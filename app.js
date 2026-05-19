@@ -1,4 +1,4 @@
-const APP_VERSION = "20260519-pwa-mobile-311";
+const APP_VERSION = "20260519-cross-device-312";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -2283,7 +2283,9 @@ const manualContent = {
       items: [
         "La app incluye configuración PWA: manifest, service worker, color de tema e instalación desde navegadores compatibles.",
         "Para instalarla en móvil, abre la URL pública HTTPS de Railway y usa Agregar a pantalla de inicio o Instalar app, según el navegador.",
+        "La compatibilidad objetivo cubre desktop Windows, Mac, tablets y móviles modernos. La ruta recomendada es usar navegadores actuales sobre HTTPS, con Supabase para persistencia compartida.",
         "El modo móvil compacta navegación, acciones superiores, botones, tarjetas y paneles para reducir desbordes.",
+        "En pantallas pequeñas, la navegación pasa a una barra horizontal deslizable y las acciones principales se apilan para evitar botones cortados.",
         "Las funciones avanzadas de administración, reportes y publicaciones siguen siendo más cómodas en tablet o escritorio.",
       ],
     },
@@ -2760,7 +2762,9 @@ const manualContent = {
       items: [
         "The app includes PWA setup: manifest, service worker, theme color, and installation support in compatible browsers.",
         "To install it on mobile, open the public HTTPS Railway URL and use Add to Home Screen or Install App, depending on the browser.",
+        "The target compatibility covers Windows desktop, Mac, tablets, and modern mobile devices. The recommended path is a current browser over HTTPS, with Supabase for shared persistence.",
         "Mobile mode compacts navigation, top actions, buttons, cards, and panels to reduce overflow.",
+        "On small screens, navigation becomes a horizontal scroll bar and main actions stack to avoid clipped buttons.",
         "Advanced admin, reporting, and publishing workflows remain more comfortable on tablet or desktop.",
       ],
     },

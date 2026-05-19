@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260519-pwa-mobile-311";
+const CACHE_NAME = "experience-hub-pwa-20260519-cross-device-312";
 const APP_SHELL = [
   "/",
   "/index.html",
