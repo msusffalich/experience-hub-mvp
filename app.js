@@ -1,4 +1,4 @@
-const APP_VERSION = "20260519-admin-cleanup-314";
+const APP_VERSION = "20260519-save-feedback-315";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -2014,6 +2014,7 @@ const manualContent = {
         "Puedes usar plantillas rápidas para revisión diaria, reunión de trabajo o chequeo de energía.",
         "La Guía de captura usa la calidad actual de datos para sugerir qué campos completar primero en la próxima experiencia.",
         "Captura muestra una confirmación visible después de guardar. La tarjeta indica si la experiencia quedó sincronizada con Supabase o guardada localmente con sincronización pendiente.",
+        "Si el guardado ya se completó pero falla una acción secundaria, como actualizar Agenda o refrescar una vista, la app conserva la confirmación de guardado y muestra una advertencia secundaria sin marcar la experiencia como perdida.",
         "Al abrir Librería desde la confirmación de guardado, la app limpia filtros y resalta la última experiencia guardada. Si un filtro oculta registros, Librería lo indica y permite ver todo.",
         "La revisión de gramática y claridad entrega sugerencias locales para título, objetivo, ubicación, personas y notas. No bloquea el guardado; sirve para mejorar la lectura y los reportes.",
         "Cada sugerencia muestra texto propuesto editable y un botón Aplicar. También puede abrir Copilot con un prompt de reescritura preparado, si el navegador permite ventanas externas.",
@@ -2503,6 +2504,7 @@ const manualContent = {
         "Use quick templates for daily review, work meeting, or energy check-in.",
         "The Capture guide uses current data quality to suggest which fields to complete first in the next experience.",
         "Capture shows a visible confirmation after saving. The card indicates whether the experience was synced with Supabase or saved locally with sync pending.",
+        "If saving is already complete but a secondary action fails, such as updating Agenda or refreshing a view, the app keeps the saved confirmation and shows a secondary warning instead of marking the experience as lost.",
         "When Library is opened from the save confirmation, the app clears filters and highlights the last saved experience. If a filter hides records, Library says so and lets you show everything.",
         "The grammar and clarity review provides local suggestions for title, objective, location, people, and notes. It does not block saving; it improves reading quality and reports.",
         "Each suggestion shows editable proposed text and an Apply button. It can also open Copilot with a prepared rewrite prompt if the browser allows external windows.",
@@ -4821,8 +4823,11 @@ function setupForm() {
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
+    let savedCommitted = false;
+    let savedExperience = null;
     try {
       const experience = await readForm();
+      savedExperience = experience;
       const existingIndex = state.experiences.findIndex((item) => item.id === experience.id);
 
       if (existingIndex >= 0) {
@@ -4833,9 +4838,10 @@ function setupForm() {
 
       const localSaved = saveExperiences();
       const apiResult = await saveExperienceToApi(experience);
-      const agendaSynced = document.getElementById("syncAgendaInput")?.checked ? syncExperienceToAgenda(experience) : false;
       state.lastSavedExperienceId = experience.id;
       state.captureSaveStatus = buildCaptureSaveStatus(experience, { ...apiResult, localSaved }, existingIndex >= 0);
+      savedCommitted = true;
+      const agendaSynced = document.getElementById("syncAgendaInput")?.checked ? syncExperienceToAgenda(experience) : false;
       if (agendaSynced) {
         state.captureSaveStatus.detail += state.language === "en" ? " Agenda was updated." : " Agenda/Calendario fue actualizado.";
       }
@@ -4845,6 +4851,19 @@ function setupForm() {
       renderAll();
       showView("capture");
     } catch (error) {
+      if (savedCommitted && state.captureSaveStatus) {
+        const detail = state.language === "en"
+          ? "The experience was saved. A secondary update failed, so review Agenda or refresh the view if needed."
+          : "La experiencia fue guardada. Falló una actualización secundaria; revisa Agenda o refresca la vista si hace falta.";
+        state.captureSaveStatus.type = "warn";
+        state.captureSaveStatus.detail = `${state.captureSaveStatus.detail} ${detail}`;
+        state.captureSaveStatus.experienceId = savedExperience?.id || state.captureSaveStatus.experienceId;
+        state.captureSaveStatus.experienceTitle = savedExperience?.title || state.captureSaveStatus.experienceTitle;
+        renderCaptureSaveStatus();
+        notify(detail, "warn");
+        console.warn("Post-save update failed", error);
+        return;
+      }
       const detail = state.language === "en"
         ? "The experience could not be saved. Review required fields and try again."
         : "No se pudo guardar la experiencia. Revisa los campos obligatorios e inténtalo de nuevo.";
@@ -18711,6 +18730,8 @@ function renderAdminOperationalFocusPanel() {
         hiddenDetail: "Closed pilot records, QA history, self-tests, demo data, and detailed backlog remain available below.",
         next: "Next priority",
         nextDetail: "Validate cross-device media, then close OCR/document processing, then harden deploy.",
+        save: "Capture save feedback",
+        saveDetail: "A saved experience stays marked as saved even if a later Agenda or view refresh step needs review.",
       }
     : {
         title: "Administración operativa",
@@ -18721,10 +18742,13 @@ function renderAdminOperationalFocusPanel() {
         hiddenDetail: "Actas cerradas, historial QA, pruebas técnicas, datos demo y backlog detallado siguen disponibles abajo.",
         next: "Siguiente prioridad",
         nextDetail: "Validar multimedia multidispositivo, cerrar OCR/procesamiento documental y luego fortalecer el deploy.",
+        save: "Confirmación de guardado",
+        saveDetail: "Una experiencia guardada se mantiene como guardada aunque una acción posterior de Agenda o refresco necesite revisión.",
       };
   const cards = [
     [labels.flow, labels.flowDetail],
     [labels.hidden, labels.hiddenDetail],
+    [labels.save, labels.saveDetail],
     [labels.next, labels.nextDetail],
   ];
   container.innerHTML = `
