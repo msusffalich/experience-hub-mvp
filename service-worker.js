@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260519-save-feedback-315";
+const CACHE_NAME = "experience-hub-pwa-20260519-agenda-optin-316";
 const APP_SHELL = [
   "/",
   "/index.html",

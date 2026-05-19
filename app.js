@@ -1,4 +1,4 @@
-const APP_VERSION = "20260519-save-feedback-315";
+const APP_VERSION = "20260519-agenda-optin-316";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -1944,7 +1944,7 @@ const manualContent = {
         "Cada guardado de decisión queda en un historial breve del acta, útil para revisar cambios de criterio durante el piloto.",
         "Participantes piloto permite registrar nombre, correo opcional, segmento y estado de cada invitado; el objetivo rápido de 3 personas se refleja en Salud y Preparación del piloto.",
         "Captura incluye un selector de Participante piloto. El participante se registra una sola vez en Administración y luego se vincula a cada experiencia sin volver a escribirlo en las notas.",
-        "Captura también puede actualizar Agenda/Calendario al guardar la experiencia. La app crea o actualiza un evento vinculado con fecha, duración, ubicación y participante piloto.",
+        "Captura puede actualizar Agenda/Calendario solo si activas la casilla correspondiente al guardar. La app crea o actualiza un evento vinculado con fecha, duración, ubicación y participante piloto.",
         "Agenda permite asignar cada evento a un Participante piloto y filtrar el calendario por persona. Si un evento se deja como general, aparece solo en la vista general; si se asigna a una persona, aparece en su Panel y en su Agenda filtrada.",
         "El alcance por participante es transversal: Diario, Hallazgos, Reportes y acciones predictivas heredan el participante activo cuando crean eventos o experiencias derivadas. Así se evita que una acción individual aparezca como si fuera de todos.",
         "El calendario visual, la lista de Agenda, las exportaciones .ics, la conversión de eventos a experiencias y el Panel respetan el participante vinculado al evento.",
@@ -2434,7 +2434,7 @@ const manualContent = {
         "Each saved decision is kept in a short record history, useful for reviewing decision changes during the pilot.",
         "Pilot participants lets you record name, optional email, segment, and status for each invitee; the 3-user target is reflected in Health and Pilot Readiness.",
         "Capture includes a Pilot participant selector. The participant is registered once in Admin and then linked to each experience without rewriting it in notes.",
-        "Capture can also update Agenda/Calendar when saving the experience. The app creates or updates a linked event with date, duration, location, and pilot participant.",
+        "Capture updates Agenda/Calendar only when you enable that checkbox while saving. The app creates or updates a linked event with date, duration, location, and pilot participant.",
         "Agenda lets you assign each event to a Pilot participant and filter the calendar by person. A general event appears only in the general view; an assigned event appears in that person's Dashboard and filtered Agenda.",
         "Participant scope is cross-functional: Daily, Insights, Reports, and predictive actions inherit the active participant when they create derived events or experiences. This prevents an individual action from appearing as if it belonged to everyone.",
         "The visual calendar, Agenda list, .ics exports, event-to-experience conversion, and Dashboard respect the participant linked to the event.",
@@ -4825,6 +4825,7 @@ function setupForm() {
     event.preventDefault();
     let savedCommitted = false;
     let savedExperience = null;
+    let agendaRequested = false;
     try {
       const experience = await readForm();
       savedExperience = experience;
@@ -4841,9 +4842,10 @@ function setupForm() {
       state.lastSavedExperienceId = experience.id;
       state.captureSaveStatus = buildCaptureSaveStatus(experience, { ...apiResult, localSaved }, existingIndex >= 0);
       savedCommitted = true;
-      const agendaSynced = document.getElementById("syncAgendaInput")?.checked ? syncExperienceToAgenda(experience) : false;
+      agendaRequested = Boolean(document.getElementById("syncAgendaInput")?.checked);
+      const agendaSynced = agendaRequested ? syncExperienceToAgenda(experience) : false;
       if (agendaSynced) {
-        state.captureSaveStatus.detail += state.language === "en" ? " Agenda was updated." : " Agenda/Calendario fue actualizado.";
+        state.captureSaveStatus.detail += state.language === "en" ? " Agenda was updated because you selected it." : " Agenda/Calendario fue actualizado porque lo seleccionaste.";
       }
       resetLibraryFilters({ syncInputs: false });
       notify(state.captureSaveStatus.detail, apiResult?.queued || !localSaved ? "warn" : "success");
@@ -4852,11 +4854,15 @@ function setupForm() {
       showView("capture");
     } catch (error) {
       if (savedCommitted && state.captureSaveStatus) {
-        const detail = state.language === "en"
-          ? "The experience was saved. A secondary update failed, so review Agenda or refresh the view if needed."
-          : "La experiencia fue guardada. Falló una actualización secundaria; revisa Agenda o refresca la vista si hace falta.";
+        const detail = agendaRequested
+          ? state.language === "en"
+            ? "The experience was saved. Agenda could not be updated; review it only if you intended to create a calendar event."
+            : "La experiencia fue guardada. Agenda no pudo actualizarse; revísala solo si querías crear un evento de calendario."
+          : state.language === "en"
+            ? "The experience was saved. A later interface refresh did not complete; reload only if you do not see the change."
+            : "La experiencia fue guardada. Un refresco posterior de la interfaz no se completó; recarga solo si no ves el cambio.";
         state.captureSaveStatus.type = "warn";
-        state.captureSaveStatus.detail = `${state.captureSaveStatus.detail} ${detail}`;
+        state.captureSaveStatus.detail = detail;
         state.captureSaveStatus.experienceId = savedExperience?.id || state.captureSaveStatus.experienceId;
         state.captureSaveStatus.experienceTitle = savedExperience?.title || state.captureSaveStatus.experienceTitle;
         renderCaptureSaveStatus();
@@ -6198,7 +6204,7 @@ function clearForm() {
   state.pendingAttachments = [];
   document.getElementById("durationInput").value = 30;
   document.getElementById("pilotParticipantInput").value = "";
-  document.getElementById("syncAgendaInput").checked = true;
+  document.getElementById("syncAgendaInput").checked = false;
   document.getElementById("objectiveInput").value = "";
   document.getElementById("energyInput").value = 7;
   document.getElementById("timestampInput").value = toDatetimeLocal(new Date().toISOString());
@@ -6544,7 +6550,7 @@ function loadExperienceIntoForm(experience) {
   document.getElementById("categoryInput").value = experience.category;
   updatePilotParticipantControls();
   document.getElementById("pilotParticipantInput").value = experience.pilotParticipantId || "";
-  document.getElementById("syncAgendaInput").checked = true;
+  document.getElementById("syncAgendaInput").checked = state.agendaEvents.some((item) => item.sourceExperienceId === experience.id);
   document.getElementById("objectiveInput").value = experience.objective || "";
   document.getElementById("timestampInput").value = toDatetimeLocal(experience.timestamp);
   document.getElementById("durationInput").value = experience.duration;
@@ -18732,6 +18738,8 @@ function renderAdminOperationalFocusPanel() {
         nextDetail: "Validate cross-device media, then close OCR/document processing, then harden deploy.",
         save: "Capture save feedback",
         saveDetail: "A saved experience stays marked as saved even if a later Agenda or view refresh step needs review.",
+        agenda: "Agenda is optional",
+        agendaDetail: "Capture no longer updates Agenda by default. It only creates or updates a calendar event when the checkbox is selected.",
       }
     : {
         title: "Administración operativa",
@@ -18744,11 +18752,14 @@ function renderAdminOperationalFocusPanel() {
         nextDetail: "Validar multimedia multidispositivo, cerrar OCR/procesamiento documental y luego fortalecer el deploy.",
         save: "Confirmación de guardado",
         saveDetail: "Una experiencia guardada se mantiene como guardada aunque una acción posterior de Agenda o refresco necesite revisión.",
+        agenda: "Agenda es opcional",
+        agendaDetail: "Captura ya no actualiza Agenda por defecto. Solo crea o actualiza un evento de calendario cuando marcas la casilla.",
       };
   const cards = [
     [labels.flow, labels.flowDetail],
     [labels.hidden, labels.hiddenDetail],
     [labels.save, labels.saveDetail],
+    [labels.agenda, labels.agendaDetail],
     [labels.next, labels.nextDetail],
   ];
   container.innerHTML = `
