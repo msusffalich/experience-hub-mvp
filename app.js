@@ -1,4 +1,4 @@
-const APP_VERSION = "20260519-persistence-gate-318";
+const APP_VERSION = "20260519-solid-persistence-319";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -687,8 +687,8 @@ const i18n = {
       authSessionExpired: "La sesión guardada no es válida o venció. Entra de nuevo.",
       authSessionRefreshed: "Sesión renovada automáticamente.",
       authStateTitle: "Estado de acceso",
-      authConfigReady: "Supabase Auth configurado",
-      authConfigMissing: "Supabase Auth no está configurado",
+      authConfigReady: "Acceso seguro configurado",
+      authConfigMissing: "Acceso seguro no configurado",
       authTokenReady: "Token activo",
       authTokenMissing: "Sin token activo",
       authRefreshReady: "Token de renovación disponible",
@@ -1442,8 +1442,8 @@ const i18n = {
       authSessionExpired: "The saved session is invalid or expired. Sign in again.",
       authSessionRefreshed: "Session refreshed automatically.",
       authStateTitle: "Access state",
-      authConfigReady: "Supabase Auth configured",
-      authConfigMissing: "Supabase Auth is not configured",
+      authConfigReady: "Secure access configured",
+      authConfigMissing: "Secure access is not configured",
       authTokenReady: "Active token",
       authTokenMissing: "No active token",
       authRefreshReady: "Refresh token available",
@@ -1850,6 +1850,8 @@ const manualContent = {
         "Los paneles históricos de diagnóstico, QA, rutas MVP y evidencias técnicas quedan agrupados en Diagnóstico avanzado para reducir ruido sin perder trazabilidad.",
         "Administración incluye Persistencia multidispositivo como compuerta prioritaria. Revisa persistencia remota, identidad de usuario, Storage privado, URL publicada, respaldo y reportes disponibles desde varios dispositivos.",
         "La app local valida el flujo, pero el uso real en desktop, móvil y tablet exige una URL desplegada, sesión Supabase y datos persistidos fuera del navegador local.",
+        "Para el usuario final, la persistencia debe sentirse automática: la app solo pide entrar, guardar o reintentar en lenguaje simple. Los términos Supabase, API y diagnóstico quedan reservados para Administración.",
+        "En modo publicado, Captura bloquea el guardado si no hay sesión activa. Esto evita registros aislados en un solo navegador y protege la prueba multidispositivo.",
         "El servidor ya soporta modo cloud mediante HOST=0.0.0.0 y NODE_ENV=production. Usa .env.production.example como base para desplegar sin depender de localhost.",
         "La guía docs/deploy-publicacion.md define el orden recomendado: GitHub privado, Supabase productivo, variables seguras, hosting Node, prueba desde varios dispositivos y validación privada.",
         "El proyecto queda preparado para Railway con railway.json, healthcheck /api/health, Node >=20 y .gitignore para evitar publicar .env, datos locales, logs o claves.",
@@ -2013,7 +2015,7 @@ const manualContent = {
         "Al registrar energía, usa una lectura rápida y consistente: 1-3 baja, 4-6 media/estable, 7-8 alta, 9-10 excepcional.",
         "Puedes usar plantillas rápidas para revisión diaria, reunión de trabajo o chequeo de energía.",
         "La Guía de captura usa la calidad actual de datos para sugerir qué campos completar primero en la próxima experiencia.",
-        "Captura muestra una confirmación visible después de guardar. La tarjeta indica si la experiencia quedó sincronizada con Supabase, si quedó solo en este dispositivo o si requiere iniciar sesión/sincronizar antes de cerrar el navegador.",
+        "Captura muestra una confirmación visible después de guardar. La tarjeta indica si la experiencia quedó disponible en todos tus dispositivos, si quedó solo en este dispositivo o si requiere entrar y guardar pendientes antes de cerrar el navegador.",
         "En modo Supabase, Captura exige sesión antes de guardar nuevas experiencias. Esto evita que varios usuarios carguen datos que solo existan en un navegador.",
         "Si el guardado ya se completó pero falla una acción secundaria, como actualizar Agenda o refrescar una vista, la app conserva la confirmación de guardado y muestra una advertencia secundaria sin marcar la experiencia como perdida.",
         "Al abrir Librería desde la confirmación de guardado, la app limpia filtros y resalta la última experiencia guardada. Si un filtro oculta registros, Librería lo indica y permite ver todo.",
@@ -2342,6 +2344,8 @@ const manualContent = {
         "Historical diagnostic, QA, MVP route, and technical evidence panels are grouped under Advanced diagnostics to reduce noise without losing traceability.",
         "Admin includes Multi-Device Persistence as a priority gate. It checks remote persistence, user identity, private Storage, published URL, backup, and reports available from multiple devices.",
         "The local app validates the flow, but real desktop, mobile, and tablet use requires a deployed URL, Supabase session, and data persisted outside the local browser.",
+        "For the final user, persistence must feel automatic: the app only asks to sign in, save, or retry in simple language. Supabase, API, and diagnostics remain Admin concepts.",
+        "In published mode, Capture blocks saving when there is no active session. This prevents isolated records in one browser and protects the multi-device test.",
         "The server now supports cloud mode through HOST=0.0.0.0 and NODE_ENV=production. Use .env.production.example as the deployment baseline so the app does not depend on localhost.",
         "The docs/deploy-publicacion.md guide defines the recommended order: private GitHub, production Supabase, secure variables, Node hosting, multi-device test, and private validation.",
         "The project is prepared for Railway with railway.json, healthcheck /api/health, Node >=20, and .gitignore to avoid publishing .env, local data, logs, or keys.",
@@ -2504,7 +2508,7 @@ const manualContent = {
         "When recording energy, use a consistent quick scale: 1-3 low, 4-6 medium/stable, 7-8 high, 9-10 exceptional.",
         "Use quick templates for daily review, work meeting, or energy check-in.",
         "The Capture guide uses current data quality to suggest which fields to complete first in the next experience.",
-        "Capture shows a visible confirmation after saving. The card indicates whether the experience synced with Supabase, stayed only on this device, or requires sign-in/sync before closing the browser.",
+        "Capture shows a visible confirmation after saving. The card indicates whether the experience is available on all your devices, stayed only on this device, or requires sign-in and saving pending changes before closing the browser.",
         "In Supabase mode, Capture requires sign-in before saving new experiences. This prevents multiple users from creating records that exist only in one browser.",
         "If saving is already complete but a secondary action fails, such as updating Agenda or refreshing a view, the app keeps the saved confirmation and shows a secondary warning instead of marking the experience as lost.",
         "When Library is opened from the save confirmation, the app clears filters and highlights the last saved experience. If a filter hides records, Library says so and lets you show everything.",
@@ -4193,27 +4197,30 @@ function queueOfflineMutation(type, payload, reason = "api_error") {
 
 async function syncOfflineQueue(options = {}) {
   if (!state.offlineQueue.length) {
-    if (!options.silent) document.getElementById("embeddingStatus").textContent = "No hay cambios sin conexión pendientes.";
+    if (!options.silent) document.getElementById("embeddingStatus").textContent = state.language === "en" ? "No pending changes." : "No hay cambios pendientes.";
     renderPersistenceGateBanner();
+    renderAuthStatus();
     renderAdmin();
     return;
   }
   if (!state.session?.access_token && state.config?.persistence === "supabase") {
-    if (!options.silent) document.getElementById("embeddingStatus").textContent = "Inicia sesión para sincronizar sin conexión.";
+    if (!options.silent) document.getElementById("embeddingStatus").textContent = state.language === "en" ? "Sign in to save pending changes on your other devices." : "Entra para guardar los cambios pendientes en tus otros dispositivos.";
     state.offlineQueue = state.offlineQueue.map((item) => ({ ...item, reason: item.reason || "auth_required" }));
     saveOfflineQueue();
     renderPersistenceGateBanner();
+    renderAuthStatus();
     renderOfflineQueuePanel();
     return;
   }
-  if (!options.silent) document.getElementById("embeddingStatus").textContent = "Sincronizando cambios sin conexión...";
+  if (!options.silent) document.getElementById("embeddingStatus").textContent = state.language === "en" ? "Saving pending changes..." : "Guardando cambios pendientes...";
   try {
     await apiRequest("/health", { skipAuth: true });
     state.apiOnline = true;
   } catch {
     state.apiOnline = false;
-    if (!options.silent) document.getElementById("embeddingStatus").textContent = "API no disponible para sincronizar.";
+    if (!options.silent) document.getElementById("embeddingStatus").textContent = state.language === "en" ? "Connection is not ready to save pending changes." : "La conexión no está lista para guardar pendientes.";
     renderPersistenceGateBanner();
+    renderAuthStatus();
     renderAdmin();
     return;
   }
@@ -4228,11 +4235,12 @@ async function syncOfflineQueue(options = {}) {
   state.offlineQueue = remaining;
   saveOfflineQueue();
   renderPersistenceGateBanner();
+  renderAuthStatus();
   renderOfflineQueuePanel();
   if (!options.silent) {
     document.getElementById("embeddingStatus").textContent = remaining.length
-      ? `${remaining.length} cambios siguen pendientes.`
-      : "Cambios sin conexión sincronizados.";
+      ? state.language === "en" ? `${remaining.length} changes are still pending.` : `${remaining.length} cambios siguen pendientes.`
+      : state.language === "en" ? "Pending changes saved." : "Cambios pendientes guardados.";
   }
   renderAdmin();
 }
@@ -4332,26 +4340,26 @@ function renderPersistenceGateBanner() {
   }
   const labels = state.language === "en"
     ? {
-        authTitle: "Sign in required for multi-device persistence",
-        authDetail: "New experiences must be saved with your Supabase user to appear on desktop, mobile, and tablet.",
-        apiTitle: "Remote persistence is not confirmed",
-        apiDetail: "The app is working locally while the API is unavailable. Do not rely on cross-device sync until it reconnects.",
-        queueTitle: "Pending sync",
-        queueDetail: `${queueCount} change${queueCount === 1 ? "" : "s"} waiting to be sent to Supabase.`,
+        authTitle: "Sign in to save on all your devices",
+        authDetail: "Before capturing, sign in with the same user you will use on mobile, tablet, and desktop.",
+        apiTitle: "Cloud save is not confirmed",
+        apiDetail: "You can keep reviewing the app, but important captures should wait until the connection is restored.",
+        queueTitle: "Changes waiting to be saved on your other devices",
+        queueDetail: `${queueCount} change${queueCount === 1 ? "" : "s"} will be sent automatically when the session and connection are ready.`,
         signIn: "Sign in",
-        sync: "Sync now",
-        refresh: "Refresh",
+        sync: "Save pending",
+        refresh: "Try again",
       }
     : {
-        authTitle: "Inicio de sesión requerido para persistencia multidispositivo",
-        authDetail: "Las nuevas experiencias deben guardarse con tu usuario Supabase para aparecer en desktop, móvil y tablet.",
-        apiTitle: "Persistencia remota no confirmada",
-        apiDetail: "La app está trabajando localmente mientras la API no está disponible. No asumas sincronización multidispositivo hasta reconectar.",
-        queueTitle: "Sincronización pendiente",
-        queueDetail: `${queueCount} cambio${queueCount === 1 ? "" : "s"} esperando envío a Supabase.`,
-        signIn: "Iniciar sesión",
-        sync: "Sincronizar ahora",
-        refresh: "Refrescar",
+        authTitle: "Inicia sesión para guardar en todos tus dispositivos",
+        authDetail: "Antes de capturar, entra con el mismo usuario que usarás en móvil, tablet y desktop.",
+        apiTitle: "Guardado en la nube no confirmado",
+        apiDetail: "Puedes seguir revisando la app, pero las capturas importantes deben esperar hasta recuperar la conexión.",
+        queueTitle: "Cambios pendientes por guardar en tus otros dispositivos",
+        queueDetail: `${queueCount} cambio${queueCount === 1 ? "" : "s"} se enviarán automáticamente cuando la sesión y la conexión estén listas.`,
+        signIn: "Entrar",
+        sync: "Guardar pendientes",
+        refresh: "Reintentar",
       };
   const title = missingSession ? labels.authTitle : queueCount ? labels.queueTitle : labels.apiTitle;
   const detail = missingSession ? labels.authDetail : queueCount ? labels.queueDetail : labels.apiDetail;
@@ -4511,7 +4519,7 @@ async function authenticate(mode) {
     return;
   }
   if (!state.config?.supabaseUrl || !state.config?.supabasePublishableKey) {
-    message.textContent = "Supabase Auth no esta configurado.";
+    message.textContent = "El acceso seguro no está configurado.";
     setAuthBusy(false);
     return;
   }
@@ -4565,6 +4573,10 @@ async function continueAfterAuth() {
   if (pending === "admin") {
     await syncOfflineQueue({ silent: true });
     showView("admin");
+  }
+  if (pending === "capture") {
+    await syncOfflineQueue({ silent: true });
+    showView("capture");
   }
 }
 
@@ -4634,7 +4646,7 @@ async function supabaseAuthRequest(pathname, body) {
 function friendlyAuthError(message, mode) {
   const normalized = String(message || "").toLowerCase();
   if (normalized.includes("invalid login credentials")) {
-    return "Credenciales inválidas: usa un usuario creado en Supabase Auth. Si es tu primer acceso, pulsa Crear cuenta; si ya existe, usa Recuperar contraseña.";
+    return "Credenciales inválidas: usa un usuario creado en la app. Si es tu primer acceso, pulsa Crear cuenta; si ya existe, usa Recuperar contraseña.";
   }
   if (normalized.includes("email not confirmed")) {
     return "Tu correo electrónico aún no está confirmado. Revisa tu correo o pulsa Reenviar confirmación.";
@@ -4672,12 +4684,37 @@ function renderAuthStatus() {
     node.innerHTML = "";
     return;
   }
+  const pending = state.offlineQueue?.length || 0;
+  const labels = state.language === "en"
+    ? {
+        synced: "Synced",
+        pending: "Pending save",
+        signIn: "Sign in to save",
+        offline: "Connection pending",
+        savePending: "Save pending",
+      }
+    : {
+        synced: "Sincronizado",
+        pending: "Guardado pendiente",
+        signIn: "Entrar para guardar",
+        offline: "Conexión pendiente",
+        savePending: "Guardar pendientes",
+      };
+  const statusText = !state.session?.access_token
+    ? labels.signIn
+    : pending
+      ? `${pending} ${labels.pending.toLowerCase()}`
+      : !state.apiOnline
+        ? labels.offline
+        : labels.synced;
+  const statusClass = !state.session?.access_token || pending || !state.apiOnline ? "is-warn" : "is-ok";
+  const statusChip = `<button class="sync-status-chip ${statusClass}" type="button" onclick="${pending ? "syncOfflineQueue()" : "renderPersistenceGateBanner()"}">${escapeHtml(statusText)}</button>`;
   if (state.session?.access_token && state.session?.user?.email) {
-    node.innerHTML = `<span>${escapeHtml(state.session.user.email)}</span><button class="ghost-button" type="button" onclick="signOut()">${t("buttons.signOut")}</button>`;
+    node.innerHTML = `${statusChip}<span>${escapeHtml(state.session.user.email)}</span><button class="ghost-button" type="button" onclick="signOut()">${t("buttons.signOut")}</button>`;
   } else if (state.session?.user?.email) {
-    node.innerHTML = `<span>${t("labels.authSessionIncomplete")}: ${escapeHtml(state.session.user.email)}</span><button class="ghost-button" type="button" onclick="signOut()">${t("buttons.signIn")}</button>`;
+    node.innerHTML = `${statusChip}<span>${t("labels.authSessionIncomplete")}: ${escapeHtml(state.session.user.email)}</span><button class="ghost-button" type="button" onclick="signOut()">${t("buttons.signIn")}</button>`;
   } else {
-    node.innerHTML = `<button class="ghost-button" type="button" onclick="showAuthView()">${t("buttons.signIn")}</button>`;
+    node.innerHTML = `${statusChip}<button class="ghost-button" type="button" onclick="showAuthView()">${t("buttons.signIn")}</button>`;
   }
 }
 
@@ -4728,7 +4765,7 @@ function showAuthView() {
   document.querySelectorAll(".nav-item").forEach((item) => item.classList.remove("active"));
   document.querySelectorAll(".view").forEach((section) => section.classList.remove("active-view"));
   document.getElementById("authView").classList.add("active-view");
-  document.getElementById("viewTitle").textContent = "Supabase Auth";
+  document.getElementById("viewTitle").textContent = state.language === "en" ? "Secure access" : "Acceso seguro";
   renderAuthStatePanel();
 }
 
@@ -4811,6 +4848,14 @@ function applyLanguage() {
   renderExperienceMapQuestionSuggestions();
   updateExperienceMapRelationOptions();
   document.getElementById("contextPrimaryButton").textContent = t("labels.contextUsePrimary");
+  document.getElementById("auth-heading").textContent = state.language === "en" ? "Sign in" : "Iniciar sesión";
+  const authHelp = document.querySelector(".auth-help");
+  if (authHelp) {
+    authHelp.querySelector("strong").textContent = state.language === "en" ? "First access" : "Primer acceso";
+    authHelp.querySelector("p").textContent = state.language === "en"
+      ? "If you do not have a user yet, enter your email, create a password, and click Create account. Technical project keys are not passwords."
+      : "Si aún no tienes usuario, escribe tu correo electrónico, crea una contraseña y pulsa Crear cuenta. Las claves técnicas del proyecto no sirven como contraseña.";
+  }
   document.getElementById("signInButton").textContent = t("buttons.signIn");
   document.getElementById("signUpButton").textContent = t("buttons.signUp");
   document.getElementById("resetPasswordButton").textContent = t("buttons.resetPassword");
@@ -4913,6 +4958,7 @@ function setupForm() {
       renderCaptureSaveStatus();
       renderPersistenceGateBanner();
       notify(state.captureSaveStatus.detail, "warn");
+      state.pendingAuthReturn = "capture";
       showAuthView();
       return;
     }
@@ -6331,13 +6377,13 @@ function buildCaptureBlockedStatus(reason = "auth_required") {
   const labels = state.language === "en"
     ? {
         title: "Sign in before saving",
-        auth: "This app is running with Supabase persistence. Sign in first so the experience is saved for all your devices.",
-        api: "The app cannot confirm the remote backend right now. Refresh operation before saving important experiences.",
+        auth: "Sign in first so the experience is saved on all your devices. The form will stay available.",
+        api: "The app cannot confirm cloud save right now. Try again before saving important experiences.",
       }
     : {
         title: "Inicia sesión antes de guardar",
-        auth: "La app está usando persistencia Supabase. Inicia sesión primero para que la experiencia se guarde en todos tus dispositivos.",
-        api: "La app no puede confirmar el backend remoto en este momento. Refresca la operación antes de guardar experiencias importantes.",
+        auth: "Entra primero para que la experiencia se guarde en todos tus dispositivos. El formulario se conservará.",
+        api: "La app no puede confirmar el guardado en la nube en este momento. Reintenta antes de guardar experiencias importantes.",
       };
   return {
     type: "warn",
@@ -6361,12 +6407,12 @@ function buildCaptureSaveStatus(experience, apiResult = {}, edited = false) {
         notPersistentTitle: "Save not safely persisted",
         local: "Saved in this browser.",
         temporary: "Saved for this session, but the browser did not confirm local persistence.",
-        remote: "Saved locally and synchronized with Supabase.",
-        authRequired: "Not synchronized with other devices because there is no active Supabase session. Sign in with the same user and press Sync offline.",
-        apiUnavailable: "Not synchronized with other devices because the API is unavailable. Press Sync offline when the connection returns.",
-        apiError: "Not synchronized with other devices because the remote save failed. Review Supabase/API status and press Sync offline.",
-        unsafe: "The app did not confirm local persistence or Supabase sync. Do not close this device until you sign in or sync.",
-        queued: "Saved locally. Remote sync is queued until the connection is available.",
+        remote: "Saved here and available for your other devices.",
+        authRequired: "It was not saved for your other devices because you are not signed in. Sign in with the same user and press Save pending.",
+        apiUnavailable: "It was not saved for your other devices because the connection is unavailable. The app will retry when it returns.",
+        apiError: "It was not saved for your other devices because cloud save did not complete. The app will keep it pending and retry.",
+        unsafe: "The app did not confirm a safe save. Do not close this device until you sign in or save pending changes.",
+        queued: "Saved on this device. It will be sent to your other devices when the connection is ready.",
         next: "Next: find it in Library, review it, and return to the MVP closure step.",
       }
     : {
@@ -6375,12 +6421,12 @@ function buildCaptureSaveStatus(experience, apiResult = {}, edited = false) {
         notPersistentTitle: "Guardado sin persistencia segura",
         local: "Guardada en este navegador.",
         temporary: "Guardada para esta sesión, pero el navegador no confirmó la persistencia local.",
-        remote: "Guardada localmente y sincronizada con Supabase.",
-        authRequired: "No se sincronizó con otros dispositivos porque no hay una sesión activa de Supabase. Inicia sesión con el mismo usuario y pulsa Sincronizar sin conexión.",
-        apiUnavailable: "No se sincronizó con otros dispositivos porque la API no está disponible. Pulsa Sincronizar sin conexión cuando vuelva la conexión.",
-        apiError: "No se sincronizó con otros dispositivos porque falló el guardado remoto. Revisa Supabase/API y pulsa Sincronizar sin conexión.",
-        unsafe: "La app no confirmó persistencia local ni sincronización con Supabase. No cierres este dispositivo hasta iniciar sesión o sincronizar.",
-        queued: "Guardada localmente. La sincronización remota quedó en cola hasta recuperar conexión.",
+        remote: "Guardada aquí y disponible para tus otros dispositivos.",
+        authRequired: "No quedó guardada para tus otros dispositivos porque no has iniciado sesión. Entra con el mismo usuario y pulsa Guardar pendientes.",
+        apiUnavailable: "No quedó guardada para tus otros dispositivos porque la conexión no está disponible. La app reintentará cuando vuelva.",
+        apiError: "No quedó guardada para tus otros dispositivos porque el guardado en la nube no se completó. La app la mantendrá pendiente y reintentará.",
+        unsafe: "La app no confirmó un guardado seguro. No cierres este dispositivo hasta iniciar sesión o guardar los cambios pendientes.",
+        queued: "Guardada en este dispositivo. Se enviará a tus otros dispositivos cuando la conexión esté lista.",
         next: "Siguiente: búscala en Librería, revísala y vuelve al paso de cierre del MVP.",
       };
   const remoteRequired = state.config?.persistence === "supabase" || state.persistence === "supabase";
@@ -7459,8 +7505,8 @@ function renderCaptureSaveStatus() {
     return;
   }
   const labels = state.language === "en"
-    ? { saved: "Saved", viewLibrary: "Open Library", keepCapturing: "Keep capturing", signIn: "Sign in", sync: "Sync now" }
-    : { saved: "Guardado", viewLibrary: "Abrir Librería", keepCapturing: "Seguir capturando", signIn: "Iniciar sesión", sync: "Sincronizar ahora" };
+    ? { saved: "Saved", viewLibrary: "Open Library", keepCapturing: "Keep capturing", signIn: "Sign in", sync: "Save pending" }
+    : { saved: "Guardado", viewLibrary: "Abrir Librería", keepCapturing: "Seguir capturando", signIn: "Entrar", sync: "Guardar pendientes" };
   const actionButtons = [
     status.reason === "auth_required" ? `<button class="primary-button" type="button" data-capture-save-action="auth">${escapeHtml(labels.signIn)}</button>` : "",
     status.queued ? `<button class="ghost-button" type="button" data-capture-save-action="sync">${escapeHtml(labels.sync)}</button>` : "",
@@ -7491,6 +7537,7 @@ function handleCaptureSaveStatusClick(event) {
     return;
   }
   if (action === "auth") {
+    state.pendingAuthReturn = "capture";
     showAuthView();
     return;
   }
@@ -18927,9 +18974,9 @@ function renderAdminOperationalFocusPanel() {
         agenda: "Agenda is optional",
         agendaDetail: "Capture no longer updates Agenda by default. It only creates or updates a calendar event when the checkbox is selected.",
         remote: "Remote persistence guard",
-        remoteDetail: "Capture warns when a record is only local, requires sign-in, or is queued for Supabase sync.",
+        remoteDetail: "Capture blocks new records without sign-in in published persistence mode and keeps pending saves visible in plain language.",
         gate: "Persistent by default",
-        gateDetail: "When Supabase is active, users must sign in before capture and a global banner exposes pending sync or API issues.",
+        gateDetail: "Technical Supabase/API diagnostics stay in Admin; users see only sign-in, save pending, and retry guidance.",
       }
     : {
         title: "Administración operativa",
@@ -18945,9 +18992,9 @@ function renderAdminOperationalFocusPanel() {
         agenda: "Agenda es opcional",
         agendaDetail: "Captura ya no actualiza Agenda por defecto. Solo crea o actualiza un evento de calendario cuando marcas la casilla.",
         remote: "Control de persistencia remota",
-        remoteDetail: "Captura advierte cuando un registro queda solo local, requiere iniciar sesión o queda en cola para sincronizar con Supabase.",
+        remoteDetail: "Captura bloquea nuevos registros sin sesión en modo publicado persistente y mantiene los pendientes visibles en lenguaje simple.",
         gate: "Persistente por defecto",
-        gateDetail: "Cuando Supabase está activo, el usuario debe iniciar sesión antes de capturar y una barra global muestra sincronización pendiente o problemas de API.",
+        gateDetail: "Los diagnósticos técnicos de Supabase/API quedan en Administración; el usuario solo ve entrar, guardar pendientes y reintentar.",
       };
   const cards = [
     [labels.flow, labels.flowDetail],
