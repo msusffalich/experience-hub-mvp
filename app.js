@@ -18718,6 +18718,7 @@ function renderPublishPlanPanel() {
           ["GitHub repository", "Create or update the shared repo, branch rules, and a release checklist.", "Next", "admin", "externalIntegrationPanel"],
           ["Cloud server preparation", "Use HOST=0.0.0.0, NODE_ENV=production, and the production environment template before deploying.", "Ready", "admin", "multiDevicePersistencePanel"],
           ["Railway deploy", "Deploy the Node app as one Railway service using railway.json, healthcheck /api/health, and production variables.", "Next", "admin", "publishPlanPanel"],
+          ["PWA and mobile install", "Manifest, service worker, theme color, and mobile overflow controls are active for HTTPS installation.", "Ready", "admin", "publishPlanPanel"],
           ["Private production test", "Run the same MVP route with three users in the deployed environment.", "Next", "admin", "pilotFeedbackPanel"],
         ],
       }
@@ -18735,6 +18736,7 @@ function renderPublishPlanPanel() {
           ["Repositorio GitHub", "Crear o actualizar el repositorio compartido, reglas de ramas y checklist de release.", "Siguiente", "admin", "externalIntegrationPanel"],
           ["Preparación de servidor cloud", "Usar HOST=0.0.0.0, NODE_ENV=production y la plantilla de entorno productivo antes de desplegar.", "Listo", "admin", "multiDevicePersistencePanel"],
           ["Deploy en Railway", "Desplegar la app Node como un servicio Railway usando railway.json, healthcheck /api/health y variables productivas.", "Siguiente", "admin", "publishPlanPanel"],
+          ["PWA e instalación móvil", "Manifest, service worker, color de tema y controles de desborde móvil activos para instalación HTTPS.", "Listo", "admin", "publishPlanPanel"],
           ["Prueba privada en producción", "Ejecutar la misma ruta MVP con tres usuarios en el entorno desplegado.", "Siguiente", "admin", "pilotFeedbackPanel"],
         ],
       };
