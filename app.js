@@ -1,4 +1,4 @@
-const APP_VERSION = "20260519-remote-save-guard-317";
+const APP_VERSION = "20260519-persistence-gate-318";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -2014,6 +2014,7 @@ const manualContent = {
         "Puedes usar plantillas rápidas para revisión diaria, reunión de trabajo o chequeo de energía.",
         "La Guía de captura usa la calidad actual de datos para sugerir qué campos completar primero en la próxima experiencia.",
         "Captura muestra una confirmación visible después de guardar. La tarjeta indica si la experiencia quedó sincronizada con Supabase, si quedó solo en este dispositivo o si requiere iniciar sesión/sincronizar antes de cerrar el navegador.",
+        "En modo Supabase, Captura exige sesión antes de guardar nuevas experiencias. Esto evita que varios usuarios carguen datos que solo existan en un navegador.",
         "Si el guardado ya se completó pero falla una acción secundaria, como actualizar Agenda o refrescar una vista, la app conserva la confirmación de guardado y muestra una advertencia secundaria sin marcar la experiencia como perdida.",
         "Al abrir Librería desde la confirmación de guardado, la app limpia filtros y resalta la última experiencia guardada. Si un filtro oculta registros, Librería lo indica y permite ver todo.",
         "La revisión de gramática y claridad entrega sugerencias locales para título, objetivo, ubicación, personas y notas. No bloquea el guardado; sirve para mejorar la lectura y los reportes.",
@@ -2504,6 +2505,7 @@ const manualContent = {
         "Use quick templates for daily review, work meeting, or energy check-in.",
         "The Capture guide uses current data quality to suggest which fields to complete first in the next experience.",
         "Capture shows a visible confirmation after saving. The card indicates whether the experience synced with Supabase, stayed only on this device, or requires sign-in/sync before closing the browser.",
+        "In Supabase mode, Capture requires sign-in before saving new experiences. This prevents multiple users from creating records that exist only in one browser.",
         "If saving is already complete but a secondary action fails, such as updating Agenda or refreshing a view, the app keeps the saved confirmation and shows a secondary warning instead of marking the experience as lost.",
         "When Library is opened from the save confirmation, the app clears filters and highlights the last saved experience. If a filter hides records, Library says so and lets you show everything.",
         "The grammar and clarity review provides local suggestions for title, objective, location, people, and notes. It does not block saving; it improves reading quality and reports.",
@@ -4192,6 +4194,7 @@ function queueOfflineMutation(type, payload, reason = "api_error") {
 async function syncOfflineQueue(options = {}) {
   if (!state.offlineQueue.length) {
     if (!options.silent) document.getElementById("embeddingStatus").textContent = "No hay cambios sin conexión pendientes.";
+    renderPersistenceGateBanner();
     renderAdmin();
     return;
   }
@@ -4199,6 +4202,7 @@ async function syncOfflineQueue(options = {}) {
     if (!options.silent) document.getElementById("embeddingStatus").textContent = "Inicia sesión para sincronizar sin conexión.";
     state.offlineQueue = state.offlineQueue.map((item) => ({ ...item, reason: item.reason || "auth_required" }));
     saveOfflineQueue();
+    renderPersistenceGateBanner();
     renderOfflineQueuePanel();
     return;
   }
@@ -4209,6 +4213,7 @@ async function syncOfflineQueue(options = {}) {
   } catch {
     state.apiOnline = false;
     if (!options.silent) document.getElementById("embeddingStatus").textContent = "API no disponible para sincronizar.";
+    renderPersistenceGateBanner();
     renderAdmin();
     return;
   }
@@ -4222,6 +4227,7 @@ async function syncOfflineQueue(options = {}) {
   }
   state.offlineQueue = remaining;
   saveOfflineQueue();
+  renderPersistenceGateBanner();
   renderOfflineQueuePanel();
   if (!options.silent) {
     document.getElementById("embeddingStatus").textContent = remaining.length
@@ -4306,6 +4312,79 @@ function setupNavigation() {
       showView(button.dataset.view);
     });
   });
+}
+
+function renderPersistenceGateBanner() {
+  const banner = document.getElementById("persistenceGateBanner");
+  if (!banner) return;
+  if (!requiresRemotePersistence()) {
+    banner.hidden = true;
+    banner.innerHTML = "";
+    return;
+  }
+  const queueCount = state.offlineQueue.length;
+  const missingSession = !state.session?.access_token;
+  const apiDown = !state.apiOnline;
+  if (!missingSession && !apiDown && !queueCount) {
+    banner.hidden = true;
+    banner.innerHTML = "";
+    return;
+  }
+  const labels = state.language === "en"
+    ? {
+        authTitle: "Sign in required for multi-device persistence",
+        authDetail: "New experiences must be saved with your Supabase user to appear on desktop, mobile, and tablet.",
+        apiTitle: "Remote persistence is not confirmed",
+        apiDetail: "The app is working locally while the API is unavailable. Do not rely on cross-device sync until it reconnects.",
+        queueTitle: "Pending sync",
+        queueDetail: `${queueCount} change${queueCount === 1 ? "" : "s"} waiting to be sent to Supabase.`,
+        signIn: "Sign in",
+        sync: "Sync now",
+        refresh: "Refresh",
+      }
+    : {
+        authTitle: "Inicio de sesión requerido para persistencia multidispositivo",
+        authDetail: "Las nuevas experiencias deben guardarse con tu usuario Supabase para aparecer en desktop, móvil y tablet.",
+        apiTitle: "Persistencia remota no confirmada",
+        apiDetail: "La app está trabajando localmente mientras la API no está disponible. No asumas sincronización multidispositivo hasta reconectar.",
+        queueTitle: "Sincronización pendiente",
+        queueDetail: `${queueCount} cambio${queueCount === 1 ? "" : "s"} esperando envío a Supabase.`,
+        signIn: "Iniciar sesión",
+        sync: "Sincronizar ahora",
+        refresh: "Refrescar",
+      };
+  const title = missingSession ? labels.authTitle : queueCount ? labels.queueTitle : labels.apiTitle;
+  const detail = missingSession ? labels.authDetail : queueCount ? labels.queueDetail : labels.apiDetail;
+  banner.hidden = false;
+  banner.innerHTML = `
+    <div>
+      <strong>${escapeHtml(title)}</strong>
+      <p>${escapeHtml(detail)}</p>
+    </div>
+    <div class="persistence-gate-actions">
+      ${missingSession ? `<button class="primary-button" type="button" data-persistence-action="auth">${escapeHtml(labels.signIn)}</button>` : ""}
+      ${queueCount ? `<button class="primary-button" type="button" data-persistence-action="sync">${escapeHtml(labels.sync)}</button>` : ""}
+      <button class="ghost-button" type="button" data-persistence-action="refresh">${escapeHtml(labels.refresh)}</button>
+    </div>
+  `;
+}
+
+async function handlePersistenceGateClick(event) {
+  const action = event.target.closest("[data-persistence-action]")?.dataset.persistenceAction;
+  if (!action) return;
+  if (action === "auth") {
+    showAuthView();
+    return;
+  }
+  if (action === "sync") {
+    await syncOfflineQueue();
+    renderPersistenceGateBanner();
+    return;
+  }
+  if (action === "refresh") {
+    await hydrateFromApi();
+    renderAll();
+  }
 }
 
 function updateUrlForView(view) {
@@ -4829,6 +4908,14 @@ function setupForm() {
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
+    if (requiresRemotePersistence() && !state.session?.access_token) {
+      state.captureSaveStatus = buildCaptureBlockedStatus("auth_required");
+      renderCaptureSaveStatus();
+      renderPersistenceGateBanner();
+      notify(state.captureSaveStatus.detail, "warn");
+      showAuthView();
+      return;
+    }
     let savedCommitted = false;
     let savedExperience = null;
     let agendaRequested = false;
@@ -5297,6 +5384,7 @@ function setupActions() {
   document.getElementById("routineList").addEventListener("change", handleRoutineScheduleChange);
   document.getElementById("routineList").addEventListener("click", handleRoutineRun);
   document.getElementById("mvpReturnBanner").addEventListener("click", handleCoreMvpReturnBannerClick);
+  document.getElementById("persistenceGateBanner").addEventListener("click", handlePersistenceGateClick);
   document.getElementById("systemHealth").addEventListener("click", handleParallelBacklogClick);
   document.getElementById("adminCommandCenter").addEventListener("click", handleParallelBacklogClick);
   document.getElementById("publishPlanPanel").addEventListener("click", handleParallelBacklogClick);
@@ -5326,7 +5414,14 @@ function setupActions() {
   document.getElementById("demoDataPanel").addEventListener("click", handleDemoDataAction);
   document.getElementById("offlineQueuePanel").addEventListener("click", handleOfflineQueueAction);
   document.getElementById("captureCoachBox").addEventListener("click", handleCaptureCoachClick);
-  window.addEventListener("online", () => syncOfflineQueue({ silent: true }));
+  window.addEventListener("online", () => syncOfflineQueue({ silent: true }).then(renderAll).catch(() => renderAll()));
+  window.setInterval(() => {
+    if (!state.offlineQueue.length || !state.session?.access_token || !state.apiOnline) {
+      renderPersistenceGateBanner();
+      return;
+    }
+    syncOfflineQueue({ silent: true }).then(renderAll).catch(() => renderPersistenceGateBanner());
+  }, 30 * 1000);
 }
 
 function handleOfflineQueueAction(event) {
@@ -6228,6 +6323,36 @@ function clearForm() {
   renderCaptureWritingCoach();
 }
 
+function requiresRemotePersistence() {
+  return state.config?.persistence === "supabase" || state.persistence === "supabase";
+}
+
+function buildCaptureBlockedStatus(reason = "auth_required") {
+  const labels = state.language === "en"
+    ? {
+        title: "Sign in before saving",
+        auth: "This app is running with Supabase persistence. Sign in first so the experience is saved for all your devices.",
+        api: "The app cannot confirm the remote backend right now. Refresh operation before saving important experiences.",
+      }
+    : {
+        title: "Inicia sesión antes de guardar",
+        auth: "La app está usando persistencia Supabase. Inicia sesión primero para que la experiencia se guarde en todos tus dispositivos.",
+        api: "La app no puede confirmar el backend remoto en este momento. Refresca la operación antes de guardar experiencias importantes.",
+      };
+  return {
+    type: "warn",
+    title: labels.title,
+    detail: reason === "api_unavailable" ? labels.api : labels.auth,
+    experienceId: "",
+    experienceTitle: "",
+    savedAt: new Date().toISOString(),
+    reason,
+    remote: false,
+    queued: false,
+    blocked: true,
+  };
+}
+
 function buildCaptureSaveStatus(experience, apiResult = {}, edited = false) {
   const labels = state.language === "en"
     ? {
@@ -6671,6 +6796,7 @@ function renderAll() {
   renderManual();
   renderAdmin();
   renderCoreMvpReturnBanner();
+  renderPersistenceGateBanner();
 }
 
 function setupDashboardClock() {
@@ -18802,6 +18928,8 @@ function renderAdminOperationalFocusPanel() {
         agendaDetail: "Capture no longer updates Agenda by default. It only creates or updates a calendar event when the checkbox is selected.",
         remote: "Remote persistence guard",
         remoteDetail: "Capture warns when a record is only local, requires sign-in, or is queued for Supabase sync.",
+        gate: "Persistent by default",
+        gateDetail: "When Supabase is active, users must sign in before capture and a global banner exposes pending sync or API issues.",
       }
     : {
         title: "Administración operativa",
@@ -18818,6 +18946,8 @@ function renderAdminOperationalFocusPanel() {
         agendaDetail: "Captura ya no actualiza Agenda por defecto. Solo crea o actualiza un evento de calendario cuando marcas la casilla.",
         remote: "Control de persistencia remota",
         remoteDetail: "Captura advierte cuando un registro queda solo local, requiere iniciar sesión o queda en cola para sincronizar con Supabase.",
+        gate: "Persistente por defecto",
+        gateDetail: "Cuando Supabase está activo, el usuario debe iniciar sesión antes de capturar y una barra global muestra sincronización pendiente o problemas de API.",
       };
   const cards = [
     [labels.flow, labels.flowDetail],
@@ -18825,6 +18955,7 @@ function renderAdminOperationalFocusPanel() {
     [labels.save, labels.saveDetail],
     [labels.agenda, labels.agendaDetail],
     [labels.remote, labels.remoteDetail],
+    [labels.gate, labels.gateDetail],
     [labels.next, labels.nextDetail],
   ];
   container.innerHTML = `
