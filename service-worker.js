@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260519-solid-persistence-319";
+const CACHE_NAME = "experience-hub-pwa-20260519-solid-persistence-320";
 const APP_SHELL = [
   "/",
   "/index.html",

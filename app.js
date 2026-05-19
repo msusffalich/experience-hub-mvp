@@ -1,4 +1,4 @@
-const APP_VERSION = "20260519-solid-persistence-319";
+const APP_VERSION = "20260519-solid-persistence-320";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -4716,6 +4716,7 @@ function renderAuthStatus() {
   } else {
     node.innerHTML = `${statusChip}<button class="ghost-button" type="button" onclick="showAuthView()">${t("buttons.signIn")}</button>`;
   }
+  renderPersistenceGateBanner();
 }
 
 function renderAuthStatePanel() {
