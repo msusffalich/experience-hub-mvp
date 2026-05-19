@@ -1,4 +1,4 @@
-const APP_VERSION = "20260519-agenda-optin-316";
+const APP_VERSION = "20260519-remote-save-guard-317";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -2013,7 +2013,7 @@ const manualContent = {
         "Al registrar energía, usa una lectura rápida y consistente: 1-3 baja, 4-6 media/estable, 7-8 alta, 9-10 excepcional.",
         "Puedes usar plantillas rápidas para revisión diaria, reunión de trabajo o chequeo de energía.",
         "La Guía de captura usa la calidad actual de datos para sugerir qué campos completar primero en la próxima experiencia.",
-        "Captura muestra una confirmación visible después de guardar. La tarjeta indica si la experiencia quedó sincronizada con Supabase o guardada localmente con sincronización pendiente.",
+        "Captura muestra una confirmación visible después de guardar. La tarjeta indica si la experiencia quedó sincronizada con Supabase, si quedó solo en este dispositivo o si requiere iniciar sesión/sincronizar antes de cerrar el navegador.",
         "Si el guardado ya se completó pero falla una acción secundaria, como actualizar Agenda o refrescar una vista, la app conserva la confirmación de guardado y muestra una advertencia secundaria sin marcar la experiencia como perdida.",
         "Al abrir Librería desde la confirmación de guardado, la app limpia filtros y resalta la última experiencia guardada. Si un filtro oculta registros, Librería lo indica y permite ver todo.",
         "La revisión de gramática y claridad entrega sugerencias locales para título, objetivo, ubicación, personas y notas. No bloquea el guardado; sirve para mejorar la lectura y los reportes.",
@@ -2503,7 +2503,7 @@ const manualContent = {
         "When recording energy, use a consistent quick scale: 1-3 low, 4-6 medium/stable, 7-8 high, 9-10 exceptional.",
         "Use quick templates for daily review, work meeting, or energy check-in.",
         "The Capture guide uses current data quality to suggest which fields to complete first in the next experience.",
-        "Capture shows a visible confirmation after saving. The card indicates whether the experience was synced with Supabase or saved locally with sync pending.",
+        "Capture shows a visible confirmation after saving. The card indicates whether the experience synced with Supabase, stayed only on this device, or requires sign-in/sync before closing the browser.",
         "If saving is already complete but a secondary action fails, such as updating Agenda or refreshing a view, the app keeps the saved confirmation and shows a secondary warning instead of marking the experience as lost.",
         "When Library is opened from the save confirmation, the app clears filters and highlights the last saved experience. If a filter hides records, Library says so and lets you show everything.",
         "The grammar and clarity review provides local suggestions for title, objective, location, people, and notes. It does not block saving; it improves reading quality and reports.",
@@ -4132,20 +4132,26 @@ function saveBackupAudit() {
 }
 
 async function saveExperienceToApi(experience) {
+  const requiresAuth = state.config?.persistence === "supabase" || state.persistence === "supabase";
+  if (requiresAuth && !state.session?.access_token) {
+    queueOfflineMutation("upsert", experience, "auth_required");
+    return { remote: false, queued: true, reason: "auth_required" };
+  }
   if (!state.apiOnline) {
     queueOfflineMutation("upsert", experience, "api_unavailable");
     return { remote: false, queued: true, reason: "api_unavailable" };
   }
   try {
-    await apiRequest(`/experiences/${encodeURIComponent(experience.id)}`, {
+    const savedExperience = await apiRequest(`/experiences/${encodeURIComponent(experience.id)}`, {
       method: "PUT",
       body: JSON.stringify({ ...experience, locale: state.language }),
     });
-    return { remote: true, queued: false };
-  } catch {
-    state.apiOnline = false;
-    queueOfflineMutation("upsert", experience, "api_error");
-    return { remote: false, queued: true, reason: "api_error" };
+    return { remote: true, queued: false, experience: savedExperience };
+  } catch (error) {
+    const reason = error?.status === 401 ? "auth_required" : "api_error";
+    if (reason === "api_error") state.apiOnline = false;
+    queueOfflineMutation("upsert", experience, reason);
+    return { remote: false, queued: true, reason };
   }
 }
 
@@ -4839,8 +4845,16 @@ function setupForm() {
 
       const localSaved = saveExperiences();
       const apiResult = await saveExperienceToApi(experience);
+      if (apiResult?.experience) {
+        const remoteExperience = normalizeExperience(apiResult.experience);
+        const remoteIndex = state.experiences.findIndex((item) => item.id === remoteExperience.id);
+        if (remoteIndex >= 0) state.experiences[remoteIndex] = remoteExperience;
+        else state.experiences.unshift(remoteExperience);
+        savedExperience = remoteExperience;
+        saveExperiences();
+      }
       state.lastSavedExperienceId = experience.id;
-      state.captureSaveStatus = buildCaptureSaveStatus(experience, { ...apiResult, localSaved }, existingIndex >= 0);
+      state.captureSaveStatus = buildCaptureSaveStatus(savedExperience || experience, { ...apiResult, localSaved }, existingIndex >= 0);
       savedCommitted = true;
       agendaRequested = Boolean(document.getElementById("syncAgendaInput")?.checked);
       const agendaSynced = agendaRequested ? syncExperienceToAgenda(experience) : false;
@@ -4849,7 +4863,9 @@ function setupForm() {
       }
       resetLibraryFilters({ syncInputs: false });
       notify(state.captureSaveStatus.detail, apiResult?.queued || !localSaved ? "warn" : "success");
-      clearForm();
+      if (apiResult?.remote || localSaved) {
+        clearForm();
+      }
       renderAll();
       showView("capture");
     } catch (error) {
@@ -6216,28 +6232,59 @@ function buildCaptureSaveStatus(experience, apiResult = {}, edited = false) {
   const labels = state.language === "en"
     ? {
         title: edited ? "Experience updated" : "Experience saved",
+        localOnlyTitle: "Saved only on this device",
+        notPersistentTitle: "Save not safely persisted",
         local: "Saved in this browser.",
         temporary: "Saved for this session, but the browser did not confirm local persistence.",
         remote: "Saved locally and synchronized with Supabase.",
+        authRequired: "Not synchronized with other devices because there is no active Supabase session. Sign in with the same user and press Sync offline.",
+        apiUnavailable: "Not synchronized with other devices because the API is unavailable. Press Sync offline when the connection returns.",
+        apiError: "Not synchronized with other devices because the remote save failed. Review Supabase/API status and press Sync offline.",
+        unsafe: "The app did not confirm local persistence or Supabase sync. Do not close this device until you sign in or sync.",
         queued: "Saved locally. Remote sync is queued until the connection is available.",
         next: "Next: find it in Library, review it, and return to the MVP closure step.",
       }
     : {
         title: edited ? "Experiencia actualizada" : "Experiencia guardada",
+        localOnlyTitle: "Guardada solo en este dispositivo",
+        notPersistentTitle: "Guardado sin persistencia segura",
         local: "Guardada en este navegador.",
         temporary: "Guardada para esta sesión, pero el navegador no confirmó la persistencia local.",
         remote: "Guardada localmente y sincronizada con Supabase.",
+        authRequired: "No se sincronizó con otros dispositivos porque no hay una sesión activa de Supabase. Inicia sesión con el mismo usuario y pulsa Sincronizar sin conexión.",
+        apiUnavailable: "No se sincronizó con otros dispositivos porque la API no está disponible. Pulsa Sincronizar sin conexión cuando vuelva la conexión.",
+        apiError: "No se sincronizó con otros dispositivos porque falló el guardado remoto. Revisa Supabase/API y pulsa Sincronizar sin conexión.",
+        unsafe: "La app no confirmó persistencia local ni sincronización con Supabase. No cierres este dispositivo hasta iniciar sesión o sincronizar.",
         queued: "Guardada localmente. La sincronización remota quedó en cola hasta recuperar conexión.",
         next: "Siguiente: búscala en Librería, revísala y vuelve al paso de cierre del MVP.",
       };
-  const storage = apiResult?.localSaved === false ? labels.temporary : apiResult?.queued ? labels.queued : apiResult?.remote ? labels.remote : labels.local;
+  const remoteRequired = state.config?.persistence === "supabase" || state.persistence === "supabase";
+  const reason = apiResult?.reason || "";
+  const remoteProblem = remoteRequired && !apiResult?.remote;
+  const reasonDetail = reason === "auth_required"
+    ? labels.authRequired
+    : reason === "api_unavailable"
+      ? labels.apiUnavailable
+      : reason === "api_error"
+        ? labels.apiError
+        : "";
+  const storage = apiResult?.remote
+    ? labels.remote
+    : apiResult?.localSaved === false
+      ? `${labels.temporary} ${reasonDetail || labels.unsafe}`
+      : remoteProblem
+        ? reasonDetail || labels.queued
+        : labels.local;
   return {
-    type: apiResult?.queued || apiResult?.localSaved === false ? "warn" : "success",
-    title: labels.title,
+    type: remoteProblem || apiResult?.queued || apiResult?.localSaved === false ? "warn" : "success",
+    title: apiResult?.localSaved === false && !apiResult?.remote ? labels.notPersistentTitle : remoteProblem ? labels.localOnlyTitle : labels.title,
     detail: `${storage} ${labels.next}`,
     experienceId: experience.id,
     experienceTitle: experience.title,
     savedAt: new Date().toISOString(),
+    reason,
+    remote: Boolean(apiResult?.remote),
+    queued: Boolean(apiResult?.queued),
   };
 }
 
@@ -7286,8 +7333,14 @@ function renderCaptureSaveStatus() {
     return;
   }
   const labels = state.language === "en"
-    ? { saved: "Saved", viewLibrary: "Open Library", keepCapturing: "Keep capturing" }
-    : { saved: "Guardado", viewLibrary: "Abrir Librería", keepCapturing: "Seguir capturando" };
+    ? { saved: "Saved", viewLibrary: "Open Library", keepCapturing: "Keep capturing", signIn: "Sign in", sync: "Sync now" }
+    : { saved: "Guardado", viewLibrary: "Abrir Librería", keepCapturing: "Seguir capturando", signIn: "Iniciar sesión", sync: "Sincronizar ahora" };
+  const actionButtons = [
+    status.reason === "auth_required" ? `<button class="primary-button" type="button" data-capture-save-action="auth">${escapeHtml(labels.signIn)}</button>` : "",
+    status.queued ? `<button class="ghost-button" type="button" data-capture-save-action="sync">${escapeHtml(labels.sync)}</button>` : "",
+    `<button class="ghost-button" type="button" data-capture-save-action="library">${escapeHtml(labels.viewLibrary)}</button>`,
+    `<button class="ghost-button" type="button" data-capture-save-action="dismiss">${escapeHtml(labels.keepCapturing)}</button>`,
+  ].filter(Boolean).join("");
   box.innerHTML = `
     <article class="capture-save-card ${status.type === "warn" ? "is-warn" : "is-success"}">
       <div>
@@ -7297,8 +7350,7 @@ function renderCaptureSaveStatus() {
         <small>${escapeHtml(status.experienceTitle || "")}</small>
       </div>
       <div class="capture-save-actions">
-        <button class="ghost-button" type="button" data-capture-save-action="library">${escapeHtml(labels.viewLibrary)}</button>
-        <button class="ghost-button" type="button" data-capture-save-action="dismiss">${escapeHtml(labels.keepCapturing)}</button>
+        ${actionButtons}
       </div>
     </article>
   `;
@@ -7310,6 +7362,14 @@ function handleCaptureSaveStatusClick(event) {
   if (action === "library") {
     resetLibraryFilters();
     showView("library");
+    return;
+  }
+  if (action === "auth") {
+    showAuthView();
+    return;
+  }
+  if (action === "sync") {
+    syncOfflineQueue();
     return;
   }
   if (action === "dismiss") {
@@ -18740,6 +18800,8 @@ function renderAdminOperationalFocusPanel() {
         saveDetail: "A saved experience stays marked as saved even if a later Agenda or view refresh step needs review.",
         agenda: "Agenda is optional",
         agendaDetail: "Capture no longer updates Agenda by default. It only creates or updates a calendar event when the checkbox is selected.",
+        remote: "Remote persistence guard",
+        remoteDetail: "Capture warns when a record is only local, requires sign-in, or is queued for Supabase sync.",
       }
     : {
         title: "Administración operativa",
@@ -18754,12 +18816,15 @@ function renderAdminOperationalFocusPanel() {
         saveDetail: "Una experiencia guardada se mantiene como guardada aunque una acción posterior de Agenda o refresco necesite revisión.",
         agenda: "Agenda es opcional",
         agendaDetail: "Captura ya no actualiza Agenda por defecto. Solo crea o actualiza un evento de calendario cuando marcas la casilla.",
+        remote: "Control de persistencia remota",
+        remoteDetail: "Captura advierte cuando un registro queda solo local, requiere iniciar sesión o queda en cola para sincronizar con Supabase.",
       };
   const cards = [
     [labels.flow, labels.flowDetail],
     [labels.hidden, labels.hiddenDetail],
     [labels.save, labels.saveDetail],
     [labels.agenda, labels.agendaDetail],
+    [labels.remote, labels.remoteDetail],
     [labels.next, labels.nextDetail],
   ];
   container.innerHTML = `
