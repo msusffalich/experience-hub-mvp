@@ -21,6 +21,12 @@
   box-sizing: border-box;
 }
 
+html {
+  max-width: 100%;
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
@@ -28,6 +34,8 @@ body {
     linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(245, 247, 244, 0)),
     var(--bg);
   color: var(--ink);
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 button,
@@ -39,6 +47,7 @@ textarea {
 
 button {
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 .app-shell {
@@ -9128,9 +9137,65 @@ button.asset-processing-summary-card {
 }
 
 @media (max-width: 720px) {
+  body {
+    font-size: 15px;
+  }
+
   .workspace,
   .sidebar {
     padding: 16px;
+  }
+
+  .app-shell,
+  .workspace,
+  .view,
+  .panel,
+  .sidebar,
+  .topbar,
+  .topbar-actions,
+  .nav-list,
+  .privacy-panel,
+  .metric-card,
+  .daily-section-card,
+  .asset-card,
+  .publication-preview,
+  .report-narrative,
+  .manual-content {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .sidebar {
+    gap: 14px;
+    padding-bottom: 12px;
+  }
+
+  .brand {
+    align-items: center;
+  }
+
+  .brand small,
+  .privacy-panel {
+    display: none;
+  }
+
+  .nav-list {
+    display: flex;
+    gap: 8px;
+    margin: 0 -16px;
+    padding: 0 16px 4px;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .nav-item {
+    flex: 0 0 auto;
+    width: auto;
+    min-height: 42px;
+    padding: 10px 12px;
+    white-space: nowrap;
+    scroll-snap-align: start;
   }
 
   .topbar,
@@ -9139,9 +9204,21 @@ button.asset-processing-summary-card {
     display: grid;
   }
 
+  .topbar {
+    gap: 12px;
+  }
+
+  .topbar h1 {
+    font-size: 24px;
+    line-height: 1.1;
+  }
+
   .topbar-actions {
-    justify-content: start;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    justify-content: stretch;
     max-width: 100%;
+    width: 100%;
   }
 
   .topbar-actions > button,
@@ -9152,6 +9229,27 @@ button.asset-processing-summary-card {
 
   .topbar-actions .language-control {
     justify-content: space-between;
+  }
+
+  .topbar-actions .auth-status,
+  .topbar-actions .notification-center {
+    grid-column: 1 / -1;
+  }
+
+  button,
+  .primary-button,
+  .ghost-button,
+  select,
+  input,
+  textarea {
+    max-width: 100%;
+  }
+
+  .primary-button,
+  .ghost-button {
+    min-height: 42px;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 
   .version-notice {
@@ -9166,6 +9264,19 @@ button.asset-processing-summary-card {
   .form-actions,
   .automation-actions {
     flex-wrap: wrap;
+  }
+
+  .form-actions,
+  .automation-actions,
+  .timeline-actions,
+  .report-actions,
+  .publication-actions,
+  .pilot-readiness-actions,
+  .mvp-closure-actions,
+  .daily-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: stretch;
   }
 
   .routine-schedule-controls {
@@ -9317,6 +9428,39 @@ button.asset-processing-summary-card {
 
   .daily-detail-content h3 {
     font-size: 18px;
+  }
+
+  .panel,
+  .metric-card,
+  .library-card,
+  .asset-card,
+  .agenda-card,
+  .daily-section-card,
+  .manual-section,
+  .publication-preview,
+  .report-narrative,
+  .insight-card {
+    overflow: hidden;
+  }
+
+  .panel *,
+  .metric-card *,
+  .library-card *,
+  .asset-card *,
+  .agenda-card *,
+  .daily-section-card *,
+  .manual-section *,
+  .publication-preview *,
+  .report-narrative *,
+  .insight-card * {
+    overflow-wrap: anywhere;
+  }
+
+  table,
+  pre,
+  code {
+    max-width: 100%;
+    overflow-x: auto;
   }
 }
 

@@ -1,4 +1,4 @@
-const APP_VERSION = "20260519-primary-person-310";
+const APP_VERSION = "20260519-pwa-mobile-311";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -2279,6 +2279,15 @@ const manualContent = {
       ],
     },
     {
+      title: "PWA y uso en móviles",
+      items: [
+        "La app incluye configuración PWA: manifest, service worker, color de tema e instalación desde navegadores compatibles.",
+        "Para instalarla en móvil, abre la URL pública HTTPS de Railway y usa Agregar a pantalla de inicio o Instalar app, según el navegador.",
+        "El modo móvil compacta navegación, acciones superiores, botones, tarjetas y paneles para reducir desbordes.",
+        "Las funciones avanzadas de administración, reportes y publicaciones siguen siendo más cómodas en tablet o escritorio.",
+      ],
+    },
+    {
       title: "Limitaciones actuales",
       items: [
         "La transcripción del navegador depende de su compatibilidad. La transcripción en el servidor local requiere configurar proveedor y clave de API.",
@@ -2747,6 +2756,15 @@ const manualContent = {
       ],
     },
     {
+      title: "PWA And Mobile Use",
+      items: [
+        "The app includes PWA setup: manifest, service worker, theme color, and installation support in compatible browsers.",
+        "To install it on mobile, open the public HTTPS Railway URL and use Add to Home Screen or Install App, depending on the browser.",
+        "Mobile mode compacts navigation, top actions, buttons, cards, and panels to reduce overflow.",
+        "Advanced admin, reporting, and publishing workflows remain more comfortable on tablet or desktop.",
+      ],
+    },
+    {
       title: "Current Limitations",
       items: [
         "Browser transcription depends on browser support. Backend transcription requires provider/API key configuration.",
@@ -3149,6 +3167,7 @@ const state = {
 };
 
 document.addEventListener("DOMContentLoaded", async () => {
+  registerServiceWorker();
   setupNavigation();
   setupForm();
   setupAgenda();
@@ -3171,6 +3190,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   setupDailyBriefingRefresh();
   setupDashboardClock();
 });
+
+function registerServiceWorker() {
+  if (!("serviceWorker" in navigator)) return;
+  if (!window.isSecureContext && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") return;
+  navigator.serviceWorker.register(`/service-worker.js?v=${encodeURIComponent(APP_VERSION)}`).catch(() => {});
+}
 
 function daysAgo(days, hours, minutes) {
   const date = new Date();

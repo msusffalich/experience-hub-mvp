@@ -1,0 +1,21 @@
+{
+  "name": "Experience Hub",
+  "short_name": "Experience Hub",
+  "description": "Plataforma de inteligencia de experiencias humanas.",
+  "start_url": "/index.html?v=20260519-pwa-mobile-311&view=dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f5f7f4",
+  "theme_color": "#0d7c66",
+  "lang": "es",
+  "categories": ["productivity", "health", "lifestyle"],
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
