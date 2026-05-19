@@ -1,4 +1,4 @@
-const APP_VERSION = "20260519-solid-persistence-320";
+const APP_VERSION = "20260519-media-storage-321";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -284,7 +284,7 @@ const i18n = {
       attachmentDocumentPreview: "Vista previa textual",
       attachmentPreviewUnsupported: "Sin vista previa nativa",
       attachmentNeedsSync: "Archivo pendiente de sincronizar",
-      attachmentNeedsSyncDetail: "Este adjunto existe como registro, pero el archivo no está disponible en este dispositivo. Ábrelo en el dispositivo original y guarda la experiencia para subirlo a Supabase Storage.",
+      attachmentNeedsSyncDetail: "Este adjunto existe como registro, pero el archivo aún no está disponible en este dispositivo. La app intentará subirlo desde el dispositivo donde se adjuntó; vuelve a guardar la experiencia si sigue pendiente.",
       attachmentStoredInline: "Temporal local",
       attachmentProcessingHint: "Se clasificará como activo multimodal al guardar la experiencia.",
       provenanceDemo: "Dato de prueba",
@@ -722,6 +722,7 @@ const i18n = {
       offlineQueueReason: "motivo",
       offlineQueueReasonApi: "API local no disponible al guardar.",
       offlineQueueReasonAuth: "Falta iniciar sesión para enviar a Supabase.",
+      offlineQueueReasonMedia: "Uno o más adjuntos siguen pendientes de subir.",
       offlineQueueReasonError: "Supabase/API rechazó el cambio; se reintentará.",
       offlineQueueConflictPolicy: "Resolución",
       offlineQueueConflictLocalWins: "La versión local se enviará como final en el próximo reintento.",
@@ -1039,7 +1040,7 @@ const i18n = {
       attachmentDocumentPreview: "Text preview",
       attachmentPreviewUnsupported: "No native preview",
       attachmentNeedsSync: "File pending sync",
-      attachmentNeedsSyncDetail: "This attachment exists as a record, but the file is not available on this device. Open it on the original device and save the experience to upload it to Supabase Storage.",
+      attachmentNeedsSyncDetail: "This attachment exists as a record, but the file is not available on this device yet. The app will try to upload it from the device where it was attached; save the experience again if it remains pending.",
       attachmentStoredInline: "Temporary local",
       attachmentProcessingHint: "It will be classified as a multimodal asset when the experience is saved.",
       provenanceDemo: "Demo data",
@@ -1477,6 +1478,7 @@ const i18n = {
       offlineQueueReason: "reason",
       offlineQueueReasonApi: "Local API was unavailable while saving.",
       offlineQueueReasonAuth: "Sign-in is required to send changes to Supabase.",
+      offlineQueueReasonMedia: "One or more attachments are still pending upload.",
       offlineQueueReasonError: "Supabase/API rejected the change; it will retry.",
       offlineQueueConflictPolicy: "Resolution",
       offlineQueueConflictLocalWins: "The local version will be sent as final on the next retry.",
@@ -1852,6 +1854,8 @@ const manualContent = {
         "La app local valida el flujo, pero el uso real en desktop, móvil y tablet exige una URL desplegada, sesión Supabase y datos persistidos fuera del navegador local.",
         "Para el usuario final, la persistencia debe sentirse automática: la app solo pide entrar, guardar o reintentar en lenguaje simple. Los términos Supabase, API y diagnóstico quedan reservados para Administración.",
         "En modo publicado, Captura bloquea el guardado si no hay sesión activa. Esto evita registros aislados en un solo navegador y protege la prueba multidispositivo.",
+        "Los adjuntos ahora se suben primero al almacenamiento privado y luego se guarda la experiencia con referencias ligeras. Así las imágenes, audios, videos y documentos pueden abrirse desde otros dispositivos.",
+        "Si un adjunto no termina de subir, la experiencia conserva la narrativa y muestra el archivo como pendiente; no debe considerarse cierre completo hasta que el activo tenga URL remota o ruta de Storage.",
         "El servidor ya soporta modo cloud mediante HOST=0.0.0.0 y NODE_ENV=production. Usa .env.production.example como base para desplegar sin depender de localhost.",
         "La guía docs/deploy-publicacion.md define el orden recomendado: GitHub privado, Supabase productivo, variables seguras, hosting Node, prueba desde varios dispositivos y validación privada.",
         "El proyecto queda preparado para Railway con railway.json, healthcheck /api/health, Node >=20 y .gitignore para evitar publicar .env, datos locales, logs o claves.",
@@ -2346,6 +2350,8 @@ const manualContent = {
         "The local app validates the flow, but real desktop, mobile, and tablet use requires a deployed URL, Supabase session, and data persisted outside the local browser.",
         "For the final user, persistence must feel automatic: the app only asks to sign in, save, or retry in simple language. Supabase, API, and diagnostics remain Admin concepts.",
         "In published mode, Capture blocks saving when there is no active session. This prevents isolated records in one browser and protects the multi-device test.",
+        "Attachments are now uploaded to private storage first, then the experience is saved with lightweight references. This lets images, audio, video, and documents open from other devices.",
+        "If an attachment does not finish uploading, the experience keeps the narrative and shows the file as pending; the flow should not be considered complete until the asset has a remote URL or Storage path.",
         "The server now supports cloud mode through HOST=0.0.0.0 and NODE_ENV=production. Use .env.production.example as the deployment baseline so the app does not depend on localhost.",
         "The docs/deploy-publicacion.md guide defines the recommended order: private GitHub, production Supabase, secure variables, Node hosting, multi-device test, and private validation.",
         "The project is prepared for Railway with railway.json, healthcheck /api/health, Node >=20, and .gitignore to avoid publishing .env, local data, logs, or keys.",
@@ -3902,7 +3908,7 @@ async function hydrateFromApi() {
       applyLanguage();
     }
     if (Array.isArray(experiences) && experiences.length > 0) {
-      state.experiences = normalizeExperiences(experiences);
+      state.experiences = mergeLocalMediaCacheForExperiences(normalizeExperiences(experiences), state.experiences);
       saveExperiences();
     } else if (state.persistence !== "supabase") {
       await Promise.all(state.experiences.map((experience) => saveExperienceToApi(experience)));
@@ -4148,17 +4154,69 @@ async function saveExperienceToApi(experience) {
     return { remote: false, queued: true, reason: "api_unavailable" };
   }
   try {
+    const preparedExperience = await prepareExperienceForRemoteSave(experience);
     const savedExperience = await apiRequest(`/experiences/${encodeURIComponent(experience.id)}`, {
       method: "PUT",
-      body: JSON.stringify({ ...experience, locale: state.language }),
+      body: JSON.stringify({ ...preparedExperience, locale: state.language }),
     });
-    return { remote: true, queued: false, experience: savedExperience };
+    const mediaPending = hasPendingRemoteMedia(savedExperience) || hasPendingRemoteMedia(preparedExperience);
+    if (mediaPending && (experience.attachments || []).some((attachment) => attachment.dataUrl)) {
+      queueOfflineMutation("upsert", experience, "media_pending");
+    }
+    return { remote: true, queued: mediaPending, experience: savedExperience, mediaPending };
   } catch (error) {
     const reason = error?.status === 401 ? "auth_required" : "api_error";
     if (reason === "api_error") state.apiOnline = false;
     queueOfflineMutation("upsert", experience, reason);
     return { remote: false, queued: true, reason };
   }
+}
+
+async function prepareExperienceForRemoteSave(experience) {
+  if (!requiresRemotePersistence() || !state.session?.access_token || !state.apiOnline) return experience;
+  const attachments = await Promise.all(
+    (experience.attachments || []).map(async (attachment) => {
+      if (attachment.path || attachment.url || !attachment.dataUrl) return stripInlineMediaForRemote(attachment);
+      try {
+        const uploaded = await apiRequest("/media", {
+          method: "POST",
+          body: JSON.stringify(attachment),
+        });
+        return stripInlineMediaForRemote({ ...attachment, ...uploaded, remoteSyncFailed: false });
+      } catch {
+        return stripInlineMediaForRemote({ ...attachment, remoteSyncFailed: true, storage: "pending" });
+      }
+    }),
+  );
+  return { ...experience, attachments };
+}
+
+function stripInlineMediaForRemote(attachment) {
+  const { dataUrl, ...rest } = attachment;
+  return rest;
+}
+
+function hasPendingRemoteMedia(experience) {
+  return Boolean((experience?.attachments || []).some((attachment) => attachment.remoteSyncFailed || (!attachment.path && !attachment.url && !attachment.dataUrl)));
+}
+
+function mergeLocalMediaCacheForExperiences(remoteExperiences = [], localExperiences = []) {
+  return remoteExperiences.map((remote) => {
+    const local = localExperiences.find((item) => item.id === remote.id);
+    return local ? mergeLocalMediaCacheForExperience(remote, local) : remote;
+  });
+}
+
+function mergeLocalMediaCacheForExperience(remoteExperience, localExperience) {
+  const localAttachments = localExperience?.attachments || [];
+  if (!localAttachments.length) return remoteExperience;
+  const attachments = (remoteExperience.attachments || []).map((remoteAttachment) => {
+    if (remoteAttachment.url || remoteAttachment.dataUrl) return remoteAttachment;
+    const localAttachment = localAttachments.find((item) => item.id === remoteAttachment.id);
+    if (!localAttachment?.dataUrl) return remoteAttachment;
+    return { ...remoteAttachment, dataUrl: localAttachment.dataUrl, localPreviewOnly: true };
+  });
+  return { ...remoteExperience, attachments };
 }
 
 async function deleteExperienceFromApi(id) {
@@ -4229,7 +4287,7 @@ async function syncOfflineQueue(options = {}) {
   for (const mutation of state.offlineQueue) {
     const synced = await syncOfflineMutation(mutation);
     if (!synced) {
-      remaining.push({ ...mutation, reason: "api_error", attempts: mutation.attempts + 1 });
+      remaining.push({ ...mutation, reason: mutation.reason === "media_pending" ? "media_pending" : "api_error", attempts: mutation.attempts + 1 });
     }
   }
   state.offlineQueue = remaining;
@@ -4250,10 +4308,12 @@ async function syncOfflineMutation(mutation) {
     if (mutation.type === "delete") {
       await apiRequest(`/experiences/${encodeURIComponent(mutation.entityId)}`, { method: "DELETE" });
     } else {
+      const preparedPayload = await prepareExperienceForRemoteSave(mutation.payload);
       await apiRequest(`/experiences/${encodeURIComponent(mutation.entityId)}`, {
         method: "PUT",
-        body: JSON.stringify({ ...mutation.payload, locale: state.language }),
+        body: JSON.stringify({ ...preparedPayload, locale: state.language }),
       });
+      if (hasPendingRemoteMedia(preparedPayload)) return false;
     }
     return true;
   } catch {
@@ -4980,7 +5040,7 @@ function setupForm() {
       const localSaved = saveExperiences();
       const apiResult = await saveExperienceToApi(experience);
       if (apiResult?.experience) {
-        const remoteExperience = normalizeExperience(apiResult.experience);
+        const remoteExperience = mergeLocalMediaCacheForExperience(normalizeExperience(apiResult.experience), experience);
         const remoteIndex = state.experiences.findIndex((item) => item.id === remoteExperience.id);
         if (remoteIndex >= 0) state.experiences[remoteIndex] = remoteExperience;
         else state.experiences.unshift(remoteExperience);
@@ -6409,6 +6469,7 @@ function buildCaptureSaveStatus(experience, apiResult = {}, edited = false) {
         local: "Saved in this browser.",
         temporary: "Saved for this session, but the browser did not confirm local persistence.",
         remote: "Saved here and available for your other devices.",
+        remoteMediaPending: "The text was saved on all devices, but one or more attachments are still pending upload.",
         authRequired: "It was not saved for your other devices because you are not signed in. Sign in with the same user and press Save pending.",
         apiUnavailable: "It was not saved for your other devices because the connection is unavailable. The app will retry when it returns.",
         apiError: "It was not saved for your other devices because cloud save did not complete. The app will keep it pending and retry.",
@@ -6423,6 +6484,7 @@ function buildCaptureSaveStatus(experience, apiResult = {}, edited = false) {
         local: "Guardada en este navegador.",
         temporary: "Guardada para esta sesión, pero el navegador no confirmó la persistencia local.",
         remote: "Guardada aquí y disponible para tus otros dispositivos.",
+        remoteMediaPending: "El texto quedó guardado en todos tus dispositivos, pero uno o más adjuntos siguen pendientes de subir.",
         authRequired: "No quedó guardada para tus otros dispositivos porque no has iniciado sesión. Entra con el mismo usuario y pulsa Guardar pendientes.",
         apiUnavailable: "No quedó guardada para tus otros dispositivos porque la conexión no está disponible. La app reintentará cuando vuelva.",
         apiError: "No quedó guardada para tus otros dispositivos porque el guardado en la nube no se completó. La app la mantendrá pendiente y reintentará.",
@@ -6441,14 +6503,14 @@ function buildCaptureSaveStatus(experience, apiResult = {}, edited = false) {
         ? labels.apiError
         : "";
   const storage = apiResult?.remote
-    ? labels.remote
+    ? apiResult?.mediaPending ? `${labels.remote} ${labels.remoteMediaPending}` : labels.remote
     : apiResult?.localSaved === false
       ? `${labels.temporary} ${reasonDetail || labels.unsafe}`
       : remoteProblem
         ? reasonDetail || labels.queued
         : labels.local;
   return {
-    type: remoteProblem || apiResult?.queued || apiResult?.localSaved === false ? "warn" : "success",
+    type: remoteProblem || apiResult?.queued || apiResult?.localSaved === false || apiResult?.mediaPending ? "warn" : "success",
     title: apiResult?.localSaved === false && !apiResult?.remote ? labels.notPersistentTitle : remoteProblem ? labels.localOnlyTitle : labels.title,
     detail: `${storage} ${labels.next}`,
     experienceId: experience.id,
@@ -18969,7 +19031,7 @@ function renderAdminOperationalFocusPanel() {
         hidden: "Reduced visual noise",
         hiddenDetail: "Closed pilot records, QA history, self-tests, demo data, and detailed backlog remain available below.",
         next: "Next priority",
-        nextDetail: "Validate cross-device media, then close OCR/document processing, then harden deploy.",
+        nextDetail: "Validate cross-device media with a real attachment on device A and device B, then close OCR/document processing and harden deploy.",
         save: "Capture save feedback",
         saveDetail: "A saved experience stays marked as saved even if a later Agenda or view refresh step needs review.",
         agenda: "Agenda is optional",
@@ -18987,7 +19049,7 @@ function renderAdminOperationalFocusPanel() {
         hidden: "Menos ruido visual",
         hiddenDetail: "Actas cerradas, historial QA, pruebas técnicas, datos demo y backlog detallado siguen disponibles abajo.",
         next: "Siguiente prioridad",
-        nextDetail: "Validar multimedia multidispositivo, cerrar OCR/procesamiento documental y luego fortalecer el deploy.",
+        nextDetail: "Validar multimedia multidispositivo con un adjunto real en dispositivo A y dispositivo B; luego cerrar OCR/procesamiento documental y fortalecer el deploy.",
         save: "Confirmación de guardado",
         saveDetail: "Una experiencia guardada se mantiene como guardada aunque una acción posterior de Agenda o refresco necesite revisión.",
         agenda: "Agenda es opcional",
@@ -20111,6 +20173,7 @@ function getOfflineConflictResolution(item) {
 function getOfflineQueueReason(reason) {
   if (reason === "api_unavailable") return t("labels.offlineQueueReasonApi");
   if (reason === "auth_required") return t("labels.offlineQueueReasonAuth");
+  if (reason === "media_pending") return t("labels.offlineQueueReasonMedia");
   return t("labels.offlineQueueReasonError");
 }
 

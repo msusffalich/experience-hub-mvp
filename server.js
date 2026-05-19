@@ -20,6 +20,7 @@ const SUPABASE_URL = process.env.SUPABASE_URL?.replace(/\/$/, "");
 const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const SUPABASE_STORAGE_BUCKET = process.env.SUPABASE_STORAGE_BUCKET || "experience-media";
+const MAX_JSON_BODY_LENGTH = Number(process.env.MAX_JSON_BODY_LENGTH || 40_000_000);
 const LOCAL_USER_ID = process.env.LOCAL_USER_ID || "00000000-0000-0000-0000-000000000001";
 const CONTEXT_TIMEOUT_MS = Number(process.env.CONTEXT_TIMEOUT_MS || 12000);
 const EMBEDDINGS_PROVIDER = process.env.EMBEDDINGS_PROVIDER || "local-hash";
@@ -703,8 +704,9 @@ function dataUrlToBuffer(dataUrl) {
   if (!dataUrl || !dataUrl.startsWith("data:")) {
     throw new Error("invalid_media_data_url");
   }
-  const [, base64] = dataUrl.split(",", 2);
-  return Buffer.from(base64, "base64");
+  const [header, payload = ""] = dataUrl.split(",", 2);
+  if (header.includes(";base64")) return Buffer.from(payload, "base64");
+  return Buffer.from(decodeURIComponent(payload), "utf-8");
 }
 
 async function uploadSupabaseObject(objectPath, contentType, bytes) {
@@ -2834,7 +2836,7 @@ function readJson(req) {
     let body = "";
     req.on("data", (chunk) => {
       body += chunk;
-      if (body.length > 8_000_000) {
+      if (body.length > MAX_JSON_BODY_LENGTH) {
         reject(new Error("payload_too_large"));
         req.destroy();
       }
