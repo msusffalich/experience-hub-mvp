@@ -1,4 +1,4 @@
-const APP_VERSION = "20260519-media-storage-321";
+const APP_VERSION = "20260519-e2e-media-flow-322";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -680,7 +680,7 @@ const i18n = {
       supabaseDiagnosticsOpenAuth: "Abrir acceso",
       supabaseDiagnosticsOpenAdmin: "Abrir administración",
       supabaseSelfTestTitle: "Prueba real Supabase",
-      supabaseSelfTestEmpty: "Ejecuta la prueba para validar perfil, Storage, guardado, lectura, búsqueda y limpieza.",
+      supabaseSelfTestEmpty: "Ejecuta la prueba para validar perfil, Storage, guardado, lectura con adjunto, búsqueda y limpieza.",
       supabaseSelfTestRunning: "Probando flujo real Supabase...",
       supabaseSelfTestReady: "Prueba real completada",
       authSessionIncomplete: "Sesión incompleta",
@@ -1436,7 +1436,7 @@ const i18n = {
       supabaseDiagnosticsOpenAuth: "Open access",
       supabaseDiagnosticsOpenAdmin: "Open Admin",
       supabaseSelfTestTitle: "Supabase real test",
-      supabaseSelfTestEmpty: "Run the test to validate profile, Storage, save, read, search, and cleanup.",
+      supabaseSelfTestEmpty: "Run the test to validate profile, Storage, save, attachment read-back, search, and cleanup.",
       supabaseSelfTestRunning: "Testing real Supabase flow...",
       supabaseSelfTestReady: "Real flow test completed",
       authSessionIncomplete: "Incomplete session",
@@ -1856,6 +1856,7 @@ const manualContent = {
         "En modo publicado, Captura bloquea el guardado si no hay sesión activa. Esto evita registros aislados en un solo navegador y protege la prueba multidispositivo.",
         "Los adjuntos ahora se suben primero al almacenamiento privado y luego se guarda la experiencia con referencias ligeras. Así las imágenes, audios, videos y documentos pueden abrirse desde otros dispositivos.",
         "Si un adjunto no termina de subir, la experiencia conserva la narrativa y muestra el archivo como pendiente; no debe considerarse cierre completo hasta que el activo tenga URL remota o ruta de Storage.",
+        "La prueba completa de multimedia solo se aprueba cuando el mismo adjunto aparece desde otro dispositivo en Librería, Activos multimodales, Reportes y Publicaciones. Si solo se sincroniza la narrativa, el flujo sigue incompleto.",
         "El servidor ya soporta modo cloud mediante HOST=0.0.0.0 y NODE_ENV=production. Usa .env.production.example como base para desplegar sin depender de localhost.",
         "La guía docs/deploy-publicacion.md define el orden recomendado: GitHub privado, Supabase productivo, variables seguras, hosting Node, prueba desde varios dispositivos y validación privada.",
         "El proyecto queda preparado para Railway con railway.json, healthcheck /api/health, Node >=20 y .gitignore para evitar publicar .env, datos locales, logs o claves.",
@@ -2352,6 +2353,7 @@ const manualContent = {
         "In published mode, Capture blocks saving when there is no active session. This prevents isolated records in one browser and protects the multi-device test.",
         "Attachments are now uploaded to private storage first, then the experience is saved with lightweight references. This lets images, audio, video, and documents open from other devices.",
         "If an attachment does not finish uploading, the experience keeps the narrative and shows the file as pending; the flow should not be considered complete until the asset has a remote URL or Storage path.",
+        "The complete media test is approved only when the same attachment appears from another device in Library, Multimodal Assets, Reports, and Publications. If only the narrative syncs, the flow is still incomplete.",
         "The server now supports cloud mode through HOST=0.0.0.0 and NODE_ENV=production. Use .env.production.example as the deployment baseline so the app does not depend on localhost.",
         "The docs/deploy-publicacion.md guide defines the recommended order: private GitHub, production Supabase, secure variables, Node hosting, multi-device test, and private validation.",
         "The project is prepared for Railway with railway.json, healthcheck /api/health, Node >=20, and .gitignore to avoid publishing .env, local data, logs, or keys.",
@@ -19161,6 +19163,8 @@ function renderAdminCommandCenter() {
 function renderPublishPlanPanel() {
   const container = document.getElementById("publishPlanPanel");
   if (!container) return;
+  const mediaReadiness = calculateAssetStorageReadiness();
+  const mediaReady = Boolean(mediaReadiness.remote > 0 && mediaReadiness.pendingSync === 0);
   const labels = state.language === "en"
     ? {
         title: "Publication Plan",
@@ -19177,7 +19181,7 @@ function renderPublishPlanPanel() {
           ["Cloud server preparation", "Use HOST=0.0.0.0, NODE_ENV=production, and the production environment template before deploying.", "Ready", "admin", "multiDevicePersistencePanel"],
           ["Railway deploy", "Deploy the Node app as one Railway service using railway.json, healthcheck /api/health, and production variables.", "Next", "admin", "publishPlanPanel"],
           ["PWA and mobile install", "Manifest, service worker, theme color, and mobile overflow controls are active for HTTPS installation.", "Ready", "admin", "publishPlanPanel"],
-          ["Cross-device media", "Attachments use Supabase Storage and show a clear pending-sync state when a file is not yet available on this device.", "Ready", "admin", "multiDevicePersistencePanel"],
+          ["Cross-device media", mediaReady ? "At least one real attachment is available from Supabase Storage with no pending sync in the current data set." : "Create a real attachment, confirm it appears on another device, and verify Library, Assets, Reports, and Publications before closing this item.", mediaReady ? "Ready" : "Review", "admin", "multiDevicePersistencePanel"],
           ["Private production test", "Run the same MVP route with three users in the deployed environment.", "Next", "admin", "pilotFeedbackPanel"],
         ],
       }
@@ -19196,7 +19200,7 @@ function renderPublishPlanPanel() {
           ["Preparación de servidor cloud", "Usar HOST=0.0.0.0, NODE_ENV=production y la plantilla de entorno productivo antes de desplegar.", "Listo", "admin", "multiDevicePersistencePanel"],
           ["Deploy en Railway", "Desplegar la app Node como un servicio Railway usando railway.json, healthcheck /api/health y variables productivas.", "Siguiente", "admin", "publishPlanPanel"],
           ["PWA e instalación móvil", "Manifest, service worker, color de tema y controles de desborde móvil activos para instalación HTTPS.", "Listo", "admin", "publishPlanPanel"],
-          ["Multimedia multidispositivo", "Los adjuntos usan Supabase Storage y muestran un estado claro de sincronización pendiente cuando el archivo aún no está disponible en este dispositivo.", "Listo", "admin", "multiDevicePersistencePanel"],
+          ["Multimedia multidispositivo", mediaReady ? "Al menos un adjunto real está disponible desde Supabase Storage y no hay sincronizaciones pendientes en los datos actuales." : "Crea un adjunto real, confirma que aparece en otro dispositivo y verifica Librería, Activos, Reportes y Publicaciones antes de cerrar este punto.", mediaReady ? "Listo" : "Revisar", "admin", "multiDevicePersistencePanel"],
           ["Prueba privada en producción", "Ejecutar la misma ruta MVP con tres usuarios en el entorno desplegado.", "Siguiente", "admin", "pilotFeedbackPanel"],
         ],
       };

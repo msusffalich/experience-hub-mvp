@@ -987,8 +987,13 @@ async function runSupabaseSelfTest(user) {
 
     await collectSelfTestStep(steps, "experienceRead", "Leer experiencia", async () => {
       const experiences = await listExperiences(user);
-      if (!experiences.some((experience) => experience.id === testId)) throw new Error("experience_not_readable");
-      return "Experiencia temporal leída correctamente desde Supabase.";
+      const saved = experiences.find((experience) => experience.id === testId);
+      if (!saved) throw new Error("experience_not_readable");
+      const attachment = Array.isArray(saved.attachments) ? saved.attachments[0] : null;
+      if (!attachment?.path) throw new Error("experience_attachment_missing_path");
+      if (!attachment?.url) throw new Error("experience_attachment_missing_signed_url");
+      await assertSignedUrlReachable(attachment.url);
+      return "Experiencia temporal leída con adjunto, ruta Storage y URL firmada funcional.";
     });
 
     await collectSelfTestStep(steps, "semantic", "Consulta semántica", async () => {
