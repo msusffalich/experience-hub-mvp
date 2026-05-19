@@ -21,6 +21,7 @@ const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const SUPABASE_STORAGE_BUCKET = process.env.SUPABASE_STORAGE_BUCKET || "experience-media";
 const MAX_JSON_BODY_LENGTH = Number(process.env.MAX_JSON_BODY_LENGTH || 40_000_000);
+const MAX_MEDIA_BODY_LENGTH = Number(process.env.MAX_MEDIA_BODY_LENGTH || 90_000_000);
 const LOCAL_USER_ID = process.env.LOCAL_USER_ID || "00000000-0000-0000-0000-000000000001";
 const CONTEXT_TIMEOUT_MS = Number(process.env.CONTEXT_TIMEOUT_MS || 12000);
 const EMBEDDINGS_PROVIDER = process.env.EMBEDDINGS_PROVIDER || "local-hash";
@@ -211,6 +212,12 @@ async function handleApi(req, res, url) {
 
   if (url.pathname === "/api/media" && req.method === "POST") {
     const user = await getRequestUser(req);
+    const contentType = req.headers["content-type"] || "";
+    if (contentType.includes("multipart/form-data")) {
+      const upload = await readMultipartMedia(req, contentType);
+      sendJson(res, 201, await saveMediaBuffer(upload.media, upload.bytes, user));
+      return;
+    }
     const media = await readJson(req);
     sendJson(res, 201, await saveMedia(media, user));
     return;
@@ -672,8 +679,22 @@ async function saveMedia(media, user = { id: LOCAL_USER_ID }) {
     return normalized;
   }
 
-  const objectPath = `${user.id}/${Date.now()}-${sanitizeFileName(normalized.name)}`;
   const bytes = dataUrlToBuffer(normalized.dataUrl);
+  return saveMediaBuffer(normalized, bytes, user);
+}
+
+async function saveMediaBuffer(media, bytes, user = { id: LOCAL_USER_ID }) {
+  const normalized = normalizeMedia(media);
+  if (activePersistence() !== "supabase") {
+    return {
+      ...normalized,
+      dataUrl: normalized.dataUrl || null,
+      storage: normalized.storage || "inline",
+    };
+  }
+
+  if (!bytes?.length) throw new Error("invalid_media_payload");
+  const objectPath = `${user.id}/${Date.now()}-${sanitizeFileName(normalized.name)}`;
   await uploadSupabaseObject(objectPath, normalized.type, bytes);
   const signedUrl = await createSignedObjectUrl(objectPath);
 
@@ -697,6 +718,13 @@ function normalizeMedia(media) {
     storage: media.storage || "inline",
     path: media.path || null,
     url: media.url || null,
+    originalType: media.originalType || media.type || "",
+    extension: media.extension || "",
+    kind: media.kind || "",
+    previewable: media.previewable !== false,
+    previewText: media.previewText || "",
+    analysisText: media.analysisText || "",
+    analysisSuggested: Boolean(media.analysisSuggested),
   };
 }
 
@@ -2855,6 +2883,79 @@ function readJson(req) {
     });
     req.on("error", reject);
   });
+}
+
+function readRawBody(req, maxLength = MAX_MEDIA_BODY_LENGTH) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    let length = 0;
+    req.on("data", (chunk) => {
+      length += chunk.length;
+      if (length > maxLength) {
+        reject(new Error("payload_too_large"));
+        req.destroy();
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on("end", () => resolve(Buffer.concat(chunks)));
+    req.on("error", reject);
+  });
+}
+
+async function readMultipartMedia(req, contentType) {
+  const boundaryMatch = contentType.match(/boundary=(?:"([^"]+)"|([^;]+))/i);
+  const boundary = boundaryMatch?.[1] || boundaryMatch?.[2];
+  if (!boundary) throw new Error("missing_multipart_boundary");
+  const body = await readRawBody(req, MAX_MEDIA_BODY_LENGTH);
+  const parts = parseMultipartParts(body, boundary);
+  const filePart = parts.find((part) => part.name === "file");
+  if (!filePart?.content?.length) throw new Error("missing_media_file");
+  const metaPart = parts.find((part) => part.name === "metadata");
+  let metadata = {};
+  if (metaPart?.content?.length) {
+    try {
+      metadata = JSON.parse(metaPart.content.toString("utf8"));
+    } catch {
+      throw new Error("invalid_media_metadata");
+    }
+  }
+  return {
+    media: {
+      ...metadata,
+      name: metadata.name || filePart.filename || "media",
+      type: metadata.type || filePart.contentType || "application/octet-stream",
+      size: Number(metadata.size || filePart.content.length),
+    },
+    bytes: filePart.content,
+  };
+}
+
+function parseMultipartParts(body, boundary) {
+  const marker = `--${boundary}`;
+  const raw = body.toString("latin1");
+  return raw
+    .split(marker)
+    .slice(1, -1)
+    .map((section) => section.replace(/^\r\n/, "").replace(/\r\n$/, ""))
+    .map((section) => {
+      const separator = section.indexOf("\r\n\r\n");
+      if (separator < 0) return null;
+      const headerText = section.slice(0, separator);
+      let contentText = section.slice(separator + 4);
+      if (contentText.endsWith("\r\n")) contentText = contentText.slice(0, -2);
+      const disposition = headerText.match(/content-disposition:\s*([^\r\n]+)/i)?.[1] || "";
+      const name = disposition.match(/name="([^"]+)"/i)?.[1] || "";
+      const filename = disposition.match(/filename="([^"]*)"/i)?.[1] || "";
+      const contentType = headerText.match(/content-type:\s*([^\r\n]+)/i)?.[1] || "";
+      return {
+        name,
+        filename,
+        contentType,
+        content: Buffer.from(contentText, "latin1"),
+      };
+    })
+    .filter(Boolean);
 }
 
 function sendJson(res, status, payload) {

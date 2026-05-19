@@ -1,4 +1,4 @@
-const APP_VERSION = "20260519-e2e-media-flow-322";
+const APP_VERSION = "20260519-mobile-media-upload-323";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -1855,6 +1855,7 @@ const manualContent = {
         "Para el usuario final, la persistencia debe sentirse automática: la app solo pide entrar, guardar o reintentar en lenguaje simple. Los términos Supabase, API y diagnóstico quedan reservados para Administración.",
         "En modo publicado, Captura bloquea el guardado si no hay sesión activa. Esto evita registros aislados en un solo navegador y protege la prueba multidispositivo.",
         "Los adjuntos ahora se suben primero al almacenamiento privado y luego se guarda la experiencia con referencias ligeras. Así las imágenes, audios, videos y documentos pueden abrirse desde otros dispositivos.",
+        "En móviles y tablets, la app usa carga binaria cuando hay sesión activa. Esto evita convertir fotos, videos o audios completos a texto interno antes de subirlos y hace la carga más estable.",
         "Si un adjunto no termina de subir, la experiencia conserva la narrativa y muestra el archivo como pendiente; no debe considerarse cierre completo hasta que el activo tenga URL remota o ruta de Storage.",
         "La prueba completa de multimedia solo se aprueba cuando el mismo adjunto aparece desde otro dispositivo en Librería, Activos multimodales, Reportes y Publicaciones. Si solo se sincroniza la narrativa, el flujo sigue incompleto.",
         "El servidor ya soporta modo cloud mediante HOST=0.0.0.0 y NODE_ENV=production. Usa .env.production.example como base para desplegar sin depender de localhost.",
@@ -2352,6 +2353,7 @@ const manualContent = {
         "For the final user, persistence must feel automatic: the app only asks to sign in, save, or retry in simple language. Supabase, API, and diagnostics remain Admin concepts.",
         "In published mode, Capture blocks saving when there is no active session. This prevents isolated records in one browser and protects the multi-device test.",
         "Attachments are now uploaded to private storage first, then the experience is saved with lightweight references. This lets images, audio, video, and documents open from other devices.",
+        "On mobile phones and tablets, the app uses binary upload when there is an active session. This avoids converting full photos, videos, or audio files into internal text before upload and makes uploads more stable.",
         "If an attachment does not finish uploading, the experience keeps the narrative and shows the file as pending; the flow should not be considered complete until the asset has a remote URL or Storage path.",
         "The complete media test is approved only when the same attachment appears from another device in Library, Multimodal Assets, Reports, and Publications. If only the narrative syncs, the flow is still incomplete.",
         "The server now supports cloud mode through HOST=0.0.0.0 and NODE_ENV=production. Use .env.production.example as the deployment baseline so the app does not depend on localhost.",
@@ -3976,9 +3978,10 @@ async function apiRequest(pathname, options = {}) {
 }
 
 async function fetchApi(pathname, options = {}) {
+  const bodyIsFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
   const response = await fetch(`${API_BASE}${pathname}`, {
     headers: {
-      "Content-Type": "application/json",
+      ...(bodyIsFormData ? {} : { "Content-Type": "application/json" }),
       ...(!options.skipAuth && state.session?.access_token ? { Authorization: `Bearer ${state.session.access_token}` } : {}),
       ...(options.headers || {}),
     },
@@ -6543,7 +6546,8 @@ async function handleMediaSelection() {
 function readSelectedFiles() {
   const input = document.getElementById("mediaInput");
   const files = Array.from(input.files || []);
-  const maxSize = 25 * 1024 * 1024;
+  const canUploadBinary = Boolean(state.apiOnline && state.session?.access_token);
+  const maxSize = (canUploadBinary ? 75 : 25) * 1024 * 1024;
   const accepted = files.filter((file) => {
     const validType = isAcceptedAttachmentFile(file);
     return validType && file.size <= maxSize;
@@ -6551,56 +6555,81 @@ function readSelectedFiles() {
   if (accepted.length !== files.length) {
     alert(
       state.language === "en"
-        ? "Some files were skipped. The MVP accepts supported image, audio, video, and document formats up to 25 MB per file."
-        : "Algunos archivos se omitieron. El MVP acepta formatos compatibles de imagen, audio, video y documentos de hasta 25 MB por archivo.",
+        ? `Some files were skipped. The MVP accepts supported image, audio, video, and document formats up to ${canUploadBinary ? 75 : 25} MB per file.`
+        : `Algunos archivos se omitieron. El MVP acepta formatos compatibles de imagen, audio, video y documentos de hasta ${canUploadBinary ? 75 : 25} MB por archivo.`,
     );
   }
   return Promise.all(accepted.map(readAndPersistMedia));
 }
 
 async function readAndPersistMedia(file) {
-  const attachment = await readFileAsAttachment(file);
-  if (attachment.kind === "audio") {
-    await appendBackendTranscript(attachment);
+  const metadata = await buildFileAttachmentMetadata(file);
+  if (state.apiOnline && state.session?.access_token) {
+    try {
+      const uploaded = await uploadFileAttachment(file, metadata);
+      if (uploaded.kind === "audio") {
+        await appendBackendTranscript(uploaded);
+      }
+      return uploaded;
+    } catch {
+      state.apiOnline = false;
+    }
   }
-  if (!state.apiOnline) return attachment;
-  try {
-    return await apiRequest("/media", {
-      method: "POST",
-      body: JSON.stringify(attachment),
-    });
-  } catch {
-    state.apiOnline = false;
-    return attachment;
-  }
+  const attachment = await readFileAsAttachment(file, metadata);
+  if (attachment.kind === "audio") await appendBackendTranscript(attachment);
+  return attachment;
 }
 
-function readFileAsAttachment(file) {
+async function uploadFileAttachment(file, metadata) {
+  const form = new FormData();
+  form.append("metadata", JSON.stringify(stripInlineMediaForRemote(metadata)));
+  form.append("file", file, file.name || metadata.name || "media");
+  return apiRequest("/media", {
+    method: "POST",
+    body: form,
+  });
+}
+
+async function buildFileAttachmentMetadata(file) {
+  const extension = getFileExtension(file.name);
+  const kind = inferMediaKind(file);
+  const type = file.type || mimeFromExtension(extension, kind);
+  const previewText = kind === "document" && TEXT_PREVIEW_DOCUMENT_EXTENSIONS.has(extension) ? await readFileTextPreview(file) : "";
+  return {
+    id: createId(),
+    name: file.name,
+    type,
+    originalType: file.type || "",
+    extension,
+    kind,
+    size: file.size,
+    dataUrl: null,
+    createdAt: new Date().toISOString(),
+    storage: "pending",
+    previewable: isBrowserPreviewable(kind, extension, type),
+    previewText,
+  };
+}
+
+function readFileAsAttachment(file, baseMetadata = null) {
+  const metadataPromise = baseMetadata ? Promise.resolve(baseMetadata) : buildFileAttachmentMetadata(file);
+  try {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = async () => {
-      const extension = getFileExtension(file.name);
-      const kind = inferMediaKind(file);
-      const type = file.type || mimeFromExtension(extension, kind);
-      const previewText = kind === "document" && TEXT_PREVIEW_DOCUMENT_EXTENSIONS.has(extension) ? await readFileTextPreview(file) : "";
+      const metadata = await metadataPromise;
       resolve({
-        id: createId(),
-        name: file.name,
-        type,
-        originalType: file.type || "",
-        extension,
-        kind,
-        size: file.size,
+        ...metadata,
         dataUrl: reader.result,
-        createdAt: new Date().toISOString(),
         storage: "inline",
-        previewable: isBrowserPreviewable(kind, extension, type),
-        previewText,
       });
     };
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
+  } catch {
+    return metadataPromise;
+  }
 }
 
 function isAcceptedAttachmentFile(file) {

@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260519-e2e-media-flow-322";
+const CACHE_NAME = "experience-hub-pwa-20260519-mobile-media-upload-323";
 const APP_SHELL = [
   "/",
   "/index.html",
