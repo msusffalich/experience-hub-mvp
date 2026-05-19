@@ -4951,6 +4951,20 @@ textarea {
   line-height: 1.4;
 }
 
+.media-sync-missing {
+  border: 1px dashed #d8912c;
+  background: #fff8ed;
+  color: #6f4a12;
+}
+
+.media-sync-missing strong {
+  color: #6f4a12;
+}
+
+.media-sync-missing small {
+  color: #8a641f;
+}
+
 .asset-preview-document {
   align-content: start;
   justify-items: stretch;
@@ -6109,6 +6123,25 @@ button.asset-processing-summary-card {
 
 .publication-media audio {
   width: 100%;
+}
+
+.publication-media-sync {
+  display: grid;
+  gap: 6px;
+  min-height: 120px;
+  padding: 16px;
+  align-content: center;
+  text-align: center;
+}
+
+.publication-media-sync strong {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.publication-media-sync small {
+  color: #8a641f;
+  line-height: 1.35;
 }
 
 .publication-file,

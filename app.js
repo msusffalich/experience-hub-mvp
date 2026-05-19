@@ -1,4 +1,4 @@
-const APP_VERSION = "20260519-cross-device-312";
+const APP_VERSION = "20260519-mobile-media-313";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -283,6 +283,8 @@ const i18n = {
       attachmentPreviewAvailable: "Vista previa disponible",
       attachmentDocumentPreview: "Vista previa textual",
       attachmentPreviewUnsupported: "Sin vista previa nativa",
+      attachmentNeedsSync: "Archivo pendiente de sincronizar",
+      attachmentNeedsSyncDetail: "Este adjunto existe como registro, pero el archivo no está disponible en este dispositivo. Ábrelo en el dispositivo original y guarda la experiencia para subirlo a Supabase Storage.",
       attachmentStoredInline: "Temporal local",
       attachmentProcessingHint: "Se clasificará como activo multimodal al guardar la experiencia.",
       provenanceDemo: "Dato de prueba",
@@ -1036,6 +1038,8 @@ const i18n = {
       attachmentPreviewAvailable: "Preview available",
       attachmentDocumentPreview: "Text preview",
       attachmentPreviewUnsupported: "No native preview",
+      attachmentNeedsSync: "File pending sync",
+      attachmentNeedsSyncDetail: "This attachment exists as a record, but the file is not available on this device. Open it on the original device and save the experience to upload it to Supabase Storage.",
       attachmentStoredInline: "Temporary local",
       attachmentProcessingHint: "It will be classified as a multimodal asset when the experience is saved.",
       provenanceDemo: "Demo data",
@@ -2279,6 +2283,14 @@ const manualContent = {
       ],
     },
     {
+      title: "Adjuntos en varios dispositivos",
+      items: [
+        "Para ver imágenes, videos, audios o documentos en móvil, tablet, Mac o desktop, el archivo debe estar en Supabase Storage o haber sido cargado en ese mismo dispositivo.",
+        "Al guardar una experiencia, el servidor intenta subir cualquier adjunto local pendiente a Storage para que otros dispositivos puedan verlo.",
+        "Si un adjunto aparece como pendiente de sincronizar, abre la experiencia en el dispositivo donde fue cargado originalmente y vuelve a guardarla para completar la subida remota.",
+      ],
+    },
+    {
       title: "PWA y uso en móviles",
       items: [
         "La app incluye configuración PWA: manifest, service worker, color de tema e instalación desde navegadores compatibles.",
@@ -2755,6 +2767,14 @@ const manualContent = {
         "The main user appears in Dashboard, Capture, Library, Reports, Findings, Publications, and Agenda.",
         "The main user does not count as a guest in the 3-person pilot target.",
         "Real experiences and events without an assigned person are linked to the main user; demo data is not reassigned.",
+      ],
+    },
+    {
+      title: "Attachments Across Devices",
+      items: [
+        "To view images, videos, audio, or documents on mobile, tablet, Mac, or desktop, the file must be in Supabase Storage or loaded on that same device.",
+        "When saving an experience, the server attempts to upload any pending local attachment to Storage so other devices can view it.",
+        "If an attachment appears as pending sync, open the experience on the device where it was originally attached and save it again to complete the remote upload.",
       ],
     },
     {
@@ -9173,6 +9193,7 @@ function renderAttachmentMedia(attachment, options = {}) {
   const source = attachment.url || attachment.dataUrl;
   const extension = attachment.extension || getFileExtension(attachment.name);
   if (kind === "document") {
+    if (!source && !attachment.previewText) return renderAttachmentNeedsSync(attachment, kind);
     const text = attachment.previewText || decodeTextDataUrl(source);
     return `
       <div class="media-document-card ${options.primary ? "is-primary" : ""}">
@@ -9182,12 +9203,23 @@ function renderAttachmentMedia(attachment, options = {}) {
       </div>
     `;
   }
-  if (!source) return "";
+  if (!source) return renderAttachmentNeedsSync(attachment, kind);
   const safeSource = escapeHtml(source);
-  if (kind === "video") return `<video src="${safeSource}" controls muted></video>`;
-  if (kind === "audio") return `<audio src="${safeSource}" controls></audio>`;
-  if (kind === "image") return `<img src="${safeSource}" alt="${escapeHtml(attachment.name || "")}" />`;
+  const syncAttrs = attachment.path || attachment.storage === "supabase" ? ` data-media-path="${escapeHtml(attachment.path || "")}" data-media-name="${escapeHtml(attachment.name || "")}"` : "";
+  if (kind === "video") return `<video src="${safeSource}" controls muted playsinline preload="metadata"${syncAttrs}></video>`;
+  if (kind === "audio") return `<audio src="${safeSource}" controls preload="metadata"${syncAttrs}></audio>`;
+  if (kind === "image") return `<img src="${safeSource}" alt="${escapeHtml(attachment.name || "")}" loading="lazy"${syncAttrs} />`;
   return "";
+}
+
+function renderAttachmentNeedsSync(attachment, kind = "document") {
+  return `
+    <div class="attachment-preview-fallback media-sync-missing">
+      <strong>${escapeHtml(attachment.name || getAssetKindLabel(kind))}</strong>
+      <span>${escapeHtml(t("labels.attachmentNeedsSync"))}</span>
+      <small>${escapeHtml(t("labels.attachmentNeedsSyncDetail"))}</small>
+    </div>
+  `;
 }
 
 function collectMultimodalAssets() {
@@ -10570,7 +10602,7 @@ function buildAssetStorageStatus(asset) {
   const remote = isRemoteAsset(asset);
   const localPreview = Boolean(asset.dataUrl || asset.previewText);
   const hasSource = Boolean(asset.url || asset.dataUrl);
-  const needsSync = !asset.isDemo && !remote && hasSource;
+  const needsSync = !asset.isDemo && (!hasSource || !remote);
   const badges = [
     remote ? t("labels.assetStorageRemote") : t("labels.assetStorageLocal"),
     localPreview ? t("labels.assetStorageCached") : t("labels.assetPreviewUnsupported"),
@@ -10640,14 +10672,24 @@ function handleAssetMetadataSubmit(event) {
 
 function renderAssetPreview(asset) {
   const source = asset.url || asset.dataUrl;
-  if (!source) return `<div class="asset-preview asset-preview-empty">${escapeHtml(getAssetKindLabel(asset.kind))}</div>`;
+  if (!source) return renderAssetNeedsSync(asset);
   if (asset.kind === "video" && asset.previewType === "image") return `<div class="asset-preview asset-preview-video-demo"><img src="${source}" alt="${escapeHtml(asset.name || "")}" loading="lazy" /><span>Video</span></div>`;
-  if (asset.kind === "video" && asset.previewable !== false) return `<div class="asset-preview"><video src="${source}" controls muted></video></div>`;
-  if (asset.kind === "audio" && asset.previewable !== false) return `<div class="asset-preview asset-preview-audio"><audio src="${source}" controls></audio></div>`;
+  if (asset.kind === "video" && asset.previewable !== false) return `<div class="asset-preview"><video src="${source}" controls muted playsinline preload="metadata"></video></div>`;
+  if (asset.kind === "audio" && asset.previewable !== false) return `<div class="asset-preview asset-preview-audio"><audio src="${source}" controls preload="metadata"></audio></div>`;
   if (asset.kind === "image" && asset.previewable !== false) return `<div class="asset-preview"><img src="${source}" alt="${escapeHtml(asset.name || "")}" loading="lazy" /></div>`;
   if (["image", "audio", "video"].includes(asset.kind)) return renderUnsupportedMediaPreview(asset);
   if (asset.kind === "document") return `<div class="asset-preview asset-preview-document"><strong>${escapeHtml(asset.name || getAssetKindLabel(asset.kind))}</strong><pre>${escapeHtml(asset.previewText || decodeTextDataUrl(source) || (state.language === "en" ? "Document preview" : "Vista previa del documento"))}</pre></div>`;
   return `<div class="asset-preview asset-preview-empty">${escapeHtml(asset.name || getAssetKindLabel(asset.kind))}</div>`;
+}
+
+function renderAssetNeedsSync(asset) {
+  return `
+    <div class="asset-preview asset-preview-unsupported media-sync-missing">
+      <span>${escapeHtml(getAssetKindLabel(asset.kind))}</span>
+      <strong>${escapeHtml(asset.name || t("labels.attachmentNeedsSync"))}</strong>
+      <small>${escapeHtml(t("labels.attachmentNeedsSyncDetail"))}</small>
+    </div>
+  `;
 }
 
 function renderUnsupportedMediaPreview(asset) {
@@ -14097,8 +14139,8 @@ function collectPublicationMedia(experiences) {
       manualNote: asset.manualNote || "",
       analyticalText: asset.analysisText || "",
       included: true,
+      needsSync: !asset.url && !asset.dataUrl,
     }))
-    .filter((item) => item.url)
     .slice(0, 8);
 }
 
@@ -14369,14 +14411,18 @@ function renderPublicationFinalDocument(draft) {
 
 function renderPublicationFinalMediaItem(item) {
   const caption = renderPublicationMediaCaption(item);
+  if (!item.url && !item.dataUrl) {
+    return `<figure class="publication-file media-sync-missing">${renderPublicationMediaSyncNotice(item)}${caption}</figure>`;
+  }
+  const source = escapeHtml(item.url || item.dataUrl);
   if (item.type.startsWith("image/")) {
-    return `<figure><img src="${item.url}" alt="${escapeHtml(item.name)}" loading="lazy" />${caption}</figure>`;
+    return `<figure><img src="${source}" alt="${escapeHtml(item.name)}" loading="lazy" />${caption}</figure>`;
   }
   if (item.type.startsWith("video/")) {
-    return `<figure><video src="${item.url}" controls muted></video>${caption}</figure>`;
+    return `<figure><video src="${source}" controls muted playsinline preload="metadata"></video>${caption}</figure>`;
   }
   if (item.type.startsWith("audio/")) {
-    return `<figure class="publication-audio"><audio src="${item.url}" controls></audio>${caption}</figure>`;
+    return `<figure class="publication-audio"><audio src="${source}" controls preload="metadata"></audio>${caption}</figure>`;
   }
   return `<figure class="publication-file">${caption}</figure>`;
 }
@@ -14657,16 +14703,29 @@ function renderPublicationMediaItem(item) {
     </label>
   `;
   const caption = renderPublicationMediaCaption(item);
+  if (!item.url && !item.dataUrl) {
+    return `<figure class="publication-file ${stateClass} media-sync-missing">${renderPublicationMediaSyncNotice(item)}${caption}${control}</figure>`;
+  }
+  const source = escapeHtml(item.url || item.dataUrl);
   if (item.type.startsWith("image/")) {
-    return `<figure class="${stateClass}"><img src="${item.url}" alt="${escapeHtml(item.name)}" loading="lazy" />${caption}${control}</figure>`;
+    return `<figure class="${stateClass}"><img src="${source}" alt="${escapeHtml(item.name)}" loading="lazy" />${caption}${control}</figure>`;
   }
   if (item.type.startsWith("video/")) {
-    return `<figure class="${stateClass}"><video src="${item.url}" controls muted></video>${caption}${control}</figure>`;
+    return `<figure class="${stateClass}"><video src="${source}" controls muted playsinline preload="metadata"></video>${caption}${control}</figure>`;
   }
   if (item.type.startsWith("audio/")) {
-    return `<figure class="publication-audio ${stateClass}"><audio src="${item.url}" controls></audio>${caption}${control}</figure>`;
+    return `<figure class="publication-audio ${stateClass}"><audio src="${source}" controls preload="metadata"></audio>${caption}${control}</figure>`;
   }
   return `<figure class="publication-file ${stateClass}">${caption}${control}</figure>`;
+}
+
+function renderPublicationMediaSyncNotice(item) {
+  return `
+    <div class="publication-media-sync">
+      <strong>${escapeHtml(t("labels.attachmentNeedsSync"))}</strong>
+      <small>${escapeHtml(t("labels.attachmentNeedsSyncDetail"))}</small>
+    </div>
+  `;
 }
 
 function renderPublicationMediaCaption(item) {
@@ -14886,7 +14945,7 @@ async function copyTextToClipboard(text) {
 }
 
 function buildPublicationHtml(draft) {
-  const approvedMedia = getApprovedPublicationMedia(draft);
+  const approvedMedia = getApprovedPublicationMedia(draft).filter((item) => item.url || item.dataUrl);
   const templateId = getPublicationTemplateId(draft);
   const exportClass = `template-${templateId}`;
   const approvalText = displayPublicationApprovalStatus(draft.approvalStatus);
@@ -14895,11 +14954,11 @@ function buildPublicationHtml(draft) {
     ? `<section><h2>${escapeHtml(t("labels.publicationMedia"))}</h2><div class="media">${approvedMedia
         .map((item) =>
           item.type.startsWith("image/")
-            ? `<figure><img src="${item.url}" alt="${escapeHtml(item.name)}" /><figcaption>${escapeHtml(buildPublicationExportCaption(item))}</figcaption></figure>`
+            ? `<figure><img src="${escapeHtml(item.url || item.dataUrl)}" alt="${escapeHtml(item.name)}" /><figcaption>${escapeHtml(buildPublicationExportCaption(item))}</figcaption></figure>`
             : item.type.startsWith("video/")
-              ? `<figure><video src="${item.url}" controls></video><figcaption>${escapeHtml(buildPublicationExportCaption(item))}</figcaption></figure>`
+              ? `<figure><video src="${escapeHtml(item.url || item.dataUrl)}" controls></video><figcaption>${escapeHtml(buildPublicationExportCaption(item))}</figcaption></figure>`
               : item.type.startsWith("audio/")
-                ? `<figure><audio src="${item.url}" controls></audio><figcaption>${escapeHtml(buildPublicationExportCaption(item))}</figcaption></figure>`
+                ? `<figure><audio src="${escapeHtml(item.url || item.dataUrl)}" controls></audio><figcaption>${escapeHtml(buildPublicationExportCaption(item))}</figcaption></figure>`
                 : `<p>${escapeHtml(buildPublicationExportCaption(item))}</p>`,
         )
         .join("")}</div></section>`
@@ -18723,6 +18782,7 @@ function renderPublishPlanPanel() {
           ["Cloud server preparation", "Use HOST=0.0.0.0, NODE_ENV=production, and the production environment template before deploying.", "Ready", "admin", "multiDevicePersistencePanel"],
           ["Railway deploy", "Deploy the Node app as one Railway service using railway.json, healthcheck /api/health, and production variables.", "Next", "admin", "publishPlanPanel"],
           ["PWA and mobile install", "Manifest, service worker, theme color, and mobile overflow controls are active for HTTPS installation.", "Ready", "admin", "publishPlanPanel"],
+          ["Cross-device media", "Attachments use Supabase Storage and show a clear pending-sync state when a file is not yet available on this device.", "Ready", "admin", "multiDevicePersistencePanel"],
           ["Private production test", "Run the same MVP route with three users in the deployed environment.", "Next", "admin", "pilotFeedbackPanel"],
         ],
       }
@@ -18741,6 +18801,7 @@ function renderPublishPlanPanel() {
           ["Preparación de servidor cloud", "Usar HOST=0.0.0.0, NODE_ENV=production y la plantilla de entorno productivo antes de desplegar.", "Listo", "admin", "multiDevicePersistencePanel"],
           ["Deploy en Railway", "Desplegar la app Node como un servicio Railway usando railway.json, healthcheck /api/health y variables productivas.", "Siguiente", "admin", "publishPlanPanel"],
           ["PWA e instalación móvil", "Manifest, service worker, color de tema y controles de desborde móvil activos para instalación HTTPS.", "Listo", "admin", "publishPlanPanel"],
+          ["Multimedia multidispositivo", "Los adjuntos usan Supabase Storage y muestran un estado claro de sincronización pendiente cuando el archivo aún no está disponible en este dispositivo.", "Listo", "admin", "multiDevicePersistencePanel"],
           ["Prueba privada en producción", "Ejecutar la misma ruta MVP con tres usuarios en el entorno desplegado.", "Siguiente", "admin", "pilotFeedbackPanel"],
         ],
       };

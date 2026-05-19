@@ -613,7 +613,8 @@ async function upsertExperience(experience, user = { id: LOCAL_USER_ID }) {
   const normalized = normalizeExperience(experience);
   if (activePersistence() === "supabase") {
     await upsertProfile(await getProfile(user), user);
-    const row = await toExperienceRow(normalized, user);
+    const mediaReady = await persistExperienceMedia(normalized, user);
+    const row = await toExperienceRow(mediaReady, user);
     const rows = await supabaseRest("experiences", {
       method: "POST",
       searchParams: { on_conflict: "experience_id" },
@@ -627,6 +628,22 @@ async function upsertExperience(experience, user = { id: LOCAL_USER_ID }) {
     currentStore.experiences = [normalized, ...currentStore.experiences.filter((item) => item.id !== normalized.id)];
     return normalized;
   });
+}
+
+async function persistExperienceMedia(experience, user = { id: LOCAL_USER_ID }) {
+  if (activePersistence() !== "supabase") return experience;
+  const attachments = await Promise.all(
+    (experience.attachments || []).map(async (attachment) => {
+      if (attachment.path) return attachment;
+      if (!attachment.dataUrl) return attachment;
+      try {
+        return await saveMedia(attachment, user);
+      } catch {
+        return { ...attachment, storage: attachment.storage || "inline", remoteSyncFailed: true };
+      }
+    }),
+  );
+  return { ...experience, attachments };
 }
 
 async function deleteExperienceRecord(id, user = { id: LOCAL_USER_ID }) {
