@@ -1,4 +1,4 @@
-const APP_VERSION = "20260519-mobile-media-313";
+const APP_VERSION = "20260519-admin-cleanup-314";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -1845,6 +1845,7 @@ const manualContent = {
         "Administración incluye un panel de Integraciones externas para registrar decisiones sobre API, MCP, reutilización de código, GitHub compartido o separación de proyectos. Clio queda documentado como candidato futuro para integración por API/MCP antes de copiar código.",
         "El panel de Integraciones externas incluye un contrato mínimo copiable para definir recursos, autenticación, eventos, adjuntos, privacidad, errores y criterios de aceptación antes de desarrollar conectores.",
         "Administración muestra un Centro de mando posterior al MVP con tres frentes principales: integración de dispositivos, OCR/procesamiento multimodal y deploy/publicación.",
+        "Administración operativa deja visibles primero los controles útiles para avanzar ahora: publicación, multidispositivo, participantes, feedback, perfil y respaldo. El cierre del piloto y la evidencia técnica quedan dentro de Diagnóstico avanzado.",
         "Administración incluye un Plan de publicación visible con la secuencia recomendada: limpiar interfaz, fortalecer Supabase, preparar GitHub, desplegar frontend, desplegar backend/API solo si es necesario y ejecutar una prueba privada en producción.",
         "Los paneles históricos de diagnóstico, QA, rutas MVP y evidencias técnicas quedan agrupados en Diagnóstico avanzado para reducir ruido sin perder trazabilidad.",
         "Administración incluye Persistencia multidispositivo como compuerta prioritaria. Revisa persistencia remota, identidad de usuario, Storage privado, URL publicada, respaldo y reportes disponibles desde varios dispositivos.",
@@ -2334,6 +2335,7 @@ const manualContent = {
         "Admin includes an External Integrations panel to record decisions about API, MCP, code reuse, shared GitHub, or keeping projects separate. Clio is documented as a future candidate for API/MCP integration before copying code.",
         "The External Integrations panel includes a copyable minimum contract to define resources, authentication, events, attachments, privacy, errors, and acceptance criteria before building connectors.",
         "Admin shows a post-MVP Command Center with three main fronts: device integration, OCR/multimodal processing, and deploy/publication.",
+        "Operational Admin keeps the immediately useful controls visible first: publication, multi-device readiness, participants, feedback, profile, and backup. Pilot closure and technical evidence now live inside Advanced diagnostics.",
         "Admin includes a visible Publication Plan with the recommended sequence: clean the interface, harden Supabase, prepare GitHub, deploy the frontend, deploy backend/API only if needed, and run a private production test.",
         "Historical diagnostic, QA, MVP route, and technical evidence panels are grouped under Advanced diagnostics to reduce noise without losing traceability.",
         "Admin includes Multi-Device Persistence as a priority gate. It checks remote persistence, user identity, private Storage, published URL, backup, and reports available from multiple devices.",
@@ -18696,6 +18698,58 @@ async function handleUiQualityClick(event) {
   handleParallelBacklogClick(event);
 }
 
+function renderAdminOperationalFocusPanel() {
+  const container = document.getElementById("adminOperationalFocusPanel");
+  if (!container) return;
+  const labels = state.language === "en"
+    ? {
+        title: "Operational Admin",
+        subtitle: "Main controls first. Pilot closure and technical evidence were moved to Advanced diagnostics.",
+        flow: "Current operating flow",
+        flowDetail: "Capture, Library, Assets, Reports, Publications, Agenda, Participants, Feedback, Backup, and Deploy.",
+        hidden: "Reduced visual noise",
+        hiddenDetail: "Closed pilot records, QA history, self-tests, demo data, and detailed backlog remain available below.",
+        next: "Next priority",
+        nextDetail: "Validate cross-device media, then close OCR/document processing, then harden deploy.",
+      }
+    : {
+        title: "Administración operativa",
+        subtitle: "Primero los controles principales. El cierre del piloto y la evidencia técnica pasaron a Diagnóstico avanzado.",
+        flow: "Flujo operativo actual",
+        flowDetail: "Captura, Librería, Activos, Reportes, Publicaciones, Agenda, Participantes, Feedback, Respaldo y Deploy.",
+        hidden: "Menos ruido visual",
+        hiddenDetail: "Actas cerradas, historial QA, pruebas técnicas, datos demo y backlog detallado siguen disponibles abajo.",
+        next: "Siguiente prioridad",
+        nextDetail: "Validar multimedia multidispositivo, cerrar OCR/procesamiento documental y luego fortalecer el deploy.",
+      };
+  const cards = [
+    [labels.flow, labels.flowDetail],
+    [labels.hidden, labels.hiddenDetail],
+    [labels.next, labels.nextDetail],
+  ];
+  container.innerHTML = `
+    <div class="admin-operational-heading">
+      <div>
+        <h3>${escapeHtml(labels.title)}</h3>
+        <p>${escapeHtml(labels.subtitle)}</p>
+      </div>
+      <span>${escapeHtml(APP_VERSION)}</span>
+    </div>
+    <div class="admin-operational-grid">
+      ${cards
+        .map(
+          ([title, detail]) => `
+            <article>
+              <strong>${escapeHtml(title)}</strong>
+              <p>${escapeHtml(detail)}</p>
+            </article>
+          `,
+        )
+        .join("")}
+    </div>
+  `;
+}
+
 function renderAdminCommandCenter() {
   const container = document.getElementById("adminCommandCenter");
   if (!container) return;
@@ -19468,6 +19522,7 @@ function renderAdmin() {
   ];
   document.getElementById("embeddingStatus").textContent =
     state.embeddingStatus || (state.language === "en" ? "Vector search ready for Supabase" : "Búsqueda vectorial lista para Supabase");
+  renderAdminOperationalFocusPanel();
   renderAdminCommandCenter();
   renderPublishPlanPanel();
   renderMultiDevicePersistencePanel();
