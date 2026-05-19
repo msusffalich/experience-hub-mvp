@@ -1,5 +1,6 @@
-const APP_VERSION = "20260519-railway-ready-309";
+const APP_VERSION = "20260519-primary-person-310";
 const PILOT_TARGET_USERS = 3;
+const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
   "Trabajo",
   "Viajes / Paseos",
@@ -2269,6 +2270,15 @@ const manualContent = {
       ],
     },
     {
+      title: "Usuario principal y participantes",
+      items: [
+        "Miguel queda registrado como usuario principal del sistema para que la evidencia inicial del MVP no se pierda al filtrar por persona.",
+        "El usuario principal aparece en Panel, Captura, LibrerÃ­a, Reportes, Hallazgos, Publicaciones y Agenda.",
+        "El usuario principal no cuenta como invitado dentro de la meta del piloto de 3 personas.",
+        "Las experiencias y eventos reales sin persona asignada se vinculan al usuario principal; los datos de ejemplo no se reasignan.",
+      ],
+    },
+    {
       title: "Limitaciones actuales",
       items: [
         "La transcripción del navegador depende de su compatibilidad. La transcripción en el servidor local requiere configurar proveedor y clave de API.",
@@ -2728,6 +2738,15 @@ const manualContent = {
       ],
     },
     {
+      title: "Main User And Participants",
+      items: [
+        "Miguel is registered as the main system user so the initial MVP evidence does not disappear when filtering by person.",
+        "The main user appears in Dashboard, Capture, Library, Reports, Findings, Publications, and Agenda.",
+        "The main user does not count as a guest in the 3-person pilot target.",
+        "Real experiences and events without an assigned person are linked to the main user; demo data is not reassigned.",
+      ],
+    },
+    {
       title: "Current Limitations",
       items: [
         "Browser transcription depends on browser support. Backend transcription requires provider/API key configuration.",
@@ -3144,6 +3163,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   await loadRemoteConfig();
   renderAuthStatus();
   await hydrateFromApi();
+  ensurePrimaryParticipant();
   ensurePilotClosureCompleted();
   renderAll();
   applyInitialViewFromUrl();
@@ -3504,6 +3524,81 @@ function loadPilotParticipants() {
   } catch {
     return [];
   }
+}
+
+function getPrimaryParticipantName() {
+  return String(state.profile?.name || "").trim() || "Miguel";
+}
+
+function ensurePrimaryParticipant() {
+  const primaryName = getPrimaryParticipantName();
+  const existingPrimary = state.pilotParticipants.find((item) => item.id === PRIMARY_PARTICIPANT_ID || item.isPrimaryUser);
+  const duplicateMiguel = state.pilotParticipants.find((item) => String(item.name || "").trim().toLowerCase() === primaryName.toLowerCase());
+  if (existingPrimary) {
+    existingPrimary.id = PRIMARY_PARTICIPANT_ID;
+    existingPrimary.name = existingPrimary.name || primaryName;
+    existingPrimary.role = existingPrimary.role || (state.language === "en" ? "Main user" : "Usuario principal");
+    existingPrimary.status = existingPrimary.status || (state.language === "en" ? "completed" : "completado");
+    existingPrimary.isPrimaryUser = true;
+    existingPrimary.accessOk = true;
+    existingPrimary.manualOk = true;
+    existingPrimary.testOk = true;
+  } else if (duplicateMiguel) {
+    duplicateMiguel.id = PRIMARY_PARTICIPANT_ID;
+    duplicateMiguel.role = duplicateMiguel.role || (state.language === "en" ? "Main user" : "Usuario principal");
+    duplicateMiguel.status = duplicateMiguel.status || (state.language === "en" ? "completed" : "completado");
+    duplicateMiguel.isPrimaryUser = true;
+    duplicateMiguel.accessOk = true;
+    duplicateMiguel.manualOk = true;
+    duplicateMiguel.testOk = true;
+  } else {
+    state.pilotParticipants.unshift({
+      id: PRIMARY_PARTICIPANT_ID,
+      createdAt: new Date().toISOString(),
+      name: primaryName,
+      email: state.profile?.email || "",
+      role: state.language === "en" ? "Main user" : "Usuario principal",
+      status: state.language === "en" ? "completed" : "completado",
+      isPrimaryUser: true,
+      accessOk: true,
+      manualOk: true,
+      testOk: true,
+    });
+  }
+  state.pilotParticipants = [
+    state.pilotParticipants.find((item) => item.id === PRIMARY_PARTICIPANT_ID),
+    ...state.pilotParticipants.filter((item) => item.id !== PRIMARY_PARTICIPANT_ID),
+  ].filter(Boolean);
+  const changedExperiences = assignUnscopedRealRecordsToPrimary();
+  savePilotParticipants();
+  if (changedExperiences) {
+    saveExperiences();
+    persistPrimaryParticipantAssignments();
+  }
+}
+
+function assignUnscopedRealRecordsToPrimary() {
+  let changed = false;
+  state.experiences.forEach((experience) => {
+    if (experience.isDemo || experience.pilotParticipantId) return;
+    experience.pilotParticipantId = PRIMARY_PARTICIPANT_ID;
+    experience.pilotParticipantName = getPrimaryParticipantName();
+    changed = true;
+  });
+  state.agendaEvents.forEach((event) => {
+    if (event.isDemo || event.pilotParticipantId) return;
+    event.pilotParticipantId = PRIMARY_PARTICIPANT_ID;
+    event.pilotParticipantName = getPrimaryParticipantName();
+    changed = true;
+  });
+  if (changed) saveAgendaEvents();
+  return changed;
+}
+
+async function persistPrimaryParticipantAssignments() {
+  if (!state.apiOnline || !state.session?.access_token) return;
+  const changed = state.experiences.filter((experience) => !experience.isDemo && experience.pilotParticipantId === PRIMARY_PARTICIPANT_ID);
+  await Promise.all(changed.map((experience) => saveExperienceToApi(experience)));
 }
 
 function loadPilotTestPlan() {
@@ -18556,6 +18651,7 @@ function renderAdminCommandCenter() {
     <div class="admin-command-heading">
       <div>
         <h3>${escapeHtml(labels.title)}</h3>
+        <p class="card-meta">${escapeHtml(summaryLabel)}</p>
         <p>${escapeHtml(labels.subtitle)}</p>
       </div>
       <strong>${escapeHtml(labels.stage)}</strong>
@@ -20457,15 +20553,17 @@ function getPilotParticipantLabels() {
 }
 
 function calculatePilotParticipantSummary() {
-  const total = state.pilotParticipants.length;
+  const pilotParticipants = state.pilotParticipants.filter((item) => !item.isPrimaryUser);
+  const total = pilotParticipants.length;
   const statusText = (item) => String(item.status || "").toLowerCase();
   return {
     total,
-    invited: state.pilotParticipants.filter((item) => ["invited", "invitado"].includes(statusText(item))).length,
-    active: state.pilotParticipants.filter((item) => ["active", "activo"].includes(statusText(item))).length,
-    completed: state.pilotParticipants.filter((item) => ["completed", "completado"].includes(statusText(item))).length,
-    onboarded: state.pilotParticipants.filter((item) => item.accessOk && item.manualOk && item.testOk).length,
-    needsOnboarding: state.pilotParticipants.filter((item) => !(item.accessOk && item.manualOk && item.testOk)).length,
+    primaryUsers: state.pilotParticipants.filter((item) => item.isPrimaryUser).length,
+    invited: pilotParticipants.filter((item) => ["invited", "invitado"].includes(statusText(item))).length,
+    active: pilotParticipants.filter((item) => ["active", "activo"].includes(statusText(item))).length,
+    completed: pilotParticipants.filter((item) => ["completed", "completado"].includes(statusText(item))).length,
+    onboarded: pilotParticipants.filter((item) => item.accessOk && item.manualOk && item.testOk).length,
+    needsOnboarding: pilotParticipants.filter((item) => !(item.accessOk && item.manualOk && item.testOk)).length,
   };
 }
 
@@ -20474,6 +20572,7 @@ function renderPilotParticipantsPanel() {
   if (!container) return;
   const labels = getPilotParticipantLabels();
   const summary = calculatePilotParticipantSummary();
+  const summaryLabel = `${summary.total}/${PILOT_TARGET_USERS} ${state.language === "en" ? "pilot guests" : "invitados piloto"}${summary.primaryUsers ? ` · ${state.language === "en" ? "main user included" : "usuario principal incluido"}` : ""}`;
   const rows = [...state.pilotParticipants].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 10);
   container.innerHTML = `
     <div class="pilot-participants-heading">
