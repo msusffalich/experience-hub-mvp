@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Guia de Prueba Individual del MVP</title>
+  <style>
+    :root {
+      color: #12213d;
+      background: #ffffff;
+      font-family: Arial, Helvetica, sans-serif;
+      line-height: 1.45;
+    }
+
+    body {
+      margin: 0;
+      padding: 32px;
+    }
+
+    main {
+      max-width: 920px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+    }
+
+    h2 {
+      margin: 28px 0 10px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #d9e2ef;
+      font-size: 20px;
+    }
+
+    h3 {
+      margin: 20px 0 8px;
+      font-size: 16px;
+    }
+
+    p {
+      margin: 8px 0;
+    }
+
+    ul, ol {
+      margin: 8px 0 12px 22px;
+      padding: 0;
+    }
+
+    li {
+      margin: 5px 0;
+    }
+
+    code {
+      padding: 2px 4px;
+      border-radius: 4px;
+      background: #eef4fb;
+      font-family: Consolas, Monaco, monospace;
+      font-size: 0.95em;
+    }
+
+    .meta {
+      margin-bottom: 24px;
+      color: #5b677a;
+      font-size: 13px;
+    }
+
+    .box {
+      margin: 14px 0;
+      padding: 14px 16px;
+      border: 1px solid #d9e2ef;
+      border-left: 4px solid #2f8cff;
+      border-radius: 8px;
+      background: #f7fbff;
+    }
+
+    .evidence {
+      border-left-color: #0d7c66;
+      background: #f0fdfa;
+    }
+
+    .warning {
+      border-left-color: #b7791f;
+      background: #fffbeb;
+    }
+
+    .checklist li {
+      list-style: square;
+    }
+
+    @media print {
+      body {
+        padding: 18mm;
+      }
+
+      .box {
+        break-inside: avoid;
+      }
+
+      h2, h3 {
+        break-after: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Guia de Prueba Individual del MVP</h1>
+    <p class="meta">Experience Hub MVP - version recomendada: <code>20260515-supabase-compat-280</code></p>
+
+    <section class="box">
+      <h2>Objetivo</h2>
+      <p>Probar si el MVP puede tomar experiencias reales desde desktop, organizarlas, analizarlas, reportarlas y dejar evidencia de cierre.</p>
+    </section>
+
+    <h2>Antes de empezar</h2>
+    <p>Abre la aplicacion en:</p>
+    <p><code>http://localhost:5174/index.html?v=20260515-supabase-compat-280&amp;view=admin</code></p>
+    <ol>
+      <li>Entra a <strong>Administracion &gt; Cierre operativo del MVP</strong>.</li>
+      <li>Pulsa <strong>Iniciar prueba</strong>.</li>
+      <li>En <strong>Responsable de prueba</strong>, escribe tu nombre o rol.</li>
+      <li>En <strong>Grupo piloto</strong>, escribe <code>Prueba individual 1</code>.</li>
+      <li>En notas, escribe <code>Validacion individual del MVP desde desktop</code>.</li>
+      <li>Pulsa <strong>Guardar notas</strong>.</li>
+    </ol>
+
+    <h2>Paso 1: Cargar base de prueba</h2>
+    <ol>
+      <li>En <strong>Cierre operativo del MVP</strong>, pulsa <strong>Cargar datos de prueba</strong> si no tienes datos suficientes.</li>
+      <li>Pulsa <strong>Ejecutar prueba central</strong>.</li>
+      <li>Revisa el primer bloqueo que indique la compuerta.</li>
+    </ol>
+    <div class="box evidence">
+      <strong>Evidencia sugerida:</strong>
+      <p>Se cargaron datos base y la compuerta central indico el estado inicial del MVP.</p>
+    </div>
+
+    <h2>Paso 2: Crear experiencia real</h2>
+    <ol>
+      <li>Ve a <strong>Captura</strong>.</li>
+      <li>Crea una experiencia real sencilla, por ejemplo <strong>Caminata de prueba MVP</strong>.</li>
+      <li>Completa categoria, fecha, duracion, estado de animo, energia, lugar, personas y notas.</li>
+      <li>Adjunta al menos un archivo: foto, audio, video, PDF, Word, TXT o captura de pantalla.</li>
+      <li>Cuando aparezca la banda superior, escribe evidencia y pulsa <strong>Guardar evidencia y volver</strong>.</li>
+    </ol>
+    <div class="box evidence">
+      <strong>Evidencia sugerida:</strong>
+      <p>Cree una experiencia real con datos propios y adjunte un archivo desde desktop.</p>
+    </div>
+
+    <h2>Paso 3: Verificar libreria</h2>
+    <ol>
+      <li>Ve a <strong>Libreria</strong> desde el paso siguiente.</li>
+      <li>Busca la experiencia creada.</li>
+      <li>Filtra por categoria o fecha.</li>
+      <li>Abre o edita la experiencia.</li>
+      <li>Confirma que el adjunto o evidencia aparece asociado.</li>
+    </ol>
+    <div class="box evidence">
+      <strong>Evidencia sugerida:</strong>
+      <p>Encontre la experiencia creada, pude revisarla o editarla y confirme que la evidencia quedo vinculada.</p>
+    </div>
+
+    <h2>Paso 4: Verificar activos multimodales</h2>
+    <ol>
+      <li>Ve a <strong>Activos</strong> o <strong>Libreria de activos</strong>.</li>
+      <li>Busca el archivo adjunto.</li>
+      <li>Revisa el tipo: imagen, audio, video o documento.</li>
+      <li>Agrega o revisa etiquetas, nota, origen, idioma, fecha o analisis manual si aplica.</li>
+      <li>Confirma si se muestra como local, servidor o Supabase.</li>
+    </ol>
+    <div class="box evidence">
+      <strong>Evidencia sugerida:</strong>
+      <p>El archivo adjunto aparecio en la libreria de activos con tipo, origen y estado de almacenamiento visibles.</p>
+    </div>
+
+    <h2>Paso 5: Revisar reportes</h2>
+    <ol>
+      <li>Ve a <strong>Reportes</strong>.</li>
+      <li>Genera o revisa el reporte.</li>
+      <li>Confirma que aparezcan resumen narrativo, hallazgos, indicadores, graficas, categorias y evidencia multimodal si existe.</li>
+      <li>Revisa si el reporte es entendible.</li>
+    </ol>
+    <div class="box evidence">
+      <strong>Evidencia sugerida:</strong>
+      <p>El reporte mostro narrativa, indicadores, graficas y evidencia suficiente para interpretar la experiencia.</p>
+    </div>
+
+    <h2>Paso 6: Exportar evidencia</h2>
+    <ol>
+      <li>Desde <strong>Reportes</strong> o <strong>Administracion</strong>, exporta al menos un formato: JSON, CSV, HTML imprimible, PDF o respaldo local.</li>
+      <li>Confirma que el archivo se genera o que la app registra la exportacion.</li>
+    </ol>
+    <div class="box evidence">
+      <strong>Evidencia sugerida:</strong>
+      <p>Genere una exportacion de evidencia y la app registro el resultado para el cierre del MVP.</p>
+    </div>
+
+    <h2>Paso 7: Respaldo y privacidad</h2>
+    <ol>
+      <li>En <strong>Administracion</strong>, revisa privacidad.</li>
+      <li>Confirma que Supabase esta activo.</li>
+      <li>Ejecuta <strong>Verificar Supabase</strong>.</li>
+      <li>Ejecuta <strong>Probar flujo real</strong> si tienes sesion activa.</li>
+      <li>Genera respaldo si esta disponible.</li>
+    </ol>
+    <div class="box evidence">
+      <strong>Evidencia sugerida:</strong>
+      <p>Verifique Supabase, privacidad, Storage y respaldo sin bloqueos criticos para la prueba individual.</p>
+    </div>
+
+    <h2>Paso 8: Cierre de la prueba</h2>
+    <ol>
+      <li>Regresa a <strong>Administracion &gt; Cierre operativo del MVP</strong>.</li>
+      <li>Confirma que todos los pasos esten completos.</li>
+      <li>Confirma que todas las evidencias esten guardadas.</li>
+      <li>Pulsa <strong>Terminar prueba</strong>.</li>
+      <li>Pulsa <strong>Ejecutar prueba central</strong> otra vez.</li>
+      <li>Revisa si el cierre final se habilita.</li>
+      <li>Exporta <strong>Paquete cierre MD</strong> y <strong>Paquete cierre JSON</strong>.</li>
+    </ol>
+    <div class="box evidence">
+      <strong>Evidencia final sugerida:</strong>
+      <p>Complete la prueba individual del MVP desde desktop, con captura, evidencia, libreria, reportes, exportaciones, Supabase y respaldo revisados.</p>
+    </div>
+
+    <h2>Criterios para considerar validado el MVP internamente</h2>
+    <ul class="checklist">
+      <li>Puedes crear una experiencia real.</li>
+      <li>Puedes adjuntar al menos un archivo.</li>
+      <li>Puedes encontrarla en Libreria.</li>
+      <li>Puedes verla en Activos.</li>
+      <li>Puedes generar reporte.</li>
+      <li>Puedes exportar evidencia.</li>
+      <li>Supabase no muestra bloqueo critico.</li>
+      <li>Puedes terminar la sesion de prueba.</li>
+      <li>Puedes exportar paquete de cierre.</li>
+    </ul>
+
+    <h2>Problemas que debes registrar</h2>
+    <div class="box warning">
+      <ul>
+        <li>No encuentro donde hacer algo.</li>
+        <li>Un boton no responde.</li>
+        <li>Un texto es confuso.</li>
+        <li>Una pantalla queda vacia.</li>
+        <li>Un archivo no se ve.</li>
+        <li>El reporte no tiene sentido.</li>
+        <li>Supabase pide sesion o falla.</li>
+        <li>La exportacion no se genera.</li>
+        <li>El flujo obliga a navegar demasiado.</li>
+      </ul>
+    </div>
+  </main>
+</body>
+</html>

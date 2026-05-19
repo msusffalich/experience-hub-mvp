@@ -1,0 +1,2882 @@
+﻿import { createServer } from "node:http";
+import { readFile, mkdir, writeFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+await loadDotEnv();
+const PORT = Number(process.env.PORT || 5174);
+const HOST = process.env.HOST || (process.env.NODE_ENV === "production" ? "0.0.0.0" : "127.0.0.1");
+const DATA_DIR = path.join(__dirname, "data");
+const STORE_PATH = path.join(DATA_DIR, "experience-store.json");
+const LOG_PATH = path.join(DATA_DIR, "operation-log.json");
+const ROUTINES_PATH = path.join(DATA_DIR, "routine-store.json");
+const DAILY_BRIEFINGS_PATH = path.join(DATA_DIR, "daily-briefing-store.json");
+const PROFILE_PARAMETERS_PATH = path.join(DATA_DIR, "profile-parameters.json");
+const EXPORTS_DIR = path.join(DATA_DIR, "exports");
+const STORAGE_ADAPTER = process.env.STORAGE_ADAPTER || "json-file";
+const SUPABASE_URL = process.env.SUPABASE_URL?.replace(/\/$/, "");
+const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_STORAGE_BUCKET = process.env.SUPABASE_STORAGE_BUCKET || "experience-media";
+const LOCAL_USER_ID = process.env.LOCAL_USER_ID || "00000000-0000-0000-0000-000000000001";
+const CONTEXT_TIMEOUT_MS = Number(process.env.CONTEXT_TIMEOUT_MS || 12000);
+const EMBEDDINGS_PROVIDER = process.env.EMBEDDINGS_PROVIDER || "local-hash";
+const EMBEDDING_DIMENSIONS = Number(process.env.EMBEDDING_DIMENSIONS || 384);
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const OPENAI_EMBEDDING_MODEL = process.env.OPENAI_EMBEDDING_MODEL || "text-embedding-3-small";
+const TRANSCRIPTION_PROVIDER = process.env.TRANSCRIPTION_PROVIDER || "none";
+const OPENAI_TRANSCRIPTION_MODEL = process.env.OPENAI_TRANSCRIPTION_MODEL || "gpt-4o-mini-transcribe";
+
+const mimeTypes = {
+  ".html": "text/html; charset=utf-8",
+  ".js": "application/javascript; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".svg": "image/svg+xml",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".webp": "image/webp",
+  ".mp4": "video/mp4",
+  ".webm": "video/webm",
+};
+
+const defaultStore = {
+  profile: {
+    userId: LOCAL_USER_ID,
+    name: "Experience Hub User",
+    language: "es",
+    timezone: "America/New_York",
+    gender: "",
+    birthYear: null,
+    experienceType: "auto",
+    subscriptionTier: "mvp",
+  },
+  experiences: [],
+};
+
+const categoryAliases = {
+  Movilidad: "Viajes / Paseos",
+};
+
+if (STORAGE_ADAPTER === "json-file") {
+  await ensureStore();
+} else {
+  await ensureStore();
+}
+let storeQueue = Promise.resolve();
+let logQueue = Promise.resolve();
+let routineQueue = Promise.resolve();
+const jobQueue = [];
+const jobs = new Map();
+let jobRunning = false;
+let routineSchedulerRunning = false;
+
+const defaultRoutines = [
+  {
+    id: "daily-review",
+    name: "Daily Review",
+    enabled: false,
+    intervalMinutes: 1440,
+    type: "capture-template",
+  },
+  {
+    id: "daily-briefing",
+    name: "Diario",
+    enabled: true,
+    intervalMinutes: 360,
+    type: "daily-briefing",
+  },
+  {
+    id: "weekly-report",
+    name: "Weekly Report",
+    enabled: false,
+    intervalMinutes: 10080,
+    type: "report-summary",
+  },
+  {
+    id: "embedding-refresh",
+    name: "Embedding Refresh",
+    enabled: false,
+    intervalMinutes: 1440,
+    type: "embeddings-backfill",
+  },
+  {
+    id: "offline-sync",
+    name: "Offline Sync",
+    enabled: false,
+    intervalMinutes: 60,
+    type: "sync-check",
+  },
+  {
+    id: "context-scan",
+    name: "Context Scan",
+    enabled: false,
+    intervalMinutes: 360,
+    type: "context-impact",
+  },
+];
+
+const server = createServer(async (req, res) => {
+  try {
+    const url = new URL(req.url, `http://${req.headers.host}`);
+
+    if (url.pathname.startsWith("/api/")) {
+      await handleApi(req, res, url);
+      return;
+    }
+
+    await serveStatic(res, url.pathname);
+  } catch (error) {
+    sendJson(res, error.statusCode || 500, {
+      error: error.statusCode ? error.message : "internal_error",
+      message: error.statusCode ? undefined : error.message,
+    });
+  }
+});
+
+server.listen(PORT, HOST, () => {
+  const displayHost = HOST === "0.0.0.0" ? "localhost" : HOST;
+  console.log(`Experience Hub MVP running at http://${displayHost}:${PORT}/index.html`);
+});
+setInterval(() => processRoutineSchedules().catch(() => {}), 60_000);
+processRoutineSchedules().catch(() => {});
+
+async function handleApi(req, res, url) {
+  if (url.pathname === "/api/health" && req.method === "GET") {
+    sendJson(res, 200, {
+      status: "ok",
+      service: "experience-hub-api",
+      host: HOST,
+      port: PORT,
+      deploymentMode: process.env.NODE_ENV === "production" ? "production" : "local",
+      cloudReady: HOST === "0.0.0.0",
+      persistence: activePersistence(),
+      supabaseConfigured: isSupabaseConfigured(),
+      mediaStorage: activePersistence() === "supabase" ? "supabase-storage" : "inline-json",
+      semanticSearch: activePersistence() === "supabase" ? "pgvector" : "token-vector",
+      embeddingsProvider: activeEmbeddingsProvider(),
+      transcriptionProvider: activeTranscriptionProvider(),
+      contextProviders: {
+        environmental: { status: "available", provider: "Open-Meteo", mode: "on-demand" },
+        geopolitical: { status: "available", provider: "GDELT DOC 2.0", mode: "on-demand" },
+      },
+      routineScheduler: { status: "active", intervalSeconds: 60 },
+      jobs: getJobSummary(),
+      timestamp: new Date().toISOString(),
+    });
+    return;
+  }
+
+  if (url.pathname === "/api/config" && req.method === "GET") {
+    sendJson(res, 200, {
+      persistence: activePersistence(),
+      supabaseUrl: activePersistence() === "supabase" ? SUPABASE_URL : null,
+      supabasePublishableKey: activePersistence() === "supabase" ? SUPABASE_PUBLISHABLE_KEY : null,
+      transcriptionProvider: activeTranscriptionProvider(),
+    });
+    return;
+  }
+
+  if (url.pathname === "/api/profile") {
+    const user = await getRequestUser(req);
+    if (req.method === "GET") {
+      sendJson(res, 200, await getProfile(user));
+      return;
+    }
+    if (req.method === "PUT") {
+      const body = await readJson(req);
+      sendJson(res, 200, await upsertProfile(body, user));
+      return;
+    }
+  }
+
+  if (url.pathname === "/api/experiences") {
+    const user = await getRequestUser(req);
+    if (req.method === "GET") {
+      sendJson(res, 200, await listExperiences(user));
+      return;
+    }
+    if (req.method === "POST") {
+      const experience = await readJson(req);
+      const normalized = normalizeExperience(experience);
+      sendJson(res, 201, await upsertExperience(normalized, user));
+      return;
+    }
+  }
+
+  if (url.pathname === "/api/media" && req.method === "POST") {
+    const user = await getRequestUser(req);
+    const media = await readJson(req);
+    sendJson(res, 201, await saveMedia(media, user));
+    return;
+  }
+
+  if (url.pathname === "/api/transcribe" && req.method === "POST") {
+    await getRequestUser(req);
+    const media = await readJson(req);
+    sendJson(res, 200, await transcribeMedia(media));
+    return;
+  }
+
+  if (url.pathname === "/api/search/semantic" && req.method === "POST") {
+    const user = await getRequestUser(req);
+    const body = await readJson(req);
+    sendJson(res, 200, await semanticSearch(body.query || "", user, body.limit || 8));
+    return;
+  }
+
+  if (url.pathname === "/api/embeddings/backfill" && req.method === "POST") {
+    const user = await getRequestUser(req);
+    const body = await readJson(req);
+    sendJson(res, 200, await backfillEmbeddings(user, body.limit || 50));
+    return;
+  }
+
+  if (url.pathname === "/api/jobs" && req.method === "GET") {
+    await getRequestUser(req);
+    sendJson(res, 200, { jobs: listJobs(), logs: await readLogs() });
+    return;
+  }
+
+  if (url.pathname === "/api/supabase/diagnostics" && req.method === "GET") {
+    const user = await getRequestUser(req);
+    sendJson(res, 200, await runSupabaseDiagnostics(user));
+    return;
+  }
+
+  if (url.pathname === "/api/supabase/self-test" && req.method === "POST") {
+    const user = await getRequestUser(req);
+    sendJson(res, 200, await runSupabaseSelfTest(user));
+    return;
+  }
+
+  if (url.pathname === "/api/routines" && req.method === "GET") {
+    const user = await getRequestUser(req);
+    sendJson(res, 200, await listUserRoutines(user));
+    return;
+  }
+
+  if (url.pathname === "/api/jobs/embeddings" && req.method === "POST") {
+    const user = await getRequestUser(req);
+    const body = await readJson(req);
+    sendJson(res, 202, enqueueJob("embeddings-backfill", user, { limit: body.limit || 200 }));
+    return;
+  }
+
+  const routineMatch = url.pathname.match(/^\/api\/routines\/([^/]+)$/);
+  if (routineMatch) {
+    const user = await getRequestUser(req);
+    const id = decodeURIComponent(routineMatch[1]);
+    if (req.method === "PUT") {
+      const body = await readJson(req);
+      sendJson(res, 200, await updateUserRoutine(user, id, body));
+      return;
+    }
+  }
+
+  const routineRunMatch = url.pathname.match(/^\/api\/routines\/([^/]+)\/run$/);
+  if (routineRunMatch && req.method === "POST") {
+    const user = await getRequestUser(req);
+    const id = decodeURIComponent(routineRunMatch[1]);
+    sendJson(res, 202, await runUserRoutine(user, id, { manual: true }));
+    return;
+  }
+
+  if (url.pathname === "/api/report/pdf" && req.method === "POST") {
+    const user = await getRequestUser(req);
+    const body = await readJson(req);
+    sendPdf(res, await buildPdfReport(user, body.report));
+    return;
+  }
+
+  if (url.pathname === "/api/exports/file" && req.method === "POST") {
+    const body = await readJson(req);
+    sendJson(res, 201, await saveExportFile(body));
+    return;
+  }
+
+  if (url.pathname === "/api/context/impact" && req.method === "GET") {
+    const location = url.searchParams.get("location") || "New York";
+    const experienceType = url.searchParams.get("experienceType") || "auto";
+    const user = await getOptionalRequestUser(req);
+    const profile = await getProfile(user);
+    sendJson(res, 200, await getContextImpact(location, profile, experienceType));
+    return;
+  }
+
+  if (url.pathname === "/api/daily-briefing" && req.method === "GET") {
+    const location = url.searchParams.get("location") || "San Juan";
+    const locale = url.searchParams.get("locale") || "es";
+    const force = url.searchParams.get("force") === "1";
+    const user = await getOptionalRequestUser(req);
+    sendJson(res, 200, await getDailyBriefing(location, locale, { user, force }));
+    return;
+  }
+
+  const match = url.pathname.match(/^\/api\/experiences\/([^/]+)$/);
+  if (match) {
+    const id = decodeURIComponent(match[1]);
+    const user = await getRequestUser(req);
+
+    if (req.method === "PUT") {
+      const body = await readJson(req);
+      const normalized = normalizeExperience({ ...body, id });
+      sendJson(res, 200, await upsertExperience(normalized, user));
+      return;
+    }
+
+    if (req.method === "DELETE") {
+      await deleteExperienceRecord(id, user);
+      sendJson(res, 200, { ok: true });
+      return;
+    }
+  }
+
+  sendJson(res, 404, { error: "not_found" });
+}
+
+async function loadDotEnv() {
+  const envPath = path.join(__dirname, ".env");
+  if (!existsSync(envPath)) return;
+  const raw = await readFile(envPath, "utf-8");
+  for (const line of raw.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const separator = trimmed.indexOf("=");
+    if (separator === -1) continue;
+    const key = trimmed.slice(0, separator).trim();
+    const value = trimmed.slice(separator + 1).trim().replace(/^["']|["']$/g, "");
+    if (!(key in process.env)) process.env[key] = value;
+  }
+}
+
+async function serveStatic(res, pathname) {
+  const requested = pathname === "/" ? "/index.html" : pathname;
+  const safePath = path.normalize(decodeURIComponent(requested)).replace(/^(\.\.[/\\])+/, "");
+  const filePath = path.join(__dirname, safePath);
+
+  if (!filePath.startsWith(__dirname) || !existsSync(filePath)) {
+    sendText(res, 404, "Not found");
+    return;
+  }
+
+  const ext = path.extname(filePath).toLowerCase();
+  const content = await readFile(filePath);
+  res.writeHead(200, {
+    "Content-Type": mimeTypes[ext] || "application/octet-stream",
+    "Cache-Control": "no-store",
+  });
+  res.end(content);
+}
+
+async function ensureStore() {
+  await mkdir(DATA_DIR, { recursive: true });
+  if (!existsSync(STORE_PATH)) {
+    await writeStore(defaultStore);
+  }
+  if (!existsSync(LOG_PATH)) {
+    await writeFile(LOG_PATH, JSON.stringify([], null, 2), "utf-8");
+  }
+  if (!existsSync(ROUTINES_PATH)) {
+    await writeFile(ROUTINES_PATH, JSON.stringify({}, null, 2), "utf-8");
+  }
+  if (!existsSync(PROFILE_PARAMETERS_PATH)) {
+    await writeFile(PROFILE_PARAMETERS_PATH, JSON.stringify({}, null, 2), "utf-8");
+  }
+}
+
+async function readStore() {
+  const raw = await readFile(STORE_PATH, "utf-8");
+  return { ...defaultStore, ...JSON.parse(raw) };
+}
+
+async function writeStore(store) {
+  await mkdir(DATA_DIR, { recursive: true });
+  await writeFile(STORE_PATH, JSON.stringify(store, null, 2), "utf-8");
+}
+
+async function mutateStore(mutator) {
+  const operation = storeQueue.then(async () => {
+    const store = await readStore();
+    const result = await mutator(store);
+    await writeStore(store);
+    return result;
+  });
+  storeQueue = operation.catch(() => {});
+  return operation;
+}
+
+async function readLogs() {
+  if (!existsSync(LOG_PATH)) return [];
+  const raw = await readFile(LOG_PATH, "utf-8");
+  return JSON.parse(raw || "[]").slice(-80).reverse();
+}
+
+async function appendLog(level, message, details = {}) {
+  const entry = {
+    id: createId(),
+    level,
+    message,
+    details,
+    createdAt: new Date().toISOString(),
+  };
+  const operation = logQueue.then(async () => {
+    await mkdir(DATA_DIR, { recursive: true });
+    const existing = existsSync(LOG_PATH) ? JSON.parse(await readFile(LOG_PATH, "utf-8")) : [];
+    existing.push(entry);
+    await writeFile(LOG_PATH, JSON.stringify(existing.slice(-300), null, 2), "utf-8");
+  });
+  logQueue = operation.catch(() => {});
+  await operation;
+  return entry;
+}
+
+async function readRoutineStore() {
+  if (!existsSync(ROUTINES_PATH)) return {};
+  const raw = await readFile(ROUTINES_PATH, "utf-8");
+  return JSON.parse(raw || "{}");
+}
+
+async function readProfileParameters() {
+  if (!existsSync(PROFILE_PARAMETERS_PATH)) return {};
+  const raw = await readFile(PROFILE_PARAMETERS_PATH, "utf-8");
+  return JSON.parse(raw || "{}");
+}
+
+async function writeProfileParameters(userId, profile) {
+  const current = await readProfileParameters();
+  current[userId] = {
+    gender: profile.gender || "",
+    birthYear: profile.birthYear ? Number(profile.birthYear) : null,
+    age: profile.age ? Number(profile.age) : null,
+    ageGroup: resolveAgeGroup(profile),
+    experienceType: profile.experienceType || "auto",
+    updatedAt: new Date().toISOString(),
+  };
+  await writeFile(PROFILE_PARAMETERS_PATH, JSON.stringify(current, null, 2), "utf-8");
+  return current[userId];
+}
+
+async function getProfileParameters(userId) {
+  const current = await readProfileParameters();
+  return current[userId] || {};
+}
+
+async function writeRoutineStore(store) {
+  await mkdir(DATA_DIR, { recursive: true });
+  await writeFile(ROUTINES_PATH, JSON.stringify(store, null, 2), "utf-8");
+}
+
+async function mutateRoutineStore(mutator) {
+  const operation = routineQueue.then(async () => {
+    const store = await readRoutineStore();
+    const result = await mutator(store);
+    await writeRoutineStore(store);
+    return result;
+  });
+  routineQueue = operation.catch(() => {});
+  return operation;
+}
+
+async function readDailyBriefingStore() {
+  await mkdir(DATA_DIR, { recursive: true });
+  if (!existsSync(DAILY_BRIEFINGS_PATH)) return {};
+  try {
+    return JSON.parse(await readFile(DAILY_BRIEFINGS_PATH, "utf-8"));
+  } catch {
+    return {};
+  }
+}
+
+async function writeDailyBriefingStore(store) {
+  await mkdir(DATA_DIR, { recursive: true });
+  await writeFile(DAILY_BRIEFINGS_PATH, JSON.stringify(store, null, 2), "utf-8");
+}
+
+function activePersistence() {
+  return STORAGE_ADAPTER === "supabase" && isSupabaseConfigured() ? "supabase" : "json-file";
+}
+
+function isSupabaseConfigured() {
+  return Boolean(SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY && SUPABASE_SERVICE_ROLE_KEY);
+}
+
+async function getRequestUser(req) {
+  if (activePersistence() !== "supabase") {
+    return {
+      id: LOCAL_USER_ID,
+      email: "local-user@example.com",
+      accessToken: null,
+    };
+  }
+  const authHeader = req.headers.authorization || "";
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+  if (!token) throw new HttpError(401, "auth_required");
+  const user = await verifySupabaseUser(token);
+  return { id: user.id, email: user.email, accessToken: token };
+}
+
+async function getOptionalRequestUser(req) {
+  try {
+    return await getRequestUser(req);
+  } catch {
+    return {
+      id: LOCAL_USER_ID,
+      email: "local-user@example.com",
+      accessToken: null,
+    };
+  }
+}
+
+async function verifySupabaseUser(token) {
+  const response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+    headers: {
+      apikey: SUPABASE_PUBLISHABLE_KEY,
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  const text = await response.text();
+  if (!response.ok) throw new HttpError(401, `invalid_auth: ${text}`);
+  return JSON.parse(text);
+}
+
+async function getProfile(user = { id: LOCAL_USER_ID, email: "local-user@example.com" }) {
+  const parameters = await getProfileParameters(user.id || LOCAL_USER_ID);
+  if (activePersistence() === "supabase") {
+    const rows = await supabaseRest("profiles", {
+      searchParams: { user_id: `eq.${user.id}`, limit: "1" },
+      accessToken: user.accessToken,
+    });
+    if (rows[0]) return { ...fromProfileRow(rows[0]), ...parameters };
+    return upsertProfile({ ...defaultStore.profile, userId: user.id, email: user.email }, user);
+  }
+  const store = await readStore();
+  return { ...store.profile, ...parameters };
+}
+
+async function upsertProfile(profile, user = { id: LOCAL_USER_ID, email: "local-user@example.com" }) {
+  const normalized = {
+    ...defaultStore.profile,
+    ...profile,
+    userId: user.id || profile.userId || LOCAL_USER_ID,
+    email: user.email || profile.email,
+  };
+  if (activePersistence() === "supabase") {
+    let rows;
+    try {
+      rows = await supabaseRest("profiles", {
+        method: "POST",
+        searchParams: { on_conflict: "user_id" },
+        headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+        body: JSON.stringify(toProfileRow(normalized, true)),
+        accessToken: user.accessToken,
+      });
+    } catch (error) {
+      rows = await supabaseRest("profiles", {
+        method: "POST",
+        searchParams: { on_conflict: "user_id" },
+        headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+        body: JSON.stringify(toProfileRow(normalized, false)),
+        accessToken: user.accessToken,
+      });
+    }
+    const parameters = await writeProfileParameters(normalized.userId, normalized);
+    return { ...fromProfileRow(rows[0]), ...parameters };
+  }
+  await writeProfileParameters(normalized.userId, normalized);
+  return mutateStore((currentStore) => {
+    currentStore.profile = normalized;
+    return currentStore.profile;
+  });
+}
+
+async function listExperiences(user = { id: LOCAL_USER_ID }) {
+  if (activePersistence() === "supabase") {
+    const rows = await supabaseRest("experiences", {
+      searchParams: {
+        user_id: `eq.${user.id}`,
+        order: "occurred_at.desc",
+      },
+      accessToken: user.accessToken,
+    });
+    return Promise.all(rows.map((row) => signExperienceMedia(fromExperienceRow(row))));
+  }
+  const store = await readStore();
+  return store.experiences.map(normalizeExperience);
+}
+
+async function upsertExperience(experience, user = { id: LOCAL_USER_ID }) {
+  const normalized = normalizeExperience(experience);
+  if (activePersistence() === "supabase") {
+    await upsertProfile(await getProfile(user), user);
+    const row = await toExperienceRow(normalized, user);
+    const rows = await supabaseRest("experiences", {
+      method: "POST",
+      searchParams: { on_conflict: "experience_id" },
+      headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+      body: JSON.stringify(row),
+      accessToken: user.accessToken,
+    });
+    return signExperienceMedia(fromExperienceRow(rows[0]));
+  }
+  return mutateStore((currentStore) => {
+    currentStore.experiences = [normalized, ...currentStore.experiences.filter((item) => item.id !== normalized.id)];
+    return normalized;
+  });
+}
+
+async function deleteExperienceRecord(id, user = { id: LOCAL_USER_ID }) {
+  if (activePersistence() === "supabase") {
+    await supabaseRest("experiences", {
+      method: "DELETE",
+      searchParams: {
+        experience_id: `eq.${id}`,
+        user_id: `eq.${user.id}`,
+      },
+      headers: { Prefer: "return=minimal" },
+      accessToken: user.accessToken,
+    });
+    return;
+  }
+  await mutateStore((currentStore) => {
+    currentStore.experiences = currentStore.experiences.filter((item) => item.id !== id);
+    return { ok: true };
+  });
+}
+
+async function saveMedia(media, user = { id: LOCAL_USER_ID }) {
+  const normalized = normalizeMedia(media);
+  if (activePersistence() !== "supabase") {
+    return normalized;
+  }
+
+  const objectPath = `${user.id}/${Date.now()}-${sanitizeFileName(normalized.name)}`;
+  const bytes = dataUrlToBuffer(normalized.dataUrl);
+  await uploadSupabaseObject(objectPath, normalized.type, bytes);
+  const signedUrl = await createSignedObjectUrl(objectPath);
+
+  return {
+    ...normalized,
+    dataUrl: null,
+    path: objectPath,
+    url: signedUrl,
+    storage: "supabase",
+  };
+}
+
+function normalizeMedia(media) {
+  return {
+    id: media.id || createId(),
+    name: media.name || "media",
+    type: media.type || "application/octet-stream",
+    size: Number(media.size || 0),
+    dataUrl: media.dataUrl || null,
+    createdAt: media.createdAt || new Date().toISOString(),
+    storage: media.storage || "inline",
+    path: media.path || null,
+    url: media.url || null,
+  };
+}
+
+function dataUrlToBuffer(dataUrl) {
+  if (!dataUrl || !dataUrl.startsWith("data:")) {
+    throw new Error("invalid_media_data_url");
+  }
+  const [, base64] = dataUrl.split(",", 2);
+  return Buffer.from(base64, "base64");
+}
+
+async function uploadSupabaseObject(objectPath, contentType, bytes) {
+  const url = `${SUPABASE_URL}/storage/v1/object/${SUPABASE_STORAGE_BUCKET}/${objectPath}`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      apikey: SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      "Content-Type": contentType,
+      "x-upsert": "true",
+    },
+    body: bytes,
+  });
+  const text = await response.text();
+  if (!response.ok) {
+    throw new Error(`supabase_storage_${response.status}: ${text}`);
+  }
+}
+
+async function createSignedObjectUrl(objectPath) {
+  const response = await fetch(`${SUPABASE_URL}/storage/v1/object/sign/${SUPABASE_STORAGE_BUCKET}/${objectPath}`, {
+    method: "POST",
+    headers: {
+      apikey: SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ expiresIn: 60 * 60 * 24 * 7 }),
+  });
+  const text = await response.text();
+  if (!response.ok) throw new Error(`supabase_sign_${response.status}: ${text}`);
+  const payload = JSON.parse(text);
+  return `${SUPABASE_URL}/storage/v1${payload.signedURL}`;
+}
+
+async function assertSignedUrlReachable(url) {
+  const response = await fetch(url, { method: "GET" });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`signed_url_${response.status}: ${text.slice(0, 120)}`);
+  }
+}
+
+async function assertObjectIsNotPublic(objectPath) {
+  const response = await fetch(`${SUPABASE_URL}/storage/v1/object/public/${SUPABASE_STORAGE_BUCKET}/${objectPath}`, {
+    method: "GET",
+    headers: {
+      apikey: SUPABASE_PUBLISHABLE_KEY,
+    },
+  });
+  if (response.ok) {
+    throw new Error("public_object_accessible");
+  }
+  if (![400, 401, 403, 404].includes(response.status)) {
+    const text = await response.text();
+    throw new Error(`public_object_check_${response.status}: ${text.slice(0, 120)}`);
+  }
+}
+
+async function signExperienceMedia(experience) {
+  if (activePersistence() !== "supabase") return experience;
+  const attachments = await Promise.all(
+    (experience.attachments || []).map(async (attachment) => {
+      if (!attachment.path) return attachment;
+      return {
+        ...attachment,
+        url: await createSignedObjectUrl(attachment.path),
+      };
+    }),
+  );
+  return { ...experience, attachments };
+}
+
+async function runSupabaseDiagnostics(user) {
+  const checks = [];
+  const addCheck = (id, label, status, detail = "", action = "", actionType = "") => {
+    const fallback = diagnosticActionForCheck(id, status, detail);
+    checks.push({ id, label, status, detail, action: action || fallback.text, actionType: actionType || fallback.actionType || "" });
+  };
+
+  addCheck(
+    "config",
+    "Configuración Supabase",
+    isSupabaseConfigured() ? "ok" : "error",
+    activePersistence() === "supabase" ? "Variables backend presentes." : "Falta STORAGE_ADAPTER=supabase o alguna variable Supabase.",
+    activePersistence() === "supabase"
+      ? "Sin acción requerida."
+      : "Completa STORAGE_ADAPTER, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, SUPABASE_SERVICE_ROLE_KEY y SUPABASE_STORAGE_BUCKET en .env; luego reinicia server.js.",
+  );
+
+  if (activePersistence() !== "supabase") {
+    return summarizeSupabaseDiagnostics(checks);
+  }
+
+  addCheck(
+    "auth",
+    "Auth del usuario",
+    user?.id ? "ok" : "error",
+    user?.email ? `Sesión válida para ${user.email}.` : "Token no validado.",
+    user?.id ? "Sin acción requerida." : "Inicia sesión en la app con un usuario de Supabase Auth y vuelve a ejecutar Verificar Supabase.",
+    user?.id ? "" : "openAuth",
+  );
+
+  await collectDiagnosticCheck(checks, "profile", "Perfil y RLS", async () => {
+    const profile = await getProfile(user);
+    return profile?.userId === user.id ? "Perfil accesible con RLS de usuario." : "Perfil creado o recuperado, revisa user_id.";
+  });
+
+  await collectDiagnosticCheck(checks, "experiences", "Experiencias y RLS", async () => {
+    const experiences = await listExperiences(user);
+    return `${experiences.length} experiencias legibles para el usuario autenticado.`;
+  });
+
+  await collectDiagnosticCheck(checks, "dailyBriefings", "Diario persistente", async () => {
+    const rows = await supabaseRest("daily_briefings", {
+      searchParams: {
+        user_id: `eq.${user.id}`,
+        limit: "1",
+      },
+      accessToken: user.accessToken,
+    });
+    return `Tabla daily_briefings accesible; ${rows.length} briefing persistido para este usuario.`;
+  });
+
+  await collectDiagnosticCheck(checks, "storage", "Storage privado", async () => {
+    const bucket = await getSupabaseStorageBucket();
+    if (!bucket) throw new Error("Bucket no encontrado.");
+    return bucket.public === false
+      ? `Bucket ${SUPABASE_STORAGE_BUCKET} privado y disponible.`
+      : `Bucket ${SUPABASE_STORAGE_BUCKET} existe, pero está público. Ejecuta database/auth-rls.sql.`;
+  }, (detail) => (detail.includes("público") ? "warn" : "ok"));
+
+  await collectDiagnosticCheck(checks, "semantic", "Búsqueda semántica", async () => {
+    if (activePersistence() !== "supabase") return "Fallback local activo.";
+    const engine = activeEmbeddingsProvider() === "openai" ? `OpenAI ${OPENAI_EMBEDDING_MODEL}` : "local-hash";
+    return `Motor ${engine}; pgvector disponible si database/semantic-search.sql fue aplicado.`;
+  });
+
+  return summarizeSupabaseDiagnostics(checks);
+}
+
+async function collectDiagnosticCheck(checks, id, label, operation, statusResolver = () => "ok") {
+  try {
+    const detail = await operation();
+    const status = statusResolver(String(detail));
+    const action = diagnosticActionForCheck(id, status, detail);
+    checks.push({ id, label, status, detail, action: action.text, actionType: action.actionType || "" });
+  } catch (error) {
+    const detail = sanitizeDiagnosticError(error);
+    const action = diagnosticActionForCheck(id, "error", detail);
+    checks.push({ id, label, status: "error", detail, action: action.text, actionType: action.actionType || "" });
+  }
+}
+
+function diagnosticActionFor(id, status, detail = "") {
+  return diagnosticActionForCheck(id, status, detail).text;
+}
+
+function diagnosticActionForCheck(id, status, detail = "") {
+  if (status === "ok") return { text: "Sin acción requerida." };
+  if (id === "config") {
+    return { text: "Revisa el archivo .env local, completa las variables Supabase y reinicia el servidor." };
+  }
+  if (id === "auth") {
+    return { text: "Inicia sesión o crea una cuenta desde el panel de acceso de la app.", actionType: "openAuth" };
+  }
+  if (id === "profile") {
+    return { text: "Ejecuta database/schema.sql y database/auth-rls.sql en Supabase; luego guarda el perfil desde Admin.", actionType: "openAdmin" };
+  }
+  if (id === "experiences") {
+    return { text: "Ejecuta database/schema.sql y database/auth-rls.sql; después guarda una experiencia de prueba y vuelve a verificar.", actionType: "openAdmin" };
+  }
+  if (id === "dailyBriefings") {
+    return { text: "Ejecuta database/schema.sql y database/auth-rls.sql para crear daily_briefings y sus políticas.", actionType: "openAdmin" };
+  }
+  if (id === "storage") {
+    return {
+      text: String(detail).includes("público")
+        ? "Ejecuta database/auth-rls.sql para marcar experience-media como privado."
+        : "Ejecuta database/schema.sql para crear el bucket experience-media y confirma permisos de Storage.",
+      actionType: "openAdmin",
+    };
+  }
+  if (id === "semantic") {
+    return { text: "Ejecuta database/semantic-search.sql y luego pulsa Actualizar embeddings en Admin.", actionType: "openAdmin" };
+  }
+  return { text: "Revisa el detalle del error, corrige la configuración relacionada y vuelve a ejecutar Verificar Supabase.", actionType: "openAdmin" };
+}
+
+function summarizeSupabaseDiagnostics(checks) {
+  const errors = checks.filter((check) => check.status === "error").length;
+  const warnings = checks.filter((check) => check.status === "warn").length;
+  return {
+    checkedAt: new Date().toISOString(),
+    status: errors ? "error" : warnings ? "warn" : "ok",
+    checks,
+  };
+}
+
+function sanitizeDiagnosticError(error) {
+  const message = String(error?.message || error || "unknown_error");
+  return message
+    .replace(SUPABASE_SERVICE_ROLE_KEY || "__never__", "[service_role]")
+    .replace(SUPABASE_PUBLISHABLE_KEY || "__never__", "[publishable_key]")
+    .slice(0, 220);
+}
+
+async function getSupabaseStorageBucket() {
+  const response = await fetch(`${SUPABASE_URL}/storage/v1/bucket/${SUPABASE_STORAGE_BUCKET}`, {
+    headers: {
+      apikey: SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+    },
+  });
+  const text = await response.text();
+  if (!response.ok) throw new Error(`storage_bucket_${response.status}: ${text}`);
+  return JSON.parse(text);
+}
+
+async function runSupabaseSelfTest(user) {
+  if (activePersistence() !== "supabase") {
+    throw new HttpError(400, "supabase_not_active");
+  }
+
+  const steps = [];
+  const testId = `selftest-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  let uploadedMedia = null;
+  let dailyTestLocation = null;
+
+  try {
+    await collectSelfTestStep(steps, "profile", "Perfil", async () => {
+      const profile = await getProfile(user);
+      if (!profile?.userId) throw new Error("profile_missing");
+      return "Perfil leído o creado correctamente para el usuario autenticado.";
+    });
+
+    await collectSelfTestStep(steps, "storage", "Storage privado", async () => {
+      uploadedMedia = await saveMedia(
+        {
+          id: `${testId}-media`,
+          name: `${testId}.png`,
+          type: "image/png",
+          size: 68,
+          dataUrl:
+            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=",
+        },
+        user,
+      );
+      if (!uploadedMedia?.path || !uploadedMedia?.url) throw new Error("storage_upload_missing_path");
+      await assertSignedUrlReachable(uploadedMedia.url);
+      await assertObjectIsNotPublic(uploadedMedia.path);
+      return `Archivo temporal subido, URL firmada validada y acceso público bloqueado en ${SUPABASE_STORAGE_BUCKET}.`;
+    });
+
+    await collectSelfTestStep(steps, "experienceCreate", "Guardar experiencia", async () => {
+      const saved = await upsertExperience(
+        {
+          id: testId,
+          title: "SUPABASE SELF TEST - borrar automaticamente",
+          category: "Trabajo",
+          timestamp: new Date().toISOString(),
+          duration: 1,
+          mood: "Calmo",
+          energy: 5,
+          location: "Self-test",
+          people: "Sistema",
+          objective: "validacion tecnica",
+          notes: "Registro temporal creado por la prueba de cierre Supabase.",
+          attachments: uploadedMedia ? [uploadedMedia] : [],
+          locale: "es",
+        },
+        user,
+      );
+      if (saved.id !== testId) throw new Error("experience_not_saved");
+      return "Experiencia temporal guardada con RLS del usuario.";
+    });
+
+    await collectSelfTestStep(steps, "experienceRead", "Leer experiencia", async () => {
+      const experiences = await listExperiences(user);
+      if (!experiences.some((experience) => experience.id === testId)) throw new Error("experience_not_readable");
+      return "Experiencia temporal leída correctamente desde Supabase.";
+    });
+
+    await collectSelfTestStep(steps, "semantic", "Consulta semántica", async () => {
+      const result = await semanticSearch("validacion tecnica self test", user, 3);
+      return `Consulta ejecutada con motor ${result.engine}.`;
+    });
+
+    await collectSelfTestStep(steps, "dailyBriefing", "Diario persistente", async () => {
+      dailyTestLocation = `Self Test ${testId}`;
+      const briefing = {
+        schemaVersion: "20260512-daily-cache-34",
+        source: "self-test",
+        location: dailyTestLocation,
+        country: "",
+        countryCode: "",
+        scope: "Self Test",
+        locale: "es",
+        generatedAt: new Date().toISOString(),
+        refreshEveryHours: 6,
+        nextRefreshAt: addMinutes(new Date(), 360).toISOString(),
+        agendaLinks: [],
+        weather: { source: "self-test", signals: [] },
+        groups: [],
+        sections: [],
+        horoscope: [],
+      };
+      await saveStoredDailyBriefing(user, briefing);
+      const saved = await getStoredDailyBriefing(user, briefing.location, "es");
+      if (!saved?.generatedAt) throw new Error("daily_briefing_not_persisted");
+      return "Briefing temporal guardado y recuperado para el usuario.";
+    });
+  } finally {
+    await collectSelfTestStep(steps, "cleanupExperience", "Limpieza experiencia", async () => {
+      await deleteExperienceRecord(testId, user);
+      return "Experiencia temporal eliminada.";
+    });
+    if (uploadedMedia?.path) {
+      await collectSelfTestStep(steps, "cleanupStorage", "Limpieza Storage", async () => {
+        await deleteSupabaseObject(uploadedMedia.path);
+        return "Archivo temporal eliminado de Storage.";
+      });
+    }
+    if (dailyTestLocation) {
+      await collectSelfTestStep(steps, "cleanupDailyBriefing", "Limpieza Diario", async () => {
+        await deleteStoredDailyBriefing(user, dailyTestLocation, "es");
+        return "Briefing temporal eliminado.";
+      });
+    }
+  }
+
+  return summarizeSupabaseSelfTest(steps);
+}
+
+async function collectSelfTestStep(steps, id, label, operation) {
+  try {
+    const detail = await operation();
+    steps.push({ id, label, status: "ok", detail, action: "Sin acción requerida." });
+  } catch (error) {
+    const detail = sanitizeDiagnosticError(error);
+    const action = selfTestActionFor(id, detail);
+    steps.push({ id, label, status: "error", detail, action: action.text, actionType: action.actionType || "" });
+  }
+}
+
+function summarizeSupabaseSelfTest(steps) {
+  const errors = steps.filter((step) => step.status === "error").length;
+  return {
+    checkedAt: new Date().toISOString(),
+    status: errors ? "error" : "ok",
+    steps,
+  };
+}
+
+function selfTestActionFor(id, detail = "") {
+  if (id === "profile") return { text: "Ejecuta database/schema.sql y database/auth-rls.sql; luego vuelve a iniciar sesión.", actionType: "openAdmin" };
+  if (id === "storage") return { text: "Revisa que el bucket experience-media exista, sea privado y acepte image/png.", actionType: "openAdmin" };
+  if (id === "experienceCreate" || id === "experienceRead") return { text: "Revisa tabla experiences, políticas RLS y que auth.uid() coincida con user_id.", actionType: "openAdmin" };
+  if (id === "semantic") return { text: "Ejecuta database/semantic-search.sql; si no está aplicado, la app seguirá con búsqueda local.", actionType: "openAdmin" };
+  if (id === "dailyBriefing") return { text: "Ejecuta database/schema.sql y database/auth-rls.sql para habilitar daily_briefings.", actionType: "openAdmin" };
+  if (id === "cleanupDailyBriefing") return { text: "Borra manualmente el registro de prueba en daily_briefings si quedó pendiente.", actionType: "openAdmin" };
+  if (id === "cleanupExperience") return { text: "Borra manualmente cualquier experiencia con título SUPABASE SELF TEST.", actionType: "openAdmin" };
+  if (id === "cleanupStorage") return { text: `Borra manualmente el objeto temporal indicado en ${SUPABASE_STORAGE_BUCKET}.`, actionType: "openAdmin" };
+  return { text: "Corrige el punto indicado y vuelve a ejecutar Probar flujo real.", actionType: "openAdmin" };
+}
+
+async function deleteSupabaseObject(objectPath) {
+  const response = await fetch(`${SUPABASE_URL}/storage/v1/object/${SUPABASE_STORAGE_BUCKET}`, {
+    method: "DELETE",
+    headers: {
+      apikey: SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ prefixes: [objectPath] }),
+  });
+  const text = await response.text();
+  if (!response.ok) throw new Error(`supabase_storage_delete_${response.status}: ${text}`);
+}
+
+async function semanticSearch(query, user, limit = 8) {
+  const cleanQuery = String(query || "").trim();
+  if (!cleanQuery) return { query: cleanQuery, results: [], engine: "token-vector-v1" };
+  const cappedLimit = Math.max(1, Math.min(Number(limit) || 8, 20));
+  if (activePersistence() === "supabase") {
+    const vectorResults = await semanticSearchWithPgvector(cleanQuery, user, cappedLimit);
+    if (vectorResults) return vectorResults;
+  }
+  const experiences = await listExperiences(user);
+  const queryVector = vectorizeText(cleanQuery);
+  const results = experiences
+    .map((experience) => {
+      const text = experienceSearchText(experience);
+      return {
+        score: cosineSimilarity(queryVector, vectorizeText(text)),
+        experience,
+      };
+    })
+    .filter((entry) => entry.score > 0.08)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, cappedLimit)
+    .map((entry) => ({
+      score: Number(entry.score.toFixed(4)),
+      experience: entry.experience,
+    }));
+  return {
+    query: cleanQuery,
+    engine: activePersistence() === "supabase" ? "supabase-token-vector-v1" : "local-token-vector-v1",
+    results,
+  };
+}
+
+async function semanticSearchWithPgvector(query, user, limit) {
+  try {
+    const queryEmbedding = await createEmbedding(query);
+    const rows = await supabaseRpc(
+      "match_experiences",
+      {
+        query_embedding: queryEmbedding,
+        match_count: limit,
+      },
+      user.accessToken,
+    );
+    const signedResults = await Promise.all(
+      rows.map(async (row) => ({
+        score: Number(row.similarity || 0),
+        experience: await signExperienceMedia(fromExperienceRow(row)),
+      })),
+    );
+    if (!signedResults.length) return null;
+    return {
+      query,
+      engine: `supabase-pgvector-${activeEmbeddingsProvider()}`,
+      results: signedResults,
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function backfillEmbeddings(user, limit = 50) {
+  if (activePersistence() !== "supabase") {
+    return { updated: 0, skipped: 0, engine: "not-supabase" };
+  }
+  const experiences = (await listExperiences(user)).slice(0, Math.max(1, Math.min(Number(limit) || 50, 200)));
+  let updated = 0;
+  for (const experience of experiences) {
+    await upsertExperience(experience, user);
+    updated += 1;
+  }
+  return {
+    updated,
+    skipped: 0,
+    engine: activeEmbeddingsProvider(),
+  };
+}
+
+function enqueueJob(type, user, payload = {}) {
+  const job = {
+    id: createId(),
+    type,
+    status: "queued",
+    payload,
+    user: { id: user.id, email: user.email, accessToken: user.accessToken },
+    createdAt: new Date().toISOString(),
+    startedAt: null,
+    finishedAt: null,
+    result: null,
+    error: null,
+  };
+  jobs.set(job.id, job);
+  jobQueue.push(job.id);
+  appendLog("info", `Job queued: ${type}`, { jobId: job.id }).catch(() => {});
+  processJobs();
+  return { jobId: job.id, status: job.status, type: job.type };
+}
+
+async function processJobs() {
+  if (jobRunning) return;
+  jobRunning = true;
+  while (jobQueue.length) {
+    const jobId = jobQueue.shift();
+    const job = jobs.get(jobId);
+    if (!job) continue;
+    job.status = "running";
+    job.startedAt = new Date().toISOString();
+    await appendLog("info", `Job started: ${job.type}`, { jobId });
+    try {
+      if (job.type === "embeddings-backfill") {
+        job.result = await backfillEmbeddings(job.user, job.payload.limit || 200);
+      } else {
+        throw new Error(`unknown_job_type:${job.type}`);
+      }
+      job.status = "completed";
+      await appendLog("info", `Job completed: ${job.type}`, { jobId, result: job.result });
+    } catch (error) {
+      job.status = "failed";
+      job.error = error.message;
+      await appendLog("error", `Job failed: ${job.type}`, { jobId, error: error.message });
+    } finally {
+      job.finishedAt = new Date().toISOString();
+    }
+  }
+  jobRunning = false;
+}
+
+function listJobs() {
+  return [...jobs.values()]
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, 30)
+    .map(({ user, ...job }) => ({
+      ...job,
+      userId: user.id,
+    }));
+}
+
+function getJobSummary() {
+  const values = [...jobs.values()];
+  return {
+    queued: values.filter((job) => job.status === "queued").length,
+    running: values.filter((job) => job.status === "running").length,
+    completed: values.filter((job) => job.status === "completed").length,
+    failed: values.filter((job) => job.status === "failed").length,
+  };
+}
+
+async function listUserRoutines(user) {
+  const store = await readRoutineStore();
+  return getMergedUserRoutines(store, user.id);
+}
+
+async function updateUserRoutine(user, id, updates) {
+  return mutateRoutineStore((store) => {
+    const routines = getMergedUserRoutines(store, user.id);
+    const existing = routines.find((routine) => routine.id === id);
+    if (!existing) throw new HttpError(404, "routine_not_found");
+    const now = new Date();
+    const intervalMinutes = Math.max(15, Math.min(Number(updates.intervalMinutes || existing.intervalMinutes), 10080));
+    const preferredTime = normalizePreferredTime(updates.preferredTime || existing.preferredTime || defaultRoutineTime(id));
+    const weeklyDay = normalizeWeeklyDay(updates.weeklyDay ?? existing.weeklyDay ?? defaultRoutineWeekday(id));
+    const windowStart = normalizePreferredTime(updates.windowStart || existing.windowStart || "00:00");
+    const windowEnd = normalizePreferredTime(updates.windowEnd || existing.windowEnd || "23:59");
+    const blockedDates = normalizeBlockedDates(updates.blockedDates ?? existing.blockedDates);
+    const updated = {
+      ...existing,
+      enabled: Boolean(updates.enabled),
+      intervalMinutes,
+      preferredTime,
+      weeklyDay,
+      paused: Boolean(updates.paused),
+      windowStart,
+      windowEnd,
+      blockedDates,
+      nextRunAt: updates.enabled ? updates.nextRunAt || addMinutes(now, intervalMinutes).toISOString() : null,
+      updatedAt: now.toISOString(),
+    };
+    store[user.id] = routines.map((routine) => (routine.id === id ? updated : routine));
+    return updated;
+  });
+}
+
+async function runUserRoutine(user, id, options = {}) {
+  const routines = await listUserRoutines(user);
+  const routine = routines.find((item) => item.id === id);
+  if (!routine) throw new HttpError(404, "routine_not_found");
+  const result = await executeRoutine(routine, user, options);
+  const updated = await mutateRoutineStore((store) => {
+    const merged = getMergedUserRoutines(store, user.id);
+    const now = new Date();
+    const nextRunAt = routine.enabled ? addMinutes(now, routine.intervalMinutes).toISOString() : routine.nextRunAt || null;
+    const next = {
+      ...merged.find((item) => item.id === id),
+      lastRunAt: now.toISOString(),
+      nextRunAt,
+      lastStatus: "completed",
+      lastResult: result,
+      updatedAt: now.toISOString(),
+    };
+    store[user.id] = merged.map((item) => (item.id === id ? next : item));
+    return next;
+  });
+  return { routine: updated, result };
+}
+
+function getMergedUserRoutines(store, userId) {
+  const saved = Array.isArray(store[userId]) ? store[userId] : [];
+  return defaultRoutines.map((base) => {
+    const current = saved.find((routine) => routine.id === base.id) || {};
+    return {
+      ...base,
+      ...current,
+      nextRunAt: current.nextRunAt || null,
+      lastRunAt: current.lastRunAt || null,
+      lastStatus: current.lastStatus || "never",
+      lastResult: current.lastResult || null,
+      preferredTime: current.preferredTime || defaultRoutineTime(base.id),
+      weeklyDay: normalizeWeeklyDay(current.weeklyDay ?? defaultRoutineWeekday(base.id)),
+      paused: Boolean(current.paused),
+      windowStart: normalizePreferredTime(current.windowStart || "00:00"),
+      windowEnd: normalizePreferredTime(current.windowEnd || "23:59"),
+      blockedDates: normalizeBlockedDates(current.blockedDates),
+    };
+  });
+}
+
+async function processRoutineSchedules() {
+  if (routineSchedulerRunning) return;
+  routineSchedulerRunning = true;
+  try {
+    const store = await readRoutineStore();
+    const now = new Date();
+    for (const [userId, routines] of Object.entries(store)) {
+      for (const routine of getMergedUserRoutines(store, userId)) {
+        if (!routine.enabled || !routine.nextRunAt || new Date(routine.nextRunAt) > now) continue;
+        const blockReason = getRoutineBlockReason(now, routine);
+        if (blockReason) {
+          await postponeRoutine(userId, routine, now, blockReason);
+          continue;
+        }
+        const user = { id: userId, email: "scheduled@local", accessToken: null };
+        try {
+          await runUserRoutine(user, routine.id, { scheduled: true });
+        } catch (error) {
+          await appendLog("error", `Scheduled routine failed: ${routine.id}`, { userId, error: error.message });
+          await mutateRoutineStore((currentStore) => {
+            const merged = getMergedUserRoutines(currentStore, userId);
+            const next = {
+              ...routine,
+              lastRunAt: now.toISOString(),
+              nextRunAt: addMinutes(now, routine.intervalMinutes).toISOString(),
+              lastStatus: "failed",
+              lastResult: { error: error.message },
+              updatedAt: now.toISOString(),
+            };
+            currentStore[userId] = merged.map((item) => (item.id === routine.id ? next : item));
+            return next;
+          });
+        }
+      }
+    }
+  } finally {
+    routineSchedulerRunning = false;
+  }
+}
+
+async function executeRoutine(routine, user, options = {}) {
+  if (routine.id === "embedding-refresh") {
+    const result = await backfillEmbeddings(user, 200);
+    await appendLog("info", "Routine completed: embedding refresh", { userId: user.id, result, options });
+    return result;
+  }
+  if (routine.id === "weekly-report") {
+    const experiences = await listExperiences(user);
+    const since = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const recent = experiences.filter((item) => new Date(item.timestamp).getTime() >= since);
+    const result = {
+      count: recent.length,
+      hours: Number((recent.reduce((sum, item) => sum + Number(item.duration || 0), 0) / 60).toFixed(1)),
+      topCategory: getTopCategoryFor(recent),
+    };
+    await appendLog("info", "Routine completed: weekly report", { userId: user.id, result, options });
+    return result;
+  }
+  if (routine.id === "daily-briefing") {
+    const experiences = await listExperiences(user);
+    const location = inferPrimaryLocationFrom(experiences) || "San Juan";
+    const result = await getDailyBriefing(location, "es");
+    await appendLog("info", "Routine completed: daily briefing", { userId: user.id, location, options });
+    return result;
+  }
+  if (routine.id === "context-scan") {
+    const experiences = await listExperiences(user);
+    const location = inferPrimaryLocationFrom(experiences);
+    const result = location ? await getContextImpact(location) : { status: "no_location" };
+    await appendLog("info", "Routine completed: context scan", { userId: user.id, location, options });
+    return result;
+  }
+  if (routine.id === "offline-sync") {
+    const result = { status: "ready", message: "La sincronización offline se ejecuta desde el navegador cuando hay cola local." };
+    await appendLog("info", "Routine checked: offline sync", { userId: user.id, result, options });
+    return result;
+  }
+  if (routine.id === "daily-review") {
+    const result = { status: "template-ready", template: "Daily Review" };
+    await appendLog("info", "Routine checked: daily review", { userId: user.id, result, options });
+    return result;
+  }
+  throw new Error(`unknown_routine:${routine.id}`);
+}
+
+function addMinutes(date, minutes) {
+  return new Date(date.getTime() + minutes * 60 * 1000);
+}
+
+function defaultRoutineTime(id) {
+  if (id === "daily-review") return "18:00";
+  if (id === "weekly-report") return "09:00";
+  if (id === "embedding-refresh") return "02:00";
+  return "08:00";
+}
+
+function defaultRoutineWeekday(id) {
+  if (id === "weekly-report") return 1;
+  return 1;
+}
+
+function normalizePreferredTime(value) {
+  return /^\d{2}:\d{2}$/.test(String(value || "")) ? value : "08:00";
+}
+
+function normalizeWeeklyDay(value) {
+  const day = Number(value);
+  return Number.isFinite(day) ? Math.max(0, Math.min(day, 6)) : 1;
+}
+
+function normalizeBlockedDates(value) {
+  const values = Array.isArray(value) ? value : String(value || "").split(/[,\s;]+/);
+  return [...new Set(values.map((item) => String(item).trim()).filter((item) => /^\d{4}-\d{2}-\d{2}$/.test(item)))].slice(0, 50);
+}
+
+function getRoutineBlockReason(date, routine) {
+  if (routine.paused) return "paused";
+  if (isBlockedRoutineDate(date, routine)) return "blocked-date";
+  if (!isWithinRoutineWindow(date, routine)) return "outside-window";
+  return "";
+}
+
+function isBlockedRoutineDate(date, routine) {
+  return normalizeBlockedDates(routine.blockedDates).includes(formatLocalDateKey(date));
+}
+
+function isWithinRoutineWindow(date, routine) {
+  const start = timeToMinutes(routine.windowStart || "00:00", 0);
+  const end = timeToMinutes(routine.windowEnd || "23:59", 1439);
+  const current = date.getHours() * 60 + date.getMinutes();
+  if (start <= end) return current >= start && current <= end;
+  return current >= start || current <= end;
+}
+
+async function postponeRoutine(userId, routine, now, reason = "outside-window") {
+  await mutateRoutineStore((store) => {
+    const merged = getMergedUserRoutines(store, userId);
+    const next = {
+      ...routine,
+      nextRunAt: calculatePostponedRun(now, routine, reason).toISOString(),
+      lastStatus: reason,
+      updatedAt: now.toISOString(),
+    };
+    store[userId] = merged.map((item) => (item.id === routine.id ? next : item));
+    return next;
+  });
+}
+
+function calculatePostponedRun(now, routine, reason) {
+  const next = new Date(now);
+  const start = timeToMinutes(routine.windowStart || routine.preferredTime || "08:00", 480);
+  const end = timeToMinutes(routine.windowEnd || "23:59", 1439);
+  const current = next.getHours() * 60 + next.getMinutes();
+  if (reason === "blocked-date" || (reason === "outside-window" && current > end)) {
+    next.setDate(next.getDate() + 1);
+    next.setHours(Math.floor(start / 60), start % 60, 0, 0);
+    return next;
+  }
+  if (reason === "outside-window" && current < start) {
+    next.setHours(Math.floor(start / 60), start % 60, 0, 0);
+    return next;
+  }
+  return addMinutes(now, Math.max(15, Math.min(Number(routine.intervalMinutes || 60), 10080)));
+}
+
+function timeToMinutes(value, fallback) {
+  const [hours, minutes] = String(value || "").split(":").map(Number);
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return fallback;
+  return Math.max(0, Math.min(hours * 60 + minutes, 1439));
+}
+
+function formatLocalDateKey(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function inferPrimaryLocationFrom(experiences) {
+  const counts = experiences.reduce((acc, item) => {
+    if (item.location && item.location !== "Sin ubicación") acc[item.location] = (acc[item.location] || 0) + 1;
+    return acc;
+  }, {});
+  return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || "";
+}
+
+function getTopCategoryFor(experiences) {
+  const totals = experiences.reduce((acc, item) => {
+    const category = normalizeCategoryName(item.category);
+    acc[category] = (acc[category] || 0) + Number(item.duration || 0);
+    return acc;
+  }, {});
+  return Object.entries(totals).sort((a, b) => b[1] - a[1])[0]?.[0] || "Sin datos";
+}
+
+function experienceSearchText(experience) {
+  return [
+    experience.title,
+    experience.objective,
+    normalizeCategoryName(experience.category),
+    experience.mood,
+    experience.location,
+    experience.people,
+    experience.notes,
+    ...(experience.attachments || []).map((attachment) => attachment.name || ""),
+  ].join(" ");
+}
+
+function vectorizeText(text) {
+  const synonyms = {
+    clima: "weather tiempo lluvia viento temperatura",
+    weather: "clima lluvia viento temperatura",
+    energia: "energy focus mood ánimo productividad",
+    energy: "energía focus mood productivity",
+    geopolitica: "geopolitical news conflict protest security election noticias",
+    noticias: "news geopolitical conflict protest security election",
+    aprendizaje: "learning study insight skill conocimiento",
+    familia: "family social hogar relaciones",
+    trabajo: "work productivity focus reunión proyecto",
+    salud: "health wellness energy descanso movimiento",
+  };
+  return tokenizeText(text).reduce((vector, token) => {
+    const expanded = synonyms[token] ? tokenizeText(`${token} ${synonyms[token]}`) : [token];
+    expanded.forEach((term) => {
+      vector[term] = (vector[term] || 0) + 1;
+    });
+    return vector;
+  }, {});
+}
+
+function tokenizeText(text) {
+  return String(text)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .split(/[^a-z0-9]+/)
+    .filter((token) => token.length > 2);
+}
+
+function cosineSimilarity(a, b) {
+  const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+  let dot = 0;
+  let normA = 0;
+  let normB = 0;
+  keys.forEach((key) => {
+    dot += (a[key] || 0) * (b[key] || 0);
+    normA += (a[key] || 0) ** 2;
+    normB += (b[key] || 0) ** 2;
+  });
+  return dot / (Math.sqrt(normA) * Math.sqrt(normB) || 1);
+}
+
+async function createEmbedding(text) {
+  if (activeEmbeddingsProvider() === "openai") {
+    return createOpenAiEmbedding(text);
+  }
+  return createLocalHashEmbedding(text);
+}
+
+function activeEmbeddingsProvider() {
+  return EMBEDDINGS_PROVIDER === "openai" && OPENAI_API_KEY ? "openai" : "local-hash";
+}
+
+async function createOpenAiEmbedding(text) {
+  const response = await fetch("https://api.openai.com/v1/embeddings", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${OPENAI_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: OPENAI_EMBEDDING_MODEL,
+      input: text,
+      dimensions: EMBEDDING_DIMENSIONS,
+    }),
+  });
+  const payload = await response.json();
+  if (!response.ok) throw new Error(`openai_embedding_${response.status}: ${payload.error?.message || "failed"}`);
+  return normalizeEmbedding(payload.data?.[0]?.embedding || []);
+}
+
+function createLocalHashEmbedding(text) {
+  const vector = Array.from({ length: EMBEDDING_DIMENSIONS }, () => 0);
+  const tokens = tokenizeText(text);
+  tokens.forEach((token, tokenIndex) => {
+    const expanded = [token, ...characterShingles(token)];
+    expanded.forEach((part, partIndex) => {
+      const index = positiveHash(`${part}:${partIndex}`) % EMBEDDING_DIMENSIONS;
+      const sign = positiveHash(`${part}:sign`) % 2 === 0 ? 1 : -1;
+      vector[index] += sign * (1 + Math.min(token.length, 12) / 12) * (tokenIndex + 1) ** -0.15;
+    });
+  });
+  return normalizeEmbedding(vector);
+}
+
+function characterShingles(token) {
+  if (token.length <= 4) return [token];
+  const shingles = [];
+  for (let index = 0; index <= token.length - 4; index += 1) {
+    shingles.push(token.slice(index, index + 4));
+  }
+  return shingles;
+}
+
+function positiveHash(value) {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+function normalizeEmbedding(vector) {
+  const resized = Array.from({ length: EMBEDDING_DIMENSIONS }, (_, index) => Number(vector[index] || 0));
+  const norm = Math.sqrt(resized.reduce((sum, value) => sum + value * value, 0)) || 1;
+  return resized.map((value) => Number((value / norm).toFixed(7)));
+}
+
+async function transcribeMedia(media) {
+  if (activeTranscriptionProvider() !== "openai") {
+    return {
+      provider: activeTranscriptionProvider(),
+      transcript: "",
+      status: "unavailable",
+      message: "Configure TRANSCRIPTION_PROVIDER=openai and OPENAI_API_KEY to enable backend transcription.",
+    };
+  }
+  const normalized = normalizeMedia(media);
+  if (!normalized.dataUrl || !normalized.type.startsWith("audio/")) {
+    throw new HttpError(400, "audio_data_url_required");
+  }
+  const bytes = dataUrlToBuffer(normalized.dataUrl);
+  const form = new FormData();
+  form.append("model", OPENAI_TRANSCRIPTION_MODEL);
+  form.append("file", new Blob([bytes], { type: normalized.type }), normalized.name || "audio.webm");
+  const response = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${OPENAI_API_KEY}`,
+    },
+    body: form,
+  });
+  const payload = await response.json();
+  if (!response.ok) {
+    throw new Error(`transcription_${response.status}: ${payload.error?.message || "failed"}`);
+  }
+  return {
+    provider: "openai",
+    model: OPENAI_TRANSCRIPTION_MODEL,
+    transcript: payload.text || "",
+    status: "ok",
+  };
+}
+
+function activeTranscriptionProvider() {
+  return TRANSCRIPTION_PROVIDER === "openai" && OPENAI_API_KEY ? "openai" : "none";
+}
+
+async function buildPdfReport(user, report = null) {
+  if (report?.summary && Array.isArray(report.rows)) {
+    const kpiLines = (report.humanKpis || []).flatMap((item) => [
+      `${item.label || "KPI"}: ${item.score || 0}/100 ${pdfBar(item.score || 0)}`,
+      item.detail || "",
+    ]);
+    const categoryLines = (report.categoryBreakdown || []).slice(0, 10).flatMap((item) => [
+      `${item.category || ""}: ${item.count || 0} experiencias | ${((Number(item.minutes || 0) / 60) || 0).toFixed(1)} h | energia ${item.avgEnergy || 0}/10 ${pdfBar(Number(item.avgEnergy || 0) * 10)}`,
+    ]);
+    const predictive = report.predictiveOutlook || null;
+    const lines = [
+      "Experience Hub MVP",
+      report.language === "en" ? "Experience report" : "Reporte de experiencias",
+      `Generado: ${report.generatedAt || new Date().toISOString()}`,
+      `Experiencias: ${report.summary.totalExperiences || 0}`,
+      `Horas capturadas: ${report.summary.capturedHours || 0}`,
+      `Energia media: ${report.summary.averageEnergy || 0}/10`,
+      `Categoria dominante: ${report.summary.topCategory || ""}`,
+      "",
+      predictive ? (report.language === "en" ? "Initial outlook" : "Proyeccion inicial") : "",
+      predictive ? `${predictive.title || ""} | confianza ${predictive.confidence || 0}% ${pdfBar(predictive.confidence || 0)}` : "",
+      predictive ? `Hipotesis: ${predictive.hypothesis || ""}` : "",
+      predictive ? `Siguiente accion: ${predictive.nextStep || ""}` : "",
+      ...((predictive?.drivers || []).slice(0, 5).map((driver) => `- ${driver}`)),
+      predictive ? "" : "",
+      report.language === "en" ? "Integrated reading" : "Lectura integrada",
+      ...(report.integratedReading || []).flatMap((item) => [
+        `${item.title || ""}`,
+        `Prioridad: ${item.priority || ""}`,
+        `Evidencia: ${item.evidence || ""}`,
+        `Accion: ${item.action || ""}`,
+        "",
+      ]),
+      kpiLines.length ? (report.language === "en" ? "Human indexes" : "Indices humanos") : "",
+      ...kpiLines,
+      kpiLines.length ? "" : "",
+      categoryLines.length ? (report.language === "en" ? "Category breakdown" : "Desglose por categoria") : "",
+      ...categoryLines,
+      categoryLines.length ? "" : "",
+      report.language === "en" ? "Map routes" : "Rutas del mapa",
+      ...(report.mapRoutes || []).map((route) => `${route.title || ""}: ${route.count || 0} experiencias | energia ${route.avgEnergy || 0}/10`),
+      "",
+      (report.multimodalEvidence || []).length ? (report.language === "en" ? "Multimodal evidence" : "Evidencia multimodal") : "",
+      ...(report.multimodalEvidence || []).slice(0, 8).flatMap((item) => [
+        `${item.experienceTitle || ""} | ${item.name || ""} | ${item.kind || ""}`,
+        `${item.analyticalText || item.manualNote || ""}`,
+      ]),
+      (report.multimodalEvidence || []).length ? "" : "",
+      ...report.rows.slice(0, 40).map((item) => `${item.fecha || ""} | ${item.titulo || ""} | ${item.categoría || item.categoria || ""} | ${item.energia || ""}/10`),
+    ];
+    await appendLog("info", "PDF report generated", { count: report.rows.length, userId: user.id, source: "client-report" });
+    return createSimplePdf(lines);
+  }
+  const experiences = await listExperiences(user);
+  const sorted = [...experiences].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+  const totalMinutes = sorted.reduce((sum, item) => sum + item.duration, 0);
+  const avgEnergy = sorted.length ? average(sorted.map((item) => item.energy)).toFixed(1) : "0.0";
+  const lines = [
+    "Experience Hub MVP",
+    "Reporte de experiencias",
+    `Generado: ${new Date().toISOString()}`,
+    `Experiencias: ${sorted.length}`,
+    `Horas capturadas: ${(totalMinutes / 60).toFixed(1)}`,
+    `Energía media: ${avgEnergy}/10`,
+    "",
+    ...sorted.slice(0, 40).map((item) => `${formatPdfDate(item.timestamp)} | ${item.title} | ${item.category} | ${item.energy}/10`),
+  ];
+  await appendLog("info", "PDF report generated", { count: sorted.length, userId: user.id });
+  return createSimplePdf(lines);
+}
+
+function pdfBar(value, width = 16) {
+  const score = Math.max(0, Math.min(100, Number(value) || 0));
+  const filled = Math.round((score / 100) * width);
+  return `[${"#".repeat(filled)}${"-".repeat(Math.max(0, width - filled))}]`;
+}
+
+function createSimplePdf(lines) {
+  const objects = [];
+  const addObject = (body) => {
+    objects.push(body);
+    return objects.length;
+  };
+  const pages = [];
+  const chunks = chunkLines(lines, 34);
+  chunks.forEach((chunk, pageIndex) => {
+    const text = [
+      "BT",
+      "/F1 12 Tf",
+      "50 760 Td",
+      `(${escapePdfText(`Página ${pageIndex + 1}`)}) Tj`,
+      "0 -24 Td",
+      ...chunk.flatMap((line) => [`(${escapePdfText(line)}) Tj`, "0 -18 Td"]),
+      "ET",
+    ].join("\n");
+    const contentId = addObject(`<< /Length ${Buffer.byteLength(text)} >>\nstream\n${text}\nendstream`);
+    const pageId = addObject(`<< /Type /Page /Parent PAGES_PLACEHOLDER /MediaBox [0 0 612 792] /Resources << /Font << /F1 FONT_PLACEHOLDER >> >> /Contents ${contentId} 0 R >>`);
+    pages.push(pageId);
+  });
+  const fontId = addObject("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
+  const pagesBody = `<< /Type /Pages /Kids [${pages.map((id) => `${id} 0 R`).join(" ")}] /Count ${pages.length} >>`;
+  const pagesId = addObject(pagesBody);
+  const catalogId = addObject(`<< /Type /Catalog /Pages ${pagesId} 0 R >>`);
+  const rendered = objects.map((body) => body.replaceAll("PAGES_PLACEHOLDER", `${pagesId} 0 R`).replaceAll("FONT_PLACEHOLDER", `${fontId} 0 R`));
+  let pdf = "%PDF-1.4\n";
+  const offsets = [0];
+  rendered.forEach((body, index) => {
+    offsets.push(Buffer.byteLength(pdf));
+    pdf += `${index + 1} 0 obj\n${body}\nendobj\n`;
+  });
+  const xrefOffset = Buffer.byteLength(pdf);
+  pdf += `xref\n0 ${rendered.length + 1}\n0000000000 65535 f \n`;
+  offsets.slice(1).forEach((offset) => {
+    pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
+  });
+  pdf += `trailer\n<< /Size ${rendered.length + 1} /Root ${catalogId} 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+  return Buffer.from(pdf, "binary");
+}
+
+function chunkLines(lines, size) {
+  const chunks = [];
+  for (let index = 0; index < lines.length; index += size) {
+    chunks.push(lines.slice(index, index + size));
+  }
+  return chunks.length ? chunks : [["Sin experiencias registradas."]];
+}
+
+function escapePdfText(value) {
+  return String(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\x20-\x7E]/g, "")
+    .replace(/\\/g, "\\\\")
+    .replace(/\(/g, "\\(")
+    .replace(/\)/g, "\\)");
+}
+
+function formatPdfDate(value) {
+  return new Date(value).toISOString().slice(0, 10);
+}
+
+function average(values) {
+  return values.reduce((sum, value) => sum + Number(value || 0), 0) / (values.length || 1);
+}
+
+function sanitizeFileName(name) {
+  return String(name)
+    .normalize("NFKD")
+    .replace(/[^\w.-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 120) || "media";
+}
+
+async function getContextImpact(location, profile = {}, experienceType = "auto") {
+  let place;
+  try {
+    place = await geocodeLocation(location);
+  } catch (error) {
+    const weather = unavailableWeatherImpact(error);
+    const news = unavailableNewsImpact(error);
+    const profileImpact = buildProfileImpact(profile, experienceType, weather, news);
+    return {
+      location: String(location || "Lugar no identificado").trim() || "Lugar no identificado",
+      country: "",
+      latitude: null,
+      longitude: null,
+      generatedAt: new Date().toISOString(),
+      impactScore: Math.max(0, profileImpact.scoreAdjustment || 0),
+      summary: buildImpactSummary(0, weather, news),
+      profileImpact,
+      weather,
+      geopoliticalNews: news,
+    };
+  }
+  const [weatherResult, newsResult] = await Promise.allSettled([getWeatherImpact(place), getNewsImpact(place)]);
+  const weather =
+    weatherResult.status === "fulfilled" ? weatherResult.value : unavailableWeatherImpact(weatherResult.reason);
+  const news = newsResult.status === "fulfilled" ? newsResult.value : unavailableNewsImpact(newsResult.reason);
+  const baseScore = calculateImpactScore(weather, news);
+  const profileImpact = buildProfileImpact(profile, experienceType, weather, news);
+  const score = Math.min(100, Math.max(0, baseScore + profileImpact.scoreAdjustment));
+  return {
+    location: place.name,
+    country: place.country,
+    latitude: place.latitude,
+    longitude: place.longitude,
+    generatedAt: new Date().toISOString(),
+    impactScore: score,
+    summary: buildImpactSummary(score, weather, news),
+    profileImpact,
+    weather,
+    geopoliticalNews: news,
+  };
+}
+
+function unavailableWeatherImpact(reason) {
+  return {
+    source: "Open-Meteo",
+    unavailable: true,
+    error: String(reason?.message || reason || "weather_unavailable"),
+    current: {
+      temperatureC: null,
+      humidityPct: null,
+      precipitationMm: null,
+      windKmh: null,
+      time: null,
+    },
+    forecast: [],
+    riskSignals: [],
+  };
+}
+
+function unavailableNewsImpact(reason) {
+  return {
+    source: "GDELT DOC 2.0",
+    unavailable: true,
+    error: String(reason?.message || reason || "news_unavailable"),
+    query: null,
+    articleCount: 0,
+    riskSignals: [],
+    articles: [],
+  };
+}
+
+async function geocodeLocation(location) {
+  const payload = await fetchGeocode(location);
+  const fallbackPayload = payload.results?.length ? payload : await fetchGeocode(String(location).split(",")[0]);
+  const result = fallbackPayload.results?.[0];
+  if (!result) {
+    throw new Error("location_not_found");
+  }
+  return {
+    name: result.name,
+    country: result.country,
+    countryCode: result.country_code,
+    latitude: result.latitude,
+    longitude: result.longitude,
+    timezone: result.timezone || "auto",
+  };
+}
+
+async function fetchGeocode(location) {
+  const url = new URL("https://geocoding-api.open-meteo.com/v1/search");
+  url.searchParams.set("name", String(location || "").trim());
+  url.searchParams.set("count", "1");
+  url.searchParams.set("language", "es");
+  url.searchParams.set("format", "json");
+  return fetchJsonWithTimeout(url);
+}
+
+async function getWeatherImpact(place) {
+  const url = new URL("https://api.open-meteo.com/v1/forecast");
+  url.searchParams.set("latitude", String(place.latitude));
+  url.searchParams.set("longitude", String(place.longitude));
+  url.searchParams.set("current", "temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m");
+  url.searchParams.set("daily", "temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max");
+  url.searchParams.set("forecast_days", "3");
+  url.searchParams.set("timezone", place.timezone);
+  const payload = await fetchJsonWithTimeout(url);
+  const current = payload.current || {};
+  const daily = payload.daily || {};
+  const riskSignals = [];
+  if (Number(current.wind_speed_10m || 0) >= 35) riskSignals.push("Viento elevado");
+  if (Number(current.precipitation || 0) >= 4) riskSignals.push("Precipitacion intensa");
+  if (Number(current.temperature_2m || 0) >= 33) riskSignals.push("Calor alto");
+  if (Number(current.temperature_2m || 0) <= 2) riskSignals.push("Frio alto");
+  return {
+    source: "Open-Meteo",
+    current: {
+      temperatureC: current.temperature_2m ?? null,
+      humidityPct: current.relative_humidity_2m ?? null,
+      precipitationMm: current.precipitation ?? null,
+      windKmh: current.wind_speed_10m ?? null,
+      time: current.time ?? null,
+    },
+    forecast: (daily.time || []).map((day, index) => ({
+      day,
+      maxC: daily.temperature_2m_max?.[index] ?? null,
+      minC: daily.temperature_2m_min?.[index] ?? null,
+      precipitationMm: daily.precipitation_sum?.[index] ?? null,
+      windMaxKmh: daily.wind_speed_10m_max?.[index] ?? null,
+    })),
+    riskSignals,
+  };
+}
+
+async function getNewsImpact(place) {
+  const query = `${place.name} ${place.country || ""} conflict OR protest OR security OR election`;
+  const url = new URL("https://api.gdeltproject.org/api/v2/doc/doc");
+  url.searchParams.set("query", query);
+  url.searchParams.set("mode", "artlist");
+  url.searchParams.set("format", "json");
+  url.searchParams.set("maxrecords", "5");
+  url.searchParams.set("sort", "hybridrel");
+  let source = "GDELT DOC 2.0";
+  let fallbackReason = null;
+  let articles = [];
+  try {
+    const payload = await fetchJsonWithTimeout(url);
+    articles = (payload.articles || []).slice(0, 5).map((article) => ({
+      title: article.title,
+      url: article.url,
+      sourceCountry: article.sourceCountry,
+      language: article.language,
+      seenAt: article.seendate,
+      domain: article.domain,
+      source: "GDELT DOC 2.0",
+    }));
+  } catch (error) {
+    fallbackReason = sanitizeDiagnosticError(error);
+  }
+
+  if (!articles.length) {
+    const fallbackQuery = [place.name, place.country, "politica economia seguridad gobierno noticias"].filter(Boolean).join(" ");
+    articles = await fetchGoogleNewsRss({ query: fallbackQuery }, "es");
+    if (articles.length) {
+      source = "Google News RSS";
+      fallbackReason = fallbackReason || "gdelt_without_articles";
+    }
+  }
+
+  const keywords = ["conflict", "protest", "election", "sanctions", "security", "border", "strike", "conflicto", "protesta", "eleccion", "seguridad", "frontera", "huelga"];
+  const headlineText = articles.map((article) => article.title || "").join(" ").toLowerCase();
+  const riskSignals = keywords.filter((keyword) => headlineText.includes(keyword));
+  return {
+    source,
+    unavailable: !articles.length,
+    error: articles.length ? null : (fallbackReason || "news_without_articles"),
+    fallbackReason,
+    query,
+    articleCount: articles.length,
+    riskSignals,
+    articles,
+  };
+}
+
+async function getDailyBriefing(location, locale = "es", options = {}) {
+  const language = String(locale).startsWith("en") ? "en" : "es";
+  const user = options.user || { id: LOCAL_USER_ID };
+  if (!options.force) {
+    const cached = await getStoredDailyBriefing(user, location, language);
+    if (cached && !isStoredDailyBriefingStale(cached)) {
+      return { ...cached, cached: true, cacheSource: cached.cacheSource || activePersistence() };
+    }
+  }
+
+  try {
+    const briefing = await buildLiveDailyBriefing(location, language);
+    await saveStoredDailyBriefing(user, briefing);
+    return { ...briefing, cached: false, cacheSource: "live" };
+  } catch (error) {
+    const cached = await getStoredDailyBriefing(user, location, language);
+    if (cached) {
+      return {
+        ...cached,
+        cached: true,
+        cacheSource: activePersistence(),
+        warning: `live_refresh_failed: ${sanitizeDiagnosticError(error)}`,
+      };
+    }
+    throw error;
+  }
+}
+
+async function buildLiveDailyBriefing(location, language = "es") {
+  const place = await geocodeLocation(location);
+  const worldLabel = language === "en" ? "World" : "Mundo";
+  const placeLabel = [place.name, place.country || place.countryCode].filter(Boolean).join(", ");
+  const queryPlace = [place.name, place.country || place.countryCode].filter(Boolean).join(" ");
+  const sections = buildBriefingSections(queryPlace, language);
+  const [sectionResults, weatherResult] = await Promise.all([
+    Promise.allSettled(sections.map((section) => fetchBriefingSection(section, language))),
+    Promise.allSettled([getWeatherImpact(place)]),
+  ]);
+  const resolvedSections = sections.map((section, index) => {
+    const result = sectionResults[index];
+    return result.status === "fulfilled" ? result.value : enrichBriefingSection({ ...section, summary: unavailableBriefingSummary(language), articles: [] }, language);
+  });
+  const weather = weatherResult[0]?.status === "fulfilled" ? weatherResult[0].value : unavailableWeatherImpact(weatherResult[0]?.reason);
+  return {
+    schemaVersion: "20260512-daily-cache-34",
+    source: "GDELT DOC 2.0 + Google News RSS",
+    location: place.name,
+    country: place.country || place.countryCode || "",
+    countryCode: place.countryCode,
+    scope: `${placeLabel || location} + ${worldLabel}`,
+    locale: language,
+    generatedAt: new Date().toISOString(),
+    refreshEveryHours: 6,
+    nextRefreshAt: addMinutes(new Date(), 360).toISOString(),
+    agendaLinks: buildAgendaLinks(place, language),
+    weather,
+    groups: buildBriefingGroups(resolvedSections, language),
+    sections: resolvedSections,
+    horoscope: await getDailyHoroscope(language),
+  };
+}
+
+async function getStoredDailyBriefing(user, location, language) {
+  const userId = user?.id || LOCAL_USER_ID;
+  const locationKey = normalizeDailyLocationKey(location);
+  if (activePersistence() === "supabase") {
+    try {
+      const rows = await supabaseRest("daily_briefings", {
+        searchParams: {
+          user_id: `eq.${userId}`,
+          location_key: `eq.${locationKey}`,
+          locale: `eq.${language}`,
+          limit: "1",
+        },
+        accessToken: user?.accessToken,
+      });
+      return rows[0]?.payload ? { ...rows[0].payload, cacheSource: "supabase" } : null;
+    } catch {
+      return getStoredDailyBriefingFromFile(userId, locationKey, language);
+    }
+  }
+
+  return getStoredDailyBriefingFromFile(userId, locationKey, language);
+}
+
+async function getStoredDailyBriefingFromFile(userId, locationKey, language) {
+  const store = await readDailyBriefingStore();
+  const payload = store[buildDailyBriefingCacheKey(userId, locationKey, language)]?.payload;
+  return payload ? { ...payload, cacheSource: "local-file" } : null;
+}
+
+async function saveStoredDailyBriefing(user, briefing) {
+  const userId = user?.id || LOCAL_USER_ID;
+  const locationKey = normalizeDailyLocationKey(briefing.location || "");
+  const row = {
+    user_id: userId,
+    location_key: locationKey,
+    locale: briefing.locale || "es",
+    payload: briefing,
+    generated_at: briefing.generatedAt,
+    next_refresh_at: briefing.nextRefreshAt,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (activePersistence() === "supabase") {
+    try {
+      await upsertProfile(await getProfile(user), user);
+      await supabaseRest("daily_briefings", {
+        method: "POST",
+        searchParams: { on_conflict: "user_id,location_key,locale" },
+        headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+        body: JSON.stringify(row),
+        accessToken: user?.accessToken,
+      });
+      return;
+    } catch (error) {
+      await appendLog("warn", "Daily briefing Supabase persistence skipped", { userId, locationKey, error: sanitizeDiagnosticError(error) });
+    }
+  }
+
+  const store = await readDailyBriefingStore();
+  store[buildDailyBriefingCacheKey(userId, locationKey, briefing.locale || "es")] = row;
+  await writeDailyBriefingStore(store);
+}
+
+async function deleteStoredDailyBriefing(user, location, language) {
+  const userId = user?.id || LOCAL_USER_ID;
+  const locationKey = normalizeDailyLocationKey(location);
+  if (activePersistence() === "supabase") {
+    await supabaseRest("daily_briefings", {
+      method: "DELETE",
+      searchParams: {
+        user_id: `eq.${userId}`,
+        location_key: `eq.${locationKey}`,
+        locale: `eq.${language || "es"}`,
+      },
+      headers: { Prefer: "return=minimal" },
+      accessToken: user?.accessToken,
+    });
+    return;
+  }
+  const store = await readDailyBriefingStore();
+  delete store[buildDailyBriefingCacheKey(userId, locationKey, language || "es")];
+  await writeDailyBriefingStore(store);
+}
+
+function normalizeDailyLocationKey(location) {
+  return String(location || "san juan")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80) || "san-juan";
+}
+
+function buildDailyBriefingCacheKey(userId, locationKey, language) {
+  return `${userId}:${locationKey}:${language}`;
+}
+
+function isStoredDailyBriefingStale(briefing) {
+  if (!briefing?.generatedAt) return true;
+  if (briefing.schemaVersion !== "20260512-daily-cache-34") return true;
+  const refreshMs = Number(briefing.refreshEveryHours || 6) * 60 * 60 * 1000;
+  return Date.now() - new Date(briefing.generatedAt).getTime() >= refreshMs;
+}
+
+function buildBriefingSections(queryPlace, language) {
+  if (language === "en") {
+    return [
+      { id: "local-politics", scope: "local", title: "Local politics", query: `${queryPlace} politics election government policy`, mediaQuery: `${queryPlace} politics government` },
+      { id: "local-economy", scope: "local", title: "Local economy and finance", query: `${queryPlace} economy finance markets inflation business`, mediaQuery: `${queryPlace} economy business` },
+      { id: "local-technology-ai", scope: "local", title: "Local technology and AI", query: `${queryPlace} technology artificial intelligence startups innovation digital transformation`, mediaQuery: `${queryPlace} technology artificial intelligence innovation` },
+      { id: "local-sports", scope: "local", title: "Local sports", query: `${queryPlace} sports football baseball basketball tennis`, mediaQuery: `${queryPlace} sports` },
+      { id: "local-entertainment", scope: "local", title: "Local entertainment and events", query: `${queryPlace} cinema concerts theater festival events movie music`, mediaQuery: `${queryPlace} concerts theater events` },
+      { id: "world-politics", scope: "world", title: "World politics", query: "world politics elections government policy diplomacy security", mediaQuery: "world politics diplomacy security" },
+      { id: "world-economy", scope: "world", title: "Global economy and finance", query: "global economy finance markets inflation business", mediaQuery: "global economy markets finance" },
+      { id: "world-technology-ai", scope: "world", title: "Technology and AI", query: "technology artificial intelligence AI chips robotics cybersecurity startups innovation", mediaQuery: "technology artificial intelligence AI innovation" },
+      { id: "world-culture-sports", scope: "world", title: "World sports and entertainment", query: "world sports entertainment cinema concerts music events", mediaQuery: "world sports entertainment events" },
+    ];
+  }
+  return [
+    { id: "local-politics", scope: "local", title: "Política local", query: `${queryPlace} política elecciones gobierno seguridad pública`, mediaQuery: `${queryPlace} politics government` },
+    { id: "local-economy", scope: "local", title: "Economía y finanzas locales", query: `${queryPlace} economía finanzas mercados inflación negocios`, mediaQuery: `${queryPlace} economy business` },
+    { id: "local-technology-ai", scope: "local", title: "Tecnología y AI local", query: `${queryPlace} tecnología inteligencia artificial startups innovación transformación digital`, mediaQuery: `${queryPlace} technology artificial intelligence innovation` },
+    { id: "local-sports", scope: "local", title: "Deportes locales", query: `${queryPlace} deportes fútbol béisbol baloncesto tenis`, mediaQuery: `${queryPlace} sports` },
+    { id: "local-entertainment", scope: "local", title: "Entretenimiento y eventos locales", query: `${queryPlace} cine conciertos teatro festival eventos música`, mediaQuery: `${queryPlace} concerts theater events` },
+    { id: "world-politics", scope: "world", title: "Política mundial", query: "mundo política elecciones gobierno diplomacia seguridad", mediaQuery: "world politics diplomacy security" },
+    { id: "world-economy", scope: "world", title: "Economía y finanzas mundiales", query: "economía mundial finanzas mercados inflación negocios", mediaQuery: "global economy markets finance" },
+    { id: "world-technology-ai", scope: "world", title: "Tecnología y AI mundial", query: "tecnología inteligencia artificial IA chips robótica ciberseguridad startups innovación", mediaQuery: "technology artificial intelligence AI innovation" },
+    { id: "world-culture-sports", scope: "world", title: "Deportes y entretenimiento mundial", query: "mundo deportes entretenimiento cine conciertos música eventos", mediaQuery: "world sports entertainment events" },
+  ];
+}
+
+function buildBriefingGroups(sections, language) {
+  return [
+    {
+      id: "local",
+      title: language === "en" ? "Local news" : "Noticias locales",
+      sections: sections.filter((section) => section.scope === "local"),
+    },
+    {
+      id: "world",
+      title: language === "en" ? "World news" : "Noticias mundiales",
+      sections: sections.filter((section) => section.scope === "world"),
+    },
+  ];
+}
+
+function buildAgendaLinks(place, language) {
+  const placeLabel = [place.name, place.country || place.countryCode].filter(Boolean).join(" ");
+  const labels =
+    language === "en"
+      ? [
+          ["Movie showtimes", `movie showtimes ${placeLabel}`],
+          ["Concerts", `concerts ${placeLabel}`],
+          ["Theater", `theater shows ${placeLabel}`],
+          ["Events today", `events today ${placeLabel}`],
+          ["Exhibitions", `exhibitions museums ${placeLabel}`],
+        ]
+      : [
+          ["Cartelera de cine", `cartelera cine ${placeLabel}`],
+          ["Conciertos", `conciertos ${placeLabel}`],
+          ["Teatro", `teatro obras ${placeLabel}`],
+          ["Eventos de hoy", `eventos hoy ${placeLabel}`],
+          ["Exposiciones", `exposiciones museos ${placeLabel}`],
+        ];
+  return labels.map(([label, query]) => ({
+    label,
+    query,
+    url: `https://www.google.com/search?q=${encodeURIComponent(query)}`,
+  }));
+}
+
+async function fetchBriefingSection(section, language) {
+  const gdeltArticles = await fetchGdeltBriefingArticles(section);
+  if (gdeltArticles.length) {
+    return enrichBriefingSection({
+      id: section.id,
+      scope: section.scope,
+      title: section.title,
+      source: "GDELT DOC 2.0",
+      summary: buildBriefingSummary(gdeltArticles, language),
+      articles: gdeltArticles,
+    }, language);
+  }
+
+  const rssArticles = await hydrateArticleImages(await fetchGoogleNewsRss(section, language));
+  const supplementalMedia = await fetchSupplementalBriefingMedia(section);
+  return enrichBriefingSection({
+    id: section.id,
+    scope: section.scope,
+    title: section.title,
+    source: rssArticles.length ? "Google News RSS" : "Sin fuente disponible",
+    summary: buildBriefingSummary(rssArticles, language),
+    articles: rssArticles,
+    supplementalMedia,
+  }, language);
+}
+
+function enrichBriefingSection(section, language) {
+  const mediaItems = [
+    ...(section.articles || []).filter((article) => article.image),
+    ...(section.supplementalMedia || []),
+  ];
+  const media = uniqueBy(mediaItems, (item) => item.image || item.url)
+    .filter((article) => isLikelyNewsImage(article.image))
+    .slice(0, 4)
+    .map((article) => ({
+      type: "image",
+      url: article.image,
+      title: article.title,
+      sourceUrl: article.url,
+    }));
+  const searchQuery = `${section.title} ${language === "en" ? "news" : "noticias"}`;
+  return {
+    ...section,
+    media,
+    mediaLinks: buildBriefingMediaLinks(searchQuery, language),
+  };
+}
+
+async function hydrateArticleImages(articles) {
+  const hydrated = await Promise.allSettled(
+    articles.map(async (article, index) => {
+      if (article.image || index > 2 || !article.url) return article;
+      const image = await fetchArticlePreviewImage(article.url);
+      return isLikelyNewsImage(image) ? { ...article, image } : article;
+    }),
+  );
+  return hydrated.map((result, index) => (result.status === "fulfilled" ? result.value : articles[index]));
+}
+
+async function fetchArticlePreviewImage(url) {
+  try {
+    const html = await fetchTextWithTimeout(url);
+    return (
+      readHtmlMetaContent(html, "property", "og:image") ||
+      readHtmlMetaContent(html, "name", "twitter:image") ||
+      readHtmlMetaContent(html, "property", "og:image:url")
+    );
+  } catch {
+    return null;
+  }
+}
+
+function isLikelyNewsImage(url) {
+  if (!url) return false;
+  const value = String(url).toLowerCase();
+  if (!/^https?:\/\//.test(value)) return false;
+  const blocked = [
+    "logo",
+    "favicon",
+    "icon",
+    "apple-touch",
+    "sprite",
+    "placeholder",
+    "default-image",
+    "default.jpg",
+    "default.png",
+    "avatar",
+    "profile",
+    "brand",
+    "googlelogo",
+    "gstatic.com",
+    "googleusercontent.com",
+    "lh3.googleusercontent.com",
+  ];
+  return !blocked.some((token) => value.includes(token));
+}
+
+function readHtmlMetaContent(html, attributeName, attributeValue) {
+  const escapedValue = attributeValue.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const escapedAttribute = attributeName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const pattern = new RegExp(`<meta[^>]+${escapedAttribute}=["']${escapedValue}["'][^>]+content=["']([^"']+)["'][^>]*>`, "i");
+  const reversePattern = new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+${escapedAttribute}=["']${escapedValue}["'][^>]*>`, "i");
+  const match = String(html || "").match(pattern) || String(html || "").match(reversePattern);
+  return match ? decodeXml(match[1]) : null;
+}
+
+async function fetchSupplementalBriefingMedia(section) {
+  if (!section.mediaQuery) return [];
+  const articles = await fetchGdeltBriefingArticles({ ...section, query: section.mediaQuery }, 8);
+  return articles.filter((article) => isLikelyNewsImage(article.image));
+}
+
+function uniqueBy(items, keyFn) {
+  const seen = new Set();
+  return items.filter((item) => {
+    const key = keyFn(item);
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function buildBriefingMediaLinks(query, language) {
+  const videoLabel = language === "en" ? "Videos" : "Videos";
+  const imageLabel = language === "en" ? "Images" : "Imágenes";
+  const audioLabel = language === "en" ? "Audio / podcasts" : "Audio / podcasts";
+  return [
+    { type: "image", label: imageLabel, url: `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}` },
+    { type: "video", label: videoLabel, url: `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}` },
+    { type: "audio", label: audioLabel, url: `https://www.google.com/search?q=${encodeURIComponent(`${query} podcast audio`)}` },
+  ];
+}
+
+async function fetchGdeltBriefingArticles(section, maxRecords = 6) {
+  const url = new URL("https://api.gdeltproject.org/api/v2/doc/doc");
+  url.searchParams.set("query", section.query);
+  url.searchParams.set("mode", "artlist");
+  url.searchParams.set("format", "json");
+  url.searchParams.set("maxrecords", String(maxRecords));
+  url.searchParams.set("sort", "hybridrel");
+  try {
+    const payload = await fetchJsonWithTimeout(url);
+    return (payload.articles || []).slice(0, maxRecords).map((article) => ({
+      title: article.title || article.domain || "Artículo",
+      url: article.url,
+      domain: article.domain,
+      language: article.language,
+      sourceCountry: article.sourceCountry,
+      seenAt: article.seendate,
+      image: isLikelyNewsImage(article.socialimage || article.image) ? article.socialimage || article.image : null,
+      source: "GDELT DOC 2.0",
+    }));
+  } catch {
+    return [];
+  }
+}
+
+async function fetchGoogleNewsRss(section, language) {
+  const url = new URL("https://news.google.com/rss/search");
+  url.searchParams.set("q", normalizeNewsQuery(section.query));
+  if (language === "en") {
+    url.searchParams.set("hl", "en-US");
+    url.searchParams.set("gl", "US");
+    url.searchParams.set("ceid", "US:en");
+  } else {
+    url.searchParams.set("hl", "es-419");
+    url.searchParams.set("gl", "US");
+    url.searchParams.set("ceid", "US:es-419");
+  }
+  try {
+    const xml = await fetchTextWithTimeout(url);
+    return parseGoogleNewsRss(xml, language).slice(0, 6);
+  } catch {
+    return [];
+  }
+}
+
+function normalizeNewsQuery(query) {
+  return String(query || "")
+    .replace(/[()]/g, " ")
+    .replace(/\bOR\b/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function parseGoogleNewsRss(xml, language) {
+  const itemMatches = [...String(xml || "").matchAll(/<item>([\s\S]*?)<\/item>/gi)];
+  return itemMatches.map((match) => {
+    const item = match[1];
+    const title = decodeXml(readXmlTag(item, "title"));
+    const sourceName = decodeXml(readXmlTag(item, "source"));
+    const sourceUrl = readXmlAttribute(item, "source", "url");
+    const image = readXmlAttribute(item, "media:content", "url") || readXmlAttribute(item, "media:thumbnail", "url") || readXmlAttribute(item, "enclosure", "url");
+    const domain = sourceName || (sourceUrl ? new URL(sourceUrl).hostname.replace(/^www\./, "") : "Google News");
+    return {
+      title: title || domain || "Artículo",
+      url: decodeXml(readXmlTag(item, "link")),
+      domain,
+      language,
+      sourceCountry: null,
+      seenAt: readXmlTag(item, "pubDate"),
+      image: isLikelyNewsImage(image) ? image : null,
+      source: "Google News RSS",
+    };
+  });
+}
+
+function readXmlTag(xml, tagName) {
+  const match = String(xml || "").match(new RegExp(`<${tagName}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${tagName}>`, "i"));
+  return match ? match[1].trim() : "";
+}
+
+function readXmlAttribute(xml, tagName, attributeName) {
+  const match = String(xml || "").match(new RegExp(`<${tagName}[^>]*\\s${attributeName}=["']([^"']+)["'][^>]*>`, "i"));
+  return match ? decodeXml(match[1]) : "";
+}
+
+function decodeXml(value) {
+  return String(value || "")
+    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, "\"")
+    .replace(/&#39;/g, "'")
+    .trim();
+}
+
+async function getDailyHoroscope(language) {
+  if (language !== "en") return buildDailyHoroscope(language);
+  const signs = [
+    ["Aries", "aries"],
+    ["Taurus", "taurus"],
+    ["Gemini", "gemini"],
+    ["Cancer", "cancer"],
+    ["Leo", "leo"],
+    ["Virgo", "virgo"],
+    ["Libra", "libra"],
+    ["Scorpio", "scorpio"],
+    ["Sagittarius", "sagittarius"],
+    ["Capricorn", "capricorn"],
+    ["Aquarius", "aquarius"],
+    ["Pisces", "pisces"],
+  ];
+  const results = await Promise.allSettled(signs.map(([label, sign]) => fetchDailyHoroscopeSign(label, sign)));
+  const external = results
+    .map((result) => (result.status === "fulfilled" ? result.value : null))
+    .filter(Boolean);
+  return external.length === signs.length ? external : buildDailyHoroscope(language);
+}
+
+async function fetchDailyHoroscopeSign(label, sign) {
+  const url = new URL("https://horoscope-app-api.vercel.app/api/v1/get-horoscope/daily");
+  url.searchParams.set("sign", sign);
+  url.searchParams.set("day", "TODAY");
+  const payload = await fetchJsonWithTimeout(url);
+  const text = payload?.data?.horoscope_data || payload?.data?.horoscope || payload?.horoscope || "";
+  if (!text) throw new Error("horoscope_empty");
+  return {
+    sign: label,
+    text,
+    source: "Horoscope API",
+  };
+}
+
+function buildBriefingSummary(articles, language) {
+  if (!articles.length) return unavailableBriefingSummary(language);
+  const domains = [...new Set(articles.map((article) => article.domain).filter(Boolean))].slice(0, 3);
+  const lead = articles[0]?.title || "";
+  if (language === "en") {
+    return `${articles.length} recent items found. Lead: ${lead}${domains.length ? ` Sources: ${domains.join(", ")}.` : ""}`;
+  }
+  return `${articles.length} notas recientes encontradas. Principal: ${lead}${domains.length ? ` Fuentes: ${domains.join(", ")}.` : ""}`;
+}
+
+function unavailableBriefingSummary(language) {
+  return language === "en" ? "No recent items available for this section." : "Sin notas recientes disponibles para esta sección.";
+}
+
+function buildDailyHoroscope(language) {
+  const signs =
+    language === "en"
+      ? ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"]
+      : ["Aries", "Tauro", "Géminis", "Cáncer", "Leo", "Virgo", "Libra", "Escorpio", "Sagitario", "Capricornio", "Acuario", "Piscis"];
+  const themes =
+    language === "en"
+      ? ["focus", "patience", "movement", "dialogue", "care", "planning", "creativity", "rest", "clarity", "discipline", "connection", "learning"]
+      : ["foco", "paciencia", "movimiento", "diálogo", "cuidado", "planificación", "creatividad", "descanso", "claridad", "disciplina", "conexión", "aprendizaje"];
+  const today = formatLocalDateKey(new Date());
+  return signs.map((sign, index) => {
+    const theme = themes[(positiveHash(`${today}:${sign}`) + index) % themes.length];
+    return {
+      sign,
+      source: "local",
+      text:
+        language === "en"
+          ? `Good day to practice ${theme}. Keep one clear priority and avoid scattering attention.`
+          : `Buen día para practicar ${theme}. Mantén una prioridad clara y evita dispersar la atención.`,
+    };
+  });
+}
+
+function calculateImpactScore(weather, news) {
+  let score = 20;
+  score += Math.min(35, weather.riskSignals.length * 12);
+  score += Math.min(35, news.riskSignals.length * 10 + news.articleCount * 2);
+  return Math.min(100, score);
+}
+
+const profileImpactMatrix = {
+  male_young: {
+    sports: ["Deportes y alto rendimiento", 5, 12, 16],
+    digital: ["Videojuegos/eSports", 8, 2, 2],
+    social: ["Socialización y competencia grupal", 8, 10, 6],
+    fitness: ["Desarrollo muscular/fitness", 8, 6, 10],
+    study: ["Estudios y carrera", 8, 12, 6],
+    mobility: ["Viajes / paseos urbanos", 4, 12, 10],
+  },
+  female_young: {
+    social: ["Salud emocional/social", 10, 10, 6],
+    study: ["Estudios y formación", 8, 12, 6],
+    digital: ["Redes sociales", 10, 6, 2],
+    fitness: ["Actividad física/bienestar", 8, 6, 10],
+    health: ["Sueño y descanso", 8, 6, 10],
+    mobility: ["Seguridad en viajes / paseos", 6, 16, 6],
+    creative: ["Actividades artísticas", 6, 2, 2],
+  },
+  male_adult: {
+    work: ["Trabajo profesional", 10, 12, 10],
+    finance: ["Gestión financiera", 8, 16, 6],
+    fitness: ["Actividad física", 8, 6, 16],
+    mobility: ["Transporte / viajes cotidianos", 6, 12, 16],
+    health: ["Sueño y recuperación", 8, 6, 10],
+    home: ["Crianza/familia", 6, 6, 2],
+    digital: ["Tecnología y automatización", 4, 10, 2],
+  },
+  female_adult: {
+    work: ["Equilibrio trabajo-familia", 10, 12, 6],
+    health: ["Salud hormonal/metabólica", 10, 6, 10],
+    home: ["Crianza y cuidado familiar", 8, 10, 2],
+    social: ["Estrés emocional", 8, 10, 6],
+    fitness: ["Actividad física preventiva", 8, 6, 16],
+    mobility: ["Seguridad en viajes / paseos", 6, 12, 6],
+    digital: ["Consumo digital/redes", 6, 6, 2],
+  },
+  male_senior: {
+    health: ["Enfermedades cardiovasculares", 10, 10, 16],
+    mobility: ["Paseos / caminatas", 8, 6, 16],
+    fitness: ["Actividad física moderada", 8, 6, 16],
+    social: ["Interacción social", 6, 6, 2],
+    travel: ["Viajes tranquilos", 4, 12, 16],
+    creative: ["Recreación/hobbies", 6, 2, 6],
+  },
+  female_senior: {
+    health: ["Salud ósea/articular", 10, 6, 16],
+    social: ["Bienestar emocional", 8, 10, 6],
+    mobility: ["Paseos, movilidad y equilibrio", 8, 6, 16],
+    fitness: ["Actividad física suave", 8, 6, 16],
+    home: ["Relaciones familiares", 8, 6, 2],
+    spiritual: ["Espiritualidad/comunidad", 6, 6, 2],
+  },
+};
+
+const experienceTypeAliases = {
+  auto: ["work", "study", "fitness", "mobility", "social", "digital", "creative", "home", "spiritual"],
+  work: ["work"],
+  study: ["study"],
+  fitness: ["fitness", "sports", "health"],
+  mobility: ["mobility", "travel"],
+  social: ["social", "home"],
+  digital: ["digital"],
+  creative: ["creative"],
+  home: ["home", "social"],
+  spiritual: ["spiritual", "social"],
+  shopping: ["finance"],
+};
+
+function buildProfileImpact(profile, experienceType, weather, news) {
+  const ageGroup = resolveAgeGroup(profile);
+  const genderGroup = profile.gender === "female" ? "female" : profile.gender === "male" ? "male" : "neutral";
+  const matrixKey = genderGroup === "neutral" ? `male_${ageGroup}` : `${genderGroup}_${ageGroup}`;
+  const matrix = profileImpactMatrix[matrixKey] || profileImpactMatrix.male_adult;
+  const aliases = experienceTypeAliases[experienceType] || experienceTypeAliases.auto;
+  const row = aliases.map((alias) => matrix[alias]).find(Boolean) || Object.values(matrix)[0];
+  const [activity, biometricWeight, geopoliticalWeight, climateWeight] = row;
+  const climatePressure = weather.unavailable ? 0 : Math.min(1, (weather.riskSignals.length * 0.35) + (Number(weather.current?.temperatureC || 0) >= 32 ? 0.3 : 0));
+  const geopoliticalPressure = news.unavailable ? 0 : Math.min(1, news.riskSignals.length * 0.3 + news.articleCount * 0.06);
+  const scoreAdjustment = Math.round((climateWeight * climatePressure + geopoliticalWeight * geopoliticalPressure + biometricWeight * 0.08) / 2);
+  const recommendations = [];
+  if (climateWeight >= 10) recommendations.push("Revisar hidratación, descanso y exposición climática");
+  if (geopoliticalWeight >= 10) recommendations.push("Revisar movilidad, seguridad y cambios operativos");
+  if (biometricWeight >= 8) recommendations.push("Monitorear energía, sueño y recuperación");
+  return {
+    profileSegment: `${genderGroup}_${ageGroup}`,
+    experienceType,
+    matchedActivity: activity,
+    weights: { biometric: biometricWeight, geopolitical: geopoliticalWeight, climate: climateWeight },
+    scoreAdjustment,
+    summary: `Perfil aplicado: ${activity}. Ajuste de impacto: ${scoreAdjustment >= 0 ? "+" : ""}${scoreAdjustment} puntos según edad, género y tipo de experiencia.`,
+    recommendations,
+  };
+}
+
+function resolveAgeGroup(profile = {}) {
+  const age = profile.age || (profile.birthYear ? new Date().getFullYear() - Number(profile.birthYear) : null);
+  if (age && age < 30) return "young";
+  if (age && age >= 60) return "senior";
+  return "adult";
+}
+
+function buildImpactSummary(score, weather, news) {
+  if (score >= 70) return "Impacto contextual alto: revisa clima, movilidad y noticias antes de planificar experiencias.";
+  if (score >= 45) return "Impacto contextual medio: hay señales externas que pueden afectar energía, seguridad o disponibilidad.";
+  if (weather.riskSignals.length || news.riskSignals.length) return "Impacto bajo con algunas señales a monitorear.";
+  return "Impacto contextual bajo según clima y cobertura noticiosa disponible.";
+}
+
+async function fetchJsonWithTimeout(url) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), CONTEXT_TIMEOUT_MS);
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    if (!response.ok) throw new Error(`upstream_${response.status}`);
+    return response.json();
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function fetchTextWithTimeout(url) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), CONTEXT_TIMEOUT_MS);
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    if (!response.ok) throw new Error(`upstream_${response.status}`);
+    return response.text();
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function supabaseRest(table, options = {}) {
+  const url = new URL(`${SUPABASE_URL}/rest/v1/${table}`);
+  for (const [key, value] of Object.entries(options.searchParams || {})) {
+    url.searchParams.set(key, value);
+  }
+  const authToken = options.accessToken || SUPABASE_SERVICE_ROLE_KEY;
+  const response = await fetch(url, {
+    method: options.method || "GET",
+    headers: {
+      apikey: options.accessToken ? SUPABASE_PUBLISHABLE_KEY : SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${authToken}`,
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+    body: options.body,
+  });
+  const text = await response.text();
+  if (!response.ok) {
+    throw new Error(`supabase_${response.status}: ${text}`);
+  }
+  return text ? JSON.parse(text) : [];
+}
+
+async function supabaseRpc(functionName, body, accessToken) {
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${functionName}`, {
+    method: "POST",
+    headers: {
+      apikey: accessToken ? SUPABASE_PUBLISHABLE_KEY : SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${accessToken || SUPABASE_SERVICE_ROLE_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  const text = await response.text();
+  if (!response.ok) {
+    throw new Error(`supabase_rpc_${response.status}: ${text}`);
+  }
+  return text ? JSON.parse(text) : [];
+}
+
+function toProfileRow(profile, includeParameters = true) {
+  const row = {
+    user_id: profile.userId || LOCAL_USER_ID,
+    email: profile.email || null,
+    name: profile.name || "Experience Hub User",
+    language: profile.language || "es",
+    timezone: profile.timezone || "America/New_York",
+    subscription_tier: profile.subscriptionTier || "mvp",
+    updated_at: new Date().toISOString(),
+  };
+  if (includeParameters) {
+    row.gender = profile.gender || null;
+    row.birth_year = profile.birthYear ? Number(profile.birthYear) : null;
+    row.experience_type = profile.experienceType || "auto";
+  }
+  return row;
+}
+
+function fromProfileRow(row) {
+  return {
+    userId: row.user_id,
+    email: row.email,
+    name: row.name,
+    language: row.language,
+    timezone: row.timezone,
+    gender: row.gender || "",
+    birthYear: row.birth_year || null,
+    experienceType: row.experience_type || "auto",
+    subscriptionTier: row.subscription_tier,
+  };
+}
+
+async function toExperienceRow(experience, user = { id: LOCAL_USER_ID }) {
+  const normalized = normalizeExperience(experience);
+  const embeddingText = experienceSearchText(normalized);
+  const embedding = await createEmbedding(embeddingText);
+  return {
+    experience_id: normalized.id,
+    user_id: user.id || LOCAL_USER_ID,
+    title: normalized.title,
+    category: normalized.category,
+    occurred_at: normalized.timestamp,
+    duration_minutes: normalized.duration,
+    mood: normalized.mood,
+    energy: normalized.energy,
+    location: normalized.location,
+    people: normalized.people,
+    notes: normalized.notes,
+    locale: normalized.locale || "es",
+    attachments: normalized.attachments || [],
+    metadata: { ...(experience.metadata || {}), objective: normalized.objective || "", isDemo: Boolean(normalized.isDemo), demoBatch: normalized.demoBatch || null },
+    embedding,
+    embedding_model: activeEmbeddingsProvider(),
+    updated_at: new Date().toISOString(),
+  };
+}
+
+function fromExperienceRow(row) {
+  return normalizeExperience({
+    id: row.experience_id,
+    title: row.title,
+    category: row.category,
+    timestamp: row.occurred_at,
+    duration: row.duration_minutes,
+    mood: row.mood,
+    energy: row.energy,
+    location: row.location || "Sin ubicación",
+    people: row.people || "Sin personas",
+    notes: row.notes || "",
+    objective: row.metadata?.objective || "",
+    isDemo: Boolean(row.metadata?.isDemo),
+    demoBatch: row.metadata?.demoBatch || "",
+    attachments: Array.isArray(row.attachments) ? row.attachments : [],
+    locale: row.locale || "es",
+    updatedAt: row.updated_at,
+  });
+}
+
+function normalizeExperience(experience) {
+  return {
+    id: experience.id || createId(),
+    title: experience.title || "Untitled experience",
+    category: normalizeCategoryName(experience.category || "Trabajo"),
+    timestamp: experience.timestamp || new Date().toISOString(),
+    duration: Number(experience.duration || 0),
+    mood: experience.mood || "Calmo",
+    energy: Number(experience.energy || 5),
+    location: experience.location || "Sin ubicación",
+    people: experience.people || "Sin personas",
+    notes: experience.notes || "",
+    objective: experience.objective || experience.metadata?.objective || "",
+    isDemo: Boolean(experience.isDemo || experience.metadata?.isDemo),
+    demoBatch: experience.demoBatch || experience.metadata?.demoBatch || "",
+    attachments: Array.isArray(experience.attachments) ? experience.attachments : [],
+    locale: experience.locale || "es",
+    updatedAt: experience.updatedAt || new Date().toISOString(),
+  };
+}
+
+function normalizeCategoryName(category) {
+  return categoryAliases[category] || category || "Sin categoría";
+}
+
+function createId() {
+  return `exp-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function readJson(req) {
+  return new Promise((resolve, reject) => {
+    let body = "";
+    req.on("data", (chunk) => {
+      body += chunk;
+      if (body.length > 8_000_000) {
+        reject(new Error("payload_too_large"));
+        req.destroy();
+      }
+    });
+    req.on("end", () => {
+      try {
+        resolve(body ? JSON.parse(body) : {});
+      } catch {
+        reject(new Error("invalid_json"));
+      }
+    });
+    req.on("error", reject);
+  });
+}
+
+function sendJson(res, status, payload) {
+  res.writeHead(status, { "Content-Type": "application/json; charset=utf-8" });
+  res.end(JSON.stringify(payload));
+}
+
+function sendText(res, status, message) {
+  res.writeHead(status, { "Content-Type": "text/plain; charset=utf-8" });
+  res.end(message);
+}
+
+function sendPdf(res, bytes) {
+  res.writeHead(200, {
+    "Content-Type": "application/pdf",
+    "Content-Disposition": "attachment; filename=\"reporte-experiencias.pdf\"",
+  });
+  res.end(bytes);
+}
+
+async function saveExportFile(body = {}) {
+  const filename = sanitizeExportFilename(body.filename || "export.json");
+  const content = typeof body.content === "string" ? body.content : JSON.stringify(body.content ?? {}, null, 2);
+  const stampedName = `${new Date().toISOString().replace(/[:.]/g, "-")}-${filename}`;
+  await mkdir(EXPORTS_DIR, { recursive: true });
+  const filePath = path.join(EXPORTS_DIR, stampedName);
+  await writeFile(filePath, content, "utf-8");
+  return {
+    ok: true,
+    filename: stampedName,
+    path: filePath,
+    relativePath: path.relative(__dirname, filePath),
+    savedAt: new Date().toISOString(),
+  };
+}
+
+function sanitizeExportFilename(filename) {
+  const base = path.basename(String(filename || "export.json"));
+  return base.replace(/[^a-zA-Z0-9._-]/g, "-").slice(0, 120) || "export.json";
+}
+
+class HttpError extends Error {
+  constructor(statusCode, message) {
+    super(message);
+    this.statusCode = statusCode;
+  }
+}
+
+
+

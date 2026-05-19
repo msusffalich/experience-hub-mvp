@@ -1,0 +1,961 @@
+﻿<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Experience Hub MVP</title>
+  <link rel="stylesheet" href="styles.css?v=20260519-dashboard-time-298" />
+  </head>
+  <body>
+    <noscript>
+      <div style="padding: 24px; font-family: system-ui, sans-serif">
+        Esta app necesita JavaScript activo para renderizar el MVP de Experience Hub.
+      </div>
+    </noscript>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Navegación principal">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">EH</span>
+          <div>
+            <strong>Experience Hub</strong>
+            <small>Universo de experiencias</small>
+          </div>
+        </div>
+
+        <nav class="nav-list">
+          <button class="nav-item active" data-view="dashboard" type="button">Panel</button>
+          <button class="nav-item" data-view="capture" type="button">Captura</button>
+          <button class="nav-item" data-view="library" type="button">Librería</button>
+          <button class="nav-item" data-view="assetLibrary" type="button">Activos multimodales</button>
+          <button class="nav-item" data-view="agenda" type="button">Agenda</button>
+          <button class="nav-item" data-view="timeline" type="button">Línea de tiempo</button>
+          <button class="nav-item" data-view="experienceMap" type="button">Mapa de Experiencias</button>
+          <button class="nav-item" data-view="report" type="button">Reporte</button>
+          <button class="nav-item" data-view="publications" type="button">Publicaciones</button>
+          <button class="nav-item" data-view="insights" type="button">Hallazgos</button>
+          <button class="nav-item" data-view="automation" type="button">Automatizaciones</button>
+          <button class="nav-item" data-view="manual" type="button">Manual del Usuario</button>
+          <button class="nav-item" data-view="admin" type="button">Administración</button>
+        </nav>
+
+        <section class="privacy-panel" aria-labelledby="privacy-title">
+          <h2 id="privacy-title">Privacidad</h2>
+          <label class="toggle-row privacy-option">
+            <span><strong id="privacyLocalTitle">Procesamiento local</strong><small id="privacyLocalHelp">Mantiene trabajo en este navegador cuando es posible.</small></span>
+            <input id="localProcessing" type="checkbox" checked />
+          </label>
+          <label class="toggle-row privacy-option">
+            <span><strong id="privacyAnalyticsTitle">Compartir analítica anónima</strong><small id="privacyAnalyticsHelp">Métricas generales de uso; recomendado apagado en MVP.</small></span>
+            <input id="shareAnalytics" type="checkbox" />
+          </label>
+          <label class="toggle-row privacy-option">
+            <span><strong id="privacySensitiveTitle">Modo sensible</strong><small id="privacySensitiveHelp">Cifra datos locales y respaldos si escribes una Clave local.</small></span>
+            <input id="sensitiveMode" type="checkbox" />
+          </label>
+          <label class="local-key-row">
+            <span><strong id="privacyLocalKeyTitle">Clave local</strong><small id="privacyLocalKeyHelp">No se guarda. Si la olvidas, no se recuperan datos cifrados.</small></span>
+            <input id="localKeyInput" type="password" placeholder="opcional" autocomplete="off" />
+          </label>
+          <div id="localKeyStatus" class="local-key-status" aria-live="polite"></div>
+          <div id="privacyChecklist" class="privacy-checklist" aria-live="polite"></div>
+          <div class="privacy-actions">
+            <button id="privacyRecommendedButton" class="primary-button sidebar-button" type="button">Aplicar recomendado</button>
+            <button id="toggleLocalKeyButton" class="ghost-button sidebar-button" type="button">Mostrar clave</button>
+            <button id="rotateLocalKeyButton" class="ghost-button sidebar-button" type="button">Aplicar clave</button>
+          </div>
+          <button id="unlockLocalButton" class="ghost-button sidebar-button" type="button">Desbloquear local</button>
+        </section>
+      </aside>
+
+      <main class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">MVP local</p>
+            <h1 id="viewTitle">Panel cognitivo</h1>
+          </div>
+          <div class="topbar-actions">
+            <div id="authStatus" class="auth-status"></div>
+            <div id="notificationCenter" class="notification-center" aria-live="polite"></div>
+            <label class="language-control" aria-label="Idioma">
+              <span>Idioma</span>
+              <select id="languageSelect">
+                <option value="es">ES</option>
+                <option value="en">EN</option>
+              </select>
+            </label>
+            <button id="seedButton" class="ghost-button" type="button">Cargar ejemplo</button>
+            <button id="clearDemoButton" class="ghost-button" type="button">Eliminar ejemplo</button>
+            <button id="voiceCommandButton" class="ghost-button" type="button">Comando de voz</button>
+            <span id="appVersionBadge" class="app-version-badge">Versión 20260513</span>
+            <button id="reloadAppButton" class="ghost-button" type="button">Actualizar app</button>
+            <button id="exportButton" class="primary-button" type="button">Respaldo de datos</button>
+            <button id="restoreButton" class="ghost-button" type="button">Restaurar respaldo</button>
+            <input id="restoreBackupInput" class="sr-only" type="file" accept="application/json,.json" />
+          </div>
+        </header>
+        <div id="mvpReturnBanner" class="mvp-return-banner" aria-live="polite"></div>
+        <div id="versionNotice" class="version-notice" hidden></div>
+
+        <section id="authView" class="view" aria-labelledby="auth-heading">
+          <div class="auth-layout">
+            <section class="panel">
+              <div class="panel-heading">
+                <h2 id="auth-heading">Iniciar sesión</h2>
+                <span>Supabase Auth</span>
+              </div>
+              <form id="authForm" class="experience-form">
+                <div class="auth-help">
+                  <strong>Primer acceso</strong>
+                  <p>Si aún no tienes usuario en Supabase Auth, escribe tu correo electrónico, crea una contraseña y pulsa Crear cuenta. Las claves de Supabase no sirven como contraseña.</p>
+                </div>
+                <label>
+                  Correo electrónico
+                  <input id="authEmailInput" type="email" autocomplete="email" required />
+                </label>
+                <div class="password-field">
+                  <label>
+                    Contraseña
+                    <input id="authPasswordInput" type="password" autocomplete="current-password" minlength="6" required />
+                  </label>
+                  <button id="togglePasswordButton" class="ghost-button" type="button">Mostrar</button>
+                </div>
+                <div class="form-actions auth-actions">
+                  <button id="signInButton" class="primary-button" type="button">Entrar</button>
+                  <button id="signUpButton" class="ghost-button" type="button">Crear cuenta</button>
+                  <button id="resetPasswordButton" class="ghost-button" type="button">Recuperar contraseña</button>
+                  <button id="resendConfirmationButton" class="ghost-button" type="button">Reenviar confirmación</button>
+                </div>
+                <p id="authMessage" class="card-meta"></p>
+                <div id="authStatePanel" class="auth-state-panel"></div>
+              </form>
+            </section>
+          </div>
+        </section>
+
+        <section id="dashboardView" class="view active-view" aria-labelledby="dashboard-heading">
+          <h2 id="dashboard-heading" class="sr-only">Resumen</h2>
+          <div id="dashboardTimeContext" class="dashboard-time-context" aria-live="polite"></div>
+          <div class="dashboard-scope-bar">
+            <label>
+              Participante / usuario
+              <select id="dashboardPilotParticipantFilter">
+                <option value="all">Todos los participantes</option>
+              </select>
+            </label>
+            <span id="dashboardScopeStatus">Vista general</span>
+          </div>
+          <div class="metric-grid" id="metricGrid"></div>
+          <section class="panel dashboard-pilot-panel">
+            <div class="panel-heading">
+              <h2 id="dashboardPilotTitle">Preparación del piloto</h2>
+              <span id="dashboardPilotStatus">Seguimiento operativo</span>
+            </div>
+            <div id="dashboardPilotBox" class="dashboard-pilot-readiness"></div>
+          </section>
+
+          <section class="panel dashboard-agenda-panel">
+            <div class="panel-heading">
+              <h2 id="dashboardAgendaTitle">Próximos eventos</h2>
+              <span id="dashboardAgendaStatus">Agenda inmediata</span>
+            </div>
+            <div id="dashboardAgendaBox" class="dashboard-agenda"></div>
+          </section>
+
+          <div class="split-layout">
+            <section class="panel">
+              <div class="panel-heading">
+                <h2>Distribución por categoría</h2>
+                <span id="totalDurationLabel"></span>
+              </div>
+              <div id="categoryChart" class="bar-chart"></div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-heading">
+                <h2>Señales recientes</h2>
+                <span>Últimas 72 h</span>
+              </div>
+              <div id="recentSignals" class="signal-list"></div>
+            </section>
+          </div>
+
+          <section class="panel">
+            <div class="panel-heading">
+              <h2 id="dataQualityTitle">Calidad de captura</h2>
+              <span id="dataQualityStatus">Preparando lectura</span>
+            </div>
+            <div id="dataQualityBox" class="data-quality"></div>
+          </section>
+
+          <section class="panel daily-panel">
+            <div class="panel-heading">
+              <h2>Diario</h2>
+              <span id="dailyBriefingStatus">Resumen informativo</span>
+            </div>
+            <div class="query-box">
+              <input id="dailyLocationInput" type="text" placeholder="Ciudad, país: San Juan, Puerto Rico..." />
+              <button id="dailyRefreshButton" class="primary-button" type="button">Actualizar diario</button>
+            </div>
+            <section id="dailyStaticActions" class="daily-action-center daily-static-actions">
+              <div class="daily-news-group-heading">
+                <div>
+                  <h3 id="dailyStaticActionsTitle">Acciones del Diario</h3>
+                  <p id="dailyStaticActionsHelp" class="card-meta">Flujo simple: actualiza el lugar, lee el Diario y usa acciones opcionales solo cuando las necesites.</p>
+                </div>
+                <span id="dailyStaticActionsStatus" class="pill">Activo</span>
+              </div>
+              <div class="daily-flow-actions">
+                <button class="daily-action-link" type="button" data-daily-flow="read"><span id="dailyFlowReadLabel">Leer Diario</span><small id="dailyFlowReadHelp">Noticias, clima y contexto</small></button>
+                <button class="daily-action-link" type="button" data-daily-flow="explore"><span id="dailyFlowExploreLabel">Cartelera y multimedia</span><small id="dailyFlowExploreHelp">Cine, eventos, imágenes, videos y audio</small></button>
+                <button class="daily-action-link" type="button" data-daily-flow="horoscope"><span id="dailyFlowHoroscopeLabel">Horóscopo</span><small id="dailyFlowHoroscopeHelp">Ver 12 signos aquí</small></button>
+                <button class="daily-action-link" type="button" data-daily-flow="voice"><span id="dailyFlowVoiceLabel">Comando de voz</span><small id="dailyFlowVoiceHelp">Navegación rápida</small></button>
+              </div>
+              <p id="dailyFlowIntro" class="daily-flow-intro">Este bloque es el mando del Diario. No duplica las noticias: sirve para leer, consultar cartelera/multimedia, ver horóscopo o usar voz.</p>
+              <p id="voiceCommandStatus" class="voice-command-status compact">Listo para escuchar o probar un ejemplo.</p>
+              <div class="voice-command-panel compact">
+                <span id="voiceCommandExamplesTitle">Ejemplos de comandos</span>
+                <div id="voiceCommandExamples" class="voice-command-examples"></div>
+              </div>
+              <div id="dailyStaticActionResult" class="daily-action-result" aria-live="polite"></div>
+            </section>
+            <div id="dailyBriefingBox" class="daily-briefing"></div>
+          </section>
+
+          <section class="panel context-panel">
+            <div class="panel-heading">
+              <h2>Impacto ambiental y geopolítico del lugar</h2>
+              <span id="contextStatus">Impacto ambiental y geopolítico listo para consultar</span>
+            </div>
+            <div class="query-box">
+              <input id="contextLocationInput" type="text" placeholder="Ciudad o lugar: San Juan, Miami, Madrid..." />
+              <button id="contextPrimaryButton" class="ghost-button" type="button">Usar ubicación principal</button>
+              <button id="contextAnalyzeButton" class="primary-button" type="button">Analizar impacto</button>
+            </div>
+            <div id="contextImpactBox" class="context-impact"></div>
+          </section>
+        </section>
+
+        <section id="captureView" class="view" aria-labelledby="capture-heading">
+          <div class="form-layout">
+            <section class="panel">
+              <div class="panel-heading">
+                <h2 id="capture-heading">Nueva experiencia</h2>
+                <span>Captura en menos de un minuto</span>
+              </div>
+              <div id="captureCoachBox" class="capture-coach"></div>
+              <div id="captureSaveStatus" class="capture-save-status" aria-live="polite"></div>
+
+              <form id="experienceForm" class="experience-form">
+                <input id="editingId" type="hidden" />
+                <label>
+                  Título
+                  <input id="titleInput" name="title" type="text" placeholder="Reunión con cliente, entrenamiento, lectura..." required />
+                </label>
+                <label>
+                  Categoría
+                  <select id="categoryInput" name="category" required></select>
+                </label>
+                <label>
+                  Participante piloto
+                  <select id="pilotParticipantInput" name="pilotParticipantId"></select>
+                </label>
+                <label class="inline-check">
+                  <input id="syncAgendaInput" name="syncAgenda" type="checkbox" checked />
+                  Actualizar Agenda/Calendario con esta experiencia
+                </label>
+                <label>
+                  Objetivo / intención
+                  <input id="objectiveInput" name="objective" type="text" placeholder="Ej: aprendizaje, salud, cierre comercial..." />
+                </label>
+                <div class="two-columns">
+                  <label>
+                    Fecha y hora
+                    <input id="timestampInput" name="timestamp" type="datetime-local" required />
+                  </label>
+                  <label>
+                    Duración (min)
+                    <input id="durationInput" name="duration" type="number" min="1" max="720" value="30" required />
+                  </label>
+                </div>
+                <div class="two-columns">
+                  <label>
+                    Estado emocional
+                    <select id="moodInput" name="mood">
+                      <option value="Enfocado">Enfocado</option>
+                      <option value="Calmo">Calmo</option>
+                      <option value="Enérgico">Enérgico</option>
+                      <option value="Saturado">Saturado</option>
+                      <option value="Inspirado">Inspirado</option>
+                    </select>
+                  </label>
+                  <label>
+                  Energía (1-10)
+                    <input id="energyInput" name="energy" type="range" min="1" max="10" value="7" />
+                  </label>
+                </div>
+                <label>
+                  Ubicación
+                  <input id="locationInput" name="location" type="text" placeholder="Casa, oficina, gimnasio..." />
+                </label>
+                <label>
+                  Personas / contexto
+                  <input id="peopleInput" name="people" type="text" placeholder="Ana, equipo producto, familia..." />
+                </label>
+                <label>
+                  Notas
+                  <textarea id="notesInput" name="notes" rows="5" placeholder="Qué pasó, qué aprendiste, próximas acciones..."></textarea>
+                </label>
+                <label>
+                  <span id="attachmentInputLabel">Imágenes, videos, audio o documentos</span>
+                  <input id="mediaInput" name="media" type="file" accept="image/*,video/*,audio/*,.heic,.heif,.avif,.webp,.tif,.tiff,.raw,.dng,.cr2,.nef,.arw,.mp3,.wav,.m4a,.aac,.flac,.ogg,.opus,.wma,.aiff,.aif,.amr,.mp4,.mov,.m4v,.webm,.mkv,.avi,.wmv,.mpeg,.mpg,.3gp,.hevc,.txt,.md,.markdown,.html,.htm,.rtf,.docx,.pdf,.csv,.json" multiple />
+                </label>
+                <div class="audio-capture">
+                  <button id="recordAudioButton" class="ghost-button" type="button">Grabar audio</button>
+                  <span id="recordingStatus" class="card-meta">Audio manual opcional</span>
+                </div>
+                <div id="attachmentPreview" class="attachment-preview" aria-live="polite"></div>
+                <div class="form-actions">
+                  <button class="ghost-button" id="clearFormButton" type="button">Limpiar</button>
+                  <button class="primary-button" type="submit">Guardar experiencia</button>
+                </div>
+              </form>
+            </section>
+
+            <section class="panel">
+              <div class="panel-heading">
+                <h2>Plantillas rápidas</h2>
+                <span>Flujos MVP</span>
+              </div>
+              <div id="templateList" class="template-list"></div>
+            </section>
+          </div>
+        </section>
+
+        <section id="libraryView" class="view" aria-labelledby="library-heading">
+          <div class="panel">
+            <div class="panel-heading">
+              <h2 id="library-heading">Librería de experiencias</h2>
+              <span id="libraryCount"></span>
+            </div>
+            <div class="filters">
+              <input id="librarySearchInput" type="search" placeholder="Buscar en la librería" />
+              <select id="libraryCategory"></select>
+              <select id="libraryMediaFilter">
+                <option value="all">Todo el contenido</option>
+                <option value="with-media">Con imagen/video</option>
+                <option value="without-media">Sin adjuntos</option>
+              </select>
+              <select id="librarySourceFilter">
+                <option value="all">Todos los orígenes</option>
+                <option value="manual">Captura manual</option>
+                <option value="daily-briefing">Diario</option>
+                <option value="agenda">Agenda</option>
+              </select>
+              <select id="libraryPilotParticipantFilter">
+                <option value="all">Todos los participantes</option>
+              </select>
+            </div>
+            <div id="libraryGrid" class="library-grid"></div>
+          </div>
+        </section>
+
+        <section id="assetLibraryView" class="view" aria-labelledby="asset-library-heading">
+          <div class="panel">
+            <div class="panel-heading">
+              <h2 id="asset-library-heading">Activos multimodales</h2>
+              <span id="assetLibraryCount"></span>
+            </div>
+            <p id="assetLibraryIntro" class="section-note">
+              Inventario de imágenes, videos, audios y documentos asociados a experiencias.
+            </p>
+            <div id="assetMetadataWorkflow" class="asset-metadata-workflow"></div>
+            <div id="assetWorkflowReadinessPanel" class="asset-workflow-readiness-panel"></div>
+            <div id="assetImportSummary" class="asset-import-summary"></div>
+            <div class="metric-grid compact-metric-grid" id="assetMetricGrid"></div>
+            <div id="assetProcessingSummary" class="asset-processing-summary"></div>
+            <div class="filters">
+              <input id="assetSearchInput" type="search" placeholder="Buscar activo, experiencia, lugar o persona" />
+              <select id="assetTypeFilter">
+                <option value="all">Todos los tipos</option>
+                <option value="image">Imágenes</option>
+                <option value="video">Videos</option>
+                <option value="audio">Audios</option>
+                <option value="document">Documentos</option>
+              </select>
+              <select id="assetCategoryFilter"></select>
+              <select id="assetReadinessFilter"></select>
+              <select id="assetProcessingFilter"></select>
+              <select id="assetProvenanceFilter"></select>
+              <select id="assetAnalysisFilter"></select>
+              <select id="assetSortFilter"></select>
+              <label class="compact-date-filter">
+                <span>Desde</span>
+                <input id="assetDateFromFilter" type="date" />
+              </label>
+              <label class="compact-date-filter">
+                <span>Hasta</span>
+                <input id="assetDateToFilter" type="date" />
+              </label>
+              <button id="exportAssetInventoryButton" class="ghost-button" type="button">Exportar inventario</button>
+              <button id="exportAssetInventoryCsvButton" class="ghost-button" type="button">CSV inventario</button>
+              <button id="exportAssetProcessingBacklogButton" class="ghost-button" type="button">Exportar pendientes</button>
+              <button id="exportAssetProcessingBacklogCsvButton" class="ghost-button" type="button">CSV pendientes</button>
+              <button id="exportAssetProcessingChecklistButton" class="ghost-button" type="button">Checklist de revisión</button>
+              <button id="exportAssetMetadataTemplateButton" class="ghost-button" type="button">Plantilla CSV</button>
+              <button id="exportAssetEditableMetadataCsvButton" class="ghost-button" type="button">CSV edición</button>
+              <button id="suggestFilteredAssetTextButton" class="ghost-button" type="button">Sugerir texto filtrados</button>
+              <button id="clearAssetFiltersButton" class="ghost-button" type="button">Limpiar filtros</button>
+              <button id="importAssetMetadataButton" class="ghost-button" type="button">Importar metadatos</button>
+              <input id="importAssetMetadataInput" class="sr-only" type="file" accept="application/json,text/csv,.json,.csv" />
+            </div>
+            <div id="assetActiveFilters" class="asset-active-filters"></div>
+            <div id="assetProcessingActionPlan" class="asset-processing-action-plan" tabindex="-1"></div>
+            <div id="assetLibraryGrid" class="asset-grid"></div>
+          </div>
+        </section>
+
+        <section id="agendaView" class="view" aria-labelledby="agenda-heading">
+          <div class="agenda-layout">
+            <section class="panel">
+              <div class="panel-heading">
+                <h2 id="agenda-heading">Agenda Inteligente</h2>
+                <span id="agendaCount"></span>
+              </div>
+              <div class="filters">
+                <input id="agendaDateFilter" type="date" />
+                <select id="agendaRangeFilter">
+                  <option value="day">Día</option>
+                  <option value="week">Semana</option>
+                  <option value="all">Todo</option>
+                </select>
+                <select id="agendaTypeFilter"></select>
+                <select id="agendaPilotParticipantFilter" aria-label="Filtrar agenda por participante">
+                  <option value="all">Todos los participantes</option>
+                </select>
+                <button id="exportAgendaIcsButton" class="ghost-button" type="button">Exportar calendario</button>
+                <button id="importAgendaIcsButton" class="ghost-button" type="button">Importar .ics</button>
+                <input id="importAgendaIcsInput" class="sr-only" type="file" accept=".ics,text/calendar" />
+              </div>
+              <div class="agenda-blocked-control">
+                <label>
+                  <span id="agendaBlockedDatesLabel">Días bloqueados</span>
+                  <input id="agendaBlockedDatesInput" type="text" placeholder="AAAA-MM-DD separados por coma" />
+                </label>
+                <button id="agendaSaveBlockedDatesButton" class="ghost-button" type="button">Guardar bloqueos</button>
+              </div>
+              <div id="agendaCalendar" class="agenda-calendar"></div>
+              <div id="agendaConflictBox" class="agenda-conflicts"></div>
+              <div id="agendaList" class="agenda-list"></div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-heading">
+                <h2 id="agendaFormHeading">Nuevo evento</h2>
+                <span id="agendaFormStatus">Agenda local</span>
+              </div>
+              <form id="agendaForm" class="experience-form">
+                <input id="agendaEditingId" type="hidden" />
+                <label>
+                  Título
+                  <input id="agendaTitleInput" type="text" placeholder="Cita médica, reunión, viaje..." required />
+                </label>
+                <label>
+                  Tipo de agenda
+                  <select id="agendaTypeInput"></select>
+                </label>
+                <label>
+                  Descripción
+                  <textarea id="agendaDescriptionInput" rows="3" placeholder="Contexto, documentos, preparación o acuerdos esperados..."></textarea>
+                </label>
+                <div class="two-columns">
+                  <label>
+                    Inicio
+                    <input id="agendaStartInput" type="datetime-local" required />
+                  </label>
+                  <label>
+                    Fin
+                    <input id="agendaEndInput" type="datetime-local" required />
+                  </label>
+                </div>
+                <label>
+                  Ubicación
+                  <input id="agendaLocationInput" type="text" placeholder="Lugar físico, enlace o ciudad" />
+                </label>
+                <label>
+                  Participantes
+                  <input id="agendaParticipantsInput" type="text" placeholder="Personas o equipos involucrados" />
+                </label>
+                <label>
+                  <span id="agendaPilotParticipantLabel">Participante piloto vinculado</span>
+                  <select id="agendaPilotParticipantInput">
+                    <option value="">Evento general / sin asignar</option>
+                  </select>
+                </label>
+                <div class="two-columns">
+                  <label>
+                    Prioridad
+                    <select id="agendaPriorityInput">
+                      <option value="normal">Normal</option>
+                      <option value="alta">Alta</option>
+                      <option value="baja">Baja</option>
+                    </select>
+                  </label>
+                  <label>
+                    Estado
+                    <select id="agendaStatusInput"></select>
+                  </label>
+                </div>
+                <label>
+                  Recordatorios
+                  <input id="agendaRemindersInput" type="text" placeholder="Ej: 30 min antes, 1 día antes" />
+                </label>
+                <div class="form-actions">
+                  <button id="agendaClearButton" class="ghost-button" type="button">Limpiar</button>
+                  <button id="agendaSaveButton" class="primary-button" type="submit">Guardar evento</button>
+                </div>
+              </form>
+            </section>
+          </div>
+        </section>
+
+        <section id="timelineView" class="view" aria-labelledby="timeline-heading">
+          <div class="panel">
+            <div class="panel-heading">
+              <h2 id="timeline-heading">Línea de tiempo de experiencias</h2>
+              <span id="timelineCount"></span>
+            </div>
+            <div class="filters">
+              <input id="searchInput" type="search" placeholder="Buscar por título, notas, personas o lugar" />
+              <select id="filterCategory"></select>
+              <select id="filterMood">
+                <option value="all">Todos los estados</option>
+                <option value="Enfocado">Enfocado</option>
+                <option value="Calmo">Calmo</option>
+                <option value="Enérgico">Enérgico</option>
+                <option value="Saturado">Saturado</option>
+                <option value="Inspirado">Inspirado</option>
+              </select>
+            </div>
+            <div id="timelineList" class="timeline-list"></div>
+          </div>
+        </section>
+
+        <section id="experienceMapView" class="view" aria-labelledby="experience-map-heading">
+          <div class="experience-map-layout">
+            <section class="panel">
+              <div class="panel-heading">
+                <h2 id="experience-map-heading">Mapa de Experiencias</h2>
+                <span id="experienceMapScope">Relaciones vivas</span>
+              </div>
+              <div class="experience-map-toolbar">
+                <select id="experienceMapRelationFilter" aria-label="Tipo de relación">
+                  <option value="all">Todas las relaciones</option>
+                  <option value="time">Tiempo</option>
+                  <option value="category">Categoría</option>
+                  <option value="people">Personas</option>
+                  <option value="location">Lugar</option>
+                  <option value="objective">Objetivo</option>
+                  <option value="energy">Energía</option>
+                </select>
+                <input id="experienceMapSearchInput" type="search" placeholder="Buscar experiencia, persona, lugar u objetivo" />
+                <button id="experienceMapExportButton" class="ghost-button" type="button">Exportar Markdown</button>
+              </div>
+              <div id="experienceMapStats" class="experience-map-stats"></div>
+              <div id="experienceMapGraph" class="experience-map-graph"></div>
+              <div id="experienceMapRoutes" class="experience-map-routes"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-heading">
+                <h2 id="experienceMapQuestionHeading">Preguntas al mapa</h2>
+                <span>Codex + Obsidian</span>
+              </div>
+              <div class="obsidian-bridge-card">
+                <strong>Obsidian + Codex</strong>
+                <p>Exporta nodos y enlaces como Markdown para una bóveda de Obsidian; usa las preguntas para leer patrones dentro de la app.</p>
+              </div>
+              <div class="query-box">
+                <input id="experienceMapQuestionInput" type="text" placeholder="Ej: ¿qué lugares se relacionan con mayor energía?" />
+                <button id="experienceMapAskButton" class="primary-button" type="button">Consultar</button>
+              </div>
+              <div id="experienceMapQuestionSuggestions" class="map-question-suggestions"></div>
+              <div id="experienceMapAnswer" class="answer-box"></div>
+              <div id="experienceMapLegend" class="experience-map-legend"></div>
+              <div id="experienceMapDetail" class="experience-map-detail"></div>
+            </section>
+          </div>
+        </section>
+
+        <section id="reportView" class="view" aria-labelledby="report-heading">
+          <div class="report-layout">
+            <section class="panel">
+              <div class="panel-heading">
+                <h2 id="report-heading">Reporte de experiencias</h2>
+                <span id="reportRangeLabel"></span>
+              </div>
+              <section id="reportScopePanel" class="report-scope-panel" aria-label="Alcance del reporte">
+                <div>
+                  <strong id="reportScopeTitle">Alcance del reporte</strong>
+                  <p id="reportScopeSummary">Este reporte analiza el filtro activo.</p>
+                </div>
+                <div class="report-scope-controls">
+                  <label>
+                    Tipo de alcance
+                    <select id="reportScopeFilter" aria-label="Tipo de alcance del reporte">
+                      <option value="all">Todas las experiencias</option>
+                      <option value="period">Rango rápido</option>
+                      <option value="filters">Categoría / persona / objetivo</option>
+                      <option value="single">Una experiencia específica</option>
+                    </select>
+                  </label>
+                  <label class="person-scope-control">
+                    <span id="reportParticipantLabel">Participante / usuario del reporte</span>
+                    <select id="reportPilotParticipantFilter" aria-label="Participante piloto del reporte">
+                      <option value="all">Todos los participantes</option>
+                    </select>
+                  </label>
+                  <label id="reportSingleExperienceLabel">
+                    Experiencia específica
+                    <select id="reportExperienceFilter" aria-label="Experiencia específica del reporte"></select>
+                  </label>
+                </div>
+                <div class="report-flow-box" aria-label="Secuencia para generar el reporte">
+                  <ol class="report-flow-steps">
+                    <li><strong>1</strong><span>Preparar alcance</span></li>
+                    <li><strong>2</strong><span>Generar y leer</span></li>
+                    <li><strong>3</strong><span>Aceptar y exportar</span></li>
+                  </ol>
+                  <div class="report-scope-actions">
+                    <button id="generateReportButton" class="primary-button" type="button" onclick="generateReportFromScope()">Generar / actualizar reporte</button>
+                    <button id="resetReportScopeButton" class="ghost-button" type="button" onclick="resetReportScope()">Limpiar alcance</button>
+                  </div>
+                  <p id="reportFlowStatus" class="report-flow-status" aria-live="polite">Prepara el alcance, genera el reporte y usa el paquete de aceptación para exportar evidencia.</p>
+                </div>
+              </section>
+              <div class="filters report-filters">
+                <select id="reportPeriodFilter" aria-label="Periodo del reporte">
+                  <option value="all">Todo el historial</option>
+                  <option value="7">Últimos 7 días</option>
+                  <option value="30">Últimos 30 días</option>
+                  <option value="90">Últimos 90 días</option>
+                </select>
+                <select id="reportCategoryFilter" aria-label="Categoría del reporte">
+                  <option value="all">Todas las categorías</option>
+                </select>
+                <input id="reportPeopleFilter" type="search" placeholder="Filtrar por persona" />
+                <input id="reportObjectiveFilter" type="search" placeholder="Filtrar por objetivo" />
+              </div>
+              <div id="reportSummary" class="report-summary"></div>
+              <div id="reportNarrative" class="answer-box"></div>
+              <details class="report-detail-drawer">
+                <summary>Ver detalle técnico, gráficas y tabla</summary>
+                <div id="reportFindings" class="report-findings"></div>
+                <div id="reportCharts" class="report-charts"></div>
+                <div id="reportCategoryBreakdown" class="report-category-breakdown"></div>
+                <div id="reportTable" class="report-table"></div>
+              </details>
+              <div id="reportAcceptancePanel" class="report-acceptance-panel"></div>
+            </section>
+          </div>
+        </section>
+
+        <section id="insightsView" class="view" aria-labelledby="insights-heading">
+          <div class="split-layout">
+            <section class="panel">
+              <div class="panel-heading">
+                <h2 id="insights-heading">Hallazgos accionables</h2>
+                <span id="insightScopeLabel">Generados localmente</span>
+              </div>
+              <div class="module-scope-bar">
+                <label>
+                  <span id="insightsParticipantLabel">Participante / usuario</span>
+                  <select id="insightsPilotParticipantFilter">
+                    <option value="all">Todos los participantes</option>
+                  </select>
+                </label>
+                <span id="insightsScopeStatus">Vista general</span>
+              </div>
+              <div id="insightList" class="insight-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-heading">
+                <h2>Preguntas al sistema</h2>
+                <span>Búsqueda contextual</span>
+              </div>
+              <div class="query-box">
+                <input id="questionInput" type="text" placeholder="Ej: ¿qué actividades elevan mi energía?" />
+                <button id="askButton" class="primary-button" type="button">Consultar</button>
+              </div>
+              <div id="questionSuggestions" class="question-suggestions"></div>
+              <div id="answerBox" class="answer-box"></div>
+            </section>
+          </div>
+        </section>
+
+        <section id="publicationsView" class="view" aria-labelledby="publications-heading">
+          <div class="publication-layout">
+            <section class="panel">
+              <div class="panel-heading">
+                <h2 id="publications-heading">Publicaciones Inteligentes</h2>
+                <span id="publicationStatus">Borradores locales</span>
+              </div>
+              <div class="module-scope-bar">
+                <label>
+                  <span id="publicationParticipantLabel">Participante / usuario fuente</span>
+                  <select id="publicationPilotParticipantFilter">
+                    <option value="all">Todos los participantes</option>
+                  </select>
+                </label>
+                <span id="publicationScopeStatus">Fuente general</span>
+              </div>
+              <form id="publicationForm" class="experience-form">
+                <div class="two-columns">
+                  <label>
+                    Tipo
+                    <select id="publicationTypeInput"></select>
+                  </label>
+                  <label>
+                    Estilo narrativo
+                    <select id="publicationStyleInput"></select>
+                  </label>
+                </div>
+                <div class="two-columns">
+                  <label>
+                    Canal
+                    <select id="publicationChannelInput"></select>
+                  </label>
+                  <label>
+                    Fuente
+                    <select id="publicationSourceInput">
+                      <option value="report">Reporte filtrado</option>
+                      <option value="latest">Últimas experiencias</option>
+                    </select>
+                  </label>
+                </div>
+                <label class="inline-toggle">
+                  <input id="publicationPrivacyInput" type="checkbox" checked />
+                  <span>Aplicar limpieza de privacidad antes de generar</span>
+                </label>
+                <div class="form-actions">
+                  <button id="generatePublicationButton" class="primary-button" type="button">Generar borrador</button>
+                  <button id="previewPublicationHtmlButton" class="ghost-button" type="button">Vista imprimible</button>
+                  <button id="copyPublicationTextButton" class="ghost-button" type="button">Copiar texto</button>
+                  <button id="copyPublicationHtmlButton" class="ghost-button" type="button">Copiar HTML</button>
+                  <button id="exportPublicationHtmlButton" class="ghost-button" type="button">Exportar HTML</button>
+                  <button id="exportPublicationMarkdownButton" class="ghost-button" type="button">Exportar Markdown</button>
+                  <button id="exportPublicationPackageButton" class="ghost-button" type="button">Paquete editorial</button>
+                </div>
+              </form>
+              <div id="publicationPrintablePreview" class="publication-print-preview"></div>
+              <div id="publicationPreview" class="publication-preview"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-heading">
+                <h2 id="publicationHistoryHeading">Borradores</h2>
+                <span id="publicationCount"></span>
+              </div>
+              <div id="publicationDraftList" class="publication-draft-list"></div>
+            </section>
+          </div>
+        </section>
+
+        <section id="automationView" class="view" aria-labelledby="automation-heading">
+          <div class="split-layout">
+            <section class="panel">
+              <div class="panel-heading">
+                <h2 id="automation-heading">Capacidades</h2>
+                <span>Capacidades activas</span>
+              </div>
+              <div id="skillList" class="automation-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-heading">
+                <h2>Rutinas</h2>
+                <span>Automatizaciones locales</span>
+              </div>
+              <div id="routineSummary" class="routine-summary-grid"></div>
+              <div id="routineList" class="automation-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-heading">
+                <h2>MCPs y conectores</h2>
+                <span>Servicios conectados</span>
+              </div>
+              <div id="connectorList" class="automation-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-heading">
+                <h2>Historial de rutinas</h2>
+                <span>Últimos eventos</span>
+              </div>
+              <div id="routineHistoryList" class="automation-list"></div>
+            </section>
+          </div>
+        </section>
+
+        <section id="manualView" class="view" aria-labelledby="manual-heading">
+          <div class="panel manual-panel">
+            <div class="panel-heading">
+              <h2 id="manual-heading">Manual del Usuario</h2>
+              <span id="manualUpdatedLabel"></span>
+            </div>
+            <div class="manual-tools">
+              <label>
+                <span id="manualSearchLabel">Buscar en el manual</span>
+                <input id="manualSearchInput" type="search" autocomplete="off" placeholder="Buscar sección, función o palabra clave" />
+              </label>
+              <label>
+                <span id="manualReviewFilterLabel">Estado de revisión</span>
+                <select id="manualReviewFilter">
+                  <option value="all">Todas</option>
+                  <option value="pending">Pendientes</option>
+                  <option value="reviewed">Revisadas</option>
+                </select>
+              </label>
+              <button id="manualClearSearchButton" class="ghost-button" type="button">Limpiar búsqueda</button>
+              <button id="manualExportMarkdownButton" class="ghost-button" type="button">Exportar Markdown</button>
+              <button id="manualExportHtmlButton" class="ghost-button" type="button">HTML imprimible</button>
+              <button id="manualMarkAllButton" class="ghost-button" type="button">Marcar todo</button>
+              <button id="manualResetReviewButton" class="ghost-button" type="button">Reiniciar revisión</button>
+              <span id="manualResultCount" class="card-meta"></span>
+            </div>
+            <div id="manualReviewMeter" class="manual-review-meter"></div>
+            <div id="manualActiveFilters" class="manual-active-filters"></div>
+            <div id="manualSectionChips" class="manual-section-chips"></div>
+            <div id="manualContent" class="manual-content"></div>
+          </div>
+        </section>
+
+        <section id="adminView" class="view" aria-labelledby="admin-heading">
+          <div class="split-layout">
+            <section class="panel">
+              <div class="panel-heading">
+                <h2 id="admin-heading">Estado del ecosistema</h2>
+                <span>Simulación operativa</span>
+              </div>
+              <div class="admin-actions">
+                <button id="embeddingBackfillButton" class="primary-button" type="button">Actualizar embeddings</button>
+                <button id="refreshOpsButton" class="ghost-button" type="button">Refrescar operación</button>
+                <button id="syncOfflineButton" class="ghost-button" type="button">Sincronizar sin conexión</button>
+                <button id="supabaseDiagnosticsButton" class="ghost-button" type="button">Verificar Supabase</button>
+                <button id="supabaseSelfTestButton" class="ghost-button" type="button">Probar flujo real</button>
+                <button id="adminExportBackupButton" class="ghost-button" type="button">Respaldar</button>
+                <button id="adminRestoreBackupButton" class="ghost-button" type="button">Restaurar</button>
+                <button id="clearLocalDataButton" class="danger-button" type="button">Vaciar datos locales</button>
+                <span id="embeddingStatus" class="card-meta">Búsqueda vectorial lista para Supabase</span>
+              </div>
+              <div id="adminCommandCenter" class="admin-command-center"></div>
+              <div id="publishPlanPanel" class="publish-plan-panel"></div>
+              <div id="multiDevicePersistencePanel" class="multi-device-persistence-panel"></div>
+              <div id="pilotClosureRecordPanel" class="pilot-closure-record-panel"></div>
+              <div id="pilotParticipantsPanel" class="pilot-participants-panel"></div>
+              <div id="pilotFeedbackPanel" class="pilot-feedback-panel"></div>
+              <details class="admin-advanced-diagnostics">
+                <summary>
+                  <span>Diagnóstico avanzado y evidencia técnica</span>
+                  <small>QA, rutas MVP, Supabase, datos demo, cola sin conexión y backlog detallado</small>
+                </summary>
+                <div id="systemHealth" class="health-grid"></div>
+                <div id="developmentRulesPanel" class="development-rules-panel"></div>
+                <div id="coreMvpGatePanel" class="core-mvp-gate-panel"></div>
+                <div id="quickQaPanel" class="quick-qa-panel"></div>
+                <div id="mvpFlowPanel" class="mvp-flow-panel"></div>
+                <div id="apiStatusPanel" class="api-status-panel"></div>
+                <div id="uiQualityPanel" class="ui-quality-panel"></div>
+                <div id="supabaseDiagnostics" class="supabase-diagnostics"></div>
+                <div id="supabaseSelfTest" class="supabase-diagnostics"></div>
+                <div id="supabasePilotGatePanel" class="supabase-pilot-gate-panel"></div>
+                <div id="demoDataPanel" class="demo-data-panel"></div>
+                <div id="offlineQueuePanel" class="offline-queue-panel"></div>
+                <div id="mvpClosurePanel" class="mvp-closure-panel"></div>
+                <div id="pilotReadinessPanel" class="pilot-readiness-panel"></div>
+                <div id="pilotInviteKitPanel" class="pilot-invite-kit-panel"></div>
+                <div id="pilotTestPlanPanel" class="pilot-test-panel"></div>
+                <div id="externalIntegrationPanel" class="external-integration-panel"></div>
+                <div id="parallelWorkstreamsPanel" class="parallel-workstreams-panel"></div>
+                <div id="parallelBacklog" class="parallel-backlog"></div>
+              </details>
+            </section>
+            <section class="panel">
+              <div class="panel-heading">
+                <h2>Dispositivos</h2>
+                <span>Fuentes de captura</span>
+              </div>
+              <div id="deviceList" class="device-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-heading">
+                <h2 id="profileSettingsHeading">Perfil</h2>
+                <span id="profileSettingsStatus">Cuenta y preferencias</span>
+              </div>
+              <form id="profileForm" class="experience-form">
+                <label>
+                  Nombre
+                  <input id="profileNameInput" type="text" placeholder="Tu nombre" />
+                </label>
+                <label>
+                  Correo electrónico
+                  <input id="profileEmailInput" type="email" readonly />
+                </label>
+                <label>
+                  Zona horaria
+                  <input id="profileTimezoneInput" type="text" placeholder="America/New_York" />
+                </label>
+                <div class="two-columns">
+                  <label>
+                    Género
+                    <select id="profileGenderInput">
+                      <option value="">No especificado</option>
+                      <option value="male">Masculino</option>
+                      <option value="female">Femenino</option>
+                      <option value="other">Otro / no binario</option>
+                    </select>
+                  </label>
+                  <label>
+                    Año de nacimiento
+                    <input id="profileBirthYearInput" type="number" min="1900" max="2026" placeholder="Ej: 1985" />
+                  </label>
+                </div>
+                <label>
+                  Tipo de experiencia dominante
+                  <select id="profileExperienceTypeInput">
+                    <option value="auto">Detectar automáticamente</option>
+                  </select>
+                </label>
+                <button id="saveProfileButton" class="primary-button" type="submit">Guardar perfil</button>
+              </form>
+            </section>
+            <section class="panel">
+              <div class="panel-heading">
+                <h2>Tareas y registros</h2>
+                <span>Operación del servidor local</span>
+              </div>
+              <div id="opsLogList" class="ops-log-list"></div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+
+  <script src="app.js?v=20260519-railway-ready-309"></script>
+  </body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
