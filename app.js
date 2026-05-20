@@ -1,4 +1,4 @@
-const APP_VERSION = "20260520-preserve-save-status-326";
+const APP_VERSION = "20260520-workspace-events-327";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -1854,6 +1854,8 @@ const manualContent = {
         "La app local valida el flujo, pero el uso real en desktop, móvil y tablet exige una URL desplegada, sesión Supabase y datos persistidos fuera del navegador local.",
         "Para el usuario final, la persistencia debe sentirse automática: la app solo pide entrar, guardar o reintentar en lenguaje simple. Los términos Supabase, API y diagnóstico quedan reservados para Administración.",
         "En modo publicado, Captura bloquea el guardado si no hay sesión activa. Esto evita registros aislados en un solo navegador y protege la prueba multidispositivo.",
+        "El refactor multidispositivo introduce el modelo correcto de workspace, miembros, participantes, eventos internos y activos. La migración SQL está en database/workspace-events-assets.sql y debe aplicarse antes de considerar compartición multiusuario real.",
+        "Captura ahora permite registrar varios eventos dentro de una experiencia. Cada línea representa un momento de la experiencia y se conserva para reportes, activos, publicaciones e integración futura con dispositivos.",
         "Los adjuntos ahora se suben primero al almacenamiento privado y luego se guarda la experiencia con referencias ligeras. Así las imágenes, audios, videos y documentos pueden abrirse desde otros dispositivos.",
         "En móviles y tablets, la app usa carga binaria cuando hay sesión activa. Esto evita convertir fotos, videos o audios completos a texto interno antes de subirlos y hace la carga más estable.",
         "Si un adjunto no termina de subir, la experiencia conserva la narrativa y muestra el archivo como pendiente; no debe considerarse cierre completo hasta que el activo tenga URL remota o ruta de Storage.",
@@ -2352,6 +2354,8 @@ const manualContent = {
         "The local app validates the flow, but real desktop, mobile, and tablet use requires a deployed URL, Supabase session, and data persisted outside the local browser.",
         "For the final user, persistence must feel automatic: the app only asks to sign in, save, or retry in simple language. Supabase, API, and diagnostics remain Admin concepts.",
         "In published mode, Capture blocks saving when there is no active session. This prevents isolated records in one browser and protects the multi-device test.",
+        "The multi-device refactor introduces the correct workspace, members, participants, internal events, and assets model. The SQL migration lives in database/workspace-events-assets.sql and must be applied before real multi-user sharing is considered complete.",
+        "Capture now supports several events inside one experience. Each line represents one moment in the experience and is preserved for reports, assets, publications, and future device integration.",
         "Attachments are now uploaded to private storage first, then the experience is saved with lightweight references. This lets images, audio, video, and documents open from other devices.",
         "On mobile phones and tablets, the app uses binary upload when there is an active session. This avoids converting full photos, videos, or audio files into internal text before upload and makes uploads more stable.",
         "If an attachment does not finish uploading, the experience keeps the narrative and shows the file as pending; the flow should not be considered complete until the asset has a remote URL or Storage path.",
@@ -4022,8 +4026,42 @@ function normalizeExperiences(experiences) {
     objective: item.objective || "",
     pilotParticipantId: item.pilotParticipantId || "",
     pilotParticipantName: item.pilotParticipantName || "",
+    workspaceId: item.workspaceId || item.metadata?.workspaceId || "",
+    events: normalizeExperienceEvents(item.events || item.metadata?.events || [], item.id),
     attachments: Array.isArray(item.attachments) ? item.attachments : [],
   }));
+}
+
+function normalizeExperienceEvents(events = [], experienceId = "") {
+  if (!Array.isArray(events)) return [];
+  return events
+    .map((event, index) => ({
+      id: event.id || event.eventId || `evt-${experienceId || "experience"}-${index + 1}`,
+      title: String(event.title || event.name || "").trim(),
+      description: String(event.description || event.notes || "").trim(),
+      order: Number.isFinite(Number(event.order)) ? Number(event.order) : index + 1,
+      timestamp: event.timestamp || event.occurredAt || "",
+      duration: event.duration ? Number(event.duration) : null,
+      mood: event.mood || "",
+      energy: event.energy ? Number(event.energy) : null,
+    }))
+    .filter((event) => event.title || event.description);
+}
+
+function parseExperienceEventsInput(value = "", experienceId = "") {
+  return String(value || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line, index) => {
+      const [title, ...descriptionParts] = line.split(/\s+[-:]\s+/);
+      return {
+        id: `evt-${experienceId || Date.now()}-${index + 1}`,
+        title: (title || line).trim(),
+        description: descriptionParts.join(" - ").trim(),
+        order: index + 1,
+      };
+    });
 }
 
 function normalizeCategoryName(category) {
@@ -6417,10 +6455,11 @@ function syncExperienceToAgenda(experience = {}) {
 
 async function readForm() {
   const existingId = document.getElementById("editingId").value;
+  const id = existingId || createId();
   const attachments = [...state.pendingAttachments, ...(await readSelectedFiles())];
   const pilotParticipantId = document.getElementById("pilotParticipantInput")?.value || "";
   return {
-    id: existingId || createId(),
+    id,
     title: document.getElementById("titleInput").value.trim(),
     category: document.getElementById("categoryInput").value,
     pilotParticipantId,
@@ -6433,6 +6472,7 @@ async function readForm() {
     location: document.getElementById("locationInput").value.trim() || "Sin ubicación",
     people: document.getElementById("peopleInput").value.trim() || "Sin personas",
     notes: document.getElementById("notesInput").value.trim(),
+    events: parseExperienceEventsInput(document.getElementById("experienceEventsInput")?.value || "", id),
     attachments,
   };
 }
@@ -6445,6 +6485,8 @@ function clearForm() {
   document.getElementById("pilotParticipantInput").value = "";
   document.getElementById("syncAgendaInput").checked = false;
   document.getElementById("objectiveInput").value = "";
+  const eventsInput = document.getElementById("experienceEventsInput");
+  if (eventsInput) eventsInput.value = "";
   document.getElementById("energyInput").value = 7;
   document.getElementById("timestampInput").value = toDatetimeLocal(new Date().toISOString());
   renderAttachmentPreview();
@@ -6891,6 +6933,13 @@ function loadExperienceIntoForm(experience) {
   document.getElementById("locationInput").value = experience.location;
   document.getElementById("peopleInput").value = experience.people;
   document.getElementById("notesInput").value = experience.notes;
+  const eventsInput = document.getElementById("experienceEventsInput");
+  if (eventsInput) {
+    eventsInput.value = normalizeExperienceEvents(experience.events || [], experience.id)
+      .sort((a, b) => a.order - b.order)
+      .map((event) => event.description ? `${event.title} - ${event.description}` : event.title)
+      .join("\n");
+  }
   state.pendingAttachments = [...(experience.attachments || [])];
   renderAttachmentPreview();
   showView("capture");
@@ -9406,6 +9455,7 @@ function renderLibrary() {
                     <span class="pill">${escapeHtml(getExperienceSourceLabel(item))}</span>
                     ${getExperiencePilotParticipantLabel(item) ? `<span class="pill">${escapeHtml(state.language === "en" ? "Pilot" : "Piloto")}: ${escapeHtml(getExperiencePilotParticipantLabel(item))}</span>` : ""}
                     ${item.objective ? `<span class="pill">${escapeHtml(item.objective)}</span>` : ""}
+                    <span class="pill">${normalizeExperienceEvents(item.events || [], item.id).length} ${state.language === "en" ? "events" : "eventos"}</span>
                     <span class="pill">${item.attachments?.length || 0} ${t("labels.attachments")}</span>
                     <span class="pill">${escapeHtml(item.mood)}</span>
                   </div>
@@ -19224,6 +19274,7 @@ function renderPublishPlanPanel() {
         open: "Open",
         steps: [
           ["Multi-device persistence", "Make the app usable from desktop, mobile, and tablet with shared Supabase data, Auth, and private Storage.", "Review", "admin", "multiDevicePersistencePanel"],
+          ["Workspace and internal events", "Structural refactor started: shared workspace, participant ownership, internal events per experience, and asset links are defined in database/workspace-events-assets.sql.", "Review", "admin", "supabasePilotGatePanel"],
           ["Interface cleanup", "Keep the main flow visible and move diagnostic history to advanced sections.", "Ready", "admin", "adminCommandCenter"],
           ["Supabase hardening", "Confirm Auth, private Storage, RLS, backup, and restore before external users.", "Review", "admin", "supabasePilotGatePanel"],
           ["GitHub repository", "Create or update the shared repo, branch rules, and a release checklist.", "Next", "admin", "externalIntegrationPanel"],
@@ -19243,6 +19294,7 @@ function renderPublishPlanPanel() {
         open: "Abrir",
         steps: [
           ["Persistencia multidispositivo", "Hacer que la app funcione en desktop, móvil y tablet con datos compartidos en Supabase, Auth y Storage privado.", "Revisar", "admin", "multiDevicePersistencePanel"],
+          ["Workspace y eventos internos", "Refactor estructural iniciado: workspace compartido, dueño participante, eventos internos por experiencia y vínculos de activos definidos en database/workspace-events-assets.sql.", "Revisar", "admin", "supabasePilotGatePanel"],
           ["Limpieza de interfaz", "Dejar visible el flujo principal y mover el historial técnico a secciones avanzadas.", "Listo", "admin", "adminCommandCenter"],
           ["Fortalecer Supabase", "Confirmar Auth, Storage privado, RLS, respaldo y restauración antes de usuarios externos.", "Revisar", "admin", "supabasePilotGatePanel"],
           ["Repositorio GitHub", "Crear o actualizar el repositorio compartido, reglas de ramas y checklist de release.", "Siguiente", "admin", "externalIntegrationPanel"],

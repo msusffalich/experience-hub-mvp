@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260520-preserve-save-status-326";
+const CACHE_NAME = "experience-hub-pwa-20260520-workspace-events-327";
 const APP_SHELL = [
   "/",
   "/index.html",

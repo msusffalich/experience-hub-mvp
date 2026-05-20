@@ -2807,7 +2807,16 @@ async function toExperienceRow(experience, user = { id: LOCAL_USER_ID }) {
     notes: normalized.notes,
     locale: normalized.locale || "es",
     attachments: normalized.attachments || [],
-    metadata: { ...(experience.metadata || {}), objective: normalized.objective || "", isDemo: Boolean(normalized.isDemo), demoBatch: normalized.demoBatch || null },
+    metadata: {
+      ...(experience.metadata || {}),
+      objective: normalized.objective || "",
+      workspaceId: normalized.workspaceId || null,
+      pilotParticipantId: normalized.pilotParticipantId || null,
+      pilotParticipantName: normalized.pilotParticipantName || null,
+      events: normalized.events || [],
+      isDemo: Boolean(normalized.isDemo),
+      demoBatch: normalized.demoBatch || null,
+    },
     embedding,
     embedding_model: activeEmbeddingsProvider(),
     updated_at: new Date().toISOString(),
@@ -2827,6 +2836,10 @@ function fromExperienceRow(row) {
     people: row.people || "Sin personas",
     notes: row.notes || "",
     objective: row.metadata?.objective || "",
+    workspaceId: row.workspace_id || row.metadata?.workspaceId || "",
+    pilotParticipantId: row.participant_id || row.metadata?.pilotParticipantId || "",
+    pilotParticipantName: row.metadata?.pilotParticipantName || "",
+    events: Array.isArray(row.metadata?.events) ? row.metadata.events : [],
     isDemo: Boolean(row.metadata?.isDemo),
     demoBatch: row.metadata?.demoBatch || "",
     attachments: Array.isArray(row.attachments) ? row.attachments : [],
@@ -2848,12 +2861,32 @@ function normalizeExperience(experience) {
     people: experience.people || "Sin personas",
     notes: experience.notes || "",
     objective: experience.objective || experience.metadata?.objective || "",
+    workspaceId: experience.workspaceId || experience.metadata?.workspaceId || "",
+    pilotParticipantId: experience.pilotParticipantId || experience.metadata?.pilotParticipantId || "",
+    pilotParticipantName: experience.pilotParticipantName || experience.metadata?.pilotParticipantName || "",
+    events: normalizeExperienceEvents(experience.events || experience.metadata?.events || [], experience.id),
     isDemo: Boolean(experience.isDemo || experience.metadata?.isDemo),
     demoBatch: experience.demoBatch || experience.metadata?.demoBatch || "",
     attachments: Array.isArray(experience.attachments) ? experience.attachments : [],
     locale: experience.locale || "es",
     updatedAt: experience.updatedAt || new Date().toISOString(),
   };
+}
+
+function normalizeExperienceEvents(events = [], experienceId = "") {
+  if (!Array.isArray(events)) return [];
+  return events
+    .map((event, index) => ({
+      id: event.id || event.eventId || `evt-${experienceId || "experience"}-${index + 1}`,
+      title: String(event.title || event.name || "").trim(),
+      description: String(event.description || event.notes || "").trim(),
+      order: Number.isFinite(Number(event.order)) ? Number(event.order) : index + 1,
+      timestamp: event.timestamp || event.occurredAt || "",
+      duration: event.duration ? Number(event.duration) : null,
+      mood: event.mood || "",
+      energy: event.energy ? Number(event.energy) : null,
+    }))
+    .filter((event) => event.title || event.description);
 }
 
 function normalizeCategoryName(category) {
