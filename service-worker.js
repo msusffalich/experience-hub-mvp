@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260520-event-table-sync-328";
+const CACHE_NAME = "experience-hub-pwa-20260520-asset-table-sync-329";
 const APP_SHELL = [
   "/",
   "/index.html",

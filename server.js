@@ -640,6 +640,7 @@ async function upsertExperience(experience, user = { id: LOCAL_USER_ID }) {
     });
     const savedExperience = fromExperienceRow(rows[0]);
     await syncExperienceEventsToSupabase(savedExperience, user);
+    await syncExperienceAssetsToSupabase(savedExperience, user);
     return signExperienceMedia(savedExperience);
   }
   return mutateStore((currentStore) => {
@@ -736,6 +737,36 @@ async function syncExperienceEventsToSupabase(experience, user = { id: LOCAL_USE
   }
 }
 
+async function syncExperienceAssetsToSupabase(experience, user = { id: LOCAL_USER_ID }) {
+  const workspace = await getWorkspaceContext(user);
+  if (!workspace?.id) return { synced: false, reason: "workspace_schema_unavailable" };
+  const attachments = Array.isArray(experience.attachments) ? experience.attachments : [];
+  try {
+    await supabaseRest("assets", {
+      method: "DELETE",
+      searchParams: { experience_id: `eq.${experience.id}` },
+      headers: { Prefer: "return=minimal" },
+      accessToken: user.accessToken,
+    });
+    const rows = attachments
+      .map((attachment, index) => toAssetRow(attachment, experience, workspace.id, user, index))
+      .filter(Boolean);
+    if (!rows.length) return { synced: true, count: 0 };
+    await supabaseRest("assets", {
+      method: "POST",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify(rows),
+      accessToken: user.accessToken,
+    });
+    return { synced: true, count: rows.length };
+  } catch (error) {
+    workspaceSchemaState.available = false;
+    workspaceSchemaState.checkedAt = new Date().toISOString();
+    workspaceSchemaState.error = sanitizeDiagnosticError(error);
+    return { synced: false, reason: "asset_sync_failed" };
+  }
+}
+
 async function listExperienceEventsForRows(rows = [], user = { id: LOCAL_USER_ID }) {
   if (!rows.length || activePersistence() !== "supabase" || workspaceSchemaUnavailableRecently()) return new Map();
   const ids = rows.map((row) => row.experience_id).filter(Boolean);
@@ -795,6 +826,49 @@ function fromExperienceEventRow(row) {
   };
 }
 
+function toAssetRow(attachment, experience, workspaceId, user, index = 0) {
+  if (!attachment) return null;
+  const kind = attachment.kind || inferServerMediaKind(attachment);
+  return {
+    asset_id: attachment.id || `asset-${experience.id}-${index + 1}`,
+    workspace_id: workspaceId,
+    owner_user_id: user.id || null,
+    participant_id: experience.pilotParticipantId || null,
+    experience_id: experience.id,
+    event_id: null,
+    name: attachment.name || `Activo ${index + 1}`,
+    kind,
+    mime_type: attachment.type || attachment.originalType || "application/octet-stream",
+    size_bytes: Number(attachment.size || 0),
+    storage_bucket: SUPABASE_STORAGE_BUCKET,
+    storage_path: attachment.path || null,
+    signed_url: null,
+    preview_text: attachment.previewText || "",
+    analysis_text: attachment.analysisText || "",
+    metadata: {
+      extension: attachment.extension || "",
+      storage: attachment.storage || "",
+      previewable: attachment.previewable !== false,
+      remoteSyncFailed: Boolean(attachment.remoteSyncFailed),
+      experienceTitle: experience.title || "",
+      source: "experience-attachment-v1",
+    },
+  };
+}
+
+function inferServerMediaKind(attachment = {}) {
+  const type = String(attachment.type || attachment.originalType || "").toLowerCase();
+  if (type.startsWith("image/")) return "image";
+  if (type.startsWith("audio/")) return "audio";
+  if (type.startsWith("video/")) return "video";
+  if (type.startsWith("text/") || type.includes("pdf") || type.includes("word") || type.includes("json")) return "document";
+  const ext = String(attachment.extension || attachment.name?.split(".").pop() || "").toLowerCase();
+  if (["jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "avif", "tif", "tiff"].includes(ext)) return "image";
+  if (["mp3", "wav", "m4a", "aac", "flac", "ogg", "opus", "wma", "aiff", "aif", "amr"].includes(ext)) return "audio";
+  if (["mp4", "mov", "m4v", "webm", "mkv", "avi", "wmv", "mpeg", "mpg", "3gp"].includes(ext)) return "video";
+  return "document";
+}
+
 function encodePostgrestListValue(value) {
   return `"${String(value).replace(/"/g, '\\"')}"`;
 }
@@ -806,6 +880,7 @@ function workspaceSchemaUnavailableRecently() {
 
 async function deleteExperienceRecord(id, user = { id: LOCAL_USER_ID }) {
   if (activePersistence() === "supabase") {
+    await deleteExperienceCompanionRows(id, user);
     await supabaseRest("experiences", {
       method: "DELETE",
       searchParams: {
@@ -821,6 +896,26 @@ async function deleteExperienceRecord(id, user = { id: LOCAL_USER_ID }) {
     currentStore.experiences = currentStore.experiences.filter((item) => item.id !== id);
     return { ok: true };
   });
+}
+
+async function deleteExperienceCompanionRows(id, user = { id: LOCAL_USER_ID }) {
+  if (workspaceSchemaUnavailableRecently()) return;
+  await Promise.all(
+    ["experience_events", "assets"].map(async (table) => {
+      try {
+        await supabaseRest(table, {
+          method: "DELETE",
+          searchParams: { experience_id: `eq.${id}` },
+          headers: { Prefer: "return=minimal" },
+          accessToken: user.accessToken,
+        });
+      } catch (error) {
+        workspaceSchemaState.available = false;
+        workspaceSchemaState.checkedAt = new Date().toISOString();
+        workspaceSchemaState.error = sanitizeDiagnosticError(error);
+      }
+    }),
+  );
 }
 
 async function saveMedia(media, user = { id: LOCAL_USER_ID }) {
@@ -1005,6 +1100,17 @@ async function runSupabaseDiagnostics(user) {
     return `Workspace activo ${workspace.id}; los eventos internos se sincronizan en experience_events.`;
   });
 
+  await collectDiagnosticCheck(checks, "workspaceAssets", "Activos multimodales compartidos", async () => {
+    const rows = await supabaseRest("assets", {
+      searchParams: {
+        owner_user_id: `eq.${user.id}`,
+        limit: "1",
+      },
+      accessToken: user.accessToken,
+    });
+    return `Tabla assets accesible; ${rows.length} activo encontrado en la muestra del usuario.`;
+  });
+
   await collectDiagnosticCheck(checks, "dailyBriefings", "Diario persistente", async () => {
     const rows = await supabaseRest("daily_briefings", {
       searchParams: {
@@ -1066,6 +1172,9 @@ function diagnosticActionForCheck(id, status, detail = "") {
   }
   if (id === "workspaceEvents") {
     return { text: "Ejecuta database/workspace-events-assets.sql para habilitar workspace, participantes, eventos internos y activos compartidos.", actionType: "openAdmin" };
+  }
+  if (id === "workspaceAssets") {
+    return { text: "Ejecuta database/workspace-events-assets.sql para habilitar la tabla assets y sus políticas RLS.", actionType: "openAdmin" };
   }
   if (id === "dailyBriefings") {
     return { text: "Ejecuta database/schema.sql y database/auth-rls.sql para crear daily_briefings y sus políticas.", actionType: "openAdmin" };
@@ -1196,6 +1305,19 @@ async function runSupabaseSelfTest(user) {
       return `${events.length} eventos internos sincronizados y legibles desde experience_events.`;
     });
 
+    await collectSelfTestStep(steps, "workspaceAssets", "Activos compartidos", async () => {
+      const rows = await supabaseRest("assets", {
+        searchParams: {
+          experience_id: `eq.${testId}`,
+          limit: "5",
+        },
+        accessToken: user.accessToken,
+      });
+      if (!rows.length) throw new Error("assets_not_synced");
+      if (!rows[0].storage_path) throw new Error("asset_storage_path_missing");
+      return `${rows.length} activo multimodal sincronizado en assets con ruta Storage.`;
+    });
+
     await collectSelfTestStep(steps, "semantic", "Consulta semántica", async () => {
       const result = await semanticSearch("validacion tecnica self test", user, 3);
       return `Consulta ejecutada con motor ${result.engine}.`;
@@ -1273,6 +1395,7 @@ function selfTestActionFor(id, detail = "") {
   if (id === "experienceCreate" || id === "experienceRead") return { text: "Revisa tabla experiences, políticas RLS y que auth.uid() coincida con user_id.", actionType: "openAdmin" };
   if (id === "semantic") return { text: "Ejecuta database/semantic-search.sql; si no está aplicado, la app seguirá con búsqueda local.", actionType: "openAdmin" };
   if (id === "workspaceEvents") return { text: "Ejecuta database/workspace-events-assets.sql y vuelve a ejecutar Probar flujo real.", actionType: "openAdmin" };
+  if (id === "workspaceAssets") return { text: "Ejecuta database/workspace-events-assets.sql y vuelve a ejecutar Probar flujo real.", actionType: "openAdmin" };
   if (id === "dailyBriefing") return { text: "Ejecuta database/schema.sql y database/auth-rls.sql para habilitar daily_briefings.", actionType: "openAdmin" };
   if (id === "cleanupDailyBriefing") return { text: "Borra manualmente el registro de prueba en daily_briefings si quedó pendiente.", actionType: "openAdmin" };
   if (id === "cleanupExperience") return { text: "Borra manualmente cualquier experiencia con título SUPABASE SELF TEST.", actionType: "openAdmin" };
