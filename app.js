@@ -1,4 +1,4 @@
-const APP_VERSION = "20260520-save-feedback-324";
+const APP_VERSION = "20260520-remote-readback-325";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -4164,16 +4164,30 @@ async function saveExperienceToApi(experience) {
       method: "PUT",
       body: JSON.stringify({ ...preparedExperience, locale: state.language }),
     });
+    const readbackExperience = await confirmRemoteExperienceReadback(savedExperience?.id || experience.id);
+    if (!readbackExperience) {
+      queueOfflineMutation("upsert", experience, "readback_failed");
+      return { remote: false, queued: true, reason: "readback_failed", experience: savedExperience };
+    }
     const mediaPending = hasPendingRemoteMedia(savedExperience) || hasPendingRemoteMedia(preparedExperience);
     if (mediaPending && (experience.attachments || []).some((attachment) => attachment.dataUrl)) {
       queueOfflineMutation("upsert", experience, "media_pending");
     }
-    return { remote: true, queued: mediaPending, experience: savedExperience, mediaPending };
+    return { remote: true, queued: mediaPending, experience: readbackExperience, mediaPending, readback: true };
   } catch (error) {
     const reason = error?.status === 401 ? "auth_required" : "api_error";
     if (reason === "api_error") state.apiOnline = false;
     queueOfflineMutation("upsert", experience, reason);
     return { remote: false, queued: true, reason };
+  }
+}
+
+async function confirmRemoteExperienceReadback(experienceId) {
+  try {
+    const experiences = await apiRequest("/experiences");
+    return Array.isArray(experiences) ? experiences.find((item) => item.id === experienceId) || null : null;
+  } catch {
+    return null;
   }
 }
 
@@ -6480,6 +6494,7 @@ function buildCaptureSaveStatus(experience, apiResult = {}, edited = false) {
         authRequired: "It was not saved for your other devices because you are not signed in. Sign in with the same user and press Save pending.",
         apiUnavailable: "It was not saved for your other devices because the connection is unavailable. The app will retry when it returns.",
         apiError: "It was not saved for your other devices because cloud save did not complete. The app will keep it pending and retry.",
+        readbackFailed: "Cloud save responded, but the app could not read the experience back from the server. Keep this device open and press Save pending.",
         unsafe: "The app did not confirm a safe save. Do not close this device until you sign in or save pending changes.",
         queued: "Saved on this device. It will be sent to your other devices when the connection is ready.",
         next: "Next: find it in Library, review it, and return to the MVP closure step.",
@@ -6495,6 +6510,7 @@ function buildCaptureSaveStatus(experience, apiResult = {}, edited = false) {
         authRequired: "No quedó guardada para tus otros dispositivos porque no has iniciado sesión. Entra con el mismo usuario y pulsa Guardar pendientes.",
         apiUnavailable: "No quedó guardada para tus otros dispositivos porque la conexión no está disponible. La app reintentará cuando vuelva.",
         apiError: "No quedó guardada para tus otros dispositivos porque el guardado en la nube no se completó. La app la mantendrá pendiente y reintentará.",
+        readbackFailed: "El servidor respondió al guardado, pero la app no pudo volver a leer la experiencia desde la nube. Mantén este dispositivo abierto y pulsa Guardar pendientes.",
         unsafe: "La app no confirmó un guardado seguro. No cierres este dispositivo hasta iniciar sesión o guardar los cambios pendientes.",
         queued: "Guardada en este dispositivo. Se enviará a tus otros dispositivos cuando la conexión esté lista.",
         next: "Siguiente: búscala en Librería, revísala y vuelve al paso de cierre del MVP.",
@@ -6508,6 +6524,8 @@ function buildCaptureSaveStatus(experience, apiResult = {}, edited = false) {
       ? labels.apiUnavailable
       : reason === "api_error"
         ? labels.apiError
+        : reason === "readback_failed"
+          ? labels.readbackFailed
         : "";
   const storage = apiResult?.remote
     ? apiResult?.mediaPending ? `${labels.remote} ${labels.remoteMediaPending}` : labels.remote
