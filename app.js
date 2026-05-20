@@ -1,4 +1,4 @@
-const APP_VERSION = "20260520-workspace-events-327";
+const APP_VERSION = "20260520-event-table-sync-328";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -1856,6 +1856,7 @@ const manualContent = {
         "En modo publicado, Captura bloquea el guardado si no hay sesión activa. Esto evita registros aislados en un solo navegador y protege la prueba multidispositivo.",
         "El refactor multidispositivo introduce el modelo correcto de workspace, miembros, participantes, eventos internos y activos. La migración SQL está en database/workspace-events-assets.sql y debe aplicarse antes de considerar compartición multiusuario real.",
         "Captura ahora permite registrar varios eventos dentro de una experiencia. Cada línea representa un momento de la experiencia y se conserva para reportes, activos, publicaciones e integración futura con dispositivos.",
+        "Cuando la migración de workspace está aplicada, el servidor sincroniza esos eventos internos en la tabla experience_events y los vuelve a leer desde Supabase. Si la tabla aún no existe, mantiene compatibilidad guardándolos dentro de la experiencia.",
         "Los adjuntos ahora se suben primero al almacenamiento privado y luego se guarda la experiencia con referencias ligeras. Así las imágenes, audios, videos y documentos pueden abrirse desde otros dispositivos.",
         "En móviles y tablets, la app usa carga binaria cuando hay sesión activa. Esto evita convertir fotos, videos o audios completos a texto interno antes de subirlos y hace la carga más estable.",
         "Si un adjunto no termina de subir, la experiencia conserva la narrativa y muestra el archivo como pendiente; no debe considerarse cierre completo hasta que el activo tenga URL remota o ruta de Storage.",
@@ -2356,6 +2357,7 @@ const manualContent = {
         "In published mode, Capture blocks saving when there is no active session. This prevents isolated records in one browser and protects the multi-device test.",
         "The multi-device refactor introduces the correct workspace, members, participants, internal events, and assets model. The SQL migration lives in database/workspace-events-assets.sql and must be applied before real multi-user sharing is considered complete.",
         "Capture now supports several events inside one experience. Each line represents one moment in the experience and is preserved for reports, assets, publications, and future device integration.",
+        "When the workspace migration is applied, the server syncs those internal events into the experience_events table and reads them back from Supabase. If the table does not exist yet, it remains compatible by keeping them inside the experience.",
         "Attachments are now uploaded to private storage first, then the experience is saved with lightweight references. This lets images, audio, video, and documents open from other devices.",
         "On mobile phones and tablets, the app uses binary upload when there is an active session. This avoids converting full photos, videos, or audio files into internal text before upload and makes uploads more stable.",
         "If an attachment does not finish uploading, the experience keeps the narrative and shows the file as pending; the flow should not be considered complete until the asset has a remote URL or Storage path.",

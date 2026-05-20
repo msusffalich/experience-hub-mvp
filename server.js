@@ -74,6 +74,7 @@ let logQueue = Promise.resolve();
 let routineQueue = Promise.resolve();
 const jobQueue = [];
 const jobs = new Map();
+const workspaceSchemaState = { checkedAt: null, available: null, error: null };
 let jobRunning = false;
 let routineSchedulerRunning = false;
 
@@ -611,7 +612,14 @@ async function listExperiences(user = { id: LOCAL_USER_ID }) {
       },
       accessToken: user.accessToken,
     });
-    return Promise.all(rows.map((row) => signExperienceMedia(fromExperienceRow(row))));
+    const eventMap = await listExperienceEventsForRows(rows, user);
+    return Promise.all(
+      rows.map((row) => {
+        const experience = fromExperienceRow(row);
+        const tableEvents = eventMap.get(experience.id);
+        return signExperienceMedia(tableEvents ? { ...experience, events: tableEvents } : experience);
+      }),
+    );
   }
   const store = await readStore();
   return store.experiences.map(normalizeExperience);
@@ -630,7 +638,9 @@ async function upsertExperience(experience, user = { id: LOCAL_USER_ID }) {
       body: JSON.stringify(row),
       accessToken: user.accessToken,
     });
-    return signExperienceMedia(fromExperienceRow(rows[0]));
+    const savedExperience = fromExperienceRow(rows[0]);
+    await syncExperienceEventsToSupabase(savedExperience, user);
+    return signExperienceMedia(savedExperience);
   }
   return mutateStore((currentStore) => {
     currentStore.experiences = [normalized, ...currentStore.experiences.filter((item) => item.id !== normalized.id)];
@@ -652,6 +662,146 @@ async function persistExperienceMedia(experience, user = { id: LOCAL_USER_ID }) 
     }),
   );
   return { ...experience, attachments };
+}
+
+async function getWorkspaceContext(user = { id: LOCAL_USER_ID, email: "local-user@example.com" }) {
+  if (activePersistence() !== "supabase" || !user?.id) return null;
+  if (workspaceSchemaUnavailableRecently()) return null;
+  try {
+    const existing = await supabaseRest("workspaces", {
+      searchParams: { owner_user_id: `eq.${user.id}`, limit: "1" },
+      accessToken: user.accessToken,
+    });
+    let workspace = existing[0];
+    if (!workspace) {
+      const created = await supabaseRest("workspaces", {
+        method: "POST",
+        headers: { Prefer: "return=representation" },
+        body: JSON.stringify({
+          name: user.email ? `${user.email} workspace` : "Experience Hub workspace",
+          owner_user_id: user.id,
+        }),
+        accessToken: user.accessToken,
+      });
+      workspace = created[0];
+    }
+    if (!workspace?.workspace_id) return null;
+    await supabaseRest("workspace_members", {
+      method: "POST",
+      searchParams: { on_conflict: "workspace_id,user_id" },
+      headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+      body: JSON.stringify({
+        workspace_id: workspace.workspace_id,
+        user_id: user.id,
+        role: "owner",
+      }),
+      accessToken: user.accessToken,
+    });
+    workspaceSchemaState.available = true;
+    workspaceSchemaState.checkedAt = new Date().toISOString();
+    workspaceSchemaState.error = null;
+    return { id: workspace.workspace_id, role: "owner" };
+  } catch (error) {
+    workspaceSchemaState.available = false;
+    workspaceSchemaState.checkedAt = new Date().toISOString();
+    workspaceSchemaState.error = sanitizeDiagnosticError(error);
+    return null;
+  }
+}
+
+async function syncExperienceEventsToSupabase(experience, user = { id: LOCAL_USER_ID }) {
+  const workspace = await getWorkspaceContext(user);
+  if (!workspace?.id) return { synced: false, reason: "workspace_schema_unavailable" };
+  const events = normalizeExperienceEvents(experience.events || [], experience.id);
+  try {
+    await supabaseRest("experience_events", {
+      method: "DELETE",
+      searchParams: { experience_id: `eq.${experience.id}` },
+      headers: { Prefer: "return=minimal" },
+      accessToken: user.accessToken,
+    });
+    if (!events.length) return { synced: true, count: 0 };
+    await supabaseRest("experience_events", {
+      method: "POST",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify(events.map((event, index) => toExperienceEventRow(event, experience, workspace.id, index))),
+      accessToken: user.accessToken,
+    });
+    return { synced: true, count: events.length };
+  } catch (error) {
+    workspaceSchemaState.available = false;
+    workspaceSchemaState.checkedAt = new Date().toISOString();
+    workspaceSchemaState.error = sanitizeDiagnosticError(error);
+    return { synced: false, reason: "event_sync_failed" };
+  }
+}
+
+async function listExperienceEventsForRows(rows = [], user = { id: LOCAL_USER_ID }) {
+  if (!rows.length || activePersistence() !== "supabase" || workspaceSchemaUnavailableRecently()) return new Map();
+  const ids = rows.map((row) => row.experience_id).filter(Boolean);
+  if (!ids.length) return new Map();
+  try {
+    const eventRows = await supabaseRest("experience_events", {
+      searchParams: {
+        experience_id: `in.(${ids.map(encodePostgrestListValue).join(",")})`,
+        order: "event_order.asc",
+      },
+      accessToken: user.accessToken,
+    });
+    workspaceSchemaState.available = true;
+    workspaceSchemaState.checkedAt = new Date().toISOString();
+    workspaceSchemaState.error = null;
+    return eventRows.reduce((map, row) => {
+      const experienceId = row.experience_id;
+      if (!map.has(experienceId)) map.set(experienceId, []);
+      map.get(experienceId).push(fromExperienceEventRow(row));
+      return map;
+    }, new Map());
+  } catch (error) {
+    workspaceSchemaState.available = false;
+    workspaceSchemaState.checkedAt = new Date().toISOString();
+    workspaceSchemaState.error = sanitizeDiagnosticError(error);
+    return new Map();
+  }
+}
+
+function toExperienceEventRow(event, experience, workspaceId, index = 0) {
+  return {
+    event_id: event.id || `evt-${experience.id}-${index + 1}`,
+    experience_id: experience.id,
+    workspace_id: workspaceId,
+    participant_id: experience.pilotParticipantId || null,
+    event_order: Number(event.order || index + 1),
+    title: event.title || event.description || `Evento ${index + 1}`,
+    description: event.description || null,
+    occurred_at: event.timestamp || experience.timestamp || null,
+    duration_minutes: event.duration || null,
+    mood: event.mood || null,
+    energy: event.energy || null,
+    metadata: { source: "experience-capture-v1" },
+  };
+}
+
+function fromExperienceEventRow(row) {
+  return {
+    id: row.event_id,
+    title: row.title || "",
+    description: row.description || "",
+    order: Number(row.event_order || 0),
+    timestamp: row.occurred_at || "",
+    duration: row.duration_minutes || null,
+    mood: row.mood || "",
+    energy: row.energy || null,
+  };
+}
+
+function encodePostgrestListValue(value) {
+  return `"${String(value).replace(/"/g, '\\"')}"`;
+}
+
+function workspaceSchemaUnavailableRecently() {
+  if (workspaceSchemaState.available !== false || !workspaceSchemaState.checkedAt) return false;
+  return Date.now() - new Date(workspaceSchemaState.checkedAt).getTime() < 5 * 60 * 1000;
 }
 
 async function deleteExperienceRecord(id, user = { id: LOCAL_USER_ID }) {
@@ -849,6 +999,12 @@ async function runSupabaseDiagnostics(user) {
     return `${experiences.length} experiencias legibles para el usuario autenticado.`;
   });
 
+  await collectDiagnosticCheck(checks, "workspaceEvents", "Workspace y eventos internos", async () => {
+    const workspace = await getWorkspaceContext(user);
+    if (!workspace?.id) throw new Error(workspaceSchemaState.error || "workspace_schema_unavailable");
+    return `Workspace activo ${workspace.id}; los eventos internos se sincronizan en experience_events.`;
+  });
+
   await collectDiagnosticCheck(checks, "dailyBriefings", "Diario persistente", async () => {
     const rows = await supabaseRest("daily_briefings", {
       searchParams: {
@@ -907,6 +1063,9 @@ function diagnosticActionForCheck(id, status, detail = "") {
   }
   if (id === "experiences") {
     return { text: "Ejecuta database/schema.sql y database/auth-rls.sql; después guarda una experiencia de prueba y vuelve a verificar.", actionType: "openAdmin" };
+  }
+  if (id === "workspaceEvents") {
+    return { text: "Ejecuta database/workspace-events-assets.sql para habilitar workspace, participantes, eventos internos y activos compartidos.", actionType: "openAdmin" };
   }
   if (id === "dailyBriefings") {
     return { text: "Ejecuta database/schema.sql y database/auth-rls.sql para crear daily_briefings y sus políticas.", actionType: "openAdmin" };
@@ -1004,6 +1163,10 @@ async function runSupabaseSelfTest(user) {
           people: "Sistema",
           objective: "validacion tecnica",
           notes: "Registro temporal creado por la prueba de cierre Supabase.",
+          events: [
+            { id: `${testId}-event-1`, title: "Inicio", description: "Se crea el registro temporal.", order: 1 },
+            { id: `${testId}-event-2`, title: "Validación", description: "Se verifica lectura y sincronización.", order: 2 },
+          ],
           attachments: uploadedMedia ? [uploadedMedia] : [],
           locale: "es",
         },
@@ -1022,6 +1185,15 @@ async function runSupabaseSelfTest(user) {
       if (!attachment?.url) throw new Error("experience_attachment_missing_signed_url");
       await assertSignedUrlReachable(attachment.url);
       return "Experiencia temporal leída con adjunto, ruta Storage y URL firmada funcional.";
+    });
+
+    await collectSelfTestStep(steps, "workspaceEvents", "Eventos internos", async () => {
+      const experiences = await listExperiences(user);
+      const saved = experiences.find((experience) => experience.id === testId);
+      const events = normalizeExperienceEvents(saved?.events || [], testId);
+      if (workspaceSchemaState.available === false) throw new Error(workspaceSchemaState.error || "workspace_schema_unavailable");
+      if (events.length < 2) throw new Error("experience_events_not_readable");
+      return `${events.length} eventos internos sincronizados y legibles desde experience_events.`;
     });
 
     await collectSelfTestStep(steps, "semantic", "Consulta semántica", async () => {
@@ -1100,6 +1272,7 @@ function selfTestActionFor(id, detail = "") {
   if (id === "storage") return { text: "Revisa que el bucket experience-media exista, sea privado y acepte image/png.", actionType: "openAdmin" };
   if (id === "experienceCreate" || id === "experienceRead") return { text: "Revisa tabla experiences, políticas RLS y que auth.uid() coincida con user_id.", actionType: "openAdmin" };
   if (id === "semantic") return { text: "Ejecuta database/semantic-search.sql; si no está aplicado, la app seguirá con búsqueda local.", actionType: "openAdmin" };
+  if (id === "workspaceEvents") return { text: "Ejecuta database/workspace-events-assets.sql y vuelve a ejecutar Probar flujo real.", actionType: "openAdmin" };
   if (id === "dailyBriefing") return { text: "Ejecuta database/schema.sql y database/auth-rls.sql para habilitar daily_briefings.", actionType: "openAdmin" };
   if (id === "cleanupDailyBriefing") return { text: "Borra manualmente el registro de prueba en daily_briefings si quedó pendiente.", actionType: "openAdmin" };
   if (id === "cleanupExperience") return { text: "Borra manualmente cualquier experiencia con título SUPABASE SELF TEST.", actionType: "openAdmin" };
