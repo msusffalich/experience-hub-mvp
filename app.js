@@ -1,4 +1,4 @@
-const APP_VERSION = "20260520-remote-readback-325";
+const APP_VERSION = "20260520-preserve-save-status-326";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -5074,30 +5074,30 @@ function setupForm() {
       if (agendaSynced) {
         state.captureSaveStatus.detail += state.language === "en" ? " Agenda was updated because you selected it." : " Agenda/Calendario fue actualizado porque lo seleccionaste.";
       }
-      resetLibraryFilters({ syncInputs: false });
       notify(state.captureSaveStatus.detail, apiResult?.queued || !localSaved ? "warn" : "success");
       if (apiResult?.remote || localSaved) {
         clearForm();
       }
-      renderAll();
-      showView("capture");
+      try {
+        resetLibraryFilters({ syncInputs: false });
+        renderAll();
+        showView("capture");
+      } catch (postSaveError) {
+        console.warn("Post-save interface refresh failed", postSaveError);
+        renderCaptureSaveStatus();
+      }
     } catch (error) {
       if (savedCommitted && state.captureSaveStatus) {
         const detail = agendaRequested
           ? state.language === "en"
             ? "The experience was saved. Agenda could not be updated; review it only if you intended to create a calendar event."
             : "La experiencia fue guardada. Agenda no pudo actualizarse; revísala solo si querías crear un evento de calendario."
-          : state.language === "en"
-            ? "The experience was saved. A later interface refresh did not complete; reload only if you do not see the change."
-            : "La experiencia fue guardada. Un refresco posterior de la interfaz no se completó; recarga solo si no ves el cambio.";
-        state.captureSaveStatus.type = "success";
-        state.captureSaveStatus.title = state.language === "en" ? "Experience saved" : "Experiencia guardada";
-        state.captureSaveStatus.detail = detail;
-        state.captureSaveStatus.queued = false;
+          : state.captureSaveStatus.detail;
+        if (agendaRequested) state.captureSaveStatus.detail = detail;
         state.captureSaveStatus.experienceId = savedExperience?.id || state.captureSaveStatus.experienceId;
         state.captureSaveStatus.experienceTitle = savedExperience?.title || state.captureSaveStatus.experienceTitle;
         renderCaptureSaveStatus();
-        notify(detail, "success");
+        notify(detail, state.captureSaveStatus.type === "warn" ? "warn" : "success");
         console.warn("Post-save update failed", error);
         return;
       }

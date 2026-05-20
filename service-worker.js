@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260520-remote-readback-325";
+const CACHE_NAME = "experience-hub-pwa-20260520-preserve-save-status-326";
 const APP_SHELL = [
   "/",
   "/index.html",
