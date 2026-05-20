@@ -1,4 +1,4 @@
-const APP_VERSION = "20260520-asset-table-sync-329";
+const APP_VERSION = "20260520-workspace-backfill-330";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -152,6 +152,7 @@ const i18n = {
       showPassword: "Mostrar",
       hidePassword: "Ocultar",
       updateEmbeddings: "Actualizar embeddings",
+      syncWorkspaceStructure: "Sincronizar estructura",
       refreshOps: "Refrescar operación",
       verifySupabase: "Verificar Supabase",
       testSupabaseFlow: "Probar flujo real",
@@ -908,6 +909,7 @@ const i18n = {
       showPassword: "Show",
       hidePassword: "Hide",
       updateEmbeddings: "Update embeddings",
+      syncWorkspaceStructure: "Sync structure",
       refreshOps: "Refresh ops",
       verifySupabase: "Verify Supabase",
       testSupabaseFlow: "Test real flow",
@@ -1858,6 +1860,7 @@ const manualContent = {
         "Captura ahora permite registrar varios eventos dentro de una experiencia. Cada línea representa un momento de la experiencia y se conserva para reportes, activos, publicaciones e integración futura con dispositivos.",
         "Cuando la migración de workspace está aplicada, el servidor sincroniza esos eventos internos en la tabla experience_events y los vuelve a leer desde Supabase. Si la tabla aún no existe, mantiene compatibilidad guardándolos dentro de la experiencia.",
         "Cuando la misma migración está aplicada, los adjuntos también se sincronizan en la tabla assets con experiencia, participante, tipo, ruta Storage, texto previo y texto analítico. Esto prepara reportes, publicaciones y dispositivos para leer activos desde una fuente común.",
+        "Administración incluye Sincronizar estructura para reprocesar las experiencias existentes y poblar workspace, eventos internos y activos después de aplicar la migración, sin obligar al usuario a volver a guardar cada registro.",
         "Los adjuntos ahora se suben primero al almacenamiento privado y luego se guarda la experiencia con referencias ligeras. Así las imágenes, audios, videos y documentos pueden abrirse desde otros dispositivos.",
         "En móviles y tablets, la app usa carga binaria cuando hay sesión activa. Esto evita convertir fotos, videos o audios completos a texto interno antes de subirlos y hace la carga más estable.",
         "Si un adjunto no termina de subir, la experiencia conserva la narrativa y muestra el archivo como pendiente; no debe considerarse cierre completo hasta que el activo tenga URL remota o ruta de Storage.",
@@ -2360,6 +2363,7 @@ const manualContent = {
         "Capture now supports several events inside one experience. Each line represents one moment in the experience and is preserved for reports, assets, publications, and future device integration.",
         "When the workspace migration is applied, the server syncs those internal events into the experience_events table and reads them back from Supabase. If the table does not exist yet, it remains compatible by keeping them inside the experience.",
         "When the same migration is applied, attachments are also synced into the assets table with experience, participant, type, Storage path, preview text, and analytical text. This prepares reports, publications, and devices to read assets from one shared source.",
+        "Admin includes Sync structure to reprocess existing experiences and populate workspace, internal events, and assets after applying the migration, without requiring the user to save every record again.",
         "Attachments are now uploaded to private storage first, then the experience is saved with lightweight references. This lets images, audio, video, and documents open from other devices.",
         "On mobile phones and tablets, the app uses binary upload when there is an active session. This avoids converting full photos, videos, or audio files into internal text before upload and makes uploads more stable.",
         "If an attachment does not finish uploading, the experience keeps the narrative and shows the file as pending; the flow should not be considered complete until the asset has a remote URL or Storage path.",
@@ -5047,6 +5051,7 @@ function applyLanguage() {
   document.getElementById("publicationHistoryHeading").textContent = state.language === "en" ? "Drafts" : "Borradores";
   document.getElementById("automation-heading").textContent = t("viewTitles.automation");
   document.getElementById("embeddingBackfillButton").textContent = t("buttons.updateEmbeddings");
+  document.getElementById("workspaceBackfillButton").textContent = t("buttons.syncWorkspaceStructure");
   document.getElementById("refreshOpsButton").textContent = t("buttons.refreshOps");
   document.getElementById("supabaseDiagnosticsButton").textContent = t("buttons.verifySupabase");
   document.getElementById("supabaseSelfTestButton").textContent = t("buttons.testSupabaseFlow");
@@ -5537,6 +5542,7 @@ function setupActions() {
   document.getElementById("contextPrimaryButton").addEventListener("click", applyPrimaryContextLocation);
   document.getElementById("contextAnalyzeButton").addEventListener("click", analyzeContextImpact);
   document.getElementById("embeddingBackfillButton").addEventListener("click", backfillEmbeddings);
+  document.getElementById("workspaceBackfillButton").addEventListener("click", syncWorkspaceStructure);
   document.getElementById("refreshOpsButton").addEventListener("click", refreshOps);
   document.getElementById("supabaseDiagnosticsButton").addEventListener("click", runSupabaseDiagnostics);
   document.getElementById("supabaseSelfTestButton").addEventListener("click", runSupabaseSelfTest);
@@ -5808,6 +5814,7 @@ function handleParallelBacklogClick(event) {
   if (run === "syncOffline") syncOfflineQueue();
   if (run === "refreshOps") refreshOps();
   if (run === "backfillEmbeddings") backfillEmbeddings();
+  if (run === "syncWorkspaceStructure") syncWorkspaceStructure();
   if (run === "showPendingAssetText") showPendingAssetText();
   if (run === "openAuthDiagnostics") {
     state.pendingAuthReturn = "quickQaDiagnostics";
@@ -23288,6 +23295,34 @@ async function backfillEmbeddings() {
     await refreshOps({ silent: true });
   } catch {
     status.textContent = "No se pudieron actualizar embeddings. Revisa la sesión de Supabase.";
+  }
+}
+
+async function syncWorkspaceStructure() {
+  const status = document.getElementById("embeddingStatus");
+  if (!state.apiOnline) {
+    status.textContent = state.language === "en" ? "API unavailable for structure sync." : "API no disponible para sincronizar estructura.";
+    return;
+  }
+  status.textContent = state.language === "en" ? "Syncing workspace structure..." : "Sincronizando estructura workspace...";
+  try {
+    const result = await apiRequest("/workspace/backfill", {
+      method: "POST",
+      body: JSON.stringify({}),
+    });
+    const ok = result.status === "ok" || result.status === "partial";
+    status.textContent = ok
+      ? state.language === "en"
+        ? `Structure sync: ${result.syncedExperiences} experiences, ${result.syncedEvents} events, ${result.syncedAssets} assets.`
+        : `Estructura sincronizada: ${result.syncedExperiences} experiencias, ${result.syncedEvents} eventos, ${result.syncedAssets} activos.`
+      : state.language === "en"
+        ? "Migration required: apply database/workspace-events-assets.sql first."
+        : "Migración requerida: aplica primero database/workspace-events-assets.sql.";
+    await runSupabaseDiagnostics();
+  } catch {
+    status.textContent = state.language === "en"
+      ? "Could not sync structure. Check session and Supabase migration."
+      : "No se pudo sincronizar la estructura. Revisa sesión y migración Supabase.";
   }
 }
 

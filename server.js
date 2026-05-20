@@ -245,6 +245,12 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (url.pathname === "/api/workspace/backfill" && req.method === "POST") {
+    const user = await getRequestUser(req);
+    sendJson(res, 200, await backfillWorkspaceStructure(user));
+    return;
+  }
+
   if (url.pathname === "/api/jobs" && req.method === "GET") {
     await getRequestUser(req);
     sendJson(res, 200, { jobs: listJobs(), logs: await readLogs() });
@@ -1491,6 +1497,52 @@ async function backfillEmbeddings(user, limit = 50) {
     updated,
     skipped: 0,
     engine: activeEmbeddingsProvider(),
+  };
+}
+
+async function backfillWorkspaceStructure(user) {
+  if (activePersistence() !== "supabase") {
+    return { syncedExperiences: 0, syncedEvents: 0, syncedAssets: 0, skipped: 0, status: "not-supabase" };
+  }
+  workspaceSchemaState.available = null;
+  workspaceSchemaState.checkedAt = null;
+  workspaceSchemaState.error = null;
+  const workspace = await getWorkspaceContext(user);
+  if (!workspace?.id) {
+    return {
+      syncedExperiences: 0,
+      syncedEvents: 0,
+      syncedAssets: 0,
+      skipped: 0,
+      status: "migration-required",
+      detail: workspaceSchemaState.error || "workspace_schema_unavailable",
+    };
+  }
+  const rows = await supabaseRest("experiences", {
+    searchParams: {
+      user_id: `eq.${user.id}`,
+      order: "occurred_at.desc",
+    },
+    accessToken: user.accessToken,
+  });
+  let syncedEvents = 0;
+  let syncedAssets = 0;
+  let skipped = 0;
+  for (const row of rows) {
+    const experience = await signExperienceMedia(fromExperienceRow(row));
+    const eventResult = await syncExperienceEventsToSupabase(experience, user);
+    const assetResult = await syncExperienceAssetsToSupabase(experience, user);
+    if (eventResult.synced) syncedEvents += Number(eventResult.count || 0);
+    if (assetResult.synced) syncedAssets += Number(assetResult.count || 0);
+    if (!eventResult.synced || !assetResult.synced) skipped += 1;
+  }
+  return {
+    syncedExperiences: rows.length,
+    syncedEvents,
+    syncedAssets,
+    skipped,
+    status: skipped ? "partial" : "ok",
+    workspaceId: workspace.id,
   };
 }
 
