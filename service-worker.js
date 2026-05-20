@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260520-workspace-backfill-330";
+const CACHE_NAME = "experience-hub-pwa-20260520-participant-table-sync-331";
 const APP_SHELL = [
   "/",
   "/index.html",

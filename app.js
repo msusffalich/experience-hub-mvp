@@ -1,4 +1,4 @@
-const APP_VERSION = "20260520-workspace-backfill-330";
+const APP_VERSION = "20260520-participant-table-sync-331";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -1858,6 +1858,7 @@ const manualContent = {
         "En modo publicado, Captura bloquea el guardado si no hay sesión activa. Esto evita registros aislados en un solo navegador y protege la prueba multidispositivo.",
         "El refactor multidispositivo introduce el modelo correcto de workspace, miembros, participantes, eventos internos y activos. La migración SQL está en database/workspace-events-assets.sql y debe aplicarse antes de considerar compartición multiusuario real.",
         "Captura ahora permite registrar varios eventos dentro de una experiencia. Cada línea representa un momento de la experiencia y se conserva para reportes, activos, publicaciones e integración futura con dispositivos.",
+        "Cuando una experiencia tiene participante piloto, el backend sincroniza primero ese participante en Supabase y luego vincula sus eventos internos y activos. Esto evita que reportes, activos o dispositivos queden con dueños inconsistentes.",
         "Cuando la migración de workspace está aplicada, el servidor sincroniza esos eventos internos en la tabla experience_events y los vuelve a leer desde Supabase. Si la tabla aún no existe, mantiene compatibilidad guardándolos dentro de la experiencia.",
         "Cuando la misma migración está aplicada, los adjuntos también se sincronizan en la tabla assets con experiencia, participante, tipo, ruta Storage, texto previo y texto analítico. Esto prepara reportes, publicaciones y dispositivos para leer activos desde una fuente común.",
         "Administración incluye Sincronizar estructura para reprocesar las experiencias existentes y poblar workspace, eventos internos y activos después de aplicar la migración, sin obligar al usuario a volver a guardar cada registro.",
@@ -2361,6 +2362,7 @@ const manualContent = {
         "In published mode, Capture blocks saving when there is no active session. This prevents isolated records in one browser and protects the multi-device test.",
         "The multi-device refactor introduces the correct workspace, members, participants, internal events, and assets model. The SQL migration lives in database/workspace-events-assets.sql and must be applied before real multi-user sharing is considered complete.",
         "Capture now supports several events inside one experience. Each line represents one moment in the experience and is preserved for reports, assets, publications, and future device integration.",
+        "When an experience has a pilot participant, the backend syncs that participant in Supabase first and then links internal events and assets to it. This prevents reports, assets, or devices from ending up with inconsistent ownership.",
         "When the workspace migration is applied, the server syncs those internal events into the experience_events table and reads them back from Supabase. If the table does not exist yet, it remains compatible by keeping them inside the experience.",
         "When the same migration is applied, attachments are also synced into the assets table with experience, participant, type, Storage path, preview text, and analytical text. This prepares reports, publications, and devices to read assets from one shared source.",
         "Admin includes Sync structure to reprocess existing experiences and populate workspace, internal events, and assets after applying the migration, without requiring the user to save every record again.",
@@ -23313,8 +23315,8 @@ async function syncWorkspaceStructure() {
     const ok = result.status === "ok" || result.status === "partial";
     status.textContent = ok
       ? state.language === "en"
-        ? `Structure sync: ${result.syncedExperiences} experiences, ${result.syncedEvents} events, ${result.syncedAssets} assets.`
-        : `Estructura sincronizada: ${result.syncedExperiences} experiencias, ${result.syncedEvents} eventos, ${result.syncedAssets} activos.`
+        ? `Structure sync: ${result.syncedExperiences} experiences, ${result.syncedParticipants || 0} participants, ${result.syncedEvents} events, ${result.syncedAssets} assets.`
+        : `Estructura sincronizada: ${result.syncedExperiences} experiencias, ${result.syncedParticipants || 0} participantes, ${result.syncedEvents} eventos, ${result.syncedAssets} activos.`
       : state.language === "en"
         ? "Migration required: apply database/workspace-events-assets.sql first."
         : "Migración requerida: aplica primero database/workspace-events-assets.sql.";

@@ -17,21 +17,22 @@ CREATE TABLE IF NOT EXISTS workspace_members (
 );
 
 CREATE TABLE IF NOT EXISTS participants (
-  participant_id TEXT PRIMARY KEY,
   workspace_id UUID NOT NULL REFERENCES workspaces(workspace_id) ON DELETE CASCADE,
+  participant_id TEXT NOT NULL,
   display_name TEXT NOT NULL,
   email TEXT,
   segment TEXT,
   status TEXT NOT NULL DEFAULT 'active',
   metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (workspace_id, participant_id)
 );
 
 ALTER TABLE experiences
   ADD COLUMN IF NOT EXISTS workspace_id UUID REFERENCES workspaces(workspace_id) ON DELETE CASCADE,
   ADD COLUMN IF NOT EXISTS owner_user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-  ADD COLUMN IF NOT EXISTS participant_id TEXT REFERENCES participants(participant_id) ON DELETE SET NULL;
+  ADD COLUMN IF NOT EXISTS participant_id TEXT;
 
 CREATE INDEX IF NOT EXISTS experiences_workspace_time_idx
   ON experiences (workspace_id, occurred_at DESC);
@@ -39,11 +40,14 @@ CREATE INDEX IF NOT EXISTS experiences_workspace_time_idx
 CREATE INDEX IF NOT EXISTS experiences_participant_time_idx
   ON experiences (participant_id, occurred_at DESC);
 
+CREATE INDEX IF NOT EXISTS participants_participant_id_idx
+  ON participants (participant_id);
+
 CREATE TABLE IF NOT EXISTS experience_events (
   event_id TEXT PRIMARY KEY,
   experience_id TEXT NOT NULL REFERENCES experiences(experience_id) ON DELETE CASCADE,
   workspace_id UUID NOT NULL REFERENCES workspaces(workspace_id) ON DELETE CASCADE,
-  participant_id TEXT REFERENCES participants(participant_id) ON DELETE SET NULL,
+  participant_id TEXT,
   event_order INTEGER NOT NULL DEFAULT 0,
   title TEXT NOT NULL,
   description TEXT,
@@ -63,7 +67,7 @@ CREATE TABLE IF NOT EXISTS assets (
   asset_id TEXT PRIMARY KEY,
   workspace_id UUID NOT NULL REFERENCES workspaces(workspace_id) ON DELETE CASCADE,
   owner_user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-  participant_id TEXT REFERENCES participants(participant_id) ON DELETE SET NULL,
+  participant_id TEXT,
   experience_id TEXT REFERENCES experiences(experience_id) ON DELETE SET NULL,
   event_id TEXT REFERENCES experience_events(event_id) ON DELETE SET NULL,
   name TEXT NOT NULL,
@@ -79,6 +83,12 @@ CREATE TABLE IF NOT EXISTS assets (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+ALTER TABLE experiences DROP CONSTRAINT IF EXISTS experiences_participant_id_fkey;
+ALTER TABLE experience_events DROP CONSTRAINT IF EXISTS experience_events_participant_id_fkey;
+ALTER TABLE assets DROP CONSTRAINT IF EXISTS assets_participant_id_fkey;
+ALTER TABLE participants DROP CONSTRAINT IF EXISTS participants_pkey;
+ALTER TABLE participants ADD CONSTRAINT participants_pkey PRIMARY KEY (workspace_id, participant_id);
 
 CREATE INDEX IF NOT EXISTS assets_workspace_created_idx
   ON assets (workspace_id, created_at DESC);

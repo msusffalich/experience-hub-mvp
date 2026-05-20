@@ -716,11 +716,47 @@ async function getWorkspaceContext(user = { id: LOCAL_USER_ID, email: "local-use
   }
 }
 
+async function ensureExperienceParticipant(experience, workspaceId, user = { id: LOCAL_USER_ID }) {
+  const participantId = String(experience?.pilotParticipantId || "").trim();
+  if (!participantId || !workspaceId) return null;
+  const displayName = String(experience?.pilotParticipantName || participantId).trim() || participantId;
+  try {
+    await supabaseRest("participants", {
+      method: "POST",
+      searchParams: { on_conflict: "workspace_id,participant_id" },
+      headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+      body: JSON.stringify({
+        participant_id: participantId,
+        workspace_id: workspaceId,
+        display_name: displayName,
+        email: null,
+        status: "active",
+        metadata: {
+          source: "experience-capture-v1",
+          ownerUserId: user.id || null,
+          lastSeenAt: new Date().toISOString(),
+        },
+      }),
+      accessToken: user.accessToken,
+    });
+    return { id: participantId, displayName };
+  } catch (error) {
+    workspaceSchemaState.available = false;
+    workspaceSchemaState.checkedAt = new Date().toISOString();
+    workspaceSchemaState.error = sanitizeDiagnosticError(error);
+    return null;
+  }
+}
+
 async function syncExperienceEventsToSupabase(experience, user = { id: LOCAL_USER_ID }) {
   const workspace = await getWorkspaceContext(user);
   if (!workspace?.id) return { synced: false, reason: "workspace_schema_unavailable" };
   const events = normalizeExperienceEvents(experience.events || [], experience.id);
   try {
+    if (experience.pilotParticipantId) {
+      const participant = await ensureExperienceParticipant(experience, workspace.id, user);
+      if (!participant) return { synced: false, reason: "participant_sync_failed" };
+    }
     await supabaseRest("experience_events", {
       method: "DELETE",
       searchParams: { experience_id: `eq.${experience.id}` },
@@ -748,6 +784,10 @@ async function syncExperienceAssetsToSupabase(experience, user = { id: LOCAL_USE
   if (!workspace?.id) return { synced: false, reason: "workspace_schema_unavailable" };
   const attachments = Array.isArray(experience.attachments) ? experience.attachments : [];
   try {
+    if (experience.pilotParticipantId) {
+      const participant = await ensureExperienceParticipant(experience, workspace.id, user);
+      if (!participant) return { synced: false, reason: "participant_sync_failed" };
+    }
     await supabaseRest("assets", {
       method: "DELETE",
       searchParams: { experience_id: `eq.${experience.id}` },
@@ -1106,6 +1146,19 @@ async function runSupabaseDiagnostics(user) {
     return `Workspace activo ${workspace.id}; los eventos internos se sincronizan en experience_events.`;
   });
 
+  await collectDiagnosticCheck(checks, "workspaceParticipants", "Participantes compartidos", async () => {
+    const workspace = await getWorkspaceContext(user);
+    if (!workspace?.id) throw new Error(workspaceSchemaState.error || "workspace_schema_unavailable");
+    const rows = await supabaseRest("participants", {
+      searchParams: {
+        workspace_id: `eq.${workspace.id}`,
+        limit: "1",
+      },
+      accessToken: user.accessToken,
+    });
+    return `Tabla participants accesible; ${rows.length} participante encontrado en la muestra del workspace.`;
+  });
+
   await collectDiagnosticCheck(checks, "workspaceAssets", "Activos multimodales compartidos", async () => {
     const rows = await supabaseRest("assets", {
       searchParams: {
@@ -1179,6 +1232,9 @@ function diagnosticActionForCheck(id, status, detail = "") {
   if (id === "workspaceEvents") {
     return { text: "Ejecuta database/workspace-events-assets.sql para habilitar workspace, participantes, eventos internos y activos compartidos.", actionType: "openAdmin" };
   }
+  if (id === "workspaceParticipants") {
+    return { text: "Ejecuta database/workspace-events-assets.sql para habilitar participantes compartidos y sus políticas RLS.", actionType: "openAdmin" };
+  }
   if (id === "workspaceAssets") {
     return { text: "Ejecuta database/workspace-events-assets.sql para habilitar la tabla assets y sus políticas RLS.", actionType: "openAdmin" };
   }
@@ -1236,6 +1292,7 @@ async function runSupabaseSelfTest(user) {
 
   const steps = [];
   const testId = `selftest-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  const testParticipantId = `${testId}-participant`;
   let uploadedMedia = null;
   let dailyTestLocation = null;
 
@@ -1278,6 +1335,8 @@ async function runSupabaseSelfTest(user) {
           people: "Sistema",
           objective: "validacion tecnica",
           notes: "Registro temporal creado por la prueba de cierre Supabase.",
+          pilotParticipantId: testParticipantId,
+          pilotParticipantName: "Participante de prueba",
           events: [
             { id: `${testId}-event-1`, title: "Inicio", description: "Se crea el registro temporal.", order: 1 },
             { id: `${testId}-event-2`, title: "Validación", description: "Se verifica lectura y sincronización.", order: 2 },
@@ -1309,6 +1368,18 @@ async function runSupabaseSelfTest(user) {
       if (workspaceSchemaState.available === false) throw new Error(workspaceSchemaState.error || "workspace_schema_unavailable");
       if (events.length < 2) throw new Error("experience_events_not_readable");
       return `${events.length} eventos internos sincronizados y legibles desde experience_events.`;
+    });
+
+    await collectSelfTestStep(steps, "workspaceParticipants", "Participantes compartidos", async () => {
+      const rows = await supabaseRest("participants", {
+        searchParams: {
+          participant_id: `eq.${testParticipantId}`,
+          limit: "1",
+        },
+        accessToken: user.accessToken,
+      });
+      if (!rows.length) throw new Error("participant_not_synced");
+      return "Participante temporal sincronizado y disponible para eventos y activos.";
     });
 
     await collectSelfTestStep(steps, "workspaceAssets", "Activos compartidos", async () => {
@@ -1358,6 +1429,10 @@ async function runSupabaseSelfTest(user) {
       await deleteExperienceRecord(testId, user);
       return "Experiencia temporal eliminada.";
     });
+    await collectSelfTestStep(steps, "cleanupParticipant", "Limpieza participante", async () => {
+      await deleteParticipantRecord(testParticipantId, user);
+      return "Participante temporal eliminado.";
+    });
     if (uploadedMedia?.path) {
       await collectSelfTestStep(steps, "cleanupStorage", "Limpieza Storage", async () => {
         await deleteSupabaseObject(uploadedMedia.path);
@@ -1401,10 +1476,12 @@ function selfTestActionFor(id, detail = "") {
   if (id === "experienceCreate" || id === "experienceRead") return { text: "Revisa tabla experiences, políticas RLS y que auth.uid() coincida con user_id.", actionType: "openAdmin" };
   if (id === "semantic") return { text: "Ejecuta database/semantic-search.sql; si no está aplicado, la app seguirá con búsqueda local.", actionType: "openAdmin" };
   if (id === "workspaceEvents") return { text: "Ejecuta database/workspace-events-assets.sql y vuelve a ejecutar Probar flujo real.", actionType: "openAdmin" };
+  if (id === "workspaceParticipants") return { text: "Ejecuta database/workspace-events-assets.sql y vuelve a ejecutar Probar flujo real.", actionType: "openAdmin" };
   if (id === "workspaceAssets") return { text: "Ejecuta database/workspace-events-assets.sql y vuelve a ejecutar Probar flujo real.", actionType: "openAdmin" };
   if (id === "dailyBriefing") return { text: "Ejecuta database/schema.sql y database/auth-rls.sql para habilitar daily_briefings.", actionType: "openAdmin" };
   if (id === "cleanupDailyBriefing") return { text: "Borra manualmente el registro de prueba en daily_briefings si quedó pendiente.", actionType: "openAdmin" };
   if (id === "cleanupExperience") return { text: "Borra manualmente cualquier experiencia con título SUPABASE SELF TEST.", actionType: "openAdmin" };
+  if (id === "cleanupParticipant") return { text: "Borra manualmente cualquier participante temporal con prefijo selftest si quedó pendiente.", actionType: "openAdmin" };
   if (id === "cleanupStorage") return { text: `Borra manualmente el objeto temporal indicado en ${SUPABASE_STORAGE_BUCKET}.`, actionType: "openAdmin" };
   return { text: "Corrige el punto indicado y vuelve a ejecutar Probar flujo real.", actionType: "openAdmin" };
 }
@@ -1421,6 +1498,16 @@ async function deleteSupabaseObject(objectPath) {
   });
   const text = await response.text();
   if (!response.ok) throw new Error(`supabase_storage_delete_${response.status}: ${text}`);
+}
+
+async function deleteParticipantRecord(participantId, user = { id: LOCAL_USER_ID }) {
+  if (!participantId || activePersistence() !== "supabase") return;
+  await supabaseRest("participants", {
+    method: "DELETE",
+    searchParams: { participant_id: `eq.${participantId}` },
+    headers: { Prefer: "return=minimal" },
+    accessToken: user.accessToken,
+  });
 }
 
 async function semanticSearch(query, user, limit = 8) {
@@ -1502,7 +1589,7 @@ async function backfillEmbeddings(user, limit = 50) {
 
 async function backfillWorkspaceStructure(user) {
   if (activePersistence() !== "supabase") {
-    return { syncedExperiences: 0, syncedEvents: 0, syncedAssets: 0, skipped: 0, status: "not-supabase" };
+    return { syncedExperiences: 0, syncedParticipants: 0, syncedEvents: 0, syncedAssets: 0, skipped: 0, status: "not-supabase" };
   }
   workspaceSchemaState.available = null;
   workspaceSchemaState.checkedAt = null;
@@ -1511,6 +1598,7 @@ async function backfillWorkspaceStructure(user) {
   if (!workspace?.id) {
     return {
       syncedExperiences: 0,
+      syncedParticipants: 0,
       syncedEvents: 0,
       syncedAssets: 0,
       skipped: 0,
@@ -1527,9 +1615,14 @@ async function backfillWorkspaceStructure(user) {
   });
   let syncedEvents = 0;
   let syncedAssets = 0;
+  const syncedParticipantIds = new Set();
   let skipped = 0;
   for (const row of rows) {
     const experience = await signExperienceMedia(fromExperienceRow(row));
+    if (experience.pilotParticipantId) {
+      const participant = await ensureExperienceParticipant(experience, workspace.id, user);
+      if (participant?.id) syncedParticipantIds.add(participant.id);
+    }
     const eventResult = await syncExperienceEventsToSupabase(experience, user);
     const assetResult = await syncExperienceAssetsToSupabase(experience, user);
     if (eventResult.synced) syncedEvents += Number(eventResult.count || 0);
@@ -1538,6 +1631,7 @@ async function backfillWorkspaceStructure(user) {
   }
   return {
     syncedExperiences: rows.length,
+    syncedParticipants: syncedParticipantIds.size,
     syncedEvents,
     syncedAssets,
     skipped,
