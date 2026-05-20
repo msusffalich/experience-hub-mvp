@@ -618,12 +618,20 @@ async function listExperiences(user = { id: LOCAL_USER_ID }) {
       },
       accessToken: user.accessToken,
     });
-    const eventMap = await listExperienceEventsForRows(rows, user);
+    const [eventMap, assetMap] = await Promise.all([
+      listExperienceEventsForRows(rows, user),
+      listExperienceAssetsForRows(rows, user),
+    ]);
     return Promise.all(
       rows.map((row) => {
         const experience = fromExperienceRow(row);
         const tableEvents = eventMap.get(experience.id);
-        return signExperienceMedia(tableEvents ? { ...experience, events: tableEvents } : experience);
+        const tableAssets = assetMap.get(experience.id);
+        return signExperienceMedia({
+          ...experience,
+          ...(tableEvents ? { events: tableEvents } : {}),
+          ...(tableAssets?.length ? { attachments: tableAssets } : {}),
+        });
       }),
     );
   }
@@ -842,6 +850,36 @@ async function listExperienceEventsForRows(rows = [], user = { id: LOCAL_USER_ID
   }
 }
 
+async function listExperienceAssetsForRows(rows = [], user = { id: LOCAL_USER_ID }) {
+  if (!rows.length || activePersistence() !== "supabase" || workspaceSchemaUnavailableRecently()) return new Map();
+  const ids = rows.map((row) => row.experience_id).filter(Boolean);
+  if (!ids.length) return new Map();
+  try {
+    const assetRows = await supabaseRest("assets", {
+      searchParams: {
+        experience_id: `in.(${ids.map(encodePostgrestListValue).join(",")})`,
+        order: "created_at.asc",
+      },
+      accessToken: user.accessToken,
+    });
+    workspaceSchemaState.available = true;
+    workspaceSchemaState.checkedAt = new Date().toISOString();
+    workspaceSchemaState.error = null;
+    return assetRows.reduce((map, row) => {
+      const experienceId = row.experience_id;
+      if (!experienceId) return map;
+      if (!map.has(experienceId)) map.set(experienceId, []);
+      map.get(experienceId).push(fromAssetRow(row));
+      return map;
+    }, new Map());
+  } catch (error) {
+    workspaceSchemaState.available = false;
+    workspaceSchemaState.checkedAt = new Date().toISOString();
+    workspaceSchemaState.error = sanitizeDiagnosticError(error);
+    return new Map();
+  }
+}
+
 function toExperienceEventRow(event, experience, workspaceId, index = 0) {
   return {
     event_id: event.id || `evt-${experience.id}-${index + 1}`,
@@ -899,6 +937,25 @@ function toAssetRow(attachment, experience, workspaceId, user, index = 0) {
       experienceTitle: experience.title || "",
       source: "experience-attachment-v1",
     },
+  };
+}
+
+function fromAssetRow(row) {
+  return {
+    id: row.asset_id,
+    name: row.name || "Activo",
+    type: row.mime_type || "application/octet-stream",
+    originalType: row.mime_type || "application/octet-stream",
+    size: Number(row.size_bytes || 0),
+    kind: row.kind || inferServerMediaKind({ type: row.mime_type }),
+    storage: "supabase",
+    path: row.storage_path || "",
+    previewText: row.preview_text || "",
+    analysisText: row.analysis_text || "",
+    extension: row.metadata?.extension || "",
+    previewable: row.metadata?.previewable !== false,
+    remoteSyncFailed: Boolean(row.metadata?.remoteSyncFailed),
+    metadata: row.metadata || {},
   };
 }
 
