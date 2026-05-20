@@ -1,4 +1,4 @@
-const APP_VERSION = "20260519-mobile-media-upload-323";
+const APP_VERSION = "20260520-save-feedback-324";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -5076,12 +5076,14 @@ function setupForm() {
           : state.language === "en"
             ? "The experience was saved. A later interface refresh did not complete; reload only if you do not see the change."
             : "La experiencia fue guardada. Un refresco posterior de la interfaz no se completó; recarga solo si no ves el cambio.";
-        state.captureSaveStatus.type = "warn";
+        state.captureSaveStatus.type = "success";
+        state.captureSaveStatus.title = state.language === "en" ? "Experience saved" : "Experiencia guardada";
         state.captureSaveStatus.detail = detail;
+        state.captureSaveStatus.queued = false;
         state.captureSaveStatus.experienceId = savedExperience?.id || state.captureSaveStatus.experienceId;
         state.captureSaveStatus.experienceTitle = savedExperience?.title || state.captureSaveStatus.experienceTitle;
         renderCaptureSaveStatus();
-        notify(detail, "warn");
+        notify(detail, "success");
         console.warn("Post-save update failed", error);
         return;
       }
