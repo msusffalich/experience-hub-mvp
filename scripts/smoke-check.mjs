@@ -90,6 +90,10 @@ assert(files.uploadAttemptsSql.includes("ENABLE ROW LEVEL SECURITY"), "Upload at
 assert(files.uploadAttemptsSql.includes("Users can manage own upload attempts"), "Upload attempts migration is missing the user RLS policy.");
 assert(files.app.includes("Cada subida de adjunto queda registrada como intento auditable"), "Spanish manual does not explain upload attempt traceability.");
 assert(files.app.includes("Every attachment upload is recorded as an auditable attempt"), "English manual does not explain upload attempt traceability.");
+assert(files.app.includes("function loadUploadAttempts"), "Frontend does not load upload attempt history.");
+assert(files.app.includes("function renderUploadAttemptsPanel"), "Admin does not render upload attempt history.");
+assert(files.app.includes("Trazabilidad de subidas de adjuntos") && files.app.includes("Attachment upload traceability"), "System health does not expose upload traceability.");
+assert(files.styles.includes(".upload-attempts-panel") && files.styles.includes(".upload-attempt-item"), "Styles are missing upload attempt history UI.");
 
 if (failures.length) {
   console.error("Smoke check failed:");

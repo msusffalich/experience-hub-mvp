@@ -1,4 +1,4 @@
-const APP_VERSION = "20260521-upload-attempts-349";
+const APP_VERSION = "20260521-upload-attempts-admin-350";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -1890,6 +1890,7 @@ const manualContent = {
         "Si un adjunto queda pendiente, Captura muestra el nombre del archivo y el motivo técnico devuelto por el backend, por ejemplo tamaño, sesión, bucket, permiso o firma de URL.",
         "Cada subida de adjunto queda registrada como intento auditable con archivo, tamaño, tipo MIME, ruta, estado, error y fecha. Administración usa esa trazabilidad para distinguir problemas de Storage, sesión, formato o URL firmada sin depender de prueba y error.",
         "El diagnóstico de Supabase incluye Trazabilidad de adjuntos. Si hay fallos recientes, muestra el último archivo afectado, el código de error y la acción recomendada antes de continuar pruebas multidispositivo.",
+        "Administración muestra un historial reciente de subidas de adjuntos con estado por archivo: subiendo, subido o fallido. Ese historial se puede actualizar desde el mismo panel para revisar pruebas desde móviles, tablets y desktop.",
         "La prueba completa de multimedia solo se aprueba cuando el mismo adjunto aparece desde otro dispositivo en Librería, Activos multimodales, Reportes y Publicaciones. Si solo se sincroniza la narrativa, el flujo sigue incompleto.",
         "El servidor ya soporta modo cloud mediante HOST=0.0.0.0 y NODE_ENV=production. Usa .env.production.example como base para desplegar sin depender de localhost.",
         "La guía docs/deploy-publicacion.md define el orden recomendado: GitHub privado, Supabase productivo, variables seguras, hosting Node, prueba desde varios dispositivos y validación privada.",
@@ -2412,6 +2413,7 @@ const manualContent = {
         "If an attachment remains pending, Capture shows the file name and the technical reason returned by the backend, such as size, session, bucket, permission, or signed URL.",
         "Every attachment upload is recorded as an auditable attempt with file, size, MIME type, path, status, error, and timestamp. Admin uses that traceability to distinguish Storage, session, format, or signed URL problems without relying on trial and error.",
         "Supabase diagnostics include Attachment traceability. If recent failures exist, it shows the affected file, error code, and recommended action before continuing multi-device tests.",
+        "Admin shows a recent attachment upload history with per-file status: uploading, uploaded, or failed. The same panel can refresh the history to review tests from phones, tablets, and desktop.",
         "The complete media test is approved only when the same attachment appears from another device in Library, Multimodal Assets, Reports, and Publications. If only the narrative syncs, the flow is still incomplete.",
         "The server now supports cloud mode through HOST=0.0.0.0 and NODE_ENV=production. Use .env.production.example as the deployment baseline so the app does not depend on localhost.",
         "The docs/deploy-publicacion.md guide defines the recommended order: private GitHub, production Supabase, secure variables, Node hosting, multi-device test, and private validation.",
@@ -3186,6 +3188,8 @@ const state = {
   apiStatus: { ok: false, checkedAt: null, latencyMs: null, message: "", service: "", mode: "local" },
   supabaseDiagnostics: null,
   supabaseSelfTest: null,
+  uploadAttempts: [],
+  uploadAttemptsCheckedAt: null,
   pendingAuthReturn: null,
   coreMvpReturn: null,
   session: loadSession(),
@@ -6097,6 +6101,14 @@ function keepLocalOfflineMutation(id) {
 }
 
 function handleDiagnosticAction(event) {
+  const refreshButton = event.target.closest("[data-upload-attempts-refresh]");
+  if (refreshButton) {
+    loadUploadAttempts().then(() => {
+      renderSupabaseDiagnostics();
+      renderAdmin();
+    });
+    return;
+  }
   const button = event.target.closest("[data-diagnostic-action]");
   if (!button) return;
   const action = button.dataset.diagnosticAction;
@@ -20260,6 +20272,7 @@ function renderAdmin() {
   const assetAnalysisReadiness = calculateAssetAnalysisReadiness();
   const assetStorageReadiness = calculateAssetStorageReadiness();
   const assetWorkflowReadiness = calculateAssetWorkflowReadiness();
+  const uploadAttemptSummary = summarizeUploadAttempts();
   const predictiveExperienceCount = getReportExperiences().length;
   const experienceMapGraph = buildExperienceMapGraph();
   const experienceMapRoutes = buildExperienceMapRoutes(experienceMapGraph);
@@ -20553,6 +20566,12 @@ function renderAdmin() {
       state.language === "en"
         ? `${assetStorageReadiness.remote}/${assetStorageReadiness.total} remote · ${assetStorageReadiness.pendingSync} pending sync · ${assetStorageReadiness.cached} cached previews`
         : `${assetStorageReadiness.remote}/${assetStorageReadiness.total} remotos · ${assetStorageReadiness.pendingSync} pendientes de sincronizar · ${assetStorageReadiness.cached} vistas en caché`,
+    ],
+    [
+      state.language === "en" ? "Attachment upload traceability" : "Trazabilidad de subidas de adjuntos",
+      uploadAttemptSummary.ok ? okStatus : attentionStatus,
+      uploadAttemptSummary.detail,
+      { view: "admin", focus: "supabaseDiagnostics", run: "runSupabaseDiagnostics", label: state.language === "en" ? "View history" : "Ver historial" },
     ],
     [
       "Sincronización sin conexión",
@@ -20994,6 +21013,7 @@ async function runSupabaseDiagnostics() {
   status.textContent = t("labels.supabaseDiagnosticsRunning");
   try {
     state.supabaseDiagnostics = await apiRequest("/supabase/diagnostics");
+    await loadUploadAttempts({ silent: true });
     status.textContent = t("labels.supabaseDiagnosticsReady");
   } catch (error) {
     const needsSession = error.status === 401 || String(error.message || "").includes("API 401");
@@ -21021,6 +21041,24 @@ async function runSupabaseDiagnostics() {
   }
   renderSupabaseDiagnostics();
   renderAdmin();
+}
+
+async function loadUploadAttempts(options = {}) {
+  if (!state.apiOnline || !state.session?.access_token) {
+    state.uploadAttempts = [];
+    state.uploadAttemptsCheckedAt = new Date().toISOString();
+    return [];
+  }
+  try {
+    const attempts = await apiRequest("/upload-attempts?limit=12");
+    state.uploadAttempts = Array.isArray(attempts) ? attempts : [];
+    state.uploadAttemptsCheckedAt = new Date().toISOString();
+    if (!options.silent) document.getElementById("embeddingStatus").textContent = state.language === "en" ? "Attachment upload history updated." : "Historial de adjuntos actualizado.";
+    return state.uploadAttempts;
+  } catch (error) {
+    if (!options.silent) document.getElementById("embeddingStatus").textContent = state.language === "en" ? "Could not read attachment upload history." : "No se pudo leer el historial de adjuntos.";
+    return state.uploadAttempts || [];
+  }
 }
 
 function renderSupabaseSelfTest() {
@@ -21060,7 +21098,92 @@ function renderSupabaseDiagnostics() {
         ? `<div class="diagnostic-grid">${checks.map((check) => renderDiagnosticCheck(check, "diagnostics")).join("")}</div>`
         : ""
     }
+    ${renderUploadAttemptsPanel()}
   `;
+}
+
+function renderUploadAttemptsPanel() {
+  const attempts = state.uploadAttempts || [];
+  const summary = summarizeUploadAttempts(attempts);
+  const labels = state.language === "en"
+    ? {
+        title: "Attachment upload history",
+        empty: "No recent attachment uploads were found for this user.",
+        refreshed: state.uploadAttemptsCheckedAt ? `Updated ${formatDate(state.uploadAttemptsCheckedAt)}` : "Not refreshed yet",
+        refresh: "Refresh history",
+        uploaded: "Uploaded",
+        uploading: "Uploading",
+        pending: "Pending",
+        failed: "Failed",
+        path: "Path",
+      }
+    : {
+        title: "Historial de subidas de adjuntos",
+        empty: "No se encontraron subidas recientes de adjuntos para este usuario.",
+        refreshed: state.uploadAttemptsCheckedAt ? `Actualizado ${formatDate(state.uploadAttemptsCheckedAt)}` : "Aún no actualizado",
+        refresh: "Actualizar historial",
+        uploaded: "Subido",
+        uploading: "Subiendo",
+        pending: "Pendiente",
+        failed: "Fallido",
+        path: "Ruta",
+      };
+  return `
+    <section class="upload-attempts-panel">
+      <div class="supabase-diagnostics-heading">
+        <div>
+          <h3>${escapeHtml(labels.title)}</h3>
+          <p class="card-meta">${escapeHtml(`${summary.detail} · ${labels.refreshed}`)}</p>
+        </div>
+        <button class="ghost-button" type="button" data-upload-attempts-refresh="1">${escapeHtml(labels.refresh)}</button>
+      </div>
+      ${
+        attempts.length
+          ? `<div class="upload-attempt-list">${attempts.map((attempt) => renderUploadAttemptItem(attempt, labels)).join("")}</div>`
+          : `<p class="card-meta">${escapeHtml(labels.empty)}</p>`
+      }
+    </section>
+  `;
+}
+
+function renderUploadAttemptItem(attempt, labels) {
+  const statusClass = attempt.status === "uploaded" ? "status-ok" : attempt.status === "failed" ? "status-warn" : "status-neutral";
+  const statusLabel = labels[attempt.status] || attempt.status || labels.pending;
+  const size = attempt.sizeBytes ? formatFileSize(Number(attempt.sizeBytes)) : "";
+  const meta = [attempt.mimeType, size, attempt.startedAt ? formatDate(attempt.startedAt) : ""].filter(Boolean).join(" · ");
+  const detail = attempt.status === "failed"
+    ? [attempt.errorCode, attempt.errorMessage].filter(Boolean).join(" · ")
+    : attempt.storagePath
+      ? `${labels.path}: ${attempt.storagePath}`
+      : "";
+  return `
+    <article class="upload-attempt-item ${attempt.status === "failed" ? "is-failed" : ""}">
+      <div>
+        <strong>${escapeHtml(attempt.fileName || attempt.assetId || "media")}</strong>
+        <p>${escapeHtml(meta)}</p>
+        ${detail ? `<small>${escapeHtml(detail)}</small>` : ""}
+      </div>
+      <span class="${statusClass}">${escapeHtml(statusLabel)}</span>
+    </article>
+  `;
+}
+
+function summarizeUploadAttempts(attempts = state.uploadAttempts || []) {
+  const total = attempts.length;
+  const failed = attempts.filter((attempt) => attempt.status === "failed").length;
+  const uploaded = attempts.filter((attempt) => attempt.status === "uploaded").length;
+  const active = attempts.filter((attempt) => attempt.status === "uploading" || attempt.status === "pending").length;
+  const detail = state.language === "en"
+    ? `${uploaded}/${total} uploaded · ${failed} failed · ${active} pending`
+    : `${uploaded}/${total} subidos · ${failed} fallidos · ${active} pendientes`;
+  return {
+    total,
+    uploaded,
+    failed,
+    active,
+    ok: total === 0 || (failed === 0 && active === 0),
+    detail,
+  };
 }
 
 function formatSelfTestSummary(result) {
