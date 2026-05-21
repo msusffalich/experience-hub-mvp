@@ -1,4 +1,4 @@
-const APP_VERSION = "20260521-dashboard-attachment-simple-356";
+const APP_VERSION = "20260521-dashboard-ux-cleanup-357";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -2004,9 +2004,10 @@ const manualContent = {
         "El alcance por participante es transversal: Diario, Hallazgos, Reportes y acciones predictivas heredan el participante activo cuando crean eventos o experiencias derivadas. Así se evita que una acción individual aparezca como si fuera de todos.",
         "El calendario visual, la lista de Agenda, las exportaciones .ics, la conversión de eventos a experiencias y el Panel respetan el participante vinculado al evento.",
         "Librería, Reportes, Hallazgos y Publicaciones muestran o filtran por Participante piloto para separar la evidencia de cada persona durante la prueba.",
-        "El Panel también permite seleccionar Participante piloto. Métricas, Agenda, distribución por categoría, señales recientes y calidad de captura se recalculan para esa persona.",
+        "El Panel también permite seleccionar Participante piloto. Métricas, Agenda, distribución por categoría y señales recientes se recalculan para esa persona.",
         "El Panel muestra arriba el día, la hora local, la zona horaria y el próximo evento vinculado para ubicar la lectura del piloto en el momento actual.",
-        "El Panel incluye Estado de adjuntos como acción directa. Si hay archivos pendientes, Reparar adjuntos intenta completar la subida para Librería, Activos, Reportes, Publicaciones y vistas móviles; si falta la copia local, guía al usuario a revisar el archivo sin mostrar detalles técnicos.",
+        "El Panel se simplifica para uso diario: acciones principales, métricas, Agenda, señales recientes, Diario y análisis contextual. Los estados técnicos, colas, preparación del piloto, adjuntos pendientes y diagnósticos viven en Administración.",
+        "La regla de producto es simple por fuera y sofisticada por dentro: las páginas de usuario muestran el flujo principal, mientras los análisis, verificaciones y controles avanzados se ejecutan en segundo plano o se revisan en Administración.",
         "Cada participante piloto incluye un checklist de onboarding: acceso confirmado, manual revisado y primera prueba completada. Preparación del piloto avisa si quedan personas sin completar esos pasos.",
         "Registro de feedback piloto permite guardar observaciones por módulo, severidad y estado, resolverlas y exportarlas como CSV. Se encuentra en Administración y también se puede abrir desde el botón Registrar feedback del Panel.",
         "El feedback alto o bloqueante que siga abierto afecta la Preparación del piloto y aparece en Salud del sistema como atención.",
@@ -2067,8 +2068,7 @@ const manualContent = {
       items: [
         "Registra título, categoría, objetivo/intención, fecha, duración, estado emocional, energía, ubicación, personas y notas.",
         "Al registrar energía, usa una lectura rápida y consistente: 1-3 baja, 4-6 media/estable, 7-8 alta, 9-10 excepcional.",
-        "Puedes usar plantillas rápidas para revisión diaria, reunión de trabajo o chequeo de energía.",
-        "La Guía de captura usa la calidad actual de datos para sugerir qué campos completar primero en la próxima experiencia.",
+        "Captura usa un formulario único. La revisión de escritura, calidad, sincronización y diagnósticos se mantienen como lógica interna o administrativa para no competir con el acto principal de guardar una experiencia.",
         "Captura muestra una confirmación visible después de guardar. La tarjeta indica si la experiencia quedó disponible en todos tus dispositivos, si quedó solo en este dispositivo o si requiere entrar y guardar pendientes antes de cerrar el navegador.",
         "Si el guardado se detiene antes de completarse, Captura indica la fase exacta del problema: validación, lectura del formulario, guardado local, Supabase, Agenda o refresco visual. El formulario se conserva para reintentar sin perder el texto.",
         "En modo Supabase, Captura exige sesión antes de guardar nuevas experiencias. Esto evita que varios usuarios carguen datos que solo existan en un navegador.",
@@ -2593,8 +2593,7 @@ const manualContent = {
       items: [
         "Capture title, category, objective/intention, date, duration, mood, energy, location, people, and notes.",
         "When recording energy, use a consistent quick scale: 1-3 low, 4-6 medium/stable, 7-8 high, 9-10 exceptional.",
-        "Use quick templates for daily review, work meeting, or energy check-in.",
-        "The Capture guide uses current data quality to suggest which fields to complete first in the next experience.",
+        "Capture uses one form. Writing review, quality, sync, and diagnostics remain internal or administrative logic so they do not compete with the main act of saving an experience.",
         "Capture shows a visible confirmation after saving. The card indicates whether the experience is available on all your devices, stayed only on this device, or requires sign-in and saving pending changes before closing the browser.",
         "In Supabase mode, Capture requires sign-in before saving new experiences. This prevents multiple users from creating records that exist only in one browser.",
         "If saving is already complete but a secondary action fails, such as updating Agenda or refreshing a view, the app keeps the saved confirmation and shows a secondary warning instead of marking the experience as lost.",
@@ -2874,7 +2873,8 @@ const manualContent = {
         "To view images, videos, audio, or documents on mobile, tablet, Mac, or desktop, the file must be in Supabase Storage or loaded on that same device.",
         "When saving an experience, the server attempts to upload any pending local attachment to Storage so other devices can view it.",
         "If an attachment appears as pending sync, open the experience on the device where it was originally attached and save it again to complete the remote upload.",
-        "The Dashboard includes Attachment status as the direct user action. Repair attachments retries pending files for Library, Assets, Reports, Publications, and mobile views; if the local file copy is missing, it guides the user to review the file without exposing technical diagnostics.",
+        "The Dashboard is simplified for daily use: primary actions, metrics, Agenda, recent signals, Daily, and contextual analysis. Technical states, queues, pilot readiness, pending attachments, and diagnostics live in Admin.",
+        "The product rule is simple outside and sophisticated inside: user pages show the main flow, while analysis, checks, and advanced controls run in the background or live in Admin.",
       ],
     },
     {
@@ -5356,8 +5356,10 @@ function applyLanguage() {
   document.getElementById("assetLibraryIntro").textContent = t("labels.assetLibraryIntro");
   document.getElementById("dashboardAgendaTitle").textContent = t("labels.dashboardAgendaTitle");
   document.getElementById("dashboardAgendaStatus").textContent = t("labels.dashboardAgendaStatus");
-  document.getElementById("dashboardPilotTitle").textContent = state.language === "en" ? "Pilot readiness" : "Preparación del piloto";
-  document.getElementById("dashboardPilotStatus").textContent = state.language === "en" ? "Operational follow-up" : "Seguimiento operativo";
+  const dashboardPilotTitle = document.getElementById("dashboardPilotTitle");
+  const dashboardPilotStatus = document.getElementById("dashboardPilotStatus");
+  if (dashboardPilotTitle) dashboardPilotTitle.textContent = state.language === "en" ? "Pilot readiness" : "Preparación del piloto";
+  if (dashboardPilotStatus) dashboardPilotStatus.textContent = state.language === "en" ? "Operational follow-up" : "Seguimiento operativo";
   document.getElementById("exportAssetInventoryButton").textContent = t("buttons.exportAssetInventory");
   document.getElementById("exportAssetInventoryCsvButton").textContent = t("buttons.exportAssetInventoryCsv");
   document.getElementById("exportAssetProcessingBacklogButton").textContent = t("buttons.exportAssetProcessingBacklog");
@@ -6046,8 +6048,9 @@ function setupActions() {
   document.getElementById("mvpFlowPanel").addEventListener("click", handleParallelBacklogClick);
   document.getElementById("apiStatusPanel").addEventListener("click", handleApiStatusClick);
   document.getElementById("uiQualityPanel").addEventListener("click", handleUiQualityClick);
-  document.getElementById("dashboardAttachmentBox").addEventListener("click", handleDashboardAttachmentAction);
-  document.getElementById("dashboardPilotBox").addEventListener("click", handleDashboardPilotAction);
+  document.querySelector(".dashboard-primary-panel")?.addEventListener("click", handleParallelBacklogClick);
+  document.getElementById("dashboardAttachmentBox")?.addEventListener("click", handleDashboardAttachmentAction);
+  document.getElementById("dashboardPilotBox")?.addEventListener("click", handleDashboardPilotAction);
   document.getElementById("parallelBacklog").addEventListener("click", handleParallelBacklogClick);
   document.getElementById("mvpClosurePanel").addEventListener("click", handleMvpClosureClick);
   document.getElementById("pilotReadinessPanel").addEventListener("click", handlePilotReadinessClick);
@@ -6066,7 +6069,7 @@ function setupActions() {
   document.getElementById("supabasePilotGatePanel").addEventListener("click", handleSupabasePilotGateClick);
   document.getElementById("demoDataPanel").addEventListener("click", handleDemoDataAction);
   document.getElementById("offlineQueuePanel").addEventListener("click", handleOfflineQueueAction);
-  document.getElementById("captureCoachBox").addEventListener("click", handleCaptureCoachClick);
+  document.getElementById("captureCoachBox")?.addEventListener("click", handleCaptureCoachClick);
   window.addEventListener("online", () => syncOfflineQueue({ silent: true }).then(renderAll).catch(() => renderAll()));
   window.setInterval(() => {
     if (!state.offlineQueue.length || !state.session?.access_token || !state.apiOnline) {
@@ -6695,7 +6698,9 @@ function populateStaticControls() {
   agendaStatuses.forEach((status) => agendaStatusSelect.append(new Option(displayAgendaStatus(status), status)));
   if ([...agendaStatusSelect.options].some((option) => option.value === selectedStatus)) agendaStatusSelect.value = selectedStatus;
 
-  document.getElementById("templateList").innerHTML = templates
+  const templateList = document.getElementById("templateList");
+  if (templateList) {
+    templateList.innerHTML = templates
     .map(
       (template, index) => `
         <button class="template-card" type="button" data-template="${index}">
@@ -6704,11 +6709,12 @@ function populateStaticControls() {
         </button>
       `,
     )
-    .join("");
+      .join("");
 
-  document.querySelectorAll("[data-template]").forEach((button) => {
-    button.addEventListener("click", () => applyTemplate(templates[Number(button.dataset.template)]));
-  });
+    document.querySelectorAll("[data-template]").forEach((button) => {
+      button.addEventListener("click", () => applyTemplate(templates[Number(button.dataset.template)]));
+    });
+  }
 
   populateExperienceTypeControl();
 }
@@ -20919,12 +20925,12 @@ function renderAdmin() {
         : `${assetStorageReadiness.remote}/${assetStorageReadiness.total} remotos · ${assetStorageReadiness.pendingSync} pendientes de sincronizar · ${assetStorageReadiness.cached} vistas en caché`,
     ],
     [
-      state.language === "en" ? "Dashboard attachment repair" : "Reparación de adjuntos desde Panel",
+      state.language === "en" ? "Attachment repair" : "Reparación de adjuntos",
       summarizeAttachmentSyncState().pending ? attentionStatus : okStatus,
       state.language === "en"
         ? `${summarizeAttachmentSyncState().pending} pending attachments · one visible action repairs Library, Assets, Reports, and Publications`
         : `${summarizeAttachmentSyncState().pending} adjuntos pendientes · una acción visible repara Librería, Activos, Reportes y Publicaciones`,
-      { view: "dashboard", focus: "dashboardAttachmentPanel", label: state.language === "en" ? "Open Dashboard" : "Abrir Panel" },
+      { view: "admin", focus: "multiDevicePersistencePanel", label: state.language === "en" ? "Open Admin" : "Abrir Administración" },
     ],
     [
       state.language === "en" ? "Attachment upload traceability" : "Trazabilidad de subidas de adjuntos",

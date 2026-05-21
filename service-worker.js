@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260521-dashboard-attachment-simple-356";
+const CACHE_NAME = "experience-hub-pwa-20260521-dashboard-ux-cleanup-357";
 const APP_SHELL = [
   "/",
   "/index.html",

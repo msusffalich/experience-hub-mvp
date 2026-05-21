@@ -1906,12 +1906,17 @@ button,
 
 .split-layout,
 .form-layout,
+.capture-layout-clean,
 .experience-map-layout,
 .agenda-layout,
 .publication-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
   gap: 16px;
+}
+
+.capture-layout-clean {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .panel {
@@ -1929,6 +1934,20 @@ button,
 .panel-heading h2 {
   margin: 0;
   font-size: 18px;
+}
+
+.dashboard-primary-panel {
+  margin-bottom: 16px;
+}
+
+.dashboard-primary-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.dashboard-primary-actions button {
+  min-height: 52px;
 }
 
 .dashboard-attachment-panel {
@@ -9612,6 +9631,7 @@ button.asset-processing-summary-card {
   .metric-grid,
   .split-layout,
   .form-layout,
+  .capture-layout-clean,
   .experience-map-layout,
   .agenda-layout,
   .publication-layout,
@@ -9845,6 +9865,10 @@ button.asset-processing-summary-card {
   }
 
   .dashboard-time-context {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-primary-actions {
     grid-template-columns: 1fr;
   }
 

@@ -9,10 +9,10 @@
     <meta name="apple-mobile-web-app-title" content="Experience Hub" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>Experience Hub MVP</title>
-    <link rel="manifest" href="manifest.webmanifest?v=20260521-dashboard-attachment-simple-356" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260521-dashboard-ux-cleanup-357" />
     <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="icons/icon.svg" />
-    <link rel="stylesheet" href="styles.css?v=20260521-dashboard-attachment-simple-356" />
+    <link rel="stylesheet" href="styles.css?v=20260521-dashboard-ux-cleanup-357" />
   </head>
   <body>
     <noscript>
@@ -154,21 +154,19 @@
             </label>
             <span id="dashboardScopeStatus">Vista general</span>
           </div>
+          <section class="panel dashboard-primary-panel">
+            <div class="panel-heading">
+              <h2>Acciones principales</h2>
+              <span>Uso diario</span>
+            </div>
+            <div class="dashboard-primary-actions">
+              <button class="primary-button" type="button" data-backlog-view="capture">Nueva experiencia</button>
+              <button class="ghost-button" type="button" data-backlog-view="library">Ver Librería</button>
+              <button class="ghost-button" type="button" data-backlog-view="assetLibrary">Ver Activos</button>
+              <button class="ghost-button" type="button" data-backlog-view="report">Generar reporte</button>
+            </div>
+          </section>
           <div class="metric-grid" id="metricGrid"></div>
-          <section class="panel dashboard-attachment-panel" id="dashboardAttachmentPanel">
-            <div class="panel-heading">
-              <h2 id="dashboardAttachmentTitle">Estado de adjuntos</h2>
-              <span id="dashboardAttachmentStatus">Multimedia y documentos</span>
-            </div>
-            <div id="dashboardAttachmentBox" class="dashboard-attachment-box"></div>
-          </section>
-          <section class="panel dashboard-pilot-panel">
-            <div class="panel-heading">
-              <h2 id="dashboardPilotTitle">Preparación del piloto</h2>
-              <span id="dashboardPilotStatus">Seguimiento operativo</span>
-            </div>
-            <div id="dashboardPilotBox" class="dashboard-pilot-readiness"></div>
-          </section>
 
           <section class="panel dashboard-agenda-panel">
             <div class="panel-heading">
@@ -195,14 +193,6 @@
               <div id="recentSignals" class="signal-list"></div>
             </section>
           </div>
-
-          <section class="panel">
-            <div class="panel-heading">
-              <h2 id="dataQualityTitle">Calidad de captura</h2>
-              <span id="dataQualityStatus">Preparando lectura</span>
-            </div>
-            <div id="dataQualityBox" class="data-quality"></div>
-          </section>
 
           <section class="panel daily-panel">
             <div class="panel-heading">
@@ -253,13 +243,12 @@
         </section>
 
         <section id="captureView" class="view" aria-labelledby="capture-heading">
-          <div class="form-layout">
+          <div class="capture-layout-clean">
             <section class="panel">
               <div class="panel-heading">
                 <h2 id="capture-heading">Nueva experiencia</h2>
-                <span>Captura en menos de un minuto</span>
+                <span>Formulario único</span>
               </div>
-              <div id="captureCoachBox" class="capture-coach"></div>
               <div id="captureSaveStatus" class="capture-save-status" aria-live="polite"></div>
 
               <form id="experienceForm" class="experience-form">
@@ -343,13 +332,6 @@
               </form>
             </section>
 
-            <section class="panel">
-              <div class="panel-heading">
-                <h2>Plantillas rápidas</h2>
-                <span>Flujos MVP</span>
-              </div>
-              <div id="templateList" class="template-list"></div>
-            </section>
           </div>
         </section>
 
@@ -960,7 +942,7 @@
       </main>
     </div>
 
-  <script src="app.js?v=20260521-dashboard-attachment-simple-356"></script>
+  <script src="app.js?v=20260521-dashboard-ux-cleanup-357"></script>
 </body>
 </html>
 

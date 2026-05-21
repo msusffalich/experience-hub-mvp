@@ -10,6 +10,7 @@ const files = {
   uploadAttemptsSql: readFileSync("database/asset-upload-attempts.sql", "utf8"),
   schemaSql: readFileSync("database/schema.sql", "utf8"),
   storageFormatsSql: readFileSync("database/storage-accept-all-supported-media.sql", "utf8"),
+  uxAudit: readFileSync("docs/ux-ui-audit.md", "utf8"),
 };
 
 const failures = [];
@@ -111,12 +112,17 @@ assert(files.schemaSql.includes("allowed_mime_types = NULL"), "Base schema still
 assert(files.storageFormatsSql.includes("allowed_mime_types = NULL"), "Storage format migration does not allow all app-supported media/document formats.");
 assert(files.server.includes("storage-accept-all-supported-media.sql"), "Supabase diagnostics do not point to the Storage MIME migration.");
 assert(files.app.includes("invalid_mime_type para PDF") && files.app.includes("invalid_mime_type for PDF"), "Manual does not explain PDF MIME bucket remediation.");
-assert(files.index.includes("dashboardAttachmentPanel") && files.index.includes("dashboardAttachmentBox"), "Dashboard does not expose the attachment repair panel.");
+assert(files.index.includes("dashboard-primary-panel") && files.index.includes("Nueva experiencia"), "Dashboard does not expose primary daily actions.");
+assert(!files.index.includes("dashboardAttachmentPanel") && !files.index.includes("dashboardPilotBox"), "Dashboard still exposes technical/pilot monitoring panels.");
+assert(files.index.includes("capture-layout-clean") && !files.index.includes("captureCoachBox") && !files.index.includes("templateList"), "Capture still exposes parallel coach/template panels.");
 assert(files.app.includes("Reparar adjuntos") && files.app.includes("Repair attachments"), "Dashboard attachment repair action is missing bilingual labels.");
-assert(files.app.includes("El Panel incluye Estado de adjuntos") && files.app.includes("The Dashboard includes Attachment status"), "Manual does not explain Dashboard attachment status.");
-assert(files.app.includes("Reparación de adjuntos desde Panel") && files.app.includes("Dashboard attachment repair"), "Admin health does not expose Dashboard attachment repair.");
-assert(files.app.includes("dashboardAttachmentFeedback"), "Dashboard attachment repair still depends only on global notifications.");
+assert(files.app.includes("El Panel se simplifica para uso diario") && files.app.includes("The Dashboard is simplified for daily use"), "Manual does not explain simplified Dashboard UX.");
+assert(files.app.includes("simple por fuera y sofisticada por dentro") && files.app.includes("simple outside and sophisticated inside"), "Manual does not document the core UX principle.");
+assert(files.app.includes("Captura usa un formulario único") && files.app.includes("Capture uses one form"), "Manual does not explain simplified Capture UX.");
+assert(files.app.includes("Reparación de adjuntos") && files.app.includes("Attachment repair"), "Admin health does not expose attachment repair.");
+assert(files.app.includes("dashboardAttachmentFeedback"), "Attachment repair feedback still depends only on global notifications.");
 assert(files.styles.includes(".dashboard-attachment-summary") && files.styles.includes(".dashboard-attachment-actions") && files.styles.includes(".dashboard-attachment-feedback"), "Styles are missing Dashboard attachment repair UI.");
+assert(files.uxAudit.includes("Usuario diario") && files.uxAudit.includes("Administración") && files.uxAudit.includes("simple por fuera"), "UX/UI audit does not document the daily/admin separation.");
 
 if (failures.length) {
   console.error("Smoke check failed:");
