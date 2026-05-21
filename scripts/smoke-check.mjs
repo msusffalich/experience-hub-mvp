@@ -7,6 +7,7 @@ const files = {
   server: readFileSync("server.js", "utf8"),
   styles: readFileSync("styles.css", "utf8"),
   sql: readFileSync("database/workspace-events-assets.sql", "utf8"),
+  uploadAttemptsSql: readFileSync("database/asset-upload-attempts.sql", "utf8"),
 };
 
 const failures = [];
@@ -79,6 +80,16 @@ assert(files.app.includes("compatible con claves Supabase nuevas sb_secret") && 
 assert(files.app.includes("Detalle del adjunto pendiente") && files.app.includes("Pending attachment detail"), "Capture does not show pending media failure details.");
 assert(files.server.includes("remoteSyncError: media.remoteSyncError") && files.server.includes("remoteSyncError: metadata.remoteSyncError"), "Server does not preserve pending media error details.");
 assert(files.app.includes("Prueba autom") && files.app.includes("Automated smoke check"), "Admin does not expose the automated smoke check.");
+assert(files.server.includes("/api/upload-attempts"), "Server is missing the upload attempts endpoint.");
+assert(files.server.includes("function classifyUploadError"), "Server does not classify upload failures.");
+assert(files.server.includes("function recordAssetUploadAttempt"), "Server does not record upload attempts.");
+assert(files.server.includes("function listAssetUploadAttempts"), "Server does not expose upload attempt history.");
+assert(files.server.includes("Trazabilidad de adjuntos") && files.server.includes("uploadAttempts"), "Supabase diagnostics do not include attachment traceability.");
+assert(files.uploadAttemptsSql.includes("CREATE TABLE IF NOT EXISTS asset_upload_attempts"), "Upload attempts migration is missing the table.");
+assert(files.uploadAttemptsSql.includes("ENABLE ROW LEVEL SECURITY"), "Upload attempts migration does not enable RLS.");
+assert(files.uploadAttemptsSql.includes("Users can manage own upload attempts"), "Upload attempts migration is missing the user RLS policy.");
+assert(files.app.includes("Cada subida de adjunto queda registrada como intento auditable"), "Spanish manual does not explain upload attempt traceability.");
+assert(files.app.includes("Every attachment upload is recorded as an auditable attempt"), "English manual does not explain upload attempt traceability.");
 
 if (failures.length) {
   console.error("Smoke check failed:");
@@ -86,4 +97,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log(`Smoke check passed for ${version}: version/cache, capture events, asset links, report evidence, manual, and admin.`);
+console.log(`Smoke check passed for ${version}: version/cache, events, assets, upload traceability, manual, and admin.`);

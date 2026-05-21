@@ -4,6 +4,7 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { inflateRawSync } from "node:zlib";
+import { randomUUID } from "node:crypto";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 await loadDotEnv();
@@ -21,6 +22,7 @@ const SUPABASE_URL = process.env.SUPABASE_URL?.replace(/\/$/, "");
 const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const SUPABASE_STORAGE_BUCKET = process.env.SUPABASE_STORAGE_BUCKET || "experience-media";
+const ASSET_UPLOAD_ATTEMPTS_TABLE = "asset_upload_attempts";
 const MAX_JSON_BODY_LENGTH = Number(process.env.MAX_JSON_BODY_LENGTH || 40_000_000);
 const MAX_MEDIA_BODY_LENGTH = Number(process.env.MAX_MEDIA_BODY_LENGTH || 90_000_000);
 const LOCAL_USER_ID = process.env.LOCAL_USER_ID || "00000000-0000-0000-0000-000000000001";
@@ -223,6 +225,13 @@ async function handleApi(req, res, url) {
     }
     const media = await readJson(req);
     sendJson(res, 201, await saveMedia(media, user));
+    return;
+  }
+
+  if (url.pathname === "/api/upload-attempts" && req.method === "GET") {
+    const user = await getRequestUser(req);
+    const limit = Number(url.searchParams.get("limit") || 20);
+    sendJson(res, 200, await listAssetUploadAttempts(user, limit));
     return;
   }
 
@@ -1175,18 +1184,194 @@ async function saveMediaBuffer(media, bytes, user = { id: LOCAL_USER_ID }) {
     };
   }
 
-  if (!bytes?.length) throw new Error("invalid_media_payload");
   const objectPath = `${user.id}/${Date.now()}-${sanitizeFileName(normalized.name)}`;
-  await uploadSupabaseObject(objectPath, normalized.type, bytes);
-  const signedUrl = await createSignedObjectUrl(objectPath);
-
-  return {
-    ...normalized,
-    dataUrl: null,
-    path: objectPath,
-    url: signedUrl,
-    storage: "supabase",
+  const attemptBase = {
+    assetId: normalized.id,
+    experienceId: normalized.experienceId || normalized.metadata?.linkedExperienceId || "",
+    userId: user.id || null,
+    deviceId: normalized.sourceDevice || normalized.device || "",
+    fileName: normalized.name,
+    mimeType: normalized.type,
+    sizeBytes: Number(normalized.size || bytes?.length || 0),
+    bucketId: SUPABASE_STORAGE_BUCKET,
+    storagePath: objectPath,
+    metadata: {
+      kind: normalized.kind || inferServerMediaKind(normalized),
+      sourceType: normalized.sourceType || "",
+      sourceId: normalized.sourceId || "",
+    },
   };
+
+  await recordAssetUploadAttempt({ ...attemptBase, status: "uploading" }, user);
+
+  try {
+    if (!bytes?.length) throw new Error("invalid_media_payload");
+    await uploadSupabaseObject(objectPath, normalized.type, bytes);
+    const signedUrl = await createSignedObjectUrl(objectPath);
+    await recordAssetUploadAttempt({ ...attemptBase, status: "uploaded", finishedAt: new Date().toISOString() }, user);
+
+    return {
+      ...normalized,
+      dataUrl: null,
+      path: objectPath,
+      url: signedUrl,
+      storage: "supabase",
+      remoteSyncFailed: false,
+      remoteSyncError: "",
+    };
+  } catch (error) {
+    const failure = classifyUploadError(error);
+    await recordAssetUploadAttempt({
+      ...attemptBase,
+      status: "failed",
+      errorCode: failure.code,
+      errorMessage: failure.message,
+      finishedAt: new Date().toISOString(),
+    }, user);
+    const uploadError = new Error(`${failure.code}: ${failure.message}`);
+    uploadError.status = error?.status;
+    uploadError.code = failure.code;
+    throw uploadError;
+  }
+}
+
+async function recordAssetUploadAttempt(attempt, user = { id: LOCAL_USER_ID }) {
+  const normalized = normalizeAssetUploadAttempt(attempt, user);
+  await appendLog(normalized.status === "failed" ? "warn" : "info", "asset_upload_attempt", normalized);
+  if (activePersistence() !== "supabase") return normalized;
+
+  try {
+    await supabaseRest(ASSET_UPLOAD_ATTEMPTS_TABLE, {
+      method: "POST",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify(toAssetUploadAttemptRow(normalized)),
+      accessToken: user.accessToken,
+    });
+  } catch (error) {
+    await appendLog("warn", "asset_upload_attempt_remote_skipped", {
+      assetId: normalized.assetId,
+      status: normalized.status,
+      reason: sanitizeDiagnosticError(error),
+    });
+  }
+  return normalized;
+}
+
+async function listAssetUploadAttempts(user = { id: LOCAL_USER_ID }, limit = 20) {
+  const cappedLimit = Math.max(1, Math.min(Number(limit) || 20, 100));
+  if (activePersistence() === "supabase") {
+    try {
+      const rows = await supabaseRest(ASSET_UPLOAD_ATTEMPTS_TABLE, {
+        searchParams: {
+          user_id: `eq.${user.id}`,
+          order: "started_at.desc",
+          limit: String(cappedLimit),
+        },
+        accessToken: user.accessToken,
+      });
+      return rows.map(fromAssetUploadAttemptRow);
+    } catch (error) {
+      await appendLog("warn", "asset_upload_attempt_list_remote_skipped", {
+        reason: sanitizeDiagnosticError(error),
+      });
+    }
+  }
+
+  const logs = await readLogs();
+  return logs
+    .filter((entry) => entry.message === "asset_upload_attempt")
+    .map((entry) => entry.details)
+    .filter((entry) => !user?.id || !entry.userId || entry.userId === user.id)
+    .slice(0, cappedLimit);
+}
+
+function normalizeAssetUploadAttempt(attempt = {}, user = { id: LOCAL_USER_ID }) {
+  const now = new Date().toISOString();
+  const status = ["pending", "uploading", "uploaded", "failed"].includes(attempt.status) ? attempt.status : "pending";
+  return {
+    attemptId: attempt.attemptId || randomUUID(),
+    assetId: attempt.assetId || attempt.asset_id || createId(),
+    experienceId: attempt.experienceId || attempt.experience_id || null,
+    userId: attempt.userId || attempt.user_id || user?.id || LOCAL_USER_ID,
+    deviceId: attempt.deviceId || attempt.device_id || "",
+    fileName: attempt.fileName || attempt.file_name || "media",
+    mimeType: attempt.mimeType || attempt.mime_type || "application/octet-stream",
+    sizeBytes: Number(attempt.sizeBytes || attempt.size_bytes || 0),
+    bucketId: attempt.bucketId || attempt.bucket_id || SUPABASE_STORAGE_BUCKET,
+    storagePath: attempt.storagePath || attempt.storage_path || "",
+    status,
+    errorCode: attempt.errorCode || attempt.error_code || "",
+    errorMessage: attempt.errorMessage || attempt.error_message || "",
+    startedAt: attempt.startedAt || attempt.started_at || now,
+    finishedAt: attempt.finishedAt || attempt.finished_at || null,
+    metadata: isPlainObject(attempt.metadata) ? attempt.metadata : {},
+  };
+}
+
+function toAssetUploadAttemptRow(attempt) {
+  return {
+    attempt_id: attempt.attemptId,
+    asset_id: attempt.assetId,
+    experience_id: attempt.experienceId || null,
+    user_id: attempt.userId || LOCAL_USER_ID,
+    device_id: attempt.deviceId || null,
+    file_name: attempt.fileName || "media",
+    mime_type: attempt.mimeType || "application/octet-stream",
+    size_bytes: Number(attempt.sizeBytes || 0),
+    bucket_id: attempt.bucketId || SUPABASE_STORAGE_BUCKET,
+    storage_path: attempt.storagePath || null,
+    status: attempt.status,
+    error_code: attempt.errorCode || null,
+    error_message: attempt.errorMessage || null,
+    started_at: attempt.startedAt,
+    finished_at: attempt.finishedAt || null,
+    metadata: attempt.metadata || {},
+  };
+}
+
+function fromAssetUploadAttemptRow(row = {}) {
+  return normalizeAssetUploadAttempt({
+    attemptId: row.attempt_id,
+    assetId: row.asset_id,
+    experienceId: row.experience_id,
+    userId: row.user_id,
+    deviceId: row.device_id,
+    fileName: row.file_name,
+    mimeType: row.mime_type,
+    sizeBytes: row.size_bytes,
+    bucketId: row.bucket_id,
+    storagePath: row.storage_path,
+    status: row.status,
+    errorCode: row.error_code,
+    errorMessage: row.error_message,
+    startedAt: row.started_at,
+    finishedAt: row.finished_at,
+    metadata: row.metadata,
+  });
+}
+
+function classifyUploadError(error) {
+  const detail = sanitizeDiagnosticError(error);
+  const lower = detail.toLowerCase();
+  if (lower.includes("invalid_media_payload") || lower.includes("invalid_media_data_url")) {
+    return { code: "invalid_media_payload", message: "El archivo no llegó completo al servidor." };
+  }
+  if (lower.includes("invalid_mime_type") || lower.includes("mime")) {
+    return { code: "invalid_mime_type", message: "El tipo de archivo no está permitido por Storage o llegó sin MIME válido." };
+  }
+  if (lower.includes("413") || lower.includes("payload_too_large") || lower.includes("too large")) {
+    return { code: "file_too_large", message: "El archivo excede el tamaño permitido por la app o por Storage." };
+  }
+  if (lower.includes("401") || lower.includes("403") || lower.includes("permission") || lower.includes("jwt")) {
+    return { code: "storage_auth", message: "Storage rechazó la subida por sesión, clave o permiso." };
+  }
+  if (lower.includes("404") || lower.includes("bucket")) {
+    return { code: "bucket_not_found", message: `No se encontró el bucket ${SUPABASE_STORAGE_BUCKET} o su ruta.` };
+  }
+  if (lower.includes("sign")) {
+    return { code: "signed_url_failed", message: "El archivo subió, pero no se pudo crear la URL privada de lectura." };
+  }
+  return { code: "storage_upload_failed", message: detail || "Storage no completó la subida del archivo." };
 }
 
 function normalizeMedia(media) {
@@ -1397,6 +1582,17 @@ async function runSupabaseDiagnostics(user) {
       : `Bucket ${SUPABASE_STORAGE_BUCKET} existe, pero está público. Ejecuta database/auth-rls.sql.`;
   }, (detail) => (detail.includes("público") ? "warn" : "ok"));
 
+  await collectDiagnosticCheck(checks, "uploadAttempts", "Trazabilidad de adjuntos", async () => {
+    const attempts = await listAssetUploadAttempts(user, 8);
+    if (!attempts.length) return "Tabla de intentos accesible; aún no hay subidas recientes para este usuario.";
+    const failed = attempts.filter((attempt) => attempt.status === "failed");
+    if (failed.length) {
+      const last = failed[0];
+      return `${failed.length}/${attempts.length} intentos recientes fallaron. Último: ${last.fileName || last.assetId} · ${last.errorCode || "sin_codigo"} · ${last.errorMessage || "sin detalle"}.`;
+    }
+    return `${attempts.length} intentos recientes registrados; no hay fallos de adjuntos en la muestra.`;
+  }, (detail) => (detail.includes("fallaron") ? "warn" : "ok"));
+
   await collectDiagnosticCheck(checks, "semantic", "Búsqueda semántica", async () => {
     if (activePersistence() !== "supabase") return "Fallback local activo.";
     const engine = activeEmbeddingsProvider() === "openai" ? `OpenAI ${OPENAI_EMBEDDING_MODEL}` : "local-hash";
@@ -1456,6 +1652,9 @@ function diagnosticActionForCheck(id, status, detail = "") {
         : "Ejecuta database/schema.sql para crear el bucket experience-media y confirma permisos de Storage.",
       actionType: "openAdmin",
     };
+  }
+  if (id === "uploadAttempts") {
+    return { text: "Ejecuta database/asset-upload-attempts.sql para habilitar auditoría de adjuntos y vuelve a probar una subida real.", actionType: "openAdmin" };
   }
   if (id === "semantic") {
     return { text: "Ejecuta database/semantic-search.sql y luego pulsa Actualizar embeddings en Admin.", actionType: "openAdmin" };
@@ -1526,6 +1725,13 @@ async function runSupabaseSelfTest(user) {
       await assertSignedUrlReachable(uploadedMedia.url);
       await assertObjectIsNotPublic(uploadedMedia.path);
       return `Archivo temporal subido, URL firmada validada y acceso público bloqueado en ${SUPABASE_STORAGE_BUCKET}.`;
+    });
+
+    await collectSelfTestStep(steps, "uploadAttempts", "Auditoría de adjuntos", async () => {
+      const attempts = await listAssetUploadAttempts(user, 10);
+      const attempt = attempts.find((item) => item.assetId === `${testId}-media` && item.status === "uploaded");
+      if (!attempt) throw new Error("asset_upload_attempt_missing");
+      return "Intento de subida registrado con archivo, ruta, estado y usuario.";
     });
 
     await collectSelfTestStep(steps, "experienceCreate", "Guardar experiencia", async () => {
@@ -1680,6 +1886,7 @@ function summarizeSupabaseSelfTest(steps) {
 function selfTestActionFor(id, detail = "") {
   if (id === "profile") return { text: "Ejecuta database/schema.sql y database/auth-rls.sql; luego vuelve a iniciar sesión.", actionType: "openAdmin" };
   if (id === "storage") return { text: "Revisa que el bucket experience-media exista, sea privado y acepte image/png.", actionType: "openAdmin" };
+  if (id === "uploadAttempts") return { text: "Ejecuta database/asset-upload-attempts.sql para habilitar auditoría de adjuntos.", actionType: "openAdmin" };
   if (id === "experienceCreate" || id === "experienceRead") return { text: "Revisa tabla experiences, políticas RLS y que auth.uid() coincida con user_id.", actionType: "openAdmin" };
   if (id === "semantic") return { text: "Ejecuta database/semantic-search.sql; si no está aplicado, la app seguirá con búsqueda local.", actionType: "openAdmin" };
   if (id === "workspaceEvents") return { text: "Ejecuta database/workspace-events-assets.sql y vuelve a ejecutar Probar flujo real.", actionType: "openAdmin" };

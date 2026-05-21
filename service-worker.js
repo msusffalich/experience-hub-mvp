@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260521-media-pending-reason-348";
+const CACHE_NAME = "experience-hub-pwa-20260521-upload-attempts-349";
 const APP_SHELL = [
   "/",
   "/index.html",

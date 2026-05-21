@@ -1,4 +1,4 @@
-const APP_VERSION = "20260521-media-pending-reason-348";
+const APP_VERSION = "20260521-upload-attempts-349";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -1888,6 +1888,8 @@ const manualContent = {
         "Cuando un adjunto queda pendiente y luego se reintenta, la app usa carga binaria multipart hacia el backend en lugar de reenviar el archivo como texto base64. Esto mejora la estabilidad en móviles, tablets y archivos medianos.",
         "El backend de Storage es compatible con claves Supabase nuevas sb_secret y claves legacy service_role. Las claves nuevas se envían como apikey del servidor, no como Bearer JWT.",
         "Si un adjunto queda pendiente, Captura muestra el nombre del archivo y el motivo técnico devuelto por el backend, por ejemplo tamaño, sesión, bucket, permiso o firma de URL.",
+        "Cada subida de adjunto queda registrada como intento auditable con archivo, tamaño, tipo MIME, ruta, estado, error y fecha. Administración usa esa trazabilidad para distinguir problemas de Storage, sesión, formato o URL firmada sin depender de prueba y error.",
+        "El diagnóstico de Supabase incluye Trazabilidad de adjuntos. Si hay fallos recientes, muestra el último archivo afectado, el código de error y la acción recomendada antes de continuar pruebas multidispositivo.",
         "La prueba completa de multimedia solo se aprueba cuando el mismo adjunto aparece desde otro dispositivo en Librería, Activos multimodales, Reportes y Publicaciones. Si solo se sincroniza la narrativa, el flujo sigue incompleto.",
         "El servidor ya soporta modo cloud mediante HOST=0.0.0.0 y NODE_ENV=production. Usa .env.production.example como base para desplegar sin depender de localhost.",
         "La guía docs/deploy-publicacion.md define el orden recomendado: GitHub privado, Supabase productivo, variables seguras, hosting Node, prueba desde varios dispositivos y validación privada.",
@@ -2408,6 +2410,8 @@ const manualContent = {
         "When an attachment is pending and later retried, the app uses binary multipart upload to the backend instead of resending the file as base64 text. This improves stability on phones, tablets, and medium-size files.",
         "The Storage backend supports new Supabase sb_secret keys and legacy service_role keys. New secret keys are sent as the server apikey, not as a Bearer JWT.",
         "If an attachment remains pending, Capture shows the file name and the technical reason returned by the backend, such as size, session, bucket, permission, or signed URL.",
+        "Every attachment upload is recorded as an auditable attempt with file, size, MIME type, path, status, error, and timestamp. Admin uses that traceability to distinguish Storage, session, format, or signed URL problems without relying on trial and error.",
+        "Supabase diagnostics include Attachment traceability. If recent failures exist, it shows the affected file, error code, and recommended action before continuing multi-device tests.",
         "The complete media test is approved only when the same attachment appears from another device in Library, Multimodal Assets, Reports, and Publications. If only the narrative syncs, the flow is still incomplete.",
         "The server now supports cloud mode through HOST=0.0.0.0 and NODE_ENV=production. Use .env.production.example as the deployment baseline so the app does not depend on localhost.",
         "The docs/deploy-publicacion.md guide defines the recommended order: private GitHub, production Supabase, secure variables, Node hosting, multi-device test, and private validation.",
