@@ -1,0 +1,15 @@
+{
+  "name": "experience-hub-clio-patterns-lab",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node --check scripts/validate-env.mjs && node --check scripts/storage-smoke.mjs && node --check scripts/mock-asset-pipeline.mjs",
+    "mock:pipeline": "node scripts/mock-asset-pipeline.mjs",
+    "smoke:storage": "node scripts/storage-smoke.mjs",
+    "validate:env": "node scripts/validate-env.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
