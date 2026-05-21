@@ -4498,7 +4498,8 @@ button,
 }
 
 .integrated-report-card,
-.report-multimodal-evidence {
+.report-multimodal-evidence,
+.report-event-timeline {
   display: grid;
   gap: 14px;
   margin: 12px 0;
@@ -4508,6 +4509,39 @@ button,
   background:
     linear-gradient(145deg, rgba(45, 116, 113, 0.08), rgba(255, 255, 255, 0.96) 52%),
     #fff;
+}
+
+.report-event-list {
+  display: grid;
+  gap: 10px;
+}
+
+.report-event-list article {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.report-event-list span,
+.report-event-list small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.report-event-list strong,
+.report-event-list p,
+.report-event-list small {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.report-event-list p {
+  margin: 0;
+  color: var(--text);
+  line-height: 1.45;
 }
 
 .report-evidence-grid {
@@ -4830,6 +4864,46 @@ textarea {
 .library-card {
   display: grid;
   gap: 12px;
+}
+
+.library-event-preview {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.library-event-item {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+}
+
+.library-event-item > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 26px;
+  border-radius: 8px;
+  background: rgba(45, 116, 113, 0.1);
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.library-event-item strong,
+.library-event-item small {
+  display: block;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.library-event-item small {
+  margin-top: 2px;
+  color: var(--muted);
+  line-height: 1.35;
 }
 
 .media-frame {

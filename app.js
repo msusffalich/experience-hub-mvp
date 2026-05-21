@@ -1,4 +1,4 @@
-const APP_VERSION = "20260521-smoke-report-events-340";
+const APP_VERSION = "20260521-event-timeline-341";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -1864,7 +1864,9 @@ const manualContent = {
         "El refactor multidispositivo introduce el modelo correcto de workspace, miembros, participantes, eventos internos y activos. La migración SQL está en database/workspace-events-assets.sql y debe aplicarse antes de considerar compartición multiusuario real.",
         "Captura ahora permite registrar varios eventos dentro de una experiencia. Cada línea representa un momento de la experiencia y se conserva para reportes, activos, publicaciones e integración futura con dispositivos.",
         "Cada adjunto de Captura puede quedar asociado a toda la experiencia o a un evento interno específico. Esto permite separar evidencia por momento: una imagen, audio, video o documento puede pertenecer al evento 1, 2, 3 o al contexto general.",
+        "Librería muestra una vista compacta de los primeros eventos internos de cada experiencia para revisar qué ocurrió dentro de registros largos sin abrir otras pantallas.",
         "Reportes muestra la evidencia multimodal con su evento vinculado. Si el activo no pertenece a un evento específico, aparece como evidencia de toda la experiencia.",
+        "Reportes incluye Línea de eventos para ver los momentos internos del alcance filtrado y exportarlos en JSON/HTML junto con el resto del reporte.",
         "Cuando una experiencia tiene participante piloto, el backend sincroniza primero ese participante en Supabase y luego vincula sus eventos internos y activos. Esto evita que reportes, activos o dispositivos queden con dueños inconsistentes.",
         "Cuando la migración de workspace está aplicada, el servidor sincroniza esos eventos internos en la tabla experience_events y los vuelve a leer desde Supabase. Si la tabla aún no existe, mantiene compatibilidad guardándolos dentro de la experiencia.",
         "Cuando la misma migración está aplicada, los adjuntos también se sincronizan y se vuelven a leer desde la tabla assets con experiencia, participante, tipo, ruta Storage, texto previo y texto analítico. Esto permite que otros dispositivos reconstruyan la multimedia desde una fuente común.",
@@ -2374,7 +2376,9 @@ const manualContent = {
         "The multi-device refactor introduces the correct workspace, members, participants, internal events, and assets model. The SQL migration lives in database/workspace-events-assets.sql and must be applied before real multi-user sharing is considered complete.",
         "Capture now supports several events inside one experience. Each line represents one moment in the experience and is preserved for reports, assets, publications, and future device integration.",
         "Each Capture attachment can be linked to the whole experience or to a specific internal event. This separates evidence by moment: an image, audio, video, or document can belong to event 1, 2, 3, or the general context.",
+        "Library shows a compact preview of the first internal events in each experience so long records can be reviewed without opening another screen.",
         "Reports show multimodal evidence with its linked event. If the asset does not belong to a specific event, it appears as evidence for the whole experience.",
+        "Reports include an Event timeline to review internal moments for the selected scope and export them in JSON/HTML with the rest of the report.",
         "When an experience has a pilot participant, the backend syncs that participant in Supabase first and then links internal events and assets to it. This prevents reports, assets, or devices from ending up with inconsistent ownership.",
         "When the workspace migration is applied, the server syncs those internal events into the experience_events table and reads them back from Supabase. If the table does not exist yet, it remains compatible by keeping them inside the experience.",
         "When the same migration is applied, attachments are also synced into and read back from the assets table with experience, participant, type, Storage path, preview text, and analytical text. This lets other devices rebuild media from one shared source.",
@@ -4076,6 +4080,28 @@ function normalizeExperienceEvents(events = [], experienceId = "") {
       energy: event.energy ? Number(event.energy) : null,
     }))
     .filter((event) => event.title || event.description);
+}
+
+function getExperienceEventTimeline(item) {
+  return normalizeExperienceEvents(item?.events || [], item?.id || "").sort((a, b) => a.order - b.order);
+}
+
+function buildReportEventTimeline(experiences = []) {
+  return experiences
+    .flatMap((experience) =>
+      getExperienceEventTimeline(experience).map((event) => ({
+        ...event,
+        experienceId: experience.id,
+        experienceTitle: experience.title,
+        experienceTimestamp: experience.timestamp,
+        category: displayCategory(experience.category),
+        participantName: getExperiencePilotParticipantLabel(experience),
+      })),
+    )
+    .sort((a, b) => {
+      const dateDelta = new Date(a.experienceTimestamp || 0).getTime() - new Date(b.experienceTimestamp || 0).getTime();
+      return dateDelta || a.order - b.order;
+    });
 }
 
 function parseExperienceEventsInput(value = "", experienceId = "") {
@@ -9731,6 +9757,7 @@ function renderLibrary() {
                     <span class="pill">${escapeHtml(item.mood)}</span>
                   </div>
                   <p>${escapeHtml(item.notes || (state.language === "en" ? "No notes." : "Sin notas."))}</p>
+                  ${renderLibraryEventPreview(item)}
                 </div>
                 <div class="timeline-actions">
                   <button class="ghost-button" type="button" onclick="editExperience('${item.id}')">${t("buttons.edit")}</button>
@@ -9800,6 +9827,31 @@ function clearLibraryFiltersAndRender() {
   resetLibraryFilters();
   updateLibraryFilterOptions();
   renderLibrary();
+}
+
+function renderLibraryEventPreview(item) {
+  const events = getExperienceEventTimeline(item);
+  if (!events.length) return "";
+  const visibleEvents = events.slice(0, 3);
+  const remaining = events.length - visibleEvents.length;
+  return `
+    <div class="library-event-preview" aria-label="${escapeHtml(state.language === "en" ? "Experience events" : "Eventos de la experiencia")}">
+      ${visibleEvents
+        .map(
+          (event) => `
+            <div class="library-event-item">
+              <span>${escapeHtml(String(event.order).padStart(2, "0"))}</span>
+              <div>
+                <strong>${escapeHtml(event.title || (state.language === "en" ? "Untitled event" : "Evento sin título"))}</strong>
+                ${event.description ? `<small>${escapeHtml(event.description)}</small>` : ""}
+              </div>
+            </div>
+          `,
+        )
+        .join("")}
+      ${remaining > 0 ? `<small class="card-meta">${escapeHtml(state.language === "en" ? `+${remaining} more event(s)` : `+${remaining} evento(s) más`)}</small>` : ""}
+    </div>
+  `;
 }
 
 function renderPrimaryMedia(item) {
@@ -12892,6 +12944,7 @@ function renderReport() {
         : ""
     }
     ${renderLivingMemoryLog(experiences, reportAnalysis)}
+    ${renderReportEventTimeline(experiences)}
     ${renderReportMultimodalEvidence(experiences)}
     <p class="report-next-step">${t("report.next")}</p>
   `;
@@ -13035,6 +13088,42 @@ function renderReportMultimodalEvidence(experiences) {
         evidence.length
           ? `<div class="report-evidence-grid">${evidence.map(renderReportEvidenceCard).join("")}</div>`
           : `<p class="card-meta">${escapeHtml(t("labels.reportMultimodalEvidenceEmpty"))}</p>`
+      }
+    </section>
+  `;
+}
+
+function renderReportEventTimeline(experiences) {
+  const events = buildReportEventTimeline(experiences);
+  const visibleEvents = events.slice(0, 18);
+  return `
+    <section class="report-event-timeline">
+      <div class="report-section-heading">
+        <h3>${escapeHtml(state.language === "en" ? "Event timeline" : "Línea de eventos")}</h3>
+        <span class="pill">${events.length} ${escapeHtml(state.language === "en" ? "events" : "eventos")}</span>
+      </div>
+      ${
+        visibleEvents.length
+          ? `<div class="report-event-list">
+              ${visibleEvents
+                .map(
+                  (event) => `
+                    <article>
+                      <span>${escapeHtml(formatShortDate(event.experienceTimestamp))} · ${escapeHtml(String(event.order).padStart(2, "0"))}</span>
+                      <strong>${escapeHtml(event.title || (state.language === "en" ? "Untitled event" : "Evento sin título"))}</strong>
+                      <p>${escapeHtml(event.description || event.experienceTitle)}</p>
+                      <small>${escapeHtml(event.experienceTitle)} · ${escapeHtml(event.category)}${event.participantName ? ` · ${escapeHtml(event.participantName)}` : ""}</small>
+                    </article>
+                  `,
+                )
+                .join("")}
+            </div>`
+          : `<p class="card-meta">${escapeHtml(state.language === "en" ? "No internal events are available for the current report scope." : "No hay eventos internos disponibles para el alcance actual del reporte.")}</p>`
+      }
+      ${
+        events.length > visibleEvents.length
+          ? `<p class="card-meta">${escapeHtml(state.language === "en" ? `Showing first ${visibleEvents.length} events. Export JSON/HTML for the full set.` : `Se muestran los primeros ${visibleEvents.length} eventos. Exporta JSON/HTML para ver el conjunto completo.`)}</p>`
+          : ""
       }
     </section>
   `;
@@ -14552,6 +14641,7 @@ function buildReportExportPayload() {
     integratedReading: buildIntegratedReportCards(reportExperiences, analysis, dataQuality, buildExperienceMapRoutes(routeGraph)),
     predictiveOutlook: buildPredictiveOutlook(reportExperiences, analysis, dataQuality),
     mapRoutes,
+    eventTimeline: buildReportEventTimeline(reportExperiences),
     humanKpis: buildHumanKpis(reportExperiences, analysis, dataQuality),
     humanCorrelations: buildHumanCorrelations(reportExperiences, analysis),
     multimodalEvidence: buildReportMultimodalEvidence(reportExperiences),
@@ -14674,6 +14764,22 @@ function downloadPrintableReport() {
           .join("")}
       </section>`
     : "";
+  const eventTimeline = payload.eventTimeline?.length
+    ? `<section>
+        <h2>${escapeHtml(state.language === "en" ? "Event timeline" : "Línea de eventos")}</h2>
+        ${payload.eventTimeline
+          .map(
+            (event) => `
+              <article class="reading">
+                <h3>${escapeHtml(`${formatShortDate(event.experienceTimestamp)} · ${String(event.order).padStart(2, "0")} · ${event.title || (state.language === "en" ? "Untitled event" : "Evento sin título")}`)}</h3>
+                <p>${escapeHtml(event.description || event.experienceTitle || "")}</p>
+                <p><strong>${escapeHtml(state.language === "en" ? "Experience" : "Experiencia")}:</strong> ${escapeHtml(event.experienceTitle || "")} · ${escapeHtml(event.category || "")}${event.participantName ? ` · ${escapeHtml(event.participantName)}` : ""}</p>
+              </article>
+            `,
+          )
+          .join("")}
+      </section>`
+    : "";
   const html = `<!doctype html>
 <html lang="${state.language}">
 <head>
@@ -14712,6 +14818,7 @@ function downloadPrintableReport() {
     <p>${escapeHtml(t("report.narrative")(payload.summary.totalExperiences, payload.rows.reduce((sum, row) => sum + Number(row.adjuntos || 0), 0), payload.summary.topCategory, payload.summary.averageEnergy.toFixed(1)))}</p>
     ${reliability}
     ${context}
+    ${eventTimeline}
   </section>
   <section class="stats">
     <article class="stat"><span>Total</span><strong>${payload.summary.totalExperiences}</strong></article>
@@ -19443,6 +19550,8 @@ function renderAdminOperationalFocusPanel() {
         gateDetail: "Technical Supabase/API diagnostics stay in Admin; users see only sign-in, save pending, and retry guidance.",
         smoke: "Automated smoke check",
         smokeDetail: "npm run check now validates syntax, version/cache consistency, critical capture functions, and event-asset links before publishing.",
+        eventTimeline: "Event timeline visible",
+        eventTimelineDetail: "Library and Reports now show internal events, so long experiences can be reviewed by moment without splitting the main record.",
       }
     : {
         title: "Administración operativa",
@@ -19466,6 +19575,8 @@ function renderAdminOperationalFocusPanel() {
     labels.saveDetail = "Captura informa la fase exacta del fallo y mantiene una experiencia como guardada si Agenda o el refresco necesitan revisi\u00f3n.";
     labels.smoke = "Prueba autom\u00e1tica";
     labels.smokeDetail = "npm run check ahora valida sintaxis, versi\u00f3n/cache, funciones cr\u00edticas de captura y v\u00ednculos evento-activo antes de publicar.";
+    labels.eventTimeline = "L\u00ednea de eventos visible";
+    labels.eventTimelineDetail = "Librer\u00eda y Reportes ahora muestran eventos internos, para revisar experiencias largas por momento sin dividir el registro principal.";
   }
   const cards = [
     [labels.flow, labels.flowDetail],
@@ -19475,6 +19586,7 @@ function renderAdminOperationalFocusPanel() {
     [labels.remote, labels.remoteDetail],
     [labels.gate, labels.gateDetail],
     [labels.smoke, labels.smokeDetail],
+    [labels.eventTimeline, labels.eventTimelineDetail],
     [labels.next, labels.nextDetail],
   ];
   container.innerHTML = `
