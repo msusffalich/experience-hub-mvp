@@ -1,4 +1,4 @@
-const APP_VERSION = "20260521-upload-attempts-admin-350";
+const APP_VERSION = "20260521-offline-queue-reconcile-351";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -1891,6 +1891,7 @@ const manualContent = {
         "Cada subida de adjunto queda registrada como intento auditable con archivo, tamaño, tipo MIME, ruta, estado, error y fecha. Administración usa esa trazabilidad para distinguir problemas de Storage, sesión, formato o URL firmada sin depender de prueba y error.",
         "El diagnóstico de Supabase incluye Trazabilidad de adjuntos. Si hay fallos recientes, muestra el último archivo afectado, el código de error y la acción recomendada antes de continuar pruebas multidispositivo.",
         "Administración muestra un historial reciente de subidas de adjuntos con estado por archivo: subiendo, subido o fallido. Ese historial se puede actualizar desde el mismo panel para revisar pruebas desde móviles, tablets y desktop.",
+        "La cola sin conexión se reconcilia con Supabase al cargar datos remotos. Si una experiencia pendiente ya existe en la nube y sus adjuntos tienen ruta o URL remota, la app elimina ese pendiente local para evitar avisos fantasma.",
         "La prueba completa de multimedia solo se aprueba cuando el mismo adjunto aparece desde otro dispositivo en Librería, Activos multimodales, Reportes y Publicaciones. Si solo se sincroniza la narrativa, el flujo sigue incompleto.",
         "El servidor ya soporta modo cloud mediante HOST=0.0.0.0 y NODE_ENV=production. Usa .env.production.example como base para desplegar sin depender de localhost.",
         "La guía docs/deploy-publicacion.md define el orden recomendado: GitHub privado, Supabase productivo, variables seguras, hosting Node, prueba desde varios dispositivos y validación privada.",
@@ -2414,6 +2415,7 @@ const manualContent = {
         "Every attachment upload is recorded as an auditable attempt with file, size, MIME type, path, status, error, and timestamp. Admin uses that traceability to distinguish Storage, session, format, or signed URL problems without relying on trial and error.",
         "Supabase diagnostics include Attachment traceability. If recent failures exist, it shows the affected file, error code, and recommended action before continuing multi-device tests.",
         "Admin shows a recent attachment upload history with per-file status: uploading, uploaded, or failed. The same panel can refresh the history to review tests from phones, tablets, and desktop.",
+        "The offline queue reconciles with Supabase when remote data loads. If a pending experience already exists in the cloud and its attachments have a remote path or URL, the app removes that local pending item to avoid ghost warnings.",
         "The complete media test is approved only when the same attachment appears from another device in Library, Multimodal Assets, Reports, and Publications. If only the narrative syncs, the flow is still incomplete.",
         "The server now supports cloud mode through HOST=0.0.0.0 and NODE_ENV=production. Use .env.production.example as the deployment baseline so the app does not depend on localhost.",
         "The docs/deploy-publicacion.md guide defines the recommended order: private GitHub, production Supabase, secure variables, Node hosting, multi-device test, and private validation.",
@@ -3978,7 +3980,9 @@ async function hydrateFromApi() {
       applyLanguage();
     }
     if (Array.isArray(experiences) && experiences.length > 0) {
-      state.experiences = mergeLocalMediaCacheForExperiences(normalizeExperiences(experiences), state.experiences);
+      const remoteExperiences = normalizeExperiences(experiences);
+      reconcileOfflineQueueWithRemote(remoteExperiences);
+      state.experiences = mergeLocalMediaCacheForExperiences(remoteExperiences, state.experiences);
       saveExperiences();
     } else if (state.persistence !== "supabase") {
       await Promise.all(state.experiences.map((experience) => saveExperienceToApi(experience)));
@@ -4513,6 +4517,48 @@ function queueOfflineMutation(type, payload, reason = "api_error") {
   saveOfflineQueue();
 }
 
+function reconcileOfflineQueueWithRemote(remoteExperiences = []) {
+  if (!state.offlineQueue.length || !Array.isArray(remoteExperiences)) return 0;
+  const before = state.offlineQueue.length;
+  state.offlineQueue = state.offlineQueue.filter((mutation) => !isOfflineMutationResolvedByRemote(mutation, remoteExperiences));
+  const resolved = before - state.offlineQueue.length;
+  if (resolved > 0) {
+    saveOfflineQueue();
+    renderPersistenceGateBanner();
+  }
+  return resolved;
+}
+
+function isOfflineMutationResolvedByRemote(mutation, remoteExperiences = []) {
+  if (!mutation || mutation.type !== "upsert" || mutation.reason !== "media_pending") return false;
+  const remote = remoteExperiences.find((experience) => experience.id === mutation.entityId || experience.id === mutation.payload?.id);
+  if (!remote) return false;
+  const pendingAttachments = (mutation.payload?.attachments || []).filter(isAttachmentPendingRemoteSync);
+  if (!pendingAttachments.length) return true;
+  return pendingAttachments.every((attachment) => hasMatchingRemoteAttachment(attachment, remote.attachments || []));
+}
+
+function isAttachmentPendingRemoteSync(attachment = {}) {
+  return Boolean(
+    attachment.dataUrl ||
+      attachment.remoteSyncFailed ||
+      attachment.storage === "pending" ||
+      (!attachment.path && !attachment.url),
+  );
+}
+
+function hasMatchingRemoteAttachment(localAttachment = {}, remoteAttachments = []) {
+  return remoteAttachments.some((remoteAttachment) => {
+    const sameIdentity = localAttachment.id && remoteAttachment.id === localAttachment.id;
+    const sameFile =
+      localAttachment.name &&
+      remoteAttachment.name === localAttachment.name &&
+      (!localAttachment.type || remoteAttachment.type === localAttachment.type) &&
+      (!localAttachment.size || Number(remoteAttachment.size || 0) === Number(localAttachment.size || 0));
+    return (sameIdentity || sameFile) && Boolean(remoteAttachment.path || remoteAttachment.url);
+  });
+}
+
 async function syncOfflineQueue(options = {}) {
   if (!state.offlineQueue.length) {
     if (!options.silent) document.getElementById("embeddingStatus").textContent = state.language === "en" ? "No pending changes." : "No hay cambios pendientes.";
@@ -4534,6 +4580,26 @@ async function syncOfflineQueue(options = {}) {
   try {
     await apiRequest("/health", { skipAuth: true });
     state.apiOnline = true;
+    if (state.config?.persistence === "supabase" || state.persistence === "supabase") {
+      try {
+        const remoteExperiences = normalizeExperiences(await apiRequest("/experiences"));
+        const resolved = reconcileOfflineQueueWithRemote(remoteExperiences);
+        if (!state.offlineQueue.length) {
+          if (!options.silent) {
+            document.getElementById("embeddingStatus").textContent = state.language === "en"
+              ? `${resolved} pending changes were already available in the cloud.`
+              : `${resolved} pendientes ya estaban disponibles en la nube.`;
+          }
+          renderPersistenceGateBanner();
+          renderAuthStatus();
+          renderOfflineQueuePanel();
+          renderAdmin();
+          return;
+        }
+      } catch {
+        // Continue with direct retry if reconciliation cannot read remote data.
+      }
+    }
   } catch {
     state.apiOnline = false;
     if (!options.silent) document.getElementById("embeddingStatus").textContent = state.language === "en" ? "Connection is not ready to save pending changes." : "La conexión no está lista para guardar pendientes.";

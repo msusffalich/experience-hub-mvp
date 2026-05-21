@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260521-upload-attempts-admin-350";
+const CACHE_NAME = "experience-hub-pwa-20260521-offline-queue-reconcile-351";
 const APP_SHELL = [
   "/",
   "/index.html",

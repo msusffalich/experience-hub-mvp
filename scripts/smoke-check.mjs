@@ -94,6 +94,10 @@ assert(files.app.includes("function loadUploadAttempts"), "Frontend does not loa
 assert(files.app.includes("function renderUploadAttemptsPanel"), "Admin does not render upload attempt history.");
 assert(files.app.includes("Trazabilidad de subidas de adjuntos") && files.app.includes("Attachment upload traceability"), "System health does not expose upload traceability.");
 assert(files.styles.includes(".upload-attempts-panel") && files.styles.includes(".upload-attempt-item"), "Styles are missing upload attempt history UI.");
+assert(files.app.includes("function reconcileOfflineQueueWithRemote"), "Offline queue does not reconcile against remote Supabase data.");
+assert(files.app.includes("function isOfflineMutationResolvedByRemote"), "Offline queue cannot detect resolved ghost media pending items.");
+assert(files.app.includes("La cola sin conexión se reconcilia con Supabase"), "Spanish manual does not explain offline queue reconciliation.");
+assert(files.app.includes("The offline queue reconciles with Supabase"), "English manual does not explain offline queue reconciliation.");
 
 if (failures.length) {
   console.error("Smoke check failed:");
