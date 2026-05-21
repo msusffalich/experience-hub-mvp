@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260521-offline-queue-clean-352";
+const CACHE_NAME = "experience-hub-pwa-20260521-banner-clear-queue-353";
 const APP_SHELL = [
   "/",
   "/index.html",

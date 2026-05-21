@@ -98,6 +98,8 @@ assert(files.app.includes("function reconcileOfflineQueueWithRemote"), "Offline 
 assert(files.app.includes("function isOfflineMutationResolvedByRemote"), "Offline queue cannot detect resolved ghost media pending items.");
 assert(files.app.includes("function reconcileOfflineQueueFromSupabase"), "Offline queue does not expose a manual Supabase reconciliation action.");
 assert(files.app.includes("offlineQueueReconcile"), "Offline queue is missing the manual clean-saved-items label/action.");
+assert(files.app.includes("data-persistence-action=\"clear-queue\""), "Persistence banner does not expose local queue cleanup.");
+assert(files.app.includes("function clearOfflineQueueFromBanner"), "Persistence banner cleanup handler is missing.");
 assert(files.app.includes("La cola sin conexión se reconcilia con Supabase"), "Spanish manual does not explain offline queue reconciliation.");
 assert(files.app.includes("The offline queue reconciles with Supabase"), "English manual does not explain offline queue reconciliation.");
 

@@ -1,4 +1,4 @@
-const APP_VERSION = "20260521-offline-queue-clean-352";
+const APP_VERSION = "20260521-banner-clear-queue-353";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -1899,6 +1899,7 @@ const manualContent = {
         "Administración muestra un historial reciente de subidas de adjuntos con estado por archivo: subiendo, subido o fallido. Ese historial se puede actualizar desde el mismo panel para revisar pruebas desde móviles, tablets y desktop.",
         "La cola sin conexión se reconcilia con Supabase al cargar datos remotos. Si una experiencia pendiente ya existe en la nube y sus adjuntos tienen ruta o URL remota, la app elimina ese pendiente local para evitar avisos fantasma.",
         "La cola sin conexión también incluye Limpiar ya guardados. Esta acción lee Supabase, compara los pendientes locales con las experiencias remotas y descarta solo los elementos que ya están cubiertos por la nube.",
+        "Si la cola local queda desfasada después de validar que las experiencias existen en Supabase, el aviso superior permite Limpiar cola local. Esta acción solo borra pendientes del navegador actual; no elimina experiencias ni adjuntos ya guardados.",
         "La prueba completa de multimedia solo se aprueba cuando el mismo adjunto aparece desde otro dispositivo en Librería, Activos multimodales, Reportes y Publicaciones. Si solo se sincroniza la narrativa, el flujo sigue incompleto.",
         "El servidor ya soporta modo cloud mediante HOST=0.0.0.0 y NODE_ENV=production. Usa .env.production.example como base para desplegar sin depender de localhost.",
         "La guía docs/deploy-publicacion.md define el orden recomendado: GitHub privado, Supabase productivo, variables seguras, hosting Node, prueba desde varios dispositivos y validación privada.",
@@ -2424,6 +2425,7 @@ const manualContent = {
         "Admin shows a recent attachment upload history with per-file status: uploading, uploaded, or failed. The same panel can refresh the history to review tests from phones, tablets, and desktop.",
         "The offline queue reconciles with Supabase when remote data loads. If a pending experience already exists in the cloud and its attachments have a remote path or URL, the app removes that local pending item to avoid ghost warnings.",
         "The offline queue also includes Clean saved items. This action reads Supabase, compares local pending items with remote experiences, and discards only items already covered by the cloud.",
+        "If the local queue remains out of sync after confirming the experiences exist in Supabase, the top warning can Clear local queue. This only removes pending items from the current browser; it does not delete saved experiences or attachments.",
         "The complete media test is approved only when the same attachment appears from another device in Library, Multimodal Assets, Reports, and Publications. If only the narrative syncs, the flow is still incomplete.",
         "The server now supports cloud mode through HOST=0.0.0.0 and NODE_ENV=production. Use .env.production.example as the deployment baseline so the app does not depend on localhost.",
         "The docs/deploy-publicacion.md guide defines the recommended order: private GitHub, production Supabase, secure variables, Node hosting, multi-device test, and private validation.",
@@ -4787,6 +4789,7 @@ function renderPersistenceGateBanner() {
         queueDetail: `${queueCount} change${queueCount === 1 ? "" : "s"} will be sent automatically when the session and connection are ready.`,
         signIn: "Sign in",
         sync: "Save pending",
+        clearQueue: "Clear local queue",
         refresh: "Try again",
       }
     : {
@@ -4798,6 +4801,7 @@ function renderPersistenceGateBanner() {
         queueDetail: `${queueCount} cambio${queueCount === 1 ? "" : "s"} se enviarán automáticamente cuando la sesión y la conexión estén listas.`,
         signIn: "Entrar",
         sync: "Guardar pendientes",
+        clearQueue: "Limpiar cola local",
         refresh: "Reintentar",
       };
   const title = missingSession ? labels.authTitle : queueCount ? labels.queueTitle : labels.apiTitle;
@@ -4811,6 +4815,7 @@ function renderPersistenceGateBanner() {
     <div class="persistence-gate-actions">
       ${missingSession ? `<button class="primary-button" type="button" data-persistence-action="auth">${escapeHtml(labels.signIn)}</button>` : ""}
       ${queueCount ? `<button class="primary-button" type="button" data-persistence-action="sync">${escapeHtml(labels.sync)}</button>` : ""}
+      ${queueCount ? `<button class="ghost-button" type="button" data-persistence-action="clear-queue">${escapeHtml(labels.clearQueue)}</button>` : ""}
       <button class="ghost-button" type="button" data-persistence-action="refresh">${escapeHtml(labels.refresh)}</button>
     </div>
   `;
@@ -4828,10 +4833,34 @@ async function handlePersistenceGateClick(event) {
     renderPersistenceGateBanner();
     return;
   }
+  if (action === "clear-queue") {
+    clearOfflineQueueFromBanner();
+    return;
+  }
   if (action === "refresh") {
     await hydrateFromApi();
     renderAll();
   }
+}
+
+function clearOfflineQueueFromBanner() {
+  if (!state.offlineQueue.length) {
+    renderPersistenceGateBanner();
+    return;
+  }
+  const message = state.language === "en"
+    ? "This clears only this browser's pending local queue. It does not delete experiences already saved in Supabase or local Library. Continue?"
+    : "Esto limpia solo la cola local pendiente de este navegador. No borra experiencias ya guardadas en Supabase ni en la Librería local. ¿Continuar?";
+  if (!confirm(message)) return;
+  const cleared = state.offlineQueue.length;
+  state.offlineQueue = [];
+  saveOfflineQueue();
+  document.getElementById("embeddingStatus").textContent = state.language === "en"
+    ? `${cleared} local pending items cleared.`
+    : `${cleared} pendientes locales limpiados.`;
+  renderPersistenceGateBanner();
+  renderOfflineQueuePanel();
+  renderAdmin();
 }
 
 function updateUrlForView(view) {
