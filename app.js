@@ -1,4 +1,4 @@
-const APP_VERSION = "20260521-events-closure-342";
+const APP_VERSION = "20260521-asset-processing-evidence-343";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -246,6 +246,10 @@ const i18n = {
       assetManualNote: "Nota manual",
       assetManualNotePlaceholder: "Agrega contexto humano, permisos, personas, intención o detalles que la app no pueda inferir.",
       assetAnalysisText: "Texto analítico",
+      assetExtractedText: "Texto extraído",
+      assetExtractionMethod: "Método",
+      assetExtractionAutomatic: "Extracción automática",
+      assetExtractionGuided: "Revisión guiada",
       assetSuggestAnalysisText: "Sugerir texto",
       assetSuggestedAnalysisSaved: "Texto analítico sugerido. Puedes editarlo antes de guardar cambios adicionales.",
       assetBulkSuggestedAnalysisSaved: "Texto sugerido para {count} activos filtrados.",
@@ -1005,6 +1009,10 @@ const i18n = {
       assetManualNote: "Manual note",
       assetManualNotePlaceholder: "Add human context, permissions, people, intent, or details the app cannot infer.",
       assetAnalysisText: "Analytical text",
+      assetExtractedText: "Extracted text",
+      assetExtractionMethod: "Method",
+      assetExtractionAutomatic: "Automatic extraction",
+      assetExtractionGuided: "Guided review",
       assetSuggestAnalysisText: "Suggest text",
       assetSuggestedAnalysisSaved: "Suggested analytical text added. You can edit it before saving further changes.",
       assetBulkSuggestedAnalysisSaved: "Suggested text added for {count} filtered assets.",
@@ -1883,6 +1891,7 @@ const manualContent = {
         "La sección Dispositivos ahora documenta un contrato único de integración. Cualquier fuente nueva debe entregar sourceId, sourceType, capturedAt, participantId, payloadType y payload antes de alimentar experiencias, activos, Agenda o contexto.",
         "El contrato de dispositivos se puede exportar como Markdown o JSON para compartirlo con desarrolladores, integraciones API/MCP o proveedores de wearables.",
         "Activos multimodales incluye Procesar ahora y Procesar visibles. Los documentos de texto se extraen localmente; los audios usan transcripción del backend si está configurada; imágenes y videos generan una revisión guiada transparente hasta conectar OCR o reconocimiento visual profundo.",
+        "El procesamiento de activos ahora muestra método, estado, fecha de procesamiento y texto extraído cuando existe. Ese texto entra en búsqueda, inventario JSON/CSV y auditoría de metadatos.",
         "El texto extraído o generado queda guardado como texto analítico del activo y entra en búsqueda, reportes, memoria y publicaciones, siempre con revisión humana antes de salidas finales.",
         "Administración incluye un tablero de frentes paralelos para agrupar el cierre del MVP en trabajo funcional, técnico, piloto, QA/manual e integraciones, con dueño sugerido y próxima acción.",
         "Administración muestra Reglas de desarrollo como criterio permanente para cada incremento: actualizar Manual y Administración, fortalecer solidez/agilidad y seguir patrones probados.",
@@ -2397,6 +2406,7 @@ const manualContent = {
         "The Devices section now documents a single integration contract. Every new source must provide sourceId, sourceType, capturedAt, participantId, payloadType, and payload before feeding experiences, assets, Agenda, or context.",
         "The device contract can be exported as Markdown or JSON to share with developers, API/MCP integrations, or wearable providers.",
         "Multimodal Assets includes Process now and Process visible. Text documents are extracted locally; audio uses backend transcription when configured; images and videos generate a transparent guided review until deep OCR or visual recognition is connected.",
+        "Asset processing now shows method, status, processed date, and extracted text when available. That text is included in search, JSON/CSV inventory, and metadata audit.",
         "Extracted or generated text is saved as asset analytical text and becomes available for search, reports, memory, and publications, with human review before final outputs.",
         "Admin includes a parallel workstreams board to group MVP closure into functional, technical, pilot, QA/manual, and integration work, with suggested owner and next action.",
         "Admin shows Development Rules as permanent criteria for every increment: update Manual and Admin, improve robustness/agility, and follow proven patterns.",
@@ -9995,6 +10005,9 @@ function collectMultimodalAssets() {
       const manualTags = Array.isArray(manual.tags) ? manual.tags : Array.isArray(attachment.manualTags) ? attachment.manualTags : [];
       const manualNote = Object.hasOwn(manual, "note") ? manual.note : attachment.manualNote || "";
       const analysisText = Object.hasOwn(manual, "analysisText") ? manual.analysisText : attachment.analysisText || "";
+      const extractedText = Object.hasOwn(manual, "extractedText") ? manual.extractedText : attachment.extractedText || "";
+      const extractionMethod = Object.hasOwn(manual, "extractionMethod") ? manual.extractionMethod : attachment.extractionMethod || "";
+      const extractionStatus = Object.hasOwn(manual, "extractionStatus") ? manual.extractionStatus : attachment.extractionStatus || "";
       const signalMetadata = attachment.metadata || {};
       const sourceDevice = attachment.sourceDevice || signalMetadata.sourceDevice || attachment.device || attachment.source || "";
       const sourceType = attachment.sourceType || signalMetadata.sourceType || signalMetadata.source || attachment.source || "";
@@ -10027,6 +10040,10 @@ function collectMultimodalAssets() {
         manualTags,
         manualNote,
         analysisText,
+        extractedText,
+        extractionMethod,
+        extractionStatus,
+        processedAt: manual.processedAt || attachment.processedAt || "",
         analysisSuggested: Boolean(manual.suggested),
       };
     }),
@@ -10487,6 +10504,9 @@ function filterMultimodalAssets() {
         asset.notes,
         asset.manualNote,
         asset.analysisText,
+        asset.extractedText,
+        asset.extractionMethod,
+        asset.extractionStatus,
         asset.type,
         asset.originalType,
         asset.extension,
@@ -10715,6 +10735,9 @@ function exportAssetEditableMetadataCsv() {
   const rows = filterMultimodalAssets().map((asset) => ({
     assetId: asset.assetKey,
     analyticalText: asset.analysisText || "",
+    extractedText: asset.extractedText || "",
+    extractionMethod: asset.extractionMethod || "",
+    extractionStatus: asset.extractionStatus || "",
     manualNote: asset.manualNote || "",
     manualTags: (asset.manualTags || []).join("; "),
     clearMetadata: "",
@@ -10723,7 +10746,7 @@ function exportAssetEditableMetadataCsv() {
     experienceTitle: asset.experienceTitle || "",
     processingStatus: buildAssetProcessingStatus(asset).label,
   }));
-  const headers = ["assetId", "analyticalText", "manualNote", "manualTags", "clearMetadata", "name", "kind", "experienceTitle", "processingStatus"];
+  const headers = ["assetId", "analyticalText", "extractedText", "extractionMethod", "extractionStatus", "manualNote", "manualTags", "clearMetadata", "name", "kind", "experienceTitle", "processingStatus"];
   const csv = [headers.join(","), ...rows.map((row) => headers.map((header) => csvCell(row[header])).join(","))].join("\n");
   downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), "metadatos-activos-editable.csv");
   markAssetWorkflowAudit("editableCsvExportedAt", { count: rows.length, format: "csv" });
@@ -10803,6 +10826,10 @@ function buildAssetInventoryRows(assets) {
     manualTags: asset.manualTags || [],
     manualNote: asset.manualNote || "",
     analyticalText: asset.analysisText || "",
+    extractedText: asset.extractedText || "",
+    extractionMethod: asset.extractionMethod || "",
+    extractionStatus: asset.extractionStatus || "",
+    processedAt: asset.processedAt || "",
     analyticalTextSuggested: Boolean(asset.analysisSuggested),
     clearMetadata: "",
     hasSource: Boolean(asset.url || asset.dataUrl),
@@ -10834,8 +10861,11 @@ async function importAssetMetadataFromFile(event) {
         : splitListField(row.manualTags || row.tags || "");
       const note = String(row.manualNote || row.note || "").trim();
       const analysisText = String(row.analyticalText || row.analysisText || "").trim();
+      const extractedText = String(row.extractedText || "").trim();
+      const extractionMethod = String(row.extractionMethod || "").trim();
+      const extractionStatus = String(row.extractionStatus || "").trim();
       const shouldClear = isTruthyImportFlag(row.clearMetadata || row.clear || row.deleteMetadata);
-      if (!tags.length && !note && !analysisText) {
+      if (!tags.length && !note && !analysisText && !extractedText && !extractionMethod && !extractionStatus) {
         if (shouldClear) {
           delete state.assetMetadata[key];
           cleared += 1;
@@ -10844,7 +10874,7 @@ async function importAssetMetadataFromFile(event) {
           ignoredEmpty += 1;
         }
       } else {
-        state.assetMetadata[key] = { tags, note, analysisText, updatedAt: new Date().toISOString() };
+        state.assetMetadata[key] = { tags, note, analysisText, extractedText, extractionMethod, extractionStatus, updatedAt: new Date().toISOString() };
         updated += 1;
       }
     });
@@ -10927,6 +10957,12 @@ function renderAssetCard(asset) {
   const tags = buildAssetTags(asset);
   const manualTagsValue = (asset.manualTags || []).join(", ");
   const hasAnalysisText = Boolean(String(asset.analysisText || "").trim());
+  const extractedText = String(asset.extractedText || "").trim();
+  const extractionLabel = asset.extractionStatus === "automatic"
+    ? t("labels.assetExtractionAutomatic")
+    : asset.extractionStatus
+      ? t("labels.assetExtractionGuided")
+      : "";
   return `
     <article class="asset-card">
       ${renderAssetPreview(asset)}
@@ -10954,7 +10990,20 @@ function renderAssetCard(asset) {
         <section class="asset-readiness-panel asset-processing-panel">
           <strong>${escapeHtml(t("labels.assetProcessingStatus"))}: ${escapeHtml(processing.label)}</strong>
           <p>${escapeHtml(processing.detail)}</p>
+          ${
+            asset.extractionMethod || asset.processedAt
+              ? `<p class="card-meta">${escapeHtml(t("labels.assetExtractionMethod"))}: ${escapeHtml([extractionLabel, asset.extractionMethod, asset.processedAt ? formatDate(asset.processedAt) : ""].filter(Boolean).join(" · "))}</p>`
+              : ""
+          }
         </section>
+        ${
+          extractedText
+            ? `<section class="asset-extracted-text-panel">
+                <strong>${escapeHtml(t("labels.assetExtractedText"))}</strong>
+                <pre>${escapeHtml(extractedText.slice(0, 900))}</pre>
+              </section>`
+            : ""
+        }
         <section class="asset-storage-panel">
           <strong>${escapeHtml(t("labels.assetStorageStatus"))}: ${escapeHtml(storageStatus.label)}</strong>
           <p>${escapeHtml(storageStatus.detail)}</p>
@@ -19574,6 +19623,8 @@ function renderAdminOperationalFocusPanel() {
         smokeDetail: "npm run check now validates syntax, version/cache consistency, critical capture functions, and event-asset links before publishing.",
         eventTimeline: "Event timeline visible",
         eventTimelineDetail: "Library, Timeline, Reports, JSON, HTML, and CSV now preserve internal events for long experiences.",
+        assetProcessing: "Asset processing evidence",
+        assetProcessingDetail: "Asset cards, search, inventory, and metadata imports now preserve extracted text, method, status, and processing date.",
       }
     : {
         title: "Administración operativa",
@@ -19599,6 +19650,8 @@ function renderAdminOperationalFocusPanel() {
     labels.smokeDetail = "npm run check ahora valida sintaxis, versi\u00f3n/cache, funciones cr\u00edticas de captura y v\u00ednculos evento-activo antes de publicar.";
     labels.eventTimeline = "L\u00ednea de eventos visible";
     labels.eventTimelineDetail = "Librer\u00eda, L\u00ednea de tiempo, Reportes, JSON, HTML y CSV ahora conservan eventos internos para experiencias largas.";
+    labels.assetProcessing = "Evidencia de procesamiento";
+    labels.assetProcessingDetail = "Las tarjetas, b\u00fasqueda, inventario e importaci\u00f3n de metadatos ahora conservan texto extra\u00eddo, m\u00e9todo, estado y fecha de procesamiento.";
   }
   const cards = [
     [labels.flow, labels.flowDetail],
@@ -19609,6 +19662,7 @@ function renderAdminOperationalFocusPanel() {
     [labels.gate, labels.gateDetail],
     [labels.smoke, labels.smokeDetail],
     [labels.eventTimeline, labels.eventTimelineDetail],
+    [labels.assetProcessing, labels.assetProcessingDetail],
     [labels.next, labels.nextDetail],
   ];
   container.innerHTML = `

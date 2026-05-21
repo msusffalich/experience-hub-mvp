@@ -5160,6 +5160,7 @@ textarea {
 
 .asset-readiness-panel,
 .asset-storage-panel,
+.asset-extracted-text-panel,
 .asset-tags-panel,
 .asset-metadata-form {
   display: grid;
@@ -5173,6 +5174,20 @@ textarea {
 .asset-processing-panel {
   border-color: rgba(31, 98, 141, 0.22);
   background: linear-gradient(180deg, rgba(31, 98, 141, 0.08), rgba(255, 255, 255, 0.92));
+}
+
+.asset-extracted-text-panel {
+  background: #fbf7ef;
+}
+
+.asset-extracted-text-panel pre {
+  max-height: 180px;
+  margin: 8px 0 0;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--text);
+  font: 12px/1.45 ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
 }
 
 .asset-metadata-workflow {
