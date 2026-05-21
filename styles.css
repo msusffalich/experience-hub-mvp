@@ -7303,6 +7303,53 @@ button.asset-processing-summary-card {
   flex-wrap: wrap;
 }
 
+.audio-capture-guide,
+.audio-readiness-card {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid rgba(13, 124, 102, 0.18);
+  border-radius: 8px;
+  background: rgba(237, 244, 239, 0.72);
+  color: var(--ink);
+}
+
+.audio-capture-guide p,
+.audio-capture-guide small,
+.audio-readiness-card p,
+.audio-readiness-card small {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.audio-readiness-card {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  margin: 12px 0;
+}
+
+.audio-readiness-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+@media (max-width: 720px) {
+  .audio-readiness-card {
+    grid-template-columns: 1fr;
+  }
+
+  .audio-readiness-actions {
+    justify-content: stretch;
+  }
+
+  .audio-readiness-actions button {
+    width: 100%;
+  }
+}
+
 .answer-box {
   min-height: 160px;
   margin-top: 14px;

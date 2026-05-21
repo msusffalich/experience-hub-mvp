@@ -133,6 +133,8 @@ assert(files.app.includes("archive-transport-only") && files.app.includes("Los a
 assert(files.server.includes("await getDocumentBytes(normalized)") && files.server.includes("audio_data_required"), "Audio transcription cannot read remote signed URLs.");
 assert(files.app.includes("assetDownloadFile") && files.app.includes("renderArchiveMediaCard") && files.app.includes("PDF se previsualiza con una vista embebida"), "Asset preview/download flow is incomplete.");
 assert(files.app.includes("patrón del blueprint de CLIO") && files.app.includes("temporary Supabase signed URLs"), "Manual does not document the CLIO-style signed-URL asset reading pattern.");
+assert(files.index.includes("audioCaptureGuide") && files.app.includes("applyAudioTranscriptToCapture") && files.app.includes("Captura rápida por audio"), "Quick audio capture flow is missing.");
+assert(files.server.includes("audioStorage") && files.server.includes("audio_asset_not_synced"), "Supabase self-test does not validate audio assets.");
 assert(/@media \(max-width: 1040px\)[\s\S]*\.capture-layout-clean \{[\s\S]*grid-template-columns: minmax\(0, 1fr\)/.test(files.styles), "Capture is not forced to full width on tablet/mobile layouts.");
 assert(/@media \(max-width: 720px\)[\s\S]*\.capture-layout-clean,[\s\S]*\.filters \{[\s\S]*grid-template-columns: 1fr/.test(files.styles), "Capture is not included in the mobile one-column layout.");
 assert(files.index.includes("Activos y multimedia") && files.index.includes("Opciones avanzadas de calendario"), "Assets operations or Agenda advanced tools are not properly grouped.");

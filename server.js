@@ -1720,6 +1720,7 @@ async function runSupabaseSelfTest(user) {
   const testId = `selftest-${Date.now()}-${Math.random().toString(16).slice(2)}`;
   const testParticipantId = `${testId}-participant`;
   let uploadedMedia = null;
+  let uploadedAudio = null;
   let dailyTestLocation = null;
 
   try {
@@ -1754,6 +1755,23 @@ async function runSupabaseSelfTest(user) {
       return "Intento de subida registrado con archivo, ruta, estado y usuario.";
     });
 
+    await collectSelfTestStep(steps, "audioStorage", "Audio multidispositivo", async () => {
+      uploadedAudio = await saveMedia(
+        {
+          id: `${testId}-audio`,
+          name: `${testId}.wav`,
+          type: "audio/wav",
+          size: 44,
+          dataUrl: "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=",
+          kind: "audio",
+        },
+        user,
+      );
+      if (!uploadedAudio?.path || !uploadedAudio?.url) throw new Error("audio_upload_missing_path");
+      await assertSignedUrlReachable(uploadedAudio.url);
+      return "Audio temporal subido a Storage y legible mediante URL firmada, igual que en otro dispositivo.";
+    });
+
     await collectSelfTestStep(steps, "experienceCreate", "Guardar experiencia", async () => {
       const saved = await upsertExperience(
         {
@@ -1774,7 +1792,7 @@ async function runSupabaseSelfTest(user) {
             { id: `${testId}-event-1`, title: "Inicio", description: "Se crea el registro temporal.", order: 1 },
             { id: `${testId}-event-2`, title: "Validación", description: "Se verifica lectura y sincronización.", order: 2 },
           ],
-          attachments: uploadedMedia ? [uploadedMedia] : [],
+          attachments: [uploadedMedia, uploadedAudio].filter(Boolean),
           locale: "es",
         },
         user,
@@ -1825,7 +1843,9 @@ async function runSupabaseSelfTest(user) {
       });
       if (!rows.length) throw new Error("assets_not_synced");
       if (!rows[0].storage_path) throw new Error("asset_storage_path_missing");
-      return `${rows.length} activo multimodal sincronizado en assets con ruta Storage.`;
+      const audioRow = rows.find((row) => row.kind === "audio" || String(row.mime_type || "").startsWith("audio/"));
+      if (!audioRow) throw new Error("audio_asset_not_synced");
+      return `${rows.length} activos multimodales sincronizados en assets, incluido audio con ruta Storage.`;
     });
 
     await collectSelfTestStep(steps, "semantic", "Consulta semántica", async () => {
@@ -1870,6 +1890,12 @@ async function runSupabaseSelfTest(user) {
       await collectSelfTestStep(steps, "cleanupStorage", "Limpieza Storage", async () => {
         await deleteSupabaseObject(uploadedMedia.path);
         return "Archivo temporal eliminado de Storage.";
+      });
+    }
+    if (uploadedAudio?.path) {
+      await collectSelfTestStep(steps, "cleanupAudioStorage", "Limpieza audio", async () => {
+        await deleteSupabaseObject(uploadedAudio.path);
+        return "Audio temporal eliminado de Storage.";
       });
     }
     if (dailyTestLocation) {
@@ -1917,6 +1943,7 @@ function selfTestActionFor(id, detail = "") {
   if (id === "cleanupExperience") return { text: "Borra manualmente cualquier experiencia con título SUPABASE SELF TEST.", actionType: "openAdmin" };
   if (id === "cleanupParticipant") return { text: "Borra manualmente cualquier participante temporal con prefijo selftest si quedó pendiente.", actionType: "openAdmin" };
   if (id === "cleanupStorage") return { text: `Borra manualmente el objeto temporal indicado en ${SUPABASE_STORAGE_BUCKET}.`, actionType: "openAdmin" };
+  if (id === "cleanupAudioStorage") return { text: `Borra manualmente el audio temporal indicado en ${SUPABASE_STORAGE_BUCKET}.`, actionType: "openAdmin" };
   return { text: "Corrige el punto indicado y vuelve a ejecutar Probar flujo real.", actionType: "openAdmin" };
 }
 

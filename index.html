@@ -9,10 +9,10 @@
     <meta name="apple-mobile-web-app-title" content="Experience Hub" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>Experience Hub MVP</title>
-    <link rel="manifest" href="manifest.webmanifest?v=20260521-asset-preview-reading-365" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260521-audio-validation-366" />
     <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="icons/icon.svg" />
-    <link rel="stylesheet" href="styles.css?v=20260521-asset-preview-reading-365" />
+    <link rel="stylesheet" href="styles.css?v=20260521-audio-validation-366" />
   </head>
   <body>
     <noscript>
@@ -325,6 +325,7 @@
                   <button id="recordAudioButton" class="ghost-button" type="button">Grabar audio</button>
                   <span id="recordingStatus" class="card-meta">Audio manual opcional</span>
                 </div>
+                <div id="audioCaptureGuide" class="audio-capture-guide"></div>
                 <div id="attachmentPreview" class="attachment-preview" aria-live="polite"></div>
                 <div class="form-actions">
                   <button class="ghost-button" id="clearFormButton" type="button">Limpiar</button>
@@ -819,7 +820,7 @@
             <div class="manual-version-card">
               <div>
                 <span id="manualVersionEyebrow">Versión vigente</span>
-                <strong id="manualVersionValue">20260521-asset-preview-reading-365</strong>
+                <strong id="manualVersionValue">20260521-audio-validation-366</strong>
                 <p id="manualVersionSummary">Guía práctica organizada por temas para entender el flujo de la app sin leer todo de corrido.</p>
               </div>
               <div class="manual-guide-grid" aria-label="Estructura del manual">
@@ -928,6 +929,7 @@
                 <div id="assetWorkflowReadinessPanel" class="asset-workflow-readiness-panel"></div>
                 <div id="assetImportSummary" class="asset-import-summary"></div>
                 <div id="assetProcessingSummary" class="asset-processing-summary"></div>
+                <div id="audioReadinessPanel" class="audio-readiness-panel"></div>
                 <div class="advanced-action-row">
                   <button id="exportAssetInventoryButton" class="ghost-button" type="button">Exportar inventario</button>
                   <button id="exportAssetInventoryCsvButton" class="ghost-button" type="button">CSV inventario</button>
@@ -1037,7 +1039,7 @@
       </main>
     </div>
 
-    <script src="app.js?v=20260521-asset-preview-reading-365"></script>
+    <script src="app.js?v=20260521-audio-validation-366"></script>
 </body>
 </html>
 

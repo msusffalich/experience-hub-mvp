@@ -1,4 +1,4 @@
-const APP_VERSION = "20260521-asset-preview-reading-365";
+const APP_VERSION = "20260521-audio-validation-366";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -292,6 +292,16 @@ const i18n = {
       assetMetadataImportNone: "Aún no hay importaciones de metadatos registradas.",
       assetMetadataImportFailed: "No se pudieron importar los metadatos. Revisa que el archivo sea JSON o CSV de inventario válido.",
       attachmentReady: "Listo para guardar",
+      recordAudio: "Grabar audio",
+      stopAudioRecording: "Detener",
+      audioCaptureUnavailable: "Grabación no disponible en este navegador",
+      audioCaptureOptional: "Audio manual opcional",
+      audioCaptureProcessing: "Procesando audio...",
+      audioCaptureAdded: "Audio agregado a la experiencia",
+      audioCaptureAddedTranscript: "Audio agregado con transcripción",
+      audioCaptureGuideTitle: "Captura rápida por audio",
+      audioCaptureGuideText: "Para experiencias cortas al paso, habla y deja que la app prepare un borrador. Luego solo confirma los campos antes de guardar.",
+      audioCaptureGuideSteps: "La transcripción puede completar título, notas, categoría, objetivo y duración si esos campos están vacíos. El audio queda como evidencia adjunta.",
       attachmentInputLabel: "Imágenes, videos, audio o documentos",
       attachmentPreviewAvailable: "Vista previa disponible",
       attachmentDocumentPreview: "Vista previa textual",
@@ -1063,6 +1073,16 @@ const i18n = {
       assetMetadataImportNone: "No metadata imports have been recorded yet.",
       assetMetadataImportFailed: "Metadata could not be imported. Check that the file is a valid inventory JSON or CSV.",
       attachmentReady: "Ready to save",
+      recordAudio: "Record audio",
+      stopAudioRecording: "Stop",
+      audioCaptureUnavailable: "Recording is not available in this browser",
+      audioCaptureOptional: "Optional manual audio",
+      audioCaptureProcessing: "Processing audio...",
+      audioCaptureAdded: "Audio added to the experience",
+      audioCaptureAddedTranscript: "Audio added with transcript",
+      audioCaptureGuideTitle: "Quick audio capture",
+      audioCaptureGuideText: "For short on-the-go experiences, speak and let the app prepare a draft. Then just confirm the fields before saving.",
+      audioCaptureGuideSteps: "The transcript can complete title, notes, category, goal, and duration when those fields are empty. The audio remains attached as evidence.",
       attachmentInputLabel: "Images, videos, audio, or documents",
       attachmentPreviewAvailable: "Preview available",
       attachmentDocumentPreview: "Text preview",
@@ -2098,6 +2118,7 @@ const manualContent = {
         "La revisión de gramática y claridad entrega sugerencias locales para título, objetivo, ubicación, personas y notas. No bloquea el guardado; sirve para mejorar la lectura y los reportes.",
         "Cada sugerencia muestra texto propuesto editable y un botón Aplicar. También puede abrir Copilot con un prompt de reescritura preparado, si el navegador permite ventanas externas.",
         "Puedes adjuntar imágenes, videos o audio en múltiples formatos. El panel de adjuntos muestra tipo, formato, tamaño, estado de vista previa y cómo se clasificará el archivo al guardar.",
+        "Captura rápida por audio: para experiencias cortas al paso, puedes grabar o adjuntar audio; la transcripción completa un borrador de título, notas, categoría, objetivo y duración cuando esos campos están vacíos. Antes de guardar, solo confirmas lo esencial.",
         "Imágenes aceptadas: JPG/JPEG, PNG, GIF, SVG, WebP, AVIF, HEIC/HEIF, TIFF, BMP y formatos RAW comunes como DNG, CR2, NEF y ARW. Vista previa nativa inicial: JPG/JPEG, PNG, GIF, SVG, WebP, AVIF y BMP.",
         "Audio aceptado: MP3, WAV, M4A, AAC, FLAC, OGG, OPUS, WMA, AIFF/AIF y AMR. Vista previa/reproducción nativa inicial: MP3, WAV, M4A, AAC, OGG, OPUS y FLAC, según soporte del navegador.",
         "Video aceptado: MP4, MOV, M4V, WebM, MKV, AVI, WMV, MPEG/MPG, 3GP y HEVC. Vista previa/reproducción nativa inicial: MP4, M4V, WebM y MOV, según soporte del navegador.",
@@ -2629,6 +2650,7 @@ const manualContent = {
         "The grammar and clarity review provides local suggestions for title, objective, location, people, and notes. It does not block saving; it improves reading quality and reports.",
         "Each suggestion shows editable proposed text and an Apply button. It can also open Copilot with a prepared rewrite prompt if the browser allows external windows.",
         "Attach images, videos, or audio in many formats. The attachment panel shows type, format, size, preview status, and how the file will be classified when saved.",
+        "Quick audio capture: for short on-the-go experiences, record or attach audio; the transcript completes a draft title, notes, category, goal, and duration when those fields are empty. Before saving, you only confirm the essentials.",
         "Accepted image formats: JPG/JPEG, PNG, GIF, SVG, WebP, AVIF, HEIC/HEIF, TIFF, BMP, and common RAW formats such as DNG, CR2, NEF, and ARW. Initial native preview: JPG/JPEG, PNG, GIF, SVG, WebP, AVIF, and BMP.",
         "Accepted audio formats: MP3, WAV, M4A, AAC, FLAC, OGG, OPUS, WMA, AIFF/AIF, and AMR. Initial native playback: MP3, WAV, M4A, AAC, OGG, OPUS, and FLAC, depending on browser support.",
         "Accepted video formats: MP4, MOV, M4V, WebM, MKV, AVI, WMV, MPEG/MPG, 3GP, and HEVC. Initial native playback: MP4, M4V, WebM, and MOV, depending on browser support.",
@@ -5340,6 +5362,11 @@ function applyLanguage() {
   document.querySelector("#experienceForm .primary-button").textContent = t("buttons.save");
   document.getElementById("clearFormButton").textContent = t("buttons.clear");
   document.getElementById("attachmentInputLabel").textContent = t("labels.attachmentInputLabel");
+  const recordAudioButton = document.getElementById("recordAudioButton");
+  if (recordAudioButton && state.mediaRecorder?.state !== "recording") recordAudioButton.textContent = t("labels.recordAudio");
+  const recordingStatus = document.getElementById("recordingStatus");
+  if (recordingStatus && !recordingStatus.textContent.trim()) recordingStatus.textContent = t("labels.audioCaptureOptional");
+  renderAudioCaptureGuide();
   document.getElementById("dailyRefreshButton").textContent = t("buttons.refreshDaily");
   applyDailyStaticActionsLanguage();
   const dataQualityTitle = document.getElementById("dataQualityTitle");
@@ -7393,6 +7420,7 @@ async function appendBackendTranscript(attachment) {
       body: JSON.stringify(attachment),
     });
     if (result.transcript) {
+      applyAudioTranscriptToCapture(result.transcript, { source: "backend" });
       appendTranscriptToNotes("Transcripción del servidor local", result.transcript);
     }
   } catch {
@@ -7581,17 +7609,20 @@ function handleAttachmentEventSelection(event) {
 function setupAudioCapture() {
   const button = document.getElementById("recordAudioButton");
   const status = document.getElementById("recordingStatus");
+  renderAudioCaptureGuide();
   if (!navigator.mediaDevices || typeof MediaRecorder === "undefined") {
     button.disabled = true;
-    status.textContent = "Grabación no disponible en este navegador";
+    status.textContent = t("labels.audioCaptureUnavailable");
     return;
   }
+  button.textContent = t("labels.recordAudio");
+  status.textContent = t("labels.audioCaptureOptional");
   button.addEventListener("click", async () => {
     if (state.mediaRecorder?.state === "recording") {
       state.mediaRecorder.stop();
       stopSpeechTranscription();
-      button.textContent = "Grabar audio";
-      status.textContent = "Procesando audio...";
+      button.textContent = t("labels.recordAudio");
+      status.textContent = t("labels.audioCaptureProcessing");
       return;
     }
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -7610,13 +7641,13 @@ function setupAudioCapture() {
       if (state.liveTranscript) appendLiveTranscriptToNotes();
       renderAttachmentPreview();
       status.textContent = state.liveTranscript
-        ? "Audio agregado con transcripción del navegador"
-        : "Audio agregado a la experiencia";
+        ? t("labels.audioCaptureAddedTranscript")
+        : t("labels.audioCaptureAdded");
     });
     state.mediaRecorder.start();
     startSpeechTranscription();
-    button.textContent = "Detener";
-    status.textContent = "Grabando...";
+    button.textContent = t("labels.stopAudioRecording");
+    status.textContent = state.language === "en" ? "Recording..." : "Grabando...";
   });
 }
 
@@ -7660,6 +7691,7 @@ function stopSpeechTranscription() {
 function appendLiveTranscriptToNotes() {
   const transcript = state.liveTranscript.trim();
   if (!transcript) return;
+  applyAudioTranscriptToCapture(transcript, { source: "browser" });
   appendTranscriptToNotes("Transcripción audio", transcript);
 }
 
@@ -7667,6 +7699,69 @@ function appendTranscriptToNotes(label, transcript) {
   const notes = document.getElementById("notesInput");
   const prefix = notes.value.trim() ? "\n\n" : "";
   notes.value = `${notes.value}${prefix}${label}:\n${transcript}`;
+}
+
+function renderAudioCaptureGuide() {
+  const guide = document.getElementById("audioCaptureGuide");
+  if (!guide) return;
+  guide.innerHTML = `
+    <strong>${escapeHtml(t("labels.audioCaptureGuideTitle"))}</strong>
+    <p>${escapeHtml(t("labels.audioCaptureGuideText"))}</p>
+    <small>${escapeHtml(t("labels.audioCaptureGuideSteps"))}</small>
+  `;
+}
+
+function applyAudioTranscriptToCapture(transcript, options = {}) {
+  const text = String(transcript || "").replace(/\s+/g, " ").trim();
+  if (!text) return;
+  const titleInput = document.getElementById("titleInput");
+  const objectiveInput = document.getElementById("objectiveInput");
+  const durationInput = document.getElementById("durationInput");
+  const categoryInput = document.getElementById("categoryInput");
+  const notesInput = document.getElementById("notesInput");
+  if (titleInput && !titleInput.value.trim()) titleInput.value = buildAudioDraftTitle(text);
+  if (objectiveInput && !objectiveInput.value.trim()) {
+    objectiveInput.value = state.language === "en" ? "Record and understand this experience" : "Registrar y comprender esta experiencia";
+  }
+  if (durationInput && !String(durationInput.value || "").trim()) durationInput.value = inferDurationFromTranscript(text);
+  if (categoryInput && (!categoryInput.value || categoryInput.value === "Trabajo")) {
+    const inferred = inferCategoryFromTranscript(text);
+    if (inferred) categoryInput.value = inferred;
+  }
+  if (notesInput && !notesInput.value.trim() && options.source === "backend") notesInput.value = text;
+  renderCaptureWritingCoach();
+  renderCaptureEventPreview();
+}
+
+function buildAudioDraftTitle(text) {
+  const words = text.split(/\s+/).filter(Boolean).slice(0, 9).join(" ");
+  const cleaned = words.charAt(0).toUpperCase() + words.slice(1);
+  return cleaned.length > 70 ? `${cleaned.slice(0, 67)}...` : cleaned;
+}
+
+function inferDurationFromTranscript(text) {
+  const lower = text.toLowerCase();
+  const minutes = lower.match(/(\d{1,3})\s*(minuto|minutos|minute|minutes|min)\b/);
+  if (minutes) return Math.max(1, Math.min(Number(minutes[1]), 1440));
+  const hours = lower.match(/(\d{1,2})\s*(hora|horas|hour|hours|h)\b/);
+  if (hours) return Math.max(1, Math.min(Number(hours[1]) * 60, 1440));
+  return 5;
+}
+
+function inferCategoryFromTranscript(text) {
+  const lower = text.toLowerCase();
+  const rules = [
+    ["Salud", ["salud", "medico", "médico", "doctor", "ejercicio", "caminar", "bienestar", "estres", "estrés"]],
+    ["Viajes / Paseos", ["viaje", "paseo", "playa", "hotel", "aeropuerto", "ruta", "turismo"]],
+    ["Trabajo", ["trabajo", "reunion", "reunión", "cliente", "proyecto", "contrato", "oficina"]],
+    ["Social", ["familia", "amigo", "amiga", "cena", "conversacion", "conversación", "cumpleaños"]],
+    ["Compras", ["compra", "tienda", "precio", "pago", "mercado"]],
+    ["Aprendizaje", ["curso", "clase", "aprendi", "aprendí", "estudio", "lectura"]],
+    ["Entretenimiento", ["cine", "musica", "música", "concierto", "teatro", "juego"]],
+    ["Hogar", ["casa", "hogar", "cocina", "limpieza", "jardin", "jardín"]],
+  ];
+  const match = rules.find(([, terms]) => terms.some((term) => lower.includes(term)));
+  return match?.[0] || "";
 }
 
 function editExperience(id) {
@@ -10741,6 +10836,7 @@ function renderAssetLibrary() {
     )
     .join("");
   renderAssetProcessingSummary(allAssets);
+  renderAudioReadinessPanel(allAssets);
   renderAssetProcessingActionPlan(assets);
   document.getElementById("assetLibraryGrid").innerHTML = assets.length
     ? assets.map(renderAssetCard).join("")
@@ -11057,6 +11153,50 @@ function renderAssetProcessingSummary(assets) {
         )
         .join("")}
     </div>
+  `;
+}
+
+function renderAudioReadinessPanel(assets = collectMultimodalAssets()) {
+  const container = document.getElementById("audioReadinessPanel");
+  if (!container) return;
+  const audioAssets = assets.filter((asset) => asset.kind === "audio");
+  const remote = audioAssets.filter((asset) => isRemoteAsset(asset)).length;
+  const playable = audioAssets.filter((asset) => Boolean(asset.url || asset.dataUrl)).length;
+  const transcriptReady = audioAssets.filter((asset) => Boolean(String(asset.analysisText || asset.extractedText || asset.previewText || "").trim())).length;
+  const providerReady = state.config?.transcriptionProvider === "openai" || state.health?.transcriptionProvider === "openai";
+  const labels = state.language === "en"
+    ? {
+        title: "Audio readiness",
+        detail: audioAssets.length
+          ? `${remote}/${audioAssets.length} remote · ${playable}/${audioAssets.length} playable · ${transcriptReady}/${audioAssets.length} with transcript or analytical text`
+          : "No audio assets yet. Record or attach audio in Capture to test the flow.",
+        provider: providerReady ? "Backend transcription active" : "Backend transcription not active",
+        quick: "Quick audio capture now fills a draft from the transcript and keeps the audio as evidence.",
+        filter: "View audio",
+        process: "Process audio",
+      }
+    : {
+        title: "Preparación de audio",
+        detail: audioAssets.length
+          ? `${remote}/${audioAssets.length} remotos · ${playable}/${audioAssets.length} reproducibles · ${transcriptReady}/${audioAssets.length} con transcripción o texto analítico`
+          : "Aún no hay audios. Graba o adjunta audio en Captura para probar el flujo.",
+        provider: providerReady ? "Transcripción backend activa" : "Transcripción backend no activa",
+        quick: "La captura rápida por audio completa un borrador desde la transcripción y conserva el audio como evidencia.",
+        filter: "Ver audios",
+        process: "Procesar audios",
+      };
+  container.innerHTML = `
+    <section class="audio-readiness-card">
+      <div>
+        <strong>${escapeHtml(labels.title)}</strong>
+        <p>${escapeHtml(labels.detail)}</p>
+        <small>${escapeHtml(`${labels.provider}. ${labels.quick}`)}</small>
+      </div>
+      <div class="audio-readiness-actions">
+        <button class="ghost-button" type="button" data-asset-type-filter="audio">${escapeHtml(labels.filter)}</button>
+        <button class="primary-button" type="button" data-audio-process-visible="1">${escapeHtml(labels.process)}</button>
+      </div>
+    </section>
   `;
 }
 
@@ -11733,6 +11873,21 @@ async function handleAssetLibraryClick(event) {
   const processVisibleButton = event.target.closest("[data-asset-processing-run]");
   if (processVisibleButton?.dataset.assetProcessingRun === "visible") {
     await processVisibleAssetBacklog();
+    return;
+  }
+  const audioProcessButton = event.target.closest("[data-audio-process-visible]");
+  if (audioProcessButton) {
+    state.assetFilters.type = "audio";
+    state.assetFilters.processing = "pending";
+    renderAssetLibrary();
+    await processVisibleAssetBacklog();
+    return;
+  }
+  const assetTypeFilterButton = event.target.closest("[data-asset-type-filter]");
+  if (assetTypeFilterButton) {
+    state.assetFilters.type = assetTypeFilterButton.dataset.assetTypeFilter || "all";
+    renderAssetLibrary();
+    requestAnimationFrame(() => document.getElementById("assetTypeFilter")?.focus());
     return;
   }
   const processAssetButton = event.target.closest("[data-asset-process]");
