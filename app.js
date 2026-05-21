@@ -1,4 +1,4 @@
-const APP_VERSION = "20260521-auth-menu-admin-fix-334";
+const APP_VERSION = "20260521-capture-save-detail-335";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -5102,6 +5102,7 @@ function setupForm() {
     let savedExperience = null;
     let agendaRequested = false;
     try {
+      validateCaptureFormBeforeRead();
       const experience = await readForm();
       savedExperience = experience;
       const existingIndex = state.experiences.findIndex((item) => item.id === experience.id);
@@ -5157,9 +5158,7 @@ function setupForm() {
         console.warn("Post-save update failed", error);
         return;
       }
-      const detail = state.language === "en"
-        ? "The experience could not be saved. Review required fields and try again."
-        : "No se pudo guardar la experiencia. Revisa los campos obligatorios e inténtalo de nuevo.";
+      const detail = getCaptureSaveErrorDetail(error);
       state.captureSaveStatus = {
         type: "warn",
         title: state.language === "en" ? "Save failed" : "Guardado no completado",
@@ -5179,6 +5178,63 @@ function setupForm() {
   form.addEventListener("input", renderCaptureWritingCoach);
   form.addEventListener("change", renderCaptureWritingCoach);
   document.getElementById("captureSaveStatus")?.addEventListener("click", handleCaptureSaveStatusClick);
+}
+
+function validateCaptureFormBeforeRead() {
+  const requiredFields = [
+    ["titleInput", state.language === "en" ? "title" : "tÃ­tulo"],
+    ["timestampInput", state.language === "en" ? "date and time" : "fecha y hora"],
+    ["durationInput", state.language === "en" ? "duration" : "duraciÃ³n"],
+  ];
+  const missing = requiredFields
+    .filter(([id]) => !String(document.getElementById(id)?.value || "").trim())
+    .map(([, label]) => label);
+  if (missing.length) {
+    const error = new Error("capture_required_fields");
+    error.reason = "required_fields";
+    error.fields = missing;
+    throw error;
+  }
+  const timestampValue = document.getElementById("timestampInput")?.value || "";
+  if (Number.isNaN(new Date(timestampValue).getTime())) {
+    const error = new Error("capture_invalid_timestamp");
+    error.reason = "invalid_timestamp";
+    throw error;
+  }
+  const duration = Number(document.getElementById("durationInput")?.value || 0);
+  if (!Number.isFinite(duration) || duration < 1) {
+    const error = new Error("capture_invalid_duration");
+    error.reason = "invalid_duration";
+    throw error;
+  }
+}
+
+function getCaptureSaveErrorDetail(error) {
+  const reason = error?.reason || error?.message || "";
+  if (reason === "required_fields") {
+    const fields = Array.isArray(error.fields) && error.fields.length ? error.fields.join(", ") : (state.language === "en" ? "required fields" : "campos obligatorios");
+    return state.language === "en"
+      ? `Missing required fields: ${fields}. Complete them and save again.`
+      : `Faltan campos obligatorios: ${fields}. ComplÃ©talos y guarda de nuevo.`;
+  }
+  if (reason === "invalid_timestamp") {
+    return state.language === "en"
+      ? "The date and time are not valid. Select them again and save."
+      : "La fecha y hora no son vÃ¡lidas. SelecciÃ³nalas de nuevo y guarda.";
+  }
+  if (reason === "invalid_duration") {
+    return state.language === "en"
+      ? "Duration must be at least 1 minute. Correct it and save again."
+      : "La duraciÃ³n debe ser de al menos 1 minuto. CorrÃ­gela y guarda de nuevo.";
+  }
+  if (String(reason).includes("Invalid time value")) {
+    return state.language === "en"
+      ? "The date and time could not be interpreted. Select them again and save."
+      : "La fecha y hora no se pudieron interpretar. SelecciÃ³nalas de nuevo y guarda.";
+  }
+  return state.language === "en"
+    ? "The experience could not be saved. Check the session, required fields, and connection; then try again."
+    : "No se pudo guardar la experiencia. Revisa sesiÃ³n, campos obligatorios y conexiÃ³n; luego intÃ©ntalo de nuevo.";
 }
 
 function setupAgenda() {
