@@ -1577,9 +1577,16 @@ async function runSupabaseDiagnostics(user) {
   await collectDiagnosticCheck(checks, "storage", "Storage privado", async () => {
     const bucket = await getSupabaseStorageBucket();
     if (!bucket) throw new Error("Bucket no encontrado.");
-    return bucket.public === false
-      ? `Bucket ${SUPABASE_STORAGE_BUCKET} privado y disponible.`
-      : `Bucket ${SUPABASE_STORAGE_BUCKET} existe, pero está público. Ejecuta database/auth-rls.sql.`;
+    const allowed = Array.isArray(bucket.allowed_mime_types) ? bucket.allowed_mime_types : null;
+    if (bucket.public !== false) {
+      return `Bucket ${SUPABASE_STORAGE_BUCKET} existe, pero está público. Ejecuta database/auth-rls.sql.`;
+    }
+    if (allowed && !allowed.includes("application/pdf")) {
+      return `Bucket ${SUPABASE_STORAGE_BUCKET} privado, pero bloquea PDF/documentos. Ejecuta database/storage-accept-all-supported-media.sql.`;
+    }
+    return allowed
+      ? `Bucket ${SUPABASE_STORAGE_BUCKET} privado; lista MIME activa con ${allowed.length} tipos.`
+      : `Bucket ${SUPABASE_STORAGE_BUCKET} privado y acepta los formatos soportados por la app.`;
   }, (detail) => (detail.includes("público") ? "warn" : "ok"));
 
   await collectDiagnosticCheck(checks, "uploadAttempts", "Trazabilidad de adjuntos", async () => {
@@ -1649,7 +1656,9 @@ function diagnosticActionForCheck(id, status, detail = "") {
     return {
       text: String(detail).includes("público")
         ? "Ejecuta database/auth-rls.sql para marcar experience-media como privado."
-        : "Ejecuta database/schema.sql para crear el bucket experience-media y confirma permisos de Storage.",
+        : String(detail).includes("bloquea PDF")
+          ? "Ejecuta database/storage-accept-all-supported-media.sql para permitir PDF, documentos y multimedia en el bucket privado."
+          : "Ejecuta database/schema.sql para crear el bucket experience-media y confirma permisos de Storage.",
       actionType: "openAdmin",
     };
   }
@@ -1885,7 +1894,7 @@ function summarizeSupabaseSelfTest(steps) {
 
 function selfTestActionFor(id, detail = "") {
   if (id === "profile") return { text: "Ejecuta database/schema.sql y database/auth-rls.sql; luego vuelve a iniciar sesión.", actionType: "openAdmin" };
-  if (id === "storage") return { text: "Revisa que el bucket experience-media exista, sea privado y acepte image/png.", actionType: "openAdmin" };
+  if (id === "storage") return { text: "Revisa que el bucket experience-media exista, sea privado y acepte los formatos soportados, incluido PDF.", actionType: "openAdmin" };
   if (id === "uploadAttempts") return { text: "Ejecuta database/asset-upload-attempts.sql para habilitar auditoría de adjuntos.", actionType: "openAdmin" };
   if (id === "experienceCreate" || id === "experienceRead") return { text: "Revisa tabla experiences, políticas RLS y que auth.uid() coincida con user_id.", actionType: "openAdmin" };
   if (id === "semantic") return { text: "Ejecuta database/semantic-search.sql; si no está aplicado, la app seguirá con búsqueda local.", actionType: "openAdmin" };

@@ -8,6 +8,8 @@ const files = {
   styles: readFileSync("styles.css", "utf8"),
   sql: readFileSync("database/workspace-events-assets.sql", "utf8"),
   uploadAttemptsSql: readFileSync("database/asset-upload-attempts.sql", "utf8"),
+  schemaSql: readFileSync("database/schema.sql", "utf8"),
+  storageFormatsSql: readFileSync("database/storage-accept-all-supported-media.sql", "utf8"),
 };
 
 const failures = [];
@@ -102,6 +104,10 @@ assert(files.app.includes("data-persistence-action=\"clear-queue\""), "Persisten
 assert(files.app.includes("function clearOfflineQueueFromBanner"), "Persistence banner cleanup handler is missing.");
 assert(files.app.includes("La cola sin conexión se reconcilia con Supabase"), "Spanish manual does not explain offline queue reconciliation.");
 assert(files.app.includes("The offline queue reconciles with Supabase"), "English manual does not explain offline queue reconciliation.");
+assert(files.schemaSql.includes("allowed_mime_types = NULL"), "Base schema still restricts Storage MIME types.");
+assert(files.storageFormatsSql.includes("allowed_mime_types = NULL"), "Storage format migration does not allow all app-supported media/document formats.");
+assert(files.server.includes("storage-accept-all-supported-media.sql"), "Supabase diagnostics do not point to the Storage MIME migration.");
+assert(files.app.includes("invalid_mime_type para PDF") && files.app.includes("invalid_mime_type for PDF"), "Manual does not explain PDF MIME bucket remediation.");
 
 if (failures.length) {
   console.error("Smoke check failed:");

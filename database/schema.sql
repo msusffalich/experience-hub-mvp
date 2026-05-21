@@ -89,37 +89,13 @@ INSERT INTO storage.buckets (
   'experience-media',
   false,
   10485760,
-  ARRAY[
-    'image/png',
-    'image/jpeg',
-    'image/webp',
-    'image/gif',
-    'video/mp4',
-    'video/webm',
-    'video/quicktime',
-    'audio/webm',
-    'audio/mpeg',
-    'audio/mp4',
-    'audio/wav'
-  ]
+  NULL
 ) ON CONFLICT (id) DO NOTHING;
 
 UPDATE storage.buckets
 SET
   public = false,
-  allowed_mime_types = ARRAY[
-  'image/png',
-  'image/jpeg',
-  'image/webp',
-  'image/gif',
-  'video/mp4',
-  'video/webm',
-  'video/quicktime',
-  'audio/webm',
-  'audio/mpeg',
-  'audio/mp4',
-  'audio/wav'
-]
+  allowed_mime_types = NULL
 WHERE id = 'experience-media';
 
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;

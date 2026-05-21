@@ -1,4 +1,4 @@
-const APP_VERSION = "20260521-banner-clear-queue-353";
+const APP_VERSION = "20260521-storage-documents-354";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -1893,6 +1893,7 @@ const manualContent = {
         "Si un adjunto no termina de subir, la experiencia conserva la narrativa y muestra el archivo como pendiente; no debe considerarse cierre completo hasta que el activo tenga URL remota o ruta de Storage.",
         "Cuando un adjunto queda pendiente y luego se reintenta, la app usa carga binaria multipart hacia el backend en lugar de reenviar el archivo como texto base64. Esto mejora la estabilidad en móviles, tablets y archivos medianos.",
         "El backend de Storage es compatible con claves Supabase nuevas sb_secret y claves legacy service_role. Las claves nuevas se envían como apikey del servidor, no como Bearer JWT.",
+        "El bucket privado experience-media debe aceptar todos los formatos soportados por la app, incluidos PDF, DOCX, TXT, imágenes, audios y videos. Si Supabase muestra invalid_mime_type para PDF, ejecuta database/storage-accept-all-supported-media.sql.",
         "Si un adjunto queda pendiente, Captura muestra el nombre del archivo y el motivo técnico devuelto por el backend, por ejemplo tamaño, sesión, bucket, permiso o firma de URL.",
         "Cada subida de adjunto queda registrada como intento auditable con archivo, tamaño, tipo MIME, ruta, estado, error y fecha. Administración usa esa trazabilidad para distinguir problemas de Storage, sesión, formato o URL firmada sin depender de prueba y error.",
         "El diagnóstico de Supabase incluye Trazabilidad de adjuntos. Si hay fallos recientes, muestra el último archivo afectado, el código de error y la acción recomendada antes de continuar pruebas multidispositivo.",
@@ -2419,6 +2420,7 @@ const manualContent = {
         "If an attachment does not finish uploading, the experience keeps the narrative and shows the file as pending; the flow should not be considered complete until the asset has a remote URL or Storage path.",
         "When an attachment is pending and later retried, the app uses binary multipart upload to the backend instead of resending the file as base64 text. This improves stability on phones, tablets, and medium-size files.",
         "The Storage backend supports new Supabase sb_secret keys and legacy service_role keys. New secret keys are sent as the server apikey, not as a Bearer JWT.",
+        "The private experience-media bucket must accept every format supported by the app, including PDF, DOCX, TXT, images, audio, and video. If Supabase returns invalid_mime_type for PDF, run database/storage-accept-all-supported-media.sql.",
         "If an attachment remains pending, Capture shows the file name and the technical reason returned by the backend, such as size, session, bucket, permission, or signed URL.",
         "Every attachment upload is recorded as an auditable attempt with file, size, MIME type, path, status, error, and timestamp. Admin uses that traceability to distinguish Storage, session, format, or signed URL problems without relying on trial and error.",
         "Supabase diagnostics include Attachment traceability. If recent failures exist, it shows the affected file, error code, and recommended action before continuing multi-device tests.",
