@@ -7,8 +7,11 @@ if (!SUPABASE_URL || !SUPABASE_SERVER_KEY) {
   process.exit(2);
 }
 
-const objectPath = `clio-lab/${Date.now()}-${Math.random().toString(16).slice(2)}.txt`;
-const bytes = new TextEncoder().encode(`Experience Hub CLIO lab ${new Date().toISOString()}`);
+const objectPath = `clio-lab/${Date.now()}-${Math.random().toString(16).slice(2)}.png`;
+const bytes = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=",
+  "base64",
+);
 
 function isLegacyJwtKey(key = "") {
   return key.split(".").length === 3;
@@ -54,7 +57,7 @@ async function main() {
   await request("upload", `${SUPABASE_URL}/storage/v1/object/${SUPABASE_BUCKET}/${objectPath}`, {
     method: "POST",
     headers: serverHeaders({
-      "Content-Type": "text/plain; charset=utf-8",
+      "Content-Type": "image/png",
       "x-upsert": "true",
     }),
     body: bytes,
