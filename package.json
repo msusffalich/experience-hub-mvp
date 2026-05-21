@@ -9,6 +9,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "check": "node --check app.js && node --check server.js"
+    "check": "node --check app.js && node --check server.js && node scripts/smoke-check.mjs",
+    "test": "npm run check"
   }
 }

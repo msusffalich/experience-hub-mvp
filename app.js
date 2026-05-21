@@ -1,4 +1,4 @@
-const APP_VERSION = "20260521-remote-merge-fix-339";
+const APP_VERSION = "20260521-smoke-report-events-340";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -1864,6 +1864,7 @@ const manualContent = {
         "El refactor multidispositivo introduce el modelo correcto de workspace, miembros, participantes, eventos internos y activos. La migración SQL está en database/workspace-events-assets.sql y debe aplicarse antes de considerar compartición multiusuario real.",
         "Captura ahora permite registrar varios eventos dentro de una experiencia. Cada línea representa un momento de la experiencia y se conserva para reportes, activos, publicaciones e integración futura con dispositivos.",
         "Cada adjunto de Captura puede quedar asociado a toda la experiencia o a un evento interno específico. Esto permite separar evidencia por momento: una imagen, audio, video o documento puede pertenecer al evento 1, 2, 3 o al contexto general.",
+        "Reportes muestra la evidencia multimodal con su evento vinculado. Si el activo no pertenece a un evento específico, aparece como evidencia de toda la experiencia.",
         "Cuando una experiencia tiene participante piloto, el backend sincroniza primero ese participante en Supabase y luego vincula sus eventos internos y activos. Esto evita que reportes, activos o dispositivos queden con dueños inconsistentes.",
         "Cuando la migración de workspace está aplicada, el servidor sincroniza esos eventos internos en la tabla experience_events y los vuelve a leer desde Supabase. Si la tabla aún no existe, mantiene compatibilidad guardándolos dentro de la experiencia.",
         "Cuando la misma migración está aplicada, los adjuntos también se sincronizan y se vuelven a leer desde la tabla assets con experiencia, participante, tipo, ruta Storage, texto previo y texto analítico. Esto permite que otros dispositivos reconstruyan la multimedia desde una fuente común.",
@@ -2373,6 +2374,7 @@ const manualContent = {
         "The multi-device refactor introduces the correct workspace, members, participants, internal events, and assets model. The SQL migration lives in database/workspace-events-assets.sql and must be applied before real multi-user sharing is considered complete.",
         "Capture now supports several events inside one experience. Each line represents one moment in the experience and is preserved for reports, assets, publications, and future device integration.",
         "Each Capture attachment can be linked to the whole experience or to a specific internal event. This separates evidence by moment: an image, audio, video, or document can belong to event 1, 2, 3, or the general context.",
+        "Reports show multimodal evidence with its linked event. If the asset does not belong to a specific event, it appears as evidence for the whole experience.",
         "When an experience has a pilot participant, the backend syncs that participant in Supabase first and then links internal events and assets to it. This prevents reports, assets, or devices from ending up with inconsistent ownership.",
         "When the workspace migration is applied, the server syncs those internal events into the experience_events table and reads them back from Supabase. If the table does not exist yet, it remains compatible by keeping them inside the experience.",
         "When the same migration is applied, attachments are also synced into and read back from the assets table with experience, participant, type, Storage path, preview text, and analytical text. This lets other devices rebuild media from one shared source.",
@@ -13013,6 +13015,9 @@ function buildReportMultimodalEvidence(experiences) {
       manualNote: asset.manualNote || "",
       analyticalText: asset.analysisText || "",
       source: asset.storageLabel,
+      eventId: asset.eventId || asset.metadata?.linkedEventId || "",
+      eventTitle: asset.eventTitle || asset.metadata?.linkedEventTitle || "",
+      eventOrder: Number(asset.eventOrder || asset.metadata?.linkedEventOrder || 0),
     }))
     .filter((item) => item.analyticalText || item.manualNote || item.manualTags.length)
     .slice(0, 12);
@@ -13198,12 +13203,20 @@ function buildPredictiveOutlook(experiences, analysis, quality) {
 }
 
 function renderReportEvidenceCard(item) {
+  const eventLabel = item.eventTitle
+    ? state.language === "en"
+      ? `Event: ${item.eventTitle}`
+      : `Evento: ${item.eventTitle}`
+    : state.language === "en"
+      ? "Whole experience"
+      : "Toda la experiencia";
   return `
     <article class="report-evidence-card">
       <div class="pill-row">
         <span class="pill">${escapeHtml(item.kind)}</span>
         <span class="pill">${escapeHtml(item.category)}</span>
         <span class="pill ${item.isDemo ? "pill-review" : "pill-approved"}">${escapeHtml(item.provenance)}</span>
+        <span class="pill">${escapeHtml(eventLabel)}</span>
       </div>
       <h4>${escapeHtml(item.experienceTitle)}</h4>
       <p class="card-meta">${escapeHtml(t("labels.reportAssetSource"))}: ${escapeHtml(item.name)} · ${escapeHtml(formatShortDate(item.date))}</p>
@@ -14651,6 +14664,7 @@ function downloadPrintableReport() {
             (item) => `
               <article class="reading">
                 <h3>${escapeHtml(item.experienceTitle)}</h3>
+                <p><strong>${escapeHtml(state.language === "en" ? "Linked event" : "Evento vinculado")}:</strong> ${escapeHtml(item.eventTitle || (state.language === "en" ? "Whole experience" : "Toda la experiencia"))}</p>
                 <p><strong>${escapeHtml(t("labels.reportAssetSource"))}:</strong> ${escapeHtml(item.name)} · ${escapeHtml(item.kind)} · ${escapeHtml(item.category)} · ${escapeHtml(item.provenance || "")}</p>
                 ${item.analyticalText ? `<p><strong>${escapeHtml(t("labels.reportAssetAnalyticalText"))}:</strong> ${escapeHtml(item.analyticalText)}</p>` : ""}
                 ${item.manualNote ? `<p>${escapeHtml(item.manualNote)}</p>` : ""}
@@ -19427,6 +19441,8 @@ function renderAdminOperationalFocusPanel() {
         remoteDetail: "Capture blocks new records without sign-in in published persistence mode and keeps pending saves visible in plain language.",
         gate: "Persistent by default",
         gateDetail: "Technical Supabase/API diagnostics stay in Admin; users see only sign-in, save pending, and retry guidance.",
+        smoke: "Automated smoke check",
+        smokeDetail: "npm run check now validates syntax, version/cache consistency, critical capture functions, and event-asset links before publishing.",
       }
     : {
         title: "Administración operativa",
@@ -19448,6 +19464,8 @@ function renderAdminOperationalFocusPanel() {
       };
   if (state.language !== "en") {
     labels.saveDetail = "Captura informa la fase exacta del fallo y mantiene una experiencia como guardada si Agenda o el refresco necesitan revisi\u00f3n.";
+    labels.smoke = "Prueba autom\u00e1tica";
+    labels.smokeDetail = "npm run check ahora valida sintaxis, versi\u00f3n/cache, funciones cr\u00edticas de captura y v\u00ednculos evento-activo antes de publicar.";
   }
   const cards = [
     [labels.flow, labels.flowDetail],
@@ -19456,6 +19474,7 @@ function renderAdminOperationalFocusPanel() {
     [labels.agenda, labels.agendaDetail],
     [labels.remote, labels.remoteDetail],
     [labels.gate, labels.gateDetail],
+    [labels.smoke, labels.smokeDetail],
     [labels.next, labels.nextDetail],
   ];
   container.innerHTML = `

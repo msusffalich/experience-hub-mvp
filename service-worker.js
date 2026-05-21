@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260521-remote-merge-fix-339";
+const CACHE_NAME = "experience-hub-pwa-20260521-smoke-report-events-340";
 const APP_SHELL = [
   "/",
   "/index.html",
