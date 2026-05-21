@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260520-asset-table-read-332";
+const CACHE_NAME = "experience-hub-pwa-20260521-auth-menu-333";
 const APP_SHELL = [
   "/",
   "/index.html",

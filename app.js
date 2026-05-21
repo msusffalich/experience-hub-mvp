@@ -1,4 +1,4 @@
-const APP_VERSION = "20260520-asset-table-read-332";
+const APP_VERSION = "20260521-auth-menu-333";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -75,6 +75,7 @@ const i18n = {
   es: {
     languageLabel: "Idioma",
     nav: {
+      auth: "Acceso",
       dashboard: "Panel",
       capture: "Captura",
       library: "Librería",
@@ -90,6 +91,7 @@ const i18n = {
       admin: "Administración",
     },
     viewTitles: {
+      auth: "Acceso seguro",
       dashboard: "Panel cognitivo",
       capture: "Captura rápida",
       library: "Librería de experiencias",
@@ -832,6 +834,7 @@ const i18n = {
   en: {
     languageLabel: "Language",
     nav: {
+      auth: "Access",
       dashboard: "Dashboard",
       capture: "Capture",
       library: "Library",
@@ -847,6 +850,7 @@ const i18n = {
       admin: "Admin",
     },
     viewTitles: {
+      auth: "Secure access",
       dashboard: "Cognitive dashboard",
       capture: "Quick capture",
       library: "Experience library",
@@ -1922,6 +1926,7 @@ const manualContent = {
     {
       title: "Primer acceso e inicio de sesión",
       items: [
+        "El acceso ahora aparece como sección fija del menú principal. Entra por Acceso antes de capturar datos reales en varios dispositivos.",
         "Usa un usuario de Supabase Auth. Las claves publishable/service_role no son contraseñas.",
         "Si es tu primer acceso, escribe tu correo electrónico, crea una contraseña de al menos 6 caracteres y pulsa Crear cuenta.",
         "Si Supabase requiere confirmación, revisa tu correo y luego pulsa Entrar.",
@@ -2426,6 +2431,7 @@ const manualContent = {
     {
       title: "First Access And Sign In",
       items: [
+        "Access now appears as a fixed section in the main menu. Open Access before capturing real data across devices.",
         "Use a Supabase Auth user. Publishable/service_role keys are not passwords.",
         "For first access, enter your email, create a password with at least 6 characters, and click Create account.",
         "If Supabase requires confirmation, check your email and then sign in.",
@@ -4892,6 +4898,7 @@ function renderAuthStatePanel() {
 function showAuthView() {
   document.querySelectorAll(".nav-item").forEach((item) => item.classList.remove("active"));
   document.querySelectorAll(".view").forEach((section) => section.classList.remove("active-view"));
+  document.querySelector('[data-view="auth"]')?.classList.add("active");
   document.getElementById("authView").classList.add("active-view");
   document.getElementById("viewTitle").textContent = state.language === "en" ? "Secure access" : "Acceso seguro";
   renderAuthStatePanel();
@@ -6981,6 +6988,9 @@ function showView(view) {
   }
   if (view === "admin") {
     renderAdmin();
+  }
+  if (view === "auth") {
+    renderAuthStatePanel();
   }
   renderCoreMvpReturnBanner(view);
 }
