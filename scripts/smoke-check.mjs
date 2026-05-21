@@ -123,6 +123,9 @@ assert(!files.index.includes("dashboardAttachmentPanel") && !files.index.include
 assert(files.index.includes("capture-layout-clean") && !files.index.includes("captureCoachBox") && !files.index.includes("templateList"), "Capture still exposes parallel coach/template panels.");
 assert(files.index.includes("captureEventPreview") && files.app.includes("function renderCaptureEventPreview"), "Capture does not show the live internal event preview.");
 assert(files.styles.includes(".capture-event-card") && files.app.includes("Capture shows a live Event preview"), "Event preview UI or manual documentation is missing.");
+assert(files.index.includes("reportEventFilter") && files.app.includes("state.reportFilters.eventQuery"), "Reports cannot filter by internal event text.");
+assert(files.index.includes("assetEventLinkFilter") && files.app.includes("state.assetFilters.eventLink"), "Assets cannot filter by event link status.");
+assert(files.index.includes(".zip,.rar,.7z") && files.app.includes('"zip", "rar", "7z"') && files.server.includes("type.includes(\"zip\")"), "Compressed files are not consistently accepted as document assets.");
 assert(/@media \(max-width: 1040px\)[\s\S]*\.capture-layout-clean \{[\s\S]*grid-template-columns: minmax\(0, 1fr\)/.test(files.styles), "Capture is not forced to full width on tablet/mobile layouts.");
 assert(/@media \(max-width: 720px\)[\s\S]*\.capture-layout-clean,[\s\S]*\.filters \{[\s\S]*grid-template-columns: 1fr/.test(files.styles), "Capture is not included in the mobile one-column layout.");
 assert(files.index.includes("Activos y multimedia") && files.index.includes("Opciones avanzadas de calendario"), "Assets operations or Agenda advanced tools are not properly grouped.");

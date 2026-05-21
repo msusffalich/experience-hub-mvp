@@ -1,4 +1,4 @@
-const APP_VERSION = "20260521-capture-event-preview-362";
+const APP_VERSION = "20260521-event-scope-filters-363";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -60,7 +60,7 @@ const MEDIA_EXTENSION_KIND = {
   mp3: "audio", wav: "audio", m4a: "audio", aac: "audio", flac: "audio", ogg: "audio", opus: "audio", wma: "audio", aiff: "audio", aif: "audio", amr: "audio",
   mp4: "video", mov: "video", m4v: "video", webm: "video", mkv: "video", avi: "video", wmv: "video", mpeg: "video", mpg: "video", "3gp": "video", hevc: "video",
 };
-const DOCUMENT_EXTENSIONS = new Set(["txt", "md", "markdown", "html", "htm", "rtf", "docx", "pdf", "csv", "json"]);
+const DOCUMENT_EXTENSIONS = new Set(["txt", "md", "markdown", "html", "htm", "rtf", "docx", "pdf", "csv", "json", "zip", "rar", "7z"]);
 const TEXT_PREVIEW_DOCUMENT_EXTENSIONS = new Set(["txt", "md", "markdown", "html", "htm", "csv", "json"]);
 const BROWSER_PREVIEWABLE = {
   image: new Set(["jpg", "jpeg", "png", "gif", "svg", "webp", "avif", "bmp"]),
@@ -1883,6 +1883,7 @@ const manualContent = {
         "Captura ahora permite registrar varios eventos dentro de una experiencia. Cada línea representa un momento de la experiencia y se conserva para reportes, activos, publicaciones e integración futura con dispositivos.",
         "Captura muestra una vista previa viva de eventos antes de guardar. Esto ayuda a confirmar si una experiencia larga debe quedar como un solo registro con momentos internos y a qué momento pertenece cada adjunto.",
         "Cada adjunto de Captura puede quedar asociado a toda la experiencia o a un evento interno específico. Esto permite separar evidencia por momento: una imagen, audio, video o documento puede pertenecer al evento 1, 2, 3 o al contexto general.",
+        "Reportes puede filtrar por texto de eventos internos y Activos puede separar adjuntos vinculados a eventos de adjuntos generales de la experiencia.",
         "Librería muestra una vista compacta de los primeros eventos internos de cada experiencia para revisar qué ocurrió dentro de registros largos sin abrir otras pantallas.",
         "La búsqueda de Librería y Línea de tiempo también encuentra texto dentro de eventos internos. Puedes buscar una conversación, aprendizaje o cierre y llegar a la experiencia completa.",
         "Reportes muestra la evidencia multimodal con su evento vinculado. Si el activo no pertenece a un evento específico, aparece como evidencia de toda la experiencia.",
@@ -1897,7 +1898,7 @@ const manualContent = {
         "Si un adjunto no termina de subir, la experiencia conserva la narrativa y muestra el archivo como pendiente; no debe considerarse cierre completo hasta que el activo tenga URL remota o ruta de Storage.",
         "Cuando un adjunto queda pendiente y luego se reintenta, la app usa carga binaria multipart hacia el backend en lugar de reenviar el archivo como texto base64. Esto mejora la estabilidad en móviles, tablets y archivos medianos.",
         "El backend de Storage es compatible con claves Supabase nuevas sb_secret y claves legacy service_role. Las claves nuevas se envían como apikey del servidor, no como Bearer JWT.",
-        "El bucket privado experience-media debe aceptar todos los formatos soportados por la app, incluidos PDF, DOCX, TXT, imágenes, audios y videos. Si Supabase muestra invalid_mime_type para PDF, ejecuta database/storage-accept-all-supported-media.sql.",
+        "El bucket privado experience-media debe aceptar todos los formatos soportados por la app, incluidos PDF, DOCX, TXT, ZIP, imágenes, audios y videos. Si Supabase muestra invalid_mime_type para PDF o ZIP, ejecuta database/storage-accept-all-supported-media.sql.",
         "Si un adjunto queda pendiente, Captura muestra el nombre del archivo y el motivo técnico devuelto por el backend, por ejemplo tamaño, sesión, bucket, permiso o firma de URL.",
         "Cada subida de adjunto queda registrada como intento auditable con archivo, tamaño, tipo MIME, ruta, estado, error y fecha. Administración usa esa trazabilidad para distinguir problemas de Storage, sesión, formato o URL firmada sin depender de prueba y error.",
         "El diagnóstico de Supabase incluye Trazabilidad de adjuntos. Si hay fallos recientes, muestra el último archivo afectado, el código de error y la acción recomendada antes de continuar pruebas multidispositivo.",
@@ -2102,6 +2103,7 @@ const manualContent = {
         "La matriz de medios del MVP distingue imágenes, audio y video aceptados de los formatos con vista previa nativa. Los formatos sin vista previa siguen siendo activos reutilizables, pero requieren revisión o procesamiento posterior antes de reportes/publicaciones finales.",
         "Documentos de texto recomendados para el MVP: TXT, Markdown, HTML, RTF, DOCX y PDF. TXT, Markdown y HTML son los candidatos más simples para lectura textual directa; DOCX y PDF se conservan como documentos y quedan preparados para extracción posterior.",
         "La captura ya acepta documentos TXT, Markdown, HTML, RTF, DOCX, PDF, CSV y JSON como adjuntos. TXT, Markdown, HTML, CSV y JSON generan una vista previa textual inicial; PDF, DOCX y RTF se guardan como documentos para extracción posterior.",
+        "Archivos comprimidos aceptados: ZIP, RAR y 7Z. Se guardan como activos documentales vinculados a la experiencia o evento, pero no se descomprimen ni se analizan automáticamente en el MVP.",
         "En Captura, los documentos con vista previa textual muestran una muestra del contenido en la tarjeta del adjunto antes de guardar la experiencia.",
         "La Librería, la Línea de tiempo y las tiras multimedia muestran documentos como fichas documentales, no como imágenes, para evitar vistas rotas cuando el archivo es PDF, DOCX, TXT, Markdown, CSV o JSON.",
         "Las notas de OneNote, Apple Notes, Google Keep, Notion, Evernote u otras apps se manejarán primero por exportación estándar: Markdown, TXT, HTML, PDF, DOCX, CSV o JSON, según permita cada herramienta.",
@@ -2416,6 +2418,7 @@ const manualContent = {
         "Capture now supports several events inside one experience. Each line represents one moment in the experience and is preserved for reports, assets, publications, and future device integration.",
         "Capture shows a live Event preview before saving. This helps confirm whether a long experience should stay as one record with internal moments and which attachments belong to each moment.",
         "Each Capture attachment can be linked to the whole experience or to a specific internal event. This separates evidence by moment: an image, audio, video, or document can belong to event 1, 2, 3, or the general context.",
+        "Reports can filter by internal-event text, and Assets can separate event-linked attachments from general experience attachments.",
         "Library shows a compact preview of the first internal events in each experience so long records can be reviewed without opening another screen.",
         "Library and Timeline search also find text inside internal events. You can search for a conversation, learning, or closing moment and reach the full experience.",
         "Reports show multimodal evidence with its linked event. If the asset does not belong to a specific event, it appears as evidence for the whole experience.",
@@ -2430,7 +2433,7 @@ const manualContent = {
         "If an attachment does not finish uploading, the experience keeps the narrative and shows the file as pending; the flow should not be considered complete until the asset has a remote URL or Storage path.",
         "When an attachment is pending and later retried, the app uses binary multipart upload to the backend instead of resending the file as base64 text. This improves stability on phones, tablets, and medium-size files.",
         "The Storage backend supports new Supabase sb_secret keys and legacy service_role keys. New secret keys are sent as the server apikey, not as a Bearer JWT.",
-        "The private experience-media bucket must accept every format supported by the app, including PDF, DOCX, TXT, images, audio, and video. If Supabase returns invalid_mime_type for PDF, run database/storage-accept-all-supported-media.sql.",
+        "The private experience-media bucket must accept every format supported by the app, including PDF, DOCX, TXT, ZIP, images, audio, and video. If Supabase returns invalid_mime_type for PDF or ZIP, run database/storage-accept-all-supported-media.sql.",
         "If an attachment remains pending, Capture shows the file name and the technical reason returned by the backend, such as size, session, bucket, permission, or signed URL.",
         "Every attachment upload is recorded as an auditable attempt with file, size, MIME type, path, status, error, and timestamp. Admin uses that traceability to distinguish Storage, session, format, or signed URL problems without relying on trial and error.",
         "Supabase diagnostics include Attachment traceability. If recent failures exist, it shows the affected file, error code, and recommended action before continuing multi-device tests.",
@@ -2628,6 +2631,7 @@ const manualContent = {
         "The MVP media matrix separates accepted image, audio, and video formats from formats with native preview. Formats without preview remain reusable assets, but they require review or later processing before final reports/publications.",
         "Recommended text-document formats for the MVP: TXT, Markdown, HTML, RTF, DOCX, and PDF. TXT, Markdown, and HTML are the simplest candidates for direct text reading; DOCX and PDF are stored as documents and prepared for later extraction.",
         "Capture now accepts TXT, Markdown, HTML, RTF, DOCX, PDF, CSV, and JSON documents as attachments. TXT, Markdown, HTML, CSV, and JSON create an initial text preview; PDF, DOCX, and RTF are stored as documents for later extraction.",
+        "Accepted compressed files: ZIP, RAR, and 7Z. They are stored as document assets linked to the experience or event, but the MVP does not automatically decompress or analyze them.",
         "In Capture, documents with text preview show a content sample in the attachment card before saving the experience.",
         "Library, Timeline, and media strips show documents as document cards, not as images, to avoid broken previews when the file is PDF, DOCX, TXT, Markdown, CSV, or JSON.",
         "Notes from OneNote, Apple Notes, Google Keep, Notion, Evernote, or other note apps will first be handled through standard export formats: Markdown, TXT, HTML, PDF, DOCX, CSV, or JSON, depending on what each tool allows.",
@@ -3264,6 +3268,7 @@ const state = {
     query: "",
     type: "all",
     category: "all",
+    eventLink: "all",
     readiness: "all",
     processing: "all",
     provenance: "all",
@@ -3301,6 +3306,7 @@ const state = {
     pilotParticipantId: "all",
     people: "",
     objective: "",
+    eventQuery: "",
   },
   manualFilters: {
     query: "",
@@ -5789,6 +5795,10 @@ function setupFilters() {
     state.assetFilters.provenance = event.target.value;
     renderAssetLibrary();
   });
+  document.getElementById("assetEventLinkFilter").addEventListener("change", (event) => {
+    state.assetFilters.eventLink = event.target.value;
+    renderAssetLibrary();
+  });
   document.getElementById("assetAnalysisFilter").addEventListener("change", (event) => {
     state.assetFilters.analysis = event.target.value;
     renderAssetLibrary();
@@ -5840,6 +5850,7 @@ function setupFilters() {
       state.reportFilters.pilotParticipantId = "all";
       state.reportFilters.people = "";
       state.reportFilters.objective = "";
+      state.reportFilters.eventQuery = "";
       state.reportFilters.experienceId = "";
     }
     syncReportFilterInputs();
@@ -5883,6 +5894,12 @@ function setupFilters() {
     syncReportFilterInputs();
     renderReport();
   });
+  document.getElementById("reportEventFilter").addEventListener("input", (event) => {
+    state.reportFilters.eventQuery = event.target.value.trim().toLowerCase();
+    if (state.reportFilters.eventQuery && state.reportFilters.scope !== "single") state.reportFilters.scope = "filters";
+    syncReportFilterInputs();
+    renderReport();
+  });
 }
 
 function syncReportFilterInputs() {
@@ -5892,6 +5909,7 @@ function syncReportFilterInputs() {
   const pilotParticipant = document.getElementById("reportPilotParticipantFilter");
   const people = document.getElementById("reportPeopleFilter");
   const objective = document.getElementById("reportObjectiveFilter");
+  const eventQuery = document.getElementById("reportEventFilter");
   const experience = document.getElementById("reportExperienceFilter");
   if (scope) scope.value = state.reportFilters.scope || "all";
   if (period) period.value = state.reportFilters.period || "all";
@@ -5899,6 +5917,7 @@ function syncReportFilterInputs() {
   if (pilotParticipant) pilotParticipant.value = state.reportFilters.pilotParticipantId || "all";
   if (people) people.value = state.reportFilters.people || "";
   if (objective) objective.value = state.reportFilters.objective || "";
+  if (eventQuery) eventQuery.value = state.reportFilters.eventQuery || "";
   if (experience) experience.value = state.reportFilters.experienceId || "";
 }
 
@@ -5925,6 +5944,7 @@ function resetReportScope() {
     pilotParticipantId: "all",
     people: "",
     objective: "",
+    eventQuery: "",
   };
   syncReportFilterInputs();
   renderReport();
@@ -6428,6 +6448,7 @@ function clearAssetFilters() {
     readiness: "all",
     processing: "all",
     provenance: "all",
+    eventLink: "all",
     analysis: "all",
     sort: "newest",
     dateFrom: "",
@@ -6435,7 +6456,7 @@ function clearAssetFilters() {
   };
   const search = document.getElementById("assetSearchInput");
   if (search) search.value = "";
-  ["assetTypeFilter", "assetCategoryFilter", "assetReadinessFilter", "assetProcessingFilter", "assetProvenanceFilter", "assetAnalysisFilter"].forEach((id) => {
+  ["assetTypeFilter", "assetCategoryFilter", "assetReadinessFilter", "assetProcessingFilter", "assetProvenanceFilter", "assetEventLinkFilter", "assetAnalysisFilter"].forEach((id) => {
     const element = document.getElementById(id);
     if (element) element.value = "all";
   });
@@ -6457,6 +6478,7 @@ function clearSingleAssetFilter(key) {
     readiness: "all",
     processing: "all",
     provenance: "all",
+    eventLink: "all",
     analysis: "all",
     sort: "newest",
     dateFrom: "",
@@ -6471,6 +6493,7 @@ function clearSingleAssetFilter(key) {
     readiness: "assetReadinessFilter",
     processing: "assetProcessingFilter",
     provenance: "assetProvenanceFilter",
+    eventLink: "assetEventLinkFilter",
     analysis: "assetAnalysisFilter",
     sort: "assetSortFilter",
     dateFrom: "assetDateFromFilter",
@@ -6714,6 +6737,27 @@ function populateStaticControls() {
   assetAnalysisOptions.forEach(([value, label]) => assetAnalysisSelect.append(new Option(label, value)));
   if ([...assetAnalysisSelect.options].some((option) => option.value === selectedAssetAnalysis)) {
     assetAnalysisSelect.value = selectedAssetAnalysis;
+  }
+
+  const assetEventLinkSelect = document.getElementById("assetEventLinkFilter");
+  const selectedAssetEventLink = assetEventLinkSelect?.value || state.assetFilters.eventLink || "all";
+  const assetEventLinkOptions = state.language === "en"
+    ? [
+        ["all", "All links"],
+        ["linked", "Linked to event"],
+        ["whole", "Whole experience"],
+      ]
+    : [
+        ["all", "Todos los vínculos"],
+        ["linked", "Con evento interno"],
+        ["whole", "Toda la experiencia"],
+      ];
+  if (assetEventLinkSelect) {
+    assetEventLinkSelect.innerHTML = "";
+    assetEventLinkOptions.forEach(([value, label]) => assetEventLinkSelect.append(new Option(label, value)));
+    if ([...assetEventLinkSelect.options].some((option) => option.value === selectedAssetEventLink)) {
+      assetEventLinkSelect.value = selectedAssetEventLink;
+    }
   }
 
   const assetSortSelect = document.getElementById("assetSortFilter");
@@ -7186,8 +7230,8 @@ function readSelectedFiles() {
   if (accepted.length !== files.length) {
     alert(
       state.language === "en"
-        ? `Some files were skipped. The MVP accepts supported image, audio, video, and document formats up to ${canUploadBinary ? 75 : 25} MB per file.`
-        : `Algunos archivos se omitieron. El MVP acepta formatos compatibles de imagen, audio, video y documentos de hasta ${canUploadBinary ? 75 : 25} MB por archivo.`,
+        ? `Some files were skipped. The MVP accepts supported image, audio, video, document, and compressed-file formats up to ${canUploadBinary ? 75 : 25} MB per file.`
+        : `Algunos archivos se omitieron. El MVP acepta formatos compatibles de imagen, audio, video, documentos y comprimidos de hasta ${canUploadBinary ? 75 : 25} MB por archivo.`,
     );
   }
   return Promise.all(accepted.map(readAndPersistMedia));
@@ -7298,6 +7342,9 @@ function mimeFromExtension(extension, kind) {
       pdf: "application/pdf",
       rtf: "application/rtf",
       docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      zip: "application/zip",
+      rar: "application/vnd.rar",
+      "7z": "application/x-7z-compressed",
     };
     return map[extension] || "application/octet-stream";
   }
@@ -10840,6 +10887,12 @@ function buildAssetActiveFilterChips() {
       label: `${state.language === "en" ? "Origin" : "Origen"}: ${filters.provenance === "demo" ? t("labels.provenanceDemo") : t("labels.provenanceUser")}`,
     });
   }
+  if (filters.eventLink !== "all") {
+    chips.push({
+      key: "eventLink",
+      label: `${state.language === "en" ? "Event link" : "Vínculo de evento"}: ${filters.eventLink === "linked" ? (state.language === "en" ? "Linked to event" : "Con evento interno") : (state.language === "en" ? "Whole experience" : "Toda la experiencia")}`,
+    });
+  }
   if (filters.analysis !== "all") {
     chips.push({
       key: "analysis",
@@ -11072,6 +11125,8 @@ function filterMultimodalAssets() {
         asset.extractedText,
         asset.extractionMethod,
         asset.extractionStatus,
+        asset.eventTitle,
+        asset.eventId ? "event linked evento vinculado" : "whole experience toda la experiencia",
         asset.type,
         asset.originalType,
         asset.extension,
@@ -11102,12 +11157,16 @@ function filterMultimodalAssets() {
         state.assetFilters.provenance === "all" ||
         (state.assetFilters.provenance === "demo" && asset.isDemo) ||
         (state.assetFilters.provenance === "user" && !asset.isDemo);
+      const eventLinkMatch =
+        state.assetFilters.eventLink === "all" ||
+        (state.assetFilters.eventLink === "linked" && Boolean(asset.eventId || asset.eventTitle)) ||
+        (state.assetFilters.eventLink === "whole" && !asset.eventId && !asset.eventTitle);
       const hasAnalysisText = Boolean(String(asset.analysisText || "").trim());
       const analysisMatch =
         state.assetFilters.analysis === "all" ||
         (state.assetFilters.analysis === "with" && hasAnalysisText) ||
         (state.assetFilters.analysis === "without" && !hasAnalysisText);
-      return queryMatch && dateFromMatch && dateToMatch && typeMatch && categoryMatch && readinessMatch && processingMatch && provenanceMatch && analysisMatch;
+      return queryMatch && dateFromMatch && dateToMatch && typeMatch && categoryMatch && readinessMatch && processingMatch && provenanceMatch && eventLinkMatch && analysisMatch;
     })
     .sort(compareAssetsForCurrentSort);
 }
@@ -13616,6 +13675,7 @@ function updateReportScopeControls() {
   const pilotParticipantFilter = document.getElementById("reportPilotParticipantFilter");
   const peopleFilter = document.getElementById("reportPeopleFilter");
   const objectiveFilter = document.getElementById("reportObjectiveFilter");
+  const eventFilter = document.getElementById("reportEventFilter");
   if (!scopeSelect || !experienceSelect) return;
   const activeScope = state.reportFilters.scope || "all";
   const scopeOptions =
@@ -13623,13 +13683,13 @@ function updateReportScopeControls() {
       ? [
           ["all", "All experiences"],
           ["period", "Quick range"],
-          ["filters", "Category / person / objective"],
+          ["filters", "Category / person / objective / event"],
           ["single", "One specific experience"],
         ]
       : [
           ["all", "Todas las experiencias"],
           ["period", "Rango rápido"],
-          ["filters", "Categoría / persona / objetivo"],
+          ["filters", "Categoría / persona / objetivo / evento"],
           ["single", "Una experiencia específica"],
         ];
   scopeSelect.innerHTML = scopeOptions.map(([value, label]) => `<option value="${value}">${escapeHtml(label)}</option>`).join("");
@@ -13648,6 +13708,7 @@ function updateReportScopeControls() {
   if (pilotParticipantFilter) pilotParticipantFilter.disabled = activeScope !== "filters";
   if (peopleFilter) peopleFilter.disabled = activeScope !== "filters";
   if (objectiveFilter) objectiveFilter.disabled = activeScope !== "filters";
+  if (eventFilter) eventFilter.disabled = activeScope !== "filters";
   const generateButton = document.getElementById("generateReportButton");
   const jumpButton = document.getElementById("jumpReportAcceptanceButton");
   const resetButton = document.getElementById("resetReportScopeButton");
@@ -13682,14 +13743,14 @@ function renderReportScopeSummary(experiences) {
     ? {
         all: "all saved experiences. Period, category, person, and objective fields are ignored.",
         period: `quick range only: ${state.reportFilters.period === "all" ? "all history" : `last ${state.reportFilters.period} days`}. Category, person, and objective are ignored.`,
-        filters: "category, person, or objective filters. The quick range also applies if selected.",
+        filters: "category, person, objective, or internal-event filters. The quick range also applies if selected.",
         single: "one specific experience. Other filters are ignored.",
         empty: "No experiences match this scope.",
       }
     : {
         all: "todas las experiencias guardadas. Se ignoran periodo, categoría, persona y objetivo.",
         period: `solo rango rápido: ${state.reportFilters.period === "all" ? "todo el historial" : `últimos ${state.reportFilters.period} días`}. Se ignoran categoría, persona y objetivo.`,
-        filters: "filtros de categoría, persona u objetivo. El rango rápido también aplica si está seleccionado.",
+        filters: "filtros de categoría, persona, objetivo o evento interno. El rango rápido también aplica si está seleccionado.",
         single: "una experiencia específica. Se ignoran los demás filtros.",
         empty: "No hay experiencias que coincidan con este alcance.",
       };
@@ -13701,9 +13762,12 @@ function renderReportScopeSummary(experiences) {
   const participantText = participantName
     ? state.language === "en" ? ` Participant: ${participantName}.` : ` Participante: ${participantName}.`
     : "";
+  const eventText = state.reportFilters.eventQuery
+    ? state.language === "en" ? ` Internal event: ${state.reportFilters.eventQuery}.` : ` Evento interno: ${state.reportFilters.eventQuery}.`
+    : "";
   summary.textContent = state.language === "en"
-    ? `This report analyzes ${experiences.length} experience(s): ${scopeLabel}. Range: ${dateText}.${participantText}`
-    : `Este reporte analiza ${experiences.length} experiencia(s): ${scopeLabel}. Rango: ${dateText}.${participantText}`;
+    ? `This report analyzes ${experiences.length} experience(s): ${scopeLabel}. Range: ${dateText}.${participantText}${eventText}`
+    : `Este reporte analiza ${experiences.length} experiencia(s): ${scopeLabel}. Rango: ${dateText}.${participantText}${eventText}`;
 }
 
 function buildReportMultimodalEvidence(experiences) {
@@ -16722,9 +16786,11 @@ function getReportExperiences() {
         item.pilotParticipantId === state.reportFilters.pilotParticipantId;
       const peopleText = `${item.people || ""}`.toLowerCase();
       const objectiveText = `${item.objective || ""}`.toLowerCase();
+      const eventText = buildExperienceEventSearchText(item).toLowerCase();
       const peopleMatch = !useFieldFilters || !state.reportFilters.people || peopleText.includes(state.reportFilters.people);
       const objectiveMatch = !useFieldFilters || !state.reportFilters.objective || objectiveText.includes(state.reportFilters.objective);
-      return dateMatch && categoryMatch && participantMatch && peopleMatch && objectiveMatch;
+      const eventMatch = !useFieldFilters || !state.reportFilters.eventQuery || eventText.includes(state.reportFilters.eventQuery);
+      return dateMatch && categoryMatch && participantMatch && peopleMatch && objectiveMatch && eventMatch;
     })
     .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 }

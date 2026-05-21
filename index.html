@@ -9,10 +9,10 @@
     <meta name="apple-mobile-web-app-title" content="Experience Hub" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>Experience Hub MVP</title>
-    <link rel="manifest" href="manifest.webmanifest?v=20260521-capture-event-preview-362" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260521-event-scope-filters-363" />
     <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="icons/icon.svg" />
-    <link rel="stylesheet" href="styles.css?v=20260521-capture-event-preview-362" />
+    <link rel="stylesheet" href="styles.css?v=20260521-event-scope-filters-363" />
   </head>
   <body>
     <noscript>
@@ -319,7 +319,7 @@
                 <div id="captureEventPreview" class="capture-event-preview" aria-live="polite"></div>
                 <label>
                   <span id="attachmentInputLabel">Imágenes, videos, audio o documentos</span>
-                  <input id="mediaInput" name="media" type="file" accept="image/*,video/*,audio/*,.heic,.heif,.avif,.webp,.tif,.tiff,.raw,.dng,.cr2,.nef,.arw,.mp3,.wav,.m4a,.aac,.flac,.ogg,.opus,.wma,.aiff,.aif,.amr,.mp4,.mov,.m4v,.webm,.mkv,.avi,.wmv,.mpeg,.mpg,.3gp,.hevc,.txt,.md,.markdown,.html,.htm,.rtf,.docx,.pdf,.csv,.json" multiple />
+                  <input id="mediaInput" name="media" type="file" accept="image/*,video/*,audio/*,.heic,.heif,.avif,.webp,.tif,.tiff,.raw,.dng,.cr2,.nef,.arw,.mp3,.wav,.m4a,.aac,.flac,.ogg,.opus,.wma,.aiff,.aif,.amr,.mp4,.mov,.m4v,.webm,.mkv,.avi,.wmv,.mpeg,.mpg,.3gp,.hevc,.txt,.md,.markdown,.html,.htm,.rtf,.docx,.pdf,.csv,.json,.zip,.rar,.7z" multiple />
                 </label>
                 <div class="audio-capture">
                   <button id="recordAudioButton" class="ghost-button" type="button">Grabar audio</button>
@@ -387,6 +387,11 @@
               <select id="assetReadinessFilter"></select>
               <select id="assetProcessingFilter"></select>
               <select id="assetProvenanceFilter"></select>
+              <select id="assetEventLinkFilter" aria-label="Filtrar activos por evento vinculado">
+                <option value="all">Todos los vínculos</option>
+                <option value="linked">Con evento interno</option>
+                <option value="whole">Toda la experiencia</option>
+              </select>
               <select id="assetAnalysisFilter"></select>
               <select id="assetSortFilter"></select>
               <label class="compact-date-filter">
@@ -641,6 +646,7 @@
                 </select>
                 <input id="reportPeopleFilter" type="search" placeholder="Filtrar por persona" />
                 <input id="reportObjectiveFilter" type="search" placeholder="Filtrar por objetivo" />
+                <input id="reportEventFilter" type="search" placeholder="Filtrar por evento interno" />
               </div>
               <div id="reportSummary" class="report-summary"></div>
               <div id="reportNarrative" class="answer-box"></div>
@@ -1031,7 +1037,7 @@
       </main>
     </div>
 
-    <script src="app.js?v=20260521-capture-event-preview-362"></script>
+    <script src="app.js?v=20260521-event-scope-filters-363"></script>
 </body>
 </html>
 

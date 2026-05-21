@@ -1107,7 +1107,7 @@ function inferServerMediaKind(attachment = {}) {
   if (type.startsWith("image/")) return "image";
   if (type.startsWith("audio/")) return "audio";
   if (type.startsWith("video/")) return "video";
-  if (type.startsWith("text/") || type.includes("pdf") || type.includes("word") || type.includes("json")) return "document";
+  if (type.startsWith("text/") || type.includes("pdf") || type.includes("word") || type.includes("json") || type.includes("zip") || type.includes("rar") || type.includes("7z")) return "document";
   const ext = String(attachment.extension || attachment.name?.split(".").pop() || "").toLowerCase();
   if (["jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "avif", "tif", "tiff"].includes(ext)) return "image";
   if (["mp3", "wav", "m4a", "aac", "flac", "ogg", "opus", "wma", "aiff", "aif", "amr"].includes(ext)) return "audio";
