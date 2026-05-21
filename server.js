@@ -34,7 +34,7 @@ const OPENAI_EMBEDDING_MODEL = process.env.OPENAI_EMBEDDING_MODEL || "text-embed
 const TRANSCRIPTION_PROVIDER = process.env.TRANSCRIPTION_PROVIDER || "none";
 const OPENAI_TRANSCRIPTION_MODEL = process.env.OPENAI_TRANSCRIPTION_MODEL || "gpt-4o-mini-transcribe";
 const OCR_PROVIDER = process.env.OCR_PROVIDER || "openai";
-const OPENAI_OCR_MODEL = process.env.OPENAI_OCR_MODEL || "gpt-4.1-mini";
+const OPENAI_OCR_MODEL = process.env.OPENAI_OCR_MODEL || "gpt-4o-mini";
 const SIGNAL_METADATA_SCHEMA_VERSION = "clio-inspired-signal-v1";
 
 const mimeTypes = {
@@ -2580,6 +2580,14 @@ async function extractDocumentText(media) {
   const normalized = normalizeMedia(media);
   const bytes = await getDocumentBytes(normalized);
   const extension = getExtension(normalized.name || normalized.type || "");
+  if (["zip", "rar", "7z"].includes(extension)) {
+    return {
+      status: "skipped",
+      method: "archive-transport-only",
+      text: "",
+      characters: 0,
+    };
+  }
   let text = "";
   let method = "";
   if (extension === "docx" || normalized.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
@@ -2588,6 +2596,10 @@ async function extractDocumentText(media) {
   } else if (extension === "pdf" || normalized.type === "application/pdf") {
     text = extractPdfText(bytes);
     method = "server-pdf-heuristic";
+    const cleanedPdfText = cleanExtractedText(text);
+    if (!cleanedPdfText && activeOcrProvider() === "openai") {
+      return ocrPdfDocument(normalized, bytes);
+    }
   } else if (extension === "rtf" || normalized.type === "application/rtf" || normalized.type === "text/rtf") {
     text = extractRtfText(bytes.toString("utf8"));
     method = "server-rtf-extraction";
@@ -2599,6 +2611,49 @@ async function extractDocumentText(media) {
   return {
     status: cleaned ? "ok" : "empty",
     method,
+    text: cleaned,
+    characters: cleaned.length,
+  };
+}
+
+async function ocrPdfDocument(media, bytes) {
+  if (bytes.length > 50_000_000) throw new HttpError(413, "pdf_ocr_too_large");
+  const response = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${OPENAI_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: OPENAI_OCR_MODEL,
+      input: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "input_file",
+              filename: media.name || "document.pdf",
+              file_data: bytes.toString("base64"),
+            },
+            {
+              type: "input_text",
+              text: "Extract all readable text from this PDF, including scanned pages. Return only the extracted text. If there is no readable text, return an empty string.",
+            },
+          ],
+        },
+      ],
+    }),
+  });
+  const payload = await response.json();
+  if (!response.ok) {
+    throw new Error(`pdf_ocr_${response.status}: ${payload.error?.message || "failed"}`);
+  }
+  const cleaned = cleanExtractedText(extractOpenAIResponseText(payload));
+  return {
+    status: cleaned ? "ok" : "empty",
+    provider: "openai",
+    model: OPENAI_OCR_MODEL,
+    method: "openai-pdf-ocr",
     text: cleaned,
     characters: cleaned.length,
   };

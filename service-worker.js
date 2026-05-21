@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260521-event-scope-filters-363";
+const CACHE_NAME = "experience-hub-pwa-20260521-pdf-ocr-archives-364";
 const APP_SHELL = [
   "/",
   "/index.html",

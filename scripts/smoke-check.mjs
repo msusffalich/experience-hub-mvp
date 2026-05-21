@@ -128,6 +128,8 @@ assert(files.index.includes("assetEventLinkFilter") && files.app.includes("state
 assert(files.index.includes(".zip,.rar,.7z") && files.app.includes('"zip", "rar", "7z"') && files.server.includes("type.includes(\"zip\")"), "Compressed files are not consistently accepted as document assets.");
 assert(files.server.includes("/api/ocr-image") && files.server.includes("openai-image-ocr"), "Backend image OCR endpoint is missing.");
 assert(files.app.includes("/ocr-image") && files.app.includes("OCR_PROVIDER=openai"), "Frontend or manual does not document/use automatic image OCR.");
+assert(files.server.includes("openai-pdf-ocr") && files.server.includes("pdf_ocr_too_large"), "Backend scanned-PDF OCR fallback is missing.");
+assert(files.app.includes("archive-transport-only") && files.app.includes("Los archivos comprimidos se guardan solo para transporte y descarga"), "Archive assets are not protected from automatic interpretation.");
 assert(/@media \(max-width: 1040px\)[\s\S]*\.capture-layout-clean \{[\s\S]*grid-template-columns: minmax\(0, 1fr\)/.test(files.styles), "Capture is not forced to full width on tablet/mobile layouts.");
 assert(/@media \(max-width: 720px\)[\s\S]*\.capture-layout-clean,[\s\S]*\.filters \{[\s\S]*grid-template-columns: 1fr/.test(files.styles), "Capture is not included in the mobile one-column layout.");
 assert(files.index.includes("Activos y multimedia") && files.index.includes("Opciones avanzadas de calendario"), "Assets operations or Agenda advanced tools are not properly grouped.");
