@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260521-save-online-recheck-345";
+const CACHE_NAME = "experience-hub-pwa-20260521-media-retry-upload-346";
 const APP_SHELL = [
   "/",
   "/index.html",

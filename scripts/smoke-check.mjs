@@ -39,6 +39,8 @@ assert(!/\bnormalizeExperience\s*\(/.test(files.app), "app.js still calls normal
   "function renderReportEvidenceCard",
   "function ensureApiOnlineForSave",
   "function isApiConnectivityError",
+  "function uploadDataUrlAttachment",
+  "function dataUrlToBlob",
 ].forEach((needle) => assert(files.app.includes(needle), `Missing critical frontend function: ${needle}.`));
 
 assert(files.app.includes("eventTitle: asset.eventTitle"), "Report evidence does not include linked event titles.");
@@ -68,6 +70,8 @@ assert(files.app.includes("The local backend attempts text extraction"), "Englis
 assert(files.app.includes("Before declaring a save local-only, Capture checks backend health again."), "English manual does not explain save connectivity recheck.");
 assert(files.app.includes("Antes de declarar un guardado como local"), "Spanish manual does not explain save connectivity recheck.");
 assert(files.app.includes("readback_pending") && files.app.includes("remoteReadbackPending"), "Capture save status still treats remote readback delays as local-only failures.");
+assert(files.app.includes("uploadDataUrlAttachment(attachment)") && files.app.includes("FormData"), "Pending local media is not retried through binary multipart upload.");
+assert(files.app.includes("Cuando un adjunto queda pendiente") && files.app.includes("When an attachment is pending"), "Manual does not explain binary retry for pending media.");
 assert(files.app.includes("Prueba autom") && files.app.includes("Automated smoke check"), "Admin does not expose the automated smoke check.");
 
 if (failures.length) {
