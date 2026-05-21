@@ -1,4 +1,4 @@
-const APP_VERSION = "20260521-assets-admin-cleanup-360";
+const APP_VERSION = "20260521-capture-event-preview-362";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -1881,6 +1881,7 @@ const manualContent = {
         "En modo publicado, Captura bloquea el guardado si no hay sesión activa. Esto evita registros aislados en un solo navegador y protege la prueba multidispositivo.",
         "El refactor multidispositivo introduce el modelo correcto de workspace, miembros, participantes, eventos internos y activos. La migración SQL está en database/workspace-events-assets.sql y debe aplicarse antes de considerar compartición multiusuario real.",
         "Captura ahora permite registrar varios eventos dentro de una experiencia. Cada línea representa un momento de la experiencia y se conserva para reportes, activos, publicaciones e integración futura con dispositivos.",
+        "Captura muestra una vista previa viva de eventos antes de guardar. Esto ayuda a confirmar si una experiencia larga debe quedar como un solo registro con momentos internos y a qué momento pertenece cada adjunto.",
         "Cada adjunto de Captura puede quedar asociado a toda la experiencia o a un evento interno específico. Esto permite separar evidencia por momento: una imagen, audio, video o documento puede pertenecer al evento 1, 2, 3 o al contexto general.",
         "Librería muestra una vista compacta de los primeros eventos internos de cada experiencia para revisar qué ocurrió dentro de registros largos sin abrir otras pantallas.",
         "La búsqueda de Librería y Línea de tiempo también encuentra texto dentro de eventos internos. Puedes buscar una conversación, aprendizaje o cierre y llegar a la experiencia completa.",
@@ -2413,6 +2414,7 @@ const manualContent = {
         "In published mode, Capture blocks saving when there is no active session. This prevents isolated records in one browser and protects the multi-device test.",
         "The multi-device refactor introduces the correct workspace, members, participants, internal events, and assets model. The SQL migration lives in database/workspace-events-assets.sql and must be applied before real multi-user sharing is considered complete.",
         "Capture now supports several events inside one experience. Each line represents one moment in the experience and is preserved for reports, assets, publications, and future device integration.",
+        "Capture shows a live Event preview before saving. This helps confirm whether a long experience should stay as one record with internal moments and which attachments belong to each moment.",
         "Each Capture attachment can be linked to the whole experience or to a specific internal event. This separates evidence by moment: an image, audio, video, or document can belong to event 1, 2, 3, or the general context.",
         "Library shows a compact preview of the first internal events in each experience so long records can be reviewed without opening another screen.",
         "Library and Timeline search also find text inside internal events. You can search for a conversation, learning, or closing moment and reach the full experience.",
@@ -5575,7 +5577,10 @@ function setupForm() {
   document.getElementById("mediaInput").addEventListener("change", handleMediaSelection);
   form.addEventListener("input", renderCaptureWritingCoach);
   form.addEventListener("change", renderCaptureWritingCoach);
-  document.getElementById("experienceEventsInput")?.addEventListener("input", renderAttachmentPreview);
+  document.getElementById("experienceEventsInput")?.addEventListener("input", () => {
+    renderCaptureEventPreview();
+    renderAttachmentPreview();
+  });
   document.getElementById("attachmentPreview")?.addEventListener("change", handleAttachmentEventSelection);
   document.getElementById("captureSaveStatus")?.addEventListener("click", handleCaptureSaveStatusClick);
 }
@@ -7342,6 +7347,62 @@ function renderAttachmentPreview() {
     .join("");
 }
 
+function renderCaptureEventPreview() {
+  const box = document.getElementById("captureEventPreview");
+  if (!box) return;
+  const events = getCaptureEventOptions();
+  const attachments = state.pendingAttachments || [];
+  const labels = state.language === "en"
+    ? {
+        title: "Internal events",
+        empty: "If the experience has several moments, write one event per line. If not, leave this empty and the record will stay as one complete experience.",
+        count: "events detected",
+        evidence: "linked attachments",
+        none: "No attachment linked yet",
+        whole: "Attachments without an event stay linked to the whole experience.",
+      }
+    : {
+        title: "Eventos internos",
+        empty: "Si la experiencia tiene varios momentos, escribe un evento por línea. Si no, déjalo vacío y el registro quedará como una experiencia completa.",
+        count: "eventos detectados",
+        evidence: "adjuntos vinculados",
+        none: "Sin adjuntos vinculados aún",
+        whole: "Los adjuntos sin evento quedan vinculados a toda la experiencia.",
+      };
+  if (!events.length) {
+    box.innerHTML = `
+      <section class="capture-event-empty">
+        <strong>${escapeHtml(labels.title)}</strong>
+        <p>${escapeHtml(labels.empty)}</p>
+      </section>
+    `;
+    return;
+  }
+  const cards = events.map((event) => {
+    const linkedCount = attachments.filter((attachment) => getAttachmentEventRef(attachment, events) === event.ref).length;
+    return `
+      <article class="capture-event-card">
+        <span class="capture-event-number">${escapeHtml(String(event.order))}</span>
+        <div>
+          <strong>${escapeHtml(event.title || `${state.language === "en" ? "Event" : "Evento"} ${event.order}`)}</strong>
+          ${event.description ? `<p>${escapeHtml(event.description)}</p>` : ""}
+          <small>${escapeHtml(linkedCount ? `${linkedCount} ${labels.evidence}` : labels.none)}</small>
+        </div>
+      </article>
+    `;
+  }).join("");
+  box.innerHTML = `
+    <section class="capture-event-summary">
+      <div class="capture-event-heading">
+        <strong>${escapeHtml(labels.title)}</strong>
+        <span class="pill">${escapeHtml(`${events.length} ${labels.count}`)}</span>
+      </div>
+      <div class="capture-event-grid">${cards}</div>
+      <p class="card-meta">${escapeHtml(labels.whole)}</p>
+    </section>
+  `;
+}
+
 function renderPendingAttachmentCard(attachment) {
   const kind = inferMediaKind(attachment);
   const extension = attachment.extension || getFileExtension(attachment.name);
@@ -7625,6 +7686,7 @@ function renderAll() {
   renderRecentSignals();
   renderDataQuality();
   renderCaptureCoach();
+  renderCaptureEventPreview();
   renderCaptureSaveStatus();
   renderAttachmentPreview();
   renderDailyBriefing();

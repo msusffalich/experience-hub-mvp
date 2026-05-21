@@ -6664,6 +6664,80 @@ button.asset-processing-summary-card {
   gap: 10px;
 }
 
+.capture-event-preview {
+  display: grid;
+  gap: 10px;
+}
+
+.capture-event-empty,
+.capture-event-summary {
+  display: grid;
+  gap: 10px;
+  border: 1px solid rgba(13, 124, 102, 0.18);
+  border-radius: 8px;
+  padding: 12px;
+  background: linear-gradient(180deg, rgba(13, 124, 102, 0.06), #fff);
+}
+
+.capture-event-empty p,
+.capture-event-summary p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.capture-event-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.capture-event-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(210px, 100%), 1fr));
+  gap: 8px;
+}
+
+.capture-event-card {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid rgba(13, 124, 102, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.78);
+  min-width: 0;
+}
+
+.capture-event-number {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 800;
+}
+
+.capture-event-card strong,
+.capture-event-card p,
+.capture-event-card small {
+  overflow-wrap: anywhere;
+}
+
+.capture-event-card p {
+  margin: 3px 0;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.capture-event-card small {
+  color: var(--muted);
+  font-weight: 700;
+}
+
 .attachment-card {
   display: grid;
   grid-template-columns: 118px minmax(0, 1fr) auto;
@@ -9799,7 +9873,6 @@ button.asset-processing-summary-card {
   .metric-grid,
   .split-layout,
   .form-layout,
-  .capture-layout-clean,
   .experience-map-layout,
   .agenda-layout,
   .publication-layout,
@@ -9813,6 +9886,11 @@ button.asset-processing-summary-card {
   .profile-impact-grid,
   .impact-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .capture-layout-clean {
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
   }
 
   .context-lead-news {
@@ -10057,6 +10135,7 @@ button.asset-processing-summary-card {
 
   .nav-list,
   .dashboard-time-context,
+  .capture-layout-clean,
   .metric-grid,
   .split-layout,
   .form-layout,

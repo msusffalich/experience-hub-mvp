@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260521-assets-admin-cleanup-360";
+const CACHE_NAME = "experience-hub-pwa-20260521-capture-event-preview-362";
 const APP_SHELL = [
   "/",
   "/index.html",

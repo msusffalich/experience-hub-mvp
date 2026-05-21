@@ -121,6 +121,10 @@ assert(files.app.includes("invalid_mime_type para PDF") && files.app.includes("i
 assert(files.index.includes("dashboard-primary-panel") && files.index.includes("Nueva experiencia"), "Dashboard does not expose primary daily actions.");
 assert(!files.index.includes("dashboardAttachmentPanel") && !files.index.includes("dashboardPilotBox"), "Dashboard still exposes technical/pilot monitoring panels.");
 assert(files.index.includes("capture-layout-clean") && !files.index.includes("captureCoachBox") && !files.index.includes("templateList"), "Capture still exposes parallel coach/template panels.");
+assert(files.index.includes("captureEventPreview") && files.app.includes("function renderCaptureEventPreview"), "Capture does not show the live internal event preview.");
+assert(files.styles.includes(".capture-event-card") && files.app.includes("Capture shows a live Event preview"), "Event preview UI or manual documentation is missing.");
+assert(/@media \(max-width: 1040px\)[\s\S]*\.capture-layout-clean \{[\s\S]*grid-template-columns: minmax\(0, 1fr\)/.test(files.styles), "Capture is not forced to full width on tablet/mobile layouts.");
+assert(/@media \(max-width: 720px\)[\s\S]*\.capture-layout-clean,[\s\S]*\.filters \{[\s\S]*grid-template-columns: 1fr/.test(files.styles), "Capture is not included in the mobile one-column layout.");
 assert(files.index.includes("Activos y multimedia") && files.index.includes("Opciones avanzadas de calendario"), "Assets operations or Agenda advanced tools are not properly grouped.");
 assert(!/assetLibraryView[\s\S]*Herramientas avanzadas de activos/.test(files.index), "Asset Library still exposes technical asset tools in the user view.");
 assert(files.index.includes("Más opciones de publicación") && files.index.includes("Exportar y cerrar reporte"), "Reports or Publications still lack the simplified advanced-action flow.");

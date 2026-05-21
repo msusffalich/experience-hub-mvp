@@ -9,10 +9,10 @@
     <meta name="apple-mobile-web-app-title" content="Experience Hub" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>Experience Hub MVP</title>
-    <link rel="manifest" href="manifest.webmanifest?v=20260521-assets-admin-cleanup-360" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260521-capture-event-preview-362" />
     <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="icons/icon.svg" />
-    <link rel="stylesheet" href="styles.css?v=20260521-assets-admin-cleanup-360" />
+    <link rel="stylesheet" href="styles.css?v=20260521-capture-event-preview-362" />
   </head>
   <body>
     <noscript>
@@ -316,6 +316,7 @@
                   <textarea id="experienceEventsInput" name="experienceEvents" rows="4" placeholder="Un evento por línea: llegada, conversación, comida, aprendizaje, cierre..."></textarea>
                   <small>Usa un evento por línea. Ejemplo: Llegada - breve contexto del momento.</small>
                 </label>
+                <div id="captureEventPreview" class="capture-event-preview" aria-live="polite"></div>
                 <label>
                   <span id="attachmentInputLabel">Imágenes, videos, audio o documentos</span>
                   <input id="mediaInput" name="media" type="file" accept="image/*,video/*,audio/*,.heic,.heif,.avif,.webp,.tif,.tiff,.raw,.dng,.cr2,.nef,.arw,.mp3,.wav,.m4a,.aac,.flac,.ogg,.opus,.wma,.aiff,.aif,.amr,.mp4,.mov,.m4v,.webm,.mkv,.avi,.wmv,.mpeg,.mpg,.3gp,.hevc,.txt,.md,.markdown,.html,.htm,.rtf,.docx,.pdf,.csv,.json" multiple />
@@ -1030,7 +1031,7 @@
       </main>
     </div>
 
-    <script src="app.js?v=20260521-assets-admin-cleanup-360"></script>
+    <script src="app.js?v=20260521-capture-event-preview-362"></script>
 </body>
 </html>
 
