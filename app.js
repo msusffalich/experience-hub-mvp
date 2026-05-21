@@ -1912,7 +1912,7 @@ const manualContent = {
         "El proyecto queda preparado para Railway con railway.json, healthcheck /api/health, Node >=20 y .gitignore para evitar publicar .env, datos locales, logs o claves.",
         "La sección Dispositivos ahora documenta un contrato único de integración. Cualquier fuente nueva debe entregar sourceId, sourceType, capturedAt, participantId, payloadType y payload antes de alimentar experiencias, activos, Agenda o contexto.",
         "El contrato de dispositivos se puede exportar como Markdown o JSON para compartirlo con desarrolladores, integraciones API/MCP o proveedores de wearables.",
-        "Activos multimodales incluye Procesar ahora y Procesar visibles. Los documentos de texto se extraen localmente; los audios usan transcripción del backend si está configurada; imágenes y videos generan una revisión guiada transparente hasta conectar OCR o reconocimiento visual profundo.",
+        "Activos multimodales incluye Procesar ahora y Procesar visibles. Los documentos de texto se extraen localmente; los audios usan transcripción del backend si está configurada; las imágenes usan OCR automático del backend cuando OCR_PROVIDER=openai y OPENAI_API_KEY están configurados.",
         "El procesamiento de activos ahora muestra método, estado, fecha de procesamiento y texto extraído cuando existe. Ese texto entra en búsqueda, inventario JSON/CSV y auditoría de metadatos.",
         "El backend local intenta extraer texto de TXT, Markdown, HTML, CSV, JSON, RTF, DOCX y PDF. PDF usa extracción heurística y puede requerir revisión si el archivo es escaneado o está protegido.",
         "El texto extraído o generado queda guardado como texto analítico del activo y entra en búsqueda, reportes, memoria y publicaciones, siempre con revisión humana antes de salidas finales.",
@@ -2104,6 +2104,7 @@ const manualContent = {
         "Documentos de texto recomendados para el MVP: TXT, Markdown, HTML, RTF, DOCX y PDF. TXT, Markdown y HTML son los candidatos más simples para lectura textual directa; DOCX y PDF se conservan como documentos y quedan preparados para extracción posterior.",
         "La captura ya acepta documentos TXT, Markdown, HTML, RTF, DOCX, PDF, CSV y JSON como adjuntos. TXT, Markdown, HTML, CSV y JSON generan una vista previa textual inicial; PDF, DOCX y RTF se guardan como documentos para extracción posterior.",
         "Archivos comprimidos aceptados: ZIP, RAR y 7Z. Se guardan como activos documentales vinculados a la experiencia o evento, pero no se descomprimen ni se analizan automáticamente en el MVP.",
+        "OCR automático: las imágenes se procesan con el backend cuando el proveedor OCR está activo. Los PDF escaneados requieren el siguiente subpaso técnico: convertir páginas a imagen antes de aplicar OCR.",
         "En Captura, los documentos con vista previa textual muestran una muestra del contenido en la tarjeta del adjunto antes de guardar la experiencia.",
         "La Librería, la Línea de tiempo y las tiras multimedia muestran documentos como fichas documentales, no como imágenes, para evitar vistas rotas cuando el archivo es PDF, DOCX, TXT, Markdown, CSV o JSON.",
         "Las notas de OneNote, Apple Notes, Google Keep, Notion, Evernote u otras apps se manejarán primero por exportación estándar: Markdown, TXT, HTML, PDF, DOCX, CSV o JSON, según permita cada herramienta.",
@@ -2447,7 +2448,7 @@ const manualContent = {
         "The project is prepared for Railway with railway.json, healthcheck /api/health, Node >=20, and .gitignore to avoid publishing .env, local data, logs, or keys.",
         "The Devices section now documents a single integration contract. Every new source must provide sourceId, sourceType, capturedAt, participantId, payloadType, and payload before feeding experiences, assets, Agenda, or context.",
         "The device contract can be exported as Markdown or JSON to share with developers, API/MCP integrations, or wearable providers.",
-        "Multimodal Assets includes Process now and Process visible. Text documents are extracted locally; audio uses backend transcription when configured; images and videos generate a transparent guided review until deep OCR or visual recognition is connected.",
+        "Multimodal Assets includes Process now and Process visible. Text documents are extracted locally; audio uses backend transcription when configured; images use automatic backend OCR when OCR_PROVIDER=openai and OPENAI_API_KEY are configured.",
         "Asset processing now shows method, status, processed date, and extracted text when available. That text is included in search, JSON/CSV inventory, and metadata audit.",
         "The local backend attempts text extraction for TXT, Markdown, HTML, CSV, JSON, RTF, DOCX, and PDF. PDF uses heuristic extraction and may require review when the file is scanned or protected.",
         "Extracted or generated text is saved as asset analytical text and becomes available for search, reports, memory, and publications, with human review before final outputs.",
@@ -2632,6 +2633,7 @@ const manualContent = {
         "Recommended text-document formats for the MVP: TXT, Markdown, HTML, RTF, DOCX, and PDF. TXT, Markdown, and HTML are the simplest candidates for direct text reading; DOCX and PDF are stored as documents and prepared for later extraction.",
         "Capture now accepts TXT, Markdown, HTML, RTF, DOCX, PDF, CSV, and JSON documents as attachments. TXT, Markdown, HTML, CSV, and JSON create an initial text preview; PDF, DOCX, and RTF are stored as documents for later extraction.",
         "Accepted compressed files: ZIP, RAR, and 7Z. They are stored as document assets linked to the experience or event, but the MVP does not automatically decompress or analyze them.",
+        "Automatic OCR: images are processed by the backend when the OCR provider is active. Scanned PDFs require the next technical substep: render pages as images before applying OCR.",
         "In Capture, documents with text preview show a content sample in the attachment card before saving the experience.",
         "Library, Timeline, and media strips show documents as document cards, not as images, to avoid broken previews when the file is PDF, DOCX, TXT, Markdown, CSV, or JSON.",
         "Notes from OneNote, Apple Notes, Google Keep, Notion, Evernote, or other note apps will first be handled through standard export formats: Markdown, TXT, HTML, PDF, DOCX, CSV, or JSON, depending on what each tool allows.",
@@ -11835,6 +11837,42 @@ async function buildProcessedAssetAnalysis(asset, manual = {}) {
           method: payload.method || "server-document-extraction",
           extractedText: payload.text,
           analysisText: buildExtractedTextAssetAnalysis(asset, payload.text, manual),
+        };
+      }
+    } catch {
+      // Fall back to a structured human-review note below.
+    }
+  }
+  if (asset.kind === "image" && state.apiOnline && state.config?.ocrProvider === "openai") {
+    try {
+      const payload = await apiRequest("/ocr-image", {
+        method: "POST",
+        body: JSON.stringify({
+          id: asset.id || asset.assetKey,
+          name: asset.name,
+          type: asset.type || asset.originalType || "image/jpeg",
+          size: asset.size || 0,
+          dataUrl: asset.dataUrl,
+          url: asset.url,
+        }),
+      });
+      if (payload?.text) {
+        return {
+          status: "automatic",
+          method: payload.method || "openai-image-ocr",
+          extractedText: payload.text,
+          analysisText: buildExtractedTextAssetAnalysis(asset, payload.text, manual),
+        };
+      }
+      if (payload?.status === "empty") {
+        return {
+          status: "automatic",
+          method: payload.method || "openai-image-ocr-empty",
+          extractedText: "",
+          analysisText: buildGuidedProcessingAnalysis(asset, {
+            ...manual,
+            note: [manual.note, state.language === "en" ? "OCR found no readable text." : "El OCR no encontró texto legible."].filter(Boolean).join(" "),
+          }),
         };
       }
     } catch {

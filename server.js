@@ -33,6 +33,8 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_EMBEDDING_MODEL = process.env.OPENAI_EMBEDDING_MODEL || "text-embedding-3-small";
 const TRANSCRIPTION_PROVIDER = process.env.TRANSCRIPTION_PROVIDER || "none";
 const OPENAI_TRANSCRIPTION_MODEL = process.env.OPENAI_TRANSCRIPTION_MODEL || "gpt-4o-mini-transcribe";
+const OCR_PROVIDER = process.env.OCR_PROVIDER || "openai";
+const OPENAI_OCR_MODEL = process.env.OPENAI_OCR_MODEL || "gpt-4.1-mini";
 const SIGNAL_METADATA_SCHEMA_VERSION = "clio-inspired-signal-v1";
 
 const mimeTypes = {
@@ -167,6 +169,7 @@ async function handleApi(req, res, url) {
       semanticSearch: activePersistence() === "supabase" ? "pgvector" : "token-vector",
       embeddingsProvider: activeEmbeddingsProvider(),
       transcriptionProvider: activeTranscriptionProvider(),
+      ocrProvider: activeOcrProvider(),
       contextProviders: {
         environmental: { status: "available", provider: "Open-Meteo", mode: "on-demand" },
         geopolitical: { status: "available", provider: "GDELT DOC 2.0", mode: "on-demand" },
@@ -184,6 +187,7 @@ async function handleApi(req, res, url) {
       supabaseUrl: activePersistence() === "supabase" ? SUPABASE_URL : null,
       supabasePublishableKey: activePersistence() === "supabase" ? SUPABASE_PUBLISHABLE_KEY : null,
       transcriptionProvider: activeTranscriptionProvider(),
+      ocrProvider: activeOcrProvider(),
     });
     return;
   }
@@ -246,6 +250,13 @@ async function handleApi(req, res, url) {
     await getRequestUser(req);
     const media = await readJson(req);
     sendJson(res, 200, await extractDocumentText(media));
+    return;
+  }
+
+  if (url.pathname === "/api/ocr-image" && req.method === "POST") {
+    await getRequestUser(req);
+    const media = await readJson(req);
+    sendJson(res, 200, await ocrImage(media));
     return;
   }
 
@@ -2593,6 +2604,71 @@ async function extractDocumentText(media) {
   };
 }
 
+async function ocrImage(media) {
+  if (activeOcrProvider() !== "openai") {
+    return {
+      provider: activeOcrProvider(),
+      status: "unavailable",
+      text: "",
+      message: "Configure OCR_PROVIDER=openai and OPENAI_API_KEY to enable backend OCR.",
+    };
+  }
+  const normalized = normalizeMedia(media);
+  if (!normalized.dataUrl && !normalized.url) throw new HttpError(400, "image_data_required");
+  const imageUrl = normalized.dataUrl || normalized.url;
+  if (!String(normalized.type || "").startsWith("image/") && !String(imageUrl || "").startsWith("data:image/")) {
+    throw new HttpError(400, "image_type_required");
+  }
+  const response = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${OPENAI_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: OPENAI_OCR_MODEL,
+      input: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "input_text",
+              text: "Extract all readable text from this image. Return only the extracted text. If there is no readable text, return an empty string.",
+            },
+            {
+              type: "input_image",
+              image_url: imageUrl,
+            },
+          ],
+        },
+      ],
+    }),
+  });
+  const payload = await response.json();
+  if (!response.ok) {
+    throw new Error(`ocr_${response.status}: ${payload.error?.message || "failed"}`);
+  }
+  const text = extractOpenAIResponseText(payload);
+  return {
+    provider: "openai",
+    model: OPENAI_OCR_MODEL,
+    status: text ? "ok" : "empty",
+    method: "openai-image-ocr",
+    text: cleanExtractedText(text),
+    characters: cleanExtractedText(text).length,
+  };
+}
+
+function extractOpenAIResponseText(payload = {}) {
+  if (typeof payload.output_text === "string") return payload.output_text;
+  return (payload.output || [])
+    .flatMap((item) => item.content || [])
+    .map((content) => content.text || "")
+    .filter(Boolean)
+    .join("\n")
+    .trim();
+}
+
 async function getDocumentBytes(media) {
   if (media.dataUrl) return dataUrlToBuffer(media.dataUrl);
   if (media.url && /^https?:\/\//i.test(media.url)) {
@@ -2709,6 +2785,10 @@ function cleanExtractedText(value = "") {
 
 function activeTranscriptionProvider() {
   return TRANSCRIPTION_PROVIDER === "openai" && OPENAI_API_KEY ? "openai" : "none";
+}
+
+function activeOcrProvider() {
+  return OCR_PROVIDER === "openai" && OPENAI_API_KEY ? "openai" : "none";
 }
 
 async function buildPdfReport(user, report = null) {
