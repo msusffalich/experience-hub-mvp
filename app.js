@@ -1,4 +1,4 @@
-const APP_VERSION = "20260521-document-extraction-344";
+const APP_VERSION = "20260521-save-online-recheck-345";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -1868,6 +1868,7 @@ const manualContent = {
         "Administración incluye Persistencia multidispositivo como compuerta prioritaria. Revisa persistencia remota, identidad de usuario, Storage privado, URL publicada, respaldo y reportes disponibles desde varios dispositivos.",
         "La app local valida el flujo, pero el uso real en desktop, móvil y tablet exige una URL desplegada, sesión Supabase y datos persistidos fuera del navegador local.",
         "Para el usuario final, la persistencia debe sentirse automática: la app solo pide entrar, guardar o reintentar en lenguaje simple. Los términos Supabase, API y diagnóstico quedan reservados para Administración.",
+        "Antes de declarar un guardado como local, Captura vuelve a comprobar la salud del backend. Si Supabase acepta el guardado pero falla una verificación secundaria, la app lo muestra como guardado en la nube y no como registro aislado del dispositivo.",
         "En modo publicado, Captura bloquea el guardado si no hay sesión activa. Esto evita registros aislados en un solo navegador y protege la prueba multidispositivo.",
         "El refactor multidispositivo introduce el modelo correcto de workspace, miembros, participantes, eventos internos y activos. La migración SQL está en database/workspace-events-assets.sql y debe aplicarse antes de considerar compartición multiusuario real.",
         "Captura ahora permite registrar varios eventos dentro de una experiencia. Cada línea representa un momento de la experiencia y se conserva para reportes, activos, publicaciones e integración futura con dispositivos.",
@@ -2384,6 +2385,7 @@ const manualContent = {
         "Admin includes Multi-Device Persistence as a priority gate. It checks remote persistence, user identity, private Storage, published URL, backup, and reports available from multiple devices.",
         "The local app validates the flow, but real desktop, mobile, and tablet use requires a deployed URL, Supabase session, and data persisted outside the local browser.",
         "For the final user, persistence must feel automatic: the app only asks to sign in, save, or retry in simple language. Supabase, API, and diagnostics remain Admin concepts.",
+        "Before declaring a save local-only, Capture checks backend health again. If Supabase accepts the save but a secondary readback fails, the app shows it as cloud-saved instead of treating it as isolated on the device.",
         "In published mode, Capture blocks saving when there is no active session. This prevents isolated records in one browser and protects the multi-device test.",
         "The multi-device refactor introduces the correct workspace, members, participants, internal events, and assets model. The SQL migration lives in database/workspace-events-assets.sql and must be applied before real multi-user sharing is considered complete.",
         "Capture now supports several events inside one experience. Each line represents one moment in the experience and is preserved for reports, assets, publications, and future device integration.",
@@ -4333,7 +4335,7 @@ async function saveExperienceToApi(experience) {
     queueOfflineMutation("upsert", experience, "auth_required");
     return { remote: false, queued: true, reason: "auth_required" };
   }
-  if (!state.apiOnline) {
+  if (!(await ensureApiOnlineForSave())) {
     queueOfflineMutation("upsert", experience, "api_unavailable");
     return { remote: false, queued: true, reason: "api_unavailable" };
   }
@@ -4345,8 +4347,7 @@ async function saveExperienceToApi(experience) {
     });
     const readbackExperience = await confirmRemoteExperienceReadback(savedExperience?.id || experience.id);
     if (!readbackExperience) {
-      queueOfflineMutation("upsert", experience, "readback_failed");
-      return { remote: false, queued: true, reason: "readback_failed", experience: savedExperience };
+      return { remote: true, queued: false, reason: "readback_pending", experience: savedExperience || preparedExperience, readback: false };
     }
     const mediaPending = hasPendingRemoteMedia(savedExperience) || hasPendingRemoteMedia(preparedExperience);
     if (mediaPending && (experience.attachments || []).some((attachment) => attachment.dataUrl)) {
@@ -4355,10 +4356,26 @@ async function saveExperienceToApi(experience) {
     return { remote: true, queued: mediaPending, experience: readbackExperience, mediaPending, readback: true };
   } catch (error) {
     const reason = error?.status === 401 ? "auth_required" : "api_error";
-    if (reason === "api_error") state.apiOnline = false;
+    if (reason === "api_error" && isApiConnectivityError(error)) state.apiOnline = false;
     queueOfflineMutation("upsert", experience, reason);
     return { remote: false, queued: true, reason };
   }
+}
+
+async function ensureApiOnlineForSave() {
+  if (state.apiOnline) return true;
+  try {
+    await apiRequest("/health", { skipAuth: true });
+    state.apiOnline = true;
+    return true;
+  } catch {
+    state.apiOnline = false;
+    return false;
+  }
+}
+
+function isApiConnectivityError(error) {
+  return !error?.status || error.status >= 500;
 }
 
 async function confirmRemoteExperienceReadback(experienceId) {
@@ -6806,6 +6823,7 @@ function buildCaptureSaveStatus(experience, apiResult = {}, edited = false) {
         temporary: "Saved for this session, but the browser did not confirm local persistence.",
         remote: "Saved here and available for your other devices.",
         remoteMediaPending: "The text was saved on all devices, but one or more attachments are still pending upload.",
+        remoteReadbackPending: "The cloud save was accepted; the secondary readback did not respond in time, so refresh only if you do not see it on another device.",
         authRequired: "It was not saved for your other devices because you are not signed in. Sign in with the same user and press Save pending.",
         apiUnavailable: "It was not saved for your other devices because the connection is unavailable. The app will retry when it returns.",
         apiError: "It was not saved for your other devices because cloud save did not complete. The app will keep it pending and retry.",
@@ -6822,6 +6840,7 @@ function buildCaptureSaveStatus(experience, apiResult = {}, edited = false) {
         temporary: "Guardada para esta sesión, pero el navegador no confirmó la persistencia local.",
         remote: "Guardada aquí y disponible para tus otros dispositivos.",
         remoteMediaPending: "El texto quedó guardado en todos tus dispositivos, pero uno o más adjuntos siguen pendientes de subir.",
+        remoteReadbackPending: "El guardado en la nube fue aceptado; la verificación secundaria no respondió a tiempo, así que refresca solo si no la ves en otro dispositivo.",
         authRequired: "No quedó guardada para tus otros dispositivos porque no has iniciado sesión. Entra con el mismo usuario y pulsa Guardar pendientes.",
         apiUnavailable: "No quedó guardada para tus otros dispositivos porque la conexión no está disponible. La app reintentará cuando vuelva.",
         apiError: "No quedó guardada para tus otros dispositivos porque el guardado en la nube no se completó. La app la mantendrá pendiente y reintentará.",
@@ -6843,14 +6862,18 @@ function buildCaptureSaveStatus(experience, apiResult = {}, edited = false) {
           ? labels.readbackFailed
         : "";
   const storage = apiResult?.remote
-    ? apiResult?.mediaPending ? `${labels.remote} ${labels.remoteMediaPending}` : labels.remote
+    ? [
+        labels.remote,
+        apiResult?.mediaPending ? labels.remoteMediaPending : "",
+        apiResult?.readback === false ? labels.remoteReadbackPending : "",
+      ].filter(Boolean).join(" ")
     : apiResult?.localSaved === false
       ? `${labels.temporary} ${reasonDetail || labels.unsafe}`
       : remoteProblem
         ? reasonDetail || labels.queued
         : labels.local;
   return {
-    type: remoteProblem || apiResult?.queued || apiResult?.localSaved === false || apiResult?.mediaPending ? "warn" : "success",
+    type: remoteProblem || apiResult?.queued || apiResult?.localSaved === false || apiResult?.mediaPending || apiResult?.readback === false ? "warn" : "success",
     title: apiResult?.localSaved === false && !apiResult?.remote ? labels.notPersistentTitle : remoteProblem ? labels.localOnlyTitle : labels.title,
     detail: `${storage} ${labels.next}`,
     experienceId: experience.id,
@@ -19643,7 +19666,7 @@ function renderAdminOperationalFocusPanel() {
         agenda: "Agenda is optional",
         agendaDetail: "Capture no longer updates Agenda by default. It only creates or updates a calendar event when the checkbox is selected.",
         remote: "Remote persistence guard",
-        remoteDetail: "Capture blocks new records without sign-in in published persistence mode and keeps pending saves visible in plain language.",
+        remoteDetail: "Capture blocks new records without sign-in in published persistence mode, rechecks backend health before local fallback, and keeps pending saves visible in plain language.",
         gate: "Persistent by default",
         gateDetail: "Technical Supabase/API diagnostics stay in Admin; users see only sign-in, save pending, and retry guidance.",
         smoke: "Automated smoke check",
@@ -19667,7 +19690,7 @@ function renderAdminOperationalFocusPanel() {
         agenda: "Agenda es opcional",
         agendaDetail: "Captura ya no actualiza Agenda por defecto. Solo crea o actualiza un evento de calendario cuando marcas la casilla.",
         remote: "Control de persistencia remota",
-        remoteDetail: "Captura bloquea nuevos registros sin sesión en modo publicado persistente y mantiene los pendientes visibles en lenguaje simple.",
+        remoteDetail: "Captura bloquea nuevos registros sin sesión en modo publicado persistente, vuelve a comprobar la salud del backend antes de caer a modo local y mantiene los pendientes visibles en lenguaje simple.",
         gate: "Persistente por defecto",
         gateDetail: "Los diagnósticos técnicos de Supabase/API quedan en Administración; el usuario solo ve entrar, guardar pendientes y reintentar.",
       };
