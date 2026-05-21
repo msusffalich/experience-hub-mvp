@@ -2,7 +2,7 @@
   "name": "Experience Hub",
   "short_name": "Experience Hub",
   "description": "Plataforma de inteligencia de experiencias humanas.",
-  "start_url": "/index.html?v=20260521-auth-menu-333&view=dashboard",
+  "start_url": "/index.html?v=20260521-auth-menu-admin-fix-334&view=dashboard",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",

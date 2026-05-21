@@ -1,4 +1,4 @@
-const APP_VERSION = "20260521-auth-menu-333";
+const APP_VERSION = "20260521-auth-menu-admin-fix-334";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -19233,6 +19233,7 @@ function renderAdminCommandCenter() {
         deployStatus: "Release path",
         deployDetail: "Prepare GitHub, Supabase production controls, hosting, and a private production test.",
         open: "Open",
+        summary: "Operational focus for the next release",
       }
     : {
         title: "Centro de mando",
@@ -19248,7 +19249,9 @@ function renderAdminCommandCenter() {
         deployStatus: "Ruta de salida",
         deployDetail: "Preparar GitHub, controles productivos de Supabase, hosting y una prueba privada en producción.",
         open: "Abrir",
+        summary: "Foco operativo para la siguiente versiÃ³n",
       };
+  const summaryLabel = labels.summary;
   const cards = [
     { title: labels.device, status: labels.deviceStatus, detail: labels.deviceDetail, view: "admin", focus: "deviceList" },
     { title: labels.ocr, status: labels.ocrStatus, detail: labels.ocrDetail, view: "assetLibrary", focus: "assetProcessingActionPlan" },
