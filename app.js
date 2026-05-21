@@ -1,4 +1,4 @@
-const APP_VERSION = "20260521-capture-save-detail-335";
+const APP_VERSION = "20260521-clio-metadata-core-336";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -1852,6 +1852,7 @@ const manualContent = {
         "La evidencia QA ahora afecta la Preparación del piloto: si falta, aparece como bloqueo accionable antes de ampliar usuarios.",
         "Administración incluye un panel de Integraciones externas para registrar decisiones sobre API, MCP, reutilización de código, GitHub compartido o separación de proyectos. Clio queda documentado como candidato futuro para integración por API/MCP antes de copiar código.",
         "El panel de Integraciones externas incluye un contrato mínimo copiable para definir recursos, autenticación, eventos, adjuntos, privacidad, errores y criterios de aceptación antes de desarrollar conectores.",
+        "Inspirado por el análisis de Clio, Experience Hub normaliza cada evento y activo con una señal común: tipo de origen, dispositivo, ID de origen, fecha de captura, participante, tipo de contenido, permisos, estado de procesamiento y huella de trazabilidad. Esto prepara integraciones con móviles, wearables, calendarios, voz, APIs y MCP sin mezclar datos ni depender de un solo navegador.",
         "Administración muestra un Centro de mando posterior al MVP con tres frentes principales: integración de dispositivos, OCR/procesamiento multimodal y deploy/publicación.",
         "Administración operativa deja visibles primero los controles útiles para avanzar ahora: publicación, multidispositivo, participantes, feedback, perfil y respaldo. El cierre del piloto y la evidencia técnica quedan dentro de Diagnóstico avanzado.",
         "Administración incluye un Plan de publicación visible con la secuencia recomendada: limpiar interfaz, fortalecer Supabase, preparar GitHub, desplegar frontend, desplegar backend/API solo si es necesario y ejecutar una prueba privada en producción.",
@@ -2096,6 +2097,7 @@ const manualContent = {
         "Sugerir texto genera una lectura analítica inicial y editable desde metadatos existentes del activo. No reemplaza OCR, transcripción ni análisis visual automático.",
         "Los textos sugeridos localmente quedan marcados en la tarjeta, en métricas superiores, en Administración y en exportaciones de inventario.",
         "Cada activo indica si es dato de prueba o dato del usuario. Esa trazabilidad también aparece en Reportes, Publicaciones y exportaciones.",
+        "Cada activo sincronizado desde el servidor puede mostrar trazabilidad técnica: tipo de origen, dispositivo, fecha de captura y huella de metadatos. Estos campos ayudan a validar de dónde vino el archivo, a qué experiencia/persona pertenece y qué procesamiento queda pendiente.",
         "El filtro de origen permite ver todos los activos, solo datos del usuario o solo datos de prueba.",
         "El filtro de texto analítico permite encontrar activos listos para análisis narrativo o detectar cuáles siguen pendientes de transcripción, OCR o descripción.",
         "Exportar inventario descarga un JSON ligero con los activos filtrados, metadatos, texto analítico, trazabilidad y vínculo a experiencia. CSV inventario genera una versión tabular para hojas de cálculo. Importar metadatos permite cargar de vuelta un JSON o CSV de inventario editado para actualizar etiquetas, nota y texto analítico. Ninguna exportación incluye archivos pesados.",
@@ -2357,6 +2359,7 @@ const manualContent = {
         "QA evidence now affects Pilot Readiness: if it is missing, it appears as an actionable blocker before expanding users.",
         "Admin includes an External Integrations panel to record decisions about API, MCP, code reuse, shared GitHub, or keeping projects separate. Clio is documented as a future candidate for API/MCP integration before copying code.",
         "The External Integrations panel includes a copyable minimum contract to define resources, authentication, events, attachments, privacy, errors, and acceptance criteria before building connectors.",
+        "Inspired by the Clio review, Experience Hub now normalizes every event and asset with a common signal envelope: source type, device, source ID, capture time, participant, payload type, permissions, processing status, and a trace fingerprint. This prepares mobile, wearable, calendar, voice, API, and MCP integrations without mixing data or depending on one browser.",
         "Admin shows a post-MVP Command Center with three main fronts: device integration, OCR/multimodal processing, and deploy/publication.",
         "Operational Admin keeps the immediately useful controls visible first: publication, multi-device readiness, participants, feedback, profile, and backup. Pilot closure and technical evidence now live inside Advanced diagnostics.",
         "Admin includes a visible Publication Plan with the recommended sequence: clean the interface, harden Supabase, prepare GitHub, deploy the frontend, deploy backend/API only if needed, and run a private production test.",
@@ -2599,6 +2602,7 @@ const manualContent = {
         "Suggest text creates an initial editable analytical reading from existing asset metadata. It does not replace OCR, transcription, or automatic visual analysis.",
         "Locally suggested texts are marked in the card, top metrics, Admin, and inventory exports.",
         "Each asset indicates whether it is demo data or user data. That provenance also appears in Reports, Publications, and exports.",
+        "Each asset synchronized from the server can show technical traceability: source type, device, capture time, and metadata fingerprint. These fields help validate where the file came from, which experience/person it belongs to, and which processing step is still pending.",
         "The origin filter lets you view all assets, only user data, or only demo data.",
         "The analytical text filter helps find assets ready for narrative analysis or detect which ones still need transcription, OCR, or description.",
         "Export inventory downloads a lightweight JSON with filtered assets, metadata, analytical text, provenance, and linked experience. Inventory CSV creates a spreadsheet-ready version. Import metadata lets you load an edited inventory JSON or CSV back into the app to update tags, note, and analytical text. Neither export includes heavy files.",
@@ -9734,6 +9738,9 @@ function collectMultimodalAssets() {
       const manualTags = Array.isArray(manual.tags) ? manual.tags : Array.isArray(attachment.manualTags) ? attachment.manualTags : [];
       const manualNote = Object.hasOwn(manual, "note") ? manual.note : attachment.manualNote || "";
       const analysisText = Object.hasOwn(manual, "analysisText") ? manual.analysisText : attachment.analysisText || "";
+      const signalMetadata = attachment.metadata || {};
+      const sourceDevice = attachment.sourceDevice || signalMetadata.sourceDevice || attachment.device || attachment.source || "";
+      const sourceType = attachment.sourceType || signalMetadata.sourceType || signalMetadata.source || attachment.source || "";
       return {
         ...attachment,
         kind,
@@ -9748,7 +9755,13 @@ function collectMultimodalAssets() {
         people: experience.people || "",
         notes: experience.notes || "",
         language: attachment.language || state.language,
-        device: attachment.device || attachment.source || (attachment.storage === "supabase" ? "Supabase Storage" : "Navegador local"),
+        device: sourceDevice || (attachment.storage === "supabase" ? "Supabase Storage" : "Navegador local"),
+        sourceType,
+        capturedAt: attachment.capturedAt || signalMetadata.capturedAt || attachment.createdAt || experience.timestamp || "",
+        uploadedAt: attachment.uploadedAt || signalMetadata.uploadedAt || "",
+        processingStatusRaw: attachment.processingStatus || signalMetadata.processingStatus || "",
+        permissions: attachment.permissions || signalMetadata.permissions || "",
+        metadataFingerprint: attachment.metadataFingerprint || signalMetadata.metadataFingerprint || "",
         storageLabel: attachment.url ? "Servidor/Supabase" : "Local",
         manualTags,
         manualNote,
@@ -10725,6 +10738,9 @@ function renderAssetCard(asset) {
           <div><dt>${t("labels.assetStorage")}</dt><dd>${escapeHtml(asset.storageLabel)}</dd></div>
           <div><dt>${t("labels.assetLanguage")}</dt><dd>${escapeHtml(String(asset.language || "-").toUpperCase())}</dd></div>
           <div><dt>${t("labels.assetDevice")}</dt><dd>${escapeHtml(asset.device)}</dd></div>
+          <div><dt>${escapeHtml(state.language === "en" ? "Source type" : "Tipo de origen")}</dt><dd>${escapeHtml(asset.sourceType || "-")}</dd></div>
+          <div><dt>${escapeHtml(state.language === "en" ? "Captured" : "Capturado")}</dt><dd>${escapeHtml(asset.capturedAt ? formatDate(asset.capturedAt) : "-")}</dd></div>
+          <div><dt>${escapeHtml(state.language === "en" ? "Trace" : "Trazabilidad")}</dt><dd>${escapeHtml(asset.metadataFingerprint || "-")}</dd></div>
         </dl>
         <button class="ghost-button asset-open-link" type="button" data-copy-asset-id="${escapeHtml(asset.assetKey)}">${escapeHtml(t("labels.assetCopyId"))}</button>
         ${asset.url || asset.dataUrl ? `<a class="ghost-button asset-open-link" href="${asset.url || asset.dataUrl}" target="_blank" rel="noreferrer">${state.language === "en" ? "Open file" : "Abrir archivo"}</a>` : ""}
@@ -22234,6 +22250,7 @@ function getExternalIntegrationContract() {
   return state.language === "en"
     ? [
         { label: "Resources", detail: "experiences, assets, devices, calendar events, locations, commands, and generated artifacts." },
+        { label: "Normalized signal", detail: "every event or asset keeps sourceType, sourceDevice, sourceId, capturedAt, participantId, payloadType, permissions, and a trace fingerprint." },
         { label: "Authentication", detail: "OAuth/JWT session, scoped tokens, expiration, refresh policy, and revocation path." },
         { label: "Events", detail: "create, update, delete, sync, attach media, schedule, analyze, and export." },
         { label: "Attachments", detail: "signed URLs, MIME type, size, checksum, provenance, linked experience, and privacy level." },
@@ -22243,6 +22260,7 @@ function getExternalIntegrationContract() {
       ]
     : [
         { label: "Recursos", detail: "experiencias, activos, dispositivos, eventos de calendario, ubicaciones, comandos y artefactos generados." },
+        { label: "Señal normalizada", detail: "cada evento o activo conserva tipo de origen, dispositivo, ID de origen, fecha de captura, participante, tipo de contenido, permisos y huella de trazabilidad." },
         { label: "Autenticación", detail: "sesión OAuth/JWT, tokens con alcance, expiración, política de refresco y ruta de revocación." },
         { label: "Eventos", detail: "crear, actualizar, borrar, sincronizar, adjuntar medios, programar, analizar y exportar." },
         { label: "Adjuntos", detail: "URLs firmadas, tipo MIME, tamaño, checksum, origen, experiencia vinculada y nivel de privacidad." },
@@ -22441,8 +22459,8 @@ function buildParallelWorkstreams(readiness = calculateDevelopmentReadiness()) {
         score: integrationReady ? 100 : 0,
         status: integrationReady ? "ready" : "review",
         detail: state.language === "en"
-          ? "API/MCP-first strategy and minimum contract are documented. Repository review remains a future step."
-          : "La estrategia API/MCP y el contrato mínimo están documentados. La revisión del repositorio queda como paso futuro.",
+          ? "API/MCP-first strategy, minimum contract, and normalized signal metadata are documented. Repository review remains a future step."
+          : "La estrategia API/MCP, el contrato mínimo y los metadatos de señal normalizada están documentados. La revisión del repositorio queda como paso futuro.",
         next: { view: "admin", focus: "externalIntegrationPanel", action: labels.open },
       },
     ],

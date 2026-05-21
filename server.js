@@ -30,6 +30,7 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_EMBEDDING_MODEL = process.env.OPENAI_EMBEDDING_MODEL || "text-embedding-3-small";
 const TRANSCRIPTION_PROVIDER = process.env.TRANSCRIPTION_PROVIDER || "none";
 const OPENAI_TRANSCRIPTION_MODEL = process.env.OPENAI_TRANSCRIPTION_MODEL || "gpt-4o-mini-transcribe";
+const SIGNAL_METADATA_SCHEMA_VERSION = "clio-inspired-signal-v1";
 
 const mimeTypes = {
   ".html": "text/html; charset=utf-8",
@@ -881,11 +882,12 @@ async function listExperienceAssetsForRows(rows = [], user = { id: LOCAL_USER_ID
 }
 
 function toExperienceEventRow(event, experience, workspaceId, index = 0) {
+  const participantId = experience.pilotParticipantId || null;
   return {
     event_id: event.id || `evt-${experience.id}-${index + 1}`,
     experience_id: experience.id,
     workspace_id: workspaceId,
-    participant_id: experience.pilotParticipantId || null,
+    participant_id: participantId,
     event_order: Number(event.order || index + 1),
     title: event.title || event.description || `Evento ${index + 1}`,
     description: event.description || null,
@@ -893,7 +895,16 @@ function toExperienceEventRow(event, experience, workspaceId, index = 0) {
     duration_minutes: event.duration || null,
     mood: event.mood || null,
     energy: event.energy || null,
-    metadata: { source: "experience-capture-v1" },
+    metadata: buildSignalMetadata({
+      existing: event.metadata,
+      source: "experience-capture-v1",
+      sourceType: event.sourceType || experience.sourceType || "manual",
+      payloadType: "experience_event",
+      experience,
+      event,
+      participantId,
+      index,
+    }),
   };
 }
 
@@ -913,11 +924,12 @@ function fromExperienceEventRow(row) {
 function toAssetRow(attachment, experience, workspaceId, user, index = 0) {
   if (!attachment) return null;
   const kind = attachment.kind || inferServerMediaKind(attachment);
+  const participantId = experience.pilotParticipantId || null;
   return {
     asset_id: attachment.id || `asset-${experience.id}-${index + 1}`,
     workspace_id: workspaceId,
     owner_user_id: user.id || null,
-    participant_id: experience.pilotParticipantId || null,
+    participant_id: participantId,
     experience_id: experience.id,
     event_id: null,
     name: attachment.name || `Activo ${index + 1}`,
@@ -929,18 +941,32 @@ function toAssetRow(attachment, experience, workspaceId, user, index = 0) {
     signed_url: null,
     preview_text: attachment.previewText || "",
     analysis_text: attachment.analysisText || "",
-    metadata: {
-      extension: attachment.extension || "",
-      storage: attachment.storage || "",
-      previewable: attachment.previewable !== false,
-      remoteSyncFailed: Boolean(attachment.remoteSyncFailed),
-      experienceTitle: experience.title || "",
+    metadata: buildSignalMetadata({
+      existing: attachment.metadata,
       source: "experience-attachment-v1",
-    },
+      sourceType: attachment.sourceType || attachment.source || experience.sourceType || "file_upload",
+      payloadType: kind,
+      experience,
+      attachment,
+      participantId,
+      user,
+      index,
+      extra: {
+        extension: attachment.extension || "",
+        storage: attachment.storage || "",
+        storageBucket: SUPABASE_STORAGE_BUCKET,
+        storagePath: attachment.path || "",
+        previewable: attachment.previewable !== false,
+        remoteSyncFailed: Boolean(attachment.remoteSyncFailed),
+        experienceTitle: experience.title || "",
+        processingStatus: inferAssetProcessingStatus(attachment, kind),
+      },
+    }),
   };
 }
 
 function fromAssetRow(row) {
+  const metadata = row.metadata || {};
   return {
     id: row.asset_id,
     name: row.name || "Activo",
@@ -952,11 +978,103 @@ function fromAssetRow(row) {
     path: row.storage_path || "",
     previewText: row.preview_text || "",
     analysisText: row.analysis_text || "",
-    extension: row.metadata?.extension || "",
-    previewable: row.metadata?.previewable !== false,
-    remoteSyncFailed: Boolean(row.metadata?.remoteSyncFailed),
-    metadata: row.metadata || {},
+    extension: metadata.extension || "",
+    previewable: metadata.previewable !== false,
+    remoteSyncFailed: Boolean(metadata.remoteSyncFailed),
+    sourceType: metadata.sourceType || "",
+    sourceDevice: metadata.sourceDevice || "",
+    sourceId: metadata.sourceId || "",
+    capturedAt: metadata.capturedAt || "",
+    uploadedAt: metadata.uploadedAt || "",
+    processingStatus: metadata.processingStatus || "",
+    permissions: metadata.permissions || "",
+    metadataFingerprint: metadata.metadataFingerprint || "",
+    metadata,
   };
+}
+
+function buildSignalMetadata({ existing, source, sourceType, payloadType, experience, attachment, event, participantId, user, index = 0, extra = {} }) {
+  const base = isPlainObject(existing) ? { ...existing } : {};
+  const capturedAt = attachment?.createdAt || event?.timestamp || experience?.timestamp || new Date().toISOString();
+  const sourceDevice =
+    attachment?.sourceDevice ||
+    attachment?.device ||
+    event?.sourceDevice ||
+    experience?.sourceDevice ||
+    (attachment?.storage === "supabase" ? "supabase-storage" : "web");
+  const sourceId =
+    attachment?.sourceId ||
+    event?.sourceId ||
+    experience?.sourceId ||
+    attachment?.id ||
+    event?.id ||
+    experience?.id ||
+    "";
+  return removeEmptyMetadataFields({
+    ...base,
+    ...extra,
+    schemaVersion: SIGNAL_METADATA_SCHEMA_VERSION,
+    source,
+    sourceType,
+    sourceDevice,
+    sourceId,
+    capturedAt,
+    uploadedAt: base.uploadedAt || new Date().toISOString(),
+    participantId: participantId || "",
+    ownerUserId: user?.id || base.ownerUserId || "",
+    payloadType,
+    linkedExperienceId: experience?.id || "",
+    linkedEventId: event?.id || attachment?.eventId || "",
+    permissions: base.permissions || attachment?.permissions || experience?.permissions || "private",
+    metadataFingerprint:
+      base.metadataFingerprint ||
+      buildMetadataFingerprint([
+        source,
+        sourceType,
+        payloadType,
+        sourceDevice,
+        sourceId,
+        participantId,
+        experience?.id,
+        attachment?.name,
+        attachment?.size,
+        attachment?.path,
+        index,
+      ]),
+  });
+}
+
+function inferAssetProcessingStatus(attachment = {}, kind = "") {
+  if (attachment.remoteSyncFailed) return "upload_pending";
+  if (String(attachment.analysisText || "").trim()) return "ready";
+  if (kind === "audio") return String(attachment.previewText || "").trim() ? "ready" : "needs_transcription";
+  if (kind === "image") return "needs_visual_review";
+  if (kind === "video") return "needs_audiovisual_review";
+  if (kind === "document") return String(attachment.previewText || "").trim() ? "ready" : "needs_extraction";
+  return "pending_review";
+}
+
+function buildMetadataFingerprint(parts = []) {
+  const raw = parts.map((part) => String(part || "")).filter(Boolean).join("|");
+  if (!raw) return "";
+  let hash = 0;
+  for (let index = 0; index < raw.length; index += 1) {
+    hash = (hash << 5) - hash + raw.charCodeAt(index);
+    hash |= 0;
+  }
+  return `meta-${Math.abs(hash).toString(16)}`;
+}
+
+function removeEmptyMetadataFields(metadata = {}) {
+  return Object.entries(metadata).reduce((clean, [key, value]) => {
+    if (value === undefined || value === null || value === "") return clean;
+    clean[key] = value;
+    return clean;
+  }, {});
+}
+
+function isPlainObject(value) {
+  return Boolean(value && typeof value === "object" && !Array.isArray(value));
 }
 
 function inferServerMediaKind(attachment = {}) {
@@ -1073,6 +1191,11 @@ function normalizeMedia(media) {
     previewText: media.previewText || "",
     analysisText: media.analysisText || "",
     analysisSuggested: Boolean(media.analysisSuggested),
+    metadata: isPlainObject(media.metadata) ? media.metadata : {},
+    sourceType: media.sourceType || media.source || "",
+    sourceDevice: media.sourceDevice || media.device || "",
+    sourceId: media.sourceId || "",
+    permissions: media.permissions || "",
   };
 }
 

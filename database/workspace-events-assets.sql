@@ -63,6 +63,19 @@ CREATE TABLE IF NOT EXISTS experience_events (
 CREATE INDEX IF NOT EXISTS experience_events_experience_order_idx
   ON experience_events (experience_id, event_order);
 
+ALTER TABLE experience_events
+  ADD COLUMN IF NOT EXISTS source_type TEXT,
+  ADD COLUMN IF NOT EXISTS source_device TEXT,
+  ADD COLUMN IF NOT EXISTS source_id TEXT,
+  ADD COLUMN IF NOT EXISTS captured_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS uploaded_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS processing_status TEXT,
+  ADD COLUMN IF NOT EXISTS permissions TEXT,
+  ADD COLUMN IF NOT EXISTS metadata_fingerprint TEXT;
+
+CREATE INDEX IF NOT EXISTS experience_events_workspace_source_time_idx
+  ON experience_events (workspace_id, source_type, occurred_at DESC);
+
 CREATE TABLE IF NOT EXISTS assets (
   asset_id TEXT PRIMARY KEY,
   workspace_id UUID NOT NULL REFERENCES workspaces(workspace_id) ON DELETE CASCADE,
@@ -95,6 +108,23 @@ CREATE INDEX IF NOT EXISTS assets_workspace_created_idx
 
 CREATE INDEX IF NOT EXISTS assets_experience_idx
   ON assets (experience_id);
+
+ALTER TABLE assets
+  ADD COLUMN IF NOT EXISTS source_type TEXT,
+  ADD COLUMN IF NOT EXISTS source_device TEXT,
+  ADD COLUMN IF NOT EXISTS source_id TEXT,
+  ADD COLUMN IF NOT EXISTS captured_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS uploaded_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS processing_status TEXT,
+  ADD COLUMN IF NOT EXISTS permissions TEXT,
+  ADD COLUMN IF NOT EXISTS metadata_fingerprint TEXT,
+  ADD COLUMN IF NOT EXISTS checksum TEXT;
+
+CREATE INDEX IF NOT EXISTS assets_workspace_source_time_idx
+  ON assets (workspace_id, source_type, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS assets_workspace_processing_time_idx
+  ON assets (workspace_id, processing_status, created_at DESC);
 
 ALTER TABLE workspaces ENABLE ROW LEVEL SECURITY;
 ALTER TABLE workspace_members ENABLE ROW LEVEL SECURITY;
