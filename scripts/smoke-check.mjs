@@ -96,6 +96,8 @@ assert(files.app.includes("Trazabilidad de subidas de adjuntos") && files.app.in
 assert(files.styles.includes(".upload-attempts-panel") && files.styles.includes(".upload-attempt-item"), "Styles are missing upload attempt history UI.");
 assert(files.app.includes("function reconcileOfflineQueueWithRemote"), "Offline queue does not reconcile against remote Supabase data.");
 assert(files.app.includes("function isOfflineMutationResolvedByRemote"), "Offline queue cannot detect resolved ghost media pending items.");
+assert(files.app.includes("function reconcileOfflineQueueFromSupabase"), "Offline queue does not expose a manual Supabase reconciliation action.");
+assert(files.app.includes("offlineQueueReconcile"), "Offline queue is missing the manual clean-saved-items label/action.");
 assert(files.app.includes("La cola sin conexión se reconcilia con Supabase"), "Spanish manual does not explain offline queue reconciliation.");
 assert(files.app.includes("The offline queue reconciles with Supabase"), "English manual does not explain offline queue reconciliation.");
 

@@ -1,4 +1,4 @@
-const APP_VERSION = "20260521-offline-queue-reconcile-351";
+const APP_VERSION = "20260521-offline-queue-clean-352";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -710,6 +710,7 @@ const i18n = {
       offlineQueueEmpty: "No hay cambios pendientes. Todo lo local está sincronizado o no se ha modificado.",
       offlineQueuePending: "Cambios pendientes por sincronizar",
       offlineQueueRetry: "Reintentar ahora",
+      offlineQueueReconcile: "Limpiar ya guardados",
       offlineQueueOpenAuth: "Abrir acceso",
       offlineQueueRetryOne: "Reintentar este",
       offlineQueueReview: "Revisar",
@@ -717,6 +718,8 @@ const i18n = {
       offlineQueueDemo: "Ejemplo",
       offlineQueueClearDemo: "Limpiar ejemplos",
       offlineQueueRetried: "Cambio sin conexión sincronizado.",
+      offlineQueueReconciled: "Pendientes ya guardados limpiados.",
+      offlineQueueReconcileEmpty: "No se encontraron pendientes ya guardados en Supabase.",
       offlineQueueRetryFailed: "No se pudo sincronizar este cambio.",
       offlineQueueDiscardConfirm: "Esto descarta este cambio pendiente. No borra datos remotos. ¿Continuar?",
       offlineQueueDiscarded: "Cambio sin conexión descartado.",
@@ -1473,6 +1476,7 @@ const i18n = {
       offlineQueueEmpty: "No pending changes. Local data is synced or has not changed.",
       offlineQueuePending: "Pending changes to sync",
       offlineQueueRetry: "Retry now",
+      offlineQueueReconcile: "Clean saved items",
       offlineQueueOpenAuth: "Open access",
       offlineQueueRetryOne: "Retry this",
       offlineQueueReview: "Review",
@@ -1480,6 +1484,8 @@ const i18n = {
       offlineQueueDemo: "Demo",
       offlineQueueClearDemo: "Clear demos",
       offlineQueueRetried: "Offline change synced.",
+      offlineQueueReconciled: "Already-saved pending items were cleaned.",
+      offlineQueueReconcileEmpty: "No already-saved pending items were found in Supabase.",
       offlineQueueRetryFailed: "This change could not be synced.",
       offlineQueueDiscardConfirm: "This discards this pending change. It does not delete remote data. Continue?",
       offlineQueueDiscarded: "Offline change discarded.",
@@ -1892,6 +1898,7 @@ const manualContent = {
         "El diagnóstico de Supabase incluye Trazabilidad de adjuntos. Si hay fallos recientes, muestra el último archivo afectado, el código de error y la acción recomendada antes de continuar pruebas multidispositivo.",
         "Administración muestra un historial reciente de subidas de adjuntos con estado por archivo: subiendo, subido o fallido. Ese historial se puede actualizar desde el mismo panel para revisar pruebas desde móviles, tablets y desktop.",
         "La cola sin conexión se reconcilia con Supabase al cargar datos remotos. Si una experiencia pendiente ya existe en la nube y sus adjuntos tienen ruta o URL remota, la app elimina ese pendiente local para evitar avisos fantasma.",
+        "La cola sin conexión también incluye Limpiar ya guardados. Esta acción lee Supabase, compara los pendientes locales con las experiencias remotas y descarta solo los elementos que ya están cubiertos por la nube.",
         "La prueba completa de multimedia solo se aprueba cuando el mismo adjunto aparece desde otro dispositivo en Librería, Activos multimodales, Reportes y Publicaciones. Si solo se sincroniza la narrativa, el flujo sigue incompleto.",
         "El servidor ya soporta modo cloud mediante HOST=0.0.0.0 y NODE_ENV=production. Usa .env.production.example como base para desplegar sin depender de localhost.",
         "La guía docs/deploy-publicacion.md define el orden recomendado: GitHub privado, Supabase productivo, variables seguras, hosting Node, prueba desde varios dispositivos y validación privada.",
@@ -2416,6 +2423,7 @@ const manualContent = {
         "Supabase diagnostics include Attachment traceability. If recent failures exist, it shows the affected file, error code, and recommended action before continuing multi-device tests.",
         "Admin shows a recent attachment upload history with per-file status: uploading, uploaded, or failed. The same panel can refresh the history to review tests from phones, tablets, and desktop.",
         "The offline queue reconciles with Supabase when remote data loads. If a pending experience already exists in the cloud and its attachments have a remote path or URL, the app removes that local pending item to avoid ghost warnings.",
+        "The offline queue also includes Clean saved items. This action reads Supabase, compares local pending items with remote experiences, and discards only items already covered by the cloud.",
         "The complete media test is approved only when the same attachment appears from another device in Library, Multimodal Assets, Reports, and Publications. If only the narrative syncs, the flow is still incomplete.",
         "The server now supports cloud mode through HOST=0.0.0.0 and NODE_ENV=production. Use .env.production.example as the deployment baseline so the app does not depend on localhost.",
         "The docs/deploy-publicacion.md guide defines the recommended order: private GitHub, production Supabase, secure variables, Node hosting, multi-device test, and private validation.",
@@ -4530,12 +4538,34 @@ function reconcileOfflineQueueWithRemote(remoteExperiences = []) {
 }
 
 function isOfflineMutationResolvedByRemote(mutation, remoteExperiences = []) {
-  if (!mutation || mutation.type !== "upsert" || mutation.reason !== "media_pending") return false;
+  if (!mutation || mutation.type !== "upsert") return false;
   const remote = remoteExperiences.find((experience) => experience.id === mutation.entityId || experience.id === mutation.payload?.id);
   if (!remote) return false;
+  if (!isRemoteExperienceEquivalentToPending(mutation.payload, remote)) return false;
   const pendingAttachments = (mutation.payload?.attachments || []).filter(isAttachmentPendingRemoteSync);
   if (!pendingAttachments.length) return true;
-  return pendingAttachments.every((attachment) => hasMatchingRemoteAttachment(attachment, remote.attachments || []));
+  if (mutation.reason !== "media_pending" && !pendingAttachments.length) return true;
+  const remoteAttachments = remote.attachments || [];
+  const remoteStoredAttachments = remoteAttachments.filter((attachment) => attachment.path || attachment.url);
+  if (remoteStoredAttachments.length >= pendingAttachments.length) return true;
+  return pendingAttachments.every((attachment) => hasMatchingRemoteAttachment(attachment, remoteAttachments));
+}
+
+function isRemoteExperienceEquivalentToPending(local = {}, remote = {}) {
+  if (!local || !remote) return false;
+  const comparableFields = ["title", "category", "timestamp", "objective", "notes", "location", "people", "mood"];
+  const comparableMatches = comparableFields.every((field) => normalizeOfflineComparableText(local[field]) === normalizeOfflineComparableText(remote[field]));
+  const numericMatches =
+    Number(local.duration || 0) === Number(remote.duration || 0) &&
+    Number(local.energy || 0) === Number(remote.energy || 0);
+  if (comparableMatches && numericMatches) return true;
+  return normalizeOfflineComparableText(local.title) === normalizeOfflineComparableText(remote.title) &&
+    normalizeOfflineComparableText(local.timestamp) === normalizeOfflineComparableText(remote.timestamp) &&
+    normalizeOfflineComparableText(local.notes).slice(0, 80) === normalizeOfflineComparableText(remote.notes).slice(0, 80);
+}
+
+function normalizeOfflineComparableText(value) {
+  return String(value || "").trim().replace(/\s+/g, " ").toLowerCase();
 }
 
 function isAttachmentPendingRemoteSync(attachment = {}) {
@@ -4557,6 +4587,30 @@ function hasMatchingRemoteAttachment(localAttachment = {}, remoteAttachments = [
       (!localAttachment.size || Number(remoteAttachment.size || 0) === Number(localAttachment.size || 0));
     return (sameIdentity || sameFile) && Boolean(remoteAttachment.path || remoteAttachment.url);
   });
+}
+
+async function reconcileOfflineQueueFromSupabase(options = {}) {
+  if (!state.offlineQueue.length) return 0;
+  if (!state.session?.access_token && (state.config?.persistence === "supabase" || state.persistence === "supabase")) {
+    if (!options.silent) document.getElementById("embeddingStatus").textContent = t("labels.offlineQueueNextLogin");
+    return 0;
+  }
+  try {
+    const remoteExperiences = normalizeExperiences(await apiRequest("/experiences"));
+    const resolved = reconcileOfflineQueueWithRemote(remoteExperiences);
+    if (!options.silent) {
+      document.getElementById("embeddingStatus").textContent = resolved
+        ? `${t("labels.offlineQueueReconciled")} ${resolved}.`
+        : t("labels.offlineQueueReconcileEmpty");
+    }
+    renderOfflineQueuePanel();
+    renderPersistenceGateBanner();
+    renderAdmin();
+    return resolved;
+  } catch {
+    if (!options.silent) document.getElementById("embeddingStatus").textContent = t("labels.offlineQueueRetryFailed");
+    return 0;
+  }
 }
 
 async function syncOfflineQueue(options = {}) {
@@ -4582,8 +4636,7 @@ async function syncOfflineQueue(options = {}) {
     state.apiOnline = true;
     if (state.config?.persistence === "supabase" || state.persistence === "supabase") {
       try {
-        const remoteExperiences = normalizeExperiences(await apiRequest("/experiences"));
-        const resolved = reconcileOfflineQueueWithRemote(remoteExperiences);
+        const resolved = await reconcileOfflineQueueFromSupabase({ silent: true });
         if (!state.offlineQueue.length) {
           if (!options.silent) {
             document.getElementById("embeddingStatus").textContent = state.language === "en"
@@ -5995,6 +6048,10 @@ function handleOfflineQueueAction(event) {
   const action = button.dataset.offlineAction;
   if (action === "retry") {
     syncOfflineQueue();
+    return;
+  }
+  if (action === "reconcile") {
+    reconcileOfflineQueueFromSupabase();
     return;
   }
   if (action === "auth") {
@@ -20882,6 +20939,7 @@ function renderOfflineQueuePanel() {
       <div class="offline-queue-actions">
         ${needsAuth ? `<button class="primary-button" type="button" data-offline-action="auth">${t("labels.offlineQueueOpenAuth")}</button>` : ""}
         <button class="ghost-button" type="button" data-offline-action="retry">${t("labels.offlineQueueRetry")}</button>
+        <button class="ghost-button" type="button" data-offline-action="reconcile" ${queue.length ? "" : "disabled"}>${t("labels.offlineQueueReconcile")}</button>
         <button class="ghost-button" type="button" data-offline-action="clear-demo" ${demoQueueCount ? "" : "disabled"}>${t("labels.offlineQueueClearDemo")}</button>
         <button class="danger-button" type="button" data-offline-action="clear" ${queue.length ? "" : "disabled"}>${t("labels.offlineQueueClear")}</button>
       </div>
