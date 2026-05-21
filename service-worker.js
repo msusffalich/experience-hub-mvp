@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260521-event-timeline-341";
+const CACHE_NAME = "experience-hub-pwa-20260521-events-closure-342";
 const APP_SHELL = [
   "/",
   "/index.html",

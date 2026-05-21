@@ -1,4 +1,4 @@
-const APP_VERSION = "20260521-event-timeline-341";
+const APP_VERSION = "20260521-events-closure-342";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -1865,8 +1865,10 @@ const manualContent = {
         "Captura ahora permite registrar varios eventos dentro de una experiencia. Cada línea representa un momento de la experiencia y se conserva para reportes, activos, publicaciones e integración futura con dispositivos.",
         "Cada adjunto de Captura puede quedar asociado a toda la experiencia o a un evento interno específico. Esto permite separar evidencia por momento: una imagen, audio, video o documento puede pertenecer al evento 1, 2, 3 o al contexto general.",
         "Librería muestra una vista compacta de los primeros eventos internos de cada experiencia para revisar qué ocurrió dentro de registros largos sin abrir otras pantallas.",
+        "La búsqueda de Librería y Línea de tiempo también encuentra texto dentro de eventos internos. Puedes buscar una conversación, aprendizaje o cierre y llegar a la experiencia completa.",
         "Reportes muestra la evidencia multimodal con su evento vinculado. Si el activo no pertenece a un evento específico, aparece como evidencia de toda la experiencia.",
         "Reportes incluye Línea de eventos para ver los momentos internos del alcance filtrado y exportarlos en JSON/HTML junto con el resto del reporte.",
+        "El CSV del reporte incluye conteo y resumen de eventos por experiencia para llevar el análisis a Excel o Sheets sin perder la estructura interna.",
         "Cuando una experiencia tiene participante piloto, el backend sincroniza primero ese participante en Supabase y luego vincula sus eventos internos y activos. Esto evita que reportes, activos o dispositivos queden con dueños inconsistentes.",
         "Cuando la migración de workspace está aplicada, el servidor sincroniza esos eventos internos en la tabla experience_events y los vuelve a leer desde Supabase. Si la tabla aún no existe, mantiene compatibilidad guardándolos dentro de la experiencia.",
         "Cuando la misma migración está aplicada, los adjuntos también se sincronizan y se vuelven a leer desde la tabla assets con experiencia, participante, tipo, ruta Storage, texto previo y texto analítico. Esto permite que otros dispositivos reconstruyan la multimedia desde una fuente común.",
@@ -2377,8 +2379,10 @@ const manualContent = {
         "Capture now supports several events inside one experience. Each line represents one moment in the experience and is preserved for reports, assets, publications, and future device integration.",
         "Each Capture attachment can be linked to the whole experience or to a specific internal event. This separates evidence by moment: an image, audio, video, or document can belong to event 1, 2, 3, or the general context.",
         "Library shows a compact preview of the first internal events in each experience so long records can be reviewed without opening another screen.",
+        "Library and Timeline search also find text inside internal events. You can search for a conversation, learning, or closing moment and reach the full experience.",
         "Reports show multimodal evidence with its linked event. If the asset does not belong to a specific event, it appears as evidence for the whole experience.",
         "Reports include an Event timeline to review internal moments for the selected scope and export them in JSON/HTML with the rest of the report.",
+        "The report CSV includes event count and event summary per experience so analysis can move to Excel or Sheets without losing the internal structure.",
         "When an experience has a pilot participant, the backend syncs that participant in Supabase first and then links internal events and assets to it. This prevents reports, assets, or devices from ending up with inconsistent ownership.",
         "When the workspace migration is applied, the server syncs those internal events into the experience_events table and reads them back from Supabase. If the table does not exist yet, it remains compatible by keeping them inside the experience.",
         "When the same migration is applied, attachments are also synced into and read back from the assets table with experience, participant, type, Storage path, preview text, and analytical text. This lets other devices rebuild media from one shared source.",
@@ -4102,6 +4106,19 @@ function buildReportEventTimeline(experiences = []) {
       const dateDelta = new Date(a.experienceTimestamp || 0).getTime() - new Date(b.experienceTimestamp || 0).getTime();
       return dateDelta || a.order - b.order;
     });
+}
+
+function buildExperienceEventSearchText(item) {
+  return getExperienceEventTimeline(item)
+    .map((event) => `${event.title} ${event.description} ${event.mood || ""}`)
+    .join(" ");
+}
+
+function buildExperienceEventSummary(item, limit = 6) {
+  const events = getExperienceEventTimeline(item);
+  const visible = events.slice(0, limit).map((event) => `${event.order}. ${event.title || event.description}`);
+  const remaining = events.length - visible.length;
+  return remaining > 0 ? `${visible.join(" | ")} | +${remaining}` : visible.join(" | ");
 }
 
 function parseExperienceEventsInput(value = "", experienceId = "") {
@@ -12108,6 +12125,7 @@ function renderTimeline() {
               </div>
               ${renderMediaStrip(item)}
               <p>${escapeHtml(item.notes || (state.language === "en" ? "No notes." : "Sin notas."))}</p>
+              ${renderLibraryEventPreview(item)}
               <p class="card-meta">${state.language === "en" ? "Context" : "Contexto"}: ${escapeHtml(item.people)}${item.objective ? ` · ${state.language === "en" ? "Goal" : "Objetivo"}: ${escapeHtml(item.objective)}` : ""}</p>
             </div>
             <div class="timeline-actions">
@@ -14665,6 +14683,8 @@ function downloadCsvReport() {
     estado: "",
     ubicación: "",
     personas: "",
+    eventos: "",
+    resumen_eventos: "",
     adjuntos: "",
     notas: "",
   });
@@ -16029,6 +16049,8 @@ function buildReportRows() {
     estado: item.mood,
     ubicación: item.location,
     personas: item.people,
+    eventos: getExperienceEventTimeline(item).length,
+    resumen_eventos: buildExperienceEventSummary(item),
     adjuntos: item.attachments?.length || 0,
     notas: item.notes,
   }));
@@ -19551,7 +19573,7 @@ function renderAdminOperationalFocusPanel() {
         smoke: "Automated smoke check",
         smokeDetail: "npm run check now validates syntax, version/cache consistency, critical capture functions, and event-asset links before publishing.",
         eventTimeline: "Event timeline visible",
-        eventTimelineDetail: "Library and Reports now show internal events, so long experiences can be reviewed by moment without splitting the main record.",
+        eventTimelineDetail: "Library, Timeline, Reports, JSON, HTML, and CSV now preserve internal events for long experiences.",
       }
     : {
         title: "Administración operativa",
@@ -19576,7 +19598,7 @@ function renderAdminOperationalFocusPanel() {
     labels.smoke = "Prueba autom\u00e1tica";
     labels.smokeDetail = "npm run check ahora valida sintaxis, versi\u00f3n/cache, funciones cr\u00edticas de captura y v\u00ednculos evento-activo antes de publicar.";
     labels.eventTimeline = "L\u00ednea de eventos visible";
-    labels.eventTimelineDetail = "Librer\u00eda y Reportes ahora muestran eventos internos, para revisar experiencias largas por momento sin dividir el registro principal.";
+    labels.eventTimelineDetail = "Librer\u00eda, L\u00ednea de tiempo, Reportes, JSON, HTML y CSV ahora conservan eventos internos para experiencias largas.";
   }
   const cards = [
     [labels.flow, labels.flowDetail],
@@ -23797,7 +23819,7 @@ function cosineSimilarity(a, b) {
 function getFilteredExperiences() {
   return [...state.experiences]
     .filter((item) => {
-      const text = `${item.title} ${item.objective} ${item.notes} ${item.people} ${item.location} ${getExperiencePilotParticipantLabel(item)}`.toLowerCase();
+      const text = `${item.title} ${item.objective} ${item.notes} ${item.people} ${item.location} ${getExperiencePilotParticipantLabel(item)} ${buildExperienceEventSearchText(item)}`.toLowerCase();
       const queryMatch = !state.filters.query || text.includes(state.filters.query);
       const categoryMatch = state.filters.category === "all" || item.category === state.filters.category;
       const moodMatch = state.filters.mood === "all" || item.mood === state.filters.mood;
@@ -23809,7 +23831,7 @@ function getFilteredExperiences() {
 function getFilteredLibraryExperiences() {
   return [...state.experiences]
     .filter((item) => {
-      const text = `${item.title} ${item.objective} ${item.notes} ${item.people} ${item.location} ${item.category} ${getExperiencePilotParticipantLabel(item)}`.toLowerCase();
+      const text = `${item.title} ${item.objective} ${item.notes} ${item.people} ${item.location} ${item.category} ${getExperiencePilotParticipantLabel(item)} ${buildExperienceEventSearchText(item)}`.toLowerCase();
       const queryMatch = !state.libraryFilters.query || text.includes(state.libraryFilters.query);
       const categoryMatch = state.libraryFilters.category === "all" || item.category === state.libraryFilters.category;
       const hasMedia = (item.attachments?.length || 0) > 0;
