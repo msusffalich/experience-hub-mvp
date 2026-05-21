@@ -115,7 +115,8 @@ assert(files.index.includes("dashboardAttachmentPanel") && files.index.includes(
 assert(files.app.includes("Reparar adjuntos") && files.app.includes("Repair attachments"), "Dashboard attachment repair action is missing bilingual labels.");
 assert(files.app.includes("El Panel incluye Estado de adjuntos") && files.app.includes("The Dashboard includes Attachment status"), "Manual does not explain Dashboard attachment status.");
 assert(files.app.includes("Reparación de adjuntos desde Panel") && files.app.includes("Dashboard attachment repair"), "Admin health does not expose Dashboard attachment repair.");
-assert(files.styles.includes(".dashboard-attachment-summary") && files.styles.includes(".dashboard-attachment-actions"), "Styles are missing Dashboard attachment repair UI.");
+assert(files.app.includes("dashboardAttachmentFeedback"), "Dashboard attachment repair still depends only on global notifications.");
+assert(files.styles.includes(".dashboard-attachment-summary") && files.styles.includes(".dashboard-attachment-actions") && files.styles.includes(".dashboard-attachment-feedback"), "Styles are missing Dashboard attachment repair UI.");
 
 if (failures.length) {
   console.error("Smoke check failed:");

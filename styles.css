@@ -1977,6 +1977,25 @@ button,
   color: var(--muted);
 }
 
+.dashboard-attachment-feedback {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.dashboard-attachment-feedback.is-ok {
+  background: rgba(13, 124, 102, 0.1);
+  color: var(--green);
+}
+
+.dashboard-attachment-feedback.is-warn {
+  background: rgba(176, 102, 42, 0.12);
+  color: #8a4a16;
+}
+
 .dashboard-attachment-metrics {
   display: grid;
   grid-template-columns: repeat(2, minmax(74px, 1fr));

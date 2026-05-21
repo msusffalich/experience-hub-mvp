@@ -1,4 +1,4 @@
-const APP_VERSION = "20260521-dashboard-attachment-repair-355";
+const APP_VERSION = "20260521-dashboard-attachment-simple-356";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -3221,6 +3221,7 @@ const state = {
   embeddingStatus: "",
   ops: { jobs: [], logs: [] },
   notifications: [],
+  dashboardAttachmentFeedback: null,
   lastDownload: null,
   lastDownloadUrl: "",
   lastServerExport: null,
@@ -7729,15 +7730,17 @@ function renderDashboardAttachmentStatus() {
         openAssets: "Abrir Activos",
       };
   const isReady = summary.pending === 0;
-  const visiblePending = summary.pendingItems.slice(0, 3);
   const primaryAction = isReady ? "assets" : summary.retryable ? "repair" : "review";
   const primaryLabel = isReady ? labels.openAssets : summary.retryable ? labels.repair : labels.review;
+  const feedback = state.dashboardAttachmentFeedback;
+  const visiblePending = [];
   box.innerHTML = `
     <div class="dashboard-attachment-summary ${isReady ? "is-ready" : "needs-review"}">
       <div>
         <strong>${escapeHtml(isReady ? labels.clearTitle : labels.pendingTitle)}</strong>
         <p>${escapeHtml(isReady ? labels.clearDetail : labels.pendingDetail)}</p>
         <small>${escapeHtml(labels.affected)}</small>
+        ${feedback ? `<div class="dashboard-attachment-feedback ${feedback.type === "warn" ? "is-warn" : "is-ok"}">${escapeHtml(feedback.message)}</div>` : ""}
       </div>
       <div class="dashboard-attachment-metrics">
         <span><b>${summary.ready}</b>${escapeHtml(labels.readyMetric)}</span>
@@ -7747,7 +7750,6 @@ function renderDashboardAttachmentStatus() {
         <button class="primary-button" type="button" data-dashboard-attachment-action="${primaryAction}">
           ${escapeHtml(primaryLabel)}
         </button>
-        ${isReady ? "" : `<button class="ghost-button" type="button" data-backlog-view="assetLibrary" data-backlog-focus="assetWorkflowReadinessPanel">${escapeHtml(labels.openAssets)}</button>`}
       </div>
     </div>
     ${
@@ -7768,19 +7770,26 @@ function renderDashboardAttachmentStatus() {
 async function repairDashboardAttachments() {
   const summary = summarizeAttachmentSyncState();
   const status = document.getElementById("embeddingStatus");
+  state.notifications = state.notifications.filter((item) => !/adjuntos reparados|attachments repaired/i.test(item.detail || ""));
+  renderNotifications();
   if (!summary.pending) {
-    notify(state.language === "en" ? "All attachments are ready." : "Todos los adjuntos están listos.");
+    state.dashboardAttachmentFeedback = {
+      type: "ok",
+      message: state.language === "en" ? "All attachments are ready." : "Todos los adjuntos están listos.",
+    };
+    renderDashboardAttachmentStatus();
     return;
   }
   if (!summary.retryable) {
-    showView("assetLibrary");
-    requestAnimationFrame(() => focusAppElement("assetWorkflowReadinessPanel"));
-    notify(
-      state.language === "en"
+    state.dashboardAttachmentFeedback = {
+      type: "warn",
+      message: state.language === "en"
         ? "Some files need to be selected again from the device where they exist."
         : "Algunos archivos deben volver a seleccionarse desde el dispositivo donde existen.",
-      "warn",
-    );
+    };
+    renderDashboardAttachmentStatus();
+    showView("assetLibrary");
+    requestAnimationFrame(() => focusAppElement("assetWorkflowReadinessPanel"));
     return;
   }
   if (requiresRemotePersistence() && !state.session?.access_token) {
@@ -7814,11 +7823,15 @@ async function repairDashboardAttachments() {
   await syncOfflineQueue({ silent: true });
   renderAll();
   const next = summarizeAttachmentSyncState();
+  const pendingText = state.language === "en"
+    ? `${next.pending} ${next.pending === 1 ? "attachment remains" : "attachments remain"} pending.`
+    : `${next.pending} ${next.pending === 1 ? "adjunto sigue" : "adjuntos siguen"} pendiente${next.pending === 1 ? "" : "s"}.`;
   const message = state.language === "en"
-    ? `${repaired} attachments repaired. ${next.pending} remain pending.`
-    : `${repaired} adjuntos reparados. ${next.pending} siguen pendientes.`;
+    ? `${repaired} ${repaired === 1 ? "attachment repaired" : "attachments repaired"}. ${pendingText}`
+    : `${repaired} ${repaired === 1 ? "adjunto reparado" : "adjuntos reparados"}. ${pendingText}`;
   if (status) status.textContent = message;
-  notify(message, next.pending ? "warn" : "ok");
+  state.dashboardAttachmentFeedback = { type: next.pending ? "warn" : "ok", message };
+  renderDashboardAttachmentStatus();
 }
 
 function handleDashboardAttachmentAction(event) {
