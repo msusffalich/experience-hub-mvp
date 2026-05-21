@@ -41,6 +41,7 @@ assert(!/\bnormalizeExperience\s*\(/.test(files.app), "app.js still calls normal
   "function isApiConnectivityError",
   "function uploadDataUrlAttachment",
   "function dataUrlToBlob",
+  "function buildPendingMediaDetail",
 ].forEach((needle) => assert(files.app.includes(needle), `Missing critical frontend function: ${needle}.`));
 
 assert(files.app.includes("eventTitle: asset.eventTitle"), "Report evidence does not include linked event titles.");
@@ -75,6 +76,8 @@ assert(files.app.includes("readback_pending") && files.app.includes("remoteReadb
 assert(files.app.includes("uploadDataUrlAttachment(attachment)") && files.app.includes("FormData"), "Pending local media is not retried through binary multipart upload.");
 assert(files.app.includes("Cuando un adjunto queda pendiente") && files.app.includes("When an attachment is pending"), "Manual does not explain binary retry for pending media.");
 assert(files.app.includes("compatible con claves Supabase nuevas sb_secret") && files.app.includes("supports new Supabase sb_secret keys"), "Manual does not explain Supabase secret-key Storage compatibility.");
+assert(files.app.includes("Detalle del adjunto pendiente") && files.app.includes("Pending attachment detail"), "Capture does not show pending media failure details.");
+assert(files.server.includes("remoteSyncError: media.remoteSyncError") && files.server.includes("remoteSyncError: metadata.remoteSyncError"), "Server does not preserve pending media error details.");
 assert(files.app.includes("Prueba autom") && files.app.includes("Automated smoke check"), "Admin does not expose the automated smoke check.");
 
 if (failures.length) {

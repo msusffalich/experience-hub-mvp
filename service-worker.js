@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260521-supabase-secret-storage-347";
+const CACHE_NAME = "experience-hub-pwa-20260521-media-pending-reason-348";
 const APP_SHELL = [
   "/",
   "/index.html",

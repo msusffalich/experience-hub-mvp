@@ -1,4 +1,4 @@
-const APP_VERSION = "20260521-supabase-secret-storage-347";
+const APP_VERSION = "20260521-media-pending-reason-348";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -1887,6 +1887,7 @@ const manualContent = {
         "Si un adjunto no termina de subir, la experiencia conserva la narrativa y muestra el archivo como pendiente; no debe considerarse cierre completo hasta que el activo tenga URL remota o ruta de Storage.",
         "Cuando un adjunto queda pendiente y luego se reintenta, la app usa carga binaria multipart hacia el backend en lugar de reenviar el archivo como texto base64. Esto mejora la estabilidad en móviles, tablets y archivos medianos.",
         "El backend de Storage es compatible con claves Supabase nuevas sb_secret y claves legacy service_role. Las claves nuevas se envían como apikey del servidor, no como Bearer JWT.",
+        "Si un adjunto queda pendiente, Captura muestra el nombre del archivo y el motivo técnico devuelto por el backend, por ejemplo tamaño, sesión, bucket, permiso o firma de URL.",
         "La prueba completa de multimedia solo se aprueba cuando el mismo adjunto aparece desde otro dispositivo en Librería, Activos multimodales, Reportes y Publicaciones. Si solo se sincroniza la narrativa, el flujo sigue incompleto.",
         "El servidor ya soporta modo cloud mediante HOST=0.0.0.0 y NODE_ENV=production. Usa .env.production.example como base para desplegar sin depender de localhost.",
         "La guía docs/deploy-publicacion.md define el orden recomendado: GitHub privado, Supabase productivo, variables seguras, hosting Node, prueba desde varios dispositivos y validación privada.",
@@ -2406,6 +2407,7 @@ const manualContent = {
         "If an attachment does not finish uploading, the experience keeps the narrative and shows the file as pending; the flow should not be considered complete until the asset has a remote URL or Storage path.",
         "When an attachment is pending and later retried, the app uses binary multipart upload to the backend instead of resending the file as base64 text. This improves stability on phones, tablets, and medium-size files.",
         "The Storage backend supports new Supabase sb_secret keys and legacy service_role keys. New secret keys are sent as the server apikey, not as a Bearer JWT.",
+        "If an attachment remains pending, Capture shows the file name and the technical reason returned by the backend, such as size, session, bucket, permission, or signed URL.",
         "The complete media test is approved only when the same attachment appears from another device in Library, Multimodal Assets, Reports, and Publications. If only the narrative syncs, the flow is still incomplete.",
         "The server now supports cloud mode through HOST=0.0.0.0 and NODE_ENV=production. Use .env.production.example as the deployment baseline so the app does not depend on localhost.",
         "The docs/deploy-publicacion.md guide defines the recommended order: private GitHub, production Supabase, secure variables, Node hosting, multi-device test, and private validation.",
@@ -6858,6 +6860,7 @@ function buildCaptureSaveStatus(experience, apiResult = {}, edited = false) {
         temporary: "Saved for this session, but the browser did not confirm local persistence.",
         remote: "Saved here and available for your other devices.",
         remoteMediaPending: "The text was saved on all devices, but one or more attachments are still pending upload.",
+        mediaPendingDetail: "Pending attachment detail:",
         remoteReadbackPending: "The cloud save was accepted; the secondary readback did not respond in time, so refresh only if you do not see it on another device.",
         authRequired: "It was not saved for your other devices because you are not signed in. Sign in with the same user and press Save pending.",
         apiUnavailable: "It was not saved for your other devices because the connection is unavailable. The app will retry when it returns.",
@@ -6875,6 +6878,7 @@ function buildCaptureSaveStatus(experience, apiResult = {}, edited = false) {
         temporary: "Guardada para esta sesión, pero el navegador no confirmó la persistencia local.",
         remote: "Guardada aquí y disponible para tus otros dispositivos.",
         remoteMediaPending: "El texto quedó guardado en todos tus dispositivos, pero uno o más adjuntos siguen pendientes de subir.",
+        mediaPendingDetail: "Detalle del adjunto pendiente:",
         remoteReadbackPending: "El guardado en la nube fue aceptado; la verificación secundaria no respondió a tiempo, así que refresca solo si no la ves en otro dispositivo.",
         authRequired: "No quedó guardada para tus otros dispositivos porque no has iniciado sesión. Entra con el mismo usuario y pulsa Guardar pendientes.",
         apiUnavailable: "No quedó guardada para tus otros dispositivos porque la conexión no está disponible. La app reintentará cuando vuelva.",
@@ -6900,6 +6904,7 @@ function buildCaptureSaveStatus(experience, apiResult = {}, edited = false) {
     ? [
         labels.remote,
         apiResult?.mediaPending ? labels.remoteMediaPending : "",
+        apiResult?.mediaPending ? buildPendingMediaDetail(experience, apiResult, labels.mediaPendingDetail) : "",
         apiResult?.readback === false ? labels.remoteReadbackPending : "",
       ].filter(Boolean).join(" ")
     : apiResult?.localSaved === false
@@ -7162,6 +7167,24 @@ function renderPendingAttachmentCard(attachment) {
 function removePendingAttachment(id) {
   state.pendingAttachments = state.pendingAttachments.filter((attachment) => attachment.id !== id);
   renderAttachmentPreview();
+}
+
+function buildPendingMediaDetail(experience, apiResult = {}, label = "") {
+  const attachments = [
+    ...(experience?.attachments || []),
+    ...(apiResult?.experience?.attachments || []),
+  ];
+  const pending = attachments
+    .filter((attachment) => attachment?.remoteSyncFailed || (!attachment?.path && !attachment?.url && !attachment?.dataUrl))
+    .map((attachment) => {
+      const fallbackName = state.language === "en" ? "unnamed file" : "archivo sin nombre";
+      const fallbackReason = state.language === "en" ? "upload did not complete" : "la subida no se completó";
+      const name = attachment.name || fallbackName;
+      const reason = attachment.remoteSyncError || attachment.uploadError || fallbackReason;
+      return `${name}: ${reason}`;
+    });
+  const unique = [...new Set(pending)].slice(0, 3);
+  return unique.length ? `${label} ${unique.join(" · ")}` : "";
 }
 
 function handleAttachmentEventSelection(event) {
@@ -19701,7 +19724,7 @@ function renderAdminOperationalFocusPanel() {
         agenda: "Agenda is optional",
         agendaDetail: "Capture no longer updates Agenda by default. It only creates or updates a calendar event when the checkbox is selected.",
         remote: "Remote persistence guard",
-        remoteDetail: "Capture blocks new records without sign-in in published persistence mode, rechecks backend health before local fallback, retries pending media with binary upload, and supports current Supabase secret keys.",
+        remoteDetail: "Capture blocks new records without sign-in, rechecks backend health, retries pending media with binary upload, supports current Supabase secret keys, and shows pending file reasons.",
         gate: "Persistent by default",
         gateDetail: "Technical Supabase/API diagnostics stay in Admin; users see only sign-in, save pending, and retry guidance.",
         smoke: "Automated smoke check",
@@ -19725,7 +19748,7 @@ function renderAdminOperationalFocusPanel() {
         agenda: "Agenda es opcional",
         agendaDetail: "Captura ya no actualiza Agenda por defecto. Solo crea o actualiza un evento de calendario cuando marcas la casilla.",
         remote: "Control de persistencia remota",
-        remoteDetail: "Captura bloquea nuevos registros sin sesión en modo publicado persistente, vuelve a comprobar la salud del backend antes de caer a modo local, reintenta multimedia pendiente con carga binaria y soporta claves secretas actuales de Supabase.",
+        remoteDetail: "Captura bloquea nuevos registros sin sesión, vuelve a comprobar la salud del backend, reintenta multimedia pendiente con carga binaria, soporta claves secretas actuales de Supabase y muestra el motivo del archivo pendiente.",
         gate: "Persistente por defecto",
         gateDetail: "Los diagnósticos técnicos de Supabase/API quedan en Administración; el usuario solo ve entrar, guardar pendientes y reintentar.",
       };
