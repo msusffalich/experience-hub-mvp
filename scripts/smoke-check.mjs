@@ -45,6 +45,9 @@ assert(!/\bnormalizeExperience\s*\(/.test(files.app), "app.js still calls normal
   "function uploadDataUrlAttachment",
   "function dataUrlToBlob",
   "function buildPendingMediaDetail",
+  "function renderDashboardAttachmentStatus",
+  "function repairDashboardAttachments",
+  "function summarizeAttachmentSyncState",
 ].forEach((needle) => assert(files.app.includes(needle), `Missing critical frontend function: ${needle}.`));
 
 assert(files.app.includes("eventTitle: asset.eventTitle"), "Report evidence does not include linked event titles.");
@@ -108,6 +111,11 @@ assert(files.schemaSql.includes("allowed_mime_types = NULL"), "Base schema still
 assert(files.storageFormatsSql.includes("allowed_mime_types = NULL"), "Storage format migration does not allow all app-supported media/document formats.");
 assert(files.server.includes("storage-accept-all-supported-media.sql"), "Supabase diagnostics do not point to the Storage MIME migration.");
 assert(files.app.includes("invalid_mime_type para PDF") && files.app.includes("invalid_mime_type for PDF"), "Manual does not explain PDF MIME bucket remediation.");
+assert(files.index.includes("dashboardAttachmentPanel") && files.index.includes("dashboardAttachmentBox"), "Dashboard does not expose the attachment repair panel.");
+assert(files.app.includes("Reparar adjuntos") && files.app.includes("Repair attachments"), "Dashboard attachment repair action is missing bilingual labels.");
+assert(files.app.includes("El Panel incluye Estado de adjuntos") && files.app.includes("The Dashboard includes Attachment status"), "Manual does not explain Dashboard attachment status.");
+assert(files.app.includes("Reparación de adjuntos desde Panel") && files.app.includes("Dashboard attachment repair"), "Admin health does not expose Dashboard attachment repair.");
+assert(files.styles.includes(".dashboard-attachment-summary") && files.styles.includes(".dashboard-attachment-actions"), "Styles are missing Dashboard attachment repair UI.");
 
 if (failures.length) {
   console.error("Smoke check failed:");

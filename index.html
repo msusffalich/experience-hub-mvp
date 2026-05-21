@@ -9,10 +9,10 @@
     <meta name="apple-mobile-web-app-title" content="Experience Hub" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>Experience Hub MVP</title>
-    <link rel="manifest" href="manifest.webmanifest?v=20260521-storage-documents-354" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260521-dashboard-attachment-repair-355" />
     <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="icons/icon.svg" />
-    <link rel="stylesheet" href="styles.css?v=20260521-storage-documents-354" />
+    <link rel="stylesheet" href="styles.css?v=20260521-dashboard-attachment-repair-355" />
   </head>
   <body>
     <noscript>
@@ -155,6 +155,13 @@
             <span id="dashboardScopeStatus">Vista general</span>
           </div>
           <div class="metric-grid" id="metricGrid"></div>
+          <section class="panel dashboard-attachment-panel" id="dashboardAttachmentPanel">
+            <div class="panel-heading">
+              <h2 id="dashboardAttachmentTitle">Estado de adjuntos</h2>
+              <span id="dashboardAttachmentStatus">Multimedia y documentos</span>
+            </div>
+            <div id="dashboardAttachmentBox" class="dashboard-attachment-box"></div>
+          </section>
           <section class="panel dashboard-pilot-panel">
             <div class="panel-heading">
               <h2 id="dashboardPilotTitle">Preparación del piloto</h2>
@@ -953,7 +960,7 @@
       </main>
     </div>
 
-  <script src="app.js?v=20260521-storage-documents-354"></script>
+  <script src="app.js?v=20260521-dashboard-attachment-repair-355"></script>
 </body>
 </html>
 

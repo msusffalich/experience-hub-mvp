@@ -1931,6 +1931,108 @@ button,
   font-size: 18px;
 }
 
+.dashboard-attachment-panel {
+  margin-bottom: 16px;
+}
+
+.dashboard-attachment-box {
+  display: grid;
+  gap: 10px;
+}
+
+.dashboard-attachment-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid rgba(18, 33, 61, 0.08);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.dashboard-attachment-summary.is-ready {
+  border-color: rgba(13, 124, 102, 0.22);
+  background: linear-gradient(180deg, rgba(13, 124, 102, 0.08), #fff);
+}
+
+.dashboard-attachment-summary.needs-review {
+  border-color: rgba(176, 102, 42, 0.26);
+  background: linear-gradient(180deg, rgba(255, 251, 242, 0.96), #fff);
+}
+
+.dashboard-attachment-summary strong,
+.dashboard-attachment-summary p,
+.dashboard-attachment-summary small {
+  overflow-wrap: anywhere;
+}
+
+.dashboard-attachment-summary p {
+  margin: 5px 0;
+  color: var(--muted);
+  line-height: 1.42;
+}
+
+.dashboard-attachment-summary small {
+  color: var(--muted);
+}
+
+.dashboard-attachment-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(74px, 1fr));
+  gap: 8px;
+}
+
+.dashboard-attachment-metrics span {
+  display: grid;
+  gap: 2px;
+  min-height: 58px;
+  padding: 8px 10px;
+  border: 1px solid rgba(18, 33, 61, 0.08);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.dashboard-attachment-metrics b {
+  color: var(--ink);
+  font-size: 20px;
+}
+
+.dashboard-attachment-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.dashboard-attachment-pending {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+  gap: 8px;
+}
+
+.dashboard-attachment-pending article {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid rgba(176, 102, 42, 0.18);
+  border-radius: 8px;
+  background: rgba(255, 251, 242, 0.78);
+}
+
+.dashboard-attachment-pending strong,
+.dashboard-attachment-pending span {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.dashboard-attachment-pending span {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .bar-chart,
 .signal-list,
 .data-quality,
@@ -9725,6 +9827,17 @@ button.asset-processing-summary-card {
 
   .dashboard-time-context {
     grid-template-columns: 1fr;
+  }
+
+  .dashboard-attachment-summary {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .dashboard-attachment-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    justify-content: stretch;
   }
 
   .password-field {

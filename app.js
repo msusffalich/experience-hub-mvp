@@ -1,4 +1,4 @@
-const APP_VERSION = "20260521-storage-documents-354";
+const APP_VERSION = "20260521-dashboard-attachment-repair-355";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -2006,6 +2006,7 @@ const manualContent = {
         "Librería, Reportes, Hallazgos y Publicaciones muestran o filtran por Participante piloto para separar la evidencia de cada persona durante la prueba.",
         "El Panel también permite seleccionar Participante piloto. Métricas, Agenda, distribución por categoría, señales recientes y calidad de captura se recalculan para esa persona.",
         "El Panel muestra arriba el día, la hora local, la zona horaria y el próximo evento vinculado para ubicar la lectura del piloto en el momento actual.",
+        "El Panel incluye Estado de adjuntos como acción directa. Si hay archivos pendientes, Reparar adjuntos intenta completar la subida para Librería, Activos, Reportes, Publicaciones y vistas móviles; si falta la copia local, guía al usuario a revisar el archivo sin mostrar detalles técnicos.",
         "Cada participante piloto incluye un checklist de onboarding: acceso confirmado, manual revisado y primera prueba completada. Preparación del piloto avisa si quedan personas sin completar esos pasos.",
         "Registro de feedback piloto permite guardar observaciones por módulo, severidad y estado, resolverlas y exportarlas como CSV. Se encuentra en Administración y también se puede abrir desde el botón Registrar feedback del Panel.",
         "El feedback alto o bloqueante que siga abierto afecta la Preparación del piloto y aparece en Salud del sistema como atención.",
@@ -2873,6 +2874,7 @@ const manualContent = {
         "To view images, videos, audio, or documents on mobile, tablet, Mac, or desktop, the file must be in Supabase Storage or loaded on that same device.",
         "When saving an experience, the server attempts to upload any pending local attachment to Storage so other devices can view it.",
         "If an attachment appears as pending sync, open the experience on the device where it was originally attached and save it again to complete the remote upload.",
+        "The Dashboard includes Attachment status as the direct user action. Repair attachments retries pending files for Library, Assets, Reports, Publications, and mobile views; if the local file copy is missing, it guides the user to review the file without exposing technical diagnostics.",
       ],
     },
     {
@@ -6043,6 +6045,7 @@ function setupActions() {
   document.getElementById("mvpFlowPanel").addEventListener("click", handleParallelBacklogClick);
   document.getElementById("apiStatusPanel").addEventListener("click", handleApiStatusClick);
   document.getElementById("uiQualityPanel").addEventListener("click", handleUiQualityClick);
+  document.getElementById("dashboardAttachmentBox").addEventListener("click", handleDashboardAttachmentAction);
   document.getElementById("dashboardPilotBox").addEventListener("click", handleDashboardPilotAction);
   document.getElementById("parallelBacklog").addEventListener("click", handleParallelBacklogClick);
   document.getElementById("mvpClosurePanel").addEventListener("click", handleMvpClosureClick);
@@ -6794,6 +6797,7 @@ function getPublicationExperiences() {
 function renderDashboardScopedPanels() {
   updateDashboardParticipantControl();
   renderMetrics();
+  renderDashboardAttachmentStatus();
   renderDashboardAgenda();
   renderCategoryChart();
   renderRecentSignals();
@@ -7560,6 +7564,7 @@ function renderAll() {
   renderDashboardTimeContext();
   renderMetrics();
   updatePilotParticipantControls();
+  renderDashboardAttachmentStatus();
   renderDashboardAgenda();
   renderDashboardPilotReadiness();
   renderCategoryChart();
@@ -7649,6 +7654,185 @@ function renderMetrics() {
   document.getElementById("metricGrid").innerHTML = metrics
     .map(([label, value]) => `<article class="metric-card"><span>${label}</span><strong>${value}</strong></article>`)
     .join("");
+}
+
+function getAttachmentSyncItems() {
+  return state.experiences.flatMap((experience) => (experience.attachments || []).map((attachment) => {
+    const pending = isAttachmentPendingRemoteSync(attachment) && !(attachment.path || attachment.url);
+    const retryable = pending && Boolean(attachment.dataUrl);
+    const needsFile = pending && !attachment.dataUrl;
+    return {
+      experience,
+      attachment,
+      pending,
+      retryable,
+      needsFile,
+      ready: Boolean(attachment.path || attachment.url),
+    };
+  }));
+}
+
+function summarizeAttachmentSyncState(items = getAttachmentSyncItems()) {
+  const total = items.length;
+  const pending = items.filter((item) => item.pending);
+  const retryable = pending.filter((item) => item.retryable);
+  const needsFile = pending.filter((item) => item.needsFile);
+  const ready = items.filter((item) => item.ready);
+  return {
+    total,
+    ready: ready.length,
+    pending: pending.length,
+    retryable: retryable.length,
+    needsFile: needsFile.length,
+    items,
+    pendingItems: pending,
+    retryableItems: retryable,
+    needsFileItems: needsFile,
+  };
+}
+
+function renderDashboardAttachmentStatus() {
+  const box = document.getElementById("dashboardAttachmentBox");
+  if (!box) return;
+  const title = document.getElementById("dashboardAttachmentTitle");
+  const status = document.getElementById("dashboardAttachmentStatus");
+  if (title) title.textContent = state.language === "en" ? "Attachment status" : "Estado de adjuntos";
+  if (status) status.textContent = state.language === "en" ? "Media and documents" : "Multimedia y documentos";
+  const summary = summarizeAttachmentSyncState();
+  const labels = state.language === "en"
+    ? {
+        clearTitle: "All attachments are ready",
+        clearDetail: summary.total
+          ? `${summary.ready}/${summary.total} attachments are available for Library, Assets, Reports, and Publications.`
+          : "No attachments have been added yet. When you attach files, this panel will confirm if they are available on other devices.",
+        pendingTitle: "Attachments need attention",
+        pendingDetail: `${summary.pending} attachments are pending. The app can repair ${summary.retryable} from this device; ${summary.needsFile} may need the file selected again.`,
+        repair: "Repair attachments",
+        review: "Review pending files",
+        readyMetric: "Ready",
+        pendingMetric: "Pending",
+        affected: "Applies to Library, Assets, Reports, Publications, and mobile views.",
+        openAssets: "Open Assets",
+      }
+    : {
+        clearTitle: "Todos los adjuntos están listos",
+        clearDetail: summary.total
+          ? `${summary.ready}/${summary.total} adjuntos están disponibles para Librería, Activos, Reportes y Publicaciones.`
+          : "Aún no has agregado adjuntos. Cuando cargues archivos, este panel confirmará si están disponibles en otros dispositivos.",
+        pendingTitle: "Hay adjuntos que necesitan atención",
+        pendingDetail: `${summary.pending} adjuntos están pendientes. La app puede reparar ${summary.retryable} desde este dispositivo; ${summary.needsFile} pueden requerir volver a seleccionar el archivo.`,
+        repair: "Reparar adjuntos",
+        review: "Revisar pendientes",
+        readyMetric: "Listos",
+        pendingMetric: "Pendientes",
+        affected: "Aplica a Librería, Activos, Reportes, Publicaciones y vistas móviles.",
+        openAssets: "Abrir Activos",
+      };
+  const isReady = summary.pending === 0;
+  const visiblePending = summary.pendingItems.slice(0, 3);
+  const primaryAction = isReady ? "assets" : summary.retryable ? "repair" : "review";
+  const primaryLabel = isReady ? labels.openAssets : summary.retryable ? labels.repair : labels.review;
+  box.innerHTML = `
+    <div class="dashboard-attachment-summary ${isReady ? "is-ready" : "needs-review"}">
+      <div>
+        <strong>${escapeHtml(isReady ? labels.clearTitle : labels.pendingTitle)}</strong>
+        <p>${escapeHtml(isReady ? labels.clearDetail : labels.pendingDetail)}</p>
+        <small>${escapeHtml(labels.affected)}</small>
+      </div>
+      <div class="dashboard-attachment-metrics">
+        <span><b>${summary.ready}</b>${escapeHtml(labels.readyMetric)}</span>
+        <span><b>${summary.pending}</b>${escapeHtml(labels.pendingMetric)}</span>
+      </div>
+      <div class="dashboard-attachment-actions">
+        <button class="primary-button" type="button" data-dashboard-attachment-action="${primaryAction}">
+          ${escapeHtml(primaryLabel)}
+        </button>
+        ${isReady ? "" : `<button class="ghost-button" type="button" data-backlog-view="assetLibrary" data-backlog-focus="assetWorkflowReadinessPanel">${escapeHtml(labels.openAssets)}</button>`}
+      </div>
+    </div>
+    ${
+      visiblePending.length
+        ? `<div class="dashboard-attachment-pending">
+            ${visiblePending.map(({ experience, attachment }) => `
+              <article>
+                <strong>${escapeHtml(attachment.name || t("labels.attachmentNeedsSync"))}</strong>
+                <span>${escapeHtml(experience.title || (state.language === "en" ? "Untitled experience" : "Experiencia sin título"))}</span>
+              </article>
+            `).join("")}
+          </div>`
+        : ""
+    }
+  `;
+}
+
+async function repairDashboardAttachments() {
+  const summary = summarizeAttachmentSyncState();
+  const status = document.getElementById("embeddingStatus");
+  if (!summary.pending) {
+    notify(state.language === "en" ? "All attachments are ready." : "Todos los adjuntos están listos.");
+    return;
+  }
+  if (!summary.retryable) {
+    showView("assetLibrary");
+    requestAnimationFrame(() => focusAppElement("assetWorkflowReadinessPanel"));
+    notify(
+      state.language === "en"
+        ? "Some files need to be selected again from the device where they exist."
+        : "Algunos archivos deben volver a seleccionarse desde el dispositivo donde existen.",
+      "warn",
+    );
+    return;
+  }
+  if (requiresRemotePersistence() && !state.session?.access_token) {
+    state.pendingAuthReturn = "dashboard";
+    showAuthView();
+    requestAnimationFrame(() => {
+      const message = document.getElementById("authMessage");
+      if (message) message.textContent = state.language === "en"
+        ? "Sign in to repair attachments across your devices."
+        : "Inicia sesión para reparar adjuntos en todos tus dispositivos.";
+    });
+    return;
+  }
+  if (status) {
+    status.textContent = state.language === "en" ? "Repairing attachments..." : "Reparando adjuntos...";
+  }
+  const experienceIds = new Set(summary.retryableItems.map((item) => item.experience.id));
+  let repaired = 0;
+  for (const id of experienceIds) {
+    const index = state.experiences.findIndex((item) => item.id === id);
+    if (index < 0) continue;
+    const beforePending = (state.experiences[index].attachments || []).filter((attachment) => isAttachmentPendingRemoteSync(attachment) && !(attachment.path || attachment.url)).length;
+    const result = await saveExperienceToApi(state.experiences[index]);
+    if (result?.experience) {
+      state.experiences[index] = mergeLocalMediaCacheForExperience(result.experience, state.experiences[index]);
+      const afterPending = (state.experiences[index].attachments || []).filter((attachment) => isAttachmentPendingRemoteSync(attachment) && !(attachment.path || attachment.url)).length;
+      repaired += Math.max(0, beforePending - afterPending);
+    }
+  }
+  saveExperiences();
+  await syncOfflineQueue({ silent: true });
+  renderAll();
+  const next = summarizeAttachmentSyncState();
+  const message = state.language === "en"
+    ? `${repaired} attachments repaired. ${next.pending} remain pending.`
+    : `${repaired} adjuntos reparados. ${next.pending} siguen pendientes.`;
+  if (status) status.textContent = message;
+  notify(message, next.pending ? "warn" : "ok");
+}
+
+function handleDashboardAttachmentAction(event) {
+  const button = event.target.closest("[data-dashboard-attachment-action]");
+  if (!button) {
+    handleParallelBacklogClick(event);
+    return;
+  }
+  if (button.dataset.dashboardAttachmentAction === "repair") {
+    repairDashboardAttachments();
+    return;
+  }
+  showView("assetLibrary");
+  requestAnimationFrame(() => focusAppElement("assetWorkflowReadinessPanel"));
 }
 
 function renderDashboardPilotReadiness() {
@@ -20720,6 +20904,14 @@ function renderAdmin() {
       state.language === "en"
         ? `${assetStorageReadiness.remote}/${assetStorageReadiness.total} remote · ${assetStorageReadiness.pendingSync} pending sync · ${assetStorageReadiness.cached} cached previews`
         : `${assetStorageReadiness.remote}/${assetStorageReadiness.total} remotos · ${assetStorageReadiness.pendingSync} pendientes de sincronizar · ${assetStorageReadiness.cached} vistas en caché`,
+    ],
+    [
+      state.language === "en" ? "Dashboard attachment repair" : "Reparación de adjuntos desde Panel",
+      summarizeAttachmentSyncState().pending ? attentionStatus : okStatus,
+      state.language === "en"
+        ? `${summarizeAttachmentSyncState().pending} pending attachments · one visible action repairs Library, Assets, Reports, and Publications`
+        : `${summarizeAttachmentSyncState().pending} adjuntos pendientes · una acción visible repara Librería, Activos, Reportes y Publicaciones`,
+      { view: "dashboard", focus: "dashboardAttachmentPanel", label: state.language === "en" ? "Open Dashboard" : "Abrir Panel" },
     ],
     [
       state.language === "en" ? "Attachment upload traceability" : "Trazabilidad de subidas de adjuntos",
