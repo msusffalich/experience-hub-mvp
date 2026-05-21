@@ -4,6 +4,7 @@ const files = {
   app: readFileSync("app.js", "utf8"),
   index: readFileSync("index.html", "utf8"),
   serviceWorker: readFileSync("service-worker.js", "utf8"),
+  manifest: readFileSync("manifest.webmanifest", "utf8"),
   server: readFileSync("server.js", "utf8"),
   styles: readFileSync("styles.css", "utf8"),
   sql: readFileSync("database/workspace-events-assets.sql", "utf8"),
@@ -26,6 +27,11 @@ assert(files.index.includes(`app.js?v=${version}`), "index.html does not load th
 assert(files.index.includes(`styles.css?v=${version}`), "index.html does not load the current styles.css version.");
 assert(files.index.includes(`manifest.webmanifest?v=${version}`), "index.html does not load the current manifest version.");
 assert(files.serviceWorker.includes(`experience-hub-pwa-${version}`), "service-worker.js cache name does not match APP_VERSION.");
+const manifest = JSON.parse(files.manifest);
+assert(manifest.id === "/", "manifest.webmanifest is missing a stable app id.");
+assert(manifest.start_url === "/index.html?view=dashboard", "manifest.webmanifest start_url must be stable and not point to an old app version.");
+assert(manifest.display === "standalone", "manifest.webmanifest should use standalone display for PWA install.");
+assert(!/[ÃÂ�]/.test(files.app + files.index + files.styles + files.manifest + files.serviceWorker + files.uxAudit), "Visible app files contain mojibake characters.");
 
 assert(!/\bnormalizeExperience\s*\(/.test(files.app), "app.js still calls normalizeExperience(); use normalizeExperienceItem() or normalizeExperiences().");
 [
@@ -115,6 +121,16 @@ assert(files.app.includes("invalid_mime_type para PDF") && files.app.includes("i
 assert(files.index.includes("dashboard-primary-panel") && files.index.includes("Nueva experiencia"), "Dashboard does not expose primary daily actions.");
 assert(!files.index.includes("dashboardAttachmentPanel") && !files.index.includes("dashboardPilotBox"), "Dashboard still exposes technical/pilot monitoring panels.");
 assert(files.index.includes("capture-layout-clean") && !files.index.includes("captureCoachBox") && !files.index.includes("templateList"), "Capture still exposes parallel coach/template panels.");
+assert(files.index.includes("Herramientas avanzadas de activos") && files.index.includes("Opciones avanzadas de calendario"), "Assets or Agenda do not collapse advanced tools.");
+assert(files.index.includes("Más opciones de publicación") && files.index.includes("Exportar y cerrar reporte"), "Reports or Publications still lack the simplified advanced-action flow.");
+assert(files.index.includes("admin-accordion-stack") && files.index.includes("Resumen ejecutivo") && files.index.includes("Persistencia y Supabase"), "Admin is not organized into thematic accordions.");
+assert(files.index.includes("manual-version-card") && files.index.includes("manualVersionValue"), "Manual does not expose the current version guide card.");
+assert(files.app.includes("Librería, Activos, Reportes, Publicaciones y Agenda usan una vista limpia"), "Spanish manual does not explain the cleaned user pages.");
+assert(files.app.includes("Library, Assets, Reports, Publications, and Agenda use a cleaner view"), "English manual does not explain the cleaned user pages.");
+assert(files.app.includes("Administración ya no se organiza como una sábana") && files.app.includes("Admin is no longer organized as an endless sheet"), "Manual does not explain the reorganized Admin.");
+assert(files.app.includes("El Manual muestra la versión vigente") && files.app.includes("The Manual shows the current version"), "Manual does not explain the current-version guide card.");
+assert(files.styles.includes(".user-advanced-drawer") && files.styles.includes(".advanced-action-row"), "Styles are missing cleaned advanced drawer UI.");
+assert(files.styles.includes(".admin-section-drawer") && files.styles.includes(".manual-version-card"), "Styles are missing Admin/Manual cleanup UI.");
 assert(files.app.includes("Reparar adjuntos") && files.app.includes("Repair attachments"), "Dashboard attachment repair action is missing bilingual labels.");
 assert(files.app.includes("El Panel se simplifica para uso diario") && files.app.includes("The Dashboard is simplified for daily use"), "Manual does not explain simplified Dashboard UX.");
 assert(files.app.includes("simple por fuera y sofisticada por dentro") && files.app.includes("simple outside and sophisticated inside"), "Manual does not document the core UX principle.");

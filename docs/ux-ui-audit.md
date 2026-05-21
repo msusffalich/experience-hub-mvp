@@ -1,6 +1,6 @@
 # Auditoría UX/UI - Experience Hub
 
-Versión base: 20260521-dashboard-ux-cleanup-357
+Versión base: 20260521-admin-manual-cleanup-359
 
 ## Criterio rector
 
@@ -23,6 +23,12 @@ La aplicación debe separar claramente dos modos:
 - Las acciones principales del Panel son: Nueva experiencia, Ver Librería, Ver Activos y Generar reporte.
 - La reparación de adjuntos queda como estado administrativo, no como monitoreo visible del Panel.
 - Captura queda como formulario único. Guías de calidad, corrección gramatical y plantillas rápidas no compiten visualmente con guardar una experiencia.
+- Activos muestra primero galería, filtros y revisión visual. Inventarios, CSV, importación, auditoría y plan de procesamiento quedan plegados como herramientas avanzadas.
+- Agenda muestra primero calendario, lista y formulario. Importar/exportar .ics y días bloqueados quedan en opciones avanzadas.
+- Reportes mantiene una secuencia única: preparar alcance, generar/leer y exportar/cerrar.
+- Publicaciones muestra primero generar, editar y exportar. Controles editoriales, historial, guía de salida y paquete quedan plegados.
+- Administración queda reorganizada por acordeones temáticos: Resumen ejecutivo, Persistencia/Supabase, Personas/piloto, Perfil/dispositivos, Calidad/cierre y Diagnóstico técnico avanzado.
+- El Manual muestra la versión vigente, una tarjeta de orientación y bloques de entrada rápida para entender la estructura antes de leer secciones detalladas.
 
 ## Reglas para los próximos cambios
 
@@ -32,11 +38,13 @@ La aplicación debe separar claramente dos modos:
 - Si una acción abre otra vista, el texto del botón debe decirlo explícitamente.
 - No duplicar estados del mismo flujo en dos secciones visibles para el usuario.
 - Administración puede tener detalle técnico; Panel, Captura, Librería, Reportes y Publicaciones deben usar lenguaje simple.
+- Administración debe mantener agrupación temática y evitar volver a una lista vertical sin jerarquía.
+- El Manual debe indicar siempre la versión vigente y separar orientación práctica de detalle técnico.
 
 ## Limpieza pendiente por página
 
-- Librería: revisar filtros, acciones repetidas y confirmación de edición.
-- Activos: separar uso normal de auditoría multimodal avanzada.
-- Reportes: dejar una secuencia única de generar, revisar y exportar.
-- Publicaciones: reducir opciones iniciales y mostrar edición/resultado final con claridad.
-- Agenda: confirmar creación, actualización y alcance por participante sin saltos innecesarios.
+- Librería: revisar acciones dentro de cada tarjeta y confirmación de edición/eliminación.
+- Activos: seguir evaluando si las herramientas avanzadas deben moverse por completo a Administración.
+- Reportes: reducir texto de ayuda si el usuario ya completó el flujo.
+- Publicaciones: revisar visualmente los diseños y el ajuste en móvil.
+- Agenda: mejorar confirmaciones de creación, actualización y alcance por participante.

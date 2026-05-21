@@ -9,10 +9,10 @@
     <meta name="apple-mobile-web-app-title" content="Experience Hub" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>Experience Hub MVP</title>
-    <link rel="manifest" href="manifest.webmanifest?v=20260521-dashboard-ux-cleanup-357" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260521-admin-manual-cleanup-359" />
     <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="icons/icon.svg" />
-    <link rel="stylesheet" href="styles.css?v=20260521-dashboard-ux-cleanup-357" />
+    <link rel="stylesheet" href="styles.css?v=20260521-admin-manual-cleanup-359" />
   </head>
   <body>
     <noscript>
@@ -372,11 +372,7 @@
             <p id="assetLibraryIntro" class="section-note">
               Inventario de imágenes, videos, audios y documentos asociados a experiencias.
             </p>
-            <div id="assetMetadataWorkflow" class="asset-metadata-workflow"></div>
-            <div id="assetWorkflowReadinessPanel" class="asset-workflow-readiness-panel"></div>
-            <div id="assetImportSummary" class="asset-import-summary"></div>
             <div class="metric-grid compact-metric-grid" id="assetMetricGrid"></div>
-            <div id="assetProcessingSummary" class="asset-processing-summary"></div>
             <div class="filters">
               <input id="assetSearchInput" type="search" placeholder="Buscar activo, experiencia, lugar o persona" />
               <select id="assetTypeFilter">
@@ -400,21 +396,33 @@
                 <span>Hasta</span>
                 <input id="assetDateToFilter" type="date" />
               </label>
-              <button id="exportAssetInventoryButton" class="ghost-button" type="button">Exportar inventario</button>
-              <button id="exportAssetInventoryCsvButton" class="ghost-button" type="button">CSV inventario</button>
-              <button id="exportAssetProcessingBacklogButton" class="ghost-button" type="button">Exportar pendientes</button>
-              <button id="exportAssetProcessingBacklogCsvButton" class="ghost-button" type="button">CSV pendientes</button>
-              <button id="exportAssetProcessingChecklistButton" class="ghost-button" type="button">Checklist de revisión</button>
-              <button id="exportAssetMetadataTemplateButton" class="ghost-button" type="button">Plantilla CSV</button>
-              <button id="exportAssetEditableMetadataCsvButton" class="ghost-button" type="button">CSV edición</button>
-              <button id="suggestFilteredAssetTextButton" class="ghost-button" type="button">Sugerir texto filtrados</button>
               <button id="clearAssetFiltersButton" class="ghost-button" type="button">Limpiar filtros</button>
-              <button id="importAssetMetadataButton" class="ghost-button" type="button">Importar metadatos</button>
-              <input id="importAssetMetadataInput" class="sr-only" type="file" accept="application/json,text/csv,.json,.csv" />
             </div>
             <div id="assetActiveFilters" class="asset-active-filters"></div>
-            <div id="assetProcessingActionPlan" class="asset-processing-action-plan" tabindex="-1"></div>
             <div id="assetLibraryGrid" class="asset-grid"></div>
+            <details class="user-advanced-drawer">
+              <summary>
+                <span id="assetAdvancedTitle">Herramientas avanzadas de activos</span>
+                <small id="assetAdvancedHelp">Inventario, importación, revisión y procesamiento</small>
+              </summary>
+              <div id="assetMetadataWorkflow" class="asset-metadata-workflow"></div>
+              <div id="assetWorkflowReadinessPanel" class="asset-workflow-readiness-panel"></div>
+              <div id="assetImportSummary" class="asset-import-summary"></div>
+              <div id="assetProcessingSummary" class="asset-processing-summary"></div>
+              <div class="advanced-action-row">
+                <button id="exportAssetInventoryButton" class="ghost-button" type="button">Exportar inventario</button>
+                <button id="exportAssetInventoryCsvButton" class="ghost-button" type="button">CSV inventario</button>
+                <button id="exportAssetProcessingBacklogButton" class="ghost-button" type="button">Exportar pendientes</button>
+                <button id="exportAssetProcessingBacklogCsvButton" class="ghost-button" type="button">CSV pendientes</button>
+                <button id="exportAssetProcessingChecklistButton" class="ghost-button" type="button">Checklist de revisión</button>
+                <button id="exportAssetMetadataTemplateButton" class="ghost-button" type="button">Plantilla CSV</button>
+                <button id="exportAssetEditableMetadataCsvButton" class="ghost-button" type="button">CSV edición</button>
+                <button id="suggestFilteredAssetTextButton" class="ghost-button" type="button">Sugerir texto filtrado</button>
+                <button id="importAssetMetadataButton" class="ghost-button" type="button">Importar metadatos</button>
+                <input id="importAssetMetadataInput" class="sr-only" type="file" accept="application/json,text/csv,.json,.csv" />
+              </div>
+              <div id="assetProcessingActionPlan" class="asset-processing-action-plan" tabindex="-1"></div>
+            </details>
           </div>
         </section>
 
@@ -436,20 +444,28 @@
                 <select id="agendaPilotParticipantFilter" aria-label="Filtrar agenda por participante">
                   <option value="all">Todos los participantes</option>
                 </select>
-                <button id="exportAgendaIcsButton" class="ghost-button" type="button">Exportar calendario</button>
-                <button id="importAgendaIcsButton" class="ghost-button" type="button">Importar .ics</button>
-                <input id="importAgendaIcsInput" class="sr-only" type="file" accept=".ics,text/calendar" />
-              </div>
-              <div class="agenda-blocked-control">
-                <label>
-                  <span id="agendaBlockedDatesLabel">Días bloqueados</span>
-                  <input id="agendaBlockedDatesInput" type="text" placeholder="AAAA-MM-DD separados por coma" />
-                </label>
-                <button id="agendaSaveBlockedDatesButton" class="ghost-button" type="button">Guardar bloqueos</button>
               </div>
               <div id="agendaCalendar" class="agenda-calendar"></div>
               <div id="agendaConflictBox" class="agenda-conflicts"></div>
               <div id="agendaList" class="agenda-list"></div>
+              <details class="user-advanced-drawer">
+                <summary>
+                  <span id="agendaAdvancedTitle">Opciones avanzadas de calendario</span>
+                  <small id="agendaAdvancedHelp">Importar, exportar y bloquear días</small>
+                </summary>
+                <div class="advanced-action-row">
+                  <button id="exportAgendaIcsButton" class="ghost-button" type="button">Exportar calendario</button>
+                  <button id="importAgendaIcsButton" class="ghost-button" type="button">Importar .ics</button>
+                  <input id="importAgendaIcsInput" class="sr-only" type="file" accept=".ics,text/calendar" />
+                </div>
+                <div class="agenda-blocked-control">
+                  <label>
+                    <span id="agendaBlockedDatesLabel">Días bloqueados</span>
+                    <input id="agendaBlockedDatesInput" type="text" placeholder="AAAA-MM-DD separados por coma" />
+                  </label>
+                  <button id="agendaSaveBlockedDatesButton" class="ghost-button" type="button">Guardar bloqueos</button>
+                </div>
+              </details>
             </section>
 
             <section class="panel">
@@ -651,13 +667,19 @@
               <div id="reportSummary" class="report-summary"></div>
               <div id="reportNarrative" class="answer-box"></div>
               <details class="report-detail-drawer">
-                <summary>Ver detalle técnico, gráficas y tabla</summary>
+                <summary>Ver gráficas, hallazgos y tabla</summary>
                 <div id="reportFindings" class="report-findings"></div>
                 <div id="reportCharts" class="report-charts"></div>
                 <div id="reportCategoryBreakdown" class="report-category-breakdown"></div>
                 <div id="reportTable" class="report-table"></div>
               </details>
-              <div id="reportAcceptancePanel" class="report-acceptance-panel"></div>
+              <details class="user-advanced-drawer report-export-drawer" open>
+                <summary>
+                  <span id="reportExportTitle">Exportar y cerrar reporte</span>
+                  <small id="reportExportHelp">Descargas y confirmación de revisión</small>
+                </summary>
+                <div id="reportAcceptancePanel" class="report-acceptance-panel"></div>
+              </details>
             </section>
           </div>
         </section>
@@ -741,13 +763,21 @@
                 </label>
                 <div class="form-actions">
                   <button id="generatePublicationButton" class="primary-button" type="button">Generar borrador</button>
-                  <button id="previewPublicationHtmlButton" class="ghost-button" type="button">Vista imprimible</button>
-                  <button id="copyPublicationTextButton" class="ghost-button" type="button">Copiar texto</button>
-                  <button id="copyPublicationHtmlButton" class="ghost-button" type="button">Copiar HTML</button>
                   <button id="exportPublicationHtmlButton" class="ghost-button" type="button">Exportar HTML</button>
                   <button id="exportPublicationMarkdownButton" class="ghost-button" type="button">Exportar Markdown</button>
-                  <button id="exportPublicationPackageButton" class="ghost-button" type="button">Paquete editorial</button>
                 </div>
+                <details class="user-advanced-drawer publication-action-drawer">
+                  <summary>
+                    <span id="publicationMoreTitle">Más opciones de publicación</span>
+                    <small id="publicationMoreHelp">Vista imprimible, copias y paquete editorial</small>
+                  </summary>
+                  <div class="advanced-action-row">
+                    <button id="previewPublicationHtmlButton" class="ghost-button" type="button">Vista imprimible</button>
+                    <button id="copyPublicationTextButton" class="ghost-button" type="button">Copiar texto</button>
+                    <button id="copyPublicationHtmlButton" class="ghost-button" type="button">Copiar HTML</button>
+                    <button id="exportPublicationPackageButton" class="ghost-button" type="button">Paquete editorial</button>
+                  </div>
+                </details>
               </form>
               <div id="publicationPrintablePreview" class="publication-print-preview"></div>
               <div id="publicationPreview" class="publication-preview"></div>
@@ -802,6 +832,27 @@
               <h2 id="manual-heading">Manual del Usuario</h2>
               <span id="manualUpdatedLabel"></span>
             </div>
+            <div class="manual-version-card">
+              <div>
+                <span id="manualVersionEyebrow">Versión vigente</span>
+                <strong id="manualVersionValue">20260521-admin-manual-cleanup-359</strong>
+                <p id="manualVersionSummary">Guía práctica organizada por temas para entender el flujo de la app sin leer todo de corrido.</p>
+              </div>
+              <div class="manual-guide-grid" aria-label="Estructura del manual">
+                <article>
+                  <strong id="manualGuideStartTitle">Inicio rápido</strong>
+                  <span id="manualGuideStartText">Captura, Librería, Activos y Reportes.</span>
+                </article>
+                <article>
+                  <strong id="manualGuideOperateTitle">Operación</strong>
+                  <span id="manualGuideOperateText">Privacidad, Supabase, respaldo y multidispositivo.</span>
+                </article>
+                <article>
+                  <strong id="manualGuideAdminTitle">Administración</strong>
+                  <span id="manualGuideAdminText">QA, piloto, diagnóstico y publicación.</span>
+                </article>
+              </div>
+            </div>
             <div class="manual-tools">
               <label>
                 <span id="manualSearchLabel">Buscar en el manual</span>
@@ -830,119 +881,155 @@
         </section>
 
         <section id="adminView" class="view" aria-labelledby="admin-heading">
-          <div class="split-layout">
-            <section class="panel">
-              <div class="panel-heading">
-                <h2 id="admin-heading">Estado del ecosistema</h2>
-                <span>Simulación operativa</span>
-              </div>
-              <div class="admin-actions">
-                <button id="embeddingBackfillButton" class="primary-button" type="button">Actualizar embeddings</button>
-                <button id="workspaceBackfillButton" class="ghost-button" type="button">Sincronizar estructura</button>
-                <button id="refreshOpsButton" class="ghost-button" type="button">Refrescar operación</button>
-                <button id="syncOfflineButton" class="ghost-button" type="button">Sincronizar sin conexión</button>
-                <button id="supabaseDiagnosticsButton" class="ghost-button" type="button">Verificar Supabase</button>
-                <button id="supabaseSelfTestButton" class="ghost-button" type="button">Probar flujo real</button>
-                <button id="adminExportBackupButton" class="ghost-button" type="button">Respaldar</button>
-                <button id="adminRestoreBackupButton" class="ghost-button" type="button">Restaurar</button>
-                <button id="clearLocalDataButton" class="danger-button" type="button">Vaciar datos locales</button>
-                <span id="embeddingStatus" class="card-meta">Búsqueda vectorial lista para Supabase</span>
-              </div>
-              <div id="adminOperationalFocusPanel" class="admin-operational-focus-panel"></div>
-              <div id="adminCommandCenter" class="admin-command-center"></div>
-              <div id="publishPlanPanel" class="publish-plan-panel"></div>
-              <div id="multiDevicePersistencePanel" class="multi-device-persistence-panel"></div>
-              <div id="pilotParticipantsPanel" class="pilot-participants-panel"></div>
-              <div id="pilotFeedbackPanel" class="pilot-feedback-panel"></div>
-              <details class="admin-advanced-diagnostics">
+          <section class="panel admin-hub-panel">
+            <div class="panel-heading">
+              <h2 id="admin-heading">Estado del ecosistema</h2>
+              <span id="adminHubStatus">Centro operativo</span>
+            </div>
+            <div class="admin-actions">
+              <button id="embeddingBackfillButton" class="primary-button" type="button">Actualizar embeddings</button>
+              <button id="workspaceBackfillButton" class="ghost-button" type="button">Sincronizar estructura</button>
+              <button id="refreshOpsButton" class="ghost-button" type="button">Refrescar operación</button>
+              <button id="syncOfflineButton" class="ghost-button" type="button">Sincronizar sin conexión</button>
+              <button id="supabaseDiagnosticsButton" class="ghost-button" type="button">Verificar Supabase</button>
+              <button id="supabaseSelfTestButton" class="ghost-button" type="button">Probar flujo real</button>
+              <button id="adminExportBackupButton" class="ghost-button" type="button">Respaldar</button>
+              <button id="adminRestoreBackupButton" class="ghost-button" type="button">Restaurar</button>
+              <button id="clearLocalDataButton" class="danger-button" type="button">Vaciar datos locales</button>
+              <span id="embeddingStatus" class="card-meta">Búsqueda vectorial lista para Supabase</span>
+            </div>
+
+            <div class="admin-accordion-stack">
+              <details class="admin-section-drawer" open>
                 <summary>
-                  <span>Diagnóstico avanzado y evidencia técnica</span>
-                  <small>QA, rutas MVP, Supabase, datos demo, cola sin conexión y backlog detallado</small>
+                  <span id="adminExecutiveTitle">Resumen ejecutivo</span>
+                  <small id="adminExecutiveHelp">Estado, prioridades y publicación</small>
+                </summary>
+                <div id="adminOperationalFocusPanel" class="admin-operational-focus-panel"></div>
+                <div id="adminCommandCenter" class="admin-command-center"></div>
+                <div id="publishPlanPanel" class="publish-plan-panel"></div>
+              </details>
+
+              <details class="admin-section-drawer" open>
+                <summary>
+                  <span id="adminPersistenceTitle">Persistencia y Supabase</span>
+                  <small id="adminPersistenceHelp">Multidispositivo, sincronización, respaldo y pruebas reales</small>
+                </summary>
+                <div id="multiDevicePersistencePanel" class="multi-device-persistence-panel"></div>
+                <div id="supabaseDiagnostics" class="supabase-diagnostics"></div>
+                <div id="supabaseSelfTest" class="supabase-diagnostics"></div>
+                <div id="supabasePilotGatePanel" class="supabase-pilot-gate-panel"></div>
+                <div id="offlineQueuePanel" class="offline-queue-panel"></div>
+              </details>
+
+              <details class="admin-section-drawer">
+                <summary>
+                  <span id="adminPeopleTitle">Personas y piloto</span>
+                  <small id="adminPeopleHelp">Participantes, feedback, preparación y cierre</small>
+                </summary>
+                <div id="pilotParticipantsPanel" class="pilot-participants-panel"></div>
+                <div id="pilotFeedbackPanel" class="pilot-feedback-panel"></div>
+                <div id="pilotReadinessPanel" class="pilot-readiness-panel"></div>
+                <div id="pilotInviteKitPanel" class="pilot-invite-kit-panel"></div>
+                <div id="pilotTestPlanPanel" class="pilot-test-panel"></div>
+                <div id="pilotClosureRecordPanel" class="pilot-closure-record-panel"></div>
+              </details>
+
+              <details class="admin-section-drawer">
+                <summary>
+                  <span id="adminProfileDevicesTitle">Perfil y dispositivos</span>
+                  <small id="adminProfileDevicesHelp">Cuenta, preferencias y fuentes de captura</small>
+                </summary>
+                <div class="admin-two-column-section">
+                  <section>
+                    <div class="panel-heading compact-heading">
+                      <h2>Dispositivos</h2>
+                      <span>Fuentes de captura</span>
+                    </div>
+                    <div id="deviceList" class="device-list"></div>
+                  </section>
+                  <section>
+                    <div class="panel-heading compact-heading">
+                      <h2 id="profileSettingsHeading">Perfil</h2>
+                      <span id="profileSettingsStatus">Cuenta y preferencias</span>
+                    </div>
+                    <form id="profileForm" class="experience-form">
+                      <label>
+                        Nombre
+                        <input id="profileNameInput" type="text" placeholder="Tu nombre" />
+                      </label>
+                      <label>
+                        Correo electrónico
+                        <input id="profileEmailInput" type="email" readonly />
+                      </label>
+                      <label>
+                        Zona horaria
+                        <input id="profileTimezoneInput" type="text" placeholder="America/New_York" />
+                      </label>
+                      <div class="two-columns">
+                        <label>
+                          Género
+                          <select id="profileGenderInput">
+                            <option value="">No especificado</option>
+                            <option value="male">Masculino</option>
+                            <option value="female">Femenino</option>
+                            <option value="other">Otro / no binario</option>
+                          </select>
+                        </label>
+                        <label>
+                          Año de nacimiento
+                          <input id="profileBirthYearInput" type="number" min="1900" max="2026" placeholder="Ej: 1985" />
+                        </label>
+                      </div>
+                      <label>
+                        Tipo de experiencia dominante
+                        <select id="profileExperienceTypeInput">
+                          <option value="auto">Detectar automáticamente</option>
+                        </select>
+                      </label>
+                      <button id="saveProfileButton" class="primary-button" type="submit">Guardar perfil</button>
+                    </form>
+                  </section>
+                </div>
+              </details>
+
+              <details class="admin-section-drawer">
+                <summary>
+                  <span id="adminQualityTitle">Calidad, cierre y evidencias</span>
+                  <small id="adminQualityHelp">QA, MVP central, reglas y registros</small>
                 </summary>
                 <div id="systemHealth" class="health-grid"></div>
                 <div id="developmentRulesPanel" class="development-rules-panel"></div>
                 <div id="coreMvpGatePanel" class="core-mvp-gate-panel"></div>
                 <div id="quickQaPanel" class="quick-qa-panel"></div>
                 <div id="mvpFlowPanel" class="mvp-flow-panel"></div>
-                <div id="apiStatusPanel" class="api-status-panel"></div>
-                <div id="uiQualityPanel" class="ui-quality-panel"></div>
-                <div id="supabaseDiagnostics" class="supabase-diagnostics"></div>
-                <div id="supabaseSelfTest" class="supabase-diagnostics"></div>
-                <div id="supabasePilotGatePanel" class="supabase-pilot-gate-panel"></div>
-                <div id="demoDataPanel" class="demo-data-panel"></div>
-                <div id="offlineQueuePanel" class="offline-queue-panel"></div>
                 <div id="mvpClosurePanel" class="mvp-closure-panel"></div>
-                <div id="pilotReadinessPanel" class="pilot-readiness-panel"></div>
-                <div id="pilotInviteKitPanel" class="pilot-invite-kit-panel"></div>
-                <div id="pilotTestPlanPanel" class="pilot-test-panel"></div>
-                <div id="pilotClosureRecordPanel" class="pilot-closure-record-panel"></div>
+                <div id="uiQualityPanel" class="ui-quality-panel"></div>
+              </details>
+
+              <details class="admin-section-drawer">
+                <summary>
+                  <span id="adminAdvancedTitle">Diagnóstico técnico avanzado</span>
+                  <small id="adminAdvancedHelp">API, datos demo, integraciones, backlog y logs</small>
+                </summary>
+                <div id="apiStatusPanel" class="api-status-panel"></div>
+                <div id="demoDataPanel" class="demo-data-panel"></div>
                 <div id="externalIntegrationPanel" class="external-integration-panel"></div>
                 <div id="parallelWorkstreamsPanel" class="parallel-workstreams-panel"></div>
                 <div id="parallelBacklog" class="parallel-backlog"></div>
-              </details>
-            </section>
-            <section class="panel">
-              <div class="panel-heading">
-                <h2>Dispositivos</h2>
-                <span>Fuentes de captura</span>
-              </div>
-              <div id="deviceList" class="device-list"></div>
-            </section>
-            <section class="panel">
-              <div class="panel-heading">
-                <h2 id="profileSettingsHeading">Perfil</h2>
-                <span id="profileSettingsStatus">Cuenta y preferencias</span>
-              </div>
-              <form id="profileForm" class="experience-form">
-                <label>
-                  Nombre
-                  <input id="profileNameInput" type="text" placeholder="Tu nombre" />
-                </label>
-                <label>
-                  Correo electrónico
-                  <input id="profileEmailInput" type="email" readonly />
-                </label>
-                <label>
-                  Zona horaria
-                  <input id="profileTimezoneInput" type="text" placeholder="America/New_York" />
-                </label>
-                <div class="two-columns">
-                  <label>
-                    Género
-                    <select id="profileGenderInput">
-                      <option value="">No especificado</option>
-                      <option value="male">Masculino</option>
-                      <option value="female">Femenino</option>
-                      <option value="other">Otro / no binario</option>
-                    </select>
-                  </label>
-                  <label>
-                    Año de nacimiento
-                    <input id="profileBirthYearInput" type="number" min="1900" max="2026" placeholder="Ej: 1985" />
-                  </label>
+                <div class="panel-heading compact-heading">
+                  <h2>Tareas y registros</h2>
+                  <span>Operación del servidor local</span>
                 </div>
-                <label>
-                  Tipo de experiencia dominante
-                  <select id="profileExperienceTypeInput">
-                    <option value="auto">Detectar automáticamente</option>
-                  </select>
-                </label>
-                <button id="saveProfileButton" class="primary-button" type="submit">Guardar perfil</button>
-              </form>
-            </section>
-            <section class="panel">
-              <div class="panel-heading">
-                <h2>Tareas y registros</h2>
-                <span>Operación del servidor local</span>
-              </div>
-              <div id="opsLogList" class="ops-log-list"></div>
-            </section>
-          </div>
+                <div id="opsLogList" class="ops-log-list"></div>
+              </details>
+            </div>
+          </section>
         </section>
       </main>
     </div>
 
-  <script src="app.js?v=20260521-dashboard-ux-cleanup-357"></script>
+    <script src="app.js?v=20260521-admin-manual-cleanup-359"></script>
 </body>
 </html>
 

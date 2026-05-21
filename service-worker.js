@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260521-dashboard-ux-cleanup-357";
+const CACHE_NAME = "experience-hub-pwa-20260521-admin-manual-cleanup-359";
 const APP_SHELL = [
   "/",
   "/index.html",

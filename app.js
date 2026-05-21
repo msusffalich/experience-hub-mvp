@@ -1,4 +1,4 @@
-const APP_VERSION = "20260521-dashboard-ux-cleanup-357";
+const APP_VERSION = "20260521-admin-manual-cleanup-359";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -1869,6 +1869,8 @@ const manualContent = {
         "Inspirado por el análisis de Clio, Experience Hub normaliza cada evento y activo con una señal común: tipo de origen, dispositivo, ID de origen, fecha de captura, participante, tipo de contenido, permisos, estado de procesamiento y huella de trazabilidad. Esto prepara integraciones con móviles, wearables, calendarios, voz, APIs y MCP sin mezclar datos ni depender de un solo navegador.",
         "Administración muestra un Centro de mando posterior al MVP con tres frentes principales: integración de dispositivos, OCR/procesamiento multimodal y deploy/publicación.",
         "Administración operativa deja visibles primero los controles útiles para avanzar ahora: publicación, multidispositivo, participantes, feedback, perfil y respaldo. El cierre del piloto y la evidencia técnica quedan dentro de Diagnóstico avanzado.",
+        "Administración ya no se organiza como una sábana de paneles. Usa secciones desplegables por tema: Resumen ejecutivo, Persistencia y Supabase, Personas y piloto, Perfil y dispositivos, Calidad/cierre/evidencias, y Diagnóstico técnico avanzado.",
+        "El Manual muestra la versión vigente en una tarjeta superior y resume tres puertas de entrada: Inicio rápido, Operación y Administración. Usa búsqueda, filtros por sección y estado de revisión para consultar solo lo necesario.",
         "Administración incluye un Plan de publicación visible con la secuencia recomendada: limpiar interfaz, fortalecer Supabase, preparar GitHub, desplegar frontend, desplegar backend/API solo si es necesario y ejecutar una prueba privada en producción.",
         "Los paneles históricos de diagnóstico, QA, rutas MVP y evidencias técnicas quedan agrupados en Diagnóstico avanzado para reducir ruido sin perder trazabilidad.",
         "Administración incluye Persistencia multidispositivo como compuerta prioritaria. Revisa persistencia remota, identidad de usuario, Storage privado, URL publicada, respaldo y reportes disponibles desde varios dispositivos.",
@@ -2008,6 +2010,10 @@ const manualContent = {
         "El Panel muestra arriba el día, la hora local, la zona horaria y el próximo evento vinculado para ubicar la lectura del piloto en el momento actual.",
         "El Panel se simplifica para uso diario: acciones principales, métricas, Agenda, señales recientes, Diario y análisis contextual. Los estados técnicos, colas, preparación del piloto, adjuntos pendientes y diagnósticos viven en Administración.",
         "La regla de producto es simple por fuera y sofisticada por dentro: las páginas de usuario muestran el flujo principal, mientras los análisis, verificaciones y controles avanzados se ejecutan en segundo plano o se revisan en Administración.",
+        "Librería, Activos, Reportes, Publicaciones y Agenda usan una vista limpia: primero búsqueda, lectura y acción principal; las exportaciones, importaciones, auditorías y controles de revisión quedan plegados en opciones avanzadas o concentrados en Administración.",
+        "En Activos, el usuario ve primero la galería y los filtros útiles. Inventarios, CSV, plantillas, importación de metadatos y plan de procesamiento quedan en herramientas avanzadas para evitar ruido durante la revisión normal.",
+        "En Agenda, el usuario crea y consulta eventos sin ver controles técnicos de calendario. Importar, exportar .ics y bloquear días quedan en opciones avanzadas.",
+        "En Publicaciones, el flujo visible es generar, editar y exportar. La preparación editorial, el historial, la guía de salida y el paquete quedan plegados para no competir con el documento final.",
         "Cada participante piloto incluye un checklist de onboarding: acceso confirmado, manual revisado y primera prueba completada. Preparación del piloto avisa si quedan personas sin completar esos pasos.",
         "Registro de feedback piloto permite guardar observaciones por módulo, severidad y estado, resolverlas y exportarlas como CSV. Se encuentra en Administración y también se puede abrir desde el botón Registrar feedback del Panel.",
         "El feedback alto o bloqueante que siga abierto afecta la Preparación del piloto y aparece en Salud del sistema como atención.",
@@ -2338,7 +2344,7 @@ const manualContent = {
       title: "Usuario principal y participantes",
       items: [
         "Miguel queda registrado como usuario principal del sistema para que la evidencia inicial del MVP no se pierda al filtrar por persona.",
-        "El usuario principal aparece en Panel, Captura, LibrerÃ­a, Reportes, Hallazgos, Publicaciones y Agenda.",
+        "El usuario principal aparece en Panel, Captura, Librería, Reportes, Hallazgos, Publicaciones y Agenda.",
         "El usuario principal no cuenta como invitado dentro de la meta del piloto de 3 personas.",
         "Las experiencias y eventos reales sin persona asignada se vinculan al usuario principal; los datos de ejemplo no se reasignan.",
       ],
@@ -2796,6 +2802,8 @@ const manualContent = {
         "Admin shows private Storage readiness with remote assets, local previews, and pending sync.",
         "Multimodal readiness uses a local workflow audit: completed exports, reviewed import, copied assetId, saved metadata, generated suggestions, and visible human review.",
         "Profile lets you edit name, timezone, gender, birth year, and dominant experience type; email is shown as a reference for the authenticated account.",
+        "Admin is no longer organized as an endless sheet of panels. It uses thematic collapsible sections: Executive summary, Persistence and Supabase, People and pilot, Profile and devices, Quality/closure/evidence, and Advanced technical diagnostics.",
+        "The Manual shows the current version in a top card and summarizes three entry points: Quick start, Operations, and Administration. Use search, section filters, and review status to read only what you need.",
         "Demographic fields are optional and help weight environmental, geopolitical, and biometric impact using the loaded parameter matrix.",
         "Jobs and logs shows recent backend operations such as embedding backfills or PDF generation.",
         "Functional progress and Technical progress separate visible product progress from infrastructure stability so both tracks can move in parallel.",
@@ -2875,6 +2883,10 @@ const manualContent = {
         "If an attachment appears as pending sync, open the experience on the device where it was originally attached and save it again to complete the remote upload.",
         "The Dashboard is simplified for daily use: primary actions, metrics, Agenda, recent signals, Daily, and contextual analysis. Technical states, queues, pilot readiness, pending attachments, and diagnostics live in Admin.",
         "The product rule is simple outside and sophisticated inside: user pages show the main flow, while analysis, checks, and advanced controls run in the background or live in Admin.",
+        "Library, Assets, Reports, Publications, and Agenda use a cleaner view: search, reading, and the main action come first; exports, imports, audits, and review controls are collapsed into advanced options or concentrated in Admin.",
+        "In Assets, the user first sees the gallery and useful filters. Inventories, CSV files, templates, metadata import, and the processing plan live in advanced tools to reduce noise during normal review.",
+        "In Agenda, the user creates and reads events without seeing technical calendar controls first. Import, .ics export, and blocked days live in advanced options.",
+        "In Publications, the visible flow is generate, edit, and export. Editorial readiness, history, output guide, and package controls are collapsed so they do not compete with the final document.",
       ],
     },
     {
@@ -5303,7 +5315,8 @@ function applyLanguage() {
   document.getElementById("attachmentInputLabel").textContent = t("labels.attachmentInputLabel");
   document.getElementById("dailyRefreshButton").textContent = t("buttons.refreshDaily");
   applyDailyStaticActionsLanguage();
-  document.getElementById("dataQualityTitle").textContent = t("labels.dataQualityTitle");
+  const dataQualityTitle = document.getElementById("dataQualityTitle");
+  if (dataQualityTitle) dataQualityTitle.textContent = t("labels.dataQualityTitle");
   if (document.getElementById("downloadReportButton")) document.getElementById("downloadReportButton").textContent = t("buttons.downloadReport");
   if (document.getElementById("downloadCsvButton")) document.getElementById("downloadCsvButton").textContent = t("buttons.downloadCsv");
   if (document.getElementById("printReportButton")) document.getElementById("printReportButton").textContent = t("buttons.printReport");
@@ -5339,6 +5352,17 @@ function applyLanguage() {
     document.getElementById("authPasswordInput").type === "password" ? t("buttons.showPassword") : t("buttons.hidePassword");
   document.getElementById("manual-heading").textContent = t("viewTitles.manual");
   document.getElementById("manualUpdatedLabel").textContent = t("labels.manualUpdated");
+  document.getElementById("manualVersionEyebrow").textContent = state.language === "en" ? "Current version" : "Versión vigente";
+  document.getElementById("manualVersionValue").textContent = APP_VERSION;
+  document.getElementById("manualVersionSummary").textContent = state.language === "en"
+    ? "Practical guide organized by topic so you can understand the app flow without reading everything line by line."
+    : "Guía práctica organizada por temas para entender el flujo de la app sin leer todo de corrido.";
+  document.getElementById("manualGuideStartTitle").textContent = state.language === "en" ? "Quick start" : "Inicio rápido";
+  document.getElementById("manualGuideStartText").textContent = state.language === "en" ? "Capture, Library, Assets, and Reports." : "Captura, Librería, Activos y Reportes.";
+  document.getElementById("manualGuideOperateTitle").textContent = state.language === "en" ? "Operations" : "Operación";
+  document.getElementById("manualGuideOperateText").textContent = state.language === "en" ? "Privacy, Supabase, backup, and multi-device use." : "Privacidad, Supabase, respaldo y multidispositivo.";
+  document.getElementById("manualGuideAdminTitle").textContent = state.language === "en" ? "Administration" : "Administración";
+  document.getElementById("manualGuideAdminText").textContent = state.language === "en" ? "QA, pilot, diagnostics, and publishing." : "QA, piloto, diagnóstico y publicación.";
   document.getElementById("manualSearchLabel").textContent = state.language === "en" ? "Search the manual" : "Buscar en el manual";
   document.getElementById("manualSearchInput").placeholder =
     state.language === "en" ? "Search section, feature, or keyword" : "Buscar sección, función o palabra clave";
@@ -5354,6 +5378,8 @@ function applyLanguage() {
   document.getElementById("manualResetReviewButton").textContent = state.language === "en" ? "Reset review" : "Reiniciar revisión";
   document.getElementById("asset-library-heading").textContent = t("viewTitles.assetLibrary");
   document.getElementById("assetLibraryIntro").textContent = t("labels.assetLibraryIntro");
+  document.getElementById("assetAdvancedTitle").textContent = state.language === "en" ? "Advanced asset tools" : "Herramientas avanzadas de activos";
+  document.getElementById("assetAdvancedHelp").textContent = state.language === "en" ? "Inventory, import, review, and processing" : "Inventario, importación, revisión y procesamiento";
   document.getElementById("dashboardAgendaTitle").textContent = t("labels.dashboardAgendaTitle");
   document.getElementById("dashboardAgendaStatus").textContent = t("labels.dashboardAgendaStatus");
   const dashboardPilotTitle = document.getElementById("dashboardPilotTitle");
@@ -5378,6 +5404,8 @@ function applyLanguage() {
   if (assetDateFromLabel) assetDateFromLabel.textContent = t("labels.assetDateFrom");
   if (assetDateToLabel) assetDateToLabel.textContent = t("labels.assetDateTo");
   document.getElementById("agenda-heading").textContent = t("viewTitles.agenda");
+  document.getElementById("agendaAdvancedTitle").textContent = state.language === "en" ? "Advanced calendar options" : "Opciones avanzadas de calendario";
+  document.getElementById("agendaAdvancedHelp").textContent = state.language === "en" ? "Import, export, and blocked days" : "Importar, exportar y bloquear días";
   document.getElementById("agendaFormStatus").textContent = t("labels.agendaLocalStatus");
   document.getElementById("agendaPilotParticipantLabel").textContent = state.language === "en" ? "Linked pilot participant" : "Participante piloto vinculado";
   document.getElementById("agendaSaveButton").textContent = state.language === "en" ? "Save event" : "Guardar evento";
@@ -5389,6 +5417,10 @@ function applyLanguage() {
   document.getElementById("agendaSaveBlockedDatesButton").textContent = t("buttons.saveBlockedDates");
   document.getElementById("publications-heading").textContent = t("viewTitles.publications");
   document.getElementById("publicationStatus").textContent = t("labels.publicationStatus");
+  document.getElementById("reportExportTitle").textContent = state.language === "en" ? "Export and close report" : "Exportar y cerrar reporte";
+  document.getElementById("reportExportHelp").textContent = state.language === "en" ? "Downloads and review confirmation" : "Descargas y confirmación de revisión";
+  document.getElementById("publicationMoreTitle").textContent = state.language === "en" ? "More publication options" : "Más opciones de publicación";
+  document.getElementById("publicationMoreHelp").textContent = state.language === "en" ? "Printable view, copies, and editorial package" : "Vista imprimible, copias y paquete editorial";
   document.getElementById("reportParticipantLabel").textContent = state.language === "en" ? "Report participant / user" : "Participante / usuario del reporte";
   document.getElementById("insightsParticipantLabel").textContent = state.language === "en" ? "Participant / user" : "Participante / usuario";
   document.getElementById("publicationParticipantLabel").textContent = state.language === "en" ? "Source participant / user" : "Participante / usuario fuente";
@@ -5402,6 +5434,19 @@ function applyLanguage() {
   document.getElementById("publicationHistoryHeading").textContent = state.language === "en" ? "Drafts" : "Borradores";
   document.getElementById("automation-heading").textContent = t("viewTitles.automation");
   document.getElementById("embeddingBackfillButton").textContent = t("buttons.updateEmbeddings");
+  document.getElementById("adminHubStatus").textContent = state.language === "en" ? "Operations center" : "Centro operativo";
+  document.getElementById("adminExecutiveTitle").textContent = state.language === "en" ? "Executive summary" : "Resumen ejecutivo";
+  document.getElementById("adminExecutiveHelp").textContent = state.language === "en" ? "Status, priorities, and publishing" : "Estado, prioridades y publicación";
+  document.getElementById("adminPersistenceTitle").textContent = state.language === "en" ? "Persistence and Supabase" : "Persistencia y Supabase";
+  document.getElementById("adminPersistenceHelp").textContent = state.language === "en" ? "Multi-device, sync, backup, and real tests" : "Multidispositivo, sincronización, respaldo y pruebas reales";
+  document.getElementById("adminPeopleTitle").textContent = state.language === "en" ? "People and pilot" : "Personas y piloto";
+  document.getElementById("adminPeopleHelp").textContent = state.language === "en" ? "Participants, feedback, readiness, and closure" : "Participantes, feedback, preparación y cierre";
+  document.getElementById("adminProfileDevicesTitle").textContent = state.language === "en" ? "Profile and devices" : "Perfil y dispositivos";
+  document.getElementById("adminProfileDevicesHelp").textContent = state.language === "en" ? "Account, preferences, and capture sources" : "Cuenta, preferencias y fuentes de captura";
+  document.getElementById("adminQualityTitle").textContent = state.language === "en" ? "Quality, closure, and evidence" : "Calidad, cierre y evidencias";
+  document.getElementById("adminQualityHelp").textContent = state.language === "en" ? "QA, core MVP, rules, and records" : "QA, MVP central, reglas y registros";
+  document.getElementById("adminAdvancedTitle").textContent = state.language === "en" ? "Advanced technical diagnostics" : "Diagnóstico técnico avanzado";
+  document.getElementById("adminAdvancedHelp").textContent = state.language === "en" ? "API, demo data, integrations, backlog, and logs" : "API, datos demo, integraciones, backlog y logs";
   document.getElementById("workspaceBackfillButton").textContent = t("buttons.syncWorkspaceStructure");
   document.getElementById("refreshOpsButton").textContent = t("buttons.refreshOps");
   document.getElementById("supabaseDiagnosticsButton").textContent = t("buttons.verifySupabase");
@@ -5535,9 +5580,9 @@ function setupForm() {
 
 function validateCaptureFormBeforeRead() {
   const requiredFields = [
-    ["titleInput", state.language === "en" ? "title" : "tÃ­tulo"],
+    ["titleInput", state.language === "en" ? "title" : "título"],
     ["timestampInput", state.language === "en" ? "date and time" : "fecha y hora"],
-    ["durationInput", state.language === "en" ? "duration" : "duraciÃ³n"],
+    ["durationInput", state.language === "en" ? "duration" : "duración"],
   ];
   const missing = requiredFields
     .filter(([id]) => !String(document.getElementById(id)?.value || "").trim())
@@ -5568,26 +5613,26 @@ function getCaptureSaveErrorDetail(error) {
     const fields = Array.isArray(error.fields) && error.fields.length ? error.fields.join(", ") : (state.language === "en" ? "required fields" : "campos obligatorios");
     return state.language === "en"
       ? `Missing required fields: ${fields}. Complete them and save again.`
-      : `Faltan campos obligatorios: ${fields}. ComplÃ©talos y guarda de nuevo.`;
+      : `Faltan campos obligatorios: ${fields}. Complétalos y guarda de nuevo.`;
   }
   if (reason === "invalid_timestamp") {
     return state.language === "en"
       ? "The date and time are not valid. Select them again and save."
-      : "La fecha y hora no son vÃ¡lidas. SelecciÃ³nalas de nuevo y guarda.";
+      : "La fecha y hora no son válidas. Selecciónalas de nuevo y guarda.";
   }
   if (reason === "invalid_duration") {
     return state.language === "en"
       ? "Duration must be at least 1 minute. Correct it and save again."
-      : "La duraciÃ³n debe ser de al menos 1 minuto. CorrÃ­gela y guarda de nuevo.";
+      : "La duración debe ser de al menos 1 minuto. Corrígela y guarda de nuevo.";
   }
   if (String(reason).includes("Invalid time value")) {
     return state.language === "en"
       ? "The date and time could not be interpreted. Select them again and save."
-      : "La fecha y hora no se pudieron interpretar. SelecciÃ³nalas de nuevo y guarda.";
+      : "La fecha y hora no se pudieron interpretar. Selecciónalas de nuevo y guarda.";
   }
   return state.language === "en"
     ? "The experience could not be saved. Check the session, required fields, and connection; then try again."
-    : "No se pudo guardar la experiencia. Revisa sesiÃ³n, campos obligatorios y conexiÃ³n; luego intÃ©ntalo de nuevo.";
+    : "No se pudo guardar la experiencia. Revisa sesión, campos obligatorios y conexión; luego inténtalo de nuevo.";
 }
 
 function getCaptureSavePhaseLabel(phase = "") {
@@ -15610,15 +15655,21 @@ function renderPublicationPreview(draft) {
         ${renderPublicationEditor(draft)}
         ${renderPublicationMedia(draft.media || [])}
         ${renderPublicationFinalDocument(draft)}
-        ${renderPublicationExportGuide(draft)}
         <div class="publication-stats">
           <article><span>${t("metrics.experiences")}</span><strong>${draft.stats.experiences}</strong></article>
           <article><span>${t("metrics.media")}</span><strong>${draft.stats.media}</strong></article>
           <article><span>${t("metrics.avgEnergy")}</span><strong>${draft.stats.averageEnergy}/10</strong></article>
         </div>
-        ${renderPublicationReadiness(draft)}
-        ${renderPublicationClosureChecklist(draft)}
-        ${renderPublicationHistory(draft)}
+        <details class="user-advanced-drawer publication-review-drawer">
+          <summary>
+            <span>${escapeHtml(state.language === "en" ? "Editorial checks" : "Controles editoriales")}</span>
+            <small>${escapeHtml(state.language === "en" ? "Readiness, export guide and history" : "Preparación, guía de salida e historial")}</small>
+          </summary>
+          ${renderPublicationExportGuide(draft)}
+          ${renderPublicationReadiness(draft)}
+          ${renderPublicationClosureChecklist(draft)}
+          ${renderPublicationHistory(draft)}
+        </details>
         <p class="card-meta">${escapeHtml(t("labels.publicationPrivacyNote"))}</p>
       </div>
     </article>
@@ -20203,7 +20254,7 @@ function renderAdminCommandCenter() {
         deployStatus: "Ruta de salida",
         deployDetail: "Preparar GitHub, controles productivos de Supabase, hosting y una prueba privada en producción.",
         open: "Abrir",
-        summary: "Foco operativo para la siguiente versiÃ³n",
+        summary: "Foco operativo para la siguiente versión",
       };
   const summaryLabel = labels.summary;
   const cards = [
