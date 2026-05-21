@@ -1,4 +1,4 @@
-const APP_VERSION = "20260521-event-asset-links-338";
+const APP_VERSION = "20260521-remote-merge-fix-339";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -4056,6 +4056,10 @@ function normalizeExperiences(experiences) {
   }));
 }
 
+function normalizeExperienceItem(experience) {
+  return normalizeExperiences([experience || {}])[0];
+}
+
 function normalizeExperienceEvents(events = [], experienceId = "") {
   if (!Array.isArray(events)) return [];
   return events
@@ -5188,7 +5192,7 @@ function setupForm() {
       const apiResult = await saveExperienceToApi(experience);
       if (apiResult?.experience) {
         savePhase = "remote_merge";
-        const remoteExperience = mergeLocalMediaCacheForExperience(normalizeExperience(apiResult.experience), experience);
+        const remoteExperience = mergeLocalMediaCacheForExperience(normalizeExperienceItem(apiResult.experience), experience);
         const remoteIndex = state.experiences.findIndex((item) => item.id === remoteExperience.id);
         if (remoteIndex >= 0) state.experiences[remoteIndex] = remoteExperience;
         else state.experiences.unshift(remoteExperience);

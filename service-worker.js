@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260521-event-asset-links-338";
+const CACHE_NAME = "experience-hub-pwa-20260521-remote-merge-fix-339";
 const APP_SHELL = [
   "/",
   "/index.html",
