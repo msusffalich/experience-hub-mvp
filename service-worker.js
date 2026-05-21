@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260521-clio-metadata-core-336";
+const CACHE_NAME = "experience-hub-pwa-20260521-capture-phase-errors-337";
 const APP_SHELL = [
   "/",
   "/index.html",

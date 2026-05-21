@@ -1,4 +1,4 @@
-const APP_VERSION = "20260521-clio-metadata-core-336";
+const APP_VERSION = "20260521-capture-phase-errors-337";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -2036,6 +2036,7 @@ const manualContent = {
         "Puedes usar plantillas rápidas para revisión diaria, reunión de trabajo o chequeo de energía.",
         "La Guía de captura usa la calidad actual de datos para sugerir qué campos completar primero en la próxima experiencia.",
         "Captura muestra una confirmación visible después de guardar. La tarjeta indica si la experiencia quedó disponible en todos tus dispositivos, si quedó solo en este dispositivo o si requiere entrar y guardar pendientes antes de cerrar el navegador.",
+        "Si el guardado se detiene antes de completarse, Captura indica la fase exacta del problema: validación, lectura del formulario, guardado local, Supabase, Agenda o refresco visual. El formulario se conserva para reintentar sin perder el texto.",
         "En modo Supabase, Captura exige sesión antes de guardar nuevas experiencias. Esto evita que varios usuarios carguen datos que solo existan en un navegador.",
         "Si el guardado ya se completó pero falla una acción secundaria, como actualizar Agenda o refrescar una vista, la app conserva la confirmación de guardado y muestra una advertencia secundaria sin marcar la experiencia como perdida.",
         "Al abrir Librería desde la confirmación de guardado, la app limpia filtros y resalta la última experiencia guardada. Si un filtro oculta registros, Librería lo indica y permite ver todo.",
@@ -2544,6 +2545,7 @@ const manualContent = {
         "Capture shows a visible confirmation after saving. The card indicates whether the experience is available on all your devices, stayed only on this device, or requires sign-in and saving pending changes before closing the browser.",
         "In Supabase mode, Capture requires sign-in before saving new experiences. This prevents multiple users from creating records that exist only in one browser.",
         "If saving is already complete but a secondary action fails, such as updating Agenda or refreshing a view, the app keeps the saved confirmation and shows a secondary warning instead of marking the experience as lost.",
+        "If saving stops before completion, Capture shows the exact failing phase: validation, form reading, local save, Supabase, Agenda, or visual refresh. The form is kept so you can retry without losing the text.",
         "When Library is opened from the save confirmation, the app clears filters and highlights the last saved experience. If a filter hides records, Library says so and lets you show everything.",
         "The grammar and clarity review provides local suggestions for title, objective, location, people, and notes. It does not block saving; it improves reading quality and reports.",
         "Each suggestion shows editable proposed text and an Apply button. It can also open Copilot with a prepared rewrite prompt if the browser allows external windows.",
@@ -5105,21 +5107,29 @@ function setupForm() {
     let savedCommitted = false;
     let savedExperience = null;
     let agendaRequested = false;
+    let savePhase = "starting";
     try {
+      savePhase = "validation";
       validateCaptureFormBeforeRead();
+      savePhase = "read_form";
       const experience = await readForm();
       savedExperience = experience;
       const existingIndex = state.experiences.findIndex((item) => item.id === experience.id);
 
+      savePhase = "local_state";
       if (existingIndex >= 0) {
         state.experiences[existingIndex] = experience;
       } else {
         state.experiences.unshift(experience);
       }
 
+      savePhase = "local_persistence";
       const localSaved = saveExperiences();
+      savedCommitted = true;
+      savePhase = "remote_persistence";
       const apiResult = await saveExperienceToApi(experience);
       if (apiResult?.experience) {
+        savePhase = "remote_merge";
         const remoteExperience = mergeLocalMediaCacheForExperience(normalizeExperience(apiResult.experience), experience);
         const remoteIndex = state.experiences.findIndex((item) => item.id === remoteExperience.id);
         if (remoteIndex >= 0) state.experiences[remoteIndex] = remoteExperience;
@@ -5129,8 +5139,8 @@ function setupForm() {
       }
       state.lastSavedExperienceId = experience.id;
       state.captureSaveStatus = buildCaptureSaveStatus(savedExperience || experience, { ...apiResult, localSaved }, existingIndex >= 0);
-      savedCommitted = true;
       agendaRequested = Boolean(document.getElementById("syncAgendaInput")?.checked);
+      savePhase = "agenda_optional";
       const agendaSynced = agendaRequested ? syncExperienceToAgenda(experience) : false;
       if (agendaSynced) {
         state.captureSaveStatus.detail += state.language === "en" ? " Agenda was updated because you selected it." : " Agenda/Calendario fue actualizado porque lo seleccionaste.";
@@ -5140,6 +5150,7 @@ function setupForm() {
         clearForm();
       }
       try {
+        savePhase = "interface_refresh";
         resetLibraryFilters({ syncInputs: false });
         renderAll();
         showView("capture");
@@ -5162,7 +5173,7 @@ function setupForm() {
         console.warn("Post-save update failed", error);
         return;
       }
-      const detail = getCaptureSaveErrorDetail(error);
+      const detail = getCaptureSaveErrorDetailActionable(error, savePhase);
       state.captureSaveStatus = {
         type: "warn",
         title: state.language === "en" ? "Save failed" : "Guardado no completado",
@@ -5239,6 +5250,66 @@ function getCaptureSaveErrorDetail(error) {
   return state.language === "en"
     ? "The experience could not be saved. Check the session, required fields, and connection; then try again."
     : "No se pudo guardar la experiencia. Revisa sesiÃ³n, campos obligatorios y conexiÃ³n; luego intÃ©ntalo de nuevo.";
+}
+
+function getCaptureSavePhaseLabel(phase = "") {
+  const labels = state.language === "en"
+    ? {
+        starting: "start",
+        validation: "field validation",
+        read_form: "reading the form and attachments",
+        local_state: "adding the experience to the local list",
+        local_persistence: "saving the local copy",
+        remote_persistence: "saving to Supabase",
+        remote_merge: "reading the Supabase response",
+        agenda_optional: "optional Agenda update",
+        interface_refresh: "refreshing the interface",
+      }
+    : {
+        starting: "inicio",
+        validation: "validaci\u00f3n de campos",
+        read_form: "lectura del formulario y adjuntos",
+        local_state: "inserci\u00f3n en la lista local",
+        local_persistence: "guardado de la copia local",
+        remote_persistence: "guardado en Supabase",
+        remote_merge: "lectura de la respuesta de Supabase",
+        agenda_optional: "actualizaci\u00f3n opcional de Agenda",
+        interface_refresh: "actualizaci\u00f3n visual de la interfaz",
+      };
+  return labels[phase] || labels.starting;
+}
+
+function getCaptureSaveErrorDetailActionable(error, phase = "") {
+  const reason = error?.reason || error?.message || "";
+  if (reason === "required_fields") {
+    const fields = Array.isArray(error.fields) && error.fields.length ? error.fields.join(", ") : (state.language === "en" ? "required fields" : "campos obligatorios");
+    return state.language === "en"
+      ? `Missing required fields: ${fields}. Complete them and save again.`
+      : `Faltan campos obligatorios: ${fields}. Compl\u00e9talos y guarda de nuevo.`;
+  }
+  if (reason === "invalid_timestamp") {
+    return state.language === "en"
+      ? "The date and time are not valid. Select them again and save."
+      : "La fecha y hora no son v\u00e1lidas. Selecci\u00f3nalas de nuevo y guarda.";
+  }
+  if (reason === "invalid_duration") {
+    return state.language === "en"
+      ? "Duration must be at least 1 minute. Correct it and save again."
+      : "La duraci\u00f3n debe ser de al menos 1 minuto. Corr\u00edgela y guarda de nuevo.";
+  }
+  if (String(reason).includes("Invalid time value")) {
+    return state.language === "en"
+      ? "The date and time could not be interpreted. Select them again and save."
+      : "La fecha y hora no se pudieron interpretar. Selecci\u00f3nalas de nuevo y guarda.";
+  }
+  const phaseLabel = getCaptureSavePhaseLabel(phase);
+  const rawMessage = String(error?.message || "").trim();
+  const technicalDetail = rawMessage && !["capture_required_fields", "capture_invalid_timestamp", "capture_invalid_duration"].includes(rawMessage)
+    ? rawMessage.slice(0, 180)
+    : "";
+  return state.language === "en"
+    ? `The save stopped during: ${phaseLabel}. ${technicalDetail ? `Detail: ${technicalDetail}. ` : ""}The form was kept so you can retry.`
+    : `El guardado se detuvo en: ${phaseLabel}. ${technicalDetail ? `Detalle: ${technicalDetail}. ` : ""}El formulario se conserv\u00f3 para que puedas reintentar.`;
 }
 
 function setupAgenda() {
@@ -19229,7 +19300,7 @@ function renderAdminOperationalFocusPanel() {
         next: "Next priority",
         nextDetail: "Validate cross-device media with a real attachment on device A and device B, then close OCR/document processing and harden deploy.",
         save: "Capture save feedback",
-        saveDetail: "A saved experience stays marked as saved even if a later Agenda or view refresh step needs review.",
+        saveDetail: "Capture reports the exact failing phase and keeps a saved experience marked as saved if Agenda or refresh needs review.",
         agenda: "Agenda is optional",
         agendaDetail: "Capture no longer updates Agenda by default. It only creates or updates a calendar event when the checkbox is selected.",
         remote: "Remote persistence guard",
@@ -19255,6 +19326,9 @@ function renderAdminOperationalFocusPanel() {
         gate: "Persistente por defecto",
         gateDetail: "Los diagnósticos técnicos de Supabase/API quedan en Administración; el usuario solo ve entrar, guardar pendientes y reintentar.",
       };
+  if (state.language !== "en") {
+    labels.saveDetail = "Captura informa la fase exacta del fallo y mantiene una experiencia como guardada si Agenda o el refresco necesitan revisi\u00f3n.";
+  }
   const cards = [
     [labels.flow, labels.flowDetail],
     [labels.hidden, labels.hiddenDetail],
