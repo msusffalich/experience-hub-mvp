@@ -3,6 +3,7 @@ import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { inflateRawSync } from "node:zlib";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 await loadDotEnv();
@@ -229,6 +230,13 @@ async function handleApi(req, res, url) {
     await getRequestUser(req);
     const media = await readJson(req);
     sendJson(res, 200, await transcribeMedia(media));
+    return;
+  }
+
+  if (url.pathname === "/api/extract-document" && req.method === "POST") {
+    await getRequestUser(req);
+    const media = await readJson(req);
+    sendJson(res, 200, await extractDocumentText(media));
     return;
   }
 
@@ -2327,6 +2335,148 @@ async function transcribeMedia(media) {
     transcript: payload.text || "",
     status: "ok",
   };
+}
+
+async function extractDocumentText(media) {
+  const normalized = normalizeMedia(media);
+  const bytes = await getDocumentBytes(normalized);
+  const extension = getExtension(normalized.name || normalized.type || "");
+  let text = "";
+  let method = "";
+  if (extension === "docx" || normalized.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+    text = extractDocxText(bytes);
+    method = "server-docx-extraction";
+  } else if (extension === "pdf" || normalized.type === "application/pdf") {
+    text = extractPdfText(bytes);
+    method = "server-pdf-heuristic";
+  } else if (extension === "rtf" || normalized.type === "application/rtf" || normalized.type === "text/rtf") {
+    text = extractRtfText(bytes.toString("utf8"));
+    method = "server-rtf-extraction";
+  } else {
+    text = bytes.toString("utf8");
+    method = "server-text-extraction";
+  }
+  const cleaned = cleanExtractedText(text);
+  return {
+    status: cleaned ? "ok" : "empty",
+    method,
+    text: cleaned,
+    characters: cleaned.length,
+  };
+}
+
+async function getDocumentBytes(media) {
+  if (media.dataUrl) return dataUrlToBuffer(media.dataUrl);
+  if (media.url && /^https?:\/\//i.test(media.url)) {
+    const response = await fetch(media.url);
+    if (!response.ok) throw new HttpError(400, `document_fetch_failed_${response.status}`);
+    const buffer = Buffer.from(await response.arrayBuffer());
+    if (buffer.length > MAX_MEDIA_BODY_LENGTH) throw new HttpError(413, "document_too_large");
+    return buffer;
+  }
+  throw new HttpError(400, "document_data_required");
+}
+
+function getExtension(name = "") {
+  return String(name).split("?")[0].split("#")[0].split(".").pop()?.toLowerCase() || "";
+}
+
+function extractDocxText(bytes) {
+  const entries = readZipEntries(bytes);
+  const documentNames = Object.keys(entries).filter((name) =>
+    /^word\/(document|header\d*|footer\d*)\.xml$/i.test(name),
+  );
+  return documentNames
+    .map((name) => xmlToText(entries[name].toString("utf8")))
+    .filter(Boolean)
+    .join("\n\n");
+}
+
+function readZipEntries(bytes) {
+  const entries = {};
+  const eocdOffset = bytes.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]));
+  if (eocdOffset < 0) return entries;
+  const entryCount = bytes.readUInt16LE(eocdOffset + 10);
+  const centralOffset = bytes.readUInt32LE(eocdOffset + 16);
+  let offset = centralOffset;
+  for (let index = 0; index < entryCount; index += 1) {
+    if (bytes.readUInt32LE(offset) !== 0x02014b50) break;
+    const method = bytes.readUInt16LE(offset + 10);
+    const compressedSize = bytes.readUInt32LE(offset + 20);
+    const fileNameLength = bytes.readUInt16LE(offset + 28);
+    const extraLength = bytes.readUInt16LE(offset + 30);
+    const commentLength = bytes.readUInt16LE(offset + 32);
+    const localOffset = bytes.readUInt32LE(offset + 42);
+    const name = bytes.slice(offset + 46, offset + 46 + fileNameLength).toString("utf8");
+    if (bytes.readUInt32LE(localOffset) === 0x04034b50) {
+      const localNameLength = bytes.readUInt16LE(localOffset + 26);
+      const localExtraLength = bytes.readUInt16LE(localOffset + 28);
+      const dataStart = localOffset + 30 + localNameLength + localExtraLength;
+      const compressed = bytes.slice(dataStart, dataStart + compressedSize);
+      if (method === 0) entries[name] = compressed;
+      if (method === 8) entries[name] = inflateRawSync(compressed);
+    }
+    offset += 46 + fileNameLength + extraLength + commentLength;
+  }
+  return entries;
+}
+
+function xmlToText(xml = "") {
+  return xml
+    .replace(/<w:tab\/>/g, "\t")
+    .replace(/<\/w:p>/g, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, "\"")
+    .replace(/&apos;/g, "'");
+}
+
+function extractPdfText(bytes) {
+  const raw = bytes.toString("latin1");
+  const strings = [];
+  const literalPattern = /\((?:\\.|[^\\)]){2,}\)\s*Tj/g;
+  for (const match of raw.matchAll(literalPattern)) {
+    strings.push(decodePdfLiteral(match[0].replace(/\)\s*Tj$/, "").slice(1)));
+  }
+  const arrayPattern = /\[((?:\s*\((?:\\.|[^\\)])+\)\s*-?\d*)+)\]\s*TJ/g;
+  for (const match of raw.matchAll(arrayPattern)) {
+    for (const part of match[1].matchAll(/\((?:\\.|[^\\)])+\)/g)) {
+      strings.push(decodePdfLiteral(part[0].slice(1, -1)));
+    }
+  }
+  if (strings.length) return strings.join(" ");
+  return raw
+    .replace(/[^\x09\x0a\x0d\x20-\x7eáéíóúÁÉÍÓÚñÑüÜ]+/g, " ")
+    .replace(/\s+/g, " ");
+}
+
+function decodePdfLiteral(value = "") {
+  return value
+    .replace(/\\n/g, "\n")
+    .replace(/\\r/g, "\r")
+    .replace(/\\t/g, "\t")
+    .replace(/\\\(/g, "(")
+    .replace(/\\\)/g, ")")
+    .replace(/\\\\/g, "\\");
+}
+
+function extractRtfText(value = "") {
+  return value
+    .replace(/\\'[0-9a-fA-F]{2}/g, " ")
+    .replace(/\\par[d]?/g, "\n")
+    .replace(/\\[a-zA-Z]+\d* ?/g, "")
+    .replace(/[{}]/g, " ");
+}
+
+function cleanExtractedText(value = "") {
+  return String(value || "")
+    .replace(/\u0000/g, "")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim()
+    .slice(0, 20000);
 }
 
 function activeTranscriptionProvider() {

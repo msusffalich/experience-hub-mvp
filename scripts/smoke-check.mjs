@@ -46,6 +46,8 @@ assert(files.app.includes("buildExperienceEventSearchText(item)"), "Experience s
 assert(files.app.includes("assetExtractedText") && files.app.includes("asset-extracted-text-panel"), "Asset cards do not expose extracted text evidence.");
 assert(files.app.includes("extractionMethod") && files.app.includes("extractionStatus"), "Asset processing metadata is not preserved.");
 assert(files.app.includes("asset.extractedText") && files.app.includes("extractedText: asset.extractedText"), "Asset search/inventory does not include extracted text.");
+assert(files.app.includes("/extract-document"), "Frontend does not call the backend document extraction endpoint.");
+assert(files.server.includes("/api/extract-document") && files.server.includes("extractDocxText") && files.server.includes("extractPdfText"), "Server document extraction endpoint is incomplete.");
 assert(files.styles.includes(".asset-extracted-text-panel"), "Styles are missing the extracted text panel.");
 assert(files.app.includes("Linked event") && files.app.includes("Evento vinculado"), "Report export does not label linked events in both languages.");
 assert(files.styles.includes(".library-event-preview") && files.styles.includes(".report-event-timeline"), "Styles are missing event timeline UI classes.");
@@ -59,6 +61,8 @@ assert(files.app.includes("La búsqueda de Librería y Línea de tiempo también
 assert(files.app.includes("Library and Timeline search also find text inside internal events."), "English manual does not explain event search.");
 assert(files.app.includes("El procesamiento de activos ahora muestra método"), "Spanish manual does not explain asset processing evidence.");
 assert(files.app.includes("Asset processing now shows method"), "English manual does not explain asset processing evidence.");
+assert(files.app.includes("El backend local intenta extraer texto"), "Spanish manual does not explain backend document extraction.");
+assert(files.app.includes("The local backend attempts text extraction"), "English manual does not explain backend document extraction.");
 assert(files.app.includes("Prueba autom") && files.app.includes("Automated smoke check"), "Admin does not expose the automated smoke check.");
 
 if (failures.length) {

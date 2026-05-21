@@ -1,4 +1,4 @@
-const APP_VERSION = "20260521-asset-processing-evidence-343";
+const APP_VERSION = "20260521-document-extraction-344";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -1892,6 +1892,7 @@ const manualContent = {
         "El contrato de dispositivos se puede exportar como Markdown o JSON para compartirlo con desarrolladores, integraciones API/MCP o proveedores de wearables.",
         "Activos multimodales incluye Procesar ahora y Procesar visibles. Los documentos de texto se extraen localmente; los audios usan transcripción del backend si está configurada; imágenes y videos generan una revisión guiada transparente hasta conectar OCR o reconocimiento visual profundo.",
         "El procesamiento de activos ahora muestra método, estado, fecha de procesamiento y texto extraído cuando existe. Ese texto entra en búsqueda, inventario JSON/CSV y auditoría de metadatos.",
+        "El backend local intenta extraer texto de TXT, Markdown, HTML, CSV, JSON, RTF, DOCX y PDF. PDF usa extracción heurística y puede requerir revisión si el archivo es escaneado o está protegido.",
         "El texto extraído o generado queda guardado como texto analítico del activo y entra en búsqueda, reportes, memoria y publicaciones, siempre con revisión humana antes de salidas finales.",
         "Administración incluye un tablero de frentes paralelos para agrupar el cierre del MVP en trabajo funcional, técnico, piloto, QA/manual e integraciones, con dueño sugerido y próxima acción.",
         "Administración muestra Reglas de desarrollo como criterio permanente para cada incremento: actualizar Manual y Administración, fortalecer solidez/agilidad y seguir patrones probados.",
@@ -2407,6 +2408,7 @@ const manualContent = {
         "The device contract can be exported as Markdown or JSON to share with developers, API/MCP integrations, or wearable providers.",
         "Multimodal Assets includes Process now and Process visible. Text documents are extracted locally; audio uses backend transcription when configured; images and videos generate a transparent guided review until deep OCR or visual recognition is connected.",
         "Asset processing now shows method, status, processed date, and extracted text when available. That text is included in search, JSON/CSV inventory, and metadata audit.",
+        "The local backend attempts text extraction for TXT, Markdown, HTML, CSV, JSON, RTF, DOCX, and PDF. PDF uses heuristic extraction and may require review when the file is scanned or protected.",
         "Extracted or generated text is saved as asset analytical text and becomes available for search, reports, memory, and publications, with human review before final outputs.",
         "Admin includes a parallel workstreams board to group MVP closure into functional, technical, pilot, QA/manual, and integration work, with suggested owner and next action.",
         "Admin shows Development Rules as permanent criteria for every increment: update Manual and Admin, improve robustness/agility, and follow proven patterns.",
@@ -11191,6 +11193,31 @@ async function buildProcessedAssetAnalysis(asset, manual = {}) {
       extractedText: text,
       analysisText: buildExtractedTextAssetAnalysis(asset, text, manual),
     };
+  }
+  if (asset.kind === "document" && state.apiOnline) {
+    try {
+      const payload = await apiRequest("/extract-document", {
+        method: "POST",
+        body: JSON.stringify({
+          id: asset.id || asset.assetKey,
+          name: asset.name,
+          type: asset.type || asset.originalType || "application/octet-stream",
+          size: asset.size || 0,
+          dataUrl: asset.dataUrl,
+          url: asset.url,
+        }),
+      });
+      if (payload?.text) {
+        return {
+          status: "automatic",
+          method: payload.method || "server-document-extraction",
+          extractedText: payload.text,
+          analysisText: buildExtractedTextAssetAnalysis(asset, payload.text, manual),
+        };
+      }
+    } catch {
+      // Fall back to a structured human-review note below.
+    }
   }
   if (asset.kind === "audio" && state.apiOnline && state.config?.transcriptionProvider === "openai") {
     try {
