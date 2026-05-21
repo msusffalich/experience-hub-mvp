@@ -6487,6 +6487,23 @@ button.asset-processing-summary-card {
   line-height: 1.4;
 }
 
+.attachment-event-link {
+  display: grid;
+  gap: 5px;
+  max-width: 360px;
+}
+
+.attachment-event-link span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.attachment-event-link select {
+  width: 100%;
+  min-width: 0;
+}
+
 .attachment-card > .ghost-button {
   align-self: start;
   min-height: 32px;

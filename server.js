@@ -931,7 +931,7 @@ function toAssetRow(attachment, experience, workspaceId, user, index = 0) {
     owner_user_id: user.id || null,
     participant_id: participantId,
     experience_id: experience.id,
-    event_id: null,
+    event_id: attachment.eventId || attachment.metadata?.linkedEventId || null,
     name: attachment.name || `Activo ${index + 1}`,
     kind,
     mime_type: attachment.type || attachment.originalType || "application/octet-stream",
@@ -959,6 +959,9 @@ function toAssetRow(attachment, experience, workspaceId, user, index = 0) {
         previewable: attachment.previewable !== false,
         remoteSyncFailed: Boolean(attachment.remoteSyncFailed),
         experienceTitle: experience.title || "",
+        linkedEventId: attachment.eventId || attachment.metadata?.linkedEventId || "",
+        linkedEventTitle: attachment.eventTitle || attachment.metadata?.linkedEventTitle || "",
+        eventOrder: attachment.eventOrder || attachment.metadata?.eventOrder || "",
         processingStatus: inferAssetProcessingStatus(attachment, kind),
       },
     }),
@@ -989,6 +992,9 @@ function fromAssetRow(row) {
     processingStatus: metadata.processingStatus || "",
     permissions: metadata.permissions || "",
     metadataFingerprint: metadata.metadataFingerprint || "",
+    eventId: row.event_id || metadata.linkedEventId || "",
+    eventTitle: metadata.linkedEventTitle || "",
+    eventOrder: metadata.eventOrder || "",
     metadata,
   };
 }

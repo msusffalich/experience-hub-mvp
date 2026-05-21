@@ -109,6 +109,9 @@ CREATE INDEX IF NOT EXISTS assets_workspace_created_idx
 CREATE INDEX IF NOT EXISTS assets_experience_idx
   ON assets (experience_id);
 
+CREATE INDEX IF NOT EXISTS assets_event_idx
+  ON assets (event_id);
+
 ALTER TABLE assets
   ADD COLUMN IF NOT EXISTS source_type TEXT,
   ADD COLUMN IF NOT EXISTS source_device TEXT,

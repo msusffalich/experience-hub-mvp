@@ -1,4 +1,4 @@
-const APP_VERSION = "20260521-capture-phase-errors-337";
+const APP_VERSION = "20260521-event-asset-links-338";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -1863,6 +1863,7 @@ const manualContent = {
         "En modo publicado, Captura bloquea el guardado si no hay sesión activa. Esto evita registros aislados en un solo navegador y protege la prueba multidispositivo.",
         "El refactor multidispositivo introduce el modelo correcto de workspace, miembros, participantes, eventos internos y activos. La migración SQL está en database/workspace-events-assets.sql y debe aplicarse antes de considerar compartición multiusuario real.",
         "Captura ahora permite registrar varios eventos dentro de una experiencia. Cada línea representa un momento de la experiencia y se conserva para reportes, activos, publicaciones e integración futura con dispositivos.",
+        "Cada adjunto de Captura puede quedar asociado a toda la experiencia o a un evento interno específico. Esto permite separar evidencia por momento: una imagen, audio, video o documento puede pertenecer al evento 1, 2, 3 o al contexto general.",
         "Cuando una experiencia tiene participante piloto, el backend sincroniza primero ese participante en Supabase y luego vincula sus eventos internos y activos. Esto evita que reportes, activos o dispositivos queden con dueños inconsistentes.",
         "Cuando la migración de workspace está aplicada, el servidor sincroniza esos eventos internos en la tabla experience_events y los vuelve a leer desde Supabase. Si la tabla aún no existe, mantiene compatibilidad guardándolos dentro de la experiencia.",
         "Cuando la misma migración está aplicada, los adjuntos también se sincronizan y se vuelven a leer desde la tabla assets con experiencia, participante, tipo, ruta Storage, texto previo y texto analítico. Esto permite que otros dispositivos reconstruyan la multimedia desde una fuente común.",
@@ -2371,6 +2372,7 @@ const manualContent = {
         "In published mode, Capture blocks saving when there is no active session. This prevents isolated records in one browser and protects the multi-device test.",
         "The multi-device refactor introduces the correct workspace, members, participants, internal events, and assets model. The SQL migration lives in database/workspace-events-assets.sql and must be applied before real multi-user sharing is considered complete.",
         "Capture now supports several events inside one experience. Each line represents one moment in the experience and is preserved for reports, assets, publications, and future device integration.",
+        "Each Capture attachment can be linked to the whole experience or to a specific internal event. This separates evidence by moment: an image, audio, video, or document can belong to event 1, 2, 3, or the general context.",
         "When an experience has a pilot participant, the backend syncs that participant in Supabase first and then links internal events and assets to it. This prevents reports, assets, or devices from ending up with inconsistent ownership.",
         "When the workspace migration is applied, the server syncs those internal events into the experience_events table and reads them back from Supabase. If the table does not exist yet, it remains compatible by keeping them inside the experience.",
         "When the same migration is applied, attachments are also synced into and read back from the assets table with experience, participant, type, Storage path, preview text, and analytical text. This lets other devices rebuild media from one shared source.",
@@ -4086,6 +4088,62 @@ function parseExperienceEventsInput(value = "", experienceId = "") {
     });
 }
 
+function getCaptureEventOptions(experienceId = document.getElementById("editingId")?.value || "draft") {
+  return parseExperienceEventsInput(document.getElementById("experienceEventsInput")?.value || "", experienceId)
+    .sort((a, b) => a.order - b.order)
+    .map((event) => ({
+      ...event,
+      ref: `event-${event.order}`,
+      label: event.title || event.description || `${state.language === "en" ? "Event" : "Evento"} ${event.order}`,
+    }));
+}
+
+function getAttachmentEventRef(attachment = {}, eventOptions = []) {
+  if (attachment.eventRef && eventOptions.some((event) => event.ref === attachment.eventRef)) return attachment.eventRef;
+  if (attachment.eventId) {
+    const matched = eventOptions.find((event) => event.id === attachment.eventId);
+    if (matched) return matched.ref;
+  }
+  if (attachment.eventOrder) {
+    const matched = eventOptions.find((event) => Number(event.order) === Number(attachment.eventOrder));
+    if (matched) return matched.ref;
+  }
+  return "";
+}
+
+function linkAttachmentsToEvents(attachments = [], events = []) {
+  return attachments.map((attachment) => {
+    const eventRef = attachment.eventRef || (attachment.eventOrder ? `event-${attachment.eventOrder}` : "");
+    const linkedEvent = eventRef ? events.find((event) => `event-${event.order}` === eventRef) : null;
+    if (!linkedEvent) {
+      const { eventId, eventTitle, eventOrder, ...rest } = attachment;
+      return {
+        ...rest,
+        eventRef: "",
+        metadata: {
+          ...(attachment.metadata || {}),
+          linkedEventId: "",
+          linkedEventTitle: "",
+          eventOrder: "",
+        },
+      };
+    }
+    return {
+      ...attachment,
+      eventRef,
+      eventId: linkedEvent.id,
+      eventTitle: linkedEvent.title,
+      eventOrder: linkedEvent.order,
+      metadata: {
+        ...(attachment.metadata || {}),
+        linkedEventId: linkedEvent.id,
+        linkedEventTitle: linkedEvent.title,
+        eventOrder: linkedEvent.order,
+      },
+    };
+  });
+}
+
 function normalizeCategoryName(category) {
   return categoryAliases[category] || category || "Sin categoría";
 }
@@ -5192,6 +5250,8 @@ function setupForm() {
   document.getElementById("mediaInput").addEventListener("change", handleMediaSelection);
   form.addEventListener("input", renderCaptureWritingCoach);
   form.addEventListener("change", renderCaptureWritingCoach);
+  document.getElementById("experienceEventsInput")?.addEventListener("input", renderAttachmentPreview);
+  document.getElementById("attachmentPreview")?.addEventListener("change", handleAttachmentEventSelection);
   document.getElementById("captureSaveStatus")?.addEventListener("click", handleCaptureSaveStatusClick);
 }
 
@@ -6607,7 +6667,8 @@ function syncExperienceToAgenda(experience = {}) {
 async function readForm() {
   const existingId = document.getElementById("editingId").value;
   const id = existingId || createId();
-  const attachments = [...state.pendingAttachments, ...(await readSelectedFiles())];
+  const events = parseExperienceEventsInput(document.getElementById("experienceEventsInput")?.value || "", id);
+  const attachments = linkAttachmentsToEvents([...state.pendingAttachments, ...(await readSelectedFiles())], events);
   const pilotParticipantId = document.getElementById("pilotParticipantInput")?.value || "";
   return {
     id,
@@ -6623,7 +6684,7 @@ async function readForm() {
     location: document.getElementById("locationInput").value.trim() || "Sin ubicación",
     people: document.getElementById("peopleInput").value.trim() || "Sin personas",
     notes: document.getElementById("notesInput").value.trim(),
-    events: parseExperienceEventsInput(document.getElementById("experienceEventsInput")?.value || "", id),
+    events,
     attachments,
   };
 }
@@ -6934,6 +6995,12 @@ function renderPendingAttachmentCard(attachment) {
   const extension = attachment.extension || getFileExtension(attachment.name);
   const previewable = attachment.previewable !== false && Boolean(attachment.dataUrl || attachment.url);
   const source = attachment.url || attachment.dataUrl || "";
+  const eventOptions = getCaptureEventOptions();
+  const selectedEventRef = getAttachmentEventRef(attachment, eventOptions);
+  const eventSelectOptions = [
+    `<option value="">${escapeHtml(state.language === "en" ? "Whole experience" : "Toda la experiencia")}</option>`,
+    ...eventOptions.map((event) => `<option value="${escapeHtml(event.ref)}" ${event.ref === selectedEventRef ? "selected" : ""}>${escapeHtml(`${event.order}. ${event.label}`)}</option>`),
+  ].join("");
   const previewMarkup =
     kind === "image" && previewable
       ? `<img src="${source}" alt="${escapeHtml(attachment.name)}" />`
@@ -6961,6 +7028,12 @@ function renderPendingAttachmentCard(attachment) {
         <strong>${escapeHtml(attachment.name)}</strong>
         <p class="card-meta">${escapeHtml(formatFileSize(attachment.size))} · ${escapeHtml(t("labels.attachmentStoredInline"))} · ${escapeHtml(t("labels.attachmentReady"))}</p>
         <p>${escapeHtml(t("labels.attachmentProcessingHint"))}</p>
+        <label class="attachment-event-link">
+          <span>${escapeHtml(state.language === "en" ? "Evidence belongs to" : "Evidencia de")}</span>
+          <select data-attachment-event-select="${escapeHtml(attachment.id)}">
+            ${eventSelectOptions}
+          </select>
+        </label>
       </div>
       <button class="ghost-button" type="button" onclick="removePendingAttachment('${attachment.id}')">${escapeHtml(t("buttons.remove"))}</button>
     </article>
@@ -6969,6 +7042,44 @@ function renderPendingAttachmentCard(attachment) {
 
 function removePendingAttachment(id) {
   state.pendingAttachments = state.pendingAttachments.filter((attachment) => attachment.id !== id);
+  renderAttachmentPreview();
+}
+
+function handleAttachmentEventSelection(event) {
+  const select = event.target.closest("[data-attachment-event-select]");
+  if (!select) return;
+  const attachmentId = select.dataset.attachmentEventSelect;
+  const eventOptions = getCaptureEventOptions();
+  const selected = eventOptions.find((item) => item.ref === select.value);
+  state.pendingAttachments = state.pendingAttachments.map((attachment) => {
+    if (attachment.id !== attachmentId) return attachment;
+    if (!selected) {
+      const { eventId, eventTitle, eventOrder, ...rest } = attachment;
+      return {
+        ...rest,
+        eventRef: "",
+        metadata: {
+          ...(attachment.metadata || {}),
+          linkedEventId: "",
+          linkedEventTitle: "",
+          eventOrder: "",
+        },
+      };
+    }
+    return {
+      ...attachment,
+      eventRef: selected.ref,
+      eventId: selected.id,
+      eventTitle: selected.title,
+      eventOrder: selected.order,
+      metadata: {
+        ...(attachment.metadata || {}),
+        linkedEventId: selected.id,
+        linkedEventTitle: selected.title,
+        eventOrder: selected.order,
+      },
+    };
+  });
   renderAttachmentPreview();
 }
 
@@ -9812,6 +9923,8 @@ function collectMultimodalAssets() {
       const signalMetadata = attachment.metadata || {};
       const sourceDevice = attachment.sourceDevice || signalMetadata.sourceDevice || attachment.device || attachment.source || "";
       const sourceType = attachment.sourceType || signalMetadata.sourceType || signalMetadata.source || attachment.source || "";
+      const linkedEventId = attachment.eventId || signalMetadata.linkedEventId || "";
+      const linkedEventTitle = attachment.eventTitle || signalMetadata.linkedEventTitle || "";
       return {
         ...attachment,
         kind,
@@ -9821,6 +9934,8 @@ function collectMultimodalAssets() {
         isDemo: Boolean(attachment.demo || experience.isDemo),
         category: experience.category,
         objective: experience.objective || "",
+        eventId: linkedEventId,
+        eventTitle: linkedEventTitle,
         timestamp: experience.timestamp,
         location: experience.location || "",
         people: experience.people || "",
@@ -10806,6 +10921,7 @@ function renderAssetCard(asset) {
         <dl class="asset-meta-list">
           <div><dt>${t("labels.assetId")}</dt><dd>${escapeHtml(asset.assetKey)}</dd></div>
           <div><dt>${t("labels.assetLinkedExperience")}</dt><dd>${escapeHtml(asset.experienceTitle)}</dd></div>
+          <div><dt>${escapeHtml(state.language === "en" ? "Linked event" : "Evento vinculado")}</dt><dd>${escapeHtml(asset.eventTitle || (state.language === "en" ? "Whole experience" : "Toda la experiencia"))}</dd></div>
           <div><dt>${t("labels.assetStorage")}</dt><dd>${escapeHtml(asset.storageLabel)}</dd></div>
           <div><dt>${t("labels.assetLanguage")}</dt><dd>${escapeHtml(String(asset.language || "-").toUpperCase())}</dd></div>
           <div><dt>${t("labels.assetDevice")}</dt><dd>${escapeHtml(asset.device)}</dd></div>
