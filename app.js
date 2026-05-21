@@ -1,4 +1,4 @@
-const APP_VERSION = "20260521-pdf-ocr-archives-364";
+const APP_VERSION = "20260521-asset-preview-reading-365";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -233,6 +233,11 @@ const i18n = {
       assetProcessingActionPlanHelp: "Lista accionable de activos visibles que requieren OCR, transcripción, descripción o revisión audiovisual.",
       assetProcessingActionPlanReady: "Los activos visibles no tienen pendientes de procesamiento.",
       assetProcessingActionPlanMore: "{count} pendientes adicionales en la vista actual.",
+      assetDownloadFile: "Descargar archivo",
+      assetArchiveOnly: "Archivo comprimido",
+      assetArchiveOnlyDetail: "Se guarda y se descarga, pero no se lee ni se interpreta automáticamente.",
+      assetRemoteReadable: "Lectura multidispositivo",
+      assetRemoteReadableDetail: "Los archivos en Supabase se procesan desde su URL firmada temporal, sin depender del dispositivo original.",
       assetUseCases: "Uso recomendado",
       assetUsePublication: "Publicaciones",
       assetUseReport: "Reportes",
@@ -999,6 +1004,11 @@ const i18n = {
       assetProcessingActionPlanHelp: "Actionable list of visible assets that need OCR, transcription, description, or audiovisual review.",
       assetProcessingActionPlanReady: "Visible assets have no processing backlog.",
       assetProcessingActionPlanMore: "{count} additional pending assets in the current view.",
+      assetDownloadFile: "Download file",
+      assetArchiveOnly: "Archive file",
+      assetArchiveOnlyDetail: "Stored and downloadable, but not read or interpreted automatically.",
+      assetRemoteReadable: "Multi-device reading",
+      assetRemoteReadableDetail: "Files in Supabase are processed from their temporary signed URL, without depending on the original device.",
       assetUseCases: "Recommended use",
       assetUsePublication: "Publications",
       assetUseReport: "Reports",
@@ -1914,6 +1924,7 @@ const manualContent = {
         "La sección Dispositivos ahora documenta un contrato único de integración. Cualquier fuente nueva debe entregar sourceId, sourceType, capturedAt, participantId, payloadType y payload antes de alimentar experiencias, activos, Agenda o contexto.",
         "El contrato de dispositivos se puede exportar como Markdown o JSON para compartirlo con desarrolladores, integraciones API/MCP o proveedores de wearables.",
         "Activos multimodales incluye Procesar ahora y Procesar visibles. Los documentos de texto se extraen localmente; los PDFs escaneados usan OCR del backend cuando OCR_PROVIDER=openai y OPENAI_API_KEY están configurados; los audios usan transcripción del backend si está configurada; las imágenes usan OCR automático del backend.",
+        "Siguiendo el patrón del blueprint de CLIO, los activos sincronizados se leen desde el backend usando URLs firmadas temporales de Supabase. Otro dispositivo puede procesar documentos, imágenes y audios sin depender del archivo local original.",
         "El procesamiento de activos ahora muestra método, estado, fecha de procesamiento y texto extraído cuando existe. Ese texto entra en búsqueda, inventario JSON/CSV y auditoría de metadatos.",
         "El backend local intenta extraer texto de TXT, Markdown, HTML, CSV, JSON, RTF, DOCX y PDF. PDF usa extracción heurística y puede requerir revisión si el archivo es escaneado o está protegido.",
         "El texto extraído o generado queda guardado como texto analítico del activo y entra en búsqueda, reportes, memoria y publicaciones, siempre con revisión humana antes de salidas finales.",
@@ -2092,6 +2103,7 @@ const manualContent = {
         "Video aceptado: MP4, MOV, M4V, WebM, MKV, AVI, WMV, MPEG/MPG, 3GP y HEVC. Vista previa/reproducción nativa inicial: MP4, M4V, WebM y MOV, según soporte del navegador.",
         "Aceptar un formato significa conservarlo, clasificarlo y hacerlo trazable. Previsualizarlo significa que el navegador puede mostrarlo o reproducirlo directamente. OCR, transcripción, conversión de video y extracción avanzada quedan como fases posteriores.",
         "Si el navegador no puede previsualizar un formato específico, la app lo conserva, lo clasifica y permite abrirlo como archivo desde Activos multimodales.",
+        "PDF se previsualiza con una vista embebida cuando el navegador lo permite; DOCX, RTF y documentos no nativos se leen por extracción de texto del backend o se descargan como archivo.",
         "El botón Grabar audio usa el micrófono del navegador. Si el navegador soporta Web Speech, agrega una transcripción experimental a las notas.",
       ],
     },
@@ -2450,6 +2462,7 @@ const manualContent = {
         "The Devices section now documents a single integration contract. Every new source must provide sourceId, sourceType, capturedAt, participantId, payloadType, and payload before feeding experiences, assets, Agenda, or context.",
         "The device contract can be exported as Markdown or JSON to share with developers, API/MCP integrations, or wearable providers.",
         "Multimodal Assets includes Process now and Process visible. Text documents are extracted locally; scanned PDFs use backend OCR when OCR_PROVIDER=openai and OPENAI_API_KEY are configured; audio uses backend transcription when configured; images use automatic backend OCR.",
+        "Following the CLIO blueprint pattern, synced assets are read by the backend through temporary Supabase signed URLs. Another device can process documents, images, and audio without depending on the original local file.",
         "Asset processing now shows method, status, processed date, and extracted text when available. That text is included in search, JSON/CSV inventory, and metadata audit.",
         "The local backend attempts text extraction for TXT, Markdown, HTML, CSV, JSON, RTF, DOCX, and PDF. PDF uses heuristic extraction and may require review when the file is scanned or protected.",
         "Extracted or generated text is saved as asset analytical text and becomes available for search, reports, memory, and publications, with human review before final outputs.",
@@ -2621,6 +2634,7 @@ const manualContent = {
         "Accepted video formats: MP4, MOV, M4V, WebM, MKV, AVI, WMV, MPEG/MPG, 3GP, and HEVC. Initial native playback: MP4, M4V, WebM, and MOV, depending on browser support.",
         "Accepting a format means the app stores, classifies, and traces it. Previewing means the browser can display or play it directly. OCR, transcription, video conversion, and advanced extraction remain later phases.",
         "If the browser cannot preview a specific format, the app still stores it, classifies it, and lets you open it as a file from Multimodal Assets.",
+        "PDF is previewed with an embedded viewer when the browser supports it; DOCX, RTF, and non-native documents are read through backend text extraction or downloaded as files.",
         "Record audio uses the browser microphone. If Web Speech is supported, experimental transcription is appended to notes.",
       ],
     },
@@ -10582,13 +10596,17 @@ function renderAttachmentMedia(attachment, options = {}) {
   const source = attachment.url || attachment.dataUrl;
   const extension = attachment.extension || getFileExtension(attachment.name);
   if (kind === "document") {
+    if (isArchiveAsset(attachment)) return renderArchiveMediaCard(attachment, source, options);
     if (!source && !attachment.previewText) return renderAttachmentNeedsSync(attachment, kind);
     const text = attachment.previewText || decodeTextDataUrl(source);
+    const isPdf = isPdfAsset(attachment);
     return `
       <div class="media-document-card ${options.primary ? "is-primary" : ""}">
         <strong>${escapeHtml((extension || "doc").toUpperCase())}</strong>
         <span>${escapeHtml(attachment.name || getAssetKindLabel(kind))}</span>
+        ${isPdf && source ? `<iframe src="${escapeHtml(source)}" title="${escapeHtml(attachment.name || "PDF")}" loading="lazy"></iframe>` : ""}
         ${text ? `<pre>${escapeHtml(text.slice(0, options.primary ? 320 : 140))}</pre>` : `<small>${escapeHtml(t("labels.attachmentPreviewUnsupported"))}</small>`}
+        ${source ? `<a href="${escapeHtml(source)}" download="${escapeHtml(attachment.name || "document")}" target="_blank" rel="noreferrer">${escapeHtml(t("labels.assetDownloadFile"))}</a>` : ""}
       </div>
     `;
   }
@@ -10599,6 +10617,28 @@ function renderAttachmentMedia(attachment, options = {}) {
   if (kind === "audio") return `<audio src="${safeSource}" controls preload="metadata"${syncAttrs}></audio>`;
   if (kind === "image") return `<img src="${safeSource}" alt="${escapeHtml(attachment.name || "")}" loading="lazy"${syncAttrs} />`;
   return "";
+}
+
+function isArchiveAsset(asset = {}) {
+  const extension = asset.extension || getFileExtension(asset.name || asset.url || "");
+  return asset.kind === "document" && ARCHIVE_EXTENSIONS.has(extension);
+}
+
+function isPdfAsset(asset = {}) {
+  const extension = asset.extension || getFileExtension(asset.name || asset.url || "");
+  const type = String(asset.type || asset.originalType || "").toLowerCase();
+  return extension === "pdf" || type.includes("pdf");
+}
+
+function renderArchiveMediaCard(attachment, source = "", options = {}) {
+  return `
+    <div class="media-document-card media-archive-card ${options.primary ? "is-primary" : ""}">
+      <strong>${escapeHtml((attachment.extension || getFileExtension(attachment.name) || "zip").toUpperCase())}</strong>
+      <span>${escapeHtml(attachment.name || t("labels.assetArchiveOnly"))}</span>
+      <small>${escapeHtml(t("labels.assetArchiveOnlyDetail"))}</small>
+      ${source ? `<a href="${escapeHtml(source)}" download="${escapeHtml(attachment.name || "archive")}" target="_blank" rel="noreferrer">${escapeHtml(t("labels.assetDownloadFile"))}</a>` : ""}
+    </div>
+  `;
 }
 
 function renderAttachmentNeedsSync(attachment, kind = "document") {
@@ -11682,6 +11722,7 @@ function renderAssetCard(asset) {
         </dl>
         <button class="ghost-button asset-open-link" type="button" data-copy-asset-id="${escapeHtml(asset.assetKey)}">${escapeHtml(t("labels.assetCopyId"))}</button>
         ${asset.url || asset.dataUrl ? `<a class="ghost-button asset-open-link" href="${asset.url || asset.dataUrl}" target="_blank" rel="noreferrer">${state.language === "en" ? "Open file" : "Abrir archivo"}</a>` : ""}
+        ${asset.url || asset.dataUrl ? `<a class="ghost-button asset-open-link" href="${asset.url || asset.dataUrl}" download="${escapeHtml(asset.name || "asset")}" target="_blank" rel="noreferrer">${escapeHtml(t("labels.assetDownloadFile"))}</a>` : ""}
         <button class="ghost-button" type="button" onclick="editExperience('${escapeHtml(asset.experienceId)}')">${t("buttons.edit")}</button>
       </div>
     </article>
@@ -12054,6 +12095,14 @@ function buildAssetProcessingStatus(asset) {
           : "El documento tiene una vista textual legible. Agrega o sugiere texto analítico para usarlo mejor en reportes.",
     };
   }
+  if (isArchiveAsset(asset)) {
+    return {
+      ready: true,
+      code: "archive",
+      label: t("labels.assetArchiveOnly"),
+      detail: t("labels.assetArchiveOnlyDetail"),
+    };
+  }
   if (asset.kind === "document") {
     return {
       ready: false,
@@ -12210,13 +12259,28 @@ function handleAssetMetadataSubmit(event) {
 function renderAssetPreview(asset) {
   const source = asset.url || asset.dataUrl;
   if (!source) return renderAssetNeedsSync(asset);
+  if (isArchiveAsset(asset)) return renderAssetArchivePreview(asset, source);
   if (asset.kind === "video" && asset.previewType === "image") return `<div class="asset-preview asset-preview-video-demo"><img src="${source}" alt="${escapeHtml(asset.name || "")}" loading="lazy" /><span>Video</span></div>`;
   if (asset.kind === "video" && asset.previewable !== false) return `<div class="asset-preview"><video src="${source}" controls muted playsinline preload="metadata"></video></div>`;
   if (asset.kind === "audio" && asset.previewable !== false) return `<div class="asset-preview asset-preview-audio"><audio src="${source}" controls preload="metadata"></audio></div>`;
   if (asset.kind === "image" && asset.previewable !== false) return `<div class="asset-preview"><img src="${source}" alt="${escapeHtml(asset.name || "")}" loading="lazy" /></div>`;
   if (["image", "audio", "video"].includes(asset.kind)) return renderUnsupportedMediaPreview(asset);
-  if (asset.kind === "document") return `<div class="asset-preview asset-preview-document"><strong>${escapeHtml(asset.name || getAssetKindLabel(asset.kind))}</strong><pre>${escapeHtml(asset.previewText || decodeTextDataUrl(source) || (state.language === "en" ? "Document preview" : "Vista previa del documento"))}</pre></div>`;
+  if (asset.kind === "document") {
+    const text = asset.previewText || decodeTextDataUrl(source);
+    const pdfFrame = isPdfAsset(asset) ? `<iframe src="${escapeHtml(source)}" title="${escapeHtml(asset.name || "PDF")}" loading="lazy"></iframe>` : "";
+    return `<div class="asset-preview asset-preview-document">${pdfFrame}<strong>${escapeHtml(asset.name || getAssetKindLabel(asset.kind))}</strong><pre>${escapeHtml(text || (state.language === "en" ? "Document ready for extraction or download." : "Documento listo para extracción o descarga."))}</pre></div>`;
+  }
   return `<div class="asset-preview asset-preview-empty">${escapeHtml(asset.name || getAssetKindLabel(asset.kind))}</div>`;
+}
+
+function renderAssetArchivePreview(asset, source) {
+  return `
+    <div class="asset-preview asset-preview-document asset-preview-archive">
+      <strong>${escapeHtml(asset.name || t("labels.assetArchiveOnly"))}</strong>
+      <small>${escapeHtml(t("labels.assetArchiveOnlyDetail"))}</small>
+      <a href="${escapeHtml(source)}" download="${escapeHtml(asset.name || "archive")}" target="_blank" rel="noreferrer">${escapeHtml(t("labels.assetDownloadFile"))}</a>
+    </div>
+  `;
 }
 
 function renderAssetNeedsSync(asset) {

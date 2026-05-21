@@ -130,6 +130,9 @@ assert(files.server.includes("/api/ocr-image") && files.server.includes("openai-
 assert(files.app.includes("/ocr-image") && files.app.includes("OCR_PROVIDER=openai"), "Frontend or manual does not document/use automatic image OCR.");
 assert(files.server.includes("openai-pdf-ocr") && files.server.includes("pdf_ocr_too_large"), "Backend scanned-PDF OCR fallback is missing.");
 assert(files.app.includes("archive-transport-only") && files.app.includes("Los archivos comprimidos se guardan solo para transporte y descarga"), "Archive assets are not protected from automatic interpretation.");
+assert(files.server.includes("await getDocumentBytes(normalized)") && files.server.includes("audio_data_required"), "Audio transcription cannot read remote signed URLs.");
+assert(files.app.includes("assetDownloadFile") && files.app.includes("renderArchiveMediaCard") && files.app.includes("PDF se previsualiza con una vista embebida"), "Asset preview/download flow is incomplete.");
+assert(files.app.includes("patrón del blueprint de CLIO") && files.app.includes("temporary Supabase signed URLs"), "Manual does not document the CLIO-style signed-URL asset reading pattern.");
 assert(/@media \(max-width: 1040px\)[\s\S]*\.capture-layout-clean \{[\s\S]*grid-template-columns: minmax\(0, 1fr\)/.test(files.styles), "Capture is not forced to full width on tablet/mobile layouts.");
 assert(/@media \(max-width: 720px\)[\s\S]*\.capture-layout-clean,[\s\S]*\.filters \{[\s\S]*grid-template-columns: 1fr/.test(files.styles), "Capture is not included in the mobile one-column layout.");
 assert(files.index.includes("Activos y multimedia") && files.index.includes("Opciones avanzadas de calendario"), "Assets operations or Agenda advanced tools are not properly grouped.");

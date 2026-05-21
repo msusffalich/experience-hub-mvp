@@ -5145,6 +5145,26 @@ textarea {
   max-height: 116px;
 }
 
+.media-document-card iframe {
+  width: 100%;
+  min-height: 220px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.media-document-card a {
+  align-self: start;
+  color: var(--accent-dark);
+  font-size: 12px;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.media-archive-card {
+  align-content: start;
+}
+
 .asset-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -5275,6 +5295,25 @@ textarea {
   font-family: inherit;
   font-size: 12px;
   line-height: 1.45;
+}
+
+.asset-preview-document iframe {
+  width: 100%;
+  min-height: 240px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.asset-preview-archive {
+  align-content: start;
+  gap: 8px;
+}
+
+.asset-preview-archive a {
+  color: var(--accent-dark);
+  font-weight: 900;
+  text-decoration: none;
 }
 
 .asset-card-body {

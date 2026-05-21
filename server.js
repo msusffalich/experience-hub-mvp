@@ -31,7 +31,7 @@ const EMBEDDINGS_PROVIDER = process.env.EMBEDDINGS_PROVIDER || "local-hash";
 const EMBEDDING_DIMENSIONS = Number(process.env.EMBEDDING_DIMENSIONS || 384);
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_EMBEDDING_MODEL = process.env.OPENAI_EMBEDDING_MODEL || "text-embedding-3-small";
-const TRANSCRIPTION_PROVIDER = process.env.TRANSCRIPTION_PROVIDER || "none";
+const TRANSCRIPTION_PROVIDER = process.env.TRANSCRIPTION_PROVIDER || "openai";
 const OPENAI_TRANSCRIPTION_MODEL = process.env.OPENAI_TRANSCRIPTION_MODEL || "gpt-4o-mini-transcribe";
 const OCR_PROVIDER = process.env.OCR_PROVIDER || "openai";
 const OPENAI_OCR_MODEL = process.env.OPENAI_OCR_MODEL || "gpt-4o-mini";
@@ -2550,10 +2550,10 @@ async function transcribeMedia(media) {
     };
   }
   const normalized = normalizeMedia(media);
-  if (!normalized.dataUrl || !normalized.type.startsWith("audio/")) {
-    throw new HttpError(400, "audio_data_url_required");
+  if ((!normalized.dataUrl && !normalized.url) || !normalized.type.startsWith("audio/")) {
+    throw new HttpError(400, "audio_data_required");
   }
-  const bytes = dataUrlToBuffer(normalized.dataUrl);
+  const bytes = await getDocumentBytes(normalized);
   const form = new FormData();
   form.append("model", OPENAI_TRANSCRIPTION_MODEL);
   form.append("file", new Blob([bytes], { type: normalized.type }), normalized.name || "audio.webm");
