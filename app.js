@@ -1,4 +1,4 @@
-const APP_VERSION = "20260521-media-retry-upload-346";
+const APP_VERSION = "20260521-supabase-secret-storage-347";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -1886,6 +1886,7 @@ const manualContent = {
         "En móviles y tablets, la app usa carga binaria cuando hay sesión activa. Esto evita convertir fotos, videos o audios completos a texto interno antes de subirlos y hace la carga más estable.",
         "Si un adjunto no termina de subir, la experiencia conserva la narrativa y muestra el archivo como pendiente; no debe considerarse cierre completo hasta que el activo tenga URL remota o ruta de Storage.",
         "Cuando un adjunto queda pendiente y luego se reintenta, la app usa carga binaria multipart hacia el backend en lugar de reenviar el archivo como texto base64. Esto mejora la estabilidad en móviles, tablets y archivos medianos.",
+        "El backend de Storage es compatible con claves Supabase nuevas sb_secret y claves legacy service_role. Las claves nuevas se envían como apikey del servidor, no como Bearer JWT.",
         "La prueba completa de multimedia solo se aprueba cuando el mismo adjunto aparece desde otro dispositivo en Librería, Activos multimodales, Reportes y Publicaciones. Si solo se sincroniza la narrativa, el flujo sigue incompleto.",
         "El servidor ya soporta modo cloud mediante HOST=0.0.0.0 y NODE_ENV=production. Usa .env.production.example como base para desplegar sin depender de localhost.",
         "La guía docs/deploy-publicacion.md define el orden recomendado: GitHub privado, Supabase productivo, variables seguras, hosting Node, prueba desde varios dispositivos y validación privada.",
@@ -2404,6 +2405,7 @@ const manualContent = {
         "On mobile phones and tablets, the app uses binary upload when there is an active session. This avoids converting full photos, videos, or audio files into internal text before upload and makes uploads more stable.",
         "If an attachment does not finish uploading, the experience keeps the narrative and shows the file as pending; the flow should not be considered complete until the asset has a remote URL or Storage path.",
         "When an attachment is pending and later retried, the app uses binary multipart upload to the backend instead of resending the file as base64 text. This improves stability on phones, tablets, and medium-size files.",
+        "The Storage backend supports new Supabase sb_secret keys and legacy service_role keys. New secret keys are sent as the server apikey, not as a Bearer JWT.",
         "The complete media test is approved only when the same attachment appears from another device in Library, Multimodal Assets, Reports, and Publications. If only the narrative syncs, the flow is still incomplete.",
         "The server now supports cloud mode through HOST=0.0.0.0 and NODE_ENV=production. Use .env.production.example as the deployment baseline so the app does not depend on localhost.",
         "The docs/deploy-publicacion.md guide defines the recommended order: private GitHub, production Supabase, secure variables, Node hosting, multi-device test, and private validation.",
@@ -19699,7 +19701,7 @@ function renderAdminOperationalFocusPanel() {
         agenda: "Agenda is optional",
         agendaDetail: "Capture no longer updates Agenda by default. It only creates or updates a calendar event when the checkbox is selected.",
         remote: "Remote persistence guard",
-        remoteDetail: "Capture blocks new records without sign-in in published persistence mode, rechecks backend health before local fallback, retries pending media with binary upload, and keeps pending saves visible in plain language.",
+        remoteDetail: "Capture blocks new records without sign-in in published persistence mode, rechecks backend health before local fallback, retries pending media with binary upload, and supports current Supabase secret keys.",
         gate: "Persistent by default",
         gateDetail: "Technical Supabase/API diagnostics stay in Admin; users see only sign-in, save pending, and retry guidance.",
         smoke: "Automated smoke check",
@@ -19723,7 +19725,7 @@ function renderAdminOperationalFocusPanel() {
         agenda: "Agenda es opcional",
         agendaDetail: "Captura ya no actualiza Agenda por defecto. Solo crea o actualiza un evento de calendario cuando marcas la casilla.",
         remote: "Control de persistencia remota",
-        remoteDetail: "Captura bloquea nuevos registros sin sesión en modo publicado persistente, vuelve a comprobar la salud del backend antes de caer a modo local, reintenta multimedia pendiente con carga binaria y mantiene los pendientes visibles en lenguaje simple.",
+        remoteDetail: "Captura bloquea nuevos registros sin sesión en modo publicado persistente, vuelve a comprobar la salud del backend antes de caer a modo local, reintenta multimedia pendiente con carga binaria y soporta claves secretas actuales de Supabase.",
         gate: "Persistente por defecto",
         gateDetail: "Los diagnósticos técnicos de Supabase/API quedan en Administración; el usuario solo ve entrar, guardar pendientes y reintentar.",
       };

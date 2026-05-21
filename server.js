@@ -1227,8 +1227,7 @@ async function uploadSupabaseObject(objectPath, contentType, bytes) {
   const response = await fetch(url, {
     method: "POST",
     headers: {
-      apikey: SUPABASE_SERVICE_ROLE_KEY,
-      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      ...supabaseServerKeyHeaders(),
       "Content-Type": contentType,
       "x-upsert": "true",
     },
@@ -1244,8 +1243,7 @@ async function createSignedObjectUrl(objectPath) {
   const response = await fetch(`${SUPABASE_URL}/storage/v1/object/sign/${SUPABASE_STORAGE_BUCKET}/${objectPath}`, {
     method: "POST",
     headers: {
-      apikey: SUPABASE_SERVICE_ROLE_KEY,
-      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      ...supabaseServerKeyHeaders(),
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ expiresIn: 60 * 60 * 24 * 7 }),
@@ -1254,6 +1252,18 @@ async function createSignedObjectUrl(objectPath) {
   if (!response.ok) throw new Error(`supabase_sign_${response.status}: ${text}`);
   const payload = JSON.parse(text);
   return `${SUPABASE_URL}/storage/v1${payload.signedURL}`;
+}
+
+function supabaseServerKeyHeaders() {
+  const headers = { apikey: SUPABASE_SERVICE_ROLE_KEY };
+  if (isLegacyJwtSupabaseKey(SUPABASE_SERVICE_ROLE_KEY)) {
+    headers.Authorization = `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`;
+  }
+  return headers;
+}
+
+function isLegacyJwtSupabaseKey(key = "") {
+  return typeof key === "string" && key.split(".").length === 3;
 }
 
 async function assertSignedUrlReachable(url) {
@@ -1470,8 +1480,7 @@ function sanitizeDiagnosticError(error) {
 async function getSupabaseStorageBucket() {
   const response = await fetch(`${SUPABASE_URL}/storage/v1/bucket/${SUPABASE_STORAGE_BUCKET}`, {
     headers: {
-      apikey: SUPABASE_SERVICE_ROLE_KEY,
-      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      ...supabaseServerKeyHeaders(),
     },
   });
   const text = await response.text();
@@ -1684,8 +1693,7 @@ async function deleteSupabaseObject(objectPath) {
   const response = await fetch(`${SUPABASE_URL}/storage/v1/object/${SUPABASE_STORAGE_BUCKET}`, {
     method: "DELETE",
     headers: {
-      apikey: SUPABASE_SERVICE_ROLE_KEY,
-      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      ...supabaseServerKeyHeaders(),
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ prefixes: [objectPath] }),
@@ -3500,12 +3508,10 @@ async function supabaseRest(table, options = {}) {
   for (const [key, value] of Object.entries(options.searchParams || {})) {
     url.searchParams.set(key, value);
   }
-  const authToken = options.accessToken || SUPABASE_SERVICE_ROLE_KEY;
   const response = await fetch(url, {
     method: options.method || "GET",
     headers: {
-      apikey: options.accessToken ? SUPABASE_PUBLISHABLE_KEY : SUPABASE_SERVICE_ROLE_KEY,
-      Authorization: `Bearer ${authToken}`,
+      ...supabaseRequestHeaders(options.accessToken),
       "Content-Type": "application/json",
       ...(options.headers || {}),
     },
@@ -3522,8 +3528,7 @@ async function supabaseRpc(functionName, body, accessToken) {
   const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${functionName}`, {
     method: "POST",
     headers: {
-      apikey: accessToken ? SUPABASE_PUBLISHABLE_KEY : SUPABASE_SERVICE_ROLE_KEY,
-      Authorization: `Bearer ${accessToken || SUPABASE_SERVICE_ROLE_KEY}`,
+      ...supabaseRequestHeaders(accessToken),
       "Content-Type": "application/json",
     },
     body: JSON.stringify(body),
@@ -3533,6 +3538,16 @@ async function supabaseRpc(functionName, body, accessToken) {
     throw new Error(`supabase_rpc_${response.status}: ${text}`);
   }
   return text ? JSON.parse(text) : [];
+}
+
+function supabaseRequestHeaders(accessToken = "") {
+  if (accessToken) {
+    return {
+      apikey: SUPABASE_PUBLISHABLE_KEY,
+      Authorization: `Bearer ${accessToken}`,
+    };
+  }
+  return supabaseServerKeyHeaders();
 }
 
 function toProfileRow(profile, includeParameters = true) {

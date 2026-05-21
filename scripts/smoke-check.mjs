@@ -52,6 +52,8 @@ assert(files.app.includes("extractionMethod") && files.app.includes("extractionS
 assert(files.app.includes("asset.extractedText") && files.app.includes("extractedText: asset.extractedText"), "Asset search/inventory does not include extracted text.");
 assert(files.app.includes("/extract-document"), "Frontend does not call the backend document extraction endpoint.");
 assert(files.server.includes("/api/extract-document") && files.server.includes("extractDocxText") && files.server.includes("extractPdfText"), "Server document extraction endpoint is incomplete.");
+assert(files.server.includes("function supabaseServerKeyHeaders") && files.server.includes("function isLegacyJwtSupabaseKey"), "Server does not support current Supabase secret-key headers.");
+assert(!files.server.includes("Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`"), "Server still sends Supabase sb_secret/service key directly as a Bearer token.");
 assert(files.styles.includes(".asset-extracted-text-panel"), "Styles are missing the extracted text panel.");
 assert(files.app.includes("Linked event") && files.app.includes("Evento vinculado"), "Report export does not label linked events in both languages.");
 assert(files.styles.includes(".library-event-preview") && files.styles.includes(".report-event-timeline"), "Styles are missing event timeline UI classes.");
@@ -72,6 +74,7 @@ assert(files.app.includes("Antes de declarar un guardado como local"), "Spanish 
 assert(files.app.includes("readback_pending") && files.app.includes("remoteReadbackPending"), "Capture save status still treats remote readback delays as local-only failures.");
 assert(files.app.includes("uploadDataUrlAttachment(attachment)") && files.app.includes("FormData"), "Pending local media is not retried through binary multipart upload.");
 assert(files.app.includes("Cuando un adjunto queda pendiente") && files.app.includes("When an attachment is pending"), "Manual does not explain binary retry for pending media.");
+assert(files.app.includes("compatible con claves Supabase nuevas sb_secret") && files.app.includes("supports new Supabase sb_secret keys"), "Manual does not explain Supabase secret-key Storage compatibility.");
 assert(files.app.includes("Prueba autom") && files.app.includes("Automated smoke check"), "Admin does not expose the automated smoke check.");
 
 if (failures.length) {
