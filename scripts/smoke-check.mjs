@@ -121,12 +121,15 @@ assert(files.app.includes("invalid_mime_type para PDF") && files.app.includes("i
 assert(files.index.includes("dashboard-primary-panel") && files.index.includes("Nueva experiencia"), "Dashboard does not expose primary daily actions.");
 assert(!files.index.includes("dashboardAttachmentPanel") && !files.index.includes("dashboardPilotBox"), "Dashboard still exposes technical/pilot monitoring panels.");
 assert(files.index.includes("capture-layout-clean") && !files.index.includes("captureCoachBox") && !files.index.includes("templateList"), "Capture still exposes parallel coach/template panels.");
-assert(files.index.includes("Herramientas avanzadas de activos") && files.index.includes("Opciones avanzadas de calendario"), "Assets or Agenda do not collapse advanced tools.");
+assert(files.index.includes("Activos y multimedia") && files.index.includes("Opciones avanzadas de calendario"), "Assets operations or Agenda advanced tools are not properly grouped.");
+assert(!/assetLibraryView[\s\S]*Herramientas avanzadas de activos/.test(files.index), "Asset Library still exposes technical asset tools in the user view.");
 assert(files.index.includes("Más opciones de publicación") && files.index.includes("Exportar y cerrar reporte"), "Reports or Publications still lack the simplified advanced-action flow.");
 assert(files.index.includes("admin-accordion-stack") && files.index.includes("Resumen ejecutivo") && files.index.includes("Persistencia y Supabase"), "Admin is not organized into thematic accordions.");
 assert(files.index.includes("manual-version-card") && files.index.includes("manualVersionValue"), "Manual does not expose the current version guide card.");
 assert(files.app.includes("Librería, Activos, Reportes, Publicaciones y Agenda usan una vista limpia"), "Spanish manual does not explain the cleaned user pages.");
+assert(files.app.includes("La operación técnica de Activos y multimedia vive en Administración"), "Spanish manual does not explain that technical asset operations moved to Admin.");
 assert(files.app.includes("Library, Assets, Reports, Publications, and Agenda use a cleaner view"), "English manual does not explain the cleaned user pages.");
+assert(files.app.includes("Technical Assets and media operations live in Admin"), "English manual does not explain that technical asset operations moved to Admin.");
 assert(files.app.includes("Administración ya no se organiza como una sábana") && files.app.includes("Admin is no longer organized as an endless sheet"), "Manual does not explain the reorganized Admin.");
 assert(files.app.includes("El Manual muestra la versión vigente") && files.app.includes("The Manual shows the current version"), "Manual does not explain the current-version guide card.");
 assert(files.styles.includes(".user-advanced-drawer") && files.styles.includes(".advanced-action-row"), "Styles are missing cleaned advanced drawer UI.");

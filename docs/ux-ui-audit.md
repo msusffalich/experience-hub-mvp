@@ -23,7 +23,7 @@ La aplicación debe separar claramente dos modos:
 - Las acciones principales del Panel son: Nueva experiencia, Ver Librería, Ver Activos y Generar reporte.
 - La reparación de adjuntos queda como estado administrativo, no como monitoreo visible del Panel.
 - Captura queda como formulario único. Guías de calidad, corrección gramatical y plantillas rápidas no compiten visualmente con guardar una experiencia.
-- Activos muestra primero galería, filtros y revisión visual. Inventarios, CSV, importación, auditoría y plan de procesamiento quedan plegados como herramientas avanzadas.
+- Activos muestra primero galería, filtros y revisión visual. Inventarios, CSV, importación, auditoría y plan de procesamiento pasan a Administración, dentro de Activos y multimedia.
 - Agenda muestra primero calendario, lista y formulario. Importar/exportar .ics y días bloqueados quedan en opciones avanzadas.
 - Reportes mantiene una secuencia única: preparar alcance, generar/leer y exportar/cerrar.
 - Publicaciones muestra primero generar, editar y exportar. Controles editoriales, historial, guía de salida y paquete quedan plegados.
@@ -44,7 +44,7 @@ La aplicación debe separar claramente dos modos:
 ## Limpieza pendiente por página
 
 - Librería: revisar acciones dentro de cada tarjeta y confirmación de edición/eliminación.
-- Activos: seguir evaluando si las herramientas avanzadas deben moverse por completo a Administración.
+- Activos: revisar si queda algún control técnico dentro de tarjetas individuales que deba moverse a Administración.
 - Reportes: reducir texto de ayuda si el usuario ya completó el flujo.
 - Publicaciones: revisar visualmente los diseños y el ajuste en móvil.
 - Agenda: mejorar confirmaciones de creación, actualización y alcance por participante.

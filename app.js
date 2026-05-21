@@ -1,4 +1,4 @@
-const APP_VERSION = "20260521-admin-manual-cleanup-359";
+const APP_VERSION = "20260521-assets-admin-cleanup-360";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -1870,6 +1870,7 @@ const manualContent = {
         "Administración muestra un Centro de mando posterior al MVP con tres frentes principales: integración de dispositivos, OCR/procesamiento multimodal y deploy/publicación.",
         "Administración operativa deja visibles primero los controles útiles para avanzar ahora: publicación, multidispositivo, participantes, feedback, perfil y respaldo. El cierre del piloto y la evidencia técnica quedan dentro de Diagnóstico avanzado.",
         "Administración ya no se organiza como una sábana de paneles. Usa secciones desplegables por tema: Resumen ejecutivo, Persistencia y Supabase, Personas y piloto, Perfil y dispositivos, Calidad/cierre/evidencias, y Diagnóstico técnico avanzado.",
+        "La operación técnica de Activos y multimedia vive en Administración: inventarios, CSV, plantillas, importación de metadatos, backlog y plan de procesamiento. La pantalla Activos queda para búsqueda, revisión visual y edición humana de cada archivo.",
         "El Manual muestra la versión vigente en una tarjeta superior y resume tres puertas de entrada: Inicio rápido, Operación y Administración. Usa búsqueda, filtros por sección y estado de revisión para consultar solo lo necesario.",
         "Administración incluye un Plan de publicación visible con la secuencia recomendada: limpiar interfaz, fortalecer Supabase, preparar GitHub, desplegar frontend, desplegar backend/API solo si es necesario y ejecutar una prueba privada en producción.",
         "Los paneles históricos de diagnóstico, QA, rutas MVP y evidencias técnicas quedan agrupados en Diagnóstico avanzado para reducir ruido sin perder trazabilidad.",
@@ -2011,7 +2012,7 @@ const manualContent = {
         "El Panel se simplifica para uso diario: acciones principales, métricas, Agenda, señales recientes, Diario y análisis contextual. Los estados técnicos, colas, preparación del piloto, adjuntos pendientes y diagnósticos viven en Administración.",
         "La regla de producto es simple por fuera y sofisticada por dentro: las páginas de usuario muestran el flujo principal, mientras los análisis, verificaciones y controles avanzados se ejecutan en segundo plano o se revisan en Administración.",
         "Librería, Activos, Reportes, Publicaciones y Agenda usan una vista limpia: primero búsqueda, lectura y acción principal; las exportaciones, importaciones, auditorías y controles de revisión quedan plegados en opciones avanzadas o concentrados en Administración.",
-        "En Activos, el usuario ve primero la galería y los filtros útiles. Inventarios, CSV, plantillas, importación de metadatos y plan de procesamiento quedan en herramientas avanzadas para evitar ruido durante la revisión normal.",
+        "En Activos, el usuario ve primero la galería y los filtros útiles. Inventarios, CSV, plantillas, importación de metadatos y plan de procesamiento quedan en Administración para evitar ruido durante la revisión normal.",
         "En Agenda, el usuario crea y consulta eventos sin ver controles técnicos de calendario. Importar, exportar .ics y bloquear días quedan en opciones avanzadas.",
         "En Publicaciones, el flujo visible es generar, editar y exportar. La preparación editorial, el historial, la guía de salida y el paquete quedan plegados para no competir con el documento final.",
         "Cada participante piloto incluye un checklist de onboarding: acceso confirmado, manual revisado y primera prueba completada. Preparación del piloto avisa si quedan personas sin completar esos pasos.",
@@ -2803,6 +2804,7 @@ const manualContent = {
         "Multimodal readiness uses a local workflow audit: completed exports, reviewed import, copied assetId, saved metadata, generated suggestions, and visible human review.",
         "Profile lets you edit name, timezone, gender, birth year, and dominant experience type; email is shown as a reference for the authenticated account.",
         "Admin is no longer organized as an endless sheet of panels. It uses thematic collapsible sections: Executive summary, Persistence and Supabase, People and pilot, Profile and devices, Quality/closure/evidence, and Advanced technical diagnostics.",
+        "Technical Assets and media operations live in Admin: inventories, CSV files, templates, metadata import, backlog, and processing plan. The Assets screen stays focused on search, visual review, and human editing for each file.",
         "The Manual shows the current version in a top card and summarizes three entry points: Quick start, Operations, and Administration. Use search, section filters, and review status to read only what you need.",
         "Demographic fields are optional and help weight environmental, geopolitical, and biometric impact using the loaded parameter matrix.",
         "Jobs and logs shows recent backend operations such as embedding backfills or PDF generation.",
@@ -2884,7 +2886,7 @@ const manualContent = {
         "The Dashboard is simplified for daily use: primary actions, metrics, Agenda, recent signals, Daily, and contextual analysis. Technical states, queues, pilot readiness, pending attachments, and diagnostics live in Admin.",
         "The product rule is simple outside and sophisticated inside: user pages show the main flow, while analysis, checks, and advanced controls run in the background or live in Admin.",
         "Library, Assets, Reports, Publications, and Agenda use a cleaner view: search, reading, and the main action come first; exports, imports, audits, and review controls are collapsed into advanced options or concentrated in Admin.",
-        "In Assets, the user first sees the gallery and useful filters. Inventories, CSV files, templates, metadata import, and the processing plan live in advanced tools to reduce noise during normal review.",
+        "In Assets, the user first sees the gallery and useful filters. Inventories, CSV files, templates, metadata import, and the processing plan live in Admin to reduce noise during normal review.",
         "In Agenda, the user creates and reads events without seeing technical calendar controls first. Import, .ics export, and blocked days live in advanced options.",
         "In Publications, the visible flow is generate, edit, and export. Editorial readiness, history, output guide, and package controls are collapsed so they do not compete with the final document.",
       ],
@@ -5378,8 +5380,6 @@ function applyLanguage() {
   document.getElementById("manualResetReviewButton").textContent = state.language === "en" ? "Reset review" : "Reiniciar revisión";
   document.getElementById("asset-library-heading").textContent = t("viewTitles.assetLibrary");
   document.getElementById("assetLibraryIntro").textContent = t("labels.assetLibraryIntro");
-  document.getElementById("assetAdvancedTitle").textContent = state.language === "en" ? "Advanced asset tools" : "Herramientas avanzadas de activos";
-  document.getElementById("assetAdvancedHelp").textContent = state.language === "en" ? "Inventory, import, review, and processing" : "Inventario, importación, revisión y procesamiento";
   document.getElementById("dashboardAgendaTitle").textContent = t("labels.dashboardAgendaTitle");
   document.getElementById("dashboardAgendaStatus").textContent = t("labels.dashboardAgendaStatus");
   const dashboardPilotTitle = document.getElementById("dashboardPilotTitle");
@@ -5441,6 +5441,8 @@ function applyLanguage() {
   document.getElementById("adminPersistenceHelp").textContent = state.language === "en" ? "Multi-device, sync, backup, and real tests" : "Multidispositivo, sincronización, respaldo y pruebas reales";
   document.getElementById("adminPeopleTitle").textContent = state.language === "en" ? "People and pilot" : "Personas y piloto";
   document.getElementById("adminPeopleHelp").textContent = state.language === "en" ? "Participants, feedback, readiness, and closure" : "Participantes, feedback, preparación y cierre";
+  document.getElementById("adminAssetsTitle").textContent = state.language === "en" ? "Assets and media" : "Activos y multimedia";
+  document.getElementById("adminAssetsHelp").textContent = state.language === "en" ? "Inventory, import, review, and processing" : "Inventario, importación, revisión y procesamiento";
   document.getElementById("adminProfileDevicesTitle").textContent = state.language === "en" ? "Profile and devices" : "Perfil y dispositivos";
   document.getElementById("adminProfileDevicesHelp").textContent = state.language === "en" ? "Account, preferences, and capture sources" : "Cuenta, preferencias y fuentes de captura";
   document.getElementById("adminQualityTitle").textContent = state.language === "en" ? "Quality, closure, and evidence" : "Calidad, cierre y evidencias";
@@ -18137,7 +18139,7 @@ function buildCoreMvpGateChecks() {
     { key: "capture", label: labels.capture, ok: hasRealOrDemoData, detail: labels.captureDetail, view: "capture", action: labels.open },
     { key: "persistence", label: labels.persistence, ok: state.apiOnline || experiences.length > 0, detail: labels.persistenceDetail, view: "admin", focus: "apiStatusPanel", run: "refreshOps", action: labels.run },
     { key: "library", label: labels.library, ok: hasEditableLibrary && dataQuality.score >= 60, detail: labels.libraryDetail, view: "library", action: labels.open },
-    { key: "assets", label: labels.assets, ok: assetCount > 0 && assetWorkflow.score >= 70, detail: labels.assetsDetail, view: "assetLibrary", focus: "assetProcessingActionPlan", action: labels.open },
+    { key: "assets", label: labels.assets, ok: assetCount > 0 && assetWorkflow.score >= 70, detail: labels.assetsDetail, view: "admin", focus: "assetProcessingActionPlan", action: labels.open },
     { key: "reports", label: labels.reports, ok: reportExperiences.length >= 3 && reportAcceptance.score >= 70, detail: labels.reportsDetail, view: "report", focus: "reportAcceptancePanel", action: labels.open },
     { key: "exports", label: labels.exports, ok: hasReportExports, detail: labels.exportsDetail, view: "report", focus: "reportAcceptancePanel", action: labels.open },
     { key: "backup", label: labels.backup, ok: Boolean(state.backupAudit?.at) && privacy.localProcessing && !privacy.shareAnalytics, detail: labels.backupDetail, view: "admin", focus: state.backupAudit?.at ? "privacyChecklist" : "mvpClosurePanel", action: labels.open },
@@ -19155,7 +19157,7 @@ function buildQuickQaChecks() {
     { key: "app", label: labels.app, ok: true, detail: labels.appDetail, view: "dashboard", action: labels.open },
     { key: "supabase", label: labels.supabase, ok: supabaseGate.score >= 85, detail: labels.supabaseDetail, view: "admin", focus: "supabasePilotGatePanel", run: supabaseRun, action: supabaseAction },
     { key: "reports", label: labels.reports, ok: reportAcceptance.score >= 85, detail: labels.reportsDetail, view: "report", focus: "reportAcceptancePanel", action: labels.open },
-    { key: "assets", label: labels.assets, ok: assetWorkflow.score >= 85, detail: labels.assetsDetail, view: "assetLibrary", focus: "assetProcessingActionPlan", action: labels.open },
+    { key: "assets", label: labels.assets, ok: assetWorkflow.score >= 85, detail: labels.assetsDetail, view: "admin", focus: "assetProcessingActionPlan", action: labels.open },
     { key: "safety", label: labels.safety, ok: privacyOk && Boolean(state.backupAudit?.at), detail: labels.safetyDetail, view: "admin", focus: privacyOk ? "mvpClosurePanel" : "privacyChecklist", action: labels.open },
     { key: "pilot", label: labels.pilot, ok: pilot.score >= 80, detail: labels.pilotDetail, view: "admin", focus: "pilotReadinessPanel", action: labels.open },
   ];
@@ -19678,7 +19680,7 @@ function buildMvpFlowChecks() {
   return [
     { key: "capture", label: labels.capture, ok: state.experiences.length >= 3, detail: labels.captureDetail, why: labels.captureWhy, view: "capture", action: labels.open },
     { key: "quality", label: labels.quality, ok: dataQuality.score >= 70, detail: labels.qualityDetail, why: labels.qualityWhy, view: "capture", focus: "captureCoachPanel", action: labels.open },
-    { key: "assets", label: labels.assets, ok: assetWorkflow.score >= 85, detail: labels.assetsDetail, why: labels.assetsWhy, view: "assetLibrary", focus: "assetProcessingActionPlan", action: labels.open },
+    { key: "assets", label: labels.assets, ok: assetWorkflow.score >= 85, detail: labels.assetsDetail, why: labels.assetsWhy, view: "admin", focus: "assetProcessingActionPlan", action: labels.open },
     { key: "insights", label: labels.insights, ok: insights.length >= 3, detail: labels.insightsDetail, why: labels.insightsWhy, view: "insights", action: labels.open },
     { key: "reports", label: labels.reports, ok: reportExperiences.length >= 3 && reportAcceptance.score >= 85, detail: labels.reportsDetail, why: labels.reportsWhy, view: "report", focus: "reportAcceptancePanel", action: labels.open },
     { key: "publications", label: labels.publications, ok: publicationReady, detail: labels.publicationsDetail, why: labels.publicationsWhy, view: "publications", action: labels.open },
@@ -20259,7 +20261,7 @@ function renderAdminCommandCenter() {
   const summaryLabel = labels.summary;
   const cards = [
     { title: labels.device, status: labels.deviceStatus, detail: labels.deviceDetail, view: "admin", focus: "deviceList" },
-    { title: labels.ocr, status: labels.ocrStatus, detail: labels.ocrDetail, view: "assetLibrary", focus: "assetProcessingActionPlan" },
+    { title: labels.ocr, status: labels.ocrStatus, detail: labels.ocrDetail, view: "admin", focus: "assetProcessingActionPlan" },
     { title: labels.deploy, status: labels.deployStatus, detail: labels.deployDetail, view: "admin", focus: "publishPlanPanel" },
   ];
   container.innerHTML = `
@@ -20411,7 +20413,7 @@ function buildMultiDevicePersistenceChecks() {
   return [
     { key: "remote", label: labels.remote, detail: labels.remoteDetail, ok: remoteDataReady, view: "admin", focus: "supabasePilotGatePanel" },
     { key: "auth", label: labels.auth, detail: labels.authDetail, ok: authReady, view: "auth" },
-    { key: "storage", label: labels.storage, detail: labels.storageDetail, ok: storageReady, view: "assetLibrary", focus: "assetProcessingActionPlan" },
+    { key: "storage", label: labels.storage, detail: labels.storageDetail, ok: storageReady, view: "admin", focus: "assetProcessingActionPlan" },
     { key: "cloud", label: labels.cloud, detail: labels.cloudDetail, ok: cloudServerReady, view: "admin", focus: "publishPlanPanel" },
     { key: "published", label: labels.published, detail: labels.publishedDetail, ok: isPublishedHost, view: "admin", focus: "publishPlanPanel" },
     { key: "backup", label: labels.backup, detail: labels.backupDetail, ok: hasBackup, view: "admin", focus: "pilotClosureRecordPanel" },
@@ -20625,7 +20627,7 @@ function renderDeviceIntegrationPanel() {
       <div class="device-integration-actions">
         <button class="ghost-button" type="button" data-device-action="export-md">${escapeHtml(labels.exportMd)}</button>
         <button class="ghost-button" type="button" data-device-action="export-json">${escapeHtml(labels.exportJson)}</button>
-        <button class="ghost-button" type="button" data-backlog-view="assetLibrary" data-backlog-focus="assetProcessingActionPlan">${escapeHtml(labels.openAssets)}</button>
+        <button class="ghost-button" type="button" data-backlog-view="admin" data-backlog-focus="assetProcessingActionPlan">${escapeHtml(labels.openAssets)}</button>
         <button class="primary-button" type="button" data-backlog-view="capture">${escapeHtml(labels.openCapture)}</button>
       </div>
     </section>

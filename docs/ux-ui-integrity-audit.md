@@ -26,6 +26,7 @@ Administración fue reorganizada en secciones desplegables por tema para evitar 
 - `app.js`: se protegió la referencia a `dataQualityTitle`, porque ese panel ya no está visible en Panel.
 - `app.js`: se corrigieron textos con codificación dañada en mensajes críticos de validación y guardado.
 - `scripts/smoke-check.mjs`: se agregaron validaciones permanentes para PWA estable y detección de caracteres con codificación dañada.
+- `Activos multimodales`: las herramientas técnicas de inventario, CSV, importación y procesamiento masivo se movieron a Administración para preservar una pantalla de usuario más limpia.
 
 ## Navegación
 

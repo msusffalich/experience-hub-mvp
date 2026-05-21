@@ -9,10 +9,10 @@
     <meta name="apple-mobile-web-app-title" content="Experience Hub" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>Experience Hub MVP</title>
-    <link rel="manifest" href="manifest.webmanifest?v=20260521-admin-manual-cleanup-359" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260521-assets-admin-cleanup-360" />
     <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="icons/icon.svg" />
-    <link rel="stylesheet" href="styles.css?v=20260521-admin-manual-cleanup-359" />
+    <link rel="stylesheet" href="styles.css?v=20260521-assets-admin-cleanup-360" />
   </head>
   <body>
     <noscript>
@@ -400,29 +400,6 @@
             </div>
             <div id="assetActiveFilters" class="asset-active-filters"></div>
             <div id="assetLibraryGrid" class="asset-grid"></div>
-            <details class="user-advanced-drawer">
-              <summary>
-                <span id="assetAdvancedTitle">Herramientas avanzadas de activos</span>
-                <small id="assetAdvancedHelp">Inventario, importación, revisión y procesamiento</small>
-              </summary>
-              <div id="assetMetadataWorkflow" class="asset-metadata-workflow"></div>
-              <div id="assetWorkflowReadinessPanel" class="asset-workflow-readiness-panel"></div>
-              <div id="assetImportSummary" class="asset-import-summary"></div>
-              <div id="assetProcessingSummary" class="asset-processing-summary"></div>
-              <div class="advanced-action-row">
-                <button id="exportAssetInventoryButton" class="ghost-button" type="button">Exportar inventario</button>
-                <button id="exportAssetInventoryCsvButton" class="ghost-button" type="button">CSV inventario</button>
-                <button id="exportAssetProcessingBacklogButton" class="ghost-button" type="button">Exportar pendientes</button>
-                <button id="exportAssetProcessingBacklogCsvButton" class="ghost-button" type="button">CSV pendientes</button>
-                <button id="exportAssetProcessingChecklistButton" class="ghost-button" type="button">Checklist de revisión</button>
-                <button id="exportAssetMetadataTemplateButton" class="ghost-button" type="button">Plantilla CSV</button>
-                <button id="exportAssetEditableMetadataCsvButton" class="ghost-button" type="button">CSV edición</button>
-                <button id="suggestFilteredAssetTextButton" class="ghost-button" type="button">Sugerir texto filtrado</button>
-                <button id="importAssetMetadataButton" class="ghost-button" type="button">Importar metadatos</button>
-                <input id="importAssetMetadataInput" class="sr-only" type="file" accept="application/json,text/csv,.json,.csv" />
-              </div>
-              <div id="assetProcessingActionPlan" class="asset-processing-action-plan" tabindex="-1"></div>
-            </details>
           </div>
         </section>
 
@@ -937,6 +914,30 @@
 
               <details class="admin-section-drawer">
                 <summary>
+                  <span id="adminAssetsTitle">Activos y multimedia</span>
+                  <small id="adminAssetsHelp">Inventario, importación, revisión y procesamiento</small>
+                </summary>
+                <div id="assetMetadataWorkflow" class="asset-metadata-workflow"></div>
+                <div id="assetWorkflowReadinessPanel" class="asset-workflow-readiness-panel"></div>
+                <div id="assetImportSummary" class="asset-import-summary"></div>
+                <div id="assetProcessingSummary" class="asset-processing-summary"></div>
+                <div class="advanced-action-row">
+                  <button id="exportAssetInventoryButton" class="ghost-button" type="button">Exportar inventario</button>
+                  <button id="exportAssetInventoryCsvButton" class="ghost-button" type="button">CSV inventario</button>
+                  <button id="exportAssetProcessingBacklogButton" class="ghost-button" type="button">Exportar pendientes</button>
+                  <button id="exportAssetProcessingBacklogCsvButton" class="ghost-button" type="button">CSV pendientes</button>
+                  <button id="exportAssetProcessingChecklistButton" class="ghost-button" type="button">Checklist de revisión</button>
+                  <button id="exportAssetMetadataTemplateButton" class="ghost-button" type="button">Plantilla CSV</button>
+                  <button id="exportAssetEditableMetadataCsvButton" class="ghost-button" type="button">CSV edición</button>
+                  <button id="suggestFilteredAssetTextButton" class="ghost-button" type="button">Sugerir texto filtrado</button>
+                  <button id="importAssetMetadataButton" class="ghost-button" type="button">Importar metadatos</button>
+                  <input id="importAssetMetadataInput" class="sr-only" type="file" accept="application/json,text/csv,.json,.csv" />
+                </div>
+                <div id="assetProcessingActionPlan" class="asset-processing-action-plan" tabindex="-1"></div>
+              </details>
+
+              <details class="admin-section-drawer">
+                <summary>
                   <span id="adminProfileDevicesTitle">Perfil y dispositivos</span>
                   <small id="adminProfileDevicesHelp">Cuenta, preferencias y fuentes de captura</small>
                 </summary>
@@ -1029,7 +1030,7 @@
       </main>
     </div>
 
-    <script src="app.js?v=20260521-admin-manual-cleanup-359"></script>
+    <script src="app.js?v=20260521-assets-admin-cleanup-360"></script>
 </body>
 </html>
 
