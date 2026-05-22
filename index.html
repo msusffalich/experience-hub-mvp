@@ -9,10 +9,10 @@
     <meta name="apple-mobile-web-app-title" content="Experience Hub" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>Experience Hub MVP</title>
-    <link rel="manifest" href="manifest.webmanifest?v=20260522-biometric-assets-386" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260522-daily-location-flow-387" />
     <link rel="icon" href="icons/vibe-icon-192.png" type="image/png" />
     <link rel="apple-touch-icon" href="icons/vibe-apple-touch.png" />
-    <link rel="stylesheet" href="styles.css?v=20260522-biometric-assets-386" />
+    <link rel="stylesheet" href="styles.css?v=20260522-daily-location-flow-387" />
   </head>
   <body>
     <noscript>
@@ -203,6 +203,7 @@
               <input id="dailyLocationInput" type="text" placeholder="Ciudad, país: San Juan, Puerto Rico..." />
               <button id="dailyRefreshButton" class="primary-button" type="button">Actualizar diario</button>
             </div>
+            <p id="dailyLocationHelp" class="card-meta daily-location-help">Ubicación manual única para Diario y Contexto. Hasta tener app nativa, noticias, clima, horóscopo y cartelera usan esta ciudad como referencia.</p>
             <section id="dailyStaticActions" class="daily-action-center daily-static-actions">
               <div class="daily-news-group-heading">
                 <div>
@@ -299,6 +300,7 @@
                     <input id="energyInput" name="energy" type="range" min="1" max="10" value="7" />
                   </label>
                 </div>
+                <div id="biometricCaptureContext" class="biometric-capture-context" aria-live="polite"></div>
                 <label>
                   Ubicación
                   <input id="locationInput" name="location" type="text" placeholder="Casa, oficina, gimnasio..." />
@@ -831,7 +833,7 @@
             <div class="manual-version-card">
               <div>
                 <span id="manualVersionEyebrow">Versión vigente</span>
-                <strong id="manualVersionValue">20260522-biometric-assets-386</strong>
+                <strong id="manualVersionValue">20260522-daily-location-flow-387</strong>
                 <p id="manualVersionSummary">Guía práctica organizada por temas para entender el flujo de la app sin leer todo de corrido.</p>
               </div>
               <div class="manual-guide-grid" aria-label="Estructura del manual">
@@ -1050,7 +1052,7 @@
       </main>
     </div>
 
-    <script src="app.js?v=20260522-biometric-assets-386"></script>
+    <script src="app.js?v=20260522-daily-location-flow-387"></script>
 </body>
 </html>
 

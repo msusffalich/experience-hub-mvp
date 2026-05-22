@@ -1,4 +1,4 @@
-const APP_VERSION = "20260522-biometric-assets-386";
+const APP_VERSION = "20260522-daily-location-flow-387";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -604,6 +604,8 @@ const i18n = {
       dailyFlowVoice: "Comando de voz",
       dailyFlowVoiceHelp: "Navegación rápida",
       dailyFlowIntro: "Este bloque es el mando del Diario. No duplica las noticias: sirve para leer, consultar cartelera/multimedia, ver horóscopo o usar voz.",
+      dailyLocationManualHelp: "Ubicación manual única para Diario y Contexto. Hasta tener app nativa, noticias, clima, horóscopo y cartelera usan esta ciudad como referencia.",
+      dailyLocationSaved: "Ubicación del Diario guardada. Actualizando contenido de esa ciudad...",
       dailyFlowReadDetail: "Leer Diario es una guía de lectura. Las noticias reales aparecen abajo, separadas en Locales y Mundiales. Usa Ver detalle en una noticia para leerla, escucharla o guardarla como experiencia.",
       dailyExploreTitle: "Cartelera y multimedia",
       dailyExploreDetail: "Elige una acción concreta. Las búsquedas externas se abren solo cuando pulsas una opción.",
@@ -1411,6 +1413,8 @@ const i18n = {
       dailyFlowVoice: "Voice command",
       dailyFlowVoiceHelp: "Quick navigation",
       dailyFlowIntro: "This block is the Daily control area. It does not duplicate the news: use it to read, check listings/multimedia, view horoscope, or use voice.",
+      dailyLocationManualHelp: "Single manual location for Daily and Context. Until the native app exists, news, weather, horoscope, and listings use this city as reference.",
+      dailyLocationSaved: "Daily location saved. Updating content for that city...",
       dailyFlowReadDetail: "Read Daily is a reading guide. The actual stories appear below, separated into Local and World. Use View detail on a story to read it, listen to it, or save it as an experience.",
       dailyExploreTitle: "Listings and multimedia",
       dailyExploreDetail: "Choose a concrete action. External searches open only when you select an option.",
@@ -2010,7 +2014,7 @@ const manualContent = {
         "La regla operativa es clara: cada activo se procesa cuando entra si ya puede vincularse a una experiencia guardada; si aún no existe registro remoto, queda para el primer guardado en Supabase. El cierre de experiencia solo audita y reintenta pendientes, no es el paso normal de procesamiento.",
         "Captura funciona como borrador vivo cuando hay sesión y Supabase: al escribir narrativa, cambiar campos o adjuntar un archivo, la experiencia se sincroniza en segundo plano con otros dispositivos. Guardar queda como confirmación final, no como el primer momento de sincronización.",
         "Cuando el borrador vivo se sincroniza, el flujo operativo completo del mismo dispositivo se refresca sin esperar al cierre: Panel, Librería, Activos, Agenda, Línea de tiempo, Mapa, Reportes, Publicaciones, Hallazgos, estado de persistencia y Administración.",
-        "Los archivos biometricos de Apple Health, relojes, aros u otros wearables se importan desde Activos, no desde Captura. Asi quedan como contexto transversal por fecha/hora y pueden informar energia, recuperacion, sueno, actividad o estres de varias experiencias.",
+        "Los archivos biométricos de Apple Health, relojes, aros u otros wearables se importan desde Activos, no desde Captura. Quedan como contexto transversal por fecha/hora; Captura muestra una energía sugerida cuando hay coincidencia, y Reportes/Hallazgos los usan para bienestar, recuperación, sueño, actividad y estrés.",
         "El backend local intenta extraer texto de TXT, Markdown, HTML, CSV, JSON, RTF, DOCX y PDF. PDF usa extracción heurística y puede requerir revisión si el archivo es escaneado o está protegido.",
         "El texto extraído o generado queda guardado como texto analítico del activo y entra en búsqueda, reportes, memoria y publicaciones, siempre con revisión humana antes de salidas finales.",
         "Administración incluye un tablero de frentes paralelos para agrupar el cierre del MVP en trabajo funcional, técnico, piloto, QA/manual e integraciones, con dueño sugerido y próxima acción.",
@@ -2134,7 +2138,8 @@ const manualContent = {
         "Hallazgos accionables permite convertir cada recomendación en un evento de Agenda con fecha sugerida, prioridad, descripción y recordatorio.",
         "La Proyección inicial del Reporte también permite programar su siguiente acción sugerida en Agenda.",
         "Diario muestra un resumen informativo independiente de las experiencias: noticias políticas, economía y finanzas, tecnología e IA, deportes, entretenimiento/eventos, noticias del mundo y horóscopo diario para todos los signos.",
-        "Diario usa el lugar escrito en el Panel o la ubicación dominante de tus experiencias, se puede actualizar manualmente y se refresca cada 6 horas mediante la rutina Diario y un control automático del navegador.",
+        "Diario usa una ubicación manual única compartida con Contexto. En PWA no se detecta ubicación física persistente; al cambiar la ciudad se actualizan noticias, clima, horóscopo, cartelera y análisis ambiental/geopolítico con esa referencia.",
+        "Diario se refresca cada 6 horas si la rutina del servidor está activa o cuando la app está abierta y detecta contenido vencido. Si la PWA está cerrada, el refresco de fondo depende del backend, no del navegador.",
         "Diario se persiste por usuario, lugar e idioma. Con Supabase activo usa la tabla daily_briefings; si la tabla aún no existe, la app mantiene un respaldo local y sigue mostrando el resumen.",
         "La matriz de Confiabilidad del Diario separa contenido real de interacción: noticias, separación local/mundial, clima, horóscopo, cartelera, multimedia, voz/comandos y vigencia de 6 horas.",
         "Diario muestra módulos activos de clima, noticias, multimedia y horóscopo. El clima usa Open-Meteo y el horóscopo se genera por idioma activo.",
@@ -2569,7 +2574,7 @@ const manualContent = {
         "The operating rule is explicit: each asset is processed when it enters if it can already be linked to a saved experience; if there is no remote record yet, it waits for the first Supabase save. Experience closure only audits and retries pending items; it is not the normal processing step.",
         "Capture works as a live draft when sign-in and Supabase are active: narrative edits, field changes, and attachments sync in the background to other devices. Save becomes final confirmation, not the first synchronization point.",
         "When the live draft syncs, the full operating flow on the same device refreshes without waiting for the experience to close: Dashboard, Library, Assets, Agenda, Timeline, Map, Reports, Publications, Insights, persistence state, and Admin.",
-        "Biometric files from Apple Health, watches, rings, or other wearables are imported from Assets, not Capture. They remain cross-experience time-based context and can inform energy, recovery, sleep, activity, or stress across multiple experiences.",
+        "Biometric files from Apple Health, watches, rings, or other wearables are imported from Assets, not Capture. They remain cross-experience time-based context; Capture shows a suggested energy value when dates match, and Reports/Insights use them for wellness, recovery, sleep, activity, and stress.",
         "The local backend attempts text extraction for TXT, Markdown, HTML, CSV, JSON, RTF, DOCX, and PDF. PDF uses heuristic extraction and may require review when the file is scanned or protected.",
         "Extracted or generated text is saved as asset analytical text and becomes available for search, reports, memory, and publications, with human review before final outputs.",
         "Admin includes a parallel workstreams board to group MVP closure into functional, technical, pilot, QA/manual, and integration work, with suggested owner and next action.",
@@ -2686,7 +2691,8 @@ const manualContent = {
         "Actionable Insights can turn each recommendation into an Agenda event with a suggested date, priority, description, and reminder.",
         "The Report's Initial outlook can also schedule its suggested next action in Agenda.",
         "Daily shows an informational briefing independent from experiences: politics, economy and finance, technology and AI, sports, entertainment/events, world headlines, and daily horoscope for all signs.",
-        "Daily uses the place entered in Dashboard or the dominant location in your experiences, can be refreshed manually, and refreshes every 6 hours through the Daily routine and a browser-side refresh check.",
+        "Daily uses one manual location shared with Context. In the PWA, persistent physical location is not detected; changing the city updates news, weather, horoscope, listings, and environmental/geopolitical analysis with that reference.",
+        "Daily refreshes every 6 hours if the backend routine is active, or when the app is open and detects stale content. If the PWA is closed, background refresh depends on the backend, not the browser.",
         "Daily is persisted by user, place, and language. With Supabase active it uses the daily_briefings table; if that table is not applied yet, the app keeps a local fallback and still shows the briefing.",
         "The Daily Reliability matrix separates real content from interaction: news, local/world split, weather, horoscope, listings, multimedia, voice/commands, and six-hour freshness.",
         "Daily shows active weather, news, multimedia, and horoscope modules. Weather uses Open-Meteo and horoscope follows the active language.",
@@ -3366,6 +3372,7 @@ const state = {
   profile: loadLocalProfile(),
   contextImpact: null,
   dailyBriefing: loadDailyBriefing(),
+  dailyLocationPreference: loadDailyLocationPreference(),
   selectedDailyArticle: null,
   backendRoutines: [],
   mediaRecorder: null,
@@ -5064,6 +5071,14 @@ function loadDailyBriefing() {
   }
 }
 
+function loadDailyLocationPreference() {
+  try {
+    return localStorage.getItem("experience-hub-daily-location") || "";
+  } catch {
+    return "";
+  }
+}
+
 function saveDailyBriefing() {
   try {
     localStorage.setItem("experience-hub-daily-briefing", JSON.stringify(state.dailyBriefing));
@@ -5881,6 +5896,10 @@ function setupForm() {
   document.getElementById("mediaInput").addEventListener("change", handleMediaSelection);
   form.addEventListener("input", renderCaptureWritingCoach);
   form.addEventListener("change", renderCaptureWritingCoach);
+  document.getElementById("timestampInput")?.addEventListener("change", renderBiometricCaptureContext);
+  document.getElementById("durationInput")?.addEventListener("change", renderBiometricCaptureContext);
+  document.getElementById("energyInput")?.addEventListener("input", renderBiometricCaptureContext);
+  document.getElementById("biometricCaptureContext")?.addEventListener("click", handleBiometricCaptureContextClick);
   form.addEventListener("input", () => scheduleCaptureDraftAutosave("input"));
   form.addEventListener("change", () => scheduleCaptureDraftAutosave("change"));
   document.getElementById("experienceEventsInput")?.addEventListener("input", () => {
@@ -6300,6 +6319,8 @@ function setupActions() {
     if (event.target.closest("[data-version-refresh]")) reloadCurrentAppVersion();
   });
   document.getElementById("dailyRefreshButton").addEventListener("click", () => refreshDailyBriefing({ force: true }));
+  document.getElementById("dailyLocationInput").addEventListener("change", handleDailyLocationChange);
+  document.getElementById("dailyLocationInput").addEventListener("blur", handleDailyLocationChange);
   document.getElementById("dailyStaticActions").addEventListener("click", handleDailyBriefingClick);
   document.getElementById("dailyBriefingBox").addEventListener("click", handleDailyBriefingClick);
   window.addEventListener("hashchange", handleDailyRouteFromHash);
@@ -6393,6 +6414,8 @@ function setupActions() {
   document.getElementById("publicationPreview").addEventListener("click", handlePublicationTemplateClick);
   document.getElementById("publicationPreview").addEventListener("click", handlePublicationApprovalClick);
   document.getElementById("contextPrimaryButton").addEventListener("click", applyPrimaryContextLocation);
+  document.getElementById("contextLocationInput").addEventListener("change", handleContextLocationChange);
+  document.getElementById("contextLocationInput").addEventListener("blur", handleContextLocationChange);
   document.getElementById("contextAnalyzeButton").addEventListener("click", analyzeContextImpact);
   document.getElementById("embeddingBackfillButton").addEventListener("click", backfillEmbeddings);
   document.getElementById("workspaceBackfillButton").addEventListener("click", syncWorkspaceStructure);
@@ -6881,6 +6904,7 @@ function applyDailyStaticActionsLanguage() {
   const mappings = [
     ["dailyStaticActionsTitle", "labels.dailyActionsTitle"],
     ["dailyStaticActionsHelp", "labels.dailyActionsHelp"],
+    ["dailyLocationHelp", "labels.dailyLocationManualHelp"],
     ["dailyStaticActionsStatus", "labels.active"],
     ["dailyFlowReadLabel", "labels.dailyFlowRead"],
     ["dailyFlowReadHelp", "labels.dailyFlowReadHelp"],
@@ -7605,6 +7629,17 @@ async function autosaveCaptureDraft(reason = "input") {
     console.warn("Capture draft autosave failed", error);
   } finally {
     state.captureDraftAutosave.inProgress = false;
+  }
+}
+
+function saveDailyLocationPreference(location = "") {
+  const value = String(location || "").trim();
+  state.dailyLocationPreference = value;
+  try {
+    if (value) localStorage.setItem("experience-hub-daily-location", value);
+    else localStorage.removeItem("experience-hub-daily-location");
+  } catch {
+    // Ignore local location preference restrictions.
   }
 }
 
@@ -8368,6 +8403,7 @@ function renderAll() {
   renderRecentSignals();
   renderDataQuality();
   renderCaptureCoach();
+  renderBiometricCaptureContext();
   renderCaptureEventPreview();
   renderCaptureSaveStatus();
   renderAttachmentPreview();
@@ -8979,6 +9015,58 @@ function renderCaptureCoach() {
   `;
 }
 
+function renderBiometricCaptureContext() {
+  const box = document.getElementById("biometricCaptureContext");
+  if (!box) return;
+  const timestamp = document.getElementById("timestampInput")?.value || "";
+  const duration = Number(document.getElementById("durationInput")?.value || 0);
+  const energy = Number(document.getElementById("energyInput")?.value || 0);
+  const signal = buildBiometricSignalForTimestamp(timestamp, duration);
+  if (!state.biometricImports?.length) {
+    box.innerHTML = `
+      <span>${escapeHtml(state.language === "en" ? "Biometrics: no cross-experience file imported yet." : "Biometría: aún no hay archivo transversal importado.")}</span>
+      <button type="button" class="ghost-button small-button" data-biometric-open-assets="1">${escapeHtml(state.language === "en" ? "Import in Assets" : "Importar en Activos")}</button>
+    `;
+    return;
+  }
+  if (!signal.matched) {
+    box.innerHTML = `
+      <span>${escapeHtml(state.language === "en" ? "Biometrics imported, but no nearby signal was found for this date/time." : "Biometría importada, pero no se encontró señal cercana para esta fecha/hora.")}</span>
+      <button type="button" class="ghost-button small-button" data-biometric-open-assets="1">${escapeHtml(state.language === "en" ? "Review assets" : "Revisar activos")}</button>
+    `;
+    return;
+  }
+  const difference = signal.energySuggestion ? Math.abs(signal.energySuggestion - energy) : 0;
+  const diffText = difference >= 3
+    ? (state.language === "en" ? "Your perceived energy differs from the biometric suggestion; keep both as context." : "Tu energía percibida difiere de la sugerencia biométrica; conviene conservar ambas señales.")
+    : (state.language === "en" ? "Biometric signal is consistent with the current energy value." : "La señal biométrica es consistente con el valor actual de energía.");
+  box.innerHTML = `
+    <div>
+      <strong>${escapeHtml(state.language === "en" ? "Biometric context" : "Contexto biométrico")}: ${escapeHtml(signal.label)}</strong>
+      <p>${escapeHtml(signal.detail)} ${escapeHtml(diffText)}</p>
+    </div>
+    <button type="button" class="ghost-button small-button" data-biometric-apply-energy="${escapeHtml(String(signal.energySuggestion || ""))}">
+      ${escapeHtml(state.language === "en" ? `Use ${signal.energySuggestion}/10` : `Usar ${signal.energySuggestion}/10`)}
+    </button>
+  `;
+}
+
+function handleBiometricCaptureContextClick(event) {
+  const openAssets = event.target.closest("[data-biometric-open-assets]");
+  if (openAssets) {
+    showView("assetLibrary");
+    return;
+  }
+  const apply = event.target.closest("[data-biometric-apply-energy]");
+  if (!apply) return;
+  const value = Number(apply.dataset.biometricApplyEnergy || 0);
+  if (!value) return;
+  document.getElementById("energyInput").value = String(Math.max(1, Math.min(10, value)));
+  renderBiometricCaptureContext();
+  renderCaptureWritingCoach();
+  scheduleCaptureDraftAutosave("biometric-energy");
+}
+
 function readCurrentCaptureDraft() {
   return {
     title: document.getElementById("titleInput")?.value?.trim() || "",
@@ -9328,8 +9416,9 @@ function renderDailyBriefing() {
   const status = document.getElementById("dailyBriefingStatus");
   const input = document.getElementById("dailyLocationInput");
   if (!box || !status || !input) return;
-  const inferred = state.dailyBriefing?.location || document.getElementById("contextLocationInput")?.value?.trim() || "San Juan";
-  if (!input.value) input.value = inferred;
+  const inferred = getDailyOperationalLocation();
+  if (!input.value.trim()) input.value = inferred;
+  syncDailyLocationInputs(input.value.trim() || inferred);
   const briefing = state.dailyBriefing;
   if (!briefing) {
     const horoscopeItems = buildClientDailyHoroscope();
@@ -10399,7 +10488,9 @@ function mapDailySectionToExperienceCategory(section) {
 }
 
 function scheduleDailyListingsReview(query = "") {
-  const location = document.getElementById("dailyLocationInput")?.value?.trim() || state.dailyBriefing?.location || inferPrimaryLocation() || "San Juan";
+  const location = getDailyOperationalLocation();
+  saveDailyLocationPreference(location);
+  syncDailyLocationInputs(location);
   const start = skipBlockedDates(new Date(Date.now() + 24 * 60 * 60 * 1000), state.agendaBlockedDates, "18:00");
   start.setHours(18, 0, 0, 0);
   const end = new Date(start.getTime() + 45 * 60 * 1000);
@@ -10978,12 +11069,18 @@ async function refreshDailyBriefing(options = {}) {
   const input = document.getElementById("dailyLocationInput");
   const cachedAt = state.dailyBriefing?.generatedAt ? new Date(state.dailyBriefing.generatedAt).getTime() : 0;
   const stillFresh = cachedAt && !isDailyBriefingStale(state.dailyBriefing);
-  if (!options.force && stillFresh) return;
-  const location = input?.value?.trim() || state.dailyBriefing?.location || document.getElementById("contextLocationInput")?.value?.trim() || "San Juan";
+  const location = options.location || input?.value?.trim() || getDailyOperationalLocation();
+  const sameLocation = locationsEquivalent(location, state.dailyBriefing?.location);
+  const sameLanguage = !state.dailyBriefing?.locale || state.dailyBriefing.locale === state.language;
+  if (!options.force && stillFresh && sameLocation && sameLanguage) return;
+  saveDailyLocationPreference(location);
+  syncDailyLocationInputs(location);
   if (status && !options.silent) status.textContent = t("labels.dailyLoading");
   try {
     const forceParam = options.force ? "&force=1" : "";
     state.dailyBriefing = await apiRequest(`/daily-briefing?location=${encodeURIComponent(location)}&locale=${encodeURIComponent(state.language)}${forceParam}`);
+    saveDailyLocationPreference(state.dailyBriefing?.location || location);
+    syncDailyLocationInputs(state.dailyBriefing?.location || location);
     state.selectedDailyArticle = null;
     clearDailyHash();
     saveDailyBriefing();
@@ -11002,21 +11099,72 @@ function isDailyBriefingStale(briefing) {
 }
 
 function setupDailyBriefingRefresh() {
+  syncDailyLocationInputs(getDailyOperationalLocation());
+  if (!state.dailyBriefing || isDailyBriefingStale(state.dailyBriefing)) {
+    window.setTimeout(() => refreshDailyBriefing({ silent: true }), 1200);
+  }
   window.setInterval(() => {
     refreshDailyBriefing({ silent: true });
   }, 15 * 60 * 1000);
 }
 
+function getDailyOperationalLocation() {
+  return (
+    state.dailyLocationPreference ||
+    document.getElementById("dailyLocationInput")?.value?.trim() ||
+    document.getElementById("contextLocationInput")?.value?.trim() ||
+    state.dailyBriefing?.location ||
+    inferPrimaryLocation() ||
+    "San Juan"
+  );
+}
+
+function locationsEquivalent(a = "", b = "") {
+  return Boolean(a && b && normalizeComparableText(a) === normalizeComparableText(b));
+}
+
+function syncDailyLocationInputs(location = "") {
+  const value = String(location || "").trim();
+  if (!value) return;
+  const dailyInput = document.getElementById("dailyLocationInput");
+  const contextInput = document.getElementById("contextLocationInput");
+  if (dailyInput && dailyInput.value.trim() !== value) dailyInput.value = value;
+  if (contextInput && contextInput.value.trim() !== value) contextInput.value = value;
+}
+
+function handleDailyLocationChange(event) {
+  const value = event.target.value.trim();
+  if (!value) return;
+  const previous = state.dailyLocationPreference;
+  saveDailyLocationPreference(value);
+  syncDailyLocationInputs(value);
+  const status = document.getElementById("dailyBriefingStatus");
+  if (status) status.textContent = t("labels.dailyLocationSaved");
+  if (!locationsEquivalent(previous, value)) {
+    refreshDailyBriefing({ force: true, location: value });
+    renderContextImpact();
+  }
+}
+
+function handleContextLocationChange(event) {
+  const value = event.target.value.trim();
+  if (!value) return;
+  saveDailyLocationPreference(value);
+  syncDailyLocationInputs(value);
+}
+
 async function analyzeContextImpact() {
   const input = document.getElementById("contextLocationInput");
   const box = document.getElementById("contextImpactBox");
-  const location = input.value.trim() || inferPrimaryLocation();
+  const location = input.value.trim() || getDailyOperationalLocation();
   if (!location) {
     box.innerHTML = `<p class="card-meta">${t("labels.contextEmpty")}</p>`;
     updateContextStatus();
     return;
   }
   box.innerHTML = `<p class="card-meta">${t("labels.contextLoading")}</p>`;
+  saveDailyLocationPreference(location);
+  syncDailyLocationInputs(location);
   updateContextStatus("loading");
   try {
     const experienceType = getContextExperienceType();
@@ -11032,8 +11180,10 @@ async function analyzeContextImpact() {
 
 async function applyPrimaryContextLocation() {
   const input = document.getElementById("contextLocationInput");
-  const location = inferPrimaryLocation() || state.dailyBriefing?.location || "San Juan";
+  const location = inferPrimaryLocation() || getDailyOperationalLocation();
   input.value = location;
+  saveDailyLocationPreference(location);
+  syncDailyLocationInputs(location);
   updateContextStatus("primary", { location });
   await analyzeContextImpact();
 }
@@ -11051,7 +11201,8 @@ function renderContextImpact() {
   const box = document.getElementById("contextImpactBox");
   const input = document.getElementById("contextLocationInput");
   if (input && !input.value.trim()) {
-    input.value = inferPrimaryLocation() || state.dailyBriefing?.location || "";
+    input.value = getDailyOperationalLocation();
+    syncDailyLocationInputs(input.value);
   }
   if (!impact) {
     updateContextStatus();
@@ -12591,6 +12742,7 @@ async function importBiometricAssetFromFile(event) {
         startAt: parsed.startAt || "",
         endAt: parsed.endAt || "",
       },
+      rows: parsed.rows.slice(0, 20000),
     };
     state.biometricImports.unshift(imported);
     saveBiometricImports();
@@ -12633,6 +12785,119 @@ function parseBiometricFile(rawText, file = {}) {
     ? `${summaryText} This asset is cross-experience context and should be matched by date/time before adjusting energy, recovery, stress, sleep, or activity indicators.`
     : `${summaryText} Este activo es contexto transversal y debe vincularse por fecha/hora antes de ajustar energia, recuperacion, estres, sueno o actividad.`;
   return { rows: normalizedRows, recordCount: normalizedRows.length, metricNames, startAt, endAt, sourceDevice, summaryText, analysisText };
+}
+
+function getAllBiometricRows() {
+  return (state.biometricImports || []).flatMap((item) => {
+    if (Array.isArray(item.rows) && item.rows.length) {
+      return item.rows.map((row) => ({ ...row, importName: item.name, sourceDevice: item.sourceDevice || row.source || "" }));
+    }
+    if (!item.extractedText) return [];
+    try {
+      const parsed = parseBiometricFile(item.extractedText, { name: item.name, type: item.type });
+      return parsed.rows.map((row) => ({ ...row, importName: item.name, sourceDevice: item.sourceDevice || row.source || "" }));
+    } catch {
+      return [];
+    }
+  });
+}
+
+function buildBiometricSignalForTimestamp(timestampValue, durationMinutes = 0) {
+  const timestamp = timestampValue ? new Date(timestampValue) : null;
+  if (!timestamp || Number.isNaN(timestamp.getTime())) {
+    return {
+      matched: false,
+      label: state.language === "en" ? "missing date" : "fecha pendiente",
+      detail: state.language === "en" ? "Set date and time to match biometrics." : "Define fecha y hora para cruzar biometría.",
+    };
+  }
+  const rows = getAllBiometricRows();
+  if (!rows.length) return { matched: false, label: "", detail: "" };
+  const start = new Date(timestamp.getTime() - 3 * 60 * 60 * 1000);
+  const end = new Date(timestamp.getTime() + Math.max(30, Number(durationMinutes || 0)) * 60 * 1000 + 3 * 60 * 60 * 1000);
+  const dayKey = formatLocalDateKey(timestamp);
+  const previousDay = new Date(timestamp);
+  previousDay.setDate(previousDay.getDate() - 1);
+  const previousDayKey = formatLocalDateKey(previousDay);
+  const matchedRows = rows.filter((row) => {
+    const date = new Date(row.date);
+    if (Number.isNaN(date.getTime())) return false;
+    const type = classifyBiometricType(row);
+    if (type === "sleep") return [dayKey, previousDayKey].includes(formatLocalDateKey(date));
+    return date >= start && date <= end || formatLocalDateKey(date) === dayKey;
+  });
+  if (!matchedRows.length) return { matched: false, label: "", detail: "" };
+  const metrics = aggregateBiometricRows(matchedRows);
+  const energySuggestion = estimateBiometricEnergy(metrics);
+  const detail = formatBiometricSignalDetail(metrics, matchedRows.length);
+  return {
+    matched: true,
+    rows: matchedRows,
+    metrics,
+    energySuggestion,
+    label: state.language === "en" ? `${matchedRows.length} records near this experience` : `${matchedRows.length} registros cercanos a esta experiencia`,
+    detail,
+  };
+}
+
+function classifyBiometricType(row = {}) {
+  const raw = `${row.type || ""} ${row.metric || ""}`.toLowerCase();
+  if (/heart|hr|cardio|pulse|ritmo|frecuencia/.test(raw)) return "heart";
+  if (/step|paso/.test(raw)) return "steps";
+  if (/sleep|sueno/.test(raw)) return "sleep";
+  if (/energy|calorie|kcal|energia/.test(raw)) return "energy";
+  if (/distance|distancia/.test(raw)) return "distance";
+  if (/workout|exercise|active|actividad|entreno/.test(raw)) return "activity";
+  if (/oxygen|spo2|respiratory|respiracion/.test(raw)) return "respiration";
+  return "other";
+}
+
+function getBiometricNumericValue(row = {}) {
+  const value = Number(String(row.value ?? "").replace(",", ".").replace(/[^\d.-]/g, ""));
+  return Number.isFinite(value) ? value : 0;
+}
+
+function aggregateBiometricRows(rows = []) {
+  const grouped = rows.reduce((acc, row) => {
+    const type = classifyBiometricType(row);
+    const value = getBiometricNumericValue(row);
+    if (!acc[type]) acc[type] = [];
+    if (value) acc[type].push(value);
+    return acc;
+  }, {});
+  const sum = (items) => items.reduce((total, value) => total + value, 0);
+  return {
+    heartAvg: grouped.heart?.length ? average(grouped.heart) : 0,
+    steps: grouped.steps?.length ? sum(grouped.steps) : 0,
+    activeEnergy: grouped.energy?.length ? sum(grouped.energy) : 0,
+    sleepMinutes: grouped.sleep?.length ? sum(grouped.sleep) : 0,
+    activityCount: grouped.activity?.length || 0,
+    metricTypes: Object.keys(grouped),
+  };
+}
+
+function estimateBiometricEnergy(metrics = {}) {
+  let score = 5;
+  const sleepHours = Number(metrics.sleepMinutes || 0) / 60;
+  if (sleepHours >= 7) score += 1;
+  if (sleepHours > 0 && sleepHours < 6) score -= 1;
+  if (metrics.steps >= 8000) score += 1;
+  if (metrics.steps >= 12000) score += 1;
+  if (metrics.activeEnergy >= 450) score += 1;
+  if (metrics.activityCount > 0) score += 1;
+  if (metrics.heartAvg >= 105) score -= 1;
+  return Math.max(1, Math.min(10, Math.round(score)));
+}
+
+function formatBiometricSignalDetail(metrics = {}, count = 0) {
+  const parts = [];
+  if (metrics.heartAvg) parts.push(state.language === "en" ? `heart rate ${Math.round(metrics.heartAvg)} avg` : `frecuencia ${Math.round(metrics.heartAvg)} prom.`);
+  if (metrics.steps) parts.push(state.language === "en" ? `${Math.round(metrics.steps)} steps` : `${Math.round(metrics.steps)} pasos`);
+  if (metrics.activeEnergy) parts.push(state.language === "en" ? `${Math.round(metrics.activeEnergy)} kcal/energy` : `${Math.round(metrics.activeEnergy)} kcal/energía`);
+  if (metrics.sleepMinutes) parts.push(state.language === "en" ? `${(metrics.sleepMinutes / 60).toFixed(1)} h sleep` : `${(metrics.sleepMinutes / 60).toFixed(1)} h sueño`);
+  if (metrics.activityCount) parts.push(state.language === "en" ? `${metrics.activityCount} activity records` : `${metrics.activityCount} registros de actividad`);
+  const summary = parts.length ? parts.join(" · ") : (state.language === "en" ? `${count} biometric records` : `${count} registros biométricos`);
+  return state.language === "en" ? `${summary}. Suggested energy: ${estimateBiometricEnergy(metrics)}/10.` : `${summary}. Energía sugerida: ${estimateBiometricEnergy(metrics)}/10.`;
 }
 
 function extractJsonBiometricRows(payload) {
@@ -15504,8 +15769,9 @@ function buildPredictiveOutlook(experiences, analysis, quality) {
   const workPct = pct(recent.filter((item) => normalizeCategoryName(item.category) === "Trabajo").length, recent.length);
   const recoveryPct = pct(recent.filter((item) => ["Salud", "Espiritualidad", "Viajes / Paseos", "Hogar"].includes(normalizeCategoryName(item.category))).length, recent.length);
   const contextImpact = Number(state.contextImpact?.impactScore || 0);
-  const riskScore = clampScore((recentSaturationPct * 0.45) + (Math.max(0, workPct - recoveryPct) * 0.25) + (Math.max(0, -energyDelta) * 12) + (contextImpact * 0.15));
-  const confidence = Math.round(clampScore((Math.min(1, experiences.length / 14) * 44) + (quality.score * 0.38) + (analysis.categoryBreakdown.length >= 3 ? 10 : 0) + (state.contextImpact ? 8 : 0)));
+  const biometricSummary = summarizeBiometricSignalsForExperiences(experiences);
+  const riskScore = clampScore((recentSaturationPct * 0.42) + (Math.max(0, workPct - recoveryPct) * 0.24) + (Math.max(0, -energyDelta) * 11) + (contextImpact * 0.14) + (biometricSummary.biometricRiskScore * 0.1));
+  const confidence = Math.round(clampScore((Math.min(1, experiences.length / 14) * 40) + (quality.score * 0.34) + (analysis.categoryBreakdown.length >= 3 ? 10 : 0) + (state.contextImpact ? 8 : 0) + Math.min(8, biometricSummary.coveragePct * 0.08)));
   const tone = confidence >= 72 ? "strong" : confidence >= 48 ? "medium" : "low";
   const direction =
     energyDelta >= 0.45
@@ -15543,6 +15809,13 @@ function buildPredictiveOutlook(experiences, analysis, quality) {
         : state.language === "en"
           ? "External context not analyzed in this report"
           : "Contexto externo no analizado en este reporte",
+      biometricSummary.matched
+        ? state.language === "en"
+          ? `Biometric context: ${biometricSummary.matched} matched experiences, suggested energy ${(biometricSummary.averageSuggestedEnergy || 0).toFixed(1)}/10`
+          : `Contexto biométrico: ${biometricSummary.matched} experiencias vinculadas, energía sugerida ${(biometricSummary.averageSuggestedEnergy || 0).toFixed(1)}/10`
+        : state.language === "en"
+          ? "No biometric context matched this report yet"
+          : "Aún no hay contexto biométrico vinculado a este reporte",
     ],
     nextStep:
       riskScore >= 64
@@ -16067,6 +16340,7 @@ function renderHumanCorrelationCard(item) {
 function buildHumanKpis(experiences, analysis, quality) {
   if (!experiences.length) return [];
   const avgEnergy = average(experiences.map((item) => Number(item.energy || 0)));
+  const biometricSummary = summarizeBiometricSignalsForExperiences(experiences);
   const highEnergyPct = pct(experiences.filter((item) => Number(item.energy || 0) >= 7).length, experiences.length);
   const lowEnergyPct = pct(experiences.filter((item) => Number(item.energy || 0) <= 4).length, experiences.length);
   const saturatedPct = pct(experiences.filter((item) => item.mood === "Saturado").length, experiences.length);
@@ -16076,9 +16350,10 @@ function buildHumanKpis(experiences, analysis, quality) {
   const learningPct = pct(experiences.filter((item) => normalizeCategoryName(item.category) === "Aprendizaje" || String(item.notes || "").toLowerCase().includes("aprendi")).length, experiences.length);
   const balanceScore = clampScore(100 - Math.abs(workPct - recoveryPct));
   const stabilityScore = clampScore(100 - saturatedPct - Math.max(0, lowEnergyPct - 15));
-  const wellnessScore = clampScore((avgEnergy * 10 * 0.38) + (stabilityScore * 0.24) + (recoveryPct * 0.18) + (quality.score * 0.2));
-  const stressLoad = clampScore((saturatedPct * 0.58) + (lowEnergyPct * 0.32) + Math.max(0, workPct - recoveryPct) * 0.1);
-  const resilience = clampScore((highEnergyPct * 0.3) + (stabilityScore * 0.35) + (learningPct * 0.2) + (quality.score * 0.15));
+  const biometricEnergyScore = biometricSummary.averageSuggestedEnergy ? biometricSummary.averageSuggestedEnergy * 10 : avgEnergy * 10;
+  const wellnessScore = clampScore((avgEnergy * 10 * 0.3) + (biometricEnergyScore * 0.12) + (stabilityScore * 0.22) + (recoveryPct * 0.16) + (quality.score * 0.2));
+  const stressLoad = clampScore((saturatedPct * 0.52) + (lowEnergyPct * 0.28) + Math.max(0, workPct - recoveryPct) * 0.1 + biometricSummary.biometricRiskScore * 0.1);
+  const resilience = clampScore((highEnergyPct * 0.26) + (stabilityScore * 0.31) + (learningPct * 0.18) + (quality.score * 0.15) + biometricSummary.coveragePct * 0.1);
   return [
     {
       id: "human-wellness",
@@ -16119,8 +16394,10 @@ function buildHumanKpis(experiences, analysis, quality) {
     {
       id: "daily-energy",
       label: localizedHumanKpiLabel("daily-energy"),
-      score: Math.round(clampScore(avgEnergy * 10)),
-      detail: state.language === "en" ? `Average energy is ${avgEnergy.toFixed(1)}/10 in the filtered set.` : `La energía media es ${avgEnergy.toFixed(1)}/10 en el conjunto filtrado.`,
+      score: Math.round(clampScore((avgEnergy * 10 * 0.7) + (biometricEnergyScore * 0.3))),
+      detail: state.language === "en"
+        ? `Perceived energy is ${avgEnergy.toFixed(1)}/10; biometrics cover ${Math.round(biometricSummary.coveragePct)}% of the filtered set.`
+        : `La energía percibida es ${avgEnergy.toFixed(1)}/10; la biometría cubre ${Math.round(biometricSummary.coveragePct)}% del conjunto filtrado.`,
     },
     {
       id: "life-satisfaction",
@@ -16162,6 +16439,26 @@ function hasMeaningfulPeople(value) {
   return Boolean(text && text !== "Sin personas" && text.toLowerCase() !== "solo");
 }
 
+function summarizeBiometricSignalsForExperiences(experiences = []) {
+  if (!experiences.length) {
+    return { matched: 0, coveragePct: 0, averageSuggestedEnergy: 0, biometricRiskScore: 0 };
+  }
+  const signals = experiences
+    .map((experience) => buildBiometricSignalForTimestamp(experience.timestamp, experience.duration))
+    .filter((signal) => signal.matched);
+  const averageSuggestedEnergy = signals.length ? average(signals.map((signal) => Number(signal.energySuggestion || 0))) : 0;
+  const riskSignals = signals.filter((signal) => {
+    const metrics = signal.metrics || {};
+    return Number(signal.energySuggestion || 0) <= 4 || metrics.heartAvg >= 105 || (metrics.sleepMinutes > 0 && metrics.sleepMinutes < 360);
+  }).length;
+  return {
+    matched: signals.length,
+    coveragePct: pct(signals.length, experiences.length),
+    averageSuggestedEnergy,
+    biometricRiskScore: pct(riskSignals, signals.length || 1),
+  };
+}
+
 function buildHumanCorrelations(experiences, analysis) {
   if (experiences.length < 3) return [];
   const workItems = experiences.filter((item) => normalizeCategoryName(item.category) === "Trabajo");
@@ -16172,6 +16469,7 @@ function buildHumanCorrelations(experiences, analysis) {
   const contextScore = state.contextImpact?.impactScore || 0;
   const saturatedPct = pct(experiences.filter((item) => item.mood === "Saturado").length, experiences.length);
   const lowEnergyPct = pct(experiences.filter((item) => Number(item.energy || 0) <= 4).length, experiences.length);
+  const biometricSummary = summarizeBiometricSignalsForExperiences(experiences);
   const correlations = [
     buildCorrelationResult({
       source: state.language === "en" ? "Work -> saturation" : "Trabajo -> saturación",
@@ -16210,6 +16508,16 @@ function buildHumanCorrelations(experiences, analysis) {
         ? `${learningItems.length} learning signals appear in categories or notes.`
         : `${learningItems.length} señales de aprendizaje aparecen en categorías o notas.`,
       action: state.language === "en" ? "Turn repeated learnings into explicit routines or experiments." : "Convierte aprendizajes repetidos en rutinas o experimentos explícitos.",
+      inverseTone: false,
+    }),
+    buildCorrelationResult({
+      source: state.language === "en" ? "Biometrics -> energy" : "Biometría -> energía",
+      title: state.language === "en" ? "Biometric coverage and perceived energy" : "Cobertura biométrica y energía percibida",
+      score: biometricSummary.coveragePct ? Math.round((biometricSummary.coveragePct * 0.45) + ((biometricSummary.averageSuggestedEnergy || 0) * 5.5)) : 0,
+      detail: state.language === "en"
+        ? `${biometricSummary.matched} experiences have nearby biometric context; suggested energy average is ${(biometricSummary.averageSuggestedEnergy || 0).toFixed(1)}/10.`
+        : `${biometricSummary.matched} experiencias tienen contexto biométrico cercano; la energía biométrica sugerida promedia ${(biometricSummary.averageSuggestedEnergy || 0).toFixed(1)}/10.`,
+      action: state.language === "en" ? "Compare perceived energy against biometric signals before changing routines." : "Compara energía percibida contra señales biométricas antes de cambiar rutinas.",
       inverseTone: false,
     }),
     buildCorrelationResult({
@@ -19406,8 +19714,11 @@ async function runRoutine(id) {
     return;
   }
   if (id === "context-scan") {
-    const location = inferPrimaryLocation();
-    if (location) document.getElementById("contextLocationInput").value = location;
+    const location = inferPrimaryLocation() || getDailyOperationalLocation();
+    if (location) {
+      saveDailyLocationPreference(location);
+      syncDailyLocationInputs(location);
+    }
     await analyzeContextImpact();
     showView("dashboard");
   }
@@ -25554,7 +25865,7 @@ function buildParallelBacklog() {
       vectorAction: "Actualizar embeddings",
       blueprintTitle: "Plan maestro de inteligencia humana",
       blueprintDetail: humanKpis.length
-        ? `${humanKpis.length} índices, ${humanCorrelations.length} correlaciones humanas y proyección inicial visibles en Reportes; faltan biometría, sueño e IA predictiva avanzada.`
+        ? `${humanKpis.length} índices, ${humanCorrelations.length} correlaciones humanas y proyección inicial visibles en Reportes; la biometría importada desde Activos ya informa energía, recuperación y riesgo cuando coincide por fecha/hora.`
         : "Integrar indicadores humanos, reportes por categoría, correlaciones y memoria viva desde el plan maestro.",
       blueprintAction: "Abrir Reporte",
       mapTitle: "Mapa de Experiencias",
@@ -25608,7 +25919,7 @@ function buildParallelBacklog() {
       vectorAction: "Update embeddings",
       blueprintTitle: "Human Intelligence Blueprint",
       blueprintDetail: humanKpis.length
-        ? `${humanKpis.length} indexes, ${humanCorrelations.length} human correlations, and an initial outlook are visible in Reports; biometrics, sleep, and advanced predictive AI remain pending.`
+        ? `${humanKpis.length} indexes, ${humanCorrelations.length} human correlations, and an initial outlook are visible in Reports; imported biometrics from Assets now inform energy, recovery, and risk when matched by date/time.`
         : "Integrate human KPIs, category reports, correlations, and living memory from the blueprint.",
       blueprintAction: "Open Report",
       mapTitle: "Experience Map",

@@ -3517,6 +3517,41 @@ button,
   justify-content: flex-end;
 }
 
+.biometric-capture-context {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(50, 84, 104, 0.16);
+  border-radius: 8px;
+  background: #f4faf8;
+  color: var(--text);
+}
+
+.biometric-capture-context div {
+  display: grid;
+  gap: 3px;
+}
+
+.biometric-capture-context span,
+.biometric-capture-context p {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.biometric-capture-context p {
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.small-button {
+  min-height: 32px;
+  padding: 6px 10px;
+  white-space: nowrap;
+}
+
 @media (max-width: 720px) {
   .asset-biometric-panel {
     align-items: stretch;
@@ -3525,6 +3560,15 @@ button,
 
   .asset-biometric-actions {
     justify-content: flex-start;
+  }
+
+  .biometric-capture-context {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .small-button {
+    width: 100%;
   }
 }
 
