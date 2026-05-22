@@ -172,33 +172,29 @@ CREATE POLICY "Members can read memberships"
   ON workspace_members
   FOR SELECT
   TO authenticated
-  USING (
-    user_id = (select auth.uid())
-    OR EXISTS (
-      SELECT 1 FROM workspaces w
-      WHERE w.workspace_id = workspace_members.workspace_id
-        AND w.owner_user_id = (select auth.uid())
-    )
-  );
+  USING (user_id = (select auth.uid()));
 
 CREATE POLICY "Owners and admins can manage memberships"
   ON workspace_members
-  FOR ALL
+  FOR INSERT
   TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM workspaces w
-      WHERE w.workspace_id = workspace_members.workspace_id
-        AND w.owner_user_id = (select auth.uid())
-    )
-  )
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM workspaces w
-      WHERE w.workspace_id = workspace_members.workspace_id
-        AND w.owner_user_id = (select auth.uid())
-    )
-  );
+  WITH CHECK (user_id = (select auth.uid()));
+
+DROP POLICY IF EXISTS "Users can update own workspace memberships" ON workspace_members;
+DROP POLICY IF EXISTS "Users can delete own workspace memberships" ON workspace_members;
+
+CREATE POLICY "Users can update own workspace memberships"
+  ON workspace_members
+  FOR UPDATE
+  TO authenticated
+  USING (user_id = (select auth.uid()))
+  WITH CHECK (user_id = (select auth.uid()));
+
+CREATE POLICY "Users can delete own workspace memberships"
+  ON workspace_members
+  FOR DELETE
+  TO authenticated
+  USING (user_id = (select auth.uid()));
 
 CREATE POLICY "Members can manage participants"
   ON participants
