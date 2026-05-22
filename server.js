@@ -2234,7 +2234,7 @@ async function runSupabaseSelfTest(user) {
     await collectSelfTestStep(steps, "dailyBriefing", "Diario persistente", async () => {
       dailyTestLocation = `Self Test ${testId}`;
       const briefing = {
-        schemaVersion: "20260512-daily-cache-34",
+        schemaVersion: "20260522-daily-media-specific-35",
         source: "self-test",
         location: dailyTestLocation,
         country: "",
@@ -3738,7 +3738,7 @@ async function buildLiveDailyBriefing(location, language = "es") {
   });
   const weather = weatherResult[0]?.status === "fulfilled" ? weatherResult[0].value : unavailableWeatherImpact(weatherResult[0]?.reason);
   return {
-    schemaVersion: "20260512-daily-cache-34",
+    schemaVersion: "20260522-daily-media-specific-35",
     source: "GDELT DOC 2.0 + Google News RSS",
     location: place.name,
     country: place.country || place.countryCode || "",
@@ -3856,7 +3856,7 @@ function buildDailyBriefingCacheKey(userId, locationKey, language) {
 
 function isStoredDailyBriefingStale(briefing) {
   if (!briefing?.generatedAt) return true;
-  if (briefing.schemaVersion !== "20260512-daily-cache-34") return true;
+  if (briefing.schemaVersion !== "20260522-daily-media-specific-35") return true;
   const refreshMs = Number(briefing.refreshEveryHours || 6) * 60 * 60 * 1000;
   return Date.now() - new Date(briefing.generatedAt).getTime() >= refreshMs;
 }
@@ -3942,7 +3942,6 @@ async function fetchBriefingSection(section, language) {
   }
 
   const rssArticles = await hydrateArticleImages(await fetchGoogleNewsRss(section, language));
-  const supplementalMedia = await fetchSupplementalBriefingMedia(section);
   return enrichBriefingSection({
     id: section.id,
     scope: section.scope,
@@ -3950,15 +3949,11 @@ async function fetchBriefingSection(section, language) {
     source: rssArticles.length ? "Google News RSS" : "Sin fuente disponible",
     summary: buildBriefingSummary(rssArticles, language),
     articles: rssArticles,
-    supplementalMedia,
   }, language);
 }
 
 function enrichBriefingSection(section, language) {
-  const mediaItems = [
-    ...(section.articles || []).filter((article) => article.image),
-    ...(section.supplementalMedia || []),
-  ];
+  const mediaItems = (section.articles || []).filter((article) => article.image);
   const media = uniqueBy(mediaItems, (item) => item.image || item.url)
     .filter((article) => isLikelyNewsImage(article.image))
     .slice(0, 4)
@@ -3967,6 +3962,7 @@ function enrichBriefingSection(section, language) {
       url: article.image,
       title: article.title,
       sourceUrl: article.url,
+      articleSpecific: true,
     }));
   const searchQuery = `${section.title} ${language === "en" ? "news" : "noticias"}`;
   return {

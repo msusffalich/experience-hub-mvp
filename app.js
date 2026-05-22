@@ -1,4 +1,4 @@
-const APP_VERSION = "20260522-vibe-logo-388";
+const APP_VERSION = "20260522-daily-clarity-389";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -612,8 +612,12 @@ const i18n = {
       dailyExploreListingsTitle: "Cartelera vigente",
       dailyExploreListingsHelp: "Consulta cine, conciertos, teatro, eventos y exposiciones del lugar seleccionado.",
       dailyExploreMediaTitle: "Multimedia disponible",
-      dailyExploreMediaHelp: "Imágenes editoriales cargadas en el Diario y accesos a video/audio externos.",
+      dailyExploreMediaHelp: "Imágenes editoriales reales cuando la fuente las entrega. Video, audio y galería abren búsquedas externas relacionadas, no archivos propios de la noticia.",
       dailyExploreNoImages: "Aún no hay imágenes confiables cargadas en este Diario. Usa Galería, Videos o Audio para consultar fuentes externas.",
+      dailyMediaSpecific: "Multimedia específica de la noticia",
+      dailyMediaExternalSearch: "Búsqueda externa relacionada",
+      dailyArticleMediaMissing: "La fuente no entregó imagen, video ni audio específico para esta noticia.",
+      dailyArticleMediaExternalHelp: "Estas opciones buscan material relacionado fuera de la app; no son adjuntos confirmados de la noticia.",
       dailyExploreAgendaTitle: "Seguimiento",
       dailyExploreAgendaHelp: "Programa una revisión en Agenda para revisar cartelera, eventos o multimedia más tarde.",
       dailyLocalNewsHelp: "Noticias relacionadas con la ciudad o lugar escrito arriba.",
@@ -621,7 +625,7 @@ const i18n = {
       dailyActionListings: "Cartelera y eventos",
       dailyActionListingsDetail: "Cine, conciertos, teatro, eventos y exposiciones del lugar.",
       dailyActionMultimedia: "Multimedia",
-      dailyActionMultimediaDetail: "Galería, videos y audio/podcasts relacionados.",
+      dailyActionMultimediaDetail: "Imágenes reales si la fuente las trae; galería, videos y audio se abren como búsquedas externas relacionadas.",
       dailyActionHoroscope: "Horóscopo",
       dailyActionHoroscopeDetail: "12 signos disponibles en el idioma activo.",
       dailyActionVoice: "Voz",
@@ -1421,8 +1425,12 @@ const i18n = {
       dailyExploreListingsTitle: "Current listings",
       dailyExploreListingsHelp: "Check movies, concerts, theater, events, and exhibitions for the selected place.",
       dailyExploreMediaTitle: "Available multimedia",
-      dailyExploreMediaHelp: "Editorial images loaded in Daily plus external video/audio access.",
+      dailyExploreMediaHelp: "Real editorial images when the source provides them. Video, audio, and gallery open related external searches, not article-owned files.",
       dailyExploreNoImages: "No reliable images are loaded in this Daily yet. Use Gallery, Videos, or Audio to check external sources.",
+      dailyMediaSpecific: "Article-specific media",
+      dailyMediaExternalSearch: "Related external search",
+      dailyArticleMediaMissing: "The source did not provide article-specific image, video, or audio.",
+      dailyArticleMediaExternalHelp: "These options search related material outside the app; they are not confirmed article attachments.",
       dailyExploreAgendaTitle: "Follow-up",
       dailyExploreAgendaHelp: "Schedule a review in Agenda to check listings, events, or multimedia later.",
       dailyLocalNewsHelp: "Stories related to the city or place entered above.",
@@ -1430,7 +1438,7 @@ const i18n = {
       dailyActionListings: "Listings and events",
       dailyActionListingsDetail: "Movies, concerts, theater, events, and exhibitions for the place.",
       dailyActionMultimedia: "Multimedia",
-      dailyActionMultimediaDetail: "Related gallery, videos, and audio/podcasts.",
+      dailyActionMultimediaDetail: "Real images when the source provides them; gallery, videos, and audio open related external searches.",
       dailyActionHoroscope: "Horoscope",
       dailyActionHoroscopeDetail: "12 signs available in the active language.",
       dailyActionVoice: "Voice",
@@ -2145,16 +2153,16 @@ const manualContent = {
         "Diario muestra módulos activos de clima, noticias, multimedia y horóscopo. El clima usa Open-Meteo y el horóscopo se genera por idioma activo.",
         "Las noticias de Diario combinan GDELT y Google News RSS. Cada sección muestra su fuente activa; si una fuente externa no responde, se conserva un mensaje de disponibilidad sin bloquear el resto del Panel.",
         "Diario separa noticias locales y mundiales. Las consultas se adaptan al idioma activo del usuario para priorizar resultados en español o inglés.",
-        "La capa multimodal muestra imágenes cuando la fuente de noticias las entrega y ofrece accesos directos a imágenes, videos y audio/podcasts relacionados por sección.",
+        "La capa multimodal del Diario separa dos cosas: multimedia específica de la noticia e investigación externa. Solo se muestra como propia de la noticia cuando la fuente entrega una imagen editorial confiable; videos, audio, podcasts y galerías se abren como búsquedas externas relacionadas.",
         "Cada sección de Diario muestra una noticia principal, titulares secundarios y una lectura breve con qué está pasando, por qué importa y qué revisar. Usa Ver detalle para abrir una ficha dentro de la app con ruta propia, fuente, fecha, enlaces multimedia y acceso a la noticia original.",
         "Desde el detalle de una noticia puedes usar Guardar como experiencia para convertirla en una experiencia editable con fuente, contexto, fecha, lectura e imagen editorial cuando esté disponible. Si intentas guardar la misma noticia otra vez, la app abre la experiencia existente para evitar duplicados.",
         "Las imágenes del Diario se muestran solo cuando parecen ser imágenes editoriales confiables; logos, iconos, placeholders y assets pequeños se descartan.",
-        "Cuando no hay imagen editorial confiable, el Diario mantiene una capa multimedia con búsqueda directa de galería, videos, audio/podcasts y lectura en voz alta del resumen.",
+        "Cuando no hay imagen editorial confiable, el Diario lo indica en la ficha de detalle y ofrece búsquedas externas de galería, videos y audio/podcasts sin presentarlas como adjuntos confirmados.",
         "El Diario tiene un flujo simplificado: Leer Diario, Cartelera y multimedia, Horóscopo y Comando de voz. Ese bloque superior es solo el mando del Diario; las noticias reales aparecen debajo, separadas en Locales y Mundiales para evitar duplicidad conceptual.",
         "Administración separa la preparación interactiva del Diario del contenido actualizado: la cartelera, multimedia, horóscopo y voz pueden estar listos aunque falte refrescar noticias o clima reales.",
         "Noticias locales usa la ciudad o lugar escrito arriba. Noticias mundiales agrupa señales globales independientes de esa ciudad.",
         "Cartelera y multimedia depende de fuentes externas. Por eso la app muestra opciones concretas y enlaces de salida; si una pestaña no se abre automáticamente, usa el enlace visible.",
-        "La ficha Cartelera y multimedia agrupa tres zonas: cartelera vigente, multimedia disponible y seguimiento en Agenda. Si el Diario ya trae imágenes editoriales confiables, se muestran como vista previa; si no, la app lo indica y ofrece búsquedas externas.",
+        "La ficha Cartelera y multimedia agrupa tres zonas: cartelera vigente, imágenes editoriales reales disponibles y seguimiento en Agenda. Si el Diario no trae imágenes confiables, la app lo indica y ofrece búsquedas externas claramente marcadas.",
         "Si la fuente externa del horóscopo no responde o el resumen guardado no trae horóscopo, la app muestra un respaldo local en el idioma activo para los 12 signos.",
         "Cartelera y eventos ofrece accesos rápidos para buscar cine, conciertos, teatro, eventos del día y exposiciones del lugar seleccionado. También permite programar una revisión en Agenda para convertir la lectura del Diario en seguimiento accionable.",
         "Comando de voz permite ejecutar acciones básicas por voz: abrir secciones, actualizar Diario, analizar contexto, abrir reportes, abrir Publicaciones, abrir Manual, cargar ejemplo o crear una nueva experiencia. Puedes iniciar el comando con Hola V, V o, en inglés, Hi V. Depende de Web Speech del navegador y requiere activar el micrófono desde la app.",
@@ -2698,16 +2706,16 @@ const manualContent = {
         "Daily shows active weather, news, multimedia, and horoscope modules. Weather uses Open-Meteo and horoscope follows the active language.",
         "Daily news combines GDELT and Google News RSS. Each section shows its active source; if an external source is unavailable, the Dashboard keeps the rest of the briefing working.",
         "Daily separates local and world news. Queries adapt to the active user language to prioritize Spanish or English results.",
-        "The multimodal layer shows images when the news source provides them and includes direct links to related images, videos, and audio/podcasts by section.",
+        "Daily's multimodal layer separates article-owned media from external research. It only shows media as article-specific when the source provides a reliable editorial image; videos, audio, podcasts, and galleries open as related external searches.",
         "Each Daily section shows a lead story, secondary headlines, and a short reading with what is happening, why it matters, and what to watch. Use View detail to open an in-app detail card with its own route, source, date, multimedia links, and the original story link.",
         "From a story detail you can use Save as experience to turn it into an editable experience with source, context, date, reading, and editorial image when available. If you try to save the same story again, the app opens the existing experience to avoid duplicates.",
         "Daily images are shown only when they look like reliable editorial images; logos, icons, placeholders, and small assets are discarded.",
-        "When no reliable editorial image is available, Daily keeps a multimedia layer with direct gallery, video, audio/podcast search, and read-aloud summary.",
+        "When no reliable editorial image is available, Daily says so in the detail card and offers gallery, video, and audio/podcast searches without presenting them as confirmed attachments.",
         "Daily has a simplified flow: Read Daily, Listings and multimedia, Horoscope, and Voice command. That top block is only the Daily control area; the actual stories appear below, separated into Local and World to avoid conceptual duplication.",
         "Admin separates Daily interactive readiness from updated content: listings, multimedia, horoscope, and voice can be ready even if real news or weather still need refresh.",
         "Local news uses the city or place entered above. World news groups global signals independent from that city.",
         "Listings and multimedia depends on external sources. The app therefore shows concrete options and outbound links; if a tab does not open automatically, use the visible link.",
-        "The Listings and multimedia card groups three zones: current listings, available multimedia, and Agenda follow-up. If Daily already has reliable editorial images, they appear as previews; if not, the app says so and offers external searches.",
+        "The Listings and multimedia card groups three zones: current listings, real editorial images when available, and Agenda follow-up. If Daily has no reliable images, the app says so and offers clearly marked external searches.",
         "If the external horoscope source does not respond or the saved briefing has no horoscope, the app shows a local fallback in the active language for all 12 signs.",
         "Listings and events provides quick links for movie showtimes, concerts, theater, events today, and exhibitions in the selected place. It can also schedule a review in Agenda so the Daily briefing becomes actionable follow-up.",
         "Voice command runs basic actions by voice: open sections, refresh Daily, analyze context, open reports, open Publications, open Manual, load example, or create a new experience. You can start the command with Hi V, V, or in Spanish, Hola V. It depends on the browser's Web Speech support and requires activating the microphone from the app.",
@@ -9838,7 +9846,7 @@ function positiveHash(value) {
 function renderDailySection(section) {
   const lead = section.articles?.[0];
   const media = section.media || [];
-  const sectionImage = lead?.image || media[0]?.url || "";
+  const sectionImage = lead?.image || "";
   const analysis = buildDailyStoryAnalysis(section, lead);
   return `
     <article class="daily-section-card">
@@ -9850,7 +9858,7 @@ function renderDailySection(section) {
         </div>
         ${lead ? renderDailyLead(section, lead, 0, analysis) : `<p>${escapeHtml(section.summary || "")}</p>`}
         ${renderDailyHeadlines(section)}
-        ${renderDailyMedia(media, section.mediaLinks || [])}
+        ${renderDailyMedia(media, [])}
       </div>
     </article>
   `;
@@ -9917,7 +9925,7 @@ function renderDailyMedia(media, mediaLinks) {
   if (!previews && !links) return "";
   return `
     <div class="daily-media-block">
-      <span class="card-meta">${t("labels.dailyMedia")} · ${t("labels.dailyMediaActive")}</span>
+      <span class="card-meta">${previews ? t("labels.dailyMediaSpecific") : t("labels.dailyMediaExternalSearch")}</span>
       ${previews ? `<div class="daily-media-strip">${previews}</div>` : ""}
       ${links ? `<div class="daily-media-links">${links}</div>` : ""}
     </div>
@@ -9935,7 +9943,7 @@ function renderDailyArticleDetail() {
   const selected = getSelectedDailyArticle();
   if (!selected) return "";
   const { section, article, index } = selected;
-  const image = article.image || section.media?.[0]?.url || "";
+  const image = article.image || "";
   const analysis = buildDailyStoryAnalysis(section, article);
   return `
     <article class="daily-detail-panel" id="dailyDetailPanel">
@@ -9972,7 +9980,7 @@ function renderDailyArticleDetail() {
           <button class="ghost-button" type="button" data-daily-stop-audio="true">${t("labels.dailyStopAudio")}</button>
           <button class="ghost-button" type="button" data-daily-close-detail="true">${t("labels.dailyCloseDetail")}</button>
         </div>
-        ${renderDailyMedia([], section.mediaLinks || [])}
+        ${renderDailyArticleMedia(section, article)}
         <div class="daily-detail-related">
           ${(section.articles || [])
             .map((item, itemIndex) =>
@@ -9988,6 +9996,42 @@ function renderDailyArticleDetail() {
       </div>
     </article>
   `;
+}
+
+function renderDailyArticleMedia(section, article) {
+  const image = article?.image || "";
+  const links = buildDailyArticleMediaLinks(section, article);
+  return `
+    <div class="daily-media-block daily-article-media-block">
+      <span class="card-meta">${escapeHtml(image ? t("labels.dailyMediaSpecific") : t("labels.dailyArticleMediaMissing"))}</span>
+      ${image ? `<div class="daily-media-strip"><button class="daily-media-preview" type="button" data-daily-open-url="${escapeHtml(article.url || image)}"><img src="${escapeHtml(image)}" alt="" loading="lazy" data-news-image="true" /></button></div>` : ""}
+      <p class="card-meta">${escapeHtml(t("labels.dailyArticleMediaExternalHelp"))}</p>
+      <div class="daily-media-links">
+        ${links
+          .map(
+            (link) => `
+              <button class="daily-media-tile daily-media-${escapeHtml(link.type || "link")}" type="button" data-daily-open-url="${escapeHtml(link.url)}">
+                <span>${escapeHtml(getDailyMediaLabel(link))}</span>
+                <small>${escapeHtml(link.label)}</small>
+              </button>
+            `,
+          )
+          .join("")}
+      </div>
+    </div>
+  `;
+}
+
+function buildDailyArticleMediaLinks(section, article) {
+  const cleanTitle = stripNewsSource(article?.title || section?.title || "");
+  const domain = article?.domain || section?.source || "";
+  const location = state.dailyBriefing?.location || getDailyOperationalLocation();
+  const query = [cleanTitle, domain, location].filter(Boolean).join(" ");
+  return [
+    { type: "image", label: t("labels.dailyMediaExternalSearch"), query, url: `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}` },
+    { type: "video", label: t("labels.dailyMediaExternalSearch"), query, url: `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}` },
+    { type: "audio", label: t("labels.dailyMediaExternalSearch"), query: `${query} podcast audio`, url: `https://www.google.com/search?q=${encodeURIComponent(`${query} podcast audio`)}` },
+  ];
 }
 
 async function handleDailyBriefingClick(event) {
@@ -10127,6 +10171,7 @@ function handleDailyFlowAction(flow) {
       detail: t("labels.dailyHoroscopeVisible"),
       bodyHtml: renderDailyHoroscopeInline(),
     });
+    document.getElementById("dailyStaticActionResult")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     return;
   }
   if (flow === "voice") {
@@ -10207,16 +10252,6 @@ function collectDailyMediaPreviews() {
   const previews = [];
   const sections = Array.isArray(state.dailyBriefing?.sections) ? state.dailyBriefing.sections : [];
   sections.forEach((section) => {
-    (section.media || []).forEach((item) => {
-      if (item?.url) {
-        previews.push({
-          url: item.url,
-          sourceUrl: item.sourceUrl || item.url,
-          title: item.title || section.title,
-          sectionTitle: section.title,
-        });
-      }
-    });
     (section.articles || []).forEach((article) => {
       if (article?.image) {
         previews.push({
@@ -10403,7 +10438,7 @@ async function saveDailyArticleAsExperience() {
     return;
   }
   const analysis = buildDailyStoryAnalysis(section, article);
-  const image = article.image || section.media?.[0]?.url || "";
+  const image = article.image || "";
   const sourceLine = article.url
     ? `${state.language === "en" ? "Original story" : "Noticia original"}: ${article.url}`
     : "";
@@ -11013,7 +11048,7 @@ function handleNewsImageLoad(event) {
 }
 
 function removeNewsImageContainer(image) {
-  const container = image.closest(".daily-section-visual, .daily-detail-media, .daily-media-strip a");
+  const container = image.closest(".daily-section-visual, .daily-detail-media, .daily-media-preview");
   container?.remove();
 }
 
@@ -11093,7 +11128,7 @@ async function refreshDailyBriefing(options = {}) {
 
 function isDailyBriefingStale(briefing) {
   if (!briefing?.generatedAt) return true;
-  if (briefing.schemaVersion !== "20260512-daily-cache-34") return true;
+  if (briefing.schemaVersion !== "20260522-daily-media-specific-35") return true;
   const refreshMs = Number(briefing.refreshEveryHours || 6) * 60 * 60 * 1000;
   return Date.now() - new Date(briefing.generatedAt).getTime() >= refreshMs;
 }
