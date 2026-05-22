@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260522-voice-v-wake-378";
+const CACHE_NAME = "experience-hub-pwa-20260522-asset-processing-sync-379";
 const APP_SHELL = [
   "/",
   "/index.html",

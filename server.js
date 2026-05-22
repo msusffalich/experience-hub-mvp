@@ -254,6 +254,14 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (url.pathname.startsWith("/api/assets/") && url.pathname.endsWith("/processing") && req.method === "PATCH") {
+    const user = await getRequestUser(req);
+    const assetId = decodeURIComponent(url.pathname.replace("/api/assets/", "").replace("/processing", ""));
+    const body = await readJson(req);
+    sendJson(res, 200, await updateAssetProcessing(assetId, body, user));
+    return;
+  }
+
   if (url.pathname === "/api/transcribe" && req.method === "POST") {
     await getRequestUser(req);
     const media = await readJson(req);
@@ -1149,6 +1157,13 @@ function fromAssetRow(row) {
     path: row.storage_path || "",
     previewText: row.preview_text || "",
     analysisText: row.analysis_text || "",
+    extractedText: metadata.extractedText || row.preview_text || "",
+    detectedLanguage: metadata.detectedLanguage || "",
+    translatedText: metadata.translatedText || "",
+    translationLanguage: metadata.translationLanguage || "",
+    extractionMethod: metadata.extractionMethod || "",
+    extractionStatus: metadata.extractionStatus || row.processing_status || "",
+    processedAt: metadata.processedAt || "",
     extension: metadata.extension || "",
     previewable: metadata.previewable !== false,
     remoteSyncFailed: Boolean(metadata.remoteSyncFailed),
@@ -1158,13 +1173,72 @@ function fromAssetRow(row) {
     sourceId: metadata.sourceId || "",
     capturedAt: metadata.capturedAt || "",
     uploadedAt: metadata.uploadedAt || "",
-    processingStatus: metadata.processingStatus || "",
+    processingStatus: row.processing_status || metadata.processingStatus || "",
     permissions: metadata.permissions || "",
     metadataFingerprint: metadata.metadataFingerprint || "",
     eventId: row.event_id || metadata.linkedEventId || "",
     eventTitle: metadata.linkedEventTitle || "",
     eventOrder: metadata.eventOrder || "",
     metadata,
+  };
+}
+
+async function updateAssetProcessing(assetId, body = {}, user = { id: LOCAL_USER_ID }) {
+  if (activePersistence() !== "supabase") {
+    return {
+      synced: false,
+      reason: "supabase_not_active",
+    };
+  }
+  const rows = await supabaseRest("assets", {
+    searchParams: {
+      asset_id: `eq.${assetId}`,
+      limit: "1",
+    },
+    accessToken: user.accessToken,
+  });
+  if (!rows.length) {
+    const error = new Error("asset_not_found");
+    error.statusCode = 404;
+    throw error;
+  }
+  const current = rows[0];
+  const now = new Date().toISOString();
+  const extractedText = String(body.extractedText || "").trim();
+  const analysisText = String(body.analysisText || "").trim();
+  const translatedText = String(body.translatedText || "").trim();
+  const processingStatus = String(body.extractionStatus || body.processingStatus || "processed").trim();
+  const metadata = removeEmptyMetadataFields({
+    ...(isPlainObject(current.metadata) ? current.metadata : {}),
+    extractedText,
+    detectedLanguage: body.detectedLanguage || "",
+    translatedText,
+    translationLanguage: body.translationLanguage || "",
+    extractionMethod: body.extractionMethod || "",
+    extractionStatus: processingStatus,
+    processingStatus,
+    processedAt: body.processedAt || now,
+    processingSource: "asset-processing-v1",
+  });
+  const patch = removeEmptyMetadataFields({
+    preview_text: extractedText || current.preview_text || "",
+    analysis_text: analysisText || current.analysis_text || "",
+    processing_status: processingStatus,
+    metadata,
+    updated_at: now,
+  });
+  const updated = await supabaseRest("assets", {
+    method: "PATCH",
+    searchParams: {
+      asset_id: `eq.${assetId}`,
+    },
+    headers: { Prefer: "return=representation" },
+    body: JSON.stringify(patch),
+    accessToken: user.accessToken,
+  });
+  return {
+    synced: true,
+    asset: fromAssetRow(updated[0] || current),
   };
 }
 

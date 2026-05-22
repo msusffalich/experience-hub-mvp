@@ -1,4 +1,4 @@
-const APP_VERSION = "20260522-voice-v-wake-378";
+const APP_VERSION = "20260522-asset-processing-sync-379";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -1991,6 +1991,7 @@ const manualContent = {
         "Activos multimodales incluye Procesar ahora y Procesar visibles. Los documentos de texto se extraen localmente; los PDFs escaneados usan OCR del backend cuando OCR_PROVIDER=openai y OPENAI_API_KEY están configurados; los audios usan transcripción del backend si está configurada; las imágenes usan OCR automático del backend.",
         "Siguiendo el patrón del blueprint de CLIO, los activos sincronizados se leen desde el backend usando URLs firmadas temporales de Supabase. Otro dispositivo puede procesar documentos, imágenes y audios sin depender del archivo local original.",
         "El procesamiento de activos ahora muestra método, estado, fecha de procesamiento y texto extraído cuando existe. Ese texto entra en búsqueda, inventario JSON/CSV y auditoría de metadatos.",
+        "Cuando Supabase está activo, Procesar ahora y Procesar visibles también sincronizan el resultado en la tabla compartida de activos. Otro dispositivo puede leer el texto analítico, el texto extraído, la traducción, el método y la fecha sin repetir el procesamiento local.",
         "El backend local intenta extraer texto de TXT, Markdown, HTML, CSV, JSON, RTF, DOCX y PDF. PDF usa extracción heurística y puede requerir revisión si el archivo es escaneado o está protegido.",
         "El texto extraído o generado queda guardado como texto analítico del activo y entra en búsqueda, reportes, memoria y publicaciones, siempre con revisión humana antes de salidas finales.",
         "Administración incluye un tablero de frentes paralelos para agrupar el cierre del MVP en trabajo funcional, técnico, piloto, QA/manual e integraciones, con dueño sugerido y próxima acción.",
@@ -2539,6 +2540,7 @@ const manualContent = {
         "Multimodal Assets includes Process now and Process visible. Text documents are extracted locally; scanned PDFs use backend OCR when OCR_PROVIDER=openai and OPENAI_API_KEY are configured; audio uses backend transcription when configured; images use automatic backend OCR.",
         "Following the CLIO blueprint pattern, synced assets are read by the backend through temporary Supabase signed URLs. Another device can process documents, images, and audio without depending on the original local file.",
         "Asset processing now shows method, status, processed date, and extracted text when available. That text is included in search, JSON/CSV inventory, and metadata audit.",
+        "When Supabase is active, Process now and Process visible also sync the result to the shared assets table. Another device can read analytical text, extracted text, translation, method, and date without repeating local processing.",
         "The local backend attempts text extraction for TXT, Markdown, HTML, CSV, JSON, RTF, DOCX, and PDF. PDF uses heuristic extraction and may require review when the file is scanned or protected.",
         "Extracted or generated text is saved as asset analytical text and becomes available for search, reports, memory, and publications, with human review before final outputs.",
         "Admin includes a parallel workstreams board to group MVP closure into functional, technical, pilot, QA/manual, and integration work, with suggested owner and next action.",
@@ -12491,7 +12493,8 @@ async function processAssetNow(key, options = {}) {
   const result = await buildProcessedAssetAnalysis(asset, { tags, note });
   const detectedLanguage = result.detectedLanguage || detectAssetTextLanguage(result.extractedText || "");
   const translatedText = result.translatedText || (result.extractedText ? await translateExtractedAssetText(result.extractedText, detectedLanguage, state.language) : "");
-  state.assetMetadata[key] = {
+  const processedAt = new Date().toISOString();
+  const nextMetadata = {
     tags,
     note,
     analysisText: result.analysisText || buildExtractedTextAssetAnalysis(asset, translatedText || result.extractedText || "", { tags, note }),
@@ -12501,21 +12504,60 @@ async function processAssetNow(key, options = {}) {
     translationLanguage: result.translationLanguage || state.language,
     extractionMethod: result.method,
     extractionStatus: result.status,
-    updatedAt: new Date().toISOString(),
-    processedAt: new Date().toISOString(),
+    updatedAt: processedAt,
+    processedAt,
     suggested: result.status !== "automatic",
   };
+  const remoteSync = await syncProcessedAssetMetadata(key, nextMetadata, asset);
+  state.assetMetadata[key] = {
+    ...nextMetadata,
+    remoteSyncedAt: remoteSync.synced ? processedAt : existing.remoteSyncedAt || "",
+    remoteSyncError: remoteSync.synced ? "" : remoteSync.reason || "",
+  };
   saveAssetMetadata();
-  markAssetWorkflowAudit("assetProcessedAt", { assetId: key, method: result.method, status: result.status });
+  markAssetWorkflowAudit("assetProcessedAt", { assetId: key, method: result.method, status: result.status, remoteSynced: remoteSync.synced });
   if (!options.silent) {
     renderAssetLibrary();
-    const message = state.language === "en" ? `Asset processed: ${asset.name || key}.` : `Activo procesado: ${asset.name || key}.`;
-    notify(message);
+    const message = remoteSync.synced
+      ? state.language === "en"
+        ? `Asset processed and synced: ${asset.name || key}.`
+        : `Activo procesado y sincronizado: ${asset.name || key}.`
+      : state.language === "en"
+        ? `Asset processed locally. It will sync when the cloud is available: ${asset.name || key}.`
+        : `Activo procesado en este dispositivo. Se sincronizará cuando la nube esté disponible: ${asset.name || key}.`;
+    notify(message, remoteSync.synced ? "ok" : "warn");
     const intro = document.getElementById("assetLibraryIntro");
     if (intro) intro.textContent = message;
     requestAnimationFrame(() => focusAppElement("assetProcessingActionPlan"));
   }
-  return true;
+  return remoteSync.synced || options.countLocal !== false;
+}
+
+async function syncProcessedAssetMetadata(key, metadata, asset = {}) {
+  if (!state.apiOnline || !state.session?.access_token || state.config?.persistence !== "supabase") {
+    return { synced: false, reason: "cloud_not_ready" };
+  }
+  try {
+    await apiRequest(`/assets/${encodeURIComponent(key)}/processing`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        analysisText: metadata.analysisText || "",
+        extractedText: metadata.extractedText || "",
+        detectedLanguage: metadata.detectedLanguage || "",
+        translatedText: metadata.translatedText || "",
+        translationLanguage: metadata.translationLanguage || "",
+        extractionMethod: metadata.extractionMethod || "",
+        extractionStatus: metadata.extractionStatus || "",
+        processingStatus: metadata.extractionStatus || "",
+        processedAt: metadata.processedAt || new Date().toISOString(),
+        assetName: asset.name || "",
+        kind: asset.kind || "",
+      }),
+    });
+    return { synced: true };
+  } catch (error) {
+    return { synced: false, reason: error.message || "asset_processing_sync_failed" };
+  }
 }
 
 async function buildProcessedAssetAnalysis(asset, manual = {}) {
@@ -21219,7 +21261,7 @@ function renderAdminOperationalFocusPanel() {
         eventTimeline: "Event timeline visible",
         eventTimelineDetail: "Library, Timeline, Reports, JSON, HTML, and CSV now preserve internal events for long experiences.",
         assetProcessing: "Asset processing evidence",
-        assetProcessingDetail: "Asset cards, search, inventory, and metadata imports now preserve extracted text, method, status, and processing date.",
+        assetProcessingDetail: "Asset cards, search, inventory, metadata imports, and one-click processing now preserve extracted text, method, status, processing date, and Supabase sync.",
       }
     : {
         title: "Administración operativa",
@@ -21246,7 +21288,7 @@ function renderAdminOperationalFocusPanel() {
     labels.eventTimeline = "L\u00ednea de eventos visible";
     labels.eventTimelineDetail = "Librer\u00eda, L\u00ednea de tiempo, Reportes, JSON, HTML y CSV ahora conservan eventos internos para experiencias largas.";
     labels.assetProcessing = "Evidencia de procesamiento";
-    labels.assetProcessingDetail = "Las tarjetas, b\u00fasqueda, inventario e importaci\u00f3n de metadatos ahora conservan texto extra\u00eddo, m\u00e9todo, estado y fecha de procesamiento.";
+    labels.assetProcessingDetail = "Las tarjetas, b\u00fasqueda, inventario, importaci\u00f3n de metadatos y procesamiento directo ahora conservan texto extra\u00eddo, m\u00e9todo, estado, fecha y sincronizaci\u00f3n en Supabase.";
   }
   const cards = [
     [labels.flow, labels.flowDetail],
