@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260522-live-flow-refresh-385";
+const CACHE_NAME = "experience-hub-pwa-20260522-biometric-assets-386";
 const APP_SHELL = [
   "/",
   "/index.html",

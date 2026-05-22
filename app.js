@@ -1,4 +1,4 @@
-const APP_VERSION = "20260522-live-flow-refresh-385";
+const APP_VERSION = "20260522-biometric-assets-386";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -131,6 +131,7 @@ const i18n = {
       suggestFilteredAssetText: "Sugerir texto filtrados",
       clearAssetFilters: "Limpiar filtros",
       importAssetMetadata: "Importar metadatos",
+      importBiometricAsset: "Importar biometria",
       exportAgendaIcs: "Exportar calendario",
       exportAgendaEvent: "Exportar evento",
       importAgendaIcs: "Importar .ics",
@@ -300,6 +301,12 @@ const i18n = {
       assetMetadataImportSummary: "Última importación: {count} actualizados, {cleared} limpiados, {empty} vacíos ignorados, {missing} no encontrados.",
       assetMetadataImportNone: "Aún no hay importaciones de metadatos registradas.",
       assetMetadataImportFailed: "No se pudieron importar los metadatos. Revisa que el archivo sea JSON o CSV de inventario válido.",
+      biometricAssetPanelTitle: "Biometria transversal",
+      biometricAssetPanelHelp: "Importa CSV o JSON de Apple Health u otro wearable desde Activos. La app lo usa como contexto por fecha/hora, no como adjunto de una sola experiencia.",
+      biometricAssetImported: "Biometria importada: {count} registros, {metrics} senales detectadas.",
+      biometricAssetImportFailed: "No se pudo importar la biometria. Usa un archivo CSV o JSON legible.",
+      biometricAssetExperienceTitle: "Contexto biometrico",
+      biometricAssetNoMetrics: "sin senales identificadas",
       attachmentReady: "Listo para guardar",
       recordAudio: "Grabar audio",
       stopAudioRecording: "Detener",
@@ -931,6 +938,7 @@ const i18n = {
       suggestFilteredAssetText: "Suggest filtered text",
       clearAssetFilters: "Clear filters",
       importAssetMetadata: "Import metadata",
+      importBiometricAsset: "Import biometrics",
       exportAgendaIcs: "Export calendar",
       exportAgendaEvent: "Export event",
       importAgendaIcs: "Import .ics",
@@ -1100,6 +1108,12 @@ const i18n = {
       assetMetadataImportSummary: "Last import: {count} updated, {cleared} cleared, {empty} empty ignored, {missing} not found.",
       assetMetadataImportNone: "No metadata imports have been recorded yet.",
       assetMetadataImportFailed: "Metadata could not be imported. Check that the file is a valid inventory JSON or CSV.",
+      biometricAssetPanelTitle: "Cross-experience biometrics",
+      biometricAssetPanelHelp: "Import Apple Health or wearable CSV/JSON from Assets. The app uses it as time-based context, not as an attachment to one single experience.",
+      biometricAssetImported: "Biometrics imported: {count} records, {metrics} detected signals.",
+      biometricAssetImportFailed: "Biometrics could not be imported. Use a readable CSV or JSON file.",
+      biometricAssetExperienceTitle: "Biometric context",
+      biometricAssetNoMetrics: "no detected signals",
       attachmentReady: "Ready to save",
       recordAudio: "Record audio",
       stopAudioRecording: "Stop",
@@ -1996,6 +2010,7 @@ const manualContent = {
         "La regla operativa es clara: cada activo se procesa cuando entra si ya puede vincularse a una experiencia guardada; si aún no existe registro remoto, queda para el primer guardado en Supabase. El cierre de experiencia solo audita y reintenta pendientes, no es el paso normal de procesamiento.",
         "Captura funciona como borrador vivo cuando hay sesión y Supabase: al escribir narrativa, cambiar campos o adjuntar un archivo, la experiencia se sincroniza en segundo plano con otros dispositivos. Guardar queda como confirmación final, no como el primer momento de sincronización.",
         "Cuando el borrador vivo se sincroniza, el flujo operativo completo del mismo dispositivo se refresca sin esperar al cierre: Panel, Librería, Activos, Agenda, Línea de tiempo, Mapa, Reportes, Publicaciones, Hallazgos, estado de persistencia y Administración.",
+        "Los archivos biometricos de Apple Health, relojes, aros u otros wearables se importan desde Activos, no desde Captura. Asi quedan como contexto transversal por fecha/hora y pueden informar energia, recuperacion, sueno, actividad o estres de varias experiencias.",
         "El backend local intenta extraer texto de TXT, Markdown, HTML, CSV, JSON, RTF, DOCX y PDF. PDF usa extracción heurística y puede requerir revisión si el archivo es escaneado o está protegido.",
         "El texto extraído o generado queda guardado como texto analítico del activo y entra en búsqueda, reportes, memoria y publicaciones, siempre con revisión humana antes de salidas finales.",
         "Administración incluye un tablero de frentes paralelos para agrupar el cierre del MVP en trabajo funcional, técnico, piloto, QA/manual e integraciones, con dueño sugerido y próxima acción.",
@@ -2102,7 +2117,7 @@ const manualContent = {
         "Cada participante piloto incluye un checklist de onboarding: acceso confirmado, manual revisado y primera prueba completada. Preparación del piloto avisa si quedan personas sin completar esos pasos.",
         "Registro de feedback piloto permite guardar observaciones por módulo, severidad y estado, resolverlas y exportarlas como CSV. Se encuentra en Administración y también se puede abrir desde el botón Registrar feedback del Panel.",
         "El feedback alto o bloqueante que siga abierto afecta la Preparación del piloto y aparece en Salud del sistema como atención.",
-        "Vaciar datos locales está en Administración y sirve para limpiar este navegador antes de iniciar tu carga real. Limpia experiencias, Agenda, días bloqueados, Publicaciones, metadatos, perfil local, Diario, rutinas y cola sin conexión. No borra automáticamente registros remotos ya guardados en Supabase ni cierra tu sesión.",
+        "Vaciar datos locales está en Administración y sirve para limpiar este navegador antes de iniciar tu carga real. Limpia experiencias, Agenda, días bloqueados, Publicaciones, biometría importada, metadatos, perfil local, Diario, rutinas y cola sin conexión. No borra automáticamente registros remotos ya guardados en Supabase ni cierra tu sesión.",
         "La barra superior se adapta al ancho disponible para mantener visibles Idioma, Cargar ejemplo, Comando de voz, Versión, Actualizar app y Respaldo de datos.",
         "Si la URL visible pertenece a una versión anterior, la app corrige automáticamente la dirección y muestra una franja de aviso con opción de recarga completa.",
       ],
@@ -2554,6 +2569,7 @@ const manualContent = {
         "The operating rule is explicit: each asset is processed when it enters if it can already be linked to a saved experience; if there is no remote record yet, it waits for the first Supabase save. Experience closure only audits and retries pending items; it is not the normal processing step.",
         "Capture works as a live draft when sign-in and Supabase are active: narrative edits, field changes, and attachments sync in the background to other devices. Save becomes final confirmation, not the first synchronization point.",
         "When the live draft syncs, the full operating flow on the same device refreshes without waiting for the experience to close: Dashboard, Library, Assets, Agenda, Timeline, Map, Reports, Publications, Insights, persistence state, and Admin.",
+        "Biometric files from Apple Health, watches, rings, or other wearables are imported from Assets, not Capture. They remain cross-experience time-based context and can inform energy, recovery, sleep, activity, or stress across multiple experiences.",
         "The local backend attempts text extraction for TXT, Markdown, HTML, CSV, JSON, RTF, DOCX, and PDF. PDF uses heuristic extraction and may require review when the file is scanned or protected.",
         "Extracted or generated text is saved as asset analytical text and becomes available for search, reports, memory, and publications, with human review before final outputs.",
         "Admin includes a parallel workstreams board to group MVP closure into functional, technical, pilot, QA/manual, and integration work, with suggested owner and next action.",
@@ -2653,7 +2669,7 @@ const manualContent = {
         "Each pilot participant includes an onboarding checklist: access confirmed, manual reviewed, and first test completed. Pilot Readiness warns when people still need to complete those steps.",
         "Pilot feedback log stores observations by module, severity, and status, lets you resolve them, and exports them as CSV. It lives in Admin and can also be opened from the Register feedback button on the Dashboard.",
         "Open high or blocker feedback affects Pilot Readiness and appears in System Health as attention.",
-        "Clear local data lives in Admin and clears this browser before starting real capture. It clears experiences, Agenda, blocked days, Publications, metadata, local profile, Daily, routines, and the offline queue. It does not automatically delete remote records already saved in Supabase or sign you out.",
+        "Clear local data lives in Admin and clears this browser before starting real capture. It clears experiences, Agenda, blocked days, Publications, imported biometrics, metadata, local profile, Daily, routines, and the offline queue. It does not automatically delete remote records already saved in Supabase or sign you out.",
         "The top bar adapts to the available width so Language, Load example, Voice command, Version, Refresh app, and Data backup remain visible.",
         "If the visible URL belongs to an older version, the app corrects the address automatically and shows a notice banner with an optional full reload.",
       ],
@@ -3313,6 +3329,7 @@ const state = {
   agendaEvents: loadAgendaEvents(),
   agendaBlockedDates: loadAgendaBlockedDates(),
   publicationDrafts: loadPublicationDrafts(),
+  biometricImports: loadBiometricImports(),
   assetMetadata: loadAssetMetadata(),
   assetMetadataImportSummary: loadAssetMetadataImportSummary(),
   assetWorkflowAudit: loadAssetWorkflowAudit(),
@@ -3710,6 +3727,15 @@ function loadAssetMetadata() {
     return saved && typeof saved === "object" && !Array.isArray(saved) ? saved : {};
   } catch {
     return {};
+  }
+}
+
+function loadBiometricImports() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("experience-hub-biometric-imports") || "[]");
+    return Array.isArray(saved) ? saved : [];
+  } catch {
+    return [];
   }
 }
 
@@ -4535,6 +4561,14 @@ function saveAssetMetadata() {
   }
 }
 
+function saveBiometricImports() {
+  try {
+    localStorage.setItem("experience-hub-biometric-imports", JSON.stringify(state.biometricImports));
+  } catch {
+    // Ignore local biometric import persistence restrictions.
+  }
+}
+
 function saveAssetMetadataImportSummary() {
   try {
     localStorage.setItem("experience-hub-asset-metadata-import-summary", JSON.stringify(state.assetMetadataImportSummary));
@@ -4985,12 +5019,13 @@ async function syncOfflineMutation(mutation) {
 
 function clearLocalData() {
   const message =
-    "Esto vaciará las experiencias visibles, la agenda local, las publicaciones, los metadatos de activos, el perfil local, el Diario, las rutinas, los adjuntos locales y la cola sin conexión de este navegador. No borra datos remotos ya guardados en Supabase ni cierra tu sesión. Haz un respaldo de datos antes si quieres conservar una copia. ¿Continuar?";
+    "Esto vaciará las experiencias visibles, la agenda local, las publicaciones, la biometria importada, los metadatos de activos, el perfil local, el Diario, las rutinas, los adjuntos locales y la cola sin conexión de este navegador. No borra datos remotos ya guardados en Supabase ni cierra tu sesión. Haz un respaldo de datos antes si quieres conservar una copia. ¿Continuar?";
   if (!confirm(message)) return;
   state.experiences = [];
   state.agendaEvents = [];
   state.agendaBlockedDates = [];
   state.publicationDrafts = [];
+  state.biometricImports = [];
   state.assetMetadata = {};
   state.assetMetadataImportSummary = null;
   state.currentPublicationDraft = null;
@@ -5007,6 +5042,7 @@ function clearLocalData() {
   saveAgendaEvents();
   saveAgendaBlockedDates();
   savePublicationDrafts();
+  saveBiometricImports();
   saveAssetMetadata();
   saveAssetMetadataImportSummary();
   saveLocalProfile(null);
@@ -6082,6 +6118,8 @@ function setupFilters() {
   });
   document.getElementById("assetLibraryGrid").addEventListener("submit", handleAssetMetadataSubmit);
   document.getElementById("assetLibraryGrid").addEventListener("click", handleAssetLibraryClick);
+  document.getElementById("importBiometricAssetButton").addEventListener("click", () => document.getElementById("importBiometricAssetInput").click());
+  document.getElementById("importBiometricAssetInput").addEventListener("change", importBiometricAssetFromFile);
   document.getElementById("agendaDateFilter").addEventListener("change", (event) => {
     state.agendaFilters.date = event.target.value || new Date().toISOString().slice(0, 10);
     renderAgenda();
@@ -11475,7 +11513,7 @@ function renderAttachmentNeedsSync(attachment, kind = "document") {
 }
 
 function collectMultimodalAssets() {
-  return state.experiences.flatMap((experience) =>
+  const experienceAssets = state.experiences.flatMap((experience) =>
     (experience.attachments || []).map((attachment) => {
       const kind = getAssetKind(attachment);
       const assetKey = getAssetMetadataKey({ ...attachment, experienceId: experience.id });
@@ -11532,6 +11570,60 @@ function collectMultimodalAssets() {
       };
     }),
   );
+  const biometricAssets = (state.biometricImports || []).map((item) => toBiometricAsset(item));
+  return [...biometricAssets, ...experienceAssets];
+}
+
+function toBiometricAsset(item = {}) {
+  const manual = state.assetMetadata[item.id] || {};
+  const metricNames = Array.isArray(item.metricNames) ? item.metricNames : [];
+  const analysisText = Object.hasOwn(manual, "analysisText") ? manual.analysisText : item.analysisText || "";
+  const extractedText = Object.hasOwn(manual, "extractedText") ? manual.extractedText : item.extractedText || "";
+  const detectedLanguage = Object.hasOwn(manual, "detectedLanguage") ? manual.detectedLanguage : item.detectedLanguage || "data";
+  const translatedText = Object.hasOwn(manual, "translatedText") ? manual.translatedText : item.translatedText || "";
+  return {
+    id: item.id,
+    assetKey: item.id,
+    name: item.name || "biometrics.csv",
+    type: item.type || "text/csv",
+    originalType: item.type || "text/csv",
+    size: Number(item.size || 0),
+    kind: "document",
+    experienceId: "",
+    experienceTitle: t("labels.biometricAssetExperienceTitle"),
+    contextOnly: true,
+    isDemo: false,
+    category: "Salud",
+    objective: state.language === "en" ? "Biometric context" : "Contexto biometrico",
+    eventId: "",
+    eventTitle: "",
+    timestamp: item.startAt || item.importedAt || new Date().toISOString(),
+    location: "",
+    people: "",
+    notes: item.summaryText || "",
+    language: detectedLanguage,
+    detectedLanguage,
+    translatedText,
+    translationLanguage: manual.translationLanguage || item.translationLanguage || "",
+    device: item.sourceDevice || "Apple Health export",
+    sourceType: "biometric_file_import",
+    capturedAt: item.startAt || item.importedAt || "",
+    uploadedAt: item.importedAt || "",
+    processingStatusRaw: "processed",
+    permissions: "private",
+    metadataFingerprint: item.fingerprint || item.id,
+    storageLabel: state.language === "en" ? "Local biometric file" : "Archivo biometrico local",
+    manualTags: Array.isArray(manual.tags) ? manual.tags : ["biometria", ...metricNames.slice(0, 3)],
+    manualNote: Object.hasOwn(manual, "note") ? manual.note : item.summaryText || "",
+    analysisText,
+    extractedText,
+    extractionMethod: manual.extractionMethod || item.extractionMethod || "biometric_file_import",
+    extractionStatus: manual.extractionStatus || item.extractionStatus || "automatic",
+    processedAt: manual.processedAt || item.importedAt || "",
+    analysisSuggested: Boolean(manual.suggested),
+    previewText: item.previewText || item.summaryText || "",
+    metadata: item.metadata || {},
+  };
 }
 
 function getAssetMetadataKey(asset) {
@@ -11555,6 +11647,7 @@ function renderAssetLibrary() {
   if (dateFromInput && dateFromInput.value !== state.assetFilters.dateFrom) dateFromInput.value = state.assetFilters.dateFrom;
   if (dateToInput && dateToInput.value !== state.assetFilters.dateTo) dateToInput.value = state.assetFilters.dateTo;
   document.getElementById("assetLibraryCount").textContent = `${assets.length} ${t("labels.items")}`;
+  renderBiometricAssetPanel();
   renderAssetMetadataWorkflow();
   renderAssetWorkflowReadinessPanel(assets);
   renderAssetImportSummary();
@@ -11575,6 +11668,24 @@ function renderAssetLibrary() {
   document.getElementById("assetLibraryGrid").innerHTML = assets.length
     ? assets.map(renderAssetCard).join("")
     : `<p class="card-meta">${t("labels.assetLibraryEmpty")}</p>`;
+}
+
+function renderBiometricAssetPanel() {
+  const title = document.getElementById("biometricAssetPanelTitle");
+  const help = document.getElementById("biometricAssetPanelHelp");
+  const button = document.getElementById("importBiometricAssetButton");
+  const summary = document.getElementById("biometricAssetImportSummary");
+  if (title) title.textContent = t("labels.biometricAssetPanelTitle");
+  if (help) help.textContent = t("labels.biometricAssetPanelHelp");
+  if (button) button.textContent = t("buttons.importBiometricAsset");
+  if (summary) {
+    const latest = (state.biometricImports || [])[0];
+    summary.textContent = latest
+      ? `${latest.name} · ${latest.recordCount || 0} ${state.language === "en" ? "records" : "registros"} · ${(latest.metricNames || []).slice(0, 4).join(", ") || t("labels.biometricAssetNoMetrics")}`
+      : state.language === "en"
+        ? "No biometric file imported yet."
+        : "Aun no hay archivo biometrico importado.";
+  }
 }
 
 function renderAssetMetadataWorkflow() {
@@ -12446,6 +12557,134 @@ async function importAssetMetadataFromFile(event) {
   }
 }
 
+async function importBiometricAssetFromFile(event) {
+  const file = event.target.files?.[0];
+  event.target.value = "";
+  if (!file) return;
+  try {
+    const rawText = await file.text();
+    const parsed = parseBiometricFile(rawText, file);
+    const imported = {
+      id: `biometric-${Date.now()}-${simpleHash(file.name + rawText.slice(0, 400))}`,
+      name: file.name,
+      type: file.type || (getFileExtension(file.name) === "json" ? "application/json" : "text/csv"),
+      size: file.size || rawText.length,
+      sourceDevice: parsed.sourceDevice || "Apple Health export",
+      importedAt: new Date().toISOString(),
+      startAt: parsed.startAt || "",
+      endAt: parsed.endAt || "",
+      recordCount: parsed.recordCount,
+      metricNames: parsed.metricNames,
+      summaryText: parsed.summaryText,
+      analysisText: parsed.analysisText,
+      extractedText: rawText.slice(0, 12000),
+      previewText: parsed.summaryText,
+      extractionMethod: "biometric_file_import",
+      extractionStatus: "automatic",
+      fingerprint: simpleHash(rawText.slice(0, 2000)),
+      metadata: {
+        sourceType: "biometric_file_import",
+        source: "assets_library",
+        fileName: file.name,
+        metricNames: parsed.metricNames,
+        recordCount: parsed.recordCount,
+        startAt: parsed.startAt || "",
+        endAt: parsed.endAt || "",
+      },
+    };
+    state.biometricImports.unshift(imported);
+    saveBiometricImports();
+    state.assetFilters.type = "document";
+    state.assetFilters.category = "Salud";
+    renderAll();
+    showView("assetLibrary");
+    document.getElementById("assetLibraryIntro").textContent = t("labels.biometricAssetImported")
+      .replace("{count}", String(parsed.recordCount))
+      .replace("{metrics}", String(parsed.metricNames.length));
+  } catch (error) {
+    console.warn("Biometric import failed", error);
+    document.getElementById("assetLibraryIntro").textContent = t("labels.biometricAssetImportFailed");
+  }
+}
+
+function parseBiometricFile(rawText, file = {}) {
+  const text = String(rawText || "").replace(/^\uFEFF/, "");
+  const extension = getFileExtension(file.name || "");
+  const rows = extension === "csv" || String(file.type || "").includes("csv")
+    ? parseCsvTable(text)
+    : extractJsonBiometricRows(JSON.parse(text));
+  const normalizedRows = rows.map((row) => normalizeBiometricRow(row)).filter((row) => Object.keys(row).length);
+  const metricNames = detectBiometricMetricNames(normalizedRows);
+  const dates = normalizedRows
+    .map((row) => row.date)
+    .filter(Boolean)
+    .map((value) => new Date(value))
+    .filter((date) => !Number.isNaN(date.getTime()))
+    .sort((a, b) => a - b);
+  const startAt = dates[0]?.toISOString() || "";
+  const endAt = dates[dates.length - 1]?.toISOString() || "";
+  const sourceDevice = detectBiometricSource(normalizedRows) || "Apple Health export";
+  const metricText = metricNames.length ? metricNames.join(", ") : t("labels.biometricAssetNoMetrics");
+  const rangeText = startAt && endAt ? `${formatDate(startAt)} - ${formatDate(endAt)}` : state.language === "en" ? "No date range detected" : "Sin rango de fechas detectado";
+  const summaryText = state.language === "en"
+    ? `Biometric import from ${sourceDevice}. ${normalizedRows.length} records. Signals: ${metricText}. Range: ${rangeText}.`
+    : `Importacion biometrica desde ${sourceDevice}. ${normalizedRows.length} registros. Senales: ${metricText}. Rango: ${rangeText}.`;
+  const analysisText = state.language === "en"
+    ? `${summaryText} This asset is cross-experience context and should be matched by date/time before adjusting energy, recovery, stress, sleep, or activity indicators.`
+    : `${summaryText} Este activo es contexto transversal y debe vincularse por fecha/hora antes de ajustar energia, recuperacion, estres, sueno o actividad.`;
+  return { rows: normalizedRows, recordCount: normalizedRows.length, metricNames, startAt, endAt, sourceDevice, summaryText, analysisText };
+}
+
+function extractJsonBiometricRows(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (!payload || typeof payload !== "object") return [];
+  const candidates = [payload.records, payload.data, payload.healthData, payload.samples, payload.workouts, payload.items];
+  const array = candidates.find(Array.isArray);
+  if (array) return array;
+  return Object.entries(payload)
+    .filter(([, value]) => Array.isArray(value))
+    .flatMap(([key, value]) => value.map((item) => ({ metricType: key, ...(item && typeof item === "object" ? item : { value: item }) })));
+}
+
+function normalizeBiometricRow(row = {}) {
+  if (!row || typeof row !== "object") return {};
+  const normalized = {};
+  Object.entries(row).forEach(([key, value]) => {
+    normalized[String(key || "").trim().toLowerCase()] = value;
+  });
+  const type = normalized.type || normalized.metric || normalized.metrictype || normalized.identifier || normalized.name || "";
+  const source = normalized.sourcename || normalized.source || normalized.device || normalized.devicename || "";
+  const date = normalized.startdate || normalized.start || normalized.date || normalized.timestamp || normalized.creationdate || normalized.enddate || "";
+  const value = normalized.value ?? normalized.quantity ?? normalized.count ?? normalized.duration ?? "";
+  return { ...normalized, type: String(type || ""), source: String(source || ""), date: String(date || ""), value };
+}
+
+function detectBiometricMetricNames(rows = []) {
+  const names = new Set();
+  rows.forEach((row) => {
+    const raw = String(row.type || "").toLowerCase();
+    if (!raw) return;
+    if (/heart|hr|cardio|pulse|ritmo|frecuencia/.test(raw)) names.add(state.language === "en" ? "heart rate" : "frecuencia cardiaca");
+    else if (/step|paso/.test(raw)) names.add(state.language === "en" ? "steps" : "pasos");
+    else if (/sleep|sueno/.test(raw)) names.add(state.language === "en" ? "sleep" : "sueno");
+    else if (/energy|calorie|kcal|energia/.test(raw)) names.add(state.language === "en" ? "energy/calories" : "energia/calorias");
+    else if (/distance|distancia/.test(raw)) names.add(state.language === "en" ? "distance" : "distancia");
+    else if (/oxygen|spo2|respiratory|respiracion/.test(raw)) names.add(state.language === "en" ? "oxygen/respiration" : "oxigeno/respiracion");
+    else if (/workout|exercise|active|actividad|entreno/.test(raw)) names.add(state.language === "en" ? "activity" : "actividad");
+    else names.add(raw.replace(/^hkquantitytypeidentifier/i, "").replace(/^hkcategorytypeidentifier/i, "").slice(0, 34));
+  });
+  return Array.from(names).filter(Boolean).slice(0, 12);
+}
+
+function detectBiometricSource(rows = []) {
+  const counts = rows.reduce((acc, row) => {
+    const source = String(row.source || "").trim();
+    if (source) acc[source] = (acc[source] || 0) + 1;
+    return acc;
+  }, {});
+  return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || "";
+}
+
 function isTruthyImportFlag(value) {
   return ["1", "true", "yes", "si", "sí", "x", "clear", "limpiar", "borrar"].includes(String(value || "").trim().toLowerCase());
 }
@@ -12627,7 +12866,7 @@ function renderAssetCard(asset) {
         <button class="ghost-button asset-open-link" type="button" data-copy-asset-id="${escapeHtml(asset.assetKey)}">${escapeHtml(t("labels.assetCopyId"))}</button>
         ${asset.url || asset.dataUrl ? `<a class="ghost-button asset-open-link" href="${asset.url || asset.dataUrl}" target="_blank" rel="noreferrer">${state.language === "en" ? "Open file" : "Abrir archivo"}</a>` : ""}
         ${asset.url || asset.dataUrl ? `<a class="ghost-button asset-open-link" href="${asset.url || asset.dataUrl}" download="${escapeHtml(asset.name || "asset")}" target="_blank" rel="noreferrer">${escapeHtml(t("labels.assetDownloadFile"))}</a>` : ""}
-        <button class="ghost-button" type="button" onclick="editExperience('${escapeHtml(asset.experienceId)}')">${t("buttons.edit")}</button>
+        ${asset.contextOnly ? "" : `<button class="ghost-button" type="button" onclick="editExperience('${escapeHtml(asset.experienceId)}')">${t("buttons.edit")}</button>`}
       </div>
     </article>
   `;
@@ -13309,7 +13548,7 @@ function buildAssetProcessingStatus(asset) {
 }
 
 function buildAssetReadiness(asset) {
-  const hasSource = Boolean(asset.url || asset.dataUrl);
+  const hasSource = Boolean(asset.url || asset.dataUrl || asset.contextOnly);
   const hasContext = Boolean(asset.experienceTitle && asset.category && asset.timestamp);
   const previewable = asset.previewable !== false || asset.kind === "document";
   const ready = hasSource && hasContext && previewable;
@@ -13338,6 +13577,18 @@ function buildAssetReadiness(asset) {
 }
 
 function buildAssetStorageStatus(asset) {
+  if (asset.contextOnly) {
+    return {
+      remote: false,
+      localPreview: true,
+      needsSync: false,
+      label: state.language === "en" ? "Context asset" : "Activo de contexto",
+      detail: state.language === "en"
+        ? "This biometric file is stored as cross-experience context and linked by date/time."
+        : "Este archivo biometrico se guarda como contexto transversal y se vincula por fecha/hora.",
+      badges: [state.language === "en" ? "Biometrics" : "Biometria", state.language === "en" ? "Time-based context" : "Contexto por fecha/hora"],
+    };
+  }
   const remote = isRemoteAsset(asset);
   const localPreview = Boolean(asset.dataUrl || asset.previewText);
   const hasSource = Boolean(asset.url || asset.dataUrl);
@@ -18196,6 +18447,7 @@ function buildLocalBackupPayload() {
     agendaEvents: state.agendaEvents,
     agendaBlockedDates: state.agendaBlockedDates,
     publicationDrafts: state.publicationDrafts,
+    biometricImports: state.biometricImports,
     assetMetadata: state.assetMetadata,
     assetMetadataImportSummary: state.assetMetadataImportSummary,
     reportExportAudit: state.reportExportAudit,
@@ -18314,6 +18566,7 @@ function summarizeBackupPayload(payload = {}) {
     agendaEvents: Array.isArray(payload.agendaEvents) ? payload.agendaEvents.length : 0,
     agendaBlockedDates: Array.isArray(payload.agendaBlockedDates) ? payload.agendaBlockedDates.length : 0,
     publicationDrafts: Array.isArray(payload.publicationDrafts) ? payload.publicationDrafts.length : 0,
+    biometricImports: Array.isArray(payload.biometricImports) ? payload.biometricImports.length : 0,
     assetMetadata: payload.assetMetadata && typeof payload.assetMetadata === "object" ? Object.keys(payload.assetMetadata).length : 0,
     pilotTests: payload.pilotTestPlan && typeof payload.pilotTestPlan === "object" ? Object.keys(payload.pilotTestPlan).length : 0,
     pilotSignoff: payload.pilotClosureSignoff?.decision ? 1 : 0,
@@ -18349,6 +18602,7 @@ function describeBackupCoverage() {
     payload.agendaEvents.length,
     payload.agendaBlockedDates.length,
     payload.publicationDrafts.length,
+    Array.isArray(payload.biometricImports) ? payload.biometricImports.length : 0,
     Object.keys(payload.assetMetadata || {}).length,
     payload.profile ? 1 : 0,
     payload.dailyBriefing ? 1 : 0,
@@ -18400,6 +18654,7 @@ async function restoreBackupFromFile(event) {
     state.agendaEvents = Array.isArray(payload.agendaEvents) ? payload.agendaEvents : state.agendaEvents;
     state.agendaBlockedDates = Array.isArray(payload.agendaBlockedDates) ? normalizeAgendaBlockedDates(payload.agendaBlockedDates) : state.agendaBlockedDates;
     state.publicationDrafts = Array.isArray(payload.publicationDrafts) ? payload.publicationDrafts : state.publicationDrafts;
+    state.biometricImports = Array.isArray(payload.biometricImports) ? payload.biometricImports : state.biometricImports;
     state.assetMetadata =
       payload.assetMetadata && typeof payload.assetMetadata === "object" && !Array.isArray(payload.assetMetadata)
         ? payload.assetMetadata
@@ -18460,6 +18715,7 @@ async function restoreBackupFromFile(event) {
     saveAgendaEvents();
     saveAgendaBlockedDates();
     savePublicationDrafts();
+    saveBiometricImports();
     saveAssetMetadata();
     saveAssetMetadataImportSummary();
     saveReportExportAudit();
@@ -21592,6 +21848,8 @@ function renderAdminOperationalFocusPanel() {
         assetProcessingDetail: "Asset cards, search, inventory, metadata imports, automatic processing, startup/backlog recovery, and one-click retries preserve extracted text, method, status, processing date, and Supabase sync.",
         liveFlow: "Live draft refresh",
         liveFlowDetail: "When Capture syncs an open draft, the same device refreshes Dashboard, Library, Assets, Agenda, Timeline, Map, Reports, Publications, Insights, persistence state, and Admin.",
+        biometricAssets: "Biometric files in Assets",
+        biometricAssetsDetail: "CSV/JSON from Apple Health or wearables enters through Assets as cross-experience context, then informs energy and recovery by date/time.",
       }
     : {
         title: "Administración operativa",
@@ -21621,6 +21879,8 @@ function renderAdminOperationalFocusPanel() {
     labels.assetProcessingDetail = "Las tarjetas, b\u00fasqueda, inventario, importaci\u00f3n de metadatos, procesamiento autom\u00e1tico, recuperaci\u00f3n de pendientes y reintento manual conservan texto extra\u00eddo, m\u00e9todo, estado, fecha y sincronizaci\u00f3n en Supabase.";
     labels.liveFlow = "Refresco de borrador vivo";
     labels.liveFlowDetail = "Cuando Captura sincroniza una experiencia abierta, el mismo dispositivo refresca Panel, Librer\u00eda, Activos, Agenda, L\u00ednea de tiempo, Mapa, Reportes, Publicaciones, Hallazgos, persistencia y Administraci\u00f3n.";
+    labels.biometricAssets = "Biometria desde Activos";
+    labels.biometricAssetsDetail = "CSV/JSON de Apple Health o wearables entra por Activos como contexto transversal y luego informa energia o recuperacion por fecha/hora.";
   }
   const cards = [
     [labels.flow, labels.flowDetail],
@@ -21633,6 +21893,7 @@ function renderAdminOperationalFocusPanel() {
     [labels.eventTimeline, labels.eventTimelineDetail],
     [labels.assetProcessing, labels.assetProcessingDetail],
     [labels.liveFlow, labels.liveFlowDetail],
+    [labels.biometricAssets, labels.biometricAssetsDetail],
     [labels.next, labels.nextDetail],
   ];
   container.innerHTML = `

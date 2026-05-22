@@ -3487,6 +3487,47 @@ button,
   margin: 10px 0 14px;
 }
 
+.asset-biometric-panel {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  padding: 14px;
+  margin: 12px 0 16px;
+  border: 1px solid rgba(25, 118, 210, 0.22);
+  border-radius: 8px;
+  background: #eef7ff;
+}
+
+.asset-biometric-panel strong,
+.asset-biometric-panel p,
+.asset-biometric-panel small {
+  margin: 0;
+}
+
+.asset-biometric-panel p,
+.asset-biometric-panel small {
+  color: var(--muted);
+}
+
+.asset-biometric-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+@media (max-width: 720px) {
+  .asset-biometric-panel {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .asset-biometric-actions {
+    justify-content: flex-start;
+  }
+}
+
 .asset-import-summary article {
   display: flex;
   flex-wrap: wrap;

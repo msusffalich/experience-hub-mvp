@@ -9,10 +9,10 @@
     <meta name="apple-mobile-web-app-title" content="Experience Hub" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>Experience Hub MVP</title>
-    <link rel="manifest" href="manifest.webmanifest?v=20260522-live-flow-refresh-385" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260522-biometric-assets-386" />
     <link rel="icon" href="icons/vibe-icon-192.png" type="image/png" />
     <link rel="apple-touch-icon" href="icons/vibe-apple-touch.png" />
-    <link rel="stylesheet" href="styles.css?v=20260522-live-flow-refresh-385" />
+    <link rel="stylesheet" href="styles.css?v=20260522-biometric-assets-386" />
   </head>
   <body>
     <noscript>
@@ -374,6 +374,17 @@
             <p id="assetLibraryIntro" class="section-note">
               Inventario de imágenes, videos, audios y documentos asociados a experiencias.
             </p>
+            <section class="asset-biometric-panel">
+              <div>
+                <strong id="biometricAssetPanelTitle">Biometria transversal</strong>
+                <p id="biometricAssetPanelHelp">Importa CSV o JSON de Apple Health u otro wearable desde Activos.</p>
+                <small id="biometricAssetImportSummary"></small>
+              </div>
+              <div class="asset-biometric-actions">
+                <button id="importBiometricAssetButton" class="primary-button" type="button">Importar biometria</button>
+                <input id="importBiometricAssetInput" class="sr-only" type="file" accept="application/json,text/csv,.json,.csv" />
+              </div>
+            </section>
             <div class="metric-grid compact-metric-grid" id="assetMetricGrid"></div>
             <div class="filters">
               <input id="assetSearchInput" type="search" placeholder="Buscar activo, experiencia, lugar o persona" />
@@ -820,7 +831,7 @@
             <div class="manual-version-card">
               <div>
                 <span id="manualVersionEyebrow">Versión vigente</span>
-                <strong id="manualVersionValue">20260522-live-flow-refresh-385</strong>
+                <strong id="manualVersionValue">20260522-biometric-assets-386</strong>
                 <p id="manualVersionSummary">Guía práctica organizada por temas para entender el flujo de la app sin leer todo de corrido.</p>
               </div>
               <div class="manual-guide-grid" aria-label="Estructura del manual">
@@ -1039,7 +1050,7 @@
       </main>
     </div>
 
-    <script src="app.js?v=20260522-live-flow-refresh-385"></script>
+    <script src="app.js?v=20260522-biometric-assets-386"></script>
 </body>
 </html>
 
