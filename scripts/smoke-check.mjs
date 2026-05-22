@@ -142,6 +142,13 @@ assert(
     && files.server.includes("audio/webm"),
   "Quick audio capture flow or WebM audio handling is missing.",
 );
+assert(
+  files.app.includes('const VOICE_ASSISTANT_NAME = "Vibe"')
+    && files.app.includes("stripVoiceWakePhrase")
+    && files.app.includes("Hola Vibe")
+    && files.app.includes("Hi Vibe"),
+  "Vibe voice invocation is missing.",
+);
 assert(files.server.includes("audioStorage") && files.server.includes("audio_asset_not_synced"), "Supabase self-test does not validate audio assets.");
 assert(/@media \(max-width: 1040px\)[\s\S]*\.capture-layout-clean \{[\s\S]*grid-template-columns: minmax\(0, 1fr\)/.test(files.styles), "Capture is not forced to full width on tablet/mobile layouts.");
 assert(/@media \(max-width: 720px\)[\s\S]*\.capture-layout-clean,[\s\S]*\.filters \{[\s\S]*grid-template-columns: 1fr/.test(files.styles), "Capture is not included in the mobile one-column layout.");

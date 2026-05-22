@@ -1,4 +1,5 @@
-const APP_VERSION = "20260521-audio-flow-webm-367";
+const APP_VERSION = "20260522-vibe-wake-368";
+const VOICE_ASSISTANT_NAME = "Vibe";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -638,13 +639,14 @@ const i18n = {
       voiceCommandListening: "Escuchando comando...",
       voiceCommandUnsupported: "Este navegador no soporta comandos de voz.",
       voiceCommandHeard: "Comando recibido",
-      voiceCommandUnknown: "No entendí el comando. Prueba: abrir panel, actualizar diario, abrir reporte o nueva experiencia.",
+      voiceCommandUnknown: "No entendí el comando. Prueba: Hola Vibe, abrir captura; Vibe, actualizar diario; abrir reporte o nueva experiencia.",
       voiceCommandReady: "Comandos de voz disponibles",
-      voiceCommandHelp: "Puedes decir: abrir panel, abrir captura, actualizar diario, analizar contexto, abrir reporte, abrir publicaciones, abrir manual o nueva experiencia.",
+      voiceCommandHelp: "Puedes decir Hola Vibe o Vibe antes del comando: abrir panel, abrir captura, actualizar diario, analizar contexto, abrir reporte, abrir publicaciones, abrir manual o nueva experiencia.",
       voiceCommandExamplesTitle: "Ejemplos de comandos",
       voiceCommandStatusReady: "Listo para escuchar o probar un ejemplo.",
       voiceCommandStatusUnsupported: "La voz no está disponible en este navegador. Puedes usar los ejemplos como prueba manual.",
       voiceCommandStatusExecuted: "Comando ejecutado",
+      voiceCommandWakeReady: "Te escucho. Di una acción después de Vibe: abrir captura, actualizar diario, abrir reporte o nueva experiencia.",
       localKeyReady: "Modo sensible listo: los datos locales y respaldos se cifrarán con esta clave.",
       localKeyMissing: "Modo sensible activo sin clave. Escribe una Clave local para cifrar datos y respaldos.",
       localKeyOff: "Modo sensible desactivado. La Clave local es opcional.",
@@ -1422,13 +1424,14 @@ const i18n = {
       voiceCommandListening: "Listening for a command...",
       voiceCommandUnsupported: "This browser does not support voice commands.",
       voiceCommandHeard: "Command received",
-      voiceCommandUnknown: "I did not understand the command. Try: open dashboard, refresh daily, open report, or new experience.",
+      voiceCommandUnknown: "I did not understand the command. Try: Hi Vibe, open capture; Vibe, refresh daily; open report; or new experience.",
       voiceCommandReady: "Voice commands available",
-      voiceCommandHelp: "You can say: open dashboard, open capture, refresh daily, analyze context, open report, open publications, open manual, or new experience.",
+      voiceCommandHelp: "You can say Hi Vibe or Vibe before the command: open dashboard, open capture, refresh daily, analyze context, open report, open publications, open manual, or new experience.",
       voiceCommandExamplesTitle: "Command examples",
       voiceCommandStatusReady: "Ready to listen or test an example.",
       voiceCommandStatusUnsupported: "Voice is not available in this browser. You can use the examples as a manual test.",
       voiceCommandStatusExecuted: "Command executed",
+      voiceCommandWakeReady: "I am listening. Say an action after Vibe: open capture, refresh daily, open report, or new experience.",
       localKeyReady: "Sensitive mode ready: local data and backups will be encrypted with this key.",
       localKeyMissing: "Sensitive mode is on without a key. Enter a Local key to encrypt data and backups.",
       localKeyOff: "Sensitive mode is off. The Local key is optional.",
@@ -2093,7 +2096,7 @@ const manualContent = {
         "La ficha Cartelera y multimedia agrupa tres zonas: cartelera vigente, multimedia disponible y seguimiento en Agenda. Si el Diario ya trae imágenes editoriales confiables, se muestran como vista previa; si no, la app lo indica y ofrece búsquedas externas.",
         "Si la fuente externa del horóscopo no responde o el resumen guardado no trae horóscopo, la app muestra un respaldo local en el idioma activo para los 12 signos.",
         "Cartelera y eventos ofrece accesos rápidos para buscar cine, conciertos, teatro, eventos del día y exposiciones del lugar seleccionado. También permite programar una revisión en Agenda para convertir la lectura del Diario en seguimiento accionable.",
-        "Comando de voz permite ejecutar acciones básicas por voz: abrir secciones, actualizar Diario, analizar contexto, abrir reportes, abrir Publicaciones, abrir Manual, cargar ejemplo o crear una nueva experiencia. Depende de Web Speech del navegador.",
+        "Comando de voz permite ejecutar acciones básicas por voz: abrir secciones, actualizar Diario, analizar contexto, abrir reportes, abrir Publicaciones, abrir Manual, cargar ejemplo o crear una nueva experiencia. Puedes iniciar el comando con Hola Vibe o Vibe. Depende de Web Speech del navegador y requiere activar el micrófono desde la app.",
         "La tarjeta Voz del Diario muestra el estado del comando y ejemplos clicables. Si el micrófono o Web Speech no están disponibles, puedes probar el mismo flujo con esos ejemplos.",
         "Incluye distribución por categoría y señales recientes de las últimas experiencias.",
         "El panel Impacto ambiental y geopolítico analiza una ciudad o lugar con mediciones climáticas de Open-Meteo y noticias geopolíticas de GDELT. Puedes usar la ubicación principal detectada en tus experiencias para acelerar la consulta.",
@@ -2625,7 +2628,7 @@ const manualContent = {
         "The Listings and multimedia card groups three zones: current listings, available multimedia, and Agenda follow-up. If Daily already has reliable editorial images, they appear as previews; if not, the app says so and offers external searches.",
         "If the external horoscope source does not respond or the saved briefing has no horoscope, the app shows a local fallback in the active language for all 12 signs.",
         "Listings and events provides quick links for movie showtimes, concerts, theater, events today, and exhibitions in the selected place. It can also schedule a review in Agenda so the Daily briefing becomes actionable follow-up.",
-        "Voice command runs basic actions by voice: open sections, refresh Daily, analyze context, open reports, open Publications, open Manual, load example, or create a new experience. It depends on the browser's Web Speech support.",
+        "Voice command runs basic actions by voice: open sections, refresh Daily, analyze context, open reports, open Publications, open Manual, load example, or create a new experience. You can start the command with Hi Vibe or Vibe. It depends on the browser's Web Speech support and requires activating the microphone from the app.",
         "The Daily Voice card shows command status and clickable examples. If microphone access or Web Speech is unavailable, you can test the same flow with those examples.",
         "Includes category distribution and recent signals from the latest experiences.",
         "Context impact analyzes a city/place with Open-Meteo weather and GDELT geopolitical news. You can use the primary location detected from your experiences to speed up the query.",
@@ -6674,8 +6677,8 @@ function applyDailyStaticActionsLanguage() {
 
 function getVoiceCommandExamples() {
   return state.language === "en"
-    ? ["open capture", "refresh daily", "analyze context", "open report"]
-    : ["abrir captura", "actualizar diario", "analizar contexto", "abrir reporte"];
+    ? ["Hi Vibe, open capture", "Vibe, refresh daily", "Vibe, analyze context", "Vibe, open report"]
+    : ["Hola Vibe, abrir captura", "Vibe, actualizar diario", "Vibe, analizar contexto", "Vibe, abrir reporte"];
 }
 
 function renderVoiceCommandExamples() {
@@ -10042,7 +10045,12 @@ function startVoiceCommand() {
 }
 
 function executeVoiceCommand(transcript) {
-  const command = normalizeVoiceCommand(transcript);
+  const command = stripVoiceWakePhrase(normalizeVoiceCommand(transcript));
+  if (!command) {
+    setVoiceCommandStatus(t("labels.voiceCommandWakeReady"), "active");
+    notify(t("labels.voiceCommandWakeReady"));
+    return;
+  }
   const viewMatch = [
     ["dashboard", ["panel", "dashboard", "inicio", "home"]],
     ["capture", ["captura", "capture", "nueva experiencia", "new experience"]],
@@ -10095,6 +10103,16 @@ function normalizeVoiceCommand(value) {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[.,;:!?¿¡]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function stripVoiceWakePhrase(command = "") {
+  return String(command || "")
+    .replace(/^(hola|hello|hi|hey|oye)\s+vibe\b/, "")
+    .replace(/^vibe\b/, "")
+    .replace(/^(por favor|please)\b/, "")
     .trim();
 }
 
@@ -21331,8 +21349,8 @@ function renderAdmin() {
       webSpeechSupported ? okStatus : attentionStatus,
       webSpeechSupported
         ? state.language === "en"
-          ? "Microphone flow and clickable command examples are available"
-          : "El flujo con micrófono y los ejemplos clicables están disponibles"
+          ? "Microphone flow, Vibe invocation, and clickable command examples are available"
+          : "El flujo con micrófono, la invocación Vibe y los ejemplos clicables están disponibles"
         : state.language === "en"
           ? "This browser has no Web Speech support; clickable examples remain available"
           : "Este navegador no tiene Web Speech; los ejemplos clicables siguen disponibles",

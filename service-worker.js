@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260521-audio-flow-webm-367";
+const CACHE_NAME = "experience-hub-pwa-20260522-vibe-wake-368";
 const APP_SHELL = [
   "/",
   "/index.html",
