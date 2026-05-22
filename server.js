@@ -371,6 +371,13 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (url.pathname === "/api/publication/pdf" && req.method === "POST") {
+    const user = await getRequestUser(req);
+    const body = await readJson(req);
+    sendPdf(res, await buildPublicationPdf(body.html, user), "publicacion-inteligente.pdf");
+    return;
+  }
+
   if (url.pathname === "/api/exports/file" && req.method === "POST") {
     const body = await readJson(req);
     sendJson(res, 201, await saveExportFile(body));
@@ -3437,6 +3444,41 @@ async function buildPdfReport(user, report = null) {
   return createSimplePdf(lines);
 }
 
+async function buildPublicationPdf(html, user = { id: LOCAL_USER_ID }) {
+  if (typeof html !== "string" || !html.trim()) {
+    throw new HttpError(400, "publication_html_required");
+  }
+  const printable = normalizePublicationHtmlForPdf(html);
+  const pdf = await renderReportHtmlToPdf(printable);
+  if (pdf) {
+    await appendLog("info", "Publication PDF generated", { userId: user.id, source: "publication-html" });
+    return pdf;
+  }
+  await appendLog("warn", "Publication PDF fallback used", { userId: user.id });
+  return createSimplePdf([
+    "Experience Hub - Publicacion inteligente",
+    "El servidor no pudo renderizar el PDF visual avanzado.",
+    "Usa Exportar HTML como salida visual equivalente o configura Chrome/Edge en el entorno del servidor.",
+  ]);
+}
+
+function normalizePublicationHtmlForPdf(html) {
+  if (html.includes("</style>")) {
+    return html.replace(
+      "</style>",
+      `
+html,body{max-width:100%;overflow-x:hidden}
+article,section,.cover,.media,pre{max-width:100%;overflow-wrap:anywhere}
+img,video{max-width:100%;height:auto}
+pre{white-space:pre-wrap;word-break:break-word}
+.media{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+@media print{article,section,.cover,.media figure{break-inside:avoid;page-break-inside:avoid}}
+</style>`,
+    );
+  }
+  return `<!doctype html><html><head><meta charset="utf-8"><style>body{font-family:Arial,sans-serif;margin:24px;color:#17201b}pre{white-space:pre-wrap;word-break:break-word}</style></head><body>${escapeHtmlServer(html)}</body></html>`;
+}
+
 function pdfBar(value, width = 16) {
   const score = Math.max(0, Math.min(100, Number(value) || 0));
   const filled = Math.round((score / 100) * width);
@@ -4873,10 +4915,10 @@ function sendText(res, status, message) {
   res.end(message);
 }
 
-function sendPdf(res, bytes) {
+function sendPdf(res, bytes, filename = "reporte-experiencias.pdf") {
   res.writeHead(200, {
     "Content-Type": "application/pdf",
-    "Content-Disposition": "attachment; filename=\"reporte-experiencias.pdf\"",
+    "Content-Disposition": `attachment; filename="${filename}"`,
   });
   res.end(bytes);
 }

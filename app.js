@@ -1,4 +1,4 @@
-const APP_VERSION = "20260522-report-pdf-design-392";
+const APP_VERSION = "20260522-publication-pdf-393";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2295,6 +2295,8 @@ const manualContent = {
         "Guía de salida aclara qué se exporta: HTML para pieza visual/imprimible con multimedia y Markdown para edición, documentación u Obsidian.",
         "Vista imprimible muestra el mismo HTML final dentro de la app para revisar diseño, márgenes y saltos antes de descargar.",
         "Copiar texto y Copiar HTML usan el mismo Documento final que se exporta, para pegar manualmente la publicación en email, mensajería, CMS o redes mientras los conectores directos quedan para una fase posterior.",
+        "En Publicaciones, Preparar canal no publica solo: WhatsApp y Email abren un mensaje listo para revisar y enviar; Facebook e Instagram copian el contenido para pegarlo manualmente hasta tener conectores futuros.",
+        "Formatos de publicación en lenguaje simple: PDF es para leer, imprimir o enviar; HTML conserva el diseño visual; Markdown sirve para editar en notas o documentos; JSON es respaldo técnico para Administración.",
         "Exportar HTML y Exportar Markdown generan un enlace visible de descarga, además de intentar la descarga automática.",
         "Si se exporta un borrador en revisión, el archivo incluye esa marca de aprobación para evitar confundirlo con una versión final.",
         "El Editor del borrador permite modificar título, resumen y cuerpo. El Documento final muestra exactamente la pieza que se exportará, combinando el texto editado con la multimedia incluida.",
@@ -2846,6 +2848,8 @@ const manualContent = {
         "Printable output and exported HTML use page margins, page-break rules, and card protection to reduce panels or media being cut across pages.",
         "Exported HTML preserves the selected visual design: social, executive, magazine, album, or script.",
         "Output guide clarifies what gets exported: HTML for a visual/printable piece with media and Markdown for editing, documentation, or Obsidian.",
+        "In Publications, Prepare channel does not auto-post: WhatsApp and Email open a ready draft for you to review and send; Facebook and Instagram copy the content so you can paste it manually until future connectors exist.",
+        "Publication formats in plain language: PDF is for reading, printing, or sending; HTML keeps the visual layout; Markdown is easy to edit in notes or documents; JSON is a technical backup for Admin.",
         "Printable preview shows the same final HTML inside the app to review design, margins, and page breaks before downloading.",
         "Export HTML and Export Markdown create a visible download link, while also attempting automatic download.",
         "If a draft is exported while still in review, the file includes that approval mark so it is not confused with a final version.",
@@ -6422,10 +6426,12 @@ function setupActions() {
   document.getElementById("downloadPdfButton")?.addEventListener("click", downloadPdfReport);
   document.getElementById("generatePublicationButton").addEventListener("click", generatePublicationDraft);
   document.getElementById("previewPublicationHtmlButton").addEventListener("click", previewCurrentPublicationHtml);
+  document.getElementById("launchPublicationChannelButton").addEventListener("click", preparePublicationChannelLaunch);
   document.getElementById("copyPublicationTextButton").addEventListener("click", copyCurrentPublicationText);
   document.getElementById("copyPublicationHtmlButton").addEventListener("click", copyCurrentPublicationHtml);
   document.getElementById("exportPublicationHtmlButton").addEventListener("click", exportCurrentPublicationHtml);
   document.getElementById("exportPublicationMarkdownButton").addEventListener("click", exportCurrentPublicationMarkdown);
+  document.getElementById("exportPublicationPdfButton").addEventListener("click", exportCurrentPublicationPdf);
   document.getElementById("exportPublicationPackageButton").addEventListener("click", exportCurrentPublicationPackage);
   document.getElementById("publicationDraftList").addEventListener("click", handlePublicationDraftAction);
   document.getElementById("publicationPreview").addEventListener("change", handlePublicationMediaSelection);
@@ -17864,6 +17870,7 @@ function renderPublicationHistory(draft) {
 }
 
 function renderPublicationExportGuide(draft) {
+  const direct = getPublicationChannelStatus(draft.channel);
   return `
     <section class="publication-export-guide">
       <div class="publication-section-heading">
@@ -17875,6 +17882,10 @@ function renderPublicationExportGuide(draft) {
       </div>
       <div class="publication-export-grid">
         <article>
+          <strong>PDF</strong>
+          <p>${escapeHtml(state.language === "en" ? "Final reading, printing, approval, and sharing as a stable document." : "Lectura final, impresión, aprobación y envío como documento estable.")}</p>
+        </article>
+        <article>
           <strong>HTML</strong>
           <p>${escapeHtml(t("labels.publicationExportHtmlUse"))}</p>
         </article>
@@ -17882,9 +17893,81 @@ function renderPublicationExportGuide(draft) {
           <strong>Markdown</strong>
           <p>${escapeHtml(t("labels.publicationExportMarkdownUse"))}</p>
         </article>
+        <article>
+          <strong>JSON</strong>
+          <p>${escapeHtml(state.language === "en" ? "Editorial package for backup, API integration, audit, or migration to another tool." : "Paquete editorial para respaldo, integración API, auditoría o migración a otra herramienta.")}</p>
+        </article>
+        <article>
+          <strong>${escapeHtml(state.language === "en" ? "Channel launch" : "Lanzamiento por canal")}</strong>
+          <p>${escapeHtml(direct.detail)}</p>
+        </article>
       </div>
+      <p class="card-meta">${escapeHtml(getPublicationFormatHelpText())}</p>
+      <p class="card-meta">${escapeHtml(state.language === "en" ? "Direct posting to Facebook and Instagram is planned for a later connector. For now, use Prepare channel, review, and paste." : "La publicación directa en Facebook e Instagram queda para un conector futuro. Por ahora usa Preparar canal, revisa y pega.")}</p>
     </section>
   `;
+}
+
+function getPublicationFormatHelpText() {
+  return state.language === "en"
+    ? "Format guide: PDF is for reading, printing, or sending. HTML keeps the visual layout. Markdown is easy to edit in notes or documents. JSON is a technical backup for Admin."
+    : "Guía de formatos: PDF es para leer, imprimir o enviar. HTML conserva el diseño visual. Markdown es fácil de editar en notas o documentos. JSON es un respaldo técnico para Administración.";
+}
+
+function getPublicationChannelStatus(channel) {
+  const labels = state.language === "en"
+    ? {
+        whatsapp: "Ready: the app opens WhatsApp with the text prepared. You review and send.",
+        email: "Ready: the app opens an email draft with subject and text. You review and send.",
+        facebook: "Not automatic yet: the app prepares and copies the content. You paste it into Facebook.",
+        instagram: "Not automatic yet: the app prepares and copies the content. You paste it into Instagram.",
+        file: "Ready: the app downloads the publication as PDF or HTML.",
+      }
+    : {
+        whatsapp: "Listo: la app abre WhatsApp con el texto preparado. Tú revisas y envías.",
+        email: "Listo: la app abre un correo con asunto y texto. Tú revisas y envías.",
+        facebook: "Aún no es automático: la app prepara y copia el contenido. Tú lo pegas en Facebook.",
+        instagram: "Aún no es automático: la app prepara y copia el contenido. Tú lo pegas en Instagram.",
+        file: "Listo: la app descarga la publicación como PDF o HTML.",
+      };
+  if (channel === "WhatsApp") return { level: "assisted", detail: labels.whatsapp };
+  if (channel === "Email") return { level: "assisted", detail: labels.email };
+  if (channel === "Facebook") return { level: "future", detail: labels.facebook };
+  if (channel === "Instagram") return { level: "future", detail: labels.instagram };
+  return { level: "export", detail: labels.file };
+}
+
+async function preparePublicationChannelLaunch() {
+  const draft = state.currentPublicationDraft || state.publicationDrafts[0];
+  if (!draft) {
+    document.getElementById("publicationStatus").textContent = t("labels.publicationEmpty");
+    return;
+  }
+  const text = buildPublicationMarkdown(draft);
+  const copied = await copyTextToClipboard(text);
+  const channel = draft.channel;
+  let opened = false;
+  if (channel === "WhatsApp") {
+    opened = Boolean(window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer"));
+  } else if (channel === "Email") {
+    const subject = encodeURIComponent(draft.title || "Experience Hub");
+    const body = encodeURIComponent(text);
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    opened = true;
+  } else if (channel === "Facebook") {
+    opened = Boolean(window.open("https://www.facebook.com/", "_blank", "noopener,noreferrer"));
+  } else if (channel === "Instagram") {
+    opened = Boolean(window.open("https://www.instagram.com/", "_blank", "noopener,noreferrer"));
+  } else {
+    exportCurrentPublicationHtml();
+    return;
+  }
+  addPublicationHistory(draft, "exported", state.language === "en" ? `Prepared ${channel}` : `Canal preparado: ${channel}`);
+  persistPublicationDraft(draft);
+  document.getElementById("publicationStatus").textContent = state.language === "en"
+    ? `${channel} is ready. The text was copied${opened ? " and the channel was opened." : ". Open the channel manually if the browser blocked it."}`
+    : `${channel} listo. El texto fue copiado${opened ? " y el canal fue abierto." : ". Abre el canal manualmente si el navegador lo bloqueó."}`;
+  if (!copied) notify(state.language === "en" ? "Could not copy automatically." : "No se pudo copiar automáticamente.", "warn");
 }
 
 function renderPublicationApproval(draft) {
@@ -18055,6 +18138,7 @@ function renderPublicationReadiness(draft) {
 
 function renderPublicationClosureChecklist(draft) {
   const readiness = buildPublicationReadiness(draft);
+  const channelStatus = getPublicationChannelStatus(draft.channel);
   const words = countWords(`${draft.summary} ${draft.body}`);
   const limit = getPublicationWordLimit(draft.channel);
   const totalMedia = (draft.media || []).length;
@@ -18091,11 +18175,11 @@ function renderPublicationClosureChecklist(draft) {
     },
     {
       label: t("labels.publicationClosureChannel"),
-      ready: readiness.score >= 75,
+      ready: readiness.score >= 75 && channelStatus.level !== "future",
       detail:
-        readiness.score >= 75
-          ? `${t("labels.publicationClosureChannelReady")} ${readiness.score}%.`
-          : `${t("labels.publicationClosureChannelReview")} ${readiness.score}%.`,
+        readiness.score >= 75 && channelStatus.level !== "future"
+          ? `${t("labels.publicationClosureChannelReady")} ${readiness.score}%. ${channelStatus.detail}`
+          : `${t("labels.publicationClosureChannelReview")} ${readiness.score}%. ${channelStatus.detail}`,
     },
   ];
   const readyCount = items.filter((item) => item.ready).length;
@@ -18134,7 +18218,9 @@ function buildPublicationReadiness(draft) {
   const privacyScore = draft.privacy ? 92 : 48;
   const mediaScore = totalMedia ? Math.round((includedMedia / totalMedia) * 100) : channelBenefitsFromMedia(draft.channel) ? 45 : 80;
   const channelScore = scorePublicationChannelFit(draft, words, includedMedia);
-  const score = Math.round((readability.score + privacyScore + mediaScore + channelScore.score) / 4);
+  const directStatus = getPublicationChannelStatus(draft.channel);
+  const directScore = directStatus.level === "future" ? 55 : 90;
+  const score = Math.round((readability.score + privacyScore + mediaScore + channelScore.score + directScore) / 5);
   const suggestions = buildPublicationSuggestions({ draft, words, includedMedia, totalMedia, readability, privacyScore, mediaScore, channelScore });
   return {
     score,
@@ -18163,6 +18249,11 @@ function buildPublicationReadiness(draft) {
             : "No hay multimedia vinculada disponible.",
       },
       { label: t("labels.publicationChannelFit"), score: channelScore.score, detail: channelScore.detail },
+      {
+        label: state.language === "en" ? "Direct channel status" : "Estado del canal directo",
+        score: directScore,
+        detail: directStatus.detail,
+      },
     ],
     suggestions,
   };
@@ -18459,6 +18550,40 @@ function exportCurrentPublicationHtml() {
   persistPublicationDraft(draft);
   const html = buildPublicationHtml(draft);
   downloadPublicationBlob(new Blob([html], { type: "text/html;charset=utf-8" }), "publicacion-inteligente.html", warning);
+}
+
+async function exportCurrentPublicationPdf() {
+  const draft = state.currentPublicationDraft || state.publicationDrafts[0];
+  if (!draft) {
+    document.getElementById("publicationStatus").textContent = t("labels.publicationEmpty");
+    return;
+  }
+  const warning = draft.approvalStatus !== "approved" ? t("labels.publicationExportReviewWarning") : "";
+  const html = buildPublicationHtml(draft);
+  if (!state.apiOnline) {
+    addPublicationHistory(draft, "exported", "PDF fallback HTML");
+    persistPublicationDraft(draft);
+    downloadPublicationBlob(new Blob([html], { type: "text/html;charset=utf-8" }), "publicacion-inteligente.html", warning || (state.language === "en" ? "PDF requires the local API. HTML was exported instead." : "El PDF requiere la API local. Se exportó HTML como alternativa."));
+    return;
+  }
+  try {
+    document.getElementById("publicationStatus").textContent = state.language === "en" ? "Generating publication PDF..." : "Generando PDF de publicación...";
+    const response = await fetch(`${API_BASE}/publication/pdf`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...authHeader() },
+      body: JSON.stringify({ html, title: draft.title, language: state.language }),
+    });
+    if (!response.ok) throw new Error(await response.text());
+    const blob = await response.blob();
+    addPublicationHistory(draft, "exported", "PDF");
+    persistPublicationDraft(draft);
+    downloadPublicationBlob(blob, "publicacion-inteligente.pdf", warning);
+  } catch (error) {
+    console.warn("Publication PDF export failed", error);
+    addPublicationHistory(draft, "exported", "PDF fallback HTML");
+    persistPublicationDraft(draft);
+    downloadPublicationBlob(new Blob([html], { type: "text/html;charset=utf-8" }), "publicacion-inteligente.html", warning || (state.language === "en" ? "PDF could not be generated. HTML was exported instead." : "No se pudo generar el PDF. Se exportó HTML como alternativa."));
+  }
 }
 
 function previewCurrentPublicationHtml() {
@@ -22330,8 +22455,8 @@ function renderAdminOperationalFocusPanel() {
         liveFlowDetail: "When Capture syncs an open draft, the same device refreshes Dashboard, Library, Assets, Agenda, Timeline, Map, Reports, Publications, Insights, persistence state, and Admin.",
         biometricAssets: "Biometric files in Assets",
         biometricAssetsDetail: "CSV/JSON from Apple Health or wearables enters through Assets as cross-experience context, then informs energy and recovery by date/time.",
-        reportPdf: "Editorial report export",
-        reportPdfDetail: "Report PDF now uses an editorial layout with cover, KPI cards, category bars, multimodal evidence, and images when previews are available.",
+        reportPdf: "Clear PDF and channel exports",
+        reportPdfDetail: "Reports and Publications now explain what each format does. Publications can export PDF and prepare WhatsApp or Email drafts; Facebook and Instagram remain manual until future connectors.",
       }
     : {
         title: "Administración operativa",
@@ -22363,8 +22488,8 @@ function renderAdminOperationalFocusPanel() {
     labels.liveFlowDetail = "Cuando Captura sincroniza una experiencia abierta, el mismo dispositivo refresca Panel, Librer\u00eda, Activos, Agenda, L\u00ednea de tiempo, Mapa, Reportes, Publicaciones, Hallazgos, persistencia y Administraci\u00f3n.";
     labels.biometricAssets = "Biometr\u00eda desde Activos";
     labels.biometricAssetsDetail = "CSV/JSON de Apple Health o wearables entra por Activos como contexto transversal y luego informa energ\u00eda o recuperaci\u00f3n por fecha/hora.";
-    labels.reportPdf = "Reporte PDF editorial";
-    labels.reportPdfDetail = "El PDF del reporte ahora usa portada, cuadros de KPIs, barras por categor\u00eda, evidencia multimodal e im\u00e1genes cuando hay vista previa disponible.";
+    labels.reportPdf = "PDF y canales claros";
+    labels.reportPdfDetail = "Reportes y Publicaciones explican para qué sirve cada formato. Publicaciones exporta PDF y prepara WhatsApp o Email; Facebook e Instagram siguen manuales hasta tener conectores futuros.";
   }
   const cards = [
     [labels.flow, labels.flowDetail],
@@ -26057,7 +26182,7 @@ function buildParallelBacklog() {
       agendaDetail: "Primer MVP activo: calendario visual diario/semanal, eventos locales, estados, conflictos, días bloqueados, importación/exportación .ics y conversión de evento en experiencia.",
       agendaAction: "Abrir Agenda",
       publicationTitle: "Publicaciones Inteligentes",
-      publicationDetail: "MVP activo: aprobación humana, diseños visuales, editor de borradores, documento final, curaduría multimedia, preparación editorial, cierre prepublicación, copiado manual, paquete editorial y exportación HTML/Markdown.",
+      publicationDetail: "MVP activo: aprobación humana, diseños visuales, editor de borradores, documento final, curaduría multimedia, preparación editorial, cierre prepublicación, preparación asistida por canal, paquete editorial y exportación HTML/Markdown/PDF.",
       publicationAction: "Abrir Publicaciones",
     },
     en: {
@@ -26111,7 +26236,7 @@ function buildParallelBacklog() {
       agendaDetail: "First MVP active: visual day/week calendar, local events, states, conflicts, blocked days, .ics import/export, and event-to-experience conversion.",
       agendaAction: "Open Agenda",
       publicationTitle: "Intelligent Publications",
-      publicationDetail: "Active MVP: human approval, visual designs, draft editor, final document, media curation, editorial readiness, pre-publication closure, manual copy, editorial package, and HTML/Markdown export.",
+      publicationDetail: "Active MVP: human approval, visual designs, draft editor, final document, media curation, editorial readiness, pre-publication closure, assisted channel preparation, editorial package, and HTML/Markdown/PDF export.",
       publicationAction: "Open Publications",
     },
   }[state.language] || {};
@@ -27206,22 +27331,6 @@ function toDatetimeLocal(value) {
   const offset = date.getTimezoneOffset() * 60000;
   return new Date(date.getTime() - offset).toISOString().slice(0, 16);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
