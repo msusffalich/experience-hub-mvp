@@ -1,4 +1,4 @@
-const APP_VERSION = "20260522-selftest-summary-376";
+const APP_VERSION = "20260522-upload-history-final-377";
 const VOICE_ASSISTANT_NAME = "Vibe";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -1981,6 +1981,7 @@ const manualContent = {
         "La prueba real de Supabase valida ahora cinco familias de activos: imagen, audio, video, documento de texto y ZIP. Para aprobar, cada uno debe subir a Storage privado, generar URL firmada, quedar vinculado a la experiencia y aparecer en la tabla assets. El ZIP se valida solo como transporte y descarga, no como contenido interpretable.",
         "Al terminar Probar flujo real, Administración abre y conserva una tabla de familias de activos. Esa tabla muestra si imagen, audio, video, documento y ZIP pasaron Storage, lectura y tabla assets, para evitar depender de un mensaje global poco visible.",
         "Si la prueba real muestra Storage y Lectura en Listo, pero Tabla assets en Revisar, significa que los archivos funcionan y que falta aplicar las tablas compartidas de Supabase. En ese caso se deben aplicar database/workspace-events-assets.sql y database/agenda-events.sql antes de considerar completo el flujo multidispositivo.",
+        "El historial de subidas consolida cada archivo por su estado final. Si un adjunto ya figura como subido, Administración no lo cuenta también como subiendo, evitando falsos pendientes después de una prueba correcta.",
         "El patrón recomendado, tomado del análisis de CLIO, es mantener Supabase como fuente de verdad, usar Storage privado para archivos, URLs firmadas temporales para lectura, registros de auditoría para cada subida y caché local solo como respaldo o cola de reintento.",
         "El servidor ya soporta modo cloud mediante HOST=0.0.0.0 y NODE_ENV=production. Usa .env.production.example como base para desplegar sin depender de localhost.",
         "La guía docs/deploy-publicacion.md define el orden recomendado: GitHub privado, Supabase productivo, variables seguras, hosting Node, prueba desde varios dispositivos y validación privada.",
@@ -2528,6 +2529,7 @@ const manualContent = {
         "The real Supabase test now validates five asset families: image, audio, video, text document, and ZIP. To pass, each one must upload to private Storage, generate a signed URL, stay linked to the experience, and appear in the assets table. ZIP is validated only as transport and download, not as interpreted content.",
         "When Run real test finishes, Admin opens and preserves an asset-family table. That table shows whether image, audio, video, document, and ZIP passed Storage, read-back, and the assets table, so the user does not have to rely on a small global message.",
         "If the real test shows Storage and Read-back as Ready, but Assets table as Review, files are working and the shared Supabase tables are missing. Apply database/workspace-events-assets.sql and database/agenda-events.sql before considering the multi-device flow complete.",
+        "The upload history consolidates each file by its final state. If an attachment is already uploaded, Admin does not also count the earlier uploading attempt, avoiding false pending warnings after a successful test.",
         "The recommended pattern, based on the CLIO review, is to keep Supabase as the source of truth, use private Storage for files, temporary signed URLs for reading, audit records for every upload, and local cache only as fallback or retry queue.",
         "The server now supports cloud mode through HOST=0.0.0.0 and NODE_ENV=production. Use .env.production.example as the deployment baseline so the app does not depend on localhost.",
         "The docs/deploy-publicacion.md guide defines the recommended order: private GitHub, production Supabase, secure variables, Node hosting, multi-device test, and private validation.",
@@ -22726,7 +22728,7 @@ function renderSupabaseDiagnostics() {
 }
 
 function renderUploadAttemptsPanel() {
-  const attempts = state.uploadAttempts || [];
+  const attempts = consolidateUploadAttempts(state.uploadAttempts || []);
   const summary = summarizeUploadAttempts(attempts);
   const labels = state.language === "en"
     ? {
@@ -22791,7 +22793,33 @@ function renderUploadAttemptItem(attempt, labels) {
   `;
 }
 
+function consolidateUploadAttempts(attempts = []) {
+  const statusRank = { uploaded: 4, failed: 3, uploading: 2, pending: 1 };
+  const byAsset = new Map();
+  for (const attempt of attempts) {
+    const key = attempt.assetId || attempt.storagePath || `${attempt.fileName || "file"}:${attempt.sizeBytes || ""}:${attempt.mimeType || ""}`;
+    const current = byAsset.get(key);
+    if (!current) {
+      byAsset.set(key, attempt);
+      continue;
+    }
+    const currentRank = statusRank[current.status] || 0;
+    const nextRank = statusRank[attempt.status] || 0;
+    const currentTime = Date.parse(current.finishedAt || current.startedAt || current.createdAt || 0) || 0;
+    const nextTime = Date.parse(attempt.finishedAt || attempt.startedAt || attempt.createdAt || 0) || 0;
+    if (nextRank > currentRank || (nextRank === currentRank && nextTime > currentTime)) {
+      byAsset.set(key, attempt);
+    }
+  }
+  return Array.from(byAsset.values()).sort((a, b) => {
+    const aTime = Date.parse(a.finishedAt || a.startedAt || a.createdAt || 0) || 0;
+    const bTime = Date.parse(b.finishedAt || b.startedAt || b.createdAt || 0) || 0;
+    return bTime - aTime;
+  });
+}
+
 function summarizeUploadAttempts(attempts = state.uploadAttempts || []) {
+  attempts = consolidateUploadAttempts(attempts);
   const total = attempts.length;
   const failed = attempts.filter((attempt) => attempt.status === "failed").length;
   const uploaded = attempts.filter((attempt) => attempt.status === "uploaded").length;

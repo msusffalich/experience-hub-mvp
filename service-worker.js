@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260522-selftest-summary-376";
+const CACHE_NAME = "experience-hub-pwa-20260522-upload-history-final-377";
 const APP_SHELL = [
   "/",
   "/index.html",
