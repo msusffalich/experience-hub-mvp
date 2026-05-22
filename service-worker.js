@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260522-daily-clarity-389";
+const CACHE_NAME = "experience-hub-pwa-20260522-biometric-impact-390";
 const APP_SHELL = [
   "/",
   "/index.html",

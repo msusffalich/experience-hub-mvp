@@ -3546,6 +3546,62 @@ button,
   font-size: 0.86rem;
 }
 
+.report-biometric-impact {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  margin: 16px 0;
+  border: 1px solid rgba(25, 118, 210, 0.2);
+  border-radius: 8px;
+  background: linear-gradient(135deg, #f4fbff, #f8fff6);
+}
+
+.report-biometric-impact.is-empty {
+  background: #f8fafc;
+}
+
+.report-biometric-impact h3,
+.report-biometric-impact p {
+  margin: 0;
+}
+
+.biometric-impact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+}
+
+.biometric-impact-grid article,
+.biometric-impact-examples article {
+  padding: 12px;
+  border: 1px solid rgba(50, 84, 104, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.biometric-impact-grid span,
+.biometric-impact-examples span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.biometric-impact-grid strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 1.15rem;
+}
+
+.biometric-impact-examples {
+  display: grid;
+  gap: 8px;
+}
+
+.biometric-impact-examples p {
+  margin-top: 4px;
+  color: var(--muted);
+}
+
 .small-button {
   min-height: 32px;
   padding: 6px 10px;

@@ -1,4 +1,4 @@
-const APP_VERSION = "20260522-daily-clarity-389";
+const APP_VERSION = "20260522-biometric-impact-390";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2179,6 +2179,7 @@ const manualContent = {
       items: [
         "Energía: valor subjetivo de 1 a 10 que indica cuánta vitalidad, foco o disponibilidad sentiste durante la experiencia. 1 significa muy baja energía; 10 significa energía muy alta.",
         "Energía media: promedio de todas las calificaciones de energía dentro del rango o filtro seleccionado. Sirve para detectar tendencia, no como diagnóstico médico.",
+        "Impacto biométrico: cuando importas biometría desde Activos, Reportes cruza esos registros por fecha/hora con las experiencias filtradas. Muestra cobertura, energía sugerida, sueño, pasos, frecuencia y riesgo contextual. Es apoyo analítico, no diagnóstico médico.",
         "Adjuntos multimedia: cantidad de imágenes, videos o audios asociados a una experiencia o reporte. Cuando veas Adjuntos, se refiere a archivos guardados, no a promedio.",
         "Media, en inglés, significa archivos multimedia; por claridad, la interfaz en español usa Adjuntos multimedia.",
       ],
@@ -2732,6 +2733,7 @@ const manualContent = {
       items: [
         "Energy: a subjective 1-10 value that indicates how much vitality, focus, or availability you felt during the experience. 1 means very low energy; 10 means very high energy.",
         "Average energy: the mean of all energy ratings within the selected range or filter. It helps detect trends and is not a medical diagnosis.",
+        "Biometric impact: when you import biometrics from Assets, Reports matches those records by date/time against the filtered experiences. It shows coverage, suggested energy, sleep, steps, heart rate, and contextual risk. It is analytical support, not a medical diagnosis.",
         "Media attachments: the number of images, videos, or audio files linked to an experience or report.",
         "In Spanish, the interface uses Adjuntos multimedia to avoid confusing media files with average.",
       ],
@@ -15502,6 +15504,7 @@ function renderReport() {
           </section>`
         : ""
     }
+    ${renderReportBiometricImpact(experiences)}
     ${renderLivingMemoryLog(experiences, reportAnalysis)}
     ${renderReportEventTimeline(experiences)}
     ${renderReportMultimodalEvidence(experiences)}
@@ -16478,9 +16481,7 @@ function summarizeBiometricSignalsForExperiences(experiences = []) {
   if (!experiences.length) {
     return { matched: 0, coveragePct: 0, averageSuggestedEnergy: 0, biometricRiskScore: 0 };
   }
-  const signals = experiences
-    .map((experience) => buildBiometricSignalForTimestamp(experience.timestamp, experience.duration))
-    .filter((signal) => signal.matched);
+  const signals = getBiometricSignalsForExperiences(experiences).map((item) => item.signal);
   const averageSuggestedEnergy = signals.length ? average(signals.map((signal) => Number(signal.energySuggestion || 0))) : 0;
   const riskSignals = signals.filter((signal) => {
     const metrics = signal.metrics || {};
@@ -16492,6 +16493,94 @@ function summarizeBiometricSignalsForExperiences(experiences = []) {
     averageSuggestedEnergy,
     biometricRiskScore: pct(riskSignals, signals.length || 1),
   };
+}
+
+function getBiometricSignalsForExperiences(experiences = []) {
+  return experiences
+    .map((experience) => ({
+      experience,
+      signal: buildBiometricSignalForTimestamp(experience.timestamp, experience.duration),
+    }))
+    .filter((item) => item.signal?.matched);
+}
+
+function renderReportBiometricImpact(experiences = []) {
+  const labels = state.language === "en"
+    ? {
+        title: "Biometric impact",
+        noImports: "No biometric file has been imported yet. Import Apple Health or wearable CSV/JSON from Assets to compare body signals with experiences.",
+        noMatches: "Biometrics are imported, but no records match the date/time of this report scope yet.",
+        coverage: "Coverage",
+        energy: "Suggested energy",
+        risk: "Risk signal",
+        records: "Matched records",
+        sleep: "Sleep",
+        steps: "Steps",
+        heart: "Heart rate",
+        active: "Active energy",
+        method: "The app matches biometric rows by date/time around each experience. It informs analysis; it is not a medical diagnosis.",
+        examples: "Recent matches",
+      }
+    : {
+        title: "Impacto biométrico",
+        noImports: "Aún no hay archivo biométrico importado. Importa CSV/JSON de Apple Health o wearables desde Activos para comparar señales corporales con las experiencias.",
+        noMatches: "La biometría está importada, pero no hay registros que coincidan con la fecha/hora del alcance actual del reporte.",
+        coverage: "Cobertura",
+        energy: "Energía sugerida",
+        risk: "Señal de riesgo",
+        records: "Registros vinculados",
+        sleep: "Sueño",
+        steps: "Pasos",
+        heart: "Frecuencia",
+        active: "Energía activa",
+        method: "La app cruza registros biométricos por fecha/hora alrededor de cada experiencia. Informa el análisis; no es diagnóstico médico.",
+        examples: "Coincidencias recientes",
+      };
+  const importedCount = state.biometricImports?.length || 0;
+  const signals = getBiometricSignalsForExperiences(experiences);
+  const summary = summarizeBiometricSignalsForExperiences(experiences);
+  if (!importedCount) {
+    return `<section class="report-biometric-impact is-empty"><h3>${escapeHtml(labels.title)}</h3><p>${escapeHtml(labels.noImports)}</p></section>`;
+  }
+  if (!signals.length) {
+    return `<section class="report-biometric-impact is-empty"><h3>${escapeHtml(labels.title)}</h3><p>${escapeHtml(labels.noMatches)}</p><small>${escapeHtml(labels.method)}</small></section>`;
+  }
+  const rows = signals.flatMap((item) => item.signal.rows || []);
+  const metrics = aggregateBiometricRows(rows);
+  const examples = signals.slice(0, 4);
+  return `
+    <section class="report-biometric-impact">
+      <div class="report-section-heading">
+        <div>
+          <span class="report-kicker">${escapeHtml(labels.title)}</span>
+          <h3>${escapeHtml(`${summary.matched}/${experiences.length} ${labels.records}`)}</h3>
+        </div>
+        <span class="pill">${escapeHtml(`${Math.round(summary.coveragePct)}% ${labels.coverage}`)}</span>
+      </div>
+      <div class="biometric-impact-grid">
+        <article><span>${escapeHtml(labels.energy)}</span><strong>${escapeHtml((summary.averageSuggestedEnergy || 0).toFixed(1))}/10</strong></article>
+        <article><span>${escapeHtml(labels.risk)}</span><strong>${escapeHtml(`${Math.round(summary.biometricRiskScore)}%`)}</strong></article>
+        <article><span>${escapeHtml(labels.heart)}</span><strong>${metrics.heartAvg ? Math.round(metrics.heartAvg) : "-"}</strong></article>
+        <article><span>${escapeHtml(labels.steps)}</span><strong>${metrics.steps ? Math.round(metrics.steps).toLocaleString() : "-"}</strong></article>
+        <article><span>${escapeHtml(labels.sleep)}</span><strong>${metrics.sleepMinutes ? `${(metrics.sleepMinutes / 60).toFixed(1)} h` : "-"}</strong></article>
+        <article><span>${escapeHtml(labels.active)}</span><strong>${metrics.activeEnergy ? `${Math.round(metrics.activeEnergy)} kcal` : "-"}</strong></article>
+      </div>
+      <p class="card-meta">${escapeHtml(labels.method)}</p>
+      <div class="biometric-impact-examples">
+        <span class="card-meta">${escapeHtml(labels.examples)}</span>
+        ${examples
+          .map(
+            ({ experience, signal }) => `
+              <article>
+                <strong>${escapeHtml(experience.title || "")}</strong>
+                <p>${escapeHtml(signal.detail || signal.label || "")}</p>
+              </article>
+            `,
+          )
+          .join("")}
+      </div>
+    </section>
+  `;
 }
 
 function buildHumanCorrelations(experiences, analysis) {
