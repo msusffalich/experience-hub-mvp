@@ -260,6 +260,13 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (url.pathname === "/api/translate-text" && req.method === "POST") {
+    await getRequestUser(req);
+    const body = await readJson(req);
+    sendJson(res, 200, await translateText(body));
+    return;
+  }
+
   if (url.pathname === "/api/search/semantic" && req.method === "POST") {
     const user = await getRequestUser(req);
     const body = await readJson(req);
@@ -2758,6 +2765,82 @@ async function ocrImage(media) {
     text: cleanExtractedText(text),
     characters: cleanExtractedText(text).length,
   };
+}
+
+async function translateText(body = {}) {
+  if (!OPENAI_API_KEY) {
+    return {
+      provider: "none",
+      status: "unavailable",
+      translatedText: "",
+      detectedLanguage: body.sourceLanguage || "",
+      targetLanguage: body.targetLanguage || "es",
+      message: "Configure OPENAI_API_KEY to enable backend translation.",
+    };
+  }
+  const text = String(body.text || "").trim();
+  if (!text) throw new HttpError(400, "translation_text_required");
+  const targetLanguage = normalizeLanguageCode(body.targetLanguage || "es");
+  const sourceLanguage = normalizeLanguageCode(body.sourceLanguage || "");
+  const response = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${OPENAI_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: OPENAI_OCR_MODEL,
+      input: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "input_text",
+              text: [
+                `Translate the following asset text to ${targetLanguage}.`,
+                sourceLanguage ? `The source language hint is ${sourceLanguage}.` : "Detect the source language.",
+                "Return only valid JSON with keys detectedLanguage and translatedText. Preserve names, prices, dates, and units.",
+                text.slice(0, 12000),
+              ].join("\n\n"),
+            },
+          ],
+        },
+      ],
+    }),
+  });
+  const payload = await response.json();
+  if (!response.ok) {
+    throw new Error(`translation_${response.status}: ${payload.error?.message || "failed"}`);
+  }
+  const raw = extractOpenAIResponseText(payload);
+  let parsed = {};
+  try {
+    parsed = JSON.parse(raw.replace(/^```json\s*/i, "").replace(/```$/i, "").trim());
+  } catch {
+    parsed = { translatedText: raw };
+  }
+  return {
+    provider: "openai",
+    model: OPENAI_OCR_MODEL,
+    status: "ok",
+    detectedLanguage: normalizeLanguageCode(parsed.detectedLanguage || sourceLanguage || ""),
+    targetLanguage,
+    translatedText: cleanExtractedText(parsed.translatedText || raw),
+  };
+}
+
+function normalizeLanguageCode(value = "") {
+  const raw = String(value || "").toLowerCase().trim();
+  if (!raw) return "";
+  if (raw.startsWith("es") || raw.includes("spanish") || raw.includes("español")) return "es";
+  if (raw.startsWith("en") || raw.includes("english") || raw.includes("inglés") || raw.includes("ingles")) return "en";
+  if (raw.startsWith("fr") || raw.includes("french") || raw.includes("francés") || raw.includes("frances")) return "fr";
+  if (raw.startsWith("pt")) return "pt";
+  if (raw.startsWith("it")) return "it";
+  if (raw.startsWith("de")) return "de";
+  if (raw.startsWith("cs") || raw.includes("czech") || raw.includes("checo")) return "cs";
+  if (raw.startsWith("ja")) return "ja";
+  return raw.slice(0, 8);
 }
 
 function extractOpenAIResponseText(payload = {}) {

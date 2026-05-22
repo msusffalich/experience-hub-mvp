@@ -1,4 +1,4 @@
-const APP_VERSION = "20260522-vibe-logo-369";
+const APP_VERSION = "20260522-vibe-notes-agenda-371";
 const VOICE_ASSISTANT_NAME = "Vibe";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -254,6 +254,14 @@ const i18n = {
       assetManualNotePlaceholder: "Agrega contexto humano, permisos, personas, intención o detalles que la app no pueda inferir.",
       assetAnalysisText: "Texto analítico",
       assetExtractedText: "Texto extraído",
+      assetOriginalLanguage: "Idioma original",
+      assetTranslatedText: "Traducción al idioma del usuario",
+      assetTranslationLanguage: "Idioma de traducción",
+      assetTranslateText: "Traducir texto",
+      assetTranslationPlaceholder: "Traducción editable del texto original extraído.",
+      assetTranslationHelp: "La traducción se usa para reportes, búsqueda y publicaciones en el idioma activo. El archivo original no se modifica.",
+      assetTranslationReady: "Traducción disponible",
+      assetTranslationMissing: "Sin traducción",
       assetExtractionMethod: "Método",
       assetExtractionAutomatic: "Extracción automática",
       assetExtractionGuided: "Revisión guiada",
@@ -647,6 +655,9 @@ const i18n = {
       voiceCommandStatusUnsupported: "La voz no está disponible en este navegador. Puedes usar los ejemplos como prueba manual.",
       voiceCommandStatusExecuted: "Comando ejecutado",
       voiceCommandWakeReady: "Te escucho. Di una acción después de Vibe: abrir captura, actualizar diario, abrir reporte o nueva experiencia.",
+      voiceNoteSaved: "Nota agregada al borrador de captura.",
+      voiceQuickExperienceSaved: "Experiencia rápida creada desde la nota de voz.",
+      voiceAgendaSaved: "Evento creado en Agenda.",
       localKeyReady: "Modo sensible listo: los datos locales y respaldos se cifrarán con esta clave.",
       localKeyMissing: "Modo sensible activo sin clave. Escribe una Clave local para cifrar datos y respaldos.",
       localKeyOff: "Modo sensible desactivado. La Clave local es opcional.",
@@ -1039,6 +1050,14 @@ const i18n = {
       assetManualNotePlaceholder: "Add human context, permissions, people, intent, or details the app cannot infer.",
       assetAnalysisText: "Analytical text",
       assetExtractedText: "Extracted text",
+      assetOriginalLanguage: "Original language",
+      assetTranslatedText: "Translation to user language",
+      assetTranslationLanguage: "Translation language",
+      assetTranslateText: "Translate text",
+      assetTranslationPlaceholder: "Editable translation of the original extracted text.",
+      assetTranslationHelp: "The translation is used for reports, search, and publications in the active language. The original file is not changed.",
+      assetTranslationReady: "Translation available",
+      assetTranslationMissing: "No translation",
       assetExtractionMethod: "Method",
       assetExtractionAutomatic: "Automatic extraction",
       assetExtractionGuided: "Guided review",
@@ -1432,6 +1451,9 @@ const i18n = {
       voiceCommandStatusUnsupported: "Voice is not available in this browser. You can use the examples as a manual test.",
       voiceCommandStatusExecuted: "Command executed",
       voiceCommandWakeReady: "I am listening. Say an action after Vibe: open capture, refresh daily, open report, or new experience.",
+      voiceNoteSaved: "Note added to the capture draft.",
+      voiceQuickExperienceSaved: "Quick experience created from the voice note.",
+      voiceAgendaSaved: "Agenda event created.",
       localKeyReady: "Sensitive mode ready: local data and backups will be encrypted with this key.",
       localKeyMissing: "Sensitive mode is on without a key. Enter a Local key to encrypt data and backups.",
       localKeyOff: "Sensitive mode is off. The Local key is optional.",
@@ -2097,6 +2119,7 @@ const manualContent = {
         "Si la fuente externa del horóscopo no responde o el resumen guardado no trae horóscopo, la app muestra un respaldo local en el idioma activo para los 12 signos.",
         "Cartelera y eventos ofrece accesos rápidos para buscar cine, conciertos, teatro, eventos del día y exposiciones del lugar seleccionado. También permite programar una revisión en Agenda para convertir la lectura del Diario en seguimiento accionable.",
         "Comando de voz permite ejecutar acciones básicas por voz: abrir secciones, actualizar Diario, analizar contexto, abrir reportes, abrir Publicaciones, abrir Manual, cargar ejemplo o crear una nueva experiencia. Puedes iniciar el comando con Hola Vibe o Vibe. Depende de Web Speech del navegador y requiere activar el micrófono desde la app.",
+        "Vibe ya puede registrar contenido simple: toma nota agrega texto al borrador de Captura, guarda esto crea una experiencia rápida y agenda/pon en mi agenda crea un evento local en Agenda con hora interpretada cuando la frase la incluye.",
         "La tarjeta Voz del Diario muestra el estado del comando y ejemplos clicables. Si el micrófono o Web Speech no están disponibles, puedes probar el mismo flujo con esos ejemplos.",
         "Incluye distribución por categoría y señales recientes de las últimas experiencias.",
         "El panel Impacto ambiental y geopolítico analiza una ciudad o lugar con mediciones climáticas de Open-Meteo y noticias geopolíticas de GDELT. Puedes usar la ubicación principal detectada en tus experiencias para acelerar la consulta.",
@@ -2148,6 +2171,7 @@ const manualContent = {
         "La captura ya acepta documentos TXT, Markdown, HTML, RTF, DOCX, PDF, CSV y JSON como adjuntos. TXT, Markdown, HTML, CSV y JSON generan una vista previa textual inicial; PDF, DOCX y RTF se guardan como documentos para extracción posterior.",
         "Archivos comprimidos aceptados: ZIP, RAR y 7Z. Se guardan como activos documentales vinculados a la experiencia o evento, sirven para transporte y descarga, pero no se descomprimen ni se analizan automáticamente en el MVP.",
         "OCR automático: las imágenes se procesan con el backend cuando el proveedor OCR está activo. Los PDF escaneados primero intentan extracción textual; si no hay texto legible, el backend aplica OCR con OpenAI cuando la configuración está activa.",
+        "Cada activo conserva el archivo y el texto original. La lectura se separa como Original | Traducción | Interpretación: el texto extraído queda en el idioma real del activo, la traducción queda en el idioma activo del usuario y la interpretación alimenta reportes y publicaciones.",
         "En Captura, los documentos con vista previa textual muestran una muestra del contenido en la tarjeta del adjunto antes de guardar la experiencia.",
         "La Librería, la Línea de tiempo y las tiras multimedia muestran documentos como fichas documentales, no como imágenes, para evitar vistas rotas cuando el archivo es PDF, DOCX, TXT, Markdown, CSV o JSON.",
         "Las notas de OneNote, Apple Notes, Google Keep, Notion, Evernote u otras apps se manejarán primero por exportación estándar: Markdown, TXT, HTML, PDF, DOCX, CSV o JSON, según permita cada herramienta.",
@@ -2629,6 +2653,7 @@ const manualContent = {
         "If the external horoscope source does not respond or the saved briefing has no horoscope, the app shows a local fallback in the active language for all 12 signs.",
         "Listings and events provides quick links for movie showtimes, concerts, theater, events today, and exhibitions in the selected place. It can also schedule a review in Agenda so the Daily briefing becomes actionable follow-up.",
         "Voice command runs basic actions by voice: open sections, refresh Daily, analyze context, open reports, open Publications, open Manual, load example, or create a new experience. You can start the command with Hi Vibe or Vibe. It depends on the browser's Web Speech support and requires activating the microphone from the app.",
+        "Vibe can now record simple content: take note adds text to the Capture draft, save this creates a quick experience, and schedule/add to my calendar creates a local Agenda event with interpreted time when the phrase includes it.",
         "The Daily Voice card shows command status and clickable examples. If microphone access or Web Speech is unavailable, you can test the same flow with those examples.",
         "Includes category distribution and recent signals from the latest experiences.",
         "Context impact analyzes a city/place with Open-Meteo weather and GDELT geopolitical news. You can use the primary location detected from your experiences to speed up the query.",
@@ -2680,6 +2705,7 @@ const manualContent = {
         "Capture now accepts TXT, Markdown, HTML, RTF, DOCX, PDF, CSV, and JSON documents as attachments. TXT, Markdown, HTML, CSV, and JSON create an initial text preview; PDF, DOCX, and RTF are stored as documents for later extraction.",
         "Accepted compressed files: ZIP, RAR, and 7Z. They are stored as document assets linked to the experience or event, support transport and download, but the MVP does not automatically decompress or analyze them.",
         "Automatic OCR: images are processed by the backend when the OCR provider is active. Scanned PDFs first attempt text extraction; when no readable text is found, the backend applies OpenAI OCR when the configuration is active.",
+        "Every asset preserves the original file and original text. Reading is separated as Original | Translation | Interpretation: extracted text stays in the asset's real language, translation follows the user's active language, and interpretation feeds reports and publications.",
         "In Capture, documents with text preview show a content sample in the attachment card before saving the experience.",
         "Library, Timeline, and media strips show documents as document cards, not as images, to avoid broken previews when the file is PDF, DOCX, TXT, Markdown, CSV, or JSON.",
         "Notes from OneNote, Apple Notes, Google Keep, Notion, Evernote, or other note apps will first be handled through standard export formats: Markdown, TXT, HTML, PDF, DOCX, CSV, or JSON, depending on what each tool allows.",
@@ -6677,8 +6703,8 @@ function applyDailyStaticActionsLanguage() {
 
 function getVoiceCommandExamples() {
   return state.language === "en"
-    ? ["Hi Vibe, open capture", "Vibe, refresh daily", "Vibe, analyze context", "Vibe, open report"]
-    : ["Hola Vibe, abrir captura", "Vibe, actualizar diario", "Vibe, analizar contexto", "Vibe, abrir reporte"];
+    ? ["Hi Vibe, take note: this park is beautiful", "Vibe, schedule dinner today at 8 pm", "Vibe, save this: great service", "Vibe, open report"]
+    : ["Hola Vibe, toma nota: este parque es hermoso", "Vibe, agenda cena hoy a las 8 pm", "Vibe, guarda esto: excelente atención", "Vibe, abrir reporte"];
 }
 
 function renderVoiceCommandExamples() {
@@ -10051,6 +10077,7 @@ function executeVoiceCommand(transcript) {
     notify(t("labels.voiceCommandWakeReady"));
     return;
   }
+  if (handleVoiceContentCommand(command, transcript)) return;
   const viewMatch = [
     ["dashboard", ["panel", "dashboard", "inicio", "home"]],
     ["capture", ["captura", "capture", "nueva experiencia", "new experience"]],
@@ -10096,6 +10123,172 @@ function executeVoiceCommand(transcript) {
   }
   notify(t("labels.voiceCommandUnknown"));
   setVoiceCommandStatus(t("labels.voiceCommandUnknown"), "warning");
+}
+
+function handleVoiceContentCommand(command, originalTranscript = command) {
+  const note = extractVoiceNoteText(command);
+  if (note) {
+    appendVoiceNoteToCapture(note, originalTranscript);
+    return true;
+  }
+  const quickExperienceNote = extractVoiceQuickExperienceText(command);
+  if (quickExperienceNote) {
+    saveVoiceQuickExperience(quickExperienceNote, originalTranscript);
+    return true;
+  }
+  if (isVoiceAgendaCommand(command)) {
+    createVoiceAgendaEvent(command, originalTranscript);
+    return true;
+  }
+  return false;
+}
+
+function extractVoiceNoteText(command = "") {
+  const match = command.match(/(?:toma nota|tomar nota|anota|nota que|take note|note that)\s*(?:que|:)?\s*(.+)$/i);
+  return match?.[1]?.trim() || "";
+}
+
+function extractVoiceQuickExperienceText(command = "") {
+  const match = command.match(/(?:guarda esto|guardar esto|crea experiencia|nueva experiencia|save this|create experience)\s*(?:que|:)?\s*(.+)$/i);
+  return match?.[1]?.trim() || "";
+}
+
+function isVoiceAgendaCommand(command = "") {
+  if (/\b(abrir|open)\s+(agenda|calendar)\b/i.test(command)) return false;
+  return /\b(pon en mi agenda|agrega a mi agenda|agenda|calendario|schedule|calendar)\b/i.test(command);
+}
+
+function appendVoiceNoteToCapture(note, originalTranscript = "") {
+  showView("capture");
+  const notesInput = document.getElementById("notesInput");
+  const prefix = notesInput?.value.trim() ? "\n\n" : "";
+  const label = state.language === "en" ? "Vibe note" : "Nota de Vibe";
+  if (notesInput) notesInput.value = `${notesInput.value}${prefix}${label} (${formatDate(new Date().toISOString())}):\n${note}`;
+  if (!document.getElementById("titleInput")?.value.trim()) {
+    document.getElementById("titleInput").value = buildAudioDraftTitle(note);
+  }
+  renderCaptureWritingCoach();
+  renderCaptureEventPreview();
+  setVoiceCommandStatus(`${t("labels.voiceNoteSaved")}: ${originalTranscript}`, "success");
+  notify(t("labels.voiceNoteSaved"));
+}
+
+async function saveVoiceQuickExperience(note, originalTranscript = "") {
+  const now = new Date();
+  const participantFields = buildPilotParticipantFields(getActivePilotParticipantId(["capture", "dashboard"]));
+  const experience = {
+    id: createId(),
+    title: buildAudioDraftTitle(note),
+    category: inferCategoryFromTranscript(note) || "Social",
+    timestamp: now.toISOString(),
+    duration: inferDurationFromTranscript(note),
+    objective: state.language === "en" ? "Quick voice capture" : "Captura rápida por voz",
+    mood: "",
+    energy: 5,
+    location: "",
+    people: participantFields.pilotParticipantName || "",
+    attachments: [],
+    notes: note,
+    sourceType: "voice_quick_note",
+    createdAt: now.toISOString(),
+    ...participantFields,
+  };
+  state.experiences.unshift(experience);
+  saveExperiences();
+  await saveExperienceToApi(experience);
+  state.lastSavedExperienceId = experience.id;
+  renderAll();
+  showView("library");
+  setVoiceCommandStatus(`${t("labels.voiceQuickExperienceSaved")}: ${originalTranscript}`, "success");
+  notify(t("labels.voiceQuickExperienceSaved"));
+}
+
+function createVoiceAgendaEvent(command, originalTranscript = command) {
+  const start = parseVoiceAgendaStart(command);
+  const end = new Date(start.getTime() + 90 * 60 * 1000);
+  const title = buildVoiceAgendaTitle(command);
+  const participantFields = buildPilotParticipantFields(getActivePilotParticipantId(["agenda", "dashboard"]));
+  const agendaEvent = {
+    id: createId(),
+    title,
+    type: inferAgendaTypeFromVoice(command),
+    description: originalTranscript,
+    startAt: start.toISOString(),
+    endAt: end.toISOString(),
+    location: "",
+    participants: inferVoiceAgendaParticipants(command) || participantFields.pilotParticipantName || "Sin participantes",
+    ...participantFields,
+    priority: "normal",
+    status: "Planificado",
+    reminders: state.language === "en" ? "30 min before" : "30 min antes",
+    sourceType: "voice_command",
+    createdAt: new Date().toISOString(),
+  };
+  state.agendaEvents.unshift(agendaEvent);
+  state.agendaFilters.date = formatLocalDateKey(start);
+  state.agendaFilters.range = "day";
+  state.agendaFilters.pilotParticipantId = agendaEvent.pilotParticipantId || "all";
+  saveAgendaEvents();
+  renderAgenda();
+  showView("agenda");
+  const message = `${t("labels.voiceAgendaSaved")}: ${title} · ${formatDate(agendaEvent.startAt)}`;
+  document.getElementById("agendaFormStatus").textContent = message;
+  setVoiceCommandStatus(message, "success");
+  notify(message);
+}
+
+function parseVoiceAgendaStart(command = "") {
+  const now = new Date();
+  const lower = String(command || "").toLowerCase();
+  const base = new Date(now);
+  if (/\b(mañana|tomorrow)\b/.test(lower)) base.setDate(base.getDate() + 1);
+  const explicitDate = lower.match(/\b(\d{1,2})[\/-](\d{1,2})(?:[\/-](\d{2,4}))?\b/);
+  if (explicitDate) {
+    const day = Number(explicitDate[1]);
+    const month = Number(explicitDate[2]) - 1;
+    const year = explicitDate[3] ? Number(explicitDate[3].length === 2 ? `20${explicitDate[3]}` : explicitDate[3]) : base.getFullYear();
+    base.setFullYear(year, month, day);
+  }
+  const time = lower.match(/\b(?:a las|at)?\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm|a m|p m|de la mañana|de la tarde|de la noche)?\b/);
+  if (time) {
+    let hour = Number(time[1]);
+    const minute = Number(time[2] || 0);
+    const marker = String(time[3] || "").replace(/\s/g, "");
+    if ((marker === "pm" || marker === "pm" || marker.includes("tarde") || marker.includes("noche")) && hour < 12) hour += 12;
+    if ((marker === "am" || marker.includes("mañana")) && hour === 12) hour = 0;
+    base.setHours(hour, minute, 0, 0);
+  } else {
+    base.setHours(now.getHours() + 1, 0, 0, 0);
+  }
+  return base;
+}
+
+function buildVoiceAgendaTitle(command = "") {
+  const cleaned = String(command || "")
+    .replace(/\b(pon en mi agenda|agrega a mi agenda|agenda|calendario|schedule|calendar)\b/gi, "")
+    .replace(/\b(que|tengo|tendre|tendré|hoy|mañana|tomorrow|today|at|a las|pm|am|de la tarde|de la noche|de la mañana)\b/gi, "")
+    .replace(/\b\d{1,2}(?::\d{2})?\b/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  return buildAudioDraftTitle(cleaned || (state.language === "en" ? "Voice agenda event" : "Evento de voz"));
+}
+
+function inferAgendaTypeFromVoice(command = "") {
+  const lower = String(command || "").toLowerCase();
+  if (/(cena|almuerzo|familia|esposa|esposo|personal|dinner|lunch|family|wife|husband)/.test(lower)) return "Personal";
+  if (/(reunion|reunión|trabajo|cliente|meeting|work|client)/.test(lower)) return "Laboral";
+  if (/(doctor|medic|médic|salud|health)/.test(lower)) return "Médica";
+  if (/(viaje|vuelo|hotel|travel|flight)/.test(lower)) return "Viajes";
+  return "Personal";
+}
+
+function inferVoiceAgendaParticipants(command = "") {
+  const lower = String(command || "").toLowerCase();
+  if (lower.includes("esposa")) return "Esposa";
+  if (lower.includes("esposo")) return "Esposo";
+  if (lower.includes("familia")) return "Familia";
+  const withMatch = command.match(/\b(?:con|with)\s+(.+?)(?:\s+(?:hoy|mañana|tomorrow|today|a las|at)\b|$)/i);
+  return withMatch?.[1]?.trim() || "";
 }
 
 function normalizeVoiceCommand(value) {
@@ -10836,6 +11029,9 @@ function collectMultimodalAssets() {
       const manualNote = Object.hasOwn(manual, "note") ? manual.note : attachment.manualNote || "";
       const analysisText = Object.hasOwn(manual, "analysisText") ? manual.analysisText : attachment.analysisText || "";
       const extractedText = Object.hasOwn(manual, "extractedText") ? manual.extractedText : attachment.extractedText || "";
+      const detectedLanguage = Object.hasOwn(manual, "detectedLanguage") ? manual.detectedLanguage : attachment.detectedLanguage || attachment.language || "";
+      const translatedText = Object.hasOwn(manual, "translatedText") ? manual.translatedText : attachment.translatedText || "";
+      const translationLanguage = Object.hasOwn(manual, "translationLanguage") ? manual.translationLanguage : attachment.translationLanguage || "";
       const extractionMethod = Object.hasOwn(manual, "extractionMethod") ? manual.extractionMethod : attachment.extractionMethod || "";
       const extractionStatus = Object.hasOwn(manual, "extractionStatus") ? manual.extractionStatus : attachment.extractionStatus || "";
       const signalMetadata = attachment.metadata || {};
@@ -10858,7 +11054,10 @@ function collectMultimodalAssets() {
         location: experience.location || "",
         people: experience.people || "",
         notes: experience.notes || "",
-        language: attachment.language || state.language,
+        language: detectedLanguage || attachment.language || state.language,
+        detectedLanguage,
+        translatedText,
+        translationLanguage,
         device: sourceDevice || (attachment.storage === "supabase" ? "Supabase Storage" : "Navegador local"),
         sourceType,
         capturedAt: attachment.capturedAt || signalMetadata.capturedAt || attachment.createdAt || experience.timestamp || "",
@@ -11595,7 +11794,7 @@ function exportAssetProcessingChecklistMarkdown() {
 }
 
 function exportAssetMetadataTemplateCsv() {
-  const headers = ["assetId", "analyticalText", "manualNote", "manualTags", "clearMetadata"];
+  const headers = ["assetId", "analyticalText", "extractedText", "detectedLanguage", "translatedText", "translationLanguage", "manualNote", "manualTags", "clearMetadata"];
   const example =
     state.language === "en"
       ? {
@@ -11623,6 +11822,9 @@ function exportAssetEditableMetadataCsv() {
     assetId: asset.assetKey,
     analyticalText: asset.analysisText || "",
     extractedText: asset.extractedText || "",
+    detectedLanguage: asset.detectedLanguage || asset.language || "",
+    translatedText: asset.translatedText || "",
+    translationLanguage: asset.translationLanguage || state.language,
     extractionMethod: asset.extractionMethod || "",
     extractionStatus: asset.extractionStatus || "",
     manualNote: asset.manualNote || "",
@@ -11633,7 +11835,7 @@ function exportAssetEditableMetadataCsv() {
     experienceTitle: asset.experienceTitle || "",
     processingStatus: buildAssetProcessingStatus(asset).label,
   }));
-  const headers = ["assetId", "analyticalText", "extractedText", "extractionMethod", "extractionStatus", "manualNote", "manualTags", "clearMetadata", "name", "kind", "experienceTitle", "processingStatus"];
+  const headers = ["assetId", "analyticalText", "extractedText", "detectedLanguage", "translatedText", "translationLanguage", "extractionMethod", "extractionStatus", "manualNote", "manualTags", "clearMetadata", "name", "kind", "experienceTitle", "processingStatus"];
   const csv = [headers.join(","), ...rows.map((row) => headers.map((header) => csvCell(row[header])).join(","))].join("\n");
   downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), "metadatos-activos-editable.csv");
   markAssetWorkflowAudit("editableCsvExportedAt", { count: rows.length, format: "csv" });
@@ -11749,10 +11951,13 @@ async function importAssetMetadataFromFile(event) {
       const note = String(row.manualNote || row.note || "").trim();
       const analysisText = String(row.analyticalText || row.analysisText || "").trim();
       const extractedText = String(row.extractedText || "").trim();
+      const detectedLanguage = normalizeAssetLanguageCode(row.detectedLanguage || row.originalLanguage || row.language || "");
+      const translatedText = String(row.translatedText || row.translation || "").trim();
+      const translationLanguage = normalizeAssetLanguageCode(row.translationLanguage || state.language);
       const extractionMethod = String(row.extractionMethod || "").trim();
       const extractionStatus = String(row.extractionStatus || "").trim();
       const shouldClear = isTruthyImportFlag(row.clearMetadata || row.clear || row.deleteMetadata);
-      if (!tags.length && !note && !analysisText && !extractedText && !extractionMethod && !extractionStatus) {
+      if (!tags.length && !note && !analysisText && !extractedText && !detectedLanguage && !translatedText && !extractionMethod && !extractionStatus) {
         if (shouldClear) {
           delete state.assetMetadata[key];
           cleared += 1;
@@ -11761,7 +11966,7 @@ async function importAssetMetadataFromFile(event) {
           ignoredEmpty += 1;
         }
       } else {
-        state.assetMetadata[key] = { tags, note, analysisText, extractedText, extractionMethod, extractionStatus, updatedAt: new Date().toISOString() };
+        state.assetMetadata[key] = { tags, note, analysisText, extractedText, detectedLanguage, translatedText, translationLanguage, extractionMethod, extractionStatus, updatedAt: new Date().toISOString() };
         updated += 1;
       }
     });
@@ -11845,6 +12050,9 @@ function renderAssetCard(asset) {
   const manualTagsValue = (asset.manualTags || []).join(", ");
   const hasAnalysisText = Boolean(String(asset.analysisText || "").trim());
   const extractedText = String(asset.extractedText || "").trim();
+  const translatedText = String(asset.translatedText || "").trim();
+  const detectedLanguage = normalizeAssetLanguageCode(asset.detectedLanguage || asset.language || "");
+  const translationLanguage = normalizeAssetLanguageCode(asset.translationLanguage || state.language);
   const extractionLabel = asset.extractionStatus === "automatic"
     ? t("labels.assetExtractionAutomatic")
     : asset.extractionStatus
@@ -11860,6 +12068,7 @@ function renderAssetCard(asset) {
           <span class="pill ${asset.isDemo ? "pill-review" : "pill-approved"}">${escapeHtml(getAssetProvenanceLabel(asset))}</span>
           <span class="pill ${storageStatus.needsSync ? "pill-review" : "pill-approved"}">${escapeHtml(storageStatus.label)}</span>
           <span class="pill ${hasAnalysisText ? "pill-approved" : "pill-review"}">${escapeHtml(hasAnalysisText ? t("labels.assetAnalysisWithText") : t("labels.assetAnalysisWithoutText"))}</span>
+          <span class="pill ${translatedText ? "pill-approved" : "pill-review"}">${escapeHtml(translatedText ? t("labels.assetTranslationReady") : t("labels.assetTranslationMissing"))}</span>
           ${asset.analysisSuggested ? `<span class="pill pill-review">${escapeHtml(t("labels.assetSuggestedAnalysisBadge"))}</span>` : ""}
           <span class="pill ${readiness.ready ? "pill-approved" : "pill-review"}">${escapeHtml(readiness.label)}</span>
           <span class="pill ${processing.ready ? "pill-approved" : "pill-review"}">${escapeHtml(processing.label)}</span>
@@ -11887,7 +12096,17 @@ function renderAssetCard(asset) {
           extractedText
             ? `<section class="asset-extracted-text-panel">
                 <strong>${escapeHtml(t("labels.assetExtractedText"))}</strong>
+                <small>${escapeHtml(t("labels.assetOriginalLanguage"))}: ${escapeHtml((detectedLanguage || "-").toUpperCase())}</small>
                 <pre>${escapeHtml(extractedText.slice(0, 900))}</pre>
+              </section>`
+            : ""
+        }
+        ${
+          translatedText
+            ? `<section class="asset-extracted-text-panel asset-translation-panel">
+                <strong>${escapeHtml(t("labels.assetTranslatedText"))}</strong>
+                <small>${escapeHtml(t("labels.assetTranslationLanguage"))}: ${escapeHtml((translationLanguage || "-").toUpperCase())}</small>
+                <pre>${escapeHtml(translatedText.slice(0, 900))}</pre>
               </section>`
             : ""
         }
@@ -11923,8 +12142,18 @@ function renderAssetCard(asset) {
             <textarea data-asset-metadata-field="analysisText" rows="4" placeholder="${escapeHtml(t("labels.assetAnalysisTextPlaceholder"))}">${escapeHtml(asset.analysisText || "")}</textarea>
             <small>${escapeHtml(t("labels.assetAnalysisTextHelp"))}</small>
           </label>
+          <label>
+            <span>${escapeHtml(t("labels.assetOriginalLanguage"))}</span>
+            <input type="text" data-asset-metadata-field="detectedLanguage" value="${escapeHtml(detectedLanguage || "")}" placeholder="es, en, fr..." />
+          </label>
+          <label>
+            <span>${escapeHtml(t("labels.assetTranslatedText"))}</span>
+            <textarea data-asset-metadata-field="translatedText" rows="4" placeholder="${escapeHtml(t("labels.assetTranslationPlaceholder"))}">${escapeHtml(translatedText)}</textarea>
+            <small>${escapeHtml(t("labels.assetTranslationHelp"))}</small>
+          </label>
           <div class="asset-metadata-actions">
             <button class="primary-button" type="button" data-asset-process="${escapeHtml(asset.assetKey)}">${escapeHtml(state.language === "en" ? "Process now" : "Procesar ahora")}</button>
+            <button class="ghost-button" type="button" data-asset-translate="${escapeHtml(asset.assetKey)}">${escapeHtml(t("labels.assetTranslateText"))}</button>
             <button class="ghost-button" type="button" data-asset-suggest-analysis="${escapeHtml(asset.assetKey)}">${escapeHtml(t("labels.assetSuggestAnalysisText"))}</button>
             <button class="ghost-button" type="submit">${state.language === "en" ? "Save metadata" : "Guardar metadatos"}</button>
           </div>
@@ -11934,7 +12163,7 @@ function renderAssetCard(asset) {
           <div><dt>${t("labels.assetLinkedExperience")}</dt><dd>${escapeHtml(asset.experienceTitle)}</dd></div>
           <div><dt>${escapeHtml(state.language === "en" ? "Linked event" : "Evento vinculado")}</dt><dd>${escapeHtml(asset.eventTitle || (state.language === "en" ? "Whole experience" : "Toda la experiencia"))}</dd></div>
           <div><dt>${t("labels.assetStorage")}</dt><dd>${escapeHtml(asset.storageLabel)}</dd></div>
-          <div><dt>${t("labels.assetLanguage")}</dt><dd>${escapeHtml(String(asset.language || "-").toUpperCase())}</dd></div>
+          <div><dt>${t("labels.assetLanguage")}</dt><dd>${escapeHtml(String(detectedLanguage || asset.language || "-").toUpperCase())}</dd></div>
           <div><dt>${t("labels.assetDevice")}</dt><dd>${escapeHtml(asset.device)}</dd></div>
           <div><dt>${escapeHtml(state.language === "en" ? "Source type" : "Tipo de origen")}</dt><dd>${escapeHtml(asset.sourceType || "-")}</dd></div>
           <div><dt>${escapeHtml(state.language === "en" ? "Captured" : "Capturado")}</dt><dd>${escapeHtml(asset.capturedAt ? formatDate(asset.capturedAt) : "-")}</dd></div>
@@ -11961,6 +12190,11 @@ async function handleAssetLibraryClick(event) {
     state.assetFilters.processing = "pending";
     renderAssetLibrary();
     await processVisibleAssetBacklog();
+    return;
+  }
+  const translateButton = event.target.closest("[data-asset-translate]");
+  if (translateButton) {
+    await translateAssetNow(translateButton.dataset.assetTranslate);
     return;
   }
   const assetTypeFilterButton = event.target.closest("[data-asset-type-filter]");
@@ -12061,11 +12295,16 @@ async function processAssetNow(key, options = {}) {
   const tags = Array.isArray(existing.tags) ? existing.tags : Array.isArray(asset.manualTags) ? asset.manualTags : [];
   const note = Object.hasOwn(existing, "note") ? existing.note : asset.manualNote || "";
   const result = await buildProcessedAssetAnalysis(asset, { tags, note });
+  const detectedLanguage = result.detectedLanguage || detectAssetTextLanguage(result.extractedText || "");
+  const translatedText = result.translatedText || (result.extractedText ? await translateExtractedAssetText(result.extractedText, detectedLanguage, state.language) : "");
   state.assetMetadata[key] = {
     tags,
     note,
-    analysisText: result.analysisText,
+    analysisText: result.analysisText || buildExtractedTextAssetAnalysis(asset, translatedText || result.extractedText || "", { tags, note }),
     extractedText: result.extractedText || "",
+    detectedLanguage,
+    translatedText,
+    translationLanguage: result.translationLanguage || state.language,
     extractionMethod: result.method,
     extractionStatus: result.status,
     updatedAt: new Date().toISOString(),
@@ -12206,6 +12445,111 @@ async function buildProcessedAssetAnalysis(asset, manual = {}) {
     extractedText: "",
     analysisText: buildGuidedProcessingAnalysis(asset, manual),
   };
+}
+
+async function translateExtractedAssetText(text, sourceLanguage, targetLanguage) {
+  const sourceText = String(text || "").trim();
+  if (!sourceText) return "";
+  const normalizedSource = normalizeAssetLanguageCode(sourceLanguage || detectAssetTextLanguage(sourceText));
+  const normalizedTarget = normalizeAssetLanguageCode(targetLanguage || state.language || "es");
+  if (normalizedSource && normalizedSource === normalizedTarget) return sourceText;
+  try {
+    const payload = await apiRequest("/translate-text", {
+      method: "POST",
+      body: JSON.stringify({
+        text: sourceText,
+        sourceLanguage: normalizedSource,
+        targetLanguage: normalizedTarget,
+        purpose: "asset-processing",
+      }),
+    });
+    return String(payload.translatedText || "").trim();
+  } catch {
+    return buildLocalTranslationPlaceholder(sourceText, normalizedSource, normalizedTarget);
+  }
+}
+
+async function translateAssetNow(key, options = {}) {
+  const asset = collectMultimodalAssets().find((item) => item.assetKey === key);
+  if (!asset) return false;
+  const existing = state.assetMetadata[key] || {};
+  const sourceText = String(existing.extractedText || asset.extractedText || asset.previewText || asset.analysisText || "").trim();
+  if (!sourceText) {
+    if (!options.silent) notify(state.language === "en" ? "No extracted text available to translate." : "No hay texto extraído para traducir.", "warn");
+    return false;
+  }
+  const detectedLanguage = String(existing.detectedLanguage || asset.detectedLanguage || detectAssetTextLanguage(sourceText)).trim();
+  const targetLanguage = state.language === "en" ? "en" : "es";
+  let translatedText = "";
+  try {
+    const payload = await apiRequest("/translate-text", {
+      method: "POST",
+      body: JSON.stringify({
+        text: sourceText,
+        sourceLanguage: detectedLanguage,
+        targetLanguage,
+        purpose: "asset-reporting",
+      }),
+    });
+    translatedText = String(payload.translatedText || "").trim();
+  } catch {
+    translatedText = buildLocalTranslationPlaceholder(sourceText, detectedLanguage, targetLanguage);
+  }
+  state.assetMetadata[key] = {
+    ...existing,
+    tags: Array.isArray(existing.tags) ? existing.tags : asset.manualTags || [],
+    note: Object.hasOwn(existing, "note") ? existing.note : asset.manualNote || "",
+    analysisText: existing.analysisText || asset.analysisText || buildExtractedTextAssetAnalysis(asset, translatedText || sourceText, existing),
+    extractedText: sourceText,
+    detectedLanguage,
+    translatedText,
+    translationLanguage: targetLanguage,
+    updatedAt: new Date().toISOString(),
+    translatedAt: new Date().toISOString(),
+  };
+  saveAssetMetadata();
+  markAssetWorkflowAudit("assetTranslatedAt", { assetId: key, sourceLanguage: detectedLanguage, targetLanguage });
+  if (!options.silent) {
+    renderAssetLibrary();
+    notify(state.language === "en" ? `Asset translated: ${asset.name || key}.` : `Activo traducido: ${asset.name || key}.`);
+  }
+  return true;
+}
+
+function normalizeAssetLanguageCode(value = "") {
+  const raw = String(value || "").toLowerCase().trim();
+  if (!raw) return "";
+  if (raw.startsWith("es") || raw.includes("spanish") || raw.includes("español")) return "es";
+  if (raw.startsWith("en") || raw.includes("english") || raw.includes("inglés") || raw.includes("ingles")) return "en";
+  if (raw.startsWith("fr") || raw.includes("french") || raw.includes("francés") || raw.includes("frances")) return "fr";
+  if (raw.startsWith("pt") || raw.includes("portuguese") || raw.includes("portugués") || raw.includes("portugues")) return "pt";
+  if (raw.startsWith("it") || raw.includes("italian") || raw.includes("italiano")) return "it";
+  if (raw.startsWith("de") || raw.includes("german") || raw.includes("alemán") || raw.includes("aleman")) return "de";
+  if (raw.startsWith("cs") || raw.includes("czech") || raw.includes("checo")) return "cs";
+  if (raw.startsWith("ja") || raw.includes("japanese") || raw.includes("japonés") || raw.includes("japones")) return "ja";
+  return raw.slice(0, 8);
+}
+
+function detectAssetTextLanguage(text = "") {
+  const value = String(text || "").toLowerCase();
+  if (!value.trim()) return "";
+  const spanishHits = [" el ", " la ", " los ", " las ", " una ", " para ", " que ", " con ", " menú", " experiencia"];
+  const englishHits = [" the ", " and ", " with ", " menu", " experience", " for ", " from "];
+  const frenchHits = [" le ", " la ", " les ", " avec ", " menu", " pour ", " dans "];
+  const spanishScore = spanishHits.filter((token) => value.includes(token)).length;
+  const englishScore = englishHits.filter((token) => value.includes(token)).length;
+  const frenchScore = frenchHits.filter((token) => value.includes(token)).length;
+  if (spanishScore >= englishScore && spanishScore >= frenchScore && spanishScore > 0) return "es";
+  if (englishScore >= spanishScore && englishScore >= frenchScore && englishScore > 0) return "en";
+  if (frenchScore > 0) return "fr";
+  return state.language || "es";
+}
+
+function buildLocalTranslationPlaceholder(text, sourceLanguage, targetLanguage) {
+  if (normalizeAssetLanguageCode(sourceLanguage) === normalizeAssetLanguageCode(targetLanguage)) return text;
+  return state.language === "en"
+    ? `[Translation pending from ${(sourceLanguage || "original").toUpperCase()}]\n${text}`
+    : `[Traducción pendiente desde ${(sourceLanguage || "original").toUpperCase()}]\n${text}`;
 }
 
 function isTranscriptionCandidateAsset(asset = {}) {
@@ -12489,10 +12833,21 @@ function handleAssetMetadataSubmit(event) {
   const tags = splitListField(form.querySelector('[data-asset-metadata-field="tags"]')?.value || "");
   const note = (form.querySelector('[data-asset-metadata-field="note"]')?.value || "").trim();
   const analysisText = (form.querySelector('[data-asset-metadata-field="analysisText"]')?.value || "").trim();
-  if (!tags.length && !note && !analysisText) {
+  const detectedLanguage = normalizeAssetLanguageCode(form.querySelector('[data-asset-metadata-field="detectedLanguage"]')?.value || "");
+  const translatedText = (form.querySelector('[data-asset-metadata-field="translatedText"]')?.value || "").trim();
+  if (!tags.length && !note && !analysisText && !detectedLanguage && !translatedText) {
     delete state.assetMetadata[key];
   } else {
-    state.assetMetadata[key] = { tags, note, analysisText, updatedAt: new Date().toISOString() };
+    state.assetMetadata[key] = {
+      ...(state.assetMetadata[key] || {}),
+      tags,
+      note,
+      analysisText,
+      detectedLanguage,
+      translatedText,
+      translationLanguage: state.language,
+      updatedAt: new Date().toISOString(),
+    };
   }
   saveAssetMetadata();
   markAssetWorkflowAudit("metadataSavedAt", { assetId: key });
@@ -14155,12 +14510,16 @@ function buildReportMultimodalEvidence(experiences) {
       manualTags: asset.manualTags || [],
       manualNote: asset.manualNote || "",
       analyticalText: asset.analysisText || "",
+      originalText: asset.extractedText || "",
+      translatedText: asset.translatedText || "",
+      detectedLanguage: asset.detectedLanguage || asset.language || "",
+      translationLanguage: asset.translationLanguage || state.language,
       source: asset.storageLabel,
       eventId: asset.eventId || asset.metadata?.linkedEventId || "",
       eventTitle: asset.eventTitle || asset.metadata?.linkedEventTitle || "",
       eventOrder: Number(asset.eventOrder || asset.metadata?.linkedEventOrder || 0),
     }))
-    .filter((item) => item.analyticalText || item.manualNote || item.manualTags.length)
+    .filter((item) => item.analyticalText || item.translatedText || item.originalText || item.manualNote || item.manualTags.length)
     .slice(0, 12);
 }
 
@@ -14400,6 +14759,11 @@ function renderReportEvidenceCard(item) {
       ${
         item.analyticalText
           ? `<p><strong>${escapeHtml(t("labels.reportAssetAnalyticalText"))}:</strong> ${escapeHtml(item.analyticalText)}</p>`
+          : ""
+      }
+      ${
+        item.translatedText
+          ? `<p><strong>${escapeHtml(t("labels.assetTranslatedText"))}:</strong> ${escapeHtml(item.translatedText.slice(0, 420))}</p>`
           : ""
       }
       ${item.manualNote ? `<p>${escapeHtml(item.manualNote)}</p>` : ""}
@@ -16059,6 +16423,8 @@ function collectPublicationMedia(experiences) {
       tags: buildAssetTags(asset),
       manualNote: asset.manualNote || "",
       analyticalText: asset.analysisText || "",
+      translatedText: asset.translatedText || "",
+      originalText: asset.extractedText || "",
       included: true,
       needsSync: !asset.url && !asset.dataUrl,
     }))

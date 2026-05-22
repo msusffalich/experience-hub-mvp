@@ -151,9 +151,21 @@ assert(
 assert(
   files.app.includes('const VOICE_ASSISTANT_NAME = "Vibe"')
     && files.app.includes("stripVoiceWakePhrase")
+    && files.app.includes("handleVoiceContentCommand")
+    && files.app.includes("createVoiceAgendaEvent")
+    && files.app.includes("appendVoiceNoteToCapture")
     && files.app.includes("Hola Vibe")
     && files.app.includes("Hi Vibe"),
   "Vibe voice invocation is missing.",
+);
+assert(
+  files.app.includes("assetTranslatedText")
+    && files.app.includes("translateAssetNow")
+    && files.app.includes("translateExtractedAssetText")
+    && files.server.includes("/api/translate-text")
+    && files.server.includes("Translate the following asset text")
+    && files.app.includes("Original | Traducci"),
+  "Asset translation/original interpretation flow is missing.",
 );
 assert(files.server.includes("audioStorage") && files.server.includes("audio_asset_not_synced"), "Supabase self-test does not validate audio assets.");
 assert(/@media \(max-width: 1040px\)[\s\S]*\.capture-layout-clean \{[\s\S]*grid-template-columns: minmax\(0, 1fr\)/.test(files.styles), "Capture is not forced to full width on tablet/mobile layouts.");
