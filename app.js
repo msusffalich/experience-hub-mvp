@@ -1,4 +1,4 @@
-const APP_VERSION = "20260522-asset-complete-test-374";
+const APP_VERSION = "20260522-selftest-visible-375";
 const VOICE_ASSISTANT_NAME = "Vibe";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -1977,6 +1977,7 @@ const manualContent = {
         "Si la cola local queda desfasada después de validar que las experiencias existen en Supabase, el aviso superior permite Limpiar cola local. Esta acción solo borra pendientes del navegador actual; no elimina experiencias ni adjuntos ya guardados.",
         "La prueba completa de multimedia solo se aprueba cuando el mismo adjunto aparece desde otro dispositivo en Librería, Activos multimodales, Reportes y Publicaciones. Si solo se sincroniza la narrativa, el flujo sigue incompleto.",
         "La prueba real de Supabase valida ahora cinco familias de activos: imagen, audio, video, documento de texto y ZIP. Para aprobar, cada uno debe subir a Storage privado, generar URL firmada, quedar vinculado a la experiencia y aparecer en la tabla assets. El ZIP se valida solo como transporte y descarga, no como contenido interpretable.",
+        "Al terminar Probar flujo real, Administración abre y conserva una tabla de familias de activos. Esa tabla muestra si imagen, audio, video, documento y ZIP pasaron Storage, lectura y tabla assets, para evitar depender de un mensaje global poco visible.",
         "El patrón recomendado, tomado del análisis de CLIO, es mantener Supabase como fuente de verdad, usar Storage privado para archivos, URLs firmadas temporales para lectura, registros de auditoría para cada subida y caché local solo como respaldo o cola de reintento.",
         "El servidor ya soporta modo cloud mediante HOST=0.0.0.0 y NODE_ENV=production. Usa .env.production.example como base para desplegar sin depender de localhost.",
         "La guía docs/deploy-publicacion.md define el orden recomendado: GitHub privado, Supabase productivo, variables seguras, hosting Node, prueba desde varios dispositivos y validación privada.",
@@ -2522,6 +2523,7 @@ const manualContent = {
         "If the local queue remains out of sync after confirming the experiences exist in Supabase, the top warning can Clear local queue. This only removes pending items from the current browser; it does not delete saved experiences or attachments.",
         "The complete media test is approved only when the same attachment appears from another device in Library, Multimodal Assets, Reports, and Publications. If only the narrative syncs, the flow is still incomplete.",
         "The real Supabase test now validates five asset families: image, audio, video, text document, and ZIP. To pass, each one must upload to private Storage, generate a signed URL, stay linked to the experience, and appear in the assets table. ZIP is validated only as transport and download, not as interpreted content.",
+        "When Run real test finishes, Admin opens and preserves an asset-family table. That table shows whether image, audio, video, document, and ZIP passed Storage, read-back, and the assets table, so the user does not have to rely on a small global message.",
         "The recommended pattern, based on the CLIO review, is to keep Supabase as the source of truth, use private Storage for files, temporary signed URLs for reading, audit records for every upload, and local cache only as fallback or retry queue.",
         "The server now supports cloud mode through HOST=0.0.0.0 and NODE_ENV=production. Use .env.production.example as the deployment baseline so the app does not depend on localhost.",
         "The docs/deploy-publicacion.md guide defines the recommended order: private GitHub, production Supabase, secure variables, Node hosting, multi-device test, and private validation.",
@@ -3311,7 +3313,7 @@ const state = {
   health: null,
   apiStatus: { ok: false, checkedAt: null, latencyMs: null, message: "", service: "", mode: "local" },
   supabaseDiagnostics: null,
-  supabaseSelfTest: null,
+  supabaseSelfTest: loadSupabaseSelfTest(),
   uploadAttempts: [],
   uploadAttemptsCheckedAt: null,
   pendingAuthReturn: null,
@@ -4002,6 +4004,23 @@ function loadOfflineQueue() {
     return normalizeOfflineQueue(JSON.parse(localStorage.getItem("experience-hub-offline-queue") || "[]"));
   } catch {
     return [];
+  }
+}
+
+function loadSupabaseSelfTest() {
+  try {
+    return JSON.parse(localStorage.getItem("experience-hub-supabase-self-test") || "null");
+  } catch {
+    return null;
+  }
+}
+
+function saveSupabaseSelfTest() {
+  try {
+    if (state.supabaseSelfTest) localStorage.setItem("experience-hub-supabase-self-test", JSON.stringify(state.supabaseSelfTest));
+    else localStorage.removeItem("experience-hub-supabase-self-test");
+  } catch {
+    // Ignore self-test persistence restrictions.
   }
 }
 
@@ -22404,12 +22423,15 @@ async function runSupabaseSelfTest() {
         },
       ],
     };
-    renderSupabaseSelfTest();
+    saveSupabaseSelfTest();
+    renderAdmin();
+    focusSupabaseSelfTestPanel();
     return;
   }
   status.textContent = t("labels.supabaseSelfTestRunning");
   try {
     state.supabaseSelfTest = await apiRequest("/supabase/self-test", { method: "POST" });
+    saveSupabaseSelfTest();
     status.textContent = t("labels.supabaseSelfTestReady");
     await hydrateFromApi();
   } catch (error) {
@@ -22434,10 +22456,20 @@ async function runSupabaseSelfTest() {
         },
       ],
     };
+    saveSupabaseSelfTest();
     status.textContent = needsSession ? t("labels.supabaseDiagnosticsNeedsSession") : "No se pudo ejecutar la prueba real Supabase.";
   }
-  renderSupabaseSelfTest();
   renderAdmin();
+  focusSupabaseSelfTestPanel();
+}
+
+function focusSupabaseSelfTestPanel() {
+  const container = document.getElementById("supabaseSelfTest");
+  if (!container) return;
+  container.closest("details")?.setAttribute("open", "");
+  window.setTimeout(() => {
+    container.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, 80);
 }
 
 async function runSupabaseDiagnostics() {
@@ -22517,6 +22549,7 @@ function renderSupabaseSelfTest() {
   if (!container) return;
   const steps = result?.steps || [];
   const statusText = result ? formatSelfTestSummary(result) : t("labels.supabaseSelfTestEmpty");
+  const showAssetMatrix = Boolean(result);
   container.innerHTML = `
     <div class="supabase-diagnostics-heading">
       <div>
@@ -22525,7 +22558,7 @@ function renderSupabaseSelfTest() {
       </div>
       ${result?.checkedAt ? `<span class="pill">${escapeHtml(formatDate(result.checkedAt))}</span>` : ""}
     </div>
-    ${steps.length ? renderSelfTestAssetMatrix(steps) : ""}
+    ${showAssetMatrix ? renderSelfTestAssetMatrix(steps) : ""}
     ${steps.length ? `<div class="diagnostic-grid">${steps.map((step) => renderDiagnosticCheck(step, "selfTest")).join("")}</div>` : ""}
   `;
 }
