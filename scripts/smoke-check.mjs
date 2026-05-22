@@ -183,7 +183,15 @@ assert(
     && files.app.includes("Original | Traducci"),
   "Asset translation/original interpretation flow is missing.",
 );
-assert(files.server.includes("audioStorage") && files.server.includes("audio_asset_not_synced"), "Supabase self-test does not validate audio assets.");
+assert(
+  files.server.includes("audioStorage")
+    && files.server.includes("videoStorage")
+    && files.server.includes("documentStorage")
+    && files.server.includes("archiveStorage")
+    && files.server.includes("asset_kinds_not_synced"),
+  "Supabase self-test does not validate all core asset families.",
+);
+assert(files.app.includes("function renderSelfTestAssetMatrix") && files.app.includes("Familias de activos probadas"), "Admin does not show the Supabase asset-family test matrix.");
 assert(/@media \(max-width: 1040px\)[\s\S]*\.capture-layout-clean \{[\s\S]*grid-template-columns: minmax\(0, 1fr\)/.test(files.styles), "Capture is not forced to full width on tablet/mobile layouts.");
 assert(/@media \(max-width: 720px\)[\s\S]*\.capture-layout-clean,[\s\S]*\.filters \{[\s\S]*grid-template-columns: 1fr/.test(files.styles), "Capture is not included in the mobile one-column layout.");
 assert(files.index.includes("Activos y multimedia") && files.index.includes("Opciones avanzadas de calendario"), "Assets operations or Agenda advanced tools are not properly grouped.");

@@ -1,4 +1,4 @@
-const APP_VERSION = "20260522-agenda-sync-373";
+const APP_VERSION = "20260522-asset-complete-test-374";
 const VOICE_ASSISTANT_NAME = "Vibe";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -721,7 +721,7 @@ const i18n = {
       supabaseDiagnosticsOpenAuth: "Abrir acceso",
       supabaseDiagnosticsOpenAdmin: "Abrir administración",
       supabaseSelfTestTitle: "Prueba real Supabase",
-      supabaseSelfTestEmpty: "Ejecuta la prueba para validar perfil, Storage, guardado, lectura con adjunto, búsqueda y limpieza.",
+      supabaseSelfTestEmpty: "Ejecuta la prueba para validar perfil, Storage privado, imagen, audio, video, documento, ZIP, guardado, lectura, búsqueda y limpieza.",
       supabaseSelfTestRunning: "Probando flujo real Supabase...",
       supabaseSelfTestReady: "Prueba real completada",
       authSessionIncomplete: "Sesión incompleta",
@@ -1520,7 +1520,7 @@ const i18n = {
       supabaseDiagnosticsOpenAuth: "Open access",
       supabaseDiagnosticsOpenAdmin: "Open Admin",
       supabaseSelfTestTitle: "Supabase real test",
-      supabaseSelfTestEmpty: "Run the test to validate profile, Storage, save, attachment read-back, search, and cleanup.",
+      supabaseSelfTestEmpty: "Run the test to validate profile, private Storage, image, audio, video, document, ZIP, save, read-back, search, and cleanup.",
       supabaseSelfTestRunning: "Testing real Supabase flow...",
       supabaseSelfTestReady: "Real flow test completed",
       authSessionIncomplete: "Incomplete session",
@@ -1976,6 +1976,8 @@ const manualContent = {
         "La cola sin conexión también incluye Limpiar ya guardados. Esta acción lee Supabase, compara los pendientes locales con las experiencias remotas y descarta solo los elementos que ya están cubiertos por la nube.",
         "Si la cola local queda desfasada después de validar que las experiencias existen en Supabase, el aviso superior permite Limpiar cola local. Esta acción solo borra pendientes del navegador actual; no elimina experiencias ni adjuntos ya guardados.",
         "La prueba completa de multimedia solo se aprueba cuando el mismo adjunto aparece desde otro dispositivo en Librería, Activos multimodales, Reportes y Publicaciones. Si solo se sincroniza la narrativa, el flujo sigue incompleto.",
+        "La prueba real de Supabase valida ahora cinco familias de activos: imagen, audio, video, documento de texto y ZIP. Para aprobar, cada uno debe subir a Storage privado, generar URL firmada, quedar vinculado a la experiencia y aparecer en la tabla assets. El ZIP se valida solo como transporte y descarga, no como contenido interpretable.",
+        "El patrón recomendado, tomado del análisis de CLIO, es mantener Supabase como fuente de verdad, usar Storage privado para archivos, URLs firmadas temporales para lectura, registros de auditoría para cada subida y caché local solo como respaldo o cola de reintento.",
         "El servidor ya soporta modo cloud mediante HOST=0.0.0.0 y NODE_ENV=production. Usa .env.production.example como base para desplegar sin depender de localhost.",
         "La guía docs/deploy-publicacion.md define el orden recomendado: GitHub privado, Supabase productivo, variables seguras, hosting Node, prueba desde varios dispositivos y validación privada.",
         "El proyecto queda preparado para Railway con railway.json, healthcheck /api/health, Node >=20 y .gitignore para evitar publicar .env, datos locales, logs o claves.",
@@ -2519,6 +2521,8 @@ const manualContent = {
         "The offline queue also includes Clean saved items. This action reads Supabase, compares local pending items with remote experiences, and discards only items already covered by the cloud.",
         "If the local queue remains out of sync after confirming the experiences exist in Supabase, the top warning can Clear local queue. This only removes pending items from the current browser; it does not delete saved experiences or attachments.",
         "The complete media test is approved only when the same attachment appears from another device in Library, Multimodal Assets, Reports, and Publications. If only the narrative syncs, the flow is still incomplete.",
+        "The real Supabase test now validates five asset families: image, audio, video, text document, and ZIP. To pass, each one must upload to private Storage, generate a signed URL, stay linked to the experience, and appear in the assets table. ZIP is validated only as transport and download, not as interpreted content.",
+        "The recommended pattern, based on the CLIO review, is to keep Supabase as the source of truth, use private Storage for files, temporary signed URLs for reading, audit records for every upload, and local cache only as fallback or retry queue.",
         "The server now supports cloud mode through HOST=0.0.0.0 and NODE_ENV=production. Use .env.production.example as the deployment baseline so the app does not depend on localhost.",
         "The docs/deploy-publicacion.md guide defines the recommended order: private GitHub, production Supabase, secure variables, Node hosting, multi-device test, and private validation.",
         "The project is prepared for Railway with railway.json, healthcheck /api/health, Node >=20, and .gitignore to avoid publishing .env, local data, logs, or keys.",
@@ -22521,7 +22525,80 @@ function renderSupabaseSelfTest() {
       </div>
       ${result?.checkedAt ? `<span class="pill">${escapeHtml(formatDate(result.checkedAt))}</span>` : ""}
     </div>
+    ${steps.length ? renderSelfTestAssetMatrix(steps) : ""}
     ${steps.length ? `<div class="diagnostic-grid">${steps.map((step) => renderDiagnosticCheck(step, "selfTest")).join("")}</div>` : ""}
+  `;
+}
+
+function renderSelfTestAssetMatrix(steps = []) {
+  const findStep = (id) => steps.find((step) => step.id === id);
+  const labels = state.language === "en"
+    ? {
+        title: "Asset families tested",
+        help: "This follows the CLIO-style pattern: private Storage, signed URL, shared asset row, and local cache only as fallback.",
+        ready: "Ready",
+        review: "Review",
+        storage: "Storage",
+        readback: "Read-back",
+        assets: "Assets table",
+        image: "Image",
+        audio: "Audio",
+        video: "Video",
+        document: "Document",
+        archive: "ZIP",
+        archiveNote: "Transport only",
+      }
+    : {
+        title: "Familias de activos probadas",
+        help: "Sigue el patrón tipo CLIO: Storage privado, URL firmada, fila compartida de activo y caché local solo como respaldo.",
+        ready: "Listo",
+        review: "Revisar",
+        storage: "Storage",
+        readback: "Lectura",
+        assets: "Tabla assets",
+        image: "Imagen",
+        audio: "Audio",
+        video: "Video",
+        document: "Documento",
+        archive: "ZIP",
+        archiveNote: "Solo transporte",
+      };
+  const rows = [
+    { key: "image", label: labels.image, storage: "storage" },
+    { key: "audio", label: labels.audio, storage: "audioStorage" },
+    { key: "video", label: labels.video, storage: "videoStorage" },
+    { key: "document", label: labels.document, storage: "documentStorage" },
+    { key: "archive", label: labels.archive, storage: "archiveStorage", note: labels.archiveNote },
+  ].map((row) => {
+    const storageStep = findStep(row.storage);
+    const readStep = findStep("experienceRead");
+    const assetStep = findStep("workspaceAssets");
+    const ready = storageStep?.status === "ok" && readStep?.status === "ok" && assetStep?.status === "ok";
+    return { ...row, storageStep, readStep, assetStep, ready };
+  });
+  return `
+    <section class="self-test-asset-matrix">
+      <div>
+        <h4>${escapeHtml(labels.title)}</h4>
+        <p class="card-meta">${escapeHtml(labels.help)}</p>
+      </div>
+      <div class="asset-family-grid">
+        ${rows
+          .map(
+            (row) => `
+              <article class="${row.ready ? "is-ready" : "is-review"}">
+                <span class="${row.ready ? "status-ok" : "status-warn"}">${escapeHtml(row.ready ? labels.ready : labels.review)}</span>
+                <strong>${escapeHtml(row.label)}</strong>
+                ${row.note ? `<small>${escapeHtml(row.note)}</small>` : ""}
+                <p>${escapeHtml(labels.storage)}: ${escapeHtml(row.storageStep?.status === "ok" ? labels.ready : labels.review)}</p>
+                <p>${escapeHtml(labels.readback)}: ${escapeHtml(row.readStep?.status === "ok" ? labels.ready : labels.review)}</p>
+                <p>${escapeHtml(labels.assets)}: ${escapeHtml(row.assetStep?.status === "ok" ? labels.ready : labels.review)}</p>
+              </article>
+            `,
+          )
+          .join("")}
+      </div>
+    </section>
   `;
 }
 

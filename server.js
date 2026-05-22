@@ -1956,6 +1956,9 @@ async function runSupabaseSelfTest(user) {
   const testParticipantId = `${testId}-participant`;
   let uploadedMedia = null;
   let uploadedAudio = null;
+  let uploadedVideo = null;
+  let uploadedDocument = null;
+  let uploadedArchive = null;
   let dailyTestLocation = null;
 
   try {
@@ -2007,6 +2010,60 @@ async function runSupabaseSelfTest(user) {
       return "Audio temporal subido a Storage y legible mediante URL firmada, igual que en otro dispositivo.";
     });
 
+    await collectSelfTestStep(steps, "videoStorage", "Video multidispositivo", async () => {
+      uploadedVideo = await saveMedia(
+        {
+          id: `${testId}-video`,
+          name: `${testId}.mp4`,
+          type: "video/mp4",
+          size: 28,
+          dataUrl: "data:video/mp4;base64,AAAAHGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDE=",
+          kind: "video",
+        },
+        user,
+      );
+      if (!uploadedVideo?.path || !uploadedVideo?.url) throw new Error("video_upload_missing_path");
+      await assertSignedUrlReachable(uploadedVideo.url);
+      return "Video temporal subido a Storage y disponible mediante URL firmada para otros dispositivos.";
+    });
+
+    await collectSelfTestStep(steps, "documentStorage", "Documento multidispositivo", async () => {
+      uploadedDocument = await saveMedia(
+        {
+          id: `${testId}-document`,
+          name: `${testId}.txt`,
+          type: "text/plain",
+          size: 86,
+          dataUrl: "data:text/plain;base64,UHJ1ZWJhIHRlbXBvcmFsIGRlIGRvY3VtZW50byBtdWx0aWRpc3Bvc2l0aXZvIHBhcmEgVmliZS4=",
+          kind: "document",
+          previewText: "Prueba temporal de documento multidispositivo para Vibe.",
+        },
+        user,
+      );
+      if (!uploadedDocument?.path || !uploadedDocument?.url) throw new Error("document_upload_missing_path");
+      await assertSignedUrlReachable(uploadedDocument.url);
+      return "Documento temporal subido a Storage, con texto legible y URL firmada funcional.";
+    });
+
+    await collectSelfTestStep(steps, "archiveStorage", "ZIP de transporte", async () => {
+      uploadedArchive = await saveMedia(
+        {
+          id: `${testId}-archive`,
+          name: `${testId}.zip`,
+          type: "application/zip",
+          size: 22,
+          dataUrl: "data:application/zip;base64,UEsFBgAAAAAAAAAAAAAAAAAAAAAAAA==",
+          kind: "document",
+          previewable: false,
+          previewText: "ZIP conservado para transporte y descarga; no se interpreta automáticamente.",
+        },
+        user,
+      );
+      if (!uploadedArchive?.path || !uploadedArchive?.url) throw new Error("archive_upload_missing_path");
+      await assertSignedUrlReachable(uploadedArchive.url);
+      return "ZIP temporal subido como activo documental: se conserva y descarga, pero no se interpreta.";
+    });
+
     await collectSelfTestStep(steps, "experienceCreate", "Guardar experiencia", async () => {
       const saved = await upsertExperience(
         {
@@ -2027,7 +2084,7 @@ async function runSupabaseSelfTest(user) {
             { id: `${testId}-event-1`, title: "Inicio", description: "Se crea el registro temporal.", order: 1 },
             { id: `${testId}-event-2`, title: "Validación", description: "Se verifica lectura y sincronización.", order: 2 },
           ],
-          attachments: [uploadedMedia, uploadedAudio].filter(Boolean),
+          attachments: [uploadedMedia, uploadedAudio, uploadedVideo, uploadedDocument, uploadedArchive].filter(Boolean),
           locale: "es",
         },
         user,
@@ -2040,11 +2097,14 @@ async function runSupabaseSelfTest(user) {
       const experiences = await listExperiences(user);
       const saved = experiences.find((experience) => experience.id === testId);
       if (!saved) throw new Error("experience_not_readable");
-      const attachment = Array.isArray(saved.attachments) ? saved.attachments[0] : null;
-      if (!attachment?.path) throw new Error("experience_attachment_missing_path");
-      if (!attachment?.url) throw new Error("experience_attachment_missing_signed_url");
-      await assertSignedUrlReachable(attachment.url);
-      return "Experiencia temporal leída con adjunto, ruta Storage y URL firmada funcional.";
+      const attachments = Array.isArray(saved.attachments) ? saved.attachments : [];
+      const expectedNames = [uploadedMedia, uploadedAudio, uploadedVideo, uploadedDocument, uploadedArchive]
+        .filter(Boolean)
+        .map((item) => item.name);
+      const missing = expectedNames.filter((name) => !attachments.some((attachment) => attachment.name === name && attachment.path && attachment.url));
+      if (missing.length) throw new Error(`experience_attachment_missing_signed_url: ${missing.join(", ")}`);
+      await Promise.all(attachments.filter((attachment) => expectedNames.includes(attachment.name)).map((attachment) => assertSignedUrlReachable(attachment.url)));
+      return `Experiencia temporal leída con ${expectedNames.length} adjuntos, rutas Storage y URLs firmadas funcionales.`;
     });
 
     await collectSelfTestStep(steps, "workspaceEvents", "Eventos internos", async () => {
@@ -2072,15 +2132,24 @@ async function runSupabaseSelfTest(user) {
       const rows = await supabaseRest("assets", {
         searchParams: {
           experience_id: `eq.${testId}`,
-          limit: "5",
+          limit: "10",
         },
         accessToken: user.accessToken,
       });
       if (!rows.length) throw new Error("assets_not_synced");
       if (!rows[0].storage_path) throw new Error("asset_storage_path_missing");
-      const audioRow = rows.find((row) => row.kind === "audio" || String(row.mime_type || "").startsWith("audio/"));
-      if (!audioRow) throw new Error("audio_asset_not_synced");
-      return `${rows.length} activos multimodales sincronizados en assets, incluido audio con ruta Storage.`;
+      const requiredKinds = {
+        image: (row) => row.kind === "image" || String(row.mime_type || "").startsWith("image/"),
+        audio: (row) => row.kind === "audio" || String(row.mime_type || "").startsWith("audio/"),
+        video: (row) => row.kind === "video" || String(row.mime_type || "").startsWith("video/"),
+        document: (row) => row.kind === "document" || String(row.mime_type || "").startsWith("text/"),
+        archive: (row) => String(row.mime_type || "").includes("zip") || String(row.name || "").toLowerCase().endsWith(".zip"),
+      };
+      const missingKinds = Object.entries(requiredKinds)
+        .filter(([, predicate]) => !rows.some(predicate))
+        .map(([kind]) => kind);
+      if (missingKinds.length) throw new Error(`asset_kinds_not_synced: ${missingKinds.join(", ")}`);
+      return `${rows.length} activos sincronizados en assets: imagen, audio, video, documento y ZIP de transporte.`;
     });
 
     await collectSelfTestStep(steps, "semantic", "Consulta semántica", async () => {
@@ -2133,6 +2202,24 @@ async function runSupabaseSelfTest(user) {
         return "Audio temporal eliminado de Storage.";
       });
     }
+    if (uploadedVideo?.path) {
+      await collectSelfTestStep(steps, "cleanupVideoStorage", "Limpieza video", async () => {
+        await deleteSupabaseObject(uploadedVideo.path);
+        return "Video temporal eliminado de Storage.";
+      });
+    }
+    if (uploadedDocument?.path) {
+      await collectSelfTestStep(steps, "cleanupDocumentStorage", "Limpieza documento", async () => {
+        await deleteSupabaseObject(uploadedDocument.path);
+        return "Documento temporal eliminado de Storage.";
+      });
+    }
+    if (uploadedArchive?.path) {
+      await collectSelfTestStep(steps, "cleanupArchiveStorage", "Limpieza ZIP", async () => {
+        await deleteSupabaseObject(uploadedArchive.path);
+        return "ZIP temporal eliminado de Storage.";
+      });
+    }
     if (dailyTestLocation) {
       await collectSelfTestStep(steps, "cleanupDailyBriefing", "Limpieza Diario", async () => {
         await deleteStoredDailyBriefing(user, dailyTestLocation, "es");
@@ -2166,7 +2253,9 @@ function summarizeSupabaseSelfTest(steps) {
 
 function selfTestActionFor(id, detail = "") {
   if (id === "profile") return { text: "Ejecuta database/schema.sql y database/auth-rls.sql; luego vuelve a iniciar sesión.", actionType: "openAdmin" };
-  if (id === "storage") return { text: "Revisa que el bucket experience-media exista, sea privado y acepte los formatos soportados, incluido PDF.", actionType: "openAdmin" };
+  if (id === "storage" || id === "audioStorage" || id === "videoStorage" || id === "documentStorage" || id === "archiveStorage") {
+    return { text: "Revisa que el bucket experience-media exista, sea privado y acepte todos los formatos soportados. Si hay invalid_mime_type, ejecuta database/storage-accept-all-supported-media.sql.", actionType: "openAdmin" };
+  }
   if (id === "uploadAttempts") return { text: "Ejecuta database/asset-upload-attempts.sql para habilitar auditoría de adjuntos.", actionType: "openAdmin" };
   if (id === "experienceCreate" || id === "experienceRead") return { text: "Revisa tabla experiences, políticas RLS y que auth.uid() coincida con user_id.", actionType: "openAdmin" };
   if (id === "semantic") return { text: "Ejecuta database/semantic-search.sql; si no está aplicado, la app seguirá con búsqueda local.", actionType: "openAdmin" };

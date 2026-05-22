@@ -9357,6 +9357,54 @@ button.asset-processing-summary-card {
   gap: 10px;
 }
 
+.self-test-asset-matrix {
+  display: grid;
+  gap: 12px;
+  margin: 14px 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.self-test-asset-matrix h4 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.asset-family-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.asset-family-grid article {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.asset-family-grid article.is-review {
+  background: #fffaf0;
+}
+
+.asset-family-grid strong,
+.asset-family-grid small,
+.asset-family-grid p {
+  overflow-wrap: anywhere;
+}
+
+.asset-family-grid p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
 .backlog-card,
 .diagnostic-card {
   display: grid;
@@ -10288,6 +10336,7 @@ button.asset-processing-summary-card {
   .daily-media-links,
   .daily-weather-grid,
   .parallel-backlog-grid,
+  .asset-family-grid,
   .mvp-closure-grid,
   .mvp-closure-heading,
   .diagnostic-grid,
