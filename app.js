@@ -1,4 +1,4 @@
-const APP_VERSION = "20260522-vibe-notes-agenda-371";
+const APP_VERSION = "20260522-vibe-audio-sync-372";
 const VOICE_ASSISTANT_NAME = "Vibe";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -314,6 +314,7 @@ const i18n = {
       audioCaptureGuideTitle: "Captura rápida por audio",
       audioCaptureGuideText: "Para experiencias cortas al paso, habla y deja que la app prepare un borrador. Luego solo confirma los campos antes de guardar.",
       audioCaptureGuideSteps: "Flujo: 1. Grabar. 2. Detener. 3. Revisar el borrador y guardar. El audio queda como evidencia adjunta.",
+      audioCommandDetected: "Comando de Vibe detectado dentro del audio.",
       attachmentInputLabel: "Imágenes, videos, audio o documentos",
       attachmentPreviewAvailable: "Vista previa disponible",
       attachmentDocumentPreview: "Vista previa textual",
@@ -650,6 +651,7 @@ const i18n = {
       voiceCommandUnknown: "No entendí el comando. Prueba: Hola Vibe, abrir captura; Vibe, actualizar diario; abrir reporte o nueva experiencia.",
       voiceCommandReady: "Comandos de voz disponibles",
       voiceCommandHelp: "Puedes decir Hola Vibe o Vibe antes del comando: abrir panel, abrir captura, actualizar diario, analizar contexto, abrir reporte, abrir publicaciones, abrir manual o nueva experiencia.",
+      voiceCommandContinuousHelp: "Vibe queda escuchando mientras esta pantalla esté abierta. Di Hola Vibe o Vibe antes de la acción. Pulsa de nuevo para detener.",
       voiceCommandExamplesTitle: "Ejemplos de comandos",
       voiceCommandStatusReady: "Listo para escuchar o probar un ejemplo.",
       voiceCommandStatusUnsupported: "La voz no está disponible en este navegador. Puedes usar los ejemplos como prueba manual.",
@@ -775,6 +777,7 @@ const i18n = {
       offlineQueueKeptLocal: "Versión local marcada como final para el próximo reintento.",
       offlineQueueNextLogin: "Inicia sesión y pulsa Reintentar ahora.",
       offlineQueueNextApi: "Verifica que el servidor local esté activo y pulsa Reintentar ahora.",
+      offlineQueueAutoRetry: "La app reintentará automáticamente mientras este dispositivo esté abierto y con sesión activa.",
       offlineQueueNextRetry: "Pulsa Reintentar ahora; si falla, revisa Verificar Supabase.",
       demoDataTitle: "Datos de prueba",
       demoDataEmpty: "No hay datos de ejemplo cargados.",
@@ -1110,6 +1113,7 @@ const i18n = {
       audioCaptureGuideTitle: "Quick audio capture",
       audioCaptureGuideText: "For short on-the-go experiences, speak and let the app prepare a draft. Then just confirm the fields before saving.",
       audioCaptureGuideSteps: "Flow: 1. Record. 2. Stop. 3. Review the draft and save. The audio remains attached as evidence.",
+      audioCommandDetected: "Vibe command detected inside the audio.",
       attachmentInputLabel: "Images, videos, audio, or documents",
       attachmentPreviewAvailable: "Preview available",
       attachmentDocumentPreview: "Text preview",
@@ -1446,6 +1450,7 @@ const i18n = {
       voiceCommandUnknown: "I did not understand the command. Try: Hi Vibe, open capture; Vibe, refresh daily; open report; or new experience.",
       voiceCommandReady: "Voice commands available",
       voiceCommandHelp: "You can say Hi Vibe or Vibe before the command: open dashboard, open capture, refresh daily, analyze context, open report, open publications, open manual, or new experience.",
+      voiceCommandContinuousHelp: "Vibe keeps listening while this screen is open. Say Hi Vibe or Vibe before the action. Press again to stop.",
       voiceCommandExamplesTitle: "Command examples",
       voiceCommandStatusReady: "Ready to listen or test an example.",
       voiceCommandStatusUnsupported: "Voice is not available in this browser. You can use the examples as a manual test.",
@@ -1572,6 +1577,7 @@ const i18n = {
       offlineQueueNextLogin: "Sign in and click Retry now.",
       offlineQueueNextApi: "Verify the local server is running and click Retry now.",
       offlineQueueNextRetry: "Click Retry now; if it fails, run Verify Supabase.",
+      offlineQueueAutoRetry: "The app will retry automatically while this device remains open with an active session.",
       demoDataTitle: "Example data",
       demoDataEmpty: "No example data is loaded.",
       demoDataLoaded: "Example data visible",
@@ -1966,6 +1972,7 @@ const manualContent = {
         "El diagnóstico de Supabase incluye Trazabilidad de adjuntos. Si hay fallos recientes, muestra el último archivo afectado, el código de error y la acción recomendada antes de continuar pruebas multidispositivo.",
         "Administración muestra un historial reciente de subidas de adjuntos con estado por archivo: subiendo, subido o fallido. Ese historial se puede actualizar desde el mismo panel para revisar pruebas desde móviles, tablets y desktop.",
         "La cola sin conexión se reconcilia con Supabase al cargar datos remotos. Si una experiencia pendiente ya existe en la nube y sus adjuntos tienen ruta o URL remota, la app elimina ese pendiente local para evitar avisos fantasma.",
+        "Si una experiencia se guardó pero uno o más adjuntos quedaron pendientes, el dispositivo que conserva el archivo local reintenta la subida automáticamente mientras la app esté abierta, tenga conexión y mantenga la sesión activa.",
         "La cola sin conexión también incluye Limpiar ya guardados. Esta acción lee Supabase, compara los pendientes locales con las experiencias remotas y descarta solo los elementos que ya están cubiertos por la nube.",
         "Si la cola local queda desfasada después de validar que las experiencias existen en Supabase, el aviso superior permite Limpiar cola local. Esta acción solo borra pendientes del navegador actual; no elimina experiencias ni adjuntos ya guardados.",
         "La prueba completa de multimedia solo se aprueba cuando el mismo adjunto aparece desde otro dispositivo en Librería, Activos multimodales, Reportes y Publicaciones. Si solo se sincroniza la narrativa, el flujo sigue incompleto.",
@@ -2119,7 +2126,7 @@ const manualContent = {
         "Si la fuente externa del horóscopo no responde o el resumen guardado no trae horóscopo, la app muestra un respaldo local en el idioma activo para los 12 signos.",
         "Cartelera y eventos ofrece accesos rápidos para buscar cine, conciertos, teatro, eventos del día y exposiciones del lugar seleccionado. También permite programar una revisión en Agenda para convertir la lectura del Diario en seguimiento accionable.",
         "Comando de voz permite ejecutar acciones básicas por voz: abrir secciones, actualizar Diario, analizar contexto, abrir reportes, abrir Publicaciones, abrir Manual, cargar ejemplo o crear una nueva experiencia. Puedes iniciar el comando con Hola Vibe o Vibe. Depende de Web Speech del navegador y requiere activar el micrófono desde la app.",
-        "Vibe ya puede registrar contenido simple: toma nota agrega texto al borrador de Captura, guarda esto crea una experiencia rápida y agenda/pon en mi agenda crea un evento local en Agenda con hora interpretada cuando la frase la incluye.",
+        "Vibe ya puede registrar contenido simple: toma nota agrega texto al borrador de Captura, guarda esto crea una experiencia rápida y agenda/pon en mi agenda crea un evento local en Agenda con hora interpretada cuando la frase la incluye. Si esa frase aparece dentro de una grabación de audio, Captura también la detecta y crea el evento sin salir del formulario.",
         "La tarjeta Voz del Diario muestra el estado del comando y ejemplos clicables. Si el micrófono o Web Speech no están disponibles, puedes probar el mismo flujo con esos ejemplos.",
         "Incluye distribución por categoría y señales recientes de las últimas experiencias.",
         "El panel Impacto ambiental y geopolítico analiza una ciudad o lugar con mediciones climáticas de Open-Meteo y noticias geopolíticas de GDELT. Puedes usar la ubicación principal detectada en tus experiencias para acelerar la consulta.",
@@ -2157,7 +2164,7 @@ const manualContent = {
         "Aceptar un formato significa conservarlo, clasificarlo y hacerlo trazable. Previsualizarlo significa que el navegador puede mostrarlo o reproducirlo directamente. OCR, transcripción, conversión de video y extracción avanzada quedan como fases posteriores.",
         "Si el navegador no puede previsualizar un formato específico, la app lo conserva, lo clasifica y permite abrirlo como archivo desde Activos multimodales.",
         "PDF se previsualiza con una vista embebida cuando el navegador lo permite; DOCX, RTF y documentos no nativos se leen por extracción de texto del backend o se descargan como archivo.",
-        "El botón Grabar audio usa el micrófono del navegador. Si el navegador soporta Web Speech, agrega una transcripción experimental a las notas.",
+        "El botón Grabar audio usa el micrófono del navegador. Si el navegador soporta Web Speech, agrega una transcripción experimental a las notas y puede detectar frases de Vibe para notas o Agenda. El botón Comando de voz mantiene a Vibe escuchando mientras la pantalla esté abierta; por seguridad del navegador, no funciona como wake word en segundo plano.",
       ],
     },
     {
@@ -2507,6 +2514,7 @@ const manualContent = {
         "Supabase diagnostics include Attachment traceability. If recent failures exist, it shows the affected file, error code, and recommended action before continuing multi-device tests.",
         "Admin shows a recent attachment upload history with per-file status: uploading, uploaded, or failed. The same panel can refresh the history to review tests from phones, tablets, and desktop.",
         "The offline queue reconciles with Supabase when remote data loads. If a pending experience already exists in the cloud and its attachments have a remote path or URL, the app removes that local pending item to avoid ghost warnings.",
+        "If an experience is saved but one or more attachments remain pending, the device that still has the local file retries the upload automatically while the app is open, connected, and signed in.",
         "The offline queue also includes Clean saved items. This action reads Supabase, compares local pending items with remote experiences, and discards only items already covered by the cloud.",
         "If the local queue remains out of sync after confirming the experiences exist in Supabase, the top warning can Clear local queue. This only removes pending items from the current browser; it does not delete saved experiences or attachments.",
         "The complete media test is approved only when the same attachment appears from another device in Library, Multimodal Assets, Reports, and Publications. If only the narrative syncs, the flow is still incomplete.",
@@ -2653,7 +2661,7 @@ const manualContent = {
         "If the external horoscope source does not respond or the saved briefing has no horoscope, the app shows a local fallback in the active language for all 12 signs.",
         "Listings and events provides quick links for movie showtimes, concerts, theater, events today, and exhibitions in the selected place. It can also schedule a review in Agenda so the Daily briefing becomes actionable follow-up.",
         "Voice command runs basic actions by voice: open sections, refresh Daily, analyze context, open reports, open Publications, open Manual, load example, or create a new experience. You can start the command with Hi Vibe or Vibe. It depends on the browser's Web Speech support and requires activating the microphone from the app.",
-        "Vibe can now record simple content: take note adds text to the Capture draft, save this creates a quick experience, and schedule/add to my calendar creates a local Agenda event with interpreted time when the phrase includes it.",
+        "Vibe can now record simple content: take note adds text to the Capture draft, save this creates a quick experience, and schedule/add to my calendar creates a local Agenda event with interpreted time when the phrase includes it. If that phrase appears inside an audio recording, Capture also detects it and creates the event without leaving the form.",
         "The Daily Voice card shows command status and clickable examples. If microphone access or Web Speech is unavailable, you can test the same flow with those examples.",
         "Includes category distribution and recent signals from the latest experiences.",
         "Context impact analyzes a city/place with Open-Meteo weather and GDELT geopolitical news. You can use the primary location detected from your experiences to speed up the query.",
@@ -2691,7 +2699,7 @@ const manualContent = {
         "Accepting a format means the app stores, classifies, and traces it. Previewing means the browser can display or play it directly. OCR, transcription, video conversion, and advanced extraction remain later phases.",
         "If the browser cannot preview a specific format, the app still stores it, classifies it, and lets you open it as a file from Multimodal Assets.",
         "PDF is previewed with an embedded viewer when the browser supports it; DOCX, RTF, and non-native documents are read through backend text extraction or downloaded as files.",
-        "Record audio uses the browser microphone. If Web Speech is supported, experimental transcription is appended to notes.",
+        "Record audio uses the browser microphone. If Web Speech is supported, experimental transcription is appended to notes and can detect Vibe phrases for notes or Agenda. Voice command keeps Vibe listening while the screen remains open; due to browser security, it does not work as a background wake word.",
       ],
     },
     {
@@ -3311,6 +3319,10 @@ const state = {
   mediaRecorder: null,
   speechRecognition: null,
   voiceRecognition: null,
+  voiceWakeActive: false,
+  attachmentRetryInProgress: false,
+  attachmentRetryTimer: null,
+  processedVoiceTranscriptKeys: new Set(),
   liveTranscript: "",
   embeddingStatus: "",
   ops: { jobs: [], logs: [] },
@@ -3412,6 +3424,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   setupOpsPolling();
   setupDailyBriefingRefresh();
   setupDashboardClock();
+  startAttachmentSyncSupervisor();
+  scheduleAttachmentRetry({ delayMs: 1500 });
 });
 
 function registerServiceWorker() {
@@ -4481,12 +4495,14 @@ async function saveExperienceToApi(experience) {
     const mediaPending = hasPendingRemoteMedia(savedExperience) || hasPendingRemoteMedia(preparedExperience);
     if (mediaPending && (experience.attachments || []).some((attachment) => attachment.dataUrl)) {
       queueOfflineMutation("upsert", experience, "media_pending");
+      scheduleAttachmentRetry({ delayMs: 2500 });
     }
     return { remote: true, queued: mediaPending, experience: readbackExperience, mediaPending, readback: true };
   } catch (error) {
     const reason = error?.status === 401 ? "auth_required" : "api_error";
     if (reason === "api_error" && isApiConnectivityError(error)) state.apiOnline = false;
     queueOfflineMutation("upsert", experience, reason);
+    scheduleAttachmentRetry({ delayMs: 5000 });
     return { remote: false, queued: true, reason };
   }
 }
@@ -4692,6 +4708,33 @@ function hasMatchingRemoteAttachment(localAttachment = {}, remoteAttachments = [
   });
 }
 
+function hasRetryableOfflineMutation() {
+  return (state.offlineQueue || []).some((item) => ["media_pending", "api_error", "api_unavailable"].includes(item.reason));
+}
+
+function scheduleAttachmentRetry(options = {}) {
+  if (!hasRetryableOfflineMutation()) return;
+  if (!state.session?.access_token || !requiresRemotePersistence()) return;
+  const delayMs = Number(options.delayMs || 10000);
+  window.clearTimeout(state.attachmentRetryTimer);
+  state.attachmentRetryTimer = window.setTimeout(async () => {
+    if (state.attachmentRetryInProgress || !hasRetryableOfflineMutation()) return;
+    state.attachmentRetryInProgress = true;
+    try {
+      await syncOfflineQueue({ silent: true, auto: true });
+    } finally {
+      state.attachmentRetryInProgress = false;
+      if (hasRetryableOfflineMutation()) scheduleAttachmentRetry({ delayMs: Math.min(delayMs * 2, 60000) });
+    }
+  }, delayMs);
+}
+
+function startAttachmentSyncSupervisor() {
+  window.setInterval(() => {
+    if (!state.attachmentRetryInProgress && hasRetryableOfflineMutation()) scheduleAttachmentRetry({ delayMs: 1000 });
+  }, 30000);
+}
+
 async function reconcileOfflineQueueFromSupabase(options = {}) {
   if (!state.offlineQueue.length) return 0;
   if (!state.session?.access_token && (state.config?.persistence === "supabase" || state.persistence === "supabase")) {
@@ -4774,6 +4817,7 @@ async function syncOfflineQueue(options = {}) {
   }
   state.offlineQueue = remaining;
   saveOfflineQueue();
+  if (remaining.length) scheduleAttachmentRetry({ delayMs: options.auto ? 30000 : 5000 });
   renderPersistenceGateBanner();
   renderAuthStatus();
   renderOfflineQueuePanel();
@@ -7471,6 +7515,7 @@ async function appendBackendTranscript(attachment) {
     if (result.transcript) {
       applyAudioTranscriptToCapture(result.transcript, { source: "backend" });
       appendTranscriptToNotes("Transcripción del servidor local", result.transcript);
+      processAudioTranscriptCommands(result.transcript);
     }
   } catch {
     // Browser transcription remains the fallback.
@@ -7778,12 +7823,28 @@ function appendLiveTranscriptToNotes() {
   if (!transcript) return;
   applyAudioTranscriptToCapture(transcript, { source: "browser" });
   appendTranscriptToNotes("Transcripción audio", transcript);
+  processAudioTranscriptCommands(transcript);
 }
 
 function appendTranscriptToNotes(label, transcript) {
   const notes = document.getElementById("notesInput");
   const prefix = notes.value.trim() ? "\n\n" : "";
   notes.value = `${notes.value}${prefix}${label}:\n${transcript}`;
+}
+
+function processAudioTranscriptCommands(transcript = "") {
+  const normalized = normalizeVoiceCommand(transcript);
+  if (!normalized.includes("vibe") && !/\b(pon en mi agenda|agrega a mi agenda|agenda|schedule)\b/i.test(normalized)) return false;
+  const key = normalized.slice(0, 240);
+  if (state.processedVoiceTranscriptKeys.has(key)) return false;
+  state.processedVoiceTranscriptKeys.add(key);
+  const command = stripVoiceWakePhrase(normalized);
+  const handled = handleVoiceContentCommand(command, transcript, { source: "audio_transcript" });
+  if (handled) {
+    updateAudioCaptureStatus("addedTranscript", t("labels.audioCommandDetected"));
+    notify(t("labels.audioCommandDetected"));
+  }
+  return handled;
 }
 
 function renderAudioCaptureGuide() {
@@ -8072,7 +8133,7 @@ function renderDashboardAttachmentStatus() {
           ? `${summary.ready}/${summary.total} attachments are available for Library, Assets, Reports, and Publications.`
           : "No attachments have been added yet. When you attach files, this panel will confirm if they are available on other devices.",
         pendingTitle: "Attachments need attention",
-        pendingDetail: `${summary.pending} attachments are pending. The app can repair ${summary.retryable} from this device; ${summary.needsFile} may need the file selected again.`,
+        pendingDetail: `${summary.pending} attachments are pending. The app will automatically retry ${summary.retryable} from this device; ${summary.needsFile} may need the file selected again.`,
         repair: "Repair attachments",
         review: "Review pending files",
         readyMetric: "Ready",
@@ -8086,7 +8147,7 @@ function renderDashboardAttachmentStatus() {
           ? `${summary.ready}/${summary.total} adjuntos están disponibles para Librería, Activos, Reportes y Publicaciones.`
           : "Aún no has agregado adjuntos. Cuando cargues archivos, este panel confirmará si están disponibles en otros dispositivos.",
         pendingTitle: "Hay adjuntos que necesitan atención",
-        pendingDetail: `${summary.pending} adjuntos están pendientes. La app puede reparar ${summary.retryable} desde este dispositivo; ${summary.needsFile} pueden requerir volver a seleccionar el archivo.`,
+        pendingDetail: `${summary.pending} adjuntos están pendientes. La app reintentará automáticamente ${summary.retryable} desde este dispositivo; ${summary.needsFile} pueden requerir volver a seleccionar el archivo.`,
         repair: "Reparar adjuntos",
         review: "Revisar pendientes",
         readyMetric: "Listos",
@@ -10039,30 +10100,43 @@ function startVoiceCommand() {
     return;
   }
   if (state.voiceRecognition) {
+    state.voiceWakeActive = false;
     state.voiceRecognition.stop();
     state.voiceRecognition = null;
+    setVoiceCommandStatus(t("labels.voiceCommandStatusReady"));
     return;
   }
+  state.voiceWakeActive = true;
   const recognition = new SpeechRecognition();
   recognition.lang = state.language === "en" ? "en-US" : "es-ES";
+  recognition.continuous = true;
   recognition.interimResults = false;
   recognition.maxAlternatives = 1;
   state.voiceRecognition = recognition;
   if (button) button.textContent = t("labels.voiceCommandListening");
   if (staticButton) staticButton.textContent = t("labels.voiceCommandListening");
-  setVoiceCommandStatus(t("labels.voiceCommandHelp"), "active");
-  notify(t("labels.voiceCommandHelp"));
+  setVoiceCommandStatus(t("labels.voiceCommandContinuousHelp"), "active");
+  notify(t("labels.voiceCommandContinuousHelp"));
   recognition.onresult = (event) => {
     const transcript = event.results?.[0]?.[0]?.transcript || "";
     notify(`${t("labels.voiceCommandHeard")}: ${transcript}`);
     setVoiceCommandStatus(`${t("labels.voiceCommandHeard")}: ${transcript}`, "success");
     executeVoiceCommand(transcript);
   };
-  recognition.onerror = () => {
+  recognition.onerror = (event) => {
+    if (["not-allowed", "service-not-allowed", "audio-capture"].includes(event?.error)) state.voiceWakeActive = false;
     notify(t("labels.voiceCommandUnknown"));
     setVoiceCommandStatus(t("labels.voiceCommandUnknown"), "warning");
   };
   recognition.onend = () => {
+    if (state.voiceWakeActive) {
+      try {
+        recognition.start();
+        return;
+      } catch {
+        state.voiceWakeActive = false;
+      }
+    }
     state.voiceRecognition = null;
     if (button) button.textContent = t("buttons.voiceCommand");
     if (staticButton) staticButton.textContent = t("labels.dailyStartVoice");
@@ -10125,7 +10199,7 @@ function executeVoiceCommand(transcript) {
   setVoiceCommandStatus(t("labels.voiceCommandUnknown"), "warning");
 }
 
-function handleVoiceContentCommand(command, originalTranscript = command) {
+function handleVoiceContentCommand(command, originalTranscript = command, options = {}) {
   const note = extractVoiceNoteText(command);
   if (note) {
     appendVoiceNoteToCapture(note, originalTranscript);
@@ -10137,7 +10211,7 @@ function handleVoiceContentCommand(command, originalTranscript = command) {
     return true;
   }
   if (isVoiceAgendaCommand(command)) {
-    createVoiceAgendaEvent(command, originalTranscript);
+    createVoiceAgendaEvent(command, originalTranscript, options);
     return true;
   }
   return false;
@@ -10203,7 +10277,7 @@ async function saveVoiceQuickExperience(note, originalTranscript = "") {
   notify(t("labels.voiceQuickExperienceSaved"));
 }
 
-function createVoiceAgendaEvent(command, originalTranscript = command) {
+function createVoiceAgendaEvent(command, originalTranscript = command, options = {}) {
   const start = parseVoiceAgendaStart(command);
   const end = new Date(start.getTime() + 90 * 60 * 1000);
   const title = buildVoiceAgendaTitle(command);
@@ -10230,9 +10304,10 @@ function createVoiceAgendaEvent(command, originalTranscript = command) {
   state.agendaFilters.pilotParticipantId = agendaEvent.pilotParticipantId || "all";
   saveAgendaEvents();
   renderAgenda();
-  showView("agenda");
+  if (!options.source || options.source !== "audio_transcript") showView("agenda");
   const message = `${t("labels.voiceAgendaSaved")}: ${title} · ${formatDate(agendaEvent.startAt)}`;
-  document.getElementById("agendaFormStatus").textContent = message;
+  const agendaStatus = document.getElementById("agendaFormStatus");
+  if (agendaStatus) agendaStatus.textContent = message;
   setVoiceCommandStatus(message, "success");
   notify(message);
 }
@@ -22148,7 +22223,7 @@ function getOfflineQueueGuidance() {
     return t("labels.offlineQueueNextLogin");
   }
   if (!state.apiOnline) return t("labels.offlineQueueNextApi");
-  return t("labels.offlineQueueNextRetry");
+  return `${t("labels.offlineQueueNextRetry")} ${t("labels.offlineQueueAutoRetry")}`;
 }
 
 function renderOfflineQueueItem(item) {

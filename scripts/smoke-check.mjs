@@ -154,9 +154,17 @@ assert(
     && files.app.includes("handleVoiceContentCommand")
     && files.app.includes("createVoiceAgendaEvent")
     && files.app.includes("appendVoiceNoteToCapture")
+    && files.app.includes("processAudioTranscriptCommands")
+    && files.app.includes("voiceCommandContinuousHelp")
     && files.app.includes("Hola Vibe")
     && files.app.includes("Hi Vibe"),
   "Vibe voice invocation is missing.",
+);
+assert(
+  files.app.includes("scheduleAttachmentRetry")
+    && files.app.includes("startAttachmentSyncSupervisor")
+    && files.app.includes("offlineQueueAutoRetry"),
+  "Automatic attachment retry supervisor is missing.",
 );
 assert(
   files.app.includes("assetTranslatedText")
