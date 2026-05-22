@@ -1,10 +1,13 @@
 ﻿import { createServer } from "node:http";
-import { readFile, mkdir, writeFile } from "node:fs/promises";
+import { readFile, mkdir, writeFile, unlink } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { inflateRawSync } from "node:zlib";
 import { randomUUID } from "node:crypto";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+import { tmpdir } from "node:os";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 await loadDotEnv();
@@ -37,6 +40,7 @@ const OPENAI_TRANSCRIPTION_MODEL = process.env.OPENAI_TRANSCRIPTION_MODEL || "gp
 const OCR_PROVIDER = process.env.OCR_PROVIDER || "openai";
 const OPENAI_OCR_MODEL = process.env.OPENAI_OCR_MODEL || "gpt-4o-mini";
 const SIGNAL_METADATA_SCHEMA_VERSION = "clio-inspired-signal-v1";
+const execFileAsync = promisify(execFile);
 
 const mimeTypes = {
   ".html": "text/html; charset=utf-8",
@@ -3359,6 +3363,11 @@ function activeOcrProvider() {
 
 async function buildPdfReport(user, report = null) {
   if (report?.summary && Array.isArray(report.rows)) {
+    const richPdf = await renderReportHtmlToPdf(buildReportPdfHtml(report));
+    if (richPdf) {
+      await appendLog("info", "PDF report generated", { count: report.rows.length, userId: user.id, source: "client-report-html" });
+      return richPdf;
+    }
     const kpiLines = (report.humanKpis || []).flatMap((item) => [
       `${item.label || "KPI"}: ${item.score || 0}/100 ${pdfBar(item.score || 0)}`,
       item.detail || "",
@@ -3432,6 +3441,214 @@ function pdfBar(value, width = 16) {
   const score = Math.max(0, Math.min(100, Number(value) || 0));
   const filled = Math.round((score / 100) * width);
   return `[${"#".repeat(filled)}${"-".repeat(Math.max(0, width - filled))}]`;
+}
+
+function buildReportPdfHtml(report = {}) {
+  const language = report.language === "en" ? "en" : "es";
+  const labels = language === "en"
+    ? {
+        title: "Experience Report",
+        subtitle: "Human Experience Intelligence Platform",
+        generated: "Generated",
+        experiences: "Experiences",
+        hours: "Hours",
+        energy: "Avg. energy",
+        category: "Top category",
+        executive: "Executive Summary",
+        outlook: "Initial Outlook",
+        integrated: "Integrated Reading",
+        kpis: "Human Indexes",
+        categories: "Category Breakdown",
+        routes: "Experience Map Routes",
+        evidence: "Multimodal Evidence",
+        table: "Experience Register",
+        confidence: "Confidence",
+        hypothesis: "Hypothesis",
+        next: "Next action",
+        priority: "Priority",
+        action: "Action",
+      }
+    : {
+        title: "Reporte de Experiencias",
+        subtitle: "Plataforma de Inteligencia de Experiencias Humanas",
+        generated: "Generado",
+        experiences: "Experiencias",
+        hours: "Horas",
+        energy: "Energía media",
+        category: "Categoría dominante",
+        executive: "Resumen ejecutivo",
+        outlook: "Proyección inicial",
+        integrated: "Lectura integrada",
+        kpis: "Índices humanos",
+        categories: "Desglose por categoría",
+        routes: "Rutas del mapa de experiencias",
+        evidence: "Evidencia multimodal",
+        table: "Registro de experiencias",
+        confidence: "Confianza",
+        hypothesis: "Hipótesis",
+        next: "Siguiente acción",
+        priority: "Prioridad",
+        action: "Acción",
+      };
+  const summary = report.summary || {};
+  const rows = Array.isArray(report.rows) ? report.rows : [];
+  const attachmentCount = rows.reduce((sum, row) => sum + Number(row.adjuntos || row.attachments || 0), 0);
+  const predictive = report.predictiveOutlook || {};
+  const integrated = Array.isArray(report.integratedReading) ? report.integratedReading : [];
+  const kpis = Array.isArray(report.humanKpis) ? report.humanKpis : [];
+  const categories = Array.isArray(report.categoryBreakdown) ? report.categoryBreakdown : [];
+  const routes = Array.isArray(report.mapRoutes) ? report.mapRoutes : [];
+  const evidence = Array.isArray(report.multimodalEvidence) ? report.multimodalEvidence : [];
+  const maxMinutes = Math.max(...categories.map((item) => Number(item.minutes || 0)), 1);
+  const heroImage = evidence.find((item) => item.previewUrl)?.previewUrl || "";
+  return `<!doctype html>
+<html lang="${language}">
+<head>
+  <meta charset="utf-8" />
+  <style>
+    @page { size: Letter; margin: 16mm; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, Helvetica, sans-serif; color: #17202a; background: #ffffff; }
+    .cover { min-height: 90vh; display: grid; align-content: center; gap: 24px; padding: 28px; border-radius: 18px; background: linear-gradient(135deg, #10263f, #0d7c66 58%, #f2b84b); color: white; position: relative; overflow: hidden; }
+    .cover:after { content: ""; position: absolute; inset: auto -70px -120px auto; width: 280px; height: 280px; border-radius: 50%; background: rgba(255,255,255,.18); }
+    .cover h1 { margin: 0; max-width: 680px; font-size: 42px; line-height: 1.02; }
+    .cover p { margin: 0; max-width: 620px; font-size: 16px; color: rgba(255,255,255,.86); }
+    .hero-image { width: 220px; height: 140px; object-fit: cover; border-radius: 14px; border: 2px solid rgba(255,255,255,.55); box-shadow: 0 18px 38px rgba(0,0,0,.25); }
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 8px; }
+    .stat { padding: 14px; border-radius: 14px; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.24); }
+    .stat span { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: rgba(255,255,255,.78); }
+    .stat strong { display: block; margin-top: 6px; font-size: 24px; }
+    section { break-inside: avoid; page-break-inside: avoid; margin: 22px 0; }
+    h2 { margin: 0 0 12px; font-size: 22px; color: #10263f; }
+    h3 { margin: 0 0 8px; font-size: 15px; color: #17202a; }
+    p { margin: 4px 0; color: #485869; line-height: 1.45; }
+    .card-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .card, .wide-card { padding: 14px; border: 1px solid #d8e0e8; border-radius: 14px; background: #fbfdff; break-inside: avoid; }
+    .wide-card { background: #f3faf7; border-color: #b8d9ce; }
+    .pill { display: inline-block; padding: 4px 9px; border-radius: 999px; background: #eef4ff; color: #25507a; font-size: 11px; font-weight: 700; }
+    .meter { height: 9px; margin-top: 8px; background: #e6edf4; border-radius: 999px; overflow: hidden; }
+    .meter i { display: block; height: 100%; background: linear-gradient(90deg, #0d7c66, #55b7d7); }
+    .category-row { display: grid; grid-template-columns: 150px 1fr 54px; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid #e7edf3; }
+    .category-row:last-child { border-bottom: 0; }
+    .evidence-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .evidence-image { width: 100%; height: 120px; object-fit: cover; border-radius: 10px; margin-bottom: 8px; }
+    table { width: 100%; border-collapse: collapse; font-size: 10px; }
+    th { text-align: left; background: #10263f; color: white; padding: 7px; }
+    td { border-bottom: 1px solid #e2e8ef; padding: 7px; vertical-align: top; }
+    .footer-note { margin-top: 18px; color: #728092; font-size: 10px; }
+  </style>
+</head>
+<body>
+  <section class="cover">
+    <div>
+      <span class="pill">${escapeHtmlServer(labels.subtitle)}</span>
+      <h1>${escapeHtmlServer(labels.title)}</h1>
+      <p>${escapeHtmlServer(labels.generated)}: ${escapeHtmlServer(formatReportPdfDateTime(report.generatedAt || new Date().toISOString()))}</p>
+    </div>
+    ${heroImage ? `<img class="hero-image" src="${escapeHtmlServer(heroImage)}" alt="" />` : ""}
+    <div class="stats">
+      <article class="stat"><span>${escapeHtmlServer(labels.experiences)}</span><strong>${escapeHtmlServer(summary.totalExperiences ?? rows.length)}</strong></article>
+      <article class="stat"><span>${escapeHtmlServer(labels.hours)}</span><strong>${escapeHtmlServer(summary.capturedHours ?? 0)}</strong></article>
+      <article class="stat"><span>${escapeHtmlServer(labels.energy)}</span><strong>${escapeHtmlServer(summary.averageEnergy ?? 0)}/10</strong></article>
+      <article class="stat"><span>${escapeHtmlServer(labels.category)}</span><strong>${escapeHtmlServer(summary.topCategory || "-")}</strong></article>
+    </div>
+  </section>
+  <section>
+    <h2>${escapeHtmlServer(labels.executive)}</h2>
+    <div class="wide-card">
+      <p>${escapeHtmlServer(buildPdfExecutiveSummary(report, attachmentCount, language))}</p>
+    </div>
+  </section>
+  ${predictive?.title ? `<section><h2>${escapeHtmlServer(labels.outlook)}</h2><div class="wide-card"><span class="pill">${escapeHtmlServer(labels.confidence)} ${escapeHtmlServer(predictive.confidence || 0)}%</span><h3>${escapeHtmlServer(predictive.title)}</h3><p><b>${escapeHtmlServer(labels.hypothesis)}:</b> ${escapeHtmlServer(predictive.hypothesis || "")}</p><p><b>${escapeHtmlServer(labels.next)}:</b> ${escapeHtmlServer(predictive.nextStep || "")}</p>${renderPdfList(predictive.drivers)}</div></section>` : ""}
+  ${integrated.length ? `<section><h2>${escapeHtmlServer(labels.integrated)}</h2><div class="card-grid">${integrated.map((item) => `<article class="card"><span class="pill">${escapeHtmlServer(labels.priority)}: ${escapeHtmlServer(item.priority || "-")}</span><h3>${escapeHtmlServer(item.title || "")}</h3><p>${escapeHtmlServer(item.evidence || "")}</p><p><b>${escapeHtmlServer(labels.action)}:</b> ${escapeHtmlServer(item.action || "")}</p></article>`).join("")}</div></section>` : ""}
+  ${kpis.length ? `<section><h2>${escapeHtmlServer(labels.kpis)}</h2><div class="card-grid">${kpis.map((item) => `<article class="card"><h3>${escapeHtmlServer(item.label || "KPI")}</h3><strong>${escapeHtmlServer(item.score || 0)}/100</strong><div class="meter"><i style="width:${clampPdfWidth(item.score)}%"></i></div><p>${escapeHtmlServer(item.detail || "")}</p></article>`).join("")}</div></section>` : ""}
+  ${categories.length ? `<section><h2>${escapeHtmlServer(labels.categories)}</h2>${categories.slice(0, 12).map((item) => `<div class="category-row"><span>${escapeHtmlServer(item.category || "")}</span><div class="meter"><i style="width:${Math.max(4, Math.round((Number(item.minutes || 0) / maxMinutes) * 100))}%"></i></div><strong>${escapeHtmlServer(item.avgEnergy || 0)}/10</strong></div>`).join("")}</section>` : ""}
+  ${routes.length ? `<section><h2>${escapeHtmlServer(labels.routes)}</h2><div class="card-grid">${routes.slice(0, 6).map((route) => `<article class="card"><h3>${escapeHtmlServer(route.title || "")}</h3><p>${escapeHtmlServer(route.count || 0)} experiencias - ${escapeHtmlServer(route.avgEnergy || 0)}/10 - ${escapeHtmlServer(route.dominant || "")}</p></article>`).join("")}</div></section>` : ""}
+  ${evidence.length ? `<section><h2>${escapeHtmlServer(labels.evidence)}</h2><div class="evidence-grid">${evidence.slice(0, 8).map((item) => `<article class="card">${item.previewUrl ? `<img class="evidence-image" src="${escapeHtmlServer(item.previewUrl)}" alt="" />` : ""}<h3>${escapeHtmlServer(item.experienceTitle || item.name || "")}</h3><p><b>${escapeHtmlServer(item.kind || "")}</b> - ${escapeHtmlServer(item.name || "")}</p><p>${escapeHtmlServer(item.analyticalText || item.translatedText || item.manualNote || "")}</p></article>`).join("")}</div></section>` : ""}
+  <section>
+    <h2>${escapeHtmlServer(labels.table)}</h2>
+    <table>
+      <thead><tr><th>Fecha</th><th>Experiencia</th><th>Categoría</th><th>Energía</th><th>Adjuntos</th></tr></thead>
+      <tbody>${rows.slice(0, 60).map((row) => `<tr><td>${escapeHtmlServer(row.fecha || row.date || "")}</td><td>${escapeHtmlServer(row.titulo || row.title || "")}</td><td>${escapeHtmlServer(row.categoría || row.categoria || row.category || "")}</td><td>${escapeHtmlServer(row.energia || row.energy || "")}/10</td><td>${escapeHtmlServer(row.adjuntos || row.attachments || 0)}</td></tr>`).join("")}</tbody>
+    </table>
+    <p class="footer-note">Experience Hub - Vibe</p>
+  </section>
+</body>
+</html>`;
+}
+
+async function renderReportHtmlToPdf(html) {
+  const chromePath = findChromeExecutable();
+  if (!chromePath) return null;
+  const id = randomUUID();
+  const htmlPath = path.join(tmpdir(), `experience-report-${id}.html`);
+  const pdfPath = path.join(tmpdir(), `experience-report-${id}.pdf`);
+  try {
+    await writeFile(htmlPath, html, "utf-8");
+    await execFileAsync(chromePath, [
+      "--headless=new",
+      "--disable-gpu",
+      "--no-sandbox",
+      "--disable-dev-shm-usage",
+      `--print-to-pdf=${pdfPath}`,
+      "--print-to-pdf-no-header",
+      pathToFileURL(htmlPath).href,
+    ], { timeout: 45000, windowsHide: true });
+    return await readFile(pdfPath);
+  } catch (error) {
+    await appendLog("warn", "HTML PDF rendering failed", { error: error.message });
+    return null;
+  } finally {
+    await unlink(htmlPath).catch(() => {});
+    await unlink(pdfPath).catch(() => {});
+  }
+}
+
+function findChromeExecutable() {
+  const candidates = [
+    process.env.CHROME_PATH,
+    process.env.PUPPETEER_EXECUTABLE_PATH,
+    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+    "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
+    "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+    "/usr/bin/google-chrome",
+    "/usr/bin/google-chrome-stable",
+    "/usr/bin/chromium",
+    "/usr/bin/chromium-browser",
+  ].filter(Boolean);
+  return candidates.find((candidate) => existsSync(candidate)) || null;
+}
+
+function buildPdfExecutiveSummary(report, attachmentCount, language) {
+  const summary = report.summary || {};
+  if (language === "en") {
+    return `This report reviews ${summary.totalExperiences || report.rows?.length || 0} experiences, ${summary.capturedHours || 0} captured hours, ${attachmentCount} attachments, and an average energy of ${summary.averageEnergy || 0}/10. The dominant category is ${summary.topCategory || "not defined"}.`;
+  }
+  return `Este reporte revisa ${summary.totalExperiences || report.rows?.length || 0} experiencias, ${summary.capturedHours || 0} horas capturadas, ${attachmentCount} adjuntos y una energía media de ${summary.averageEnergy || 0}/10. La categoría dominante es ${summary.topCategory || "sin definir"}.`;
+}
+
+function renderPdfList(items = []) {
+  const list = Array.isArray(items) ? items.filter(Boolean).slice(0, 5) : [];
+  return list.length ? `<ul>${list.map((item) => `<li>${escapeHtmlServer(item)}</li>`).join("")}</ul>` : "";
+}
+
+function clampPdfWidth(value) {
+  return Math.max(4, Math.min(100, Math.round(Number(value) || 0)));
+}
+
+function formatReportPdfDateTime(value) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? String(value || "") : date.toLocaleString("es-ES");
+}
+
+function escapeHtmlServer(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 function createSimplePdf(lines) {

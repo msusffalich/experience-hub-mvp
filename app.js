@@ -1,4 +1,4 @@
-const APP_VERSION = "20260522-biometric-impact-390";
+const APP_VERSION = "20260522-report-pdf-design-392";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -213,6 +213,10 @@ const i18n = {
       assetStorageNeedsSync: "Pendiente de sincronizar",
       assetStorageReadyDetail: "Tiene fuente remota o local y vista previa disponible para trabajo operativo.",
       assetStorageSyncDetail: "Está disponible en el navegador, pero debe subirse a Supabase Storage para uso privado multidispositivo.",
+      assetSyncPendingDetailTitle: "Pendiente de sincronizaci\u00f3n",
+      assetSyncPendingDetailText: "Hay activos visibles en este navegador que a\u00fan no tienen ruta remota en Supabase Storage.",
+      assetSyncPendingAction: "Mostrar pendientes",
+      assetSyncPendingNone: "Sin activos pendientes de sincronizaci\u00f3n.",
       assetLanguage: "Idioma",
       assetDevice: "Dispositivo/origen",
       assetReadiness: "Disponibilidad",
@@ -1026,6 +1030,10 @@ const i18n = {
       assetStorageNeedsSync: "Pending sync",
       assetStorageReadyDetail: "Has remote or local source and a preview available for operational work.",
       assetStorageSyncDetail: "It is available in the browser, but should be uploaded to Supabase Storage for private multi-device use.",
+      assetSyncPendingDetailTitle: "Pending sync",
+      assetSyncPendingDetailText: "Some assets visible in this browser do not have a remote Supabase Storage path yet.",
+      assetSyncPendingAction: "Show pending",
+      assetSyncPendingNone: "No assets are pending sync.",
       assetLanguage: "Language",
       assetDevice: "Device/source",
       assetReadiness: "Readiness",
@@ -2498,7 +2506,7 @@ const manualContent = {
       title: "Limitaciones actuales",
       items: [
         "La transcripción del navegador depende de su compatibilidad. La transcripción en el servidor local requiere configurar proveedor y clave de API.",
-        "El PDF nativo ya incluye secciones estructuradas, barras textuales de KPIs/categorías y evidencia resumida. El diseño editorial completo sigue reservado para una fase posterior con motor PDF avanzado.",
+        "El PDF del reporte ahora se genera como un documento editorial: portada, resumen ejecutivo, cuadros de KPIs, barras por categor\u00eda, rutas del mapa, evidencia multimodal e im\u00e1genes cuando los activos tienen vista previa disponible. Si el servidor no puede renderizar PDF avanzado, conserva el HTML imprimible como salida visual equivalente.",
         "El MVP corre localmente; un deploy productivo requiere hosting, variables seguras, monitoreo y pruebas automatizadas.",
       ],
     },
@@ -2892,7 +2900,7 @@ const manualContent = {
         "Report reliability uses capture quality for the filtered set to warn when conclusions should be interpreted carefully.",
         "Category breakdown compares each category by number of experiences, hours, average energy, saturation, and media attachments.",
         "Filter the report by period, category, person, and objective before exporting.",
-        "Export reports as enriched JSON with analysis, CSV, printable HTML, or backend-generated PDF. Printable HTML and PDF include summary, integrated reading, initial outlook, KPIs, category breakdown, routes, and available multimodal evidence.",
+        "Export reports as enriched JSON with analysis, CSV, printable HTML, or a backend-generated editorial PDF. Printable HTML and PDF include a cover, executive summary, KPI cards, category bars, map routes, multimodal evidence, and images when available.",
         "Data backup downloads a full local state copy: experiences, Agenda, blocked days, publications, asset metadata, profile, Daily, routines, privacy, pilot controls, and offline queue.",
         "Restore backup lets you load a previously exported JSON file. If the backup is encrypted, enter the Local key first.",
       ],
@@ -3427,6 +3435,7 @@ const state = {
     eventLink: "all",
     readiness: "all",
     processing: "all",
+    storage: "all",
     provenance: "all",
     analysis: "all",
     sort: "newest",
@@ -11849,13 +11858,30 @@ function renderAssetLibrary() {
         </article>
       `,
     )
-    .join("");
+    .join("") + renderAssetSyncPendingSummary(allAssets);
   renderAssetProcessingSummary(allAssets);
   renderAudioReadinessPanel(allAssets);
   renderAssetProcessingActionPlan(assets);
   document.getElementById("assetLibraryGrid").innerHTML = assets.length
     ? assets.map(renderAssetCard).join("")
     : `<p class="card-meta">${t("labels.assetLibraryEmpty")}</p>`;
+}
+
+function renderAssetSyncPendingSummary(assets = collectMultimodalAssets()) {
+  const pending = assets.filter((asset) => buildAssetStorageStatus(asset).needsSync);
+  if (!pending.length) return "";
+  const visible = pending.slice(0, 3);
+  const detail = visible.map((asset) => asset.name || asset.experienceTitle || asset.assetKey || "asset").join(" - ");
+  const more = pending.length > visible.length ? ` +${pending.length - visible.length}` : "";
+  return `
+    <article class="metric-card compact-metric asset-sync-pending-detail">
+      <span>${escapeHtml(t("labels.assetSyncPendingDetailTitle"))}</span>
+      <strong>${escapeHtml(String(pending.length))}</strong>
+      <p>${escapeHtml(t("labels.assetSyncPendingDetailText"))}</p>
+      <small>${escapeHtml(detail + more)}</small>
+      <button class="ghost-button small-button" type="button" data-asset-storage-filter="pending">${escapeHtml(t("labels.assetSyncPendingAction"))}</button>
+    </article>
+  `;
 }
 
 function renderBiometricAssetPanel() {
@@ -12360,6 +12386,7 @@ function filterMultimodalAssets() {
       const categoryMatch = state.assetFilters.category === "all" || asset.category === state.assetFilters.category;
       const readiness = buildAssetReadiness(asset);
       const processing = buildAssetProcessingStatus(asset);
+      const storage = buildAssetStorageStatus(asset);
       const readinessMatch =
         state.assetFilters.readiness === "all" ||
         (state.assetFilters.readiness === "ready" && readiness.ready) ||
@@ -12382,7 +12409,12 @@ function filterMultimodalAssets() {
         state.assetFilters.analysis === "all" ||
         (state.assetFilters.analysis === "with" && hasAnalysisText) ||
         (state.assetFilters.analysis === "without" && !hasAnalysisText);
-      return queryMatch && dateFromMatch && dateToMatch && typeMatch && categoryMatch && readinessMatch && processingMatch && provenanceMatch && eventLinkMatch && analysisMatch;
+      const storageMatch =
+        !state.assetFilters.storage ||
+        state.assetFilters.storage === "all" ||
+        (state.assetFilters.storage === "pending" && storage.needsSync) ||
+        (state.assetFilters.storage === "remote" && storage.remote);
+      return queryMatch && dateFromMatch && dateToMatch && typeMatch && categoryMatch && readinessMatch && processingMatch && provenanceMatch && eventLinkMatch && analysisMatch && storageMatch;
     })
     .sort(compareAssetsForCurrentSort);
 }
@@ -13217,6 +13249,13 @@ async function handleAssetLibraryClick(event) {
     if (select) select.value = state.assetFilters.processing;
     renderAssetLibrary();
     requestAnimationFrame(() => document.getElementById("assetProcessingFilter")?.focus());
+    return;
+  }
+  const storageFilterButton = event.target.closest("[data-asset-storage-filter]");
+  if (storageFilterButton) {
+    state.assetFilters.storage = storageFilterButton.dataset.assetStorageFilter || "all";
+    renderAssetLibrary();
+    requestAnimationFrame(() => focusAppElement("assetMetricGrid"));
     return;
   }
   const copyAssetIdButton = event.target.closest("[data-copy-asset-id]");
@@ -15639,6 +15678,8 @@ function buildReportMultimodalEvidence(experiences) {
       detectedLanguage: asset.detectedLanguage || asset.language || "",
       translationLanguage: asset.translationLanguage || state.language,
       source: asset.storageLabel,
+      previewUrl: asset.kind === "image" ? (asset.url || asset.dataUrl || "") : "",
+      downloadUrl: asset.url || "",
       eventId: asset.eventId || asset.metadata?.linkedEventId || "",
       eventTitle: asset.eventTitle || asset.metadata?.linkedEventTitle || "",
       eventOrder: Number(asset.eventOrder || asset.metadata?.linkedEventOrder || 0),
@@ -17460,6 +17501,7 @@ function downloadPrintableReport() {
           .map(
             (item) => `
               <article class="reading">
+                ${item.previewUrl ? `<img class="report-evidence-image" src="${escapeHtml(item.previewUrl)}" alt="" />` : ""}
                 <h3>${escapeHtml(item.experienceTitle)}</h3>
                 <p><strong>${escapeHtml(state.language === "en" ? "Linked event" : "Evento vinculado")}:</strong> ${escapeHtml(item.eventTitle || (state.language === "en" ? "Whole experience" : "Toda la experiencia"))}</p>
                 <p><strong>${escapeHtml(t("labels.reportAssetSource"))}:</strong> ${escapeHtml(item.name)} · ${escapeHtml(item.kind)} · ${escapeHtml(item.category)} · ${escapeHtml(item.provenance || "")}</p>
@@ -17495,15 +17537,18 @@ function downloadPrintableReport() {
   <style>
     body { font-family: Arial, sans-serif; margin: 32px; color: #1f2933; }
     h1 { margin-bottom: 4px; }
+    h2 { break-after: avoid; color: #10263f; }
     .meta { color: #64748b; margin-top: 0; }
     .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 24px 0; }
     .stat { border: 1px solid #d8dee9; border-radius: 8px; padding: 12px; }
     .stat span { color: #64748b; display: block; font-size: 12px; }
     .stat strong { font-size: 22px; }
-    .reading { border: 1px solid #d8dee9; border-radius: 8px; padding: 12px; margin: 10px 0; }
+    section, .reading, .mini-card, .chart-row, tr { break-inside: avoid; page-break-inside: avoid; }
+    .reading { border: 1px solid #d8dee9; border-radius: 8px; padding: 12px; margin: 10px 0; overflow: hidden; }
     .highlight { background: #f0f7f5; border-color: #9cc8bc; }
     .reading h3 { margin: 0 0 8px; }
     .reading p { margin: 4px 0; color: #475569; }
+    .report-evidence-image { width: 100%; max-height: 220px; object-fit: cover; border-radius: 8px; margin-bottom: 10px; }
     .pdf-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
     .mini-card, .chart-row { break-inside: avoid; border: 1px solid #d8dee9; border-radius: 8px; padding: 10px; margin: 8px 0; }
     .mini-card span, .chart-row span { color: #64748b; font-size: 12px; }
@@ -22285,6 +22330,8 @@ function renderAdminOperationalFocusPanel() {
         liveFlowDetail: "When Capture syncs an open draft, the same device refreshes Dashboard, Library, Assets, Agenda, Timeline, Map, Reports, Publications, Insights, persistence state, and Admin.",
         biometricAssets: "Biometric files in Assets",
         biometricAssetsDetail: "CSV/JSON from Apple Health or wearables enters through Assets as cross-experience context, then informs energy and recovery by date/time.",
+        reportPdf: "Editorial report export",
+        reportPdfDetail: "Report PDF now uses an editorial layout with cover, KPI cards, category bars, multimodal evidence, and images when previews are available.",
       }
     : {
         title: "Administración operativa",
@@ -22314,8 +22361,10 @@ function renderAdminOperationalFocusPanel() {
     labels.assetProcessingDetail = "Las tarjetas, b\u00fasqueda, inventario, importaci\u00f3n de metadatos, procesamiento autom\u00e1tico, recuperaci\u00f3n de pendientes y reintento manual conservan texto extra\u00eddo, m\u00e9todo, estado, fecha y sincronizaci\u00f3n en Supabase.";
     labels.liveFlow = "Refresco de borrador vivo";
     labels.liveFlowDetail = "Cuando Captura sincroniza una experiencia abierta, el mismo dispositivo refresca Panel, Librer\u00eda, Activos, Agenda, L\u00ednea de tiempo, Mapa, Reportes, Publicaciones, Hallazgos, persistencia y Administraci\u00f3n.";
-    labels.biometricAssets = "Biometria desde Activos";
-    labels.biometricAssetsDetail = "CSV/JSON de Apple Health o wearables entra por Activos como contexto transversal y luego informa energia o recuperacion por fecha/hora.";
+    labels.biometricAssets = "Biometr\u00eda desde Activos";
+    labels.biometricAssetsDetail = "CSV/JSON de Apple Health o wearables entra por Activos como contexto transversal y luego informa energ\u00eda o recuperaci\u00f3n por fecha/hora.";
+    labels.reportPdf = "Reporte PDF editorial";
+    labels.reportPdfDetail = "El PDF del reporte ahora usa portada, cuadros de KPIs, barras por categor\u00eda, evidencia multimodal e im\u00e1genes cuando hay vista previa disponible.";
   }
   const cards = [
     [labels.flow, labels.flowDetail],
@@ -22329,6 +22378,7 @@ function renderAdminOperationalFocusPanel() {
     [labels.assetProcessing, labels.assetProcessingDetail],
     [labels.liveFlow, labels.liveFlowDetail],
     [labels.biometricAssets, labels.biometricAssetsDetail],
+    [labels.reportPdf, labels.reportPdfDetail],
     [labels.next, labels.nextDetail],
   ];
   container.innerHTML = `
@@ -22979,7 +23029,7 @@ function renderAdmin() {
       okStatus,
       state.language === "en"
         ? "JSON, CSV, printable HTML, and structured native PDF"
-        : "JSON, CSV, HTML imprimible y PDF nativo estructurado",
+        : "JSON, CSV, HTML imprimible y PDF editorial",
     ],
     [
       state.language === "en" ? "Voice commands" : "Comandos de voz",
