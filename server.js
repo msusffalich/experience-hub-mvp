@@ -16,6 +16,7 @@ const LOG_PATH = path.join(DATA_DIR, "operation-log.json");
 const ROUTINES_PATH = path.join(DATA_DIR, "routine-store.json");
 const DAILY_BRIEFINGS_PATH = path.join(DATA_DIR, "daily-briefing-store.json");
 const PROFILE_PARAMETERS_PATH = path.join(DATA_DIR, "profile-parameters.json");
+const AGENDA_EVENTS_PATH = path.join(DATA_DIR, "agenda-events.json");
 const EXPORTS_DIR = path.join(DATA_DIR, "exports");
 const STORAGE_ADAPTER = process.env.STORAGE_ADAPTER || "json-file";
 const SUPABASE_URL = process.env.SUPABASE_URL?.replace(/\/$/, "");
@@ -64,6 +65,7 @@ const defaultStore = {
     subscriptionTier: "mvp",
   },
   experiences: [],
+  agendaEvents: [],
 };
 
 const categoryAliases = {
@@ -215,6 +217,19 @@ async function handleApi(req, res, url) {
       const experience = await readJson(req);
       const normalized = normalizeExperience(experience);
       sendJson(res, 201, await upsertExperience(normalized, user));
+      return;
+    }
+  }
+
+  if (url.pathname === "/api/agenda") {
+    const user = await getRequestUser(req);
+    if (req.method === "GET") {
+      sendJson(res, 200, await listAgendaEvents(user));
+      return;
+    }
+    if (req.method === "POST") {
+      const agendaEvent = await readJson(req);
+      sendJson(res, 201, await upsertAgendaEvent(agendaEvent, user));
       return;
     }
   }
@@ -387,6 +402,22 @@ async function handleApi(req, res, url) {
     }
   }
 
+  const agendaMatch = url.pathname.match(/^\/api\/agenda\/([^/]+)$/);
+  if (agendaMatch) {
+    const id = decodeURIComponent(agendaMatch[1]);
+    const user = await getRequestUser(req);
+    if (req.method === "PUT") {
+      const body = await readJson(req);
+      sendJson(res, 200, await upsertAgendaEvent({ ...body, id }, user));
+      return;
+    }
+    if (req.method === "DELETE") {
+      await deleteAgendaEvent(id, user);
+      sendJson(res, 200, { ok: true });
+      return;
+    }
+  }
+
   sendJson(res, 404, { error: "not_found" });
 }
 
@@ -496,6 +527,24 @@ async function readProfileParameters() {
   if (!existsSync(PROFILE_PARAMETERS_PATH)) return {};
   const raw = await readFile(PROFILE_PARAMETERS_PATH, "utf-8");
   return JSON.parse(raw || "{}");
+}
+
+async function readAgendaStore() {
+  if (!existsSync(AGENDA_EVENTS_PATH)) return {};
+  const raw = await readFile(AGENDA_EVENTS_PATH, "utf-8");
+  return JSON.parse(raw || "{}");
+}
+
+async function writeAgendaStore(store) {
+  await mkdir(DATA_DIR, { recursive: true });
+  await writeFile(AGENDA_EVENTS_PATH, JSON.stringify(store, null, 2), "utf-8");
+}
+
+async function mutateAgendaStore(mutator, user = { id: LOCAL_USER_ID }) {
+  const current = await readAgendaStore();
+  const result = await mutator(current, user);
+  await writeAgendaStore(current);
+  return result;
 }
 
 async function writeProfileParameters(userId, profile) {
@@ -673,6 +722,89 @@ async function listExperiences(user = { id: LOCAL_USER_ID }) {
   }
   const store = await readStore();
   return store.experiences.map(normalizeExperience);
+}
+
+async function listAgendaEvents(user = { id: LOCAL_USER_ID }) {
+  if (activePersistence() === "supabase" && !workspaceSchemaUnavailableRecently()) {
+    try {
+      const rows = await supabaseRest("agenda_events", {
+        searchParams: {
+          user_id: `eq.${user.id}`,
+          order: "start_at.asc",
+        },
+        accessToken: user.accessToken,
+      });
+      workspaceSchemaState.available = true;
+      workspaceSchemaState.checkedAt = new Date().toISOString();
+      workspaceSchemaState.error = null;
+      return rows.map(fromAgendaEventRow);
+    } catch (error) {
+      workspaceSchemaState.available = false;
+      workspaceSchemaState.checkedAt = new Date().toISOString();
+      workspaceSchemaState.error = sanitizeDiagnosticError(error);
+    }
+  }
+  const store = await readAgendaStore();
+  return (store[user.id || LOCAL_USER_ID] || []).map(normalizeAgendaEvent);
+}
+
+async function upsertAgendaEvent(agendaEvent, user = { id: LOCAL_USER_ID }) {
+  const normalized = normalizeAgendaEvent(agendaEvent);
+  if (activePersistence() === "supabase" && !workspaceSchemaUnavailableRecently()) {
+    try {
+      await upsertProfile(await getProfile(user), user);
+      const rows = await supabaseRest("agenda_events", {
+        method: "POST",
+        searchParams: { on_conflict: "event_id" },
+        headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+        body: JSON.stringify(toAgendaEventRow(normalized, user)),
+        accessToken: user.accessToken,
+      });
+      workspaceSchemaState.available = true;
+      workspaceSchemaState.checkedAt = new Date().toISOString();
+      workspaceSchemaState.error = null;
+      return fromAgendaEventRow(rows[0]);
+    } catch (error) {
+      workspaceSchemaState.available = false;
+      workspaceSchemaState.checkedAt = new Date().toISOString();
+      workspaceSchemaState.error = sanitizeDiagnosticError(error);
+    }
+  }
+  return mutateAgendaStore((store) => {
+    const key = user.id || LOCAL_USER_ID;
+    const current = Array.isArray(store[key]) ? store[key] : [];
+    store[key] = [normalized, ...current.filter((item) => item.id !== normalized.id)];
+    return normalized;
+  }, user);
+}
+
+async function deleteAgendaEvent(id, user = { id: LOCAL_USER_ID }) {
+  if (activePersistence() === "supabase" && !workspaceSchemaUnavailableRecently()) {
+    try {
+      await supabaseRest("agenda_events", {
+        method: "DELETE",
+        searchParams: {
+          event_id: `eq.${id}`,
+          user_id: `eq.${user.id}`,
+        },
+        headers: { Prefer: "return=minimal" },
+        accessToken: user.accessToken,
+      });
+      workspaceSchemaState.available = true;
+      workspaceSchemaState.checkedAt = new Date().toISOString();
+      workspaceSchemaState.error = null;
+      return;
+    } catch (error) {
+      workspaceSchemaState.available = false;
+      workspaceSchemaState.checkedAt = new Date().toISOString();
+      workspaceSchemaState.error = sanitizeDiagnosticError(error);
+    }
+  }
+  await mutateAgendaStore((store) => {
+    const key = user.id || LOCAL_USER_ID;
+    store[key] = (store[key] || []).filter((item) => item.id !== id);
+    return { ok: true };
+  }, user);
 }
 
 async function upsertExperience(experience, user = { id: LOCAL_USER_ID }) {
@@ -1034,6 +1166,90 @@ function fromAssetRow(row) {
     eventOrder: metadata.eventOrder || "",
     metadata,
   };
+}
+
+function normalizeAgendaEvent(event = {}) {
+  const startAt = event.startAt || event.start_at || new Date().toISOString();
+  const endAt = event.endAt || event.end_at || new Date(new Date(startAt).getTime() + 60 * 60 * 1000).toISOString();
+  const metadata = isPlainObject(event.metadata) ? event.metadata : {};
+  return {
+    id: String(event.id || event.eventId || event.event_id || randomUUID()),
+    title: String(event.title || "Evento").trim() || "Evento",
+    type: String(event.type || "Personal"),
+    description: String(event.description || ""),
+    startAt,
+    endAt,
+    location: String(event.location || "Sin ubicación"),
+    participants: String(event.participants || "Sin participantes"),
+    priority: String(event.priority || "normal"),
+    status: String(event.status || "Planificado"),
+    reminders: String(event.reminders || ""),
+    source: event.source || event.sourceType || metadata.source || "manual",
+    sourceType: event.sourceType || metadata.sourceType || event.source || "manual",
+    sourceExperienceId: event.sourceExperienceId || event.source_experience_id || metadata.sourceExperienceId || "",
+    linkedExperienceId: event.linkedExperienceId || event.linked_experience_id || metadata.linkedExperienceId || "",
+    pilotParticipantId: event.pilotParticipantId || event.participantId || event.participant_id || metadata.participantId || "",
+    pilotParticipantName: event.pilotParticipantName || metadata.participantName || "",
+    createdAt: event.createdAt || event.created_at || new Date().toISOString(),
+    updatedAt: event.updatedAt || event.updated_at || new Date().toISOString(),
+    metadata,
+  };
+}
+
+function toAgendaEventRow(event, user = { id: LOCAL_USER_ID }) {
+  const normalized = normalizeAgendaEvent(event);
+  return {
+    event_id: normalized.id,
+    user_id: user.id,
+    participant_id: normalized.pilotParticipantId || null,
+    title: normalized.title,
+    type: normalized.type,
+    description: normalized.description || null,
+    start_at: normalized.startAt,
+    end_at: normalized.endAt,
+    location: normalized.location || null,
+    participants: normalized.participants || null,
+    priority: normalized.priority || "normal",
+    status: normalized.status || "Planificado",
+    reminders: normalized.reminders || null,
+    source_type: normalized.sourceType || normalized.source || "manual",
+    source_experience_id: normalized.sourceExperienceId || null,
+    linked_experience_id: normalized.linkedExperienceId || null,
+    metadata: removeEmptyMetadataFields({
+      ...normalized.metadata,
+      participantName: normalized.pilotParticipantName || "",
+      source: normalized.source || normalized.sourceType || "manual",
+      sourceType: normalized.sourceType || normalized.source || "manual",
+    }),
+    created_at: normalized.createdAt || new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+}
+
+function fromAgendaEventRow(row = {}) {
+  const metadata = row.metadata || {};
+  return normalizeAgendaEvent({
+    id: row.event_id,
+    title: row.title,
+    type: row.type,
+    description: row.description || "",
+    startAt: row.start_at,
+    endAt: row.end_at,
+    location: row.location || "",
+    participants: row.participants || "",
+    priority: row.priority || "normal",
+    status: row.status || "Planificado",
+    reminders: row.reminders || "",
+    sourceType: row.source_type || metadata.sourceType || "",
+    source: metadata.source || row.source_type || "",
+    sourceExperienceId: row.source_experience_id || "",
+    linkedExperienceId: row.linked_experience_id || "",
+    pilotParticipantId: row.participant_id || metadata.participantId || "",
+    pilotParticipantName: metadata.participantName || "",
+    createdAt: row.created_at || "",
+    updatedAt: row.updated_at || "",
+    metadata,
+  });
 }
 
 function buildSignalMetadata({ existing, source, sourceType, payloadType, experience, attachment, event, participantId, user, index = 0, extra = {} }) {

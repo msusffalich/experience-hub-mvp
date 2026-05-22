@@ -1,4 +1,4 @@
-const APP_VERSION = "20260522-vibe-audio-sync-372";
+const APP_VERSION = "20260522-agenda-sync-373";
 const VOICE_ASSISTANT_NAME = "Vibe";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -345,7 +345,7 @@ const i18n = {
       agendaBlockedInvalid: "Usa fechas válidas con formato AAAA-MM-DD, separadas por coma.",
       agendaConvert: "Convertir en experiencia",
       agendaPrepare: "Preparación sugerida",
-      agendaLocalStatus: "Agenda local; conectores externos pendientes",
+      agendaLocalStatus: "Agenda multidispositivo; conectores externos pendientes",
       dashboardAgendaTitle: "Próximos eventos",
       dashboardAgendaStatus: "Agenda inmediata",
       dashboardAgendaEmpty: "No hay eventos próximos. Puedes crearlos en Agenda.",
@@ -1144,7 +1144,7 @@ const i18n = {
       agendaBlockedInvalid: "Use valid dates in YYYY-MM-DD format, separated by commas.",
       agendaConvert: "Convert to experience",
       agendaPrepare: "Suggested preparation",
-      agendaLocalStatus: "Local agenda; external connectors pending",
+      agendaLocalStatus: "Multi-device agenda; external connectors pending",
       dashboardAgendaTitle: "Upcoming events",
       dashboardAgendaStatus: "Immediate agenda",
       dashboardAgendaEmpty: "No upcoming events. You can create them in Agenda.",
@@ -2126,7 +2126,7 @@ const manualContent = {
         "Si la fuente externa del horóscopo no responde o el resumen guardado no trae horóscopo, la app muestra un respaldo local en el idioma activo para los 12 signos.",
         "Cartelera y eventos ofrece accesos rápidos para buscar cine, conciertos, teatro, eventos del día y exposiciones del lugar seleccionado. También permite programar una revisión en Agenda para convertir la lectura del Diario en seguimiento accionable.",
         "Comando de voz permite ejecutar acciones básicas por voz: abrir secciones, actualizar Diario, analizar contexto, abrir reportes, abrir Publicaciones, abrir Manual, cargar ejemplo o crear una nueva experiencia. Puedes iniciar el comando con Hola Vibe o Vibe. Depende de Web Speech del navegador y requiere activar el micrófono desde la app.",
-        "Vibe ya puede registrar contenido simple: toma nota agrega texto al borrador de Captura, guarda esto crea una experiencia rápida y agenda/pon en mi agenda crea un evento local en Agenda con hora interpretada cuando la frase la incluye. Si esa frase aparece dentro de una grabación de audio, Captura también la detecta y crea el evento sin salir del formulario.",
+        "Vibe ya puede registrar contenido simple: toma nota agrega texto al borrador de Captura, guarda esto crea una experiencia rápida y agenda/pon en mi agenda crea un evento multidispositivo en Agenda con hora interpretada cuando la frase la incluye. Si esa frase aparece dentro de una grabación de audio, Captura también la detecta y crea el evento sin salir del formulario.",
         "La tarjeta Voz del Diario muestra el estado del comando y ejemplos clicables. Si el micrófono o Web Speech no están disponibles, puedes probar el mismo flujo con esos ejemplos.",
         "Incluye distribución por categoría y señales recientes de las últimas experiencias.",
         "El panel Impacto ambiental y geopolítico analiza una ciudad o lugar con mediciones climáticas de Open-Meteo y noticias geopolíticas de GDELT. Puedes usar la ubicación principal detectada en tus experiencias para acelerar la consulta.",
@@ -2233,6 +2233,7 @@ const manualContent = {
         "Importar .ics permite cargar eventos exportados desde calendarios externos sin conectar cuentas ni pedir permisos. La app convierte los eventos en registros locales editables.",
         "Cada tarjeta de evento también permite exportar solo ese evento como archivo .ics.",
         "La agenda usa estados del blueprint: planificado, confirmado, reprogramado, cancelado, completado, pendiente de seguimiento y convertido en experiencia.",
+        "Los eventos de Agenda se guardan localmente y se sincronizan con el backend para verse en otros dispositivos con la misma sesión. Si la tabla agenda_events aún no existe en Supabase, el servidor usa un respaldo central temporal hasta aplicar database/agenda-events.sql.",
         "Al convertir un evento, la app crea una experiencia vinculada con duración, ubicación, participantes y notas de origen para mantener la continuidad Agenda -> Evento -> Experiencia -> Memoria viva.",
         "Publicaciones Inteligentes genera borradores locales desde el reporte filtrado o las últimas experiencias. Permite elegir tipo, estilo narrativo, canal, incluir o excluir multimedia sugerida, aplicar limpieza de privacidad y exportar como HTML, Markdown o paquete editorial JSON.",
         "Aprobación humana marca si el borrador está en revisión o aprobado. Cualquier edición, cambio de diseño o curaduría multimedia lo devuelve a revisión.",
@@ -2661,7 +2662,7 @@ const manualContent = {
         "If the external horoscope source does not respond or the saved briefing has no horoscope, the app shows a local fallback in the active language for all 12 signs.",
         "Listings and events provides quick links for movie showtimes, concerts, theater, events today, and exhibitions in the selected place. It can also schedule a review in Agenda so the Daily briefing becomes actionable follow-up.",
         "Voice command runs basic actions by voice: open sections, refresh Daily, analyze context, open reports, open Publications, open Manual, load example, or create a new experience. You can start the command with Hi Vibe or Vibe. It depends on the browser's Web Speech support and requires activating the microphone from the app.",
-        "Vibe can now record simple content: take note adds text to the Capture draft, save this creates a quick experience, and schedule/add to my calendar creates a local Agenda event with interpreted time when the phrase includes it. If that phrase appears inside an audio recording, Capture also detects it and creates the event without leaving the form.",
+        "Vibe can now record simple content: take note adds text to the Capture draft, save this creates a quick experience, and schedule/add to my calendar creates a multi-device Agenda event with interpreted time when the phrase includes it. If that phrase appears inside an audio recording, Capture also detects it and creates the event without leaving the form.",
         "The Daily Voice card shows command status and clickable examples. If microphone access or Web Speech is unavailable, you can test the same flow with those examples.",
         "Includes category distribution and recent signals from the latest experiences.",
         "Context impact analyzes a city/place with Open-Meteo weather and GDELT geopolitical news. You can use the primary location detected from your experiences to speed up the query.",
@@ -2760,13 +2761,14 @@ const manualContent = {
         "Initial tags normalize type, category, goal, place, people, storage, and potential use to improve search and reuse.",
         "Manual metadata lets you add human tags, notes, and analytical text to each asset. Use it to clarify permissions, people, intent, emotional meaning, transcripts, manual OCR, or details the app cannot infer automatically.",
         "This inventory is the first increment of the multimodal architecture: files become reusable assets, not just attachments hidden inside one experience.",
-        "Intelligent Agenda lets you create local events, review day/week/all ranges, filter by type, detect simple time conflicts, and convert an event into an experience.",
+        "Intelligent Agenda lets you create multi-device events, review day/week/all ranges, filter by type, detect simple time conflicts, and convert an event into an experience.",
         "The visual calendar shows the daily or weekly distribution from the selected date. Each event block opens editing and highlights schedule conflicts when they exist.",
         "Blocked days lets you enter unavailable dates in YYYY-MM-DD format, separated by commas. Agenda highlights them in the calendar and warns when events are scheduled on top of them.",
         "Export calendar downloads an .ics file with the filtered events so you can manually import it into Google Calendar, Outlook, Apple Calendar, or another compatible calendar.",
         "Import .ics loads events exported from external calendars without connecting accounts or requesting permissions. The app turns them into editable local records.",
         "Each event card can also export only that event as an .ics file.",
         "Agenda uses the blueprint states: planned, confirmed, rescheduled, canceled, completed, pending follow-up, and converted into experience.",
+        "Agenda events are saved locally and synchronized with the backend so they appear on other devices using the same session. If the agenda_events table does not exist in Supabase yet, the server uses a temporary central fallback until database/agenda-events.sql is applied.",
         "When converting an event, the app creates a linked experience with duration, location, participants, and source notes to preserve the Agenda -> Event -> Experience -> Living memory flow.",
         "Intelligent Publications generates local drafts from the filtered report or latest experiences. You can choose publication type, narrative style, channel, include or exclude suggested media, apply privacy cleanup, copy the final text/HTML, and export as HTML, Markdown, or an editorial JSON package.",
         "Human approval marks whether the draft is in review or approved. Any edit, design change, or media curation returns it to review.",
@@ -4096,7 +4098,11 @@ async function hydrateFromApi() {
       return;
     }
 
-    const [profile, experiences] = await Promise.all([apiRequest("/profile"), apiRequest("/experiences")]);
+    const [profile, experiences, agendaEvents] = await Promise.all([
+      apiRequest("/profile"),
+      apiRequest("/experiences"),
+      apiRequest("/agenda").catch(() => null),
+    ]);
     state.profile = profile;
     saveLocalProfile(profile);
     if (profile.language && i18n[profile.language]) {
@@ -4114,6 +4120,14 @@ async function hydrateFromApi() {
     } else {
       state.experiences = [];
       saveExperiences();
+    }
+    if (Array.isArray(agendaEvents)) {
+      const mergedAgenda = mergeRemoteAgendaEvents(agendaEvents, state.agendaEvents);
+      const remoteIds = new Set(agendaEvents.map((item) => item.id));
+      state.agendaEvents = mergedAgenda;
+      saveAgendaEvents();
+      const localOnly = mergedAgenda.filter((item) => item.id && !remoteIds.has(item.id) && !item.isDemo);
+      await Promise.all(localOnly.slice(0, 50).map((item) => saveAgendaEventToApi(item, { silent: true })));
     }
     await syncOfflineQueue({ silent: true });
     await loadBackendRoutines();
@@ -4225,6 +4239,38 @@ function normalizeExperiences(experiences) {
 
 function normalizeExperienceItem(experience) {
   return normalizeExperiences([experience || {}])[0];
+}
+
+function normalizeAgendaEvents(events = []) {
+  if (!Array.isArray(events)) return [];
+  return events
+    .map((event) => ({
+      ...event,
+      id: event.id || event.eventId || createId(),
+      title: String(event.title || "").trim() || (state.language === "en" ? "Event" : "Evento"),
+      type: event.type || "Personal",
+      description: event.description || "",
+      startAt: event.startAt || event.start_at || new Date().toISOString(),
+      endAt: event.endAt || event.end_at || new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+      location: event.location || (state.language === "en" ? "No location" : "Sin ubicación"),
+      participants: event.participants || (state.language === "en" ? "No participants" : "Sin participantes"),
+      priority: event.priority || "normal",
+      status: event.status || "Planificado",
+      reminders: event.reminders || "",
+      sourceType: event.sourceType || event.source || "manual",
+      pilotParticipantId: event.pilotParticipantId || event.participantId || "",
+      pilotParticipantName: event.pilotParticipantName || "",
+      createdAt: event.createdAt || new Date().toISOString(),
+      updatedAt: event.updatedAt || "",
+    }))
+    .filter((event) => event.id && event.title);
+}
+
+function mergeRemoteAgendaEvents(remoteEvents = [], localEvents = []) {
+  const map = new Map();
+  normalizeAgendaEvents(localEvents).forEach((event) => map.set(event.id, event));
+  normalizeAgendaEvents(remoteEvents).forEach((event) => map.set(event.id, { ...map.get(event.id), ...event, remoteSynced: true }));
+  return [...map.values()].sort((a, b) => new Date(a.startAt || 0) - new Date(b.startAt || 0));
 }
 
 function normalizeExperienceEvents(events = [], experienceId = "") {
@@ -4381,6 +4427,43 @@ function saveAgendaEvents() {
     localStorage.setItem("experience-hub-agenda", JSON.stringify(state.agendaEvents));
   } catch {
     // Ignore local agenda persistence restrictions.
+  }
+}
+
+async function saveAgendaEventToApi(agendaEvent, options = {}) {
+  if (!state.apiOnline || (requiresRemotePersistence() && !state.session?.access_token)) return { remote: false, reason: "not_ready" };
+  try {
+    const saved = await apiRequest(`/agenda/${encodeURIComponent(agendaEvent.id)}`, {
+      method: "PUT",
+      body: JSON.stringify({ ...agendaEvent, locale: state.language }),
+    });
+    const index = state.agendaEvents.findIndex((item) => item.id === agendaEvent.id);
+    if (index >= 0 && saved?.id) {
+      state.agendaEvents[index] = { ...state.agendaEvents[index], ...saved, remoteSynced: true };
+      saveAgendaEvents();
+    }
+    return { remote: true, event: saved };
+  } catch (error) {
+    if (isApiConnectivityError(error)) state.apiOnline = false;
+    if (!options.silent) {
+      const status = document.getElementById("agendaFormStatus");
+      if (status) status.textContent = state.language === "en"
+        ? "Event saved on this device. It will sync when the connection is ready."
+        : "Evento guardado en este dispositivo. Se sincronizará cuando la conexión esté lista.";
+    }
+    return { remote: false, reason: error?.message || "api_error" };
+  }
+}
+
+async function deleteAgendaEventFromApi(id, options = {}) {
+  if (!state.apiOnline || (requiresRemotePersistence() && !state.session?.access_token)) return false;
+  try {
+    await apiRequest(`/agenda/${encodeURIComponent(id)}`, { method: "DELETE" });
+    return true;
+  } catch (error) {
+    if (isApiConnectivityError(error)) state.apiOnline = false;
+    if (!options.silent) notify(state.language === "en" ? "Event deleted locally; cloud delete will need retry." : "Evento eliminado localmente; el borrado en la nube requerirá reintento.", "warn");
+    return false;
   }
 }
 
@@ -7176,6 +7259,7 @@ function syncExperienceToAgenda(experience = {}) {
   state.agendaFilters.date = formatLocalDateKey(start);
   state.agendaFilters.range = "week";
   saveAgendaEvents();
+  void saveAgendaEventToApi(agendaEvent, { silent: true });
   return true;
 }
 
@@ -10303,6 +10387,7 @@ function createVoiceAgendaEvent(command, originalTranscript = command, options =
   state.agendaFilters.range = "day";
   state.agendaFilters.pilotParticipantId = agendaEvent.pilotParticipantId || "all";
   saveAgendaEvents();
+  void saveAgendaEventToApi(agendaEvent, { silent: true });
   renderAgenda();
   if (!options.source || options.source !== "audio_transcript") showView("agenda");
   const message = `${t("labels.voiceAgendaSaved")}: ${title} · ${formatDate(agendaEvent.startAt)}`;
@@ -13007,7 +13092,7 @@ function getAssetKindLabel(kind) {
   return (labels[state.language] || labels.es)[kind] || kind;
 }
 
-function handleAgendaSubmit(event) {
+async function handleAgendaSubmit(event) {
   event.preventDefault();
   const agendaEvent = readAgendaForm();
   if (new Date(agendaEvent.endAt) <= new Date(agendaEvent.startAt)) {
@@ -13019,11 +13104,14 @@ function handleAgendaSubmit(event) {
   if (existingIndex >= 0) state.agendaEvents[existingIndex] = agendaEvent;
   else state.agendaEvents.unshift(agendaEvent);
   saveAgendaEvents();
+  const syncResult = await saveAgendaEventToApi(agendaEvent, { silent: true });
   state.agendaFilters.pilotParticipantId = agendaEvent.pilotParticipantId || "all";
   clearAgendaForm();
   renderAgenda();
   updatePilotParticipantControls();
-  document.getElementById("agendaFormStatus").textContent = state.language === "en" ? "Event saved." : "Evento guardado.";
+  document.getElementById("agendaFormStatus").textContent = syncResult.remote
+    ? state.language === "en" ? "Event saved and synced." : "Evento guardado y sincronizado."
+    : state.language === "en" ? "Event saved on this device. It will sync when the connection is ready." : "Evento guardado en este dispositivo. Se sincronizará cuando la conexión esté lista.";
 }
 
 function readAgendaForm() {
@@ -13122,6 +13210,7 @@ async function importAgendaIcsFile(event) {
     }
     state.agendaEvents = [...imported, ...state.agendaEvents];
     saveAgendaEvents();
+    await Promise.all(imported.slice(0, 50).map((item) => saveAgendaEventToApi(item, { silent: true })));
     renderAgenda();
     status.textContent = t("labels.agendaImported").replace("{count}", String(imported.length));
   } catch {
@@ -13504,6 +13593,7 @@ function handleAgendaAction(event) {
   } else if (button.dataset.agendaAction === "delete") {
     state.agendaEvents = state.agendaEvents.filter((item) => item.id !== agendaEvent.id);
     saveAgendaEvents();
+    void deleteAgendaEventFromApi(agendaEvent.id, { silent: true });
     renderAgenda();
   } else if (button.dataset.agendaAction === "export") {
     exportSingleAgendaEventIcs(agendaEvent);
@@ -13555,6 +13645,7 @@ async function convertAgendaEventToExperience(event) {
   saveExperiences();
   saveAgendaEvents();
   await saveExperienceToApi(experience);
+  await saveAgendaEventToApi(state.agendaEvents.find((item) => item.id === event.id) || event, { silent: true });
   renderAll();
   showView("capture");
   loadExperienceIntoForm(experience);

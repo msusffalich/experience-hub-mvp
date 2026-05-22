@@ -167,6 +167,14 @@ assert(
   "Automatic attachment retry supervisor is missing.",
 );
 assert(
+  files.app.includes("saveAgendaEventToApi")
+    && files.app.includes("mergeRemoteAgendaEvents")
+    && files.server.includes("/api/agenda")
+    && files.server.includes("agenda_events")
+    && files.app.includes("Agenda multidispositivo"),
+  "Multi-device Agenda synchronization is missing.",
+);
+assert(
   files.app.includes("assetTranslatedText")
     && files.app.includes("translateAssetNow")
     && files.app.includes("translateExtractedAssetText")
