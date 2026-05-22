@@ -2518,6 +2518,12 @@ button,
   background: rgba(255, 251, 242, 0.96);
 }
 
+.capture-save-card.is-info {
+  border-color: rgba(36, 92, 164, 0.22);
+  border-left-color: var(--blue);
+  background: rgba(239, 246, 255, 0.96);
+}
+
 .capture-save-card div {
   min-width: 0;
 }

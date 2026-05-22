@@ -1,4 +1,4 @@
-const APP_VERSION = "20260522-live-draft-sync-382";
+const APP_VERSION = "20260522-live-sync-status-383";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -7475,6 +7475,7 @@ function scheduleCaptureDraftAutosave(reason = "input", options = {}) {
   const signature = buildCaptureDraftSignature();
   if (!signature || signature === state.captureDraftAutosave.lastSignature) return;
   if (state.captureDraftAutosave.timer) clearTimeout(state.captureDraftAutosave.timer);
+  setCaptureLiveSyncStatus("pending", reason);
   state.captureDraftAutosave.timer = setTimeout(() => {
     state.captureDraftAutosave.timer = null;
     void autosaveCaptureDraft(reason);
@@ -7520,6 +7521,7 @@ function simpleHash(value = "") {
 async function autosaveCaptureDraft(reason = "input") {
   if (!canLiveSyncCaptureDraft() || state.captureDraftAutosave.inProgress) return;
   state.captureDraftAutosave.inProgress = true;
+  setCaptureLiveSyncStatus("syncing", reason);
   try {
     ensureCaptureDraftId();
     const experience = await readAutosaveCaptureDraft();
@@ -7563,6 +7565,35 @@ async function autosaveCaptureDraft(reason = "input") {
   } finally {
     state.captureDraftAutosave.inProgress = false;
   }
+}
+
+function setCaptureLiveSyncStatus(status = "pending", reason = "") {
+  const hasContent = canLiveSyncCaptureDraft();
+  if (!hasContent) return;
+  const labels = state.language === "en"
+    ? {
+        pending: "Preparing live sync...",
+        syncing: "Syncing draft across devices...",
+        title: "Live draft",
+      }
+    : {
+        pending: "Preparando sincronización...",
+        syncing: "Sincronizando borrador en tus dispositivos...",
+        title: "Borrador vivo",
+      };
+  state.captureSaveStatus = {
+    type: "info",
+    title: labels.title,
+    detail: status === "syncing" ? labels.syncing : labels.pending,
+    experienceId: document.getElementById("editingId")?.value || "",
+    experienceTitle: document.getElementById("titleInput")?.value.trim() || "",
+    savedAt: new Date().toISOString(),
+    reason: `autosave_${reason}_${status}`,
+    remote: false,
+    queued: false,
+    transient: true,
+  };
+  renderCaptureSaveStatus();
 }
 
 function ensureCaptureDraftId() {
@@ -9145,18 +9176,20 @@ function renderCaptureSaveStatus() {
     return;
   }
   const labels = state.language === "en"
-    ? { saved: "Saved", viewLibrary: "Open Library", keepCapturing: "Keep capturing", signIn: "Sign in", sync: "Save pending" }
-    : { saved: "Guardado", viewLibrary: "Abrir Librería", keepCapturing: "Seguir capturando", signIn: "Entrar", sync: "Guardar pendientes" };
+    ? { saved: "Saved", synced: "Synced", syncing: "Sync", viewLibrary: "Open Library", keepCapturing: "Keep capturing", signIn: "Sign in", sync: "Save pending" }
+    : { saved: "Guardado", synced: "Sincronizado", syncing: "Sync", viewLibrary: "Abrir Libreria", keepCapturing: "Seguir capturando", signIn: "Entrar", sync: "Guardar pendientes" };
+  const isAutosave = String(status.reason || "").startsWith("autosave_");
   const actionButtons = [
     status.reason === "auth_required" ? `<button class="primary-button" type="button" data-capture-save-action="auth">${escapeHtml(labels.signIn)}</button>` : "",
     status.queued ? `<button class="ghost-button" type="button" data-capture-save-action="sync">${escapeHtml(labels.sync)}</button>` : "",
-    `<button class="ghost-button" type="button" data-capture-save-action="library">${escapeHtml(labels.viewLibrary)}</button>`,
+    !isAutosave ? `<button class="ghost-button" type="button" data-capture-save-action="library">${escapeHtml(labels.viewLibrary)}</button>` : "",
     `<button class="ghost-button" type="button" data-capture-save-action="dismiss">${escapeHtml(labels.keepCapturing)}</button>`,
   ].filter(Boolean).join("");
+  const statusLabel = status.type === "info" ? labels.syncing : isAutosave ? labels.synced : labels.saved;
   box.innerHTML = `
-    <article class="capture-save-card ${status.type === "warn" ? "is-warn" : "is-success"}">
+    <article class="capture-save-card ${status.type === "warn" ? "is-warn" : status.type === "info" ? "is-info" : "is-success"}">
       <div>
-        <span>${escapeHtml(labels.saved)} · ${escapeHtml(formatDate(status.savedAt))}</span>
+        <span>${escapeHtml(statusLabel)} - ${escapeHtml(formatDate(status.savedAt))}</span>
         <strong>${escapeHtml(status.title)}</strong>
         <p>${escapeHtml(status.detail)}</p>
         <small>${escapeHtml(status.experienceTitle || "")}</small>
