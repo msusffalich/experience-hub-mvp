@@ -1,4 +1,4 @@
-const APP_VERSION = "20260522-auto-asset-processing-380";
+const APP_VERSION = "20260522-asset-auto-supervisor-381";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -1993,6 +1993,7 @@ const manualContent = {
         "El procesamiento de activos ahora muestra método, estado, fecha de procesamiento y texto extraído cuando existe. Ese texto entra en búsqueda, inventario JSON/CSV y auditoría de metadatos.",
         "Cuando Supabase está activo, Procesar ahora y Procesar visibles también sincronizan el resultado en la tabla compartida de activos. Otro dispositivo puede leer el texto analítico, el texto extraído, la traducción, el método y la fecha sin repetir el procesamiento local.",
         "Después de guardar una experiencia en Supabase, los activos pendientes se procesan automáticamente en segundo plano. El botón Procesar ahora queda como respaldo para reintentar o forzar un activo específico.",
+        "La regla operativa es clara: cada activo se procesa cuando entra si ya puede vincularse a una experiencia guardada; si aún no existe registro remoto, queda para el primer guardado en Supabase. El cierre de experiencia solo audita y reintenta pendientes, no es el paso normal de procesamiento.",
         "El backend local intenta extraer texto de TXT, Markdown, HTML, CSV, JSON, RTF, DOCX y PDF. PDF usa extracción heurística y puede requerir revisión si el archivo es escaneado o está protegido.",
         "El texto extraído o generado queda guardado como texto analítico del activo y entra en búsqueda, reportes, memoria y publicaciones, siempre con revisión humana antes de salidas finales.",
         "Administración incluye un tablero de frentes paralelos para agrupar el cierre del MVP en trabajo funcional, técnico, piloto, QA/manual e integraciones, con dueño sugerido y próxima acción.",
@@ -2543,6 +2544,7 @@ const manualContent = {
         "Asset processing now shows method, status, processed date, and extracted text when available. That text is included in search, JSON/CSV inventory, and metadata audit.",
         "When Supabase is active, Process now and Process visible also sync the result to the shared assets table. Another device can read analytical text, extracted text, translation, method, and date without repeating local processing.",
         "After an experience is saved in Supabase, pending assets are processed automatically in the background. The Process now button remains as a fallback to retry or force a specific asset.",
+        "The operating rule is explicit: each asset is processed when it enters if it can already be linked to a saved experience; if there is no remote record yet, it waits for the first Supabase save. Experience closure only audits and retries pending items; it is not the normal processing step.",
         "The local backend attempts text extraction for TXT, Markdown, HTML, CSV, JSON, RTF, DOCX, and PDF. PDF uses heuristic extraction and may require review when the file is scanned or protected.",
         "Extracted or generated text is saved as asset analytical text and becomes available for search, reports, memory, and publications, with human review before final outputs.",
         "Admin includes a parallel workstreams board to group MVP closure into functional, technical, pilot, QA/manual, and integration work, with suggested owner and next action.",
@@ -3346,6 +3348,7 @@ const state = {
   ops: { jobs: [], logs: [] },
   notifications: [],
   dashboardAttachmentFeedback: null,
+  autoAssetProcessing: { inProgress: false, timer: null, lastSignature: "", lastRunAt: 0 },
   lastDownload: null,
   lastDownloadUrl: "",
   lastServerExport: null,
@@ -3437,7 +3440,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   await hydrateFromApi();
   ensurePrimaryParticipant();
   ensurePilotClosureCompleted();
-  renderAll();
+  renderAllAndScheduleAutomation();
   applyInitialViewFromUrl();
   setupOpsPolling();
   setupDailyBriefingRefresh();
@@ -4164,6 +4167,7 @@ async function hydrateFromApi() {
     }
     await syncOfflineQueue({ silent: true });
     await loadBackendRoutines();
+    scheduleAutomaticAssetBacklogProcessing({ reason: "hydrate", delayMs: 1200, silent: true });
   } catch (error) {
     state.apiOnline = false;
     state.persistence = "local";
@@ -4943,6 +4947,7 @@ async function syncOfflineQueue(options = {}) {
       : state.language === "en" ? "Pending changes saved." : "Cambios pendientes guardados.";
   }
   renderAdmin();
+  scheduleAutomaticAssetBacklogProcessing({ reason: "offline-sync", delayMs: 1200, silent: true });
 }
 
 async function syncOfflineMutation(mutation) {
@@ -8135,6 +8140,11 @@ function renderAll() {
   renderAdmin();
   renderCoreMvpReturnBanner();
   renderPersistenceGateBanner();
+}
+
+function renderAllAndScheduleAutomation() {
+  renderAll();
+  scheduleAutomaticAssetBacklogProcessing({ reason: "render", delayMs: 1800, silent: true });
 }
 
 function setupDashboardClock() {
@@ -12493,7 +12503,7 @@ function scheduleAutomaticAssetProcessing(experience = {}) {
   if (!experience?.id || !state.apiOnline || !state.session?.access_token || state.config?.persistence !== "supabase") return;
   const pendingAssetKeys = collectMultimodalAssets()
     .filter((asset) => asset.experienceId === experience.id)
-    .filter((asset) => !buildAssetProcessingStatus(asset).ready)
+    .filter(assetNeedsAutomaticProcessing)
     .map((asset) => asset.assetKey)
     .filter(Boolean);
   if (!pendingAssetKeys.length) return;
@@ -12506,20 +12516,56 @@ function scheduleAutomaticAssetProcessing(experience = {}) {
   }, 250);
 }
 
-async function processAssetKeysInBackground(assetKeys = [], experienceId = "") {
+function scheduleAutomaticAssetBacklogProcessing(options = {}) {
+  if (!state.apiOnline || !state.session?.access_token || state.config?.persistence !== "supabase") return;
+  if (state.autoAssetProcessing?.inProgress) return;
+  const pendingAssetKeys = collectMultimodalAssets()
+    .filter(assetNeedsAutomaticProcessing)
+    .map((asset) => asset.assetKey)
+    .filter(Boolean);
+  if (!pendingAssetKeys.length) return;
+  const signature = pendingAssetKeys.slice(0, 12).join("|");
+  const now = Date.now();
+  if (signature === state.autoAssetProcessing.lastSignature && now - state.autoAssetProcessing.lastRunAt < 45000) return;
+  if (state.autoAssetProcessing.timer) clearTimeout(state.autoAssetProcessing.timer);
+  state.autoAssetProcessing.timer = setTimeout(() => {
+    state.autoAssetProcessing.timer = null;
+    void processAssetKeysInBackground(pendingAssetKeys, options.reason || "backlog", { silent: options.silent !== false });
+  }, Number(options.delayMs || 1500));
+}
+
+function assetNeedsAutomaticProcessing(asset = {}) {
+  if (!asset.assetKey || isArchiveAsset(asset)) return false;
+  const metadata = state.assetMetadata[asset.assetKey] || {};
+  const processing = buildAssetProcessingStatus(asset);
+  if (!processing.ready) return true;
+  const hasProcessedText = Boolean(String(metadata.analysisText || metadata.extractedText || asset.analysisText || asset.extractedText || "").trim());
+  const needsRemoteSync = hasProcessedText && state.config?.persistence === "supabase" && !metadata.remoteSyncedAt;
+  return Boolean(needsRemoteSync || metadata.remoteSyncError);
+}
+
+async function processAssetKeysInBackground(assetKeys = [], contextId = "", options = {}) {
+  if (state.autoAssetProcessing?.inProgress) return;
   const uniqueKeys = [...new Set(assetKeys)].slice(0, 10);
+  state.autoAssetProcessing.inProgress = true;
+  state.autoAssetProcessing.lastSignature = uniqueKeys.join("|");
+  state.autoAssetProcessing.lastRunAt = Date.now();
   let processed = 0;
-  for (const key of uniqueKeys) {
-    const ok = await processAssetNow(key, { silent: true, countLocal: false });
-    if (ok) processed += 1;
+  try {
+    for (const key of uniqueKeys) {
+      const ok = await processAssetNow(key, { silent: true, countLocal: false });
+      if (ok) processed += 1;
+    }
+  } finally {
+    state.autoAssetProcessing.inProgress = false;
   }
   renderAssetLibrary();
   renderAdmin();
   const message = state.language === "en"
     ? `${processed}/${uniqueKeys.length} attachment(s) processed and synced automatically.`
     : `${processed}/${uniqueKeys.length} adjunto(s) procesados y sincronizados automáticamente.`;
-  notify(message, processed === uniqueKeys.length ? "ok" : "warn");
-  markAssetWorkflowAudit("autoProcessedAt", { experienceId, processed, attempted: uniqueKeys.length });
+  if (!options.silent || processed) notify(message, processed === uniqueKeys.length ? "ok" : "warn");
+  markAssetWorkflowAudit("autoProcessedAt", { contextId, processed, attempted: uniqueKeys.length });
 }
 
 async function processAssetNow(key, options = {}) {
@@ -21299,7 +21345,7 @@ function renderAdminOperationalFocusPanel() {
         eventTimeline: "Event timeline visible",
         eventTimelineDetail: "Library, Timeline, Reports, JSON, HTML, and CSV now preserve internal events for long experiences.",
         assetProcessing: "Asset processing evidence",
-        assetProcessingDetail: "Asset cards, search, inventory, metadata imports, automatic processing, and one-click retries preserve extracted text, method, status, processing date, and Supabase sync.",
+        assetProcessingDetail: "Asset cards, search, inventory, metadata imports, automatic processing, startup/backlog recovery, and one-click retries preserve extracted text, method, status, processing date, and Supabase sync.",
       }
     : {
         title: "Administración operativa",
@@ -21326,7 +21372,7 @@ function renderAdminOperationalFocusPanel() {
     labels.eventTimeline = "L\u00ednea de eventos visible";
     labels.eventTimelineDetail = "Librer\u00eda, L\u00ednea de tiempo, Reportes, JSON, HTML y CSV ahora conservan eventos internos para experiencias largas.";
     labels.assetProcessing = "Evidencia de procesamiento";
-    labels.assetProcessingDetail = "Las tarjetas, b\u00fasqueda, inventario, importaci\u00f3n de metadatos, procesamiento autom\u00e1tico y reintento manual conservan texto extra\u00eddo, m\u00e9todo, estado, fecha y sincronizaci\u00f3n en Supabase.";
+    labels.assetProcessingDetail = "Las tarjetas, b\u00fasqueda, inventario, importaci\u00f3n de metadatos, procesamiento autom\u00e1tico, recuperaci\u00f3n de pendientes y reintento manual conservan texto extra\u00eddo, m\u00e9todo, estado, fecha y sincronizaci\u00f3n en Supabase.";
   }
   const cards = [
     [labels.flow, labels.flowDetail],
