@@ -1,4 +1,4 @@
-const APP_VERSION = "20260521-audio-validation-366";
+const APP_VERSION = "20260521-audio-flow-webm-367";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -65,7 +65,7 @@ const ARCHIVE_EXTENSIONS = new Set(["zip", "rar", "7z"]);
 const TEXT_PREVIEW_DOCUMENT_EXTENSIONS = new Set(["txt", "md", "markdown", "html", "htm", "csv", "json"]);
 const BROWSER_PREVIEWABLE = {
   image: new Set(["jpg", "jpeg", "png", "gif", "svg", "webp", "avif", "bmp"]),
-  audio: new Set(["mp3", "wav", "m4a", "aac", "ogg", "opus", "flac"]),
+  audio: new Set(["mp3", "wav", "m4a", "aac", "ogg", "opus", "flac", "webm"]),
   video: new Set(["mp4", "m4v", "webm", "mov"]),
   document: new Set(["txt", "md", "markdown", "html", "htm", "csv", "json"]),
 };
@@ -295,13 +295,16 @@ const i18n = {
       recordAudio: "Grabar audio",
       stopAudioRecording: "Detener",
       audioCaptureUnavailable: "Grabación no disponible en este navegador",
-      audioCaptureOptional: "Audio manual opcional",
+      audioCaptureOptional: "Listo para grabar",
+      audioCaptureReady: "Listo: pulsa Grabar audio y habla con naturalidad.",
+      audioCaptureRecording: "Grabando: habla; al terminar pulsa Detener.",
       audioCaptureProcessing: "Procesando audio...",
       audioCaptureAdded: "Audio agregado a la experiencia",
       audioCaptureAddedTranscript: "Audio agregado con transcripción",
+      audioCaptureError: "No se pudo grabar audio. Revisa permisos de micrófono e inténtalo de nuevo.",
       audioCaptureGuideTitle: "Captura rápida por audio",
       audioCaptureGuideText: "Para experiencias cortas al paso, habla y deja que la app prepare un borrador. Luego solo confirma los campos antes de guardar.",
-      audioCaptureGuideSteps: "La transcripción puede completar título, notas, categoría, objetivo y duración si esos campos están vacíos. El audio queda como evidencia adjunta.",
+      audioCaptureGuideSteps: "Flujo: 1. Grabar. 2. Detener. 3. Revisar el borrador y guardar. El audio queda como evidencia adjunta.",
       attachmentInputLabel: "Imágenes, videos, audio o documentos",
       attachmentPreviewAvailable: "Vista previa disponible",
       attachmentDocumentPreview: "Vista previa textual",
@@ -1076,13 +1079,16 @@ const i18n = {
       recordAudio: "Record audio",
       stopAudioRecording: "Stop",
       audioCaptureUnavailable: "Recording is not available in this browser",
-      audioCaptureOptional: "Optional manual audio",
+      audioCaptureOptional: "Ready to record",
+      audioCaptureReady: "Ready: press Record audio and speak naturally.",
+      audioCaptureRecording: "Recording: speak; press Stop when finished.",
       audioCaptureProcessing: "Processing audio...",
       audioCaptureAdded: "Audio added to the experience",
       audioCaptureAddedTranscript: "Audio added with transcript",
+      audioCaptureError: "Audio could not be recorded. Check microphone permissions and try again.",
       audioCaptureGuideTitle: "Quick audio capture",
       audioCaptureGuideText: "For short on-the-go experiences, speak and let the app prepare a draft. Then just confirm the fields before saving.",
-      audioCaptureGuideSteps: "The transcript can complete title, notes, category, goal, and duration when those fields are empty. The audio remains attached as evidence.",
+      audioCaptureGuideSteps: "Flow: 1. Record. 2. Stop. 3. Review the draft and save. The audio remains attached as evidence.",
       attachmentInputLabel: "Images, videos, audio, or documents",
       attachmentPreviewAvailable: "Preview available",
       attachmentDocumentPreview: "Text preview",
@@ -2118,7 +2124,7 @@ const manualContent = {
         "La revisión de gramática y claridad entrega sugerencias locales para título, objetivo, ubicación, personas y notas. No bloquea el guardado; sirve para mejorar la lectura y los reportes.",
         "Cada sugerencia muestra texto propuesto editable y un botón Aplicar. También puede abrir Copilot con un prompt de reescritura preparado, si el navegador permite ventanas externas.",
         "Puedes adjuntar imágenes, videos o audio en múltiples formatos. El panel de adjuntos muestra tipo, formato, tamaño, estado de vista previa y cómo se clasificará el archivo al guardar.",
-        "Captura rápida por audio: para experiencias cortas al paso, puedes grabar o adjuntar audio; la transcripción completa un borrador de título, notas, categoría, objetivo y duración cuando esos campos están vacíos. Antes de guardar, solo confirmas lo esencial.",
+        "Captura rápida por audio: para experiencias cortas al paso, puedes grabar o adjuntar audio; la app guía el flujo Grabar, Detener, Revisar y Guardar. Los audios WebM grabados en PC se tratan como audio, no como video, para permitir transcripción y evidencia.",
         "Imágenes aceptadas: JPG/JPEG, PNG, GIF, SVG, WebP, AVIF, HEIC/HEIF, TIFF, BMP y formatos RAW comunes como DNG, CR2, NEF y ARW. Vista previa nativa inicial: JPG/JPEG, PNG, GIF, SVG, WebP, AVIF y BMP.",
         "Audio aceptado: MP3, WAV, M4A, AAC, FLAC, OGG, OPUS, WMA, AIFF/AIF y AMR. Vista previa/reproducción nativa inicial: MP3, WAV, M4A, AAC, OGG, OPUS y FLAC, según soporte del navegador.",
         "Video aceptado: MP4, MOV, M4V, WebM, MKV, AVI, WMV, MPEG/MPG, 3GP y HEVC. Vista previa/reproducción nativa inicial: MP4, M4V, WebM y MOV, según soporte del navegador.",
@@ -2650,7 +2656,7 @@ const manualContent = {
         "The grammar and clarity review provides local suggestions for title, objective, location, people, and notes. It does not block saving; it improves reading quality and reports.",
         "Each suggestion shows editable proposed text and an Apply button. It can also open Copilot with a prepared rewrite prompt if the browser allows external windows.",
         "Attach images, videos, or audio in many formats. The attachment panel shows type, format, size, preview status, and how the file will be classified when saved.",
-        "Quick audio capture: for short on-the-go experiences, record or attach audio; the transcript completes a draft title, notes, category, goal, and duration when those fields are empty. Before saving, you only confirm the essentials.",
+        "Quick audio capture: for short on-the-go experiences, record or attach audio; the app guides the Record, Stop, Review, and Save flow. WebM audio recorded on PCs is treated as audio, not video, so it can be transcribed and attached as evidence.",
         "Accepted image formats: JPG/JPEG, PNG, GIF, SVG, WebP, AVIF, HEIC/HEIF, TIFF, BMP, and common RAW formats such as DNG, CR2, NEF, and ARW. Initial native preview: JPG/JPEG, PNG, GIF, SVG, WebP, AVIF, and BMP.",
         "Accepted audio formats: MP3, WAV, M4A, AAC, FLAC, OGG, OPUS, WMA, AIFF/AIF, and AMR. Initial native playback: MP3, WAV, M4A, AAC, OGG, OPUS, and FLAC, depending on browser support.",
         "Accepted video formats: MP4, MOV, M4V, WebM, MKV, AVI, WMV, MPEG/MPG, 3GP, and HEVC. Initial native playback: MP4, M4V, WebM, and MOV, depending on browser support.",
@@ -7278,11 +7284,11 @@ function readSelectedFiles() {
         : `Algunos archivos se omitieron. El MVP acepta formatos compatibles de imagen, audio, video, documentos y comprimidos de hasta ${canUploadBinary ? 75 : 25} MB por archivo.`,
     );
   }
-  return Promise.all(accepted.map(readAndPersistMedia));
+  return Promise.all(accepted.map((file) => readAndPersistMedia(file)));
 }
 
-async function readAndPersistMedia(file) {
-  const metadata = await buildFileAttachmentMetadata(file);
+async function readAndPersistMedia(file, overrides = {}) {
+  const metadata = { ...(await buildFileAttachmentMetadata(file)), ...overrides };
   if (state.apiOnline && state.session?.access_token) {
     try {
       const uploaded = await uploadFileAttachment(file, metadata);
@@ -7362,10 +7368,22 @@ function inferMediaKind(fileOrAttachment) {
   if (fileOrAttachment.kind) return fileOrAttachment.kind;
   const type = fileOrAttachment.type || "";
   if (type.startsWith("image/")) return "image";
-  if (type.startsWith("video/")) return "video";
   if (type.startsWith("audio/")) return "audio";
   const extension = getFileExtension(fileOrAttachment.name);
+  if (extension === "webm" && isLikelyAudioWebm(fileOrAttachment)) return "audio";
+  if (type.startsWith("video/")) return "video";
   return MEDIA_EXTENSION_KIND[extension] || (DOCUMENT_EXTENSIONS.has(extension) ? "document" : "document");
+}
+
+function isLikelyAudioWebm(fileOrAttachment = {}) {
+  const extension = getFileExtension(fileOrAttachment.name || fileOrAttachment.url || "");
+  const type = String(fileOrAttachment.type || fileOrAttachment.originalType || "").toLowerCase();
+  const name = String(fileOrAttachment.name || "").toLowerCase();
+  const source = String(fileOrAttachment.sourceType || fileOrAttachment.source || fileOrAttachment.metadata?.sourceType || "").toLowerCase();
+  return extension === "webm"
+    && (type === "audio/webm"
+      || source.includes("audio")
+      || /(^|[-_\s])(audio|voz|voice|record|recording|grabacion|grabación|captura)([-_\s]|\d|$)/i.test(name));
 }
 
 function getFileExtension(name = "") {
@@ -7394,6 +7412,7 @@ function mimeFromExtension(extension, kind) {
   }
   if (extension === "svg") return "image/svg+xml";
   if (extension === "jpg") return "image/jpeg";
+  if (extension === "webm" && kind === "audio") return "audio/webm";
   if (extension === "m4a") return "audio/mp4";
   if (extension === "mov") return "video/quicktime";
   return `${kind}/${extension}`;
@@ -7401,6 +7420,7 @@ function mimeFromExtension(extension, kind) {
 
 function isBrowserPreviewable(kind, extension, type = "") {
   if (type.startsWith("image/svg")) return true;
+  if (kind === "audio" && type.includes("webm")) return true;
   return BROWSER_PREVIEWABLE[kind]?.has(extension) || false;
 }
 
@@ -7616,39 +7636,75 @@ function setupAudioCapture() {
     return;
   }
   button.textContent = t("labels.recordAudio");
-  status.textContent = t("labels.audioCaptureOptional");
+  updateAudioCaptureStatus("ready");
   button.addEventListener("click", async () => {
     if (state.mediaRecorder?.state === "recording") {
+      button.disabled = true;
       state.mediaRecorder.stop();
       stopSpeechTranscription();
       button.textContent = t("labels.recordAudio");
-      status.textContent = t("labels.audioCaptureProcessing");
+      updateAudioCaptureStatus("processing");
       return;
     }
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    state.audioChunks = [];
-    state.liveTranscript = "";
-    state.mediaRecorder = new MediaRecorder(stream);
-    state.mediaRecorder.addEventListener("dataavailable", (event) => {
-      if (event.data.size) state.audioChunks.push(event.data);
-    });
-    state.mediaRecorder.addEventListener("stop", async () => {
-      stream.getTracks().forEach((track) => track.stop());
-      const blob = new Blob(state.audioChunks, { type: "audio/webm" });
-      const file = new File([blob], `audio-${Date.now()}.webm`, { type: "audio/webm" });
-      const attachment = await readAndPersistMedia(file);
-      state.pendingAttachments.push(attachment);
-      if (state.liveTranscript) appendLiveTranscriptToNotes();
-      renderAttachmentPreview();
-      status.textContent = state.liveTranscript
-        ? t("labels.audioCaptureAddedTranscript")
-        : t("labels.audioCaptureAdded");
-    });
-    state.mediaRecorder.start();
-    startSpeechTranscription();
-    button.textContent = t("labels.stopAudioRecording");
-    status.textContent = state.language === "en" ? "Recording..." : "Grabando...";
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mimeType = MediaRecorder.isTypeSupported?.("audio/webm") ? "audio/webm" : "";
+      state.audioChunks = [];
+      state.liveTranscript = "";
+      state.mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      state.mediaRecorder.addEventListener("dataavailable", (event) => {
+        if (event.data.size) state.audioChunks.push(event.data);
+      });
+      state.mediaRecorder.addEventListener("stop", async () => {
+        try {
+          stream.getTracks().forEach((track) => track.stop());
+          const blobType = state.mediaRecorder?.mimeType || "audio/webm";
+          const blob = new Blob(state.audioChunks, { type: blobType });
+          const file = new File([blob], `audio-captura-${Date.now()}.webm`, { type: blobType });
+          const attachment = await readAndPersistMedia(file, { sourceType: "audio_capture", kind: "audio", type: "audio/webm" });
+          state.pendingAttachments.push({
+            ...attachment,
+            kind: "audio",
+            type: attachment.type?.startsWith("audio/") ? attachment.type : "audio/webm",
+            originalType: attachment.originalType || blobType,
+            sourceType: "audio_capture",
+          });
+          if (state.liveTranscript) appendLiveTranscriptToNotes();
+          renderAttachmentPreview();
+          updateAudioCaptureStatus(state.liveTranscript ? "addedTranscript" : "added");
+        } catch {
+          updateAudioCaptureStatus("error");
+        } finally {
+          button.disabled = false;
+          state.mediaRecorder = null;
+        }
+      });
+      state.mediaRecorder.start();
+      startSpeechTranscription();
+      button.textContent = t("labels.stopAudioRecording");
+      updateAudioCaptureStatus("recording");
+    } catch {
+      updateAudioCaptureStatus("error");
+    }
   });
+}
+
+function updateAudioCaptureStatus(statusKey, detail = "") {
+  const status = document.getElementById("recordingStatus");
+  const guide = document.getElementById("audioCaptureGuide");
+  const labels = {
+    ready: t("labels.audioCaptureReady"),
+    recording: t("labels.audioCaptureRecording"),
+    processing: t("labels.audioCaptureProcessing"),
+    added: t("labels.audioCaptureAdded"),
+    addedTranscript: t("labels.audioCaptureAddedTranscript"),
+    error: t("labels.audioCaptureError"),
+  };
+  const message = detail || labels[statusKey] || t("labels.audioCaptureOptional");
+  if (status) status.textContent = message;
+  if (guide) {
+    guide.dataset.audioStatus = statusKey || "ready";
+  }
 }
 
 function startSpeechTranscription() {
@@ -7665,7 +7721,7 @@ function startSpeechTranscription() {
       .trim();
     state.liveTranscript = transcript;
     if (transcript) {
-      document.getElementById("recordingStatus").textContent = `Grabando... ${transcript.slice(-70)}`;
+      updateAudioCaptureStatus("recording", `${state.language === "en" ? "Recording" : "Grabando"}: ${transcript.slice(-70)}`);
     }
   });
   recognition.addEventListener("error", () => {
@@ -7705,9 +7761,15 @@ function renderAudioCaptureGuide() {
   const guide = document.getElementById("audioCaptureGuide");
   if (!guide) return;
   guide.innerHTML = `
-    <strong>${escapeHtml(t("labels.audioCaptureGuideTitle"))}</strong>
-    <p>${escapeHtml(t("labels.audioCaptureGuideText"))}</p>
-    <small>${escapeHtml(t("labels.audioCaptureGuideSteps"))}</small>
+    <div>
+      <strong>${escapeHtml(t("labels.audioCaptureGuideTitle"))}</strong>
+      <p>${escapeHtml(t("labels.audioCaptureGuideText"))}</p>
+    </div>
+    <ol>
+      <li>${escapeHtml(state.language === "en" ? "Press Record audio." : "Pulsa Grabar audio.")}</li>
+      <li>${escapeHtml(state.language === "en" ? "Speak naturally and press Stop." : "Habla con naturalidad y pulsa Detener.")}</li>
+      <li>${escapeHtml(state.language === "en" ? "Review the draft fields, attach more files if needed, and save." : "Revisa el borrador, adjunta más archivos si hace falta y guarda.")}</li>
+    </ol>
   `;
 }
 
@@ -12095,14 +12157,14 @@ async function buildProcessedAssetAnalysis(asset, manual = {}) {
       // Fall back to a structured human-review note below.
     }
   }
-  if (asset.kind === "audio" && state.apiOnline && state.config?.transcriptionProvider === "openai") {
+  if (isTranscriptionCandidateAsset(asset) && state.apiOnline && state.config?.transcriptionProvider === "openai") {
     try {
       const payload = await apiRequest("/transcribe", {
         method: "POST",
         body: JSON.stringify({
           id: asset.id || asset.assetKey,
           name: asset.name,
-          type: asset.type || asset.originalType || "audio/mpeg",
+          type: normalizeTranscriptionMimeType(asset),
           size: asset.size || 0,
           dataUrl: asset.dataUrl,
           url: asset.url,
@@ -12126,6 +12188,16 @@ async function buildProcessedAssetAnalysis(asset, manual = {}) {
     extractedText: "",
     analysisText: buildGuidedProcessingAnalysis(asset, manual),
   };
+}
+
+function isTranscriptionCandidateAsset(asset = {}) {
+  if (asset.kind === "audio") return true;
+  return isLikelyAudioWebm(asset);
+}
+
+function normalizeTranscriptionMimeType(asset = {}) {
+  if (isLikelyAudioWebm(asset)) return "audio/webm";
+  return asset.type || asset.originalType || "audio/mpeg";
 }
 
 function extractReadableAssetText(asset) {

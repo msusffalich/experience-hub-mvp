@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260521-audio-validation-366";
+const CACHE_NAME = "experience-hub-pwa-20260521-audio-flow-webm-367";
 const APP_SHELL = [
   "/",
   "/index.html",

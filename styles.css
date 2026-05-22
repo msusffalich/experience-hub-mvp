@@ -7303,15 +7303,45 @@ button.asset-processing-summary-card {
   flex-wrap: wrap;
 }
 
+.audio-capture button {
+  min-width: 150px;
+}
+
+#recordingStatus {
+  min-height: 24px;
+  line-height: 1.35;
+}
+
 .audio-capture-guide,
 .audio-readiness-card {
   display: grid;
-  gap: 6px;
+  gap: 10px;
   padding: 12px;
   border: 1px solid rgba(13, 124, 102, 0.18);
   border-radius: 8px;
   background: rgba(237, 244, 239, 0.72);
   color: var(--ink);
+}
+
+.audio-capture-guide[data-audio-status="recording"] {
+  border-color: rgba(200, 121, 19, 0.36);
+  background: rgba(255, 248, 232, 0.9);
+}
+
+.audio-capture-guide[data-audio-status="processing"] {
+  border-color: rgba(46, 110, 166, 0.32);
+  background: rgba(236, 244, 252, 0.9);
+}
+
+.audio-capture-guide[data-audio-status="added"],
+.audio-capture-guide[data-audio-status="addedTranscript"] {
+  border-color: rgba(13, 124, 102, 0.36);
+  background: rgba(231, 246, 239, 0.92);
+}
+
+.audio-capture-guide[data-audio-status="error"] {
+  border-color: rgba(171, 68, 55, 0.36);
+  background: rgba(255, 240, 238, 0.92);
 }
 
 .audio-capture-guide p,
@@ -7321,6 +7351,14 @@ button.asset-processing-summary-card {
   margin: 0;
   color: var(--muted);
   line-height: 1.45;
+}
+
+.audio-capture-guide ol {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 20px;
+  color: var(--ink);
 }
 
 .audio-readiness-card {

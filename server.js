@@ -1117,13 +1117,25 @@ function inferServerMediaKind(attachment = {}) {
   const type = String(attachment.type || attachment.originalType || "").toLowerCase();
   if (type.startsWith("image/")) return "image";
   if (type.startsWith("audio/")) return "audio";
-  if (type.startsWith("video/")) return "video";
   if (type.startsWith("text/") || type.includes("pdf") || type.includes("word") || type.includes("json") || type.includes("zip") || type.includes("rar") || type.includes("7z")) return "document";
   const ext = String(attachment.extension || attachment.name?.split(".").pop() || "").toLowerCase();
   if (["jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "avif", "tif", "tiff"].includes(ext)) return "image";
   if (["mp3", "wav", "m4a", "aac", "flac", "ogg", "opus", "wma", "aiff", "aif", "amr"].includes(ext)) return "audio";
+  if (ext === "webm" && isLikelyServerAudioWebm(attachment)) return "audio";
+  if (type.startsWith("video/")) return "video";
   if (["mp4", "mov", "m4v", "webm", "mkv", "avi", "wmv", "mpeg", "mpg", "3gp"].includes(ext)) return "video";
   return "document";
+}
+
+function isLikelyServerAudioWebm(attachment = {}) {
+  const type = String(attachment.type || attachment.originalType || "").toLowerCase();
+  const name = String(attachment.name || "").toLowerCase();
+  const source = String(attachment.sourceType || attachment.source || attachment.metadata?.sourceType || "").toLowerCase();
+  const ext = String(attachment.extension || attachment.name?.split(".").pop() || "").toLowerCase();
+  return ext === "webm"
+    && (type === "audio/webm"
+      || source.includes("audio")
+      || /(^|[-_\s])(audio|voz|voice|record|recording|grabacion|grabación|captura)([-_\s]|\d|$)/i.test(name));
 }
 
 function encodePostgrestListValue(value) {
@@ -2577,13 +2589,14 @@ async function transcribeMedia(media) {
     };
   }
   const normalized = normalizeMedia(media);
-  if ((!normalized.dataUrl && !normalized.url) || !normalized.type.startsWith("audio/")) {
+  if ((!normalized.dataUrl && !normalized.url) || !isTranscribableServerMedia(normalized)) {
     throw new HttpError(400, "audio_data_required");
   }
   const bytes = await getDocumentBytes(normalized);
+  const transcriptionType = normalized.type.startsWith("audio/") ? normalized.type : "audio/webm";
   const form = new FormData();
   form.append("model", OPENAI_TRANSCRIPTION_MODEL);
-  form.append("file", new Blob([bytes], { type: normalized.type }), normalized.name || "audio.webm");
+  form.append("file", new Blob([bytes], { type: transcriptionType }), normalized.name || "audio.webm");
   const response = await fetch("https://api.openai.com/v1/audio/transcriptions", {
     method: "POST",
     headers: {
@@ -2601,6 +2614,12 @@ async function transcribeMedia(media) {
     transcript: payload.text || "",
     status: "ok",
   };
+}
+
+function isTranscribableServerMedia(media = {}) {
+  const type = String(media.type || media.originalType || "").toLowerCase();
+  if (type.startsWith("audio/")) return true;
+  return isLikelyServerAudioWebm(media);
 }
 
 async function extractDocumentText(media) {
