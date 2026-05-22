@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260522-asset-auto-supervisor-381";
+const CACHE_NAME = "experience-hub-pwa-20260522-live-draft-sync-382";
 const APP_SHELL = [
   "/",
   "/index.html",

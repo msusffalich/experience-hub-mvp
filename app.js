@@ -1,4 +1,4 @@
-const APP_VERSION = "20260522-asset-auto-supervisor-381";
+const APP_VERSION = "20260522-live-draft-sync-382";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -1994,6 +1994,7 @@ const manualContent = {
         "Cuando Supabase está activo, Procesar ahora y Procesar visibles también sincronizan el resultado en la tabla compartida de activos. Otro dispositivo puede leer el texto analítico, el texto extraído, la traducción, el método y la fecha sin repetir el procesamiento local.",
         "Después de guardar una experiencia en Supabase, los activos pendientes se procesan automáticamente en segundo plano. El botón Procesar ahora queda como respaldo para reintentar o forzar un activo específico.",
         "La regla operativa es clara: cada activo se procesa cuando entra si ya puede vincularse a una experiencia guardada; si aún no existe registro remoto, queda para el primer guardado en Supabase. El cierre de experiencia solo audita y reintenta pendientes, no es el paso normal de procesamiento.",
+        "Captura funciona como borrador vivo cuando hay sesión y Supabase: al escribir narrativa, cambiar campos o adjuntar un archivo, la experiencia se sincroniza en segundo plano con otros dispositivos. Guardar queda como confirmación final, no como el primer momento de sincronización.",
         "El backend local intenta extraer texto de TXT, Markdown, HTML, CSV, JSON, RTF, DOCX y PDF. PDF usa extracción heurística y puede requerir revisión si el archivo es escaneado o está protegido.",
         "El texto extraído o generado queda guardado como texto analítico del activo y entra en búsqueda, reportes, memoria y publicaciones, siempre con revisión humana antes de salidas finales.",
         "Administración incluye un tablero de frentes paralelos para agrupar el cierre del MVP en trabajo funcional, técnico, piloto, QA/manual e integraciones, con dueño sugerido y próxima acción.",
@@ -2456,6 +2457,11 @@ const manualContent = {
         "El modo móvil compacta navegación, acciones superiores, botones, tarjetas y paneles para reducir desbordes.",
         "En pantallas pequeñas, la navegación pasa a una barra horizontal deslizable y las acciones principales se apilan para evitar botones cortados.",
         "Las funciones avanzadas de administración, reportes y publicaciones siguen siendo más cómodas en tablet o escritorio.",
+        "Alcance recomendado: la PWA es el centro de análisis, revisión, administración, reportes, publicaciones y trabajo asincrónico en PC, Mac, tablets y móviles.",
+        "La captura completa en PWA es viable cuando el usuario carga manualmente fotos, audios, videos o documentos. La captura rápida en PWA debe entenderse como captura asistida, no como control nativo completo del dispositivo.",
+        "Para control real de cámara, video, audio continuo, wake word, sensores, ubicación avanzada o tareas en segundo plano, el producto necesitará una app móvil nativa o híbrida complementaria.",
+        "La app móvil recomendada sería una sola base Flutter o React Native para iPhone, iPad y Android. Wearables, lentes y servicios externos se integrarían por conectores graduales, no por una app distinta para cada dispositivo.",
+        "La integración entre PWA, app móvil y conectores debe hacerse por Supabase/API usando el mismo contrato de datos: workspace, usuario, participante, experiencia, evento, activo, dispositivo, fecha de captura, permisos, ruta Storage y estado de procesamiento.",
       ],
     },
     {
@@ -2545,6 +2551,7 @@ const manualContent = {
         "When Supabase is active, Process now and Process visible also sync the result to the shared assets table. Another device can read analytical text, extracted text, translation, method, and date without repeating local processing.",
         "After an experience is saved in Supabase, pending assets are processed automatically in the background. The Process now button remains as a fallback to retry or force a specific asset.",
         "The operating rule is explicit: each asset is processed when it enters if it can already be linked to a saved experience; if there is no remote record yet, it waits for the first Supabase save. Experience closure only audits and retries pending items; it is not the normal processing step.",
+        "Capture works as a live draft when sign-in and Supabase are active: narrative edits, field changes, and attachments sync in the background to other devices. Save becomes final confirmation, not the first synchronization point.",
         "The local backend attempts text extraction for TXT, Markdown, HTML, CSV, JSON, RTF, DOCX, and PDF. PDF uses heuristic extraction and may require review when the file is scanned or protected.",
         "Extracted or generated text is saved as asset analytical text and becomes available for search, reports, memory, and publications, with human review before final outputs.",
         "Admin includes a parallel workstreams board to group MVP closure into functional, technical, pilot, QA/manual, and integration work, with suggested owner and next action.",
@@ -3008,6 +3015,11 @@ const manualContent = {
         "Mobile mode compacts navigation, top actions, buttons, cards, and panels to reduce overflow.",
         "On small screens, navigation becomes a horizontal scroll bar and main actions stack to avoid clipped buttons.",
         "Advanced admin, reporting, and publishing workflows remain more comfortable on tablet or desktop.",
+        "Recommended scope: the PWA is the center for analysis, review, administration, reports, publications, and asynchronous work on PC, Mac, tablets, and mobile devices.",
+        "Full PWA capture is viable when the user manually attaches photos, audio, video, or documents. Quick capture in the PWA should be understood as assisted capture, not full native device control.",
+        "Real control of camera, video, continuous audio, wake word, sensors, advanced location, or background tasks requires a complementary native or hybrid mobile app.",
+        "The recommended mobile app would use one Flutter or React Native codebase for iPhone, iPad, and Android. Wearables, smart glasses, and external services should be integrated through gradual connectors, not a separate full app for every device.",
+        "PWA, mobile app, and connectors should integrate through Supabase/API using the same data contract: workspace, user, participant, experience, event, asset, device, capture time, permissions, Storage path, and processing status.",
       ],
     },
     {
@@ -3316,6 +3328,7 @@ const state = {
   manualReview: loadManualReview(),
   pendingAttachments: [],
   captureSaveStatus: null,
+  captureDraftAutosave: { inProgress: false, timer: null, lastSignature: "", lastSavedAt: 0 },
   captureWritingSuggestions: [],
   lastSavedExperienceId: "",
   currentPublicationDraft: null,
@@ -5830,9 +5843,12 @@ function setupForm() {
   document.getElementById("mediaInput").addEventListener("change", handleMediaSelection);
   form.addEventListener("input", renderCaptureWritingCoach);
   form.addEventListener("change", renderCaptureWritingCoach);
+  form.addEventListener("input", () => scheduleCaptureDraftAutosave("input"));
+  form.addEventListener("change", () => scheduleCaptureDraftAutosave("change"));
   document.getElementById("experienceEventsInput")?.addEventListener("input", () => {
     renderCaptureEventPreview();
     renderAttachmentPreview();
+    scheduleCaptureDraftAutosave("events");
   });
   document.getElementById("attachmentPreview")?.addEventListener("change", handleAttachmentEventSelection);
   document.getElementById("captureSaveStatus")?.addEventListener("click", handleCaptureSaveStatusClick);
@@ -7333,6 +7349,9 @@ function clearForm() {
   document.getElementById("editingId").value = "";
   document.getElementById("experienceForm").reset();
   state.pendingAttachments = [];
+  state.captureDraftAutosave.lastSignature = "";
+  if (state.captureDraftAutosave.timer) clearTimeout(state.captureDraftAutosave.timer);
+  state.captureDraftAutosave.timer = null;
   document.getElementById("durationInput").value = 30;
   document.getElementById("pilotParticipantInput").value = "";
   document.getElementById("syncAgendaInput").checked = false;
@@ -7450,6 +7469,124 @@ function buildCaptureSaveStatus(experience, apiResult = {}, edited = false) {
   };
 }
 
+function scheduleCaptureDraftAutosave(reason = "input", options = {}) {
+  if (!canLiveSyncCaptureDraft()) return;
+  if (state.captureDraftAutosave.inProgress) return;
+  const signature = buildCaptureDraftSignature();
+  if (!signature || signature === state.captureDraftAutosave.lastSignature) return;
+  if (state.captureDraftAutosave.timer) clearTimeout(state.captureDraftAutosave.timer);
+  state.captureDraftAutosave.timer = setTimeout(() => {
+    state.captureDraftAutosave.timer = null;
+    void autosaveCaptureDraft(reason);
+  }, Number(options.delayMs || 2500));
+}
+
+function canLiveSyncCaptureDraft() {
+  if (!state.apiOnline || !state.session?.access_token || state.config?.persistence !== "supabase") return false;
+  const title = document.getElementById("titleInput")?.value.trim() || "";
+  const objective = document.getElementById("objectiveInput")?.value.trim() || "";
+  const notes = document.getElementById("notesInput")?.value.trim() || "";
+  const events = document.getElementById("experienceEventsInput")?.value.trim() || "";
+  return Boolean(title || objective || notes.length >= 12 || events || state.pendingAttachments.length);
+}
+
+function buildCaptureDraftSignature() {
+  const fields = [
+    document.getElementById("editingId")?.value || "",
+    document.getElementById("titleInput")?.value || "",
+    document.getElementById("categoryInput")?.value || "",
+    document.getElementById("objectiveInput")?.value || "",
+    document.getElementById("timestampInput")?.value || "",
+    document.getElementById("durationInput")?.value || "",
+    document.getElementById("locationInput")?.value || "",
+    document.getElementById("peopleInput")?.value || "",
+    document.getElementById("notesInput")?.value || "",
+    document.getElementById("experienceEventsInput")?.value || "",
+    state.pendingAttachments.map((attachment) => `${attachment.id}:${attachment.path || attachment.name || ""}:${attachment.size || 0}`).join("|"),
+  ];
+  const raw = fields.join("\n").trim();
+  return raw ? String(raw.length) + ":" + simpleHash(raw) : "";
+}
+
+function simpleHash(value = "") {
+  let hash = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash << 5) - hash + value.charCodeAt(index);
+    hash |= 0;
+  }
+  return Math.abs(hash).toString(16);
+}
+
+async function autosaveCaptureDraft(reason = "input") {
+  if (!canLiveSyncCaptureDraft() || state.captureDraftAutosave.inProgress) return;
+  state.captureDraftAutosave.inProgress = true;
+  try {
+    ensureCaptureDraftId();
+    const experience = await readAutosaveCaptureDraft();
+    if (!experience) return;
+    const signature = buildCaptureDraftSignature();
+    const existingIndex = state.experiences.findIndex((item) => item.id === experience.id);
+    if (existingIndex >= 0) state.experiences[existingIndex] = experience;
+    else state.experiences.unshift(experience);
+    saveExperiences();
+    const apiResult = await saveExperienceToApi(experience);
+    if (apiResult?.experience) {
+      const remoteExperience = mergeLocalMediaCacheForExperience(normalizeExperienceItem(apiResult.experience), experience);
+      const remoteIndex = state.experiences.findIndex((item) => item.id === remoteExperience.id);
+      if (remoteIndex >= 0) state.experiences[remoteIndex] = remoteExperience;
+      else state.experiences.unshift(remoteExperience);
+      saveExperiences();
+      scheduleAutomaticAssetProcessing(remoteExperience);
+    } else if (apiResult?.remote) {
+      scheduleAutomaticAssetProcessing(experience);
+    }
+    if (apiResult?.remote) {
+      state.captureDraftAutosave.lastSignature = signature;
+      state.captureDraftAutosave.lastSavedAt = Date.now();
+      state.lastSavedExperienceId = experience.id;
+      const message = state.language === "en" ? "Draft synced across devices." : "Borrador sincronizado en tus dispositivos.";
+      state.captureSaveStatus = {
+        type: "success",
+        title: state.language === "en" ? "Live sync active" : "Sincronización activa",
+        detail: message,
+        experienceId: experience.id,
+        experienceTitle: experience.title,
+        savedAt: new Date().toISOString(),
+        reason: `autosave_${reason}`,
+        remote: true,
+        queued: false,
+      };
+      renderCaptureSaveStatus();
+    }
+  } catch (error) {
+    console.warn("Capture draft autosave failed", error);
+  } finally {
+    state.captureDraftAutosave.inProgress = false;
+  }
+}
+
+function ensureCaptureDraftId() {
+  const input = document.getElementById("editingId");
+  if (input && !input.value) input.value = createId();
+}
+
+async function readAutosaveCaptureDraft() {
+  const experience = await readForm();
+  const notes = String(experience.notes || "").trim();
+  const objective = String(experience.objective || "").trim();
+  if (!experience.title) experience.title = buildAutosaveDraftTitle(notes || objective || experience.attachments?.[0]?.name || "");
+  if (!experience.objective) experience.objective = state.language === "en" ? "Live capture in progress" : "Captura en curso";
+  experience.sourceType = experience.sourceType || "live_capture";
+  experience.updatedAt = new Date().toISOString();
+  return experience.title || notes || objective || experience.attachments?.length ? experience : null;
+}
+
+function buildAutosaveDraftTitle(seed = "") {
+  const text = String(seed || "").replace(/\s+/g, " ").trim();
+  if (text) return buildAudioDraftTitle(text);
+  return state.language === "en" ? "Experience draft" : "Borrador de experiencia";
+}
+
 function applyTemplate(template) {
   document.getElementById("titleInput").value = template.title;
   document.getElementById("categoryInput").value = template.category;
@@ -7463,7 +7600,16 @@ async function handleMediaSelection() {
   const newAttachments = await readSelectedFiles();
   state.pendingAttachments = [...state.pendingAttachments, ...newAttachments];
   document.getElementById("mediaInput").value = "";
+  resetMediaInputMode();
   renderAttachmentPreview();
+  scheduleCaptureDraftAutosave("attachment", { delayMs: 350 });
+}
+
+function resetMediaInputMode() {
+  const input = document.getElementById("mediaInput");
+  if (!input) return;
+  input.removeAttribute("capture");
+  input.setAttribute("accept", "image/*,video/*,audio/*,.heic,.heif,.avif,.webp,.tif,.tiff,.raw,.dng,.cr2,.nef,.arw,.mp3,.wav,.m4a,.aac,.flac,.ogg,.opus,.wma,.aiff,.aif,.amr,.mp4,.mov,.m4v,.webm,.mkv,.avi,.wmv,.mpeg,.mpg,.3gp,.hevc,.txt,.md,.markdown,.html,.htm,.rtf,.docx,.pdf,.csv,.json,.zip,.rar,.7z");
 }
 
 function readSelectedFiles() {
@@ -8008,6 +8154,7 @@ function applyAudioTranscriptToCapture(transcript, options = {}) {
   if (notesInput && !notesInput.value.trim() && options.source === "backend") notesInput.value = text;
   renderCaptureWritingCoach();
   renderCaptureEventPreview();
+  scheduleCaptureDraftAutosave("audio-transcript", { delayMs: 500 });
 }
 
 function buildAudioDraftTitle(text) {
@@ -10330,6 +10477,11 @@ function executeVoiceCommand(transcript) {
 }
 
 function handleVoiceContentCommand(command, originalTranscript = command, options = {}) {
+  const mediaCommand = extractVoiceMediaCommand(command);
+  if (mediaCommand) {
+    openMediaCaptureFromVoice(mediaCommand, originalTranscript);
+    return true;
+  }
   const note = extractVoiceNoteText(command);
   if (note) {
     appendVoiceNoteToCapture(note, originalTranscript);
@@ -10345,6 +10497,34 @@ function handleVoiceContentCommand(command, originalTranscript = command, option
     return true;
   }
   return false;
+}
+
+function extractVoiceMediaCommand(command = "") {
+  if (/\b(toma|tomar|saca|sacar|captura|hacer|take|capture)\b.*\b(foto|imagen|photo|picture|image)\b/i.test(command)) return "image";
+  if (/\b(graba|grabar|toma|tomar|record|capture)\b.*\b(video)\b/i.test(command)) return "video";
+  if (/\b(graba|grabar|record)\b.*\b(audio|voz|voice|nota de voz)\b/i.test(command)) return "audio";
+  return "";
+}
+
+function openMediaCaptureFromVoice(kind = "image", originalTranscript = "") {
+  showView("capture");
+  const input = document.getElementById("mediaInput");
+  if (!input) return;
+  const config = {
+    image: { accept: "image/*", capture: "environment", label: state.language === "en" ? "Choose or take a photo." : "Elige o toma una foto." },
+    video: { accept: "video/*", capture: "environment", label: state.language === "en" ? "Choose or record a video." : "Elige o graba un video." },
+    audio: { accept: "audio/*", capture: "microphone", label: state.language === "en" ? "Choose or record audio." : "Elige o graba un audio." },
+  }[kind] || {};
+  input.setAttribute("accept", config.accept || "image/*,video/*,audio/*");
+  if (config.capture) input.setAttribute("capture", config.capture);
+  setVoiceCommandStatus(`${config.label || ""} ${originalTranscript}`.trim(), "success");
+  notify(config.label || t("labels.voiceCommandStatusExecuted"));
+  try {
+    input.click();
+  } catch {
+    input.focus();
+  }
+  window.setTimeout(resetMediaInputMode, 30000);
 }
 
 function extractVoiceNoteText(command = "") {
@@ -10373,6 +10553,7 @@ function appendVoiceNoteToCapture(note, originalTranscript = "") {
   }
   renderCaptureWritingCoach();
   renderCaptureEventPreview();
+  scheduleCaptureDraftAutosave("voice-note", { delayMs: 500 });
   setVoiceCommandStatus(`${t("labels.voiceNoteSaved")}: ${originalTranscript}`, "success");
   notify(t("labels.voiceNoteSaved"));
 }
