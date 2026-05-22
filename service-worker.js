@@ -1,11 +1,14 @@
-const CACHE_NAME = "experience-hub-pwa-20260522-vibe-wake-368";
+const CACHE_NAME = "experience-hub-pwa-20260522-vibe-logo-369";
 const APP_SHELL = [
   "/",
   "/index.html",
   "/styles.css",
   "/app.js",
   "/manifest.webmanifest",
-  "/icons/icon.svg"
+  "/icons/vibe-logo.jpg",
+  "/icons/vibe-icon-192.png",
+  "/icons/vibe-icon-512.png",
+  "/icons/vibe-apple-touch.png"
 ];
 
 self.addEventListener("install", (event) => {

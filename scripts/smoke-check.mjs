@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 const files = {
   app: readFileSync("app.js", "utf8"),
@@ -31,6 +31,12 @@ const manifest = JSON.parse(files.manifest);
 assert(manifest.id === "/", "manifest.webmanifest is missing a stable app id.");
 assert(manifest.start_url === "/index.html?view=dashboard", "manifest.webmanifest start_url must be stable and not point to an old app version.");
 assert(manifest.display === "standalone", "manifest.webmanifest should use standalone display for PWA install.");
+assert(files.index.includes("icons/vibe-icon-192.png") && files.index.includes("icons/vibe-apple-touch.png"), "index.html does not use the Vibe logo icons.");
+assert(files.serviceWorker.includes("/icons/vibe-icon-512.png") && files.serviceWorker.includes("/icons/vibe-logo.jpg"), "service-worker.js does not cache Vibe logo assets.");
+assert(Array.isArray(manifest.icons) && manifest.icons.some((icon) => icon.src === "/icons/vibe-icon-192.png") && manifest.icons.some((icon) => icon.src === "/icons/vibe-icon-512.png"), "manifest.webmanifest does not expose Vibe PWA icons.");
+["icons/vibe-logo.jpg", "icons/vibe-icon-192.png", "icons/vibe-icon-512.png", "icons/vibe-apple-touch.png"].forEach((path) => {
+  assert(existsSync(path), `Missing Vibe logo asset: ${path}`);
+});
 assert(!/[ÃÂ�]/.test(files.app + files.index + files.styles + files.manifest + files.serviceWorker + files.uxAudit), "Visible app files contain mojibake characters.");
 
 assert(!/\bnormalizeExperience\s*\(/.test(files.app), "app.js still calls normalizeExperience(); use normalizeExperienceItem() or normalizeExperiences().");
