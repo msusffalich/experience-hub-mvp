@@ -9367,6 +9367,38 @@ button.asset-processing-summary-card {
   background: #f8fafc;
 }
 
+.self-test-plain-summary {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0;
+  padding: 14px;
+  border: 1px solid rgba(14, 116, 144, 0.22);
+  border-radius: 8px;
+  background: #ecfeff;
+}
+
+.self-test-plain-summary.is-review {
+  border-color: rgba(180, 83, 9, 0.3);
+  background: #fff7ed;
+}
+
+.self-test-plain-summary h4,
+.self-test-plain-summary p {
+  margin: 0;
+}
+
+.self-test-plain-summary p {
+  color: var(--ink);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.self-test-missing-tables {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .self-test-asset-matrix h4 {
   margin: 0;
   font-size: 15px;

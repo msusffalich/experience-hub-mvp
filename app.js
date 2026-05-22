@@ -1,4 +1,4 @@
-const APP_VERSION = "20260522-selftest-visible-375";
+const APP_VERSION = "20260522-selftest-summary-376";
 const VOICE_ASSISTANT_NAME = "Vibe";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -724,6 +724,7 @@ const i18n = {
       supabaseSelfTestEmpty: "Ejecuta la prueba para validar perfil, Storage privado, imagen, audio, video, documento, ZIP, guardado, lectura, búsqueda y limpieza.",
       supabaseSelfTestRunning: "Probando flujo real Supabase...",
       supabaseSelfTestReady: "Prueba real completada",
+      supabaseSelfTestReadyWithErrors: "Prueba real completada con pendientes",
       authSessionIncomplete: "Sesión incompleta",
       authSessionExpired: "La sesión guardada no es válida o venció. Entra de nuevo.",
       authSessionRefreshed: "Sesión renovada automáticamente.",
@@ -1523,6 +1524,7 @@ const i18n = {
       supabaseSelfTestEmpty: "Run the test to validate profile, private Storage, image, audio, video, document, ZIP, save, read-back, search, and cleanup.",
       supabaseSelfTestRunning: "Testing real Supabase flow...",
       supabaseSelfTestReady: "Real flow test completed",
+      supabaseSelfTestReadyWithErrors: "Real flow test completed with pending items",
       authSessionIncomplete: "Incomplete session",
       authSessionExpired: "The saved session is invalid or expired. Sign in again.",
       authSessionRefreshed: "Session refreshed automatically.",
@@ -1978,6 +1980,7 @@ const manualContent = {
         "La prueba completa de multimedia solo se aprueba cuando el mismo adjunto aparece desde otro dispositivo en Librería, Activos multimodales, Reportes y Publicaciones. Si solo se sincroniza la narrativa, el flujo sigue incompleto.",
         "La prueba real de Supabase valida ahora cinco familias de activos: imagen, audio, video, documento de texto y ZIP. Para aprobar, cada uno debe subir a Storage privado, generar URL firmada, quedar vinculado a la experiencia y aparecer en la tabla assets. El ZIP se valida solo como transporte y descarga, no como contenido interpretable.",
         "Al terminar Probar flujo real, Administración abre y conserva una tabla de familias de activos. Esa tabla muestra si imagen, audio, video, documento y ZIP pasaron Storage, lectura y tabla assets, para evitar depender de un mensaje global poco visible.",
+        "Si la prueba real muestra Storage y Lectura en Listo, pero Tabla assets en Revisar, significa que los archivos funcionan y que falta aplicar las tablas compartidas de Supabase. En ese caso se deben aplicar database/workspace-events-assets.sql y database/agenda-events.sql antes de considerar completo el flujo multidispositivo.",
         "El patrón recomendado, tomado del análisis de CLIO, es mantener Supabase como fuente de verdad, usar Storage privado para archivos, URLs firmadas temporales para lectura, registros de auditoría para cada subida y caché local solo como respaldo o cola de reintento.",
         "El servidor ya soporta modo cloud mediante HOST=0.0.0.0 y NODE_ENV=production. Usa .env.production.example como base para desplegar sin depender de localhost.",
         "La guía docs/deploy-publicacion.md define el orden recomendado: GitHub privado, Supabase productivo, variables seguras, hosting Node, prueba desde varios dispositivos y validación privada.",
@@ -2524,6 +2527,7 @@ const manualContent = {
         "The complete media test is approved only when the same attachment appears from another device in Library, Multimodal Assets, Reports, and Publications. If only the narrative syncs, the flow is still incomplete.",
         "The real Supabase test now validates five asset families: image, audio, video, text document, and ZIP. To pass, each one must upload to private Storage, generate a signed URL, stay linked to the experience, and appear in the assets table. ZIP is validated only as transport and download, not as interpreted content.",
         "When Run real test finishes, Admin opens and preserves an asset-family table. That table shows whether image, audio, video, document, and ZIP passed Storage, read-back, and the assets table, so the user does not have to rely on a small global message.",
+        "If the real test shows Storage and Read-back as Ready, but Assets table as Review, files are working and the shared Supabase tables are missing. Apply database/workspace-events-assets.sql and database/agenda-events.sql before considering the multi-device flow complete.",
         "The recommended pattern, based on the CLIO review, is to keep Supabase as the source of truth, use private Storage for files, temporary signed URLs for reading, audit records for every upload, and local cache only as fallback or retry queue.",
         "The server now supports cloud mode through HOST=0.0.0.0 and NODE_ENV=production. Use .env.production.example as the deployment baseline so the app does not depend on localhost.",
         "The docs/deploy-publicacion.md guide defines the recommended order: private GitHub, production Supabase, secure variables, Node hosting, multi-device test, and private validation.",
@@ -22429,10 +22433,10 @@ async function runSupabaseSelfTest() {
     return;
   }
   status.textContent = t("labels.supabaseSelfTestRunning");
-  try {
-    state.supabaseSelfTest = await apiRequest("/supabase/self-test", { method: "POST" });
-    saveSupabaseSelfTest();
-    status.textContent = t("labels.supabaseSelfTestReady");
+    try {
+      state.supabaseSelfTest = await apiRequest("/supabase/self-test", { method: "POST" });
+      saveSupabaseSelfTest();
+    status.textContent = state.supabaseSelfTest?.status === "ok" ? t("labels.supabaseSelfTestReady") : t("labels.supabaseSelfTestReadyWithErrors");
     await hydrateFromApi();
   } catch (error) {
     const needsSession = error.status === 401 || String(error.message || "").includes("API 401");
@@ -22558,8 +22562,71 @@ function renderSupabaseSelfTest() {
       </div>
       ${result?.checkedAt ? `<span class="pill">${escapeHtml(formatDate(result.checkedAt))}</span>` : ""}
     </div>
+    ${result ? renderSelfTestPlainSummary(result) : ""}
     ${showAssetMatrix ? renderSelfTestAssetMatrix(steps) : ""}
     ${steps.length ? `<div class="diagnostic-grid">${steps.map((step) => renderDiagnosticCheck(step, "selfTest")).join("")}</div>` : ""}
+  `;
+}
+
+function renderSelfTestPlainSummary(result) {
+  const steps = result?.steps || [];
+  const stepOk = (id) => steps.find((step) => step.id === id)?.status === "ok";
+  const missingTableErrors = steps.filter((step) => /Could not find the table|PGRST205|schema cache/i.test(`${step.detail || ""} ${step.action || ""}`));
+  const filesOk = ["storage", "audioStorage", "videoStorage", "documentStorage", "archiveStorage", "experienceRead"].every(stepOk);
+  const assetsOk = stepOk("workspaceAssets");
+  const agendaMissing = missingTableErrors.some((step) => String(step.detail || "").includes("agenda_events"));
+  const workspaceMissing = missingTableErrors.some((step) => /participants|assets|experience_events/i.test(String(step.detail || "")));
+  const labels = state.language === "en"
+    ? {
+        titleOk: "What this result means",
+        filesOk: "File upload is working: image, audio, video, document, and ZIP reached private Storage and can be read with signed URLs.",
+        filesReview: "File upload still needs review. Check the cards below for the first failed asset family.",
+        sharedOk: "The shared assets table is available, so other devices can rebuild the asset inventory from Supabase.",
+        sharedReview: "The files work, but the shared Supabase structure is incomplete. Apply the pending SQL before calling this flow complete.",
+        required: "Required SQL",
+        agenda: "Agenda table missing",
+        workspace: "Workspace, participants, events, or assets table missing",
+        done: "All core checks passed.",
+        review: "Action required",
+      }
+    : {
+        titleOk: "Qué significa este resultado",
+        filesOk: "La carga de archivos funciona: imagen, audio, video, documento y ZIP llegaron a Storage privado y se leen con URLs firmadas.",
+        filesReview: "La carga de archivos aún requiere revisión. Revisa abajo la primera familia de activos que falló.",
+        sharedOk: "La tabla compartida de activos está disponible, por lo que otros dispositivos pueden reconstruir el inventario desde Supabase.",
+        sharedReview: "Los archivos funcionan, pero la estructura compartida de Supabase está incompleta. Aplica el SQL pendiente antes de considerar completo este flujo.",
+        required: "SQL requerido",
+        agenda: "Falta la tabla de Agenda",
+        workspace: "Faltan tablas de workspace, participantes, eventos o activos",
+        done: "Todos los controles centrales pasaron.",
+        review: "Acción requerida",
+      };
+  const required = [
+    workspaceMissing ? "database/workspace-events-assets.sql" : "",
+    agendaMissing ? "database/agenda-events.sql" : "",
+  ].filter(Boolean);
+  return `
+    <section class="self-test-plain-summary ${result.status === "ok" ? "is-ready" : "is-review"}">
+      <div>
+        <span class="${result.status === "ok" ? "status-ok" : "status-warn"}">${escapeHtml(result.status === "ok" ? labels.done : labels.review)}</span>
+        <h4>${escapeHtml(labels.titleOk)}</h4>
+      </div>
+      <p>${escapeHtml(filesOk ? labels.filesOk : labels.filesReview)}</p>
+      <p>${escapeHtml(assetsOk ? labels.sharedOk : labels.sharedReview)}</p>
+      ${
+        required.length
+          ? `<p><strong>${escapeHtml(labels.required)}:</strong> ${escapeHtml(required.join(" + "))}</p>`
+          : ""
+      }
+      ${
+        missingTableErrors.length
+          ? `<div class="self-test-missing-tables">
+              ${workspaceMissing ? `<span class="pill">${escapeHtml(labels.workspace)}</span>` : ""}
+              ${agendaMissing ? `<span class="pill">${escapeHtml(labels.agenda)}</span>` : ""}
+            </div>`
+          : ""
+      }
+    </section>
   `;
 }
 

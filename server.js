@@ -2259,7 +2259,10 @@ function selfTestActionFor(id, detail = "") {
   if (id === "uploadAttempts") return { text: "Ejecuta database/asset-upload-attempts.sql para habilitar auditoría de adjuntos.", actionType: "openAdmin" };
   if (id === "experienceCreate" || id === "experienceRead") return { text: "Revisa tabla experiences, políticas RLS y que auth.uid() coincida con user_id.", actionType: "openAdmin" };
   if (id === "semantic") return { text: "Ejecuta database/semantic-search.sql; si no está aplicado, la app seguirá con búsqueda local.", actionType: "openAdmin" };
-  if (id === "workspaceEvents") return { text: "Ejecuta database/workspace-events-assets.sql y vuelve a ejecutar Probar flujo real.", actionType: "openAdmin" };
+  if (id === "workspaceEvents" && String(detail || "").includes("agenda_events")) {
+    return { text: "Ejecuta database/agenda-events.sql para habilitar Agenda multidispositivo y vuelve a ejecutar Probar flujo real.", actionType: "openAdmin" };
+  }
+  if (id === "workspaceEvents") return { text: "Ejecuta database/workspace-events-assets.sql para habilitar eventos internos compartidos y vuelve a ejecutar Probar flujo real.", actionType: "openAdmin" };
   if (id === "workspaceParticipants") return { text: "Ejecuta database/workspace-events-assets.sql y vuelve a ejecutar Probar flujo real.", actionType: "openAdmin" };
   if (id === "workspaceAssets") return { text: "Ejecuta database/workspace-events-assets.sql y vuelve a ejecutar Probar flujo real.", actionType: "openAdmin" };
   if (id === "dailyBriefing") return { text: "Ejecuta database/schema.sql y database/auth-rls.sql para habilitar daily_briefings.", actionType: "openAdmin" };
