@@ -1,4 +1,4 @@
-const APP_VERSION = "20260522-live-sync-status-383";
+const APP_VERSION = "20260522-live-flow-refresh-385";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -1995,6 +1995,7 @@ const manualContent = {
         "Después de guardar una experiencia en Supabase, los activos pendientes se procesan automáticamente en segundo plano. El botón Procesar ahora queda como respaldo para reintentar o forzar un activo específico.",
         "La regla operativa es clara: cada activo se procesa cuando entra si ya puede vincularse a una experiencia guardada; si aún no existe registro remoto, queda para el primer guardado en Supabase. El cierre de experiencia solo audita y reintenta pendientes, no es el paso normal de procesamiento.",
         "Captura funciona como borrador vivo cuando hay sesión y Supabase: al escribir narrativa, cambiar campos o adjuntar un archivo, la experiencia se sincroniza en segundo plano con otros dispositivos. Guardar queda como confirmación final, no como el primer momento de sincronización.",
+        "Cuando el borrador vivo se sincroniza, el flujo operativo completo del mismo dispositivo se refresca sin esperar al cierre: Panel, Librería, Activos, Agenda, Línea de tiempo, Mapa, Reportes, Publicaciones, Hallazgos, estado de persistencia y Administración.",
         "El backend local intenta extraer texto de TXT, Markdown, HTML, CSV, JSON, RTF, DOCX y PDF. PDF usa extracción heurística y puede requerir revisión si el archivo es escaneado o está protegido.",
         "El texto extraído o generado queda guardado como texto analítico del activo y entra en búsqueda, reportes, memoria y publicaciones, siempre con revisión humana antes de salidas finales.",
         "Administración incluye un tablero de frentes paralelos para agrupar el cierre del MVP en trabajo funcional, técnico, piloto, QA/manual e integraciones, con dueño sugerido y próxima acción.",
@@ -2552,6 +2553,7 @@ const manualContent = {
         "After an experience is saved in Supabase, pending assets are processed automatically in the background. The Process now button remains as a fallback to retry or force a specific asset.",
         "The operating rule is explicit: each asset is processed when it enters if it can already be linked to a saved experience; if there is no remote record yet, it waits for the first Supabase save. Experience closure only audits and retries pending items; it is not the normal processing step.",
         "Capture works as a live draft when sign-in and Supabase are active: narrative edits, field changes, and attachments sync in the background to other devices. Save becomes final confirmation, not the first synchronization point.",
+        "When the live draft syncs, the full operating flow on the same device refreshes without waiting for the experience to close: Dashboard, Library, Assets, Agenda, Timeline, Map, Reports, Publications, Insights, persistence state, and Admin.",
         "The local backend attempts text extraction for TXT, Markdown, HTML, CSV, JSON, RTF, DOCX, and PDF. PDF uses heuristic extraction and may require review when the file is scanned or protected.",
         "Extracted or generated text is saved as asset analytical text and becomes available for search, reports, memory, and publications, with human review before final outputs.",
         "Admin includes a parallel workstreams board to group MVP closure into functional, technical, pilot, QA/manual, and integration work, with suggested owner and next action.",
@@ -7559,12 +7561,40 @@ async function autosaveCaptureDraft(reason = "input") {
         queued: false,
       };
       renderCaptureSaveStatus();
+      refreshLiveCaptureDependentViews();
     }
   } catch (error) {
     console.warn("Capture draft autosave failed", error);
   } finally {
     state.captureDraftAutosave.inProgress = false;
   }
+}
+
+function refreshLiveCaptureDependentViews() {
+  updateDashboardParticipantControl();
+  updatePilotParticipantControls();
+  renderDashboardTimeContext();
+  renderMetrics();
+  renderDashboardAttachmentStatus();
+  renderDashboardAgenda();
+  renderDashboardPilotReadiness();
+  renderCategoryChart();
+  renderRecentSignals();
+  renderDataQuality();
+  renderDailyBriefing();
+  renderContextImpact();
+  renderLibrary();
+  renderAssetLibrary();
+  renderAgenda();
+  renderTimeline();
+  renderExperienceMap();
+  renderReport();
+  renderPublications();
+  renderInsights();
+  renderAutomations();
+  renderAdmin();
+  renderCoreMvpReturnBanner();
+  renderPersistenceGateBanner();
 }
 
 function setCaptureLiveSyncStatus(status = "pending", reason = "") {
@@ -21560,6 +21590,8 @@ function renderAdminOperationalFocusPanel() {
         eventTimelineDetail: "Library, Timeline, Reports, JSON, HTML, and CSV now preserve internal events for long experiences.",
         assetProcessing: "Asset processing evidence",
         assetProcessingDetail: "Asset cards, search, inventory, metadata imports, automatic processing, startup/backlog recovery, and one-click retries preserve extracted text, method, status, processing date, and Supabase sync.",
+        liveFlow: "Live draft refresh",
+        liveFlowDetail: "When Capture syncs an open draft, the same device refreshes Dashboard, Library, Assets, Agenda, Timeline, Map, Reports, Publications, Insights, persistence state, and Admin.",
       }
     : {
         title: "Administración operativa",
@@ -21587,6 +21619,8 @@ function renderAdminOperationalFocusPanel() {
     labels.eventTimelineDetail = "Librer\u00eda, L\u00ednea de tiempo, Reportes, JSON, HTML y CSV ahora conservan eventos internos para experiencias largas.";
     labels.assetProcessing = "Evidencia de procesamiento";
     labels.assetProcessingDetail = "Las tarjetas, b\u00fasqueda, inventario, importaci\u00f3n de metadatos, procesamiento autom\u00e1tico, recuperaci\u00f3n de pendientes y reintento manual conservan texto extra\u00eddo, m\u00e9todo, estado, fecha y sincronizaci\u00f3n en Supabase.";
+    labels.liveFlow = "Refresco de borrador vivo";
+    labels.liveFlowDetail = "Cuando Captura sincroniza una experiencia abierta, el mismo dispositivo refresca Panel, Librer\u00eda, Activos, Agenda, L\u00ednea de tiempo, Mapa, Reportes, Publicaciones, Hallazgos, persistencia y Administraci\u00f3n.";
   }
   const cards = [
     [labels.flow, labels.flowDetail],
@@ -21598,6 +21632,7 @@ function renderAdminOperationalFocusPanel() {
     [labels.smoke, labels.smokeDetail],
     [labels.eventTimeline, labels.eventTimelineDetail],
     [labels.assetProcessing, labels.assetProcessingDetail],
+    [labels.liveFlow, labels.liveFlowDetail],
     [labels.next, labels.nextDetail],
   ];
   container.innerHTML = `

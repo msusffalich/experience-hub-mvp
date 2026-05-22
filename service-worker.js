@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260522-live-sync-status-383";
+const CACHE_NAME = "experience-hub-pwa-20260522-live-flow-refresh-385";
 const APP_SHELL = [
   "/",
   "/index.html",
