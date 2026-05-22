@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260522-upload-history-final-377";
+const CACHE_NAME = "experience-hub-pwa-20260522-voice-v-wake-378";
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -43,3 +43,4 @@ self.addEventListener("fetch", (event) => {
       .catch(() => caches.match(request).then((cached) => cached || caches.match("/index.html")))
   );
 });
+

@@ -149,16 +149,17 @@ assert(
   "Quick audio capture flow or WebM audio handling is missing.",
 );
 assert(
-  files.app.includes('const VOICE_ASSISTANT_NAME = "Vibe"')
+  files.app.includes('const VOICE_ASSISTANT_NAME = "V"')
     && files.app.includes("stripVoiceWakePhrase")
+    && files.app.includes("hasVoiceWakePhrase")
     && files.app.includes("handleVoiceContentCommand")
     && files.app.includes("createVoiceAgendaEvent")
     && files.app.includes("appendVoiceNoteToCapture")
     && files.app.includes("processAudioTranscriptCommands")
     && files.app.includes("voiceCommandContinuousHelp")
-    && files.app.includes("Hola Vibe")
-    && files.app.includes("Hi Vibe"),
-  "Vibe voice invocation is missing.",
+    && files.app.includes("Hola V")
+    && files.app.includes("Hi V"),
+  "V voice invocation is missing.",
 );
 assert(
   files.app.includes("scheduleAttachmentRetry")

@@ -1,5 +1,5 @@
-const APP_VERSION = "20260522-upload-history-final-377";
-const VOICE_ASSISTANT_NAME = "Vibe";
+const APP_VERSION = "20260522-voice-v-wake-378";
+const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
 const categories = [
@@ -314,7 +314,7 @@ const i18n = {
       audioCaptureGuideTitle: "Captura rápida por audio",
       audioCaptureGuideText: "Para experiencias cortas al paso, habla y deja que la app prepare un borrador. Luego solo confirma los campos antes de guardar.",
       audioCaptureGuideSteps: "Flujo: 1. Grabar. 2. Detener. 3. Revisar el borrador y guardar. El audio queda como evidencia adjunta.",
-      audioCommandDetected: "Comando de Vibe detectado dentro del audio.",
+      audioCommandDetected: "Comando de V detectado dentro del audio.",
       attachmentInputLabel: "Imágenes, videos, audio o documentos",
       attachmentPreviewAvailable: "Vista previa disponible",
       attachmentDocumentPreview: "Vista previa textual",
@@ -648,15 +648,15 @@ const i18n = {
       voiceCommandListening: "Escuchando comando...",
       voiceCommandUnsupported: "Este navegador no soporta comandos de voz.",
       voiceCommandHeard: "Comando recibido",
-      voiceCommandUnknown: "No entendí el comando. Prueba: Hola Vibe, abrir captura; Vibe, actualizar diario; abrir reporte o nueva experiencia.",
+      voiceCommandUnknown: "No entendí el comando. Prueba: Hola V, abrir captura; V, actualizar diario; abrir reporte o nueva experiencia.",
       voiceCommandReady: "Comandos de voz disponibles",
-      voiceCommandHelp: "Puedes decir Hola Vibe o Vibe antes del comando: abrir panel, abrir captura, actualizar diario, analizar contexto, abrir reporte, abrir publicaciones, abrir manual o nueva experiencia.",
-      voiceCommandContinuousHelp: "Vibe queda escuchando mientras esta pantalla esté abierta. Di Hola Vibe o Vibe antes de la acción. Pulsa de nuevo para detener.",
+      voiceCommandHelp: "Puedes decir Hola V o V antes del comando: abrir panel, abrir captura, actualizar diario, analizar contexto, abrir reporte, abrir publicaciones, abrir manual o nueva experiencia.",
+      voiceCommandContinuousHelp: "V queda escuchando mientras esta pantalla esté abierta. Di Hola V o V antes de la acción. Pulsa de nuevo para detener.",
       voiceCommandExamplesTitle: "Ejemplos de comandos",
       voiceCommandStatusReady: "Listo para escuchar o probar un ejemplo.",
       voiceCommandStatusUnsupported: "La voz no está disponible en este navegador. Puedes usar los ejemplos como prueba manual.",
       voiceCommandStatusExecuted: "Comando ejecutado",
-      voiceCommandWakeReady: "Te escucho. Di una acción después de Vibe: abrir captura, actualizar diario, abrir reporte o nueva experiencia.",
+      voiceCommandWakeReady: "Te escucho. Di una acción después de V: abrir captura, actualizar diario, abrir reporte o nueva experiencia.",
       voiceNoteSaved: "Nota agregada al borrador de captura.",
       voiceQuickExperienceSaved: "Experiencia rápida creada desde la nota de voz.",
       voiceAgendaSaved: "Evento creado en Agenda.",
@@ -1114,7 +1114,7 @@ const i18n = {
       audioCaptureGuideTitle: "Quick audio capture",
       audioCaptureGuideText: "For short on-the-go experiences, speak and let the app prepare a draft. Then just confirm the fields before saving.",
       audioCaptureGuideSteps: "Flow: 1. Record. 2. Stop. 3. Review the draft and save. The audio remains attached as evidence.",
-      audioCommandDetected: "Vibe command detected inside the audio.",
+      audioCommandDetected: "V command detected inside the audio.",
       attachmentInputLabel: "Images, videos, audio, or documents",
       attachmentPreviewAvailable: "Preview available",
       attachmentDocumentPreview: "Text preview",
@@ -1448,15 +1448,15 @@ const i18n = {
       voiceCommandListening: "Listening for a command...",
       voiceCommandUnsupported: "This browser does not support voice commands.",
       voiceCommandHeard: "Command received",
-      voiceCommandUnknown: "I did not understand the command. Try: Hi Vibe, open capture; Vibe, refresh daily; open report; or new experience.",
+      voiceCommandUnknown: "I did not understand the command. Try: Hi V, open capture; V, refresh daily; open report; or new experience.",
       voiceCommandReady: "Voice commands available",
-      voiceCommandHelp: "You can say Hi Vibe or Vibe before the command: open dashboard, open capture, refresh daily, analyze context, open report, open publications, open manual, or new experience.",
-      voiceCommandContinuousHelp: "Vibe keeps listening while this screen is open. Say Hi Vibe or Vibe before the action. Press again to stop.",
+      voiceCommandHelp: "You can say Hi V or V before the command: open dashboard, open capture, refresh daily, analyze context, open report, open publications, open manual, or new experience.",
+      voiceCommandContinuousHelp: "V keeps listening while this screen is open. Say Hi V or V before the action. Press again to stop.",
       voiceCommandExamplesTitle: "Command examples",
       voiceCommandStatusReady: "Ready to listen or test an example.",
       voiceCommandStatusUnsupported: "Voice is not available in this browser. You can use the examples as a manual test.",
       voiceCommandStatusExecuted: "Command executed",
-      voiceCommandWakeReady: "I am listening. Say an action after Vibe: open capture, refresh daily, open report, or new experience.",
+      voiceCommandWakeReady: "I am listening. Say an action after V: open capture, refresh daily, open report, or new experience.",
       voiceNoteSaved: "Note added to the capture draft.",
       voiceQuickExperienceSaved: "Quick experience created from the voice note.",
       voiceAgendaSaved: "Agenda event created.",
@@ -2132,8 +2132,8 @@ const manualContent = {
         "La ficha Cartelera y multimedia agrupa tres zonas: cartelera vigente, multimedia disponible y seguimiento en Agenda. Si el Diario ya trae imágenes editoriales confiables, se muestran como vista previa; si no, la app lo indica y ofrece búsquedas externas.",
         "Si la fuente externa del horóscopo no responde o el resumen guardado no trae horóscopo, la app muestra un respaldo local en el idioma activo para los 12 signos.",
         "Cartelera y eventos ofrece accesos rápidos para buscar cine, conciertos, teatro, eventos del día y exposiciones del lugar seleccionado. También permite programar una revisión en Agenda para convertir la lectura del Diario en seguimiento accionable.",
-        "Comando de voz permite ejecutar acciones básicas por voz: abrir secciones, actualizar Diario, analizar contexto, abrir reportes, abrir Publicaciones, abrir Manual, cargar ejemplo o crear una nueva experiencia. Puedes iniciar el comando con Hola Vibe o Vibe. Depende de Web Speech del navegador y requiere activar el micrófono desde la app.",
-        "Vibe ya puede registrar contenido simple: toma nota agrega texto al borrador de Captura, guarda esto crea una experiencia rápida y agenda/pon en mi agenda crea un evento multidispositivo en Agenda con hora interpretada cuando la frase la incluye. Si esa frase aparece dentro de una grabación de audio, Captura también la detecta y crea el evento sin salir del formulario.",
+        "Comando de voz permite ejecutar acciones básicas por voz: abrir secciones, actualizar Diario, analizar contexto, abrir reportes, abrir Publicaciones, abrir Manual, cargar ejemplo o crear una nueva experiencia. Puedes iniciar el comando con Hola V, V o, en inglés, Hi V. Depende de Web Speech del navegador y requiere activar el micrófono desde la app.",
+        "V ya puede registrar contenido simple: toma nota agrega texto al borrador de Captura, guarda esto crea una experiencia rápida y agenda/pon en mi agenda crea un evento multidispositivo en Agenda con hora interpretada cuando la frase la incluye. Si esa frase aparece dentro de una grabación de audio, Captura también la detecta y crea el evento sin salir del formulario.",
         "La tarjeta Voz del Diario muestra el estado del comando y ejemplos clicables. Si el micrófono o Web Speech no están disponibles, puedes probar el mismo flujo con esos ejemplos.",
         "Incluye distribución por categoría y señales recientes de las últimas experiencias.",
         "El panel Impacto ambiental y geopolítico analiza una ciudad o lugar con mediciones climáticas de Open-Meteo y noticias geopolíticas de GDELT. Puedes usar la ubicación principal detectada en tus experiencias para acelerar la consulta.",
@@ -2171,7 +2171,7 @@ const manualContent = {
         "Aceptar un formato significa conservarlo, clasificarlo y hacerlo trazable. Previsualizarlo significa que el navegador puede mostrarlo o reproducirlo directamente. OCR, transcripción, conversión de video y extracción avanzada quedan como fases posteriores.",
         "Si el navegador no puede previsualizar un formato específico, la app lo conserva, lo clasifica y permite abrirlo como archivo desde Activos multimodales.",
         "PDF se previsualiza con una vista embebida cuando el navegador lo permite; DOCX, RTF y documentos no nativos se leen por extracción de texto del backend o se descargan como archivo.",
-        "El botón Grabar audio usa el micrófono del navegador. Si el navegador soporta Web Speech, agrega una transcripción experimental a las notas y puede detectar frases de Vibe para notas o Agenda. El botón Comando de voz mantiene a Vibe escuchando mientras la pantalla esté abierta; por seguridad del navegador, no funciona como wake word en segundo plano.",
+        "El botón Grabar audio usa el micrófono del navegador. Si el navegador soporta Web Speech, agrega una transcripción experimental a las notas y puede detectar frases de V para notas o Agenda. El botón Comando de voz mantiene a V escuchando mientras la pantalla esté abierta; por seguridad del navegador, no funciona como wake word en segundo plano.",
       ],
     },
     {
@@ -2673,8 +2673,8 @@ const manualContent = {
         "The Listings and multimedia card groups three zones: current listings, available multimedia, and Agenda follow-up. If Daily already has reliable editorial images, they appear as previews; if not, the app says so and offers external searches.",
         "If the external horoscope source does not respond or the saved briefing has no horoscope, the app shows a local fallback in the active language for all 12 signs.",
         "Listings and events provides quick links for movie showtimes, concerts, theater, events today, and exhibitions in the selected place. It can also schedule a review in Agenda so the Daily briefing becomes actionable follow-up.",
-        "Voice command runs basic actions by voice: open sections, refresh Daily, analyze context, open reports, open Publications, open Manual, load example, or create a new experience. You can start the command with Hi Vibe or Vibe. It depends on the browser's Web Speech support and requires activating the microphone from the app.",
-        "Vibe can now record simple content: take note adds text to the Capture draft, save this creates a quick experience, and schedule/add to my calendar creates a multi-device Agenda event with interpreted time when the phrase includes it. If that phrase appears inside an audio recording, Capture also detects it and creates the event without leaving the form.",
+        "Voice command runs basic actions by voice: open sections, refresh Daily, analyze context, open reports, open Publications, open Manual, load example, or create a new experience. You can start the command with Hi V, V, or in Spanish, Hola V. It depends on the browser's Web Speech support and requires activating the microphone from the app.",
+        "V can now record simple content: take note adds text to the Capture draft, save this creates a quick experience, and schedule/add to my calendar creates a multi-device Agenda event with interpreted time when the phrase includes it. If that phrase appears inside an audio recording, Capture also detects it and creates the event without leaving the form.",
         "The Daily Voice card shows command status and clickable examples. If microphone access or Web Speech is unavailable, you can test the same flow with those examples.",
         "Includes category distribution and recent signals from the latest experiences.",
         "Context impact analyzes a city/place with Open-Meteo weather and GDELT geopolitical news. You can use the primary location detected from your experiences to speed up the query.",
@@ -2712,7 +2712,7 @@ const manualContent = {
         "Accepting a format means the app stores, classifies, and traces it. Previewing means the browser can display or play it directly. OCR, transcription, video conversion, and advanced extraction remain later phases.",
         "If the browser cannot preview a specific format, the app still stores it, classifies it, and lets you open it as a file from Multimodal Assets.",
         "PDF is previewed with an embedded viewer when the browser supports it; DOCX, RTF, and non-native documents are read through backend text extraction or downloaded as files.",
-        "Record audio uses the browser microphone. If Web Speech is supported, experimental transcription is appended to notes and can detect Vibe phrases for notes or Agenda. Voice command keeps Vibe listening while the screen remains open; due to browser security, it does not work as a background wake word.",
+        "Record audio uses the browser microphone. If Web Speech is supported, experimental transcription is appended to notes and can detect V phrases for notes or Agenda. Voice command keeps V listening while the screen remains open; due to browser security, it does not work as a background wake word.",
       ],
     },
     {
@@ -6859,8 +6859,8 @@ function applyDailyStaticActionsLanguage() {
 
 function getVoiceCommandExamples() {
   return state.language === "en"
-    ? ["Hi Vibe, take note: this park is beautiful", "Vibe, schedule dinner today at 8 pm", "Vibe, save this: great service", "Vibe, open report"]
-    : ["Hola Vibe, toma nota: este parque es hermoso", "Vibe, agenda cena hoy a las 8 pm", "Vibe, guarda esto: excelente atención", "Vibe, abrir reporte"];
+    ? ["Hi V, take note: this park is beautiful", "V, schedule dinner today at 8 pm", "V, save this: great service", "V, open report"]
+    : ["Hola V, toma nota: este parque es hermoso", "V, agenda cena hoy a las 8 pm", "V, guarda esto: excelente atención", "V, abrir reporte"];
 }
 
 function renderVoiceCommandExamples() {
@@ -7947,7 +7947,7 @@ function appendTranscriptToNotes(label, transcript) {
 
 function processAudioTranscriptCommands(transcript = "") {
   const normalized = normalizeVoiceCommand(transcript);
-  if (!normalized.includes("vibe") && !/\b(pon en mi agenda|agrega a mi agenda|agenda|schedule)\b/i.test(normalized)) return false;
+  if (!hasVoiceWakePhrase(normalized) && !/\b(pon en mi agenda|agrega a mi agenda|agenda|schedule)\b/i.test(normalized)) return false;
   const key = normalized.slice(0, 240);
   if (state.processedVoiceTranscriptKeys.has(key)) return false;
   state.processedVoiceTranscriptKeys.add(key);
@@ -10349,7 +10349,7 @@ function appendVoiceNoteToCapture(note, originalTranscript = "") {
   showView("capture");
   const notesInput = document.getElementById("notesInput");
   const prefix = notesInput?.value.trim() ? "\n\n" : "";
-  const label = state.language === "en" ? "Vibe note" : "Nota de Vibe";
+  const label = state.language === "en" ? "V note" : "Nota de V";
   if (notesInput) notesInput.value = `${notesInput.value}${prefix}${label} (${formatDate(new Date().toISOString())}):\n${note}`;
   if (!document.getElementById("titleInput")?.value.trim()) {
     document.getElementById("titleInput").value = buildAudioDraftTitle(note);
@@ -10492,10 +10492,15 @@ function normalizeVoiceCommand(value) {
 
 function stripVoiceWakePhrase(command = "") {
   return String(command || "")
-    .replace(/^(hola|hello|hi|hey|oye)\s+vibe\b/, "")
-    .replace(/^vibe\b/, "")
+    .replace(/^(hola|hello|hi|hey|oye)\s+(v|ve|vee)\b[,:;\s-]*/, "")
+    .replace(/^(v|ve|vee)\b[,:;\s-]*/, "")
     .replace(/^(por favor|please)\b/, "")
     .trim();
+}
+
+function hasVoiceWakePhrase(command = "") {
+  return /^(hola|hello|hi|hey|oye)\s+(v|ve|vee)\b/.test(String(command || ""))
+    || /^(v|ve|vee)\b/.test(String(command || ""));
 }
 
 function reloadCurrentAppVersion() {
@@ -21910,8 +21915,8 @@ function renderAdmin() {
       webSpeechSupported ? okStatus : attentionStatus,
       webSpeechSupported
         ? state.language === "en"
-          ? "Microphone flow, Vibe invocation, and clickable command examples are available"
-          : "El flujo con micrófono, la invocación Vibe y los ejemplos clicables están disponibles"
+          ? "Microphone flow, V invocation, and clickable command examples are available"
+          : "El flujo con micrófono, la invocación V y los ejemplos clicables están disponibles"
         : state.language === "en"
           ? "This browser has no Web Speech support; clickable examples remain available"
           : "Este navegador no tiene Web Speech; los ejemplos clicables siguen disponibles",
