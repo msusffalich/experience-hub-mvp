@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260522-daily-location-flow-387";
+const CACHE_NAME = "experience-hub-pwa-20260522-vibe-logo-388";
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -6,6 +6,7 @@ const APP_SHELL = [
   "/app.js",
   "/manifest.webmanifest",
   "/icons/vibe-logo.jpg",
+  "/icons/vibe-logo.png",
   "/icons/vibe-icon-192.png",
   "/icons/vibe-icon-512.png",
   "/icons/vibe-apple-touch.png"

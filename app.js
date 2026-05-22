@@ -1,4 +1,4 @@
-const APP_VERSION = "20260522-daily-location-flow-387";
+const APP_VERSION = "20260522-vibe-logo-388";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2472,7 +2472,7 @@ const manualContent = {
     {
       title: "PWA y uso en móviles",
       items: [
-        "La app incluye configuración PWA: manifest, service worker, color de tema, logo Vibe como ícono de instalación e instalación desde navegadores compatibles.",
+        "La app incluye configuración PWA: manifest, service worker, color de tema, logo vigente de Vibe como ícono de instalación e instalación desde navegadores compatibles.",
         "Para instalarla en móvil, abre la URL pública HTTPS de Railway y usa Agregar a pantalla de inicio o Instalar app, según el navegador.",
         "La compatibilidad objetivo cubre desktop Windows, Mac, tablets y móviles modernos. La ruta recomendada es usar navegadores actuales sobre HTTPS, con Supabase para persistencia compartida.",
         "El modo móvil compacta navegación, acciones superiores, botones, tarjetas y paneles para reducir desbordes.",
@@ -3033,7 +3033,7 @@ const manualContent = {
     {
       title: "PWA And Mobile Use",
       items: [
-        "The app includes PWA setup: manifest, service worker, theme color, the Vibe logo as the install icon, and installation support in compatible browsers.",
+        "The app includes PWA setup: manifest, service worker, theme color, the current Vibe logo as the install icon, and installation support in compatible browsers.",
         "To install it on mobile, open the public HTTPS Railway URL and use Add to Home Screen or Install App, depending on the browser.",
         "The target compatibility covers Windows desktop, Mac, tablets, and modern mobile devices. The recommended path is a current browser over HTTPS, with Supabase for shared persistence.",
         "Mobile mode compacts navigation, top actions, buttons, cards, and panels to reduce overflow.",
