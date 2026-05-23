@@ -5,7 +5,7 @@ import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { inflateRawSync } from "node:zlib";
 import { randomUUID } from "node:crypto";
-import { execFile } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import { promisify } from "node:util";
 import { tmpdir } from "node:os";
 
@@ -3666,18 +3666,8 @@ async function renderReportLabPdf(scriptName, payload) {
     throw new Error("missing_python_executable_for_reportlab");
   }
   try {
-    const { stdout } = await execFileAsync(pythonExecutable, [scriptPath], {
-      input: JSON.stringify(payload || {}),
-      encoding: "buffer",
-      maxBuffer: 30_000_000,
-      timeout: 45000,
-      windowsHide: true,
-      env: {
-        ...process.env,
-        PYTHONPATH: [path.join(__dirname, ".python"), process.env.PYTHONPATH].filter(Boolean).join(path.delimiter),
-      },
-    });
-    if (!Buffer.isBuffer(stdout) || !stdout.length) {
+    const stdout = await runReportLabProcess(pythonExecutable, scriptPath, payload);
+    if (!stdout.length) {
       throw new Error("reportlab_empty_pdf_output");
     }
     return stdout;
@@ -3688,6 +3678,65 @@ async function renderReportLabPdf(scriptName, payload) {
     await appendLog("warn", "ReportLab PDF rendering failed", { scriptName, error: detail });
     throw new Error(detail || "reportlab_render_failed");
   }
+}
+
+function runReportLabProcess(pythonExecutable, scriptPath, payload) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(pythonExecutable, [scriptPath], {
+      windowsHide: true,
+      env: {
+        ...process.env,
+        PYTHONPATH: [path.join(__dirname, ".python"), process.env.PYTHONPATH].filter(Boolean).join(path.delimiter),
+      },
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    const stdout = [];
+    const stderr = [];
+    let stdoutBytes = 0;
+    let stderrBytes = 0;
+    const maxBytes = 30_000_000;
+    const timeout = setTimeout(() => {
+      child.kill("SIGKILL");
+      const error = new Error("reportlab_timeout");
+      error.stderr = Buffer.concat(stderr);
+      error.stdout = Buffer.concat(stdout);
+      reject(error);
+    }, 45000);
+
+    child.stdout.on("data", (chunk) => {
+      stdoutBytes += chunk.length;
+      if (stdoutBytes <= maxBytes) stdout.push(chunk);
+      if (stdoutBytes > maxBytes) {
+        child.kill("SIGKILL");
+        const error = new Error("reportlab_stdout_too_large");
+        error.stderr = Buffer.concat(stderr);
+        error.stdout = Buffer.concat(stdout);
+        reject(error);
+      }
+    });
+    child.stderr.on("data", (chunk) => {
+      stderrBytes += chunk.length;
+      if (stderrBytes <= maxBytes) stderr.push(chunk);
+    });
+    child.on("error", (error) => {
+      clearTimeout(timeout);
+      error.stderr = Buffer.concat(stderr);
+      error.stdout = Buffer.concat(stdout);
+      reject(error);
+    });
+    child.on("close", (code) => {
+      clearTimeout(timeout);
+      if (code === 0) {
+        resolve(Buffer.concat(stdout));
+        return;
+      }
+      const error = new Error(`reportlab_exit_${code}`);
+      error.stderr = Buffer.concat(stderr);
+      error.stdout = Buffer.concat(stdout);
+      reject(error);
+    });
+    child.stdin.end(JSON.stringify(payload || {}), "utf8");
+  });
 }
 
 function findPythonExecutable() {
