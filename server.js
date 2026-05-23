@@ -41,6 +41,7 @@ const OCR_PROVIDER = process.env.OCR_PROVIDER || "openai";
 const OPENAI_OCR_MODEL = process.env.OPENAI_OCR_MODEL || "gpt-4o-mini";
 const SIGNAL_METADATA_SCHEMA_VERSION = "clio-inspired-signal-v1";
 const execFileAsync = promisify(execFile);
+const PYTHON_EXECUTABLE = process.env.PYTHON_EXECUTABLE || process.env.PYTHON_PATH || "C:\\Users\\msusf\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe";
 
 const mimeTypes = {
   ".html": "text/html; charset=utf-8",
@@ -3370,6 +3371,11 @@ function activeOcrProvider() {
 
 async function buildPdfReport(user, report = null) {
   if (report?.summary && Array.isArray(report.rows)) {
+    const reportLabPdf = await renderReportLabPdf("report_pdf_reportlab.py", report);
+    if (reportLabPdf) {
+      await appendLog("info", "PDF report generated", { count: report.rows.length, userId: user.id, source: "reportlab" });
+      return reportLabPdf;
+    }
     const richPdf = await renderReportHtmlToPdf(buildReportPdfHtml(report));
     if (richPdf) {
       await appendLog("info", "PDF report generated", { count: report.rows.length, userId: user.id, source: "client-report-html" });
@@ -3447,6 +3453,11 @@ async function buildPdfReport(user, report = null) {
 async function buildPublicationPdf(html, user = { id: LOCAL_USER_ID }) {
   if (typeof html !== "string" || !html.trim()) {
     throw new HttpError(400, "publication_html_required");
+  }
+  const reportLabPdf = await renderReportLabPdf("publication_pdf_reportlab.py", { html });
+  if (reportLabPdf) {
+    await appendLog("info", "Publication PDF generated", { userId: user.id, source: "reportlab" });
+    return reportLabPdf;
   }
   const printable = normalizePublicationHtmlForPdf(html);
   const pdf = await renderReportHtmlToPdf(printable);
@@ -3654,6 +3665,24 @@ async function renderReportHtmlToPdf(html) {
   } finally {
     await unlink(htmlPath).catch(() => {});
     await unlink(pdfPath).catch(() => {});
+  }
+}
+
+async function renderReportLabPdf(scriptName, payload) {
+  const scriptPath = path.join(__dirname, "scripts", scriptName);
+  if (!existsSync(scriptPath) || !existsSync(PYTHON_EXECUTABLE)) return null;
+  try {
+    const { stdout } = await execFileAsync(PYTHON_EXECUTABLE, [scriptPath], {
+      input: JSON.stringify(payload || {}),
+      encoding: "buffer",
+      maxBuffer: 30_000_000,
+      timeout: 45000,
+      windowsHide: true,
+    });
+    return Buffer.isBuffer(stdout) && stdout.length ? stdout : null;
+  } catch (error) {
+    await appendLog("warn", "ReportLab PDF rendering failed", { scriptName, error: error.message });
+    return null;
   }
 }
 

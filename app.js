@@ -1,4 +1,4 @@
-const APP_VERSION = "20260522-insights-hub-395";
+const APP_VERSION = "20260522-reportlab-outputs-396";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -1964,6 +1964,7 @@ const manualContent = {
         "El Panel también muestra una siguiente acción recomendada del piloto y permite copiar un resumen breve para seguimiento.",
         "Hallazgos es la salida principal de lectura humana: organiza las experiencias en 8 ejes de análisis y luego muestra hallazgos priorizados con evidencia, confianza y próxima acción.",
         "Hallazgos permite descargar la lectura como HTML imprimible o Markdown para revisar, compartir o archivar fuera de la app.",
+        "Los PDFs de Reportes y Publicaciones usan ReportLab como motor principal para producir documentos editados, con portada, tarjetas, indicadores y evidencia curada. HTML queda como vista o respaldo.",
         "El resumen del Panel lista los pendientes principales del piloto para convertir la recomendación en acciones concretas.",
         "Administración permite exportar un paquete piloto completo con preparación, invitación, pruebas, participantes, feedback y acta de cierre.",
         "El paquete piloto muestra una vista previa de su contenido antes de exportar, para revisar preparación, invitación, pruebas, participantes, feedback y acta.",
@@ -2535,6 +2536,7 @@ const manualContent = {
         "Dashboard also shows a recommended next pilot action and lets you copy a short follow-up summary.",
         "Insights is the main human-reading output: it organizes experiences into 8 analysis themes and then shows prioritized findings with evidence, confidence, and next action.",
         "Insights can be downloaded as printable HTML or Markdown for review, sharing, or archiving outside the app.",
+        "Report and Publication PDFs use ReportLab as the main engine to produce edited documents with cover, cards, indicators, and curated evidence. HTML remains as preview or fallback.",
         "The Dashboard summary lists the main pilot pending items so the recommendation becomes concrete action.",
         "Admin can export a complete pilot package with readiness, invitation, tests, participants, feedback, and closure record.",
         "The pilot package shows a content preview before export, so you can review readiness, invitation, tests, participants, feedback, and closure record.",
