@@ -9,8 +9,7 @@
     "build": {
       "commands": [
         "...",
-        "python -m pip install --target ./.python -r requirements.txt",
-        "PYTHONPATH=./.python python -c \"import reportlab; print('ReportLab ready', reportlab.Version)\""
+        "node scripts/verify-reportlab.mjs"
       ]
     }
   }

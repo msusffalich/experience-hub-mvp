@@ -1,4 +1,4 @@
-const APP_VERSION = "20260523-reportlab-build-fix-402";
+const APP_VERSION = "20260523-railpack-quote-fix-403";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
