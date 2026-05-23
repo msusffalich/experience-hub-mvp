@@ -1,4 +1,4 @@
-const APP_VERSION = "20260523-publication-type-templates-417";
+const APP_VERSION = "20260523-audit-infographic-418";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -25488,7 +25488,7 @@ function getPilotTestScenarios() {
         { key: "capture", title: "Capture a real experience", detail: "Create, edit, attach evidence, and delete only if needed." },
         { key: "report", title: "Generate a report", detail: "Review indicators, charts, findings, and export at least one format." },
         { key: "assets", title: "Review multimodal assets", detail: "Open image, audio, video, and document examples with metadata." },
-        { key: "daily", title: "Use Daily briefing", detail: "Read local and world sections, explore details, weather, horoscope, and actions." },
+        { key: "daily", title: "Use Daily briefing", detail: "Read local and world sections, explore details, weather, media, and actions." },
         { key: "agenda", title: "Use Agenda", detail: "Create an event, test blocked days, and export/import calendar when relevant." },
         { key: "publications", title: "Create a publication", detail: "Edit title, text, layout, media selection, and export the final package." },
         { key: "privacy", title: "Apply privacy controls", detail: "Review recommended privacy, local key, backup, and restore behavior." },
@@ -25498,7 +25498,7 @@ function getPilotTestScenarios() {
         { key: "capture", title: "Capturar una experiencia real", detail: "Crear, editar, adjuntar evidencia y eliminar solo si hace falta." },
         { key: "report", title: "Generar un reporte", detail: "Revisar indicadores, gráficos, hallazgos y exportar al menos un formato." },
         { key: "assets", title: "Revisar activos multimodales", detail: "Abrir ejemplos de imagen, audio, video y documento con metadatos." },
-        { key: "daily", title: "Usar el Diario", detail: "Leer secciones locales y mundiales, explorar detalle, clima, horóscopo y acciones." },
+        { key: "daily", title: "Usar el Diario", detail: "Leer secciones locales y mundiales, explorar detalle, clima, multimedia y acciones." },
         { key: "agenda", title: "Usar Agenda", detail: "Crear un evento, probar días bloqueados y exportar/importar calendario si aplica." },
         { key: "publications", title: "Crear una publicación", detail: "Editar título, texto, diseño, selección multimedia y exportar el paquete final." },
         { key: "privacy", title: "Aplicar controles de privacidad", detail: "Revisar privacidad recomendada, Clave local, respaldo y restauración." },

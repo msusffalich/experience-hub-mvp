@@ -8,6 +8,7 @@ Supabase key.txt
 # Local data and exports
 data/
 extracted_pdf_text.txt
+arch_infographic.html
 *.backup
 *.bak
 
@@ -28,9 +29,11 @@ dist/
 build/
 .cache/
 .railway/
+tmp/
 
 # OS and editor files
 .DS_Store
 Thumbs.db
 .vscode/
 .idea/
+icons/vibe-logo-official.png
