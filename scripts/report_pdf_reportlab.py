@@ -277,11 +277,12 @@ def section_title(text):
     return [para(text, "H1x")]
 
 
-def card(title, body, meta=None):
-    data = [[para(title, "H2x")], [para(short(body, 280), "Bodyx")]]
+def card(title, body, meta=None, width=None, body_limit=210):
+    width = width or (PAGE_WIDTH - 2 * MARGIN)
+    data = [[para(title, "H2x")], [para(short(body, body_limit), "Bodyx")]]
     if meta:
-        data.append([para(meta, "Small")])
-    t = Table(data, colWidths=[PAGE_WIDTH - 2 * MARGIN], hAlign="LEFT")
+        data.append([para(short(meta, 90), "Small")])
+    t = Table(data, colWidths=[width], hAlign="LEFT")
     t.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, -1), colors.white),
         ("BOX", (0, 0), (-1, -1), 0.7, LINE),
@@ -294,16 +295,23 @@ def card(title, body, meta=None):
 
 
 def two_column_cards(items):
+    card_width = (PAGE_WIDTH - 2 * MARGIN - 12) / 2
     rows = []
     for i in range(0, len(items), 2):
         row = []
         for item in items[i : i + 2]:
-            row.append(card(item[0], item[1], item[2] if len(item) > 2 else None))
+            row.append(card(item[0], item[1], item[2] if len(item) > 2 else None, width=card_width))
         while len(row) < 2:
             row.append("")
         rows.append(row)
-    t = Table(rows, colWidths=[(PAGE_WIDTH - 2 * MARGIN - 8) / 2] * 2)
-    t.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0), ("RIGHTPADDING", (0, 0), (-1, -1), 4)]))
+    t = Table(rows, colWidths=[card_width] * 2)
+    t.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 0),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+        ("TOPPADDING", (0, 0), (-1, -1), 3),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+    ]))
     return t
 
 
@@ -371,7 +379,9 @@ def evidence_cards(items):
         title = f"{item.get('experienceTitle') or item.get('name') or 'Evidencia'}"
         meta = f"{item.get('kind', '')} - {item.get('name', '')}"
         body = item.get("analyticalText") or item.get("translatedText") or item.get("manualNote") or "Evidencia disponible para revisar."
-        cards.append((title, body, meta))
+        body = body.replace("Extracción local automática para", "Texto extraído de")
+        body = body.replace("Uso: evidencia consultable para reportes, memoria y publicaciones. Revisar antes de publicar.", "")
+        cards.append((title, short(body, 155), meta))
     return two_column_cards(cards) if cards else para("No hay evidencia multimodal seleccionada para este filtro.", "Muted")
 
 

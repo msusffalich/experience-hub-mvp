@@ -314,7 +314,7 @@ def build_story(payload):
     story.append(para("Ejes de exploracion", "H1x"))
     story.append(axis_table(axes))
     story.append(Spacer(1, 8))
-    story.append(para("Este PDF resume decisiones. Para auditoria o reprocesamiento, usa tambien Markdown/HTML o JSON si se habilita en administracion.", "Small"))
+    story.append(para("Este PDF resume decisiones, evidencia y recomendaciones. JSON/CSV quedan para auditoria tecnica; este documento es la salida ejecutiva para lectura humana.", "Small"))
     return story
 
 

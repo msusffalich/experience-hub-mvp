@@ -26,7 +26,16 @@ def clean_html(value):
     text = re.sub(r"<style[\s\S]*?</style>", " ", str(value or ""), flags=re.I)
     text = re.sub(r"<script[\s\S]*?</script>", " ", text, flags=re.I)
     text = re.sub(r"<[^>]+>", " ", text)
-    return " ".join(unescape(text).split())
+    text = unescape(text)
+    noise = [
+        "Uso: evidencia consultable para reportes, memoria y publicaciones. Revisar antes de publicar.",
+        "Si necesitas conservar diseno visual completo, usa tambien la exportacion HTML.",
+        "Si necesitas conservar diseño visual completo, usa también la exportación HTML.",
+    ]
+    for item in noise:
+        text = text.replace(item, " ")
+    text = re.sub(r"\b(PDF/HTML|HTML|Markdown|JSON|CSV)\b", " ", text)
+    return " ".join(text.split())
 
 
 def short(value, limit=420):
@@ -34,6 +43,19 @@ def short(value, limit=420):
     if len(text) <= limit:
         return text
     return text[: max(0, limit - 1)].rstrip() + "..."
+
+
+def sentence_summary(text, max_sentences=2, limit=360):
+    parts = [part.strip() for part in re.split(r"(?<=[.!?])\s+", clean_html(text)) if part.strip()]
+    selected = " ".join(parts[:max_sentences]) or clean_html(text)
+    return short(selected, limit)
+
+
+def editorial_body(text, limit=760):
+    cleaned = clean_html(text)
+    parts = [part.strip() for part in re.split(r"(?<=[.!?])\s+", cleaned) if part.strip()]
+    body = " ".join(parts[2:8]) if len(parts) > 2 else cleaned
+    return short(body, limit)
 
 
 def styles():
@@ -82,8 +104,9 @@ def hero(title, subtitle):
     return table
 
 
-def card(title, body):
-    t = Table([[para(title, "H2x")], [para(body, "Bodyx")]], colWidths=[PAGE_WIDTH - 2 * MARGIN])
+def card(title, body, width=None):
+    width = width or (PAGE_WIDTH - 2 * MARGIN)
+    t = Table([[para(title, "H2x")], [para(body, "Bodyx")]], colWidths=[width])
     t.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, -1), colors.white),
         ("BOX", (0, 0), (-1, -1), 0.6, LINE),
@@ -98,10 +121,22 @@ def card(title, body):
 def build(payload):
     html = payload.get("html") or ""
     title = payload.get("title") or "Publicacion inteligente"
-    text = short(html, 2200)
-    parts = [part.strip() for part in re.split(r"(?<=[.!?])\s+", text) if part.strip()]
-    summary = " ".join(parts[:3]) or "Contenido preparado para revision humana."
-    body = " ".join(parts[3:14]) or text
+    text = clean_html(html)
+    summary = sentence_summary(text, max_sentences=2, limit=360) or "Contenido preparado para revision humana."
+    body = editorial_body(text, limit=820)
+    checklist_width = (PAGE_WIDTH - 2 * MARGIN - 10) / 2
+    checklist = Table(
+        [[
+            card("Antes de compartir", "1. Confirma privacidad. 2. Revisa nombres, lugares y datos sensibles. 3. Usa el canal elegido solo cuando el contenido este aprobado.", checklist_width),
+            card("Salida recomendada", "PDF para version final revisada. Markdown para editar texto. JSON/CSV quedan para auditoria tecnica, no para lectura del usuario final.", checklist_width),
+        ]],
+        colWidths=[checklist_width, checklist_width],
+    )
+    checklist.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 0),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+    ]))
     return [
         hero(title, "Documento final para revisar, aprobar y compartir."),
         Spacer(1, 18),
@@ -111,8 +146,8 @@ def build(payload):
         para("Contenido principal", "H1x"),
         card("Borrador editado", body),
         Spacer(1, 12),
-        para("Uso recomendado", "H1x"),
-        card("Siguiente paso", "Revisa el texto, confirma privacidad y comparte por el canal elegido. Si necesitas conservar diseno visual completo, usa tambien la exportacion HTML."),
+        para("Cierre editorial", "H1x"),
+        checklist,
     ]
 
 

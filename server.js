@@ -3449,7 +3449,7 @@ async function buildManualPdf(html, user = { id: LOCAL_USER_ID }) {
     throw new HttpError(400, "manual_html_required");
   }
   try {
-    const reportLabPdf = await renderReportLabPdf("publication_pdf_reportlab.py", {
+    const reportLabPdf = await renderReportLabPdf("manual_pdf_reportlab.py", {
       title: "Manual Vibe",
       html,
     });
