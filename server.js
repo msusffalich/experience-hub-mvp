@@ -155,7 +155,8 @@ const server = createServer(async (req, res) => {
   } catch (error) {
     sendJson(res, error.statusCode || 500, {
       error: error.statusCode ? error.message : "internal_error",
-      message: error.statusCode ? undefined : error.message,
+      message: error.detail || (error.statusCode ? undefined : error.message),
+      detail: error.detail,
     });
   }
 });
@@ -3391,13 +3392,14 @@ function activeOcrProvider() {
 
 async function buildPdfReport(user, report = null) {
   if (report?.summary && Array.isArray(report.rows)) {
-    const reportLabPdf = await renderReportLabPdf("report_pdf_reportlab.py", report);
-    if (reportLabPdf) {
+    try {
+      const reportLabPdf = await renderReportLabPdf("report_pdf_reportlab.py", report);
       await appendLog("info", "PDF report generated", { count: report.rows.length, userId: user.id, source: "reportlab" });
       return reportLabPdf;
+    } catch (error) {
+      await appendLog("error", "ReportLab PDF required but unavailable", { userId: user.id, document: "report", error: error.message });
+      throw new HttpError(503, "reportlab_unavailable", error.message);
     }
-    await appendLog("error", "ReportLab PDF required but unavailable", { userId: user.id, document: "report" });
-    throw new HttpError(503, "reportlab_unavailable");
   }
   const experiences = await listExperiences(user);
   const sorted = [...experiences].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
@@ -3421,39 +3423,42 @@ async function buildPublicationPdf(html, user = { id: LOCAL_USER_ID }) {
   if (typeof html !== "string" || !html.trim()) {
     throw new HttpError(400, "publication_html_required");
   }
-  const reportLabPdf = await renderReportLabPdf("publication_pdf_reportlab.py", { html });
-  if (reportLabPdf) {
+  try {
+    const reportLabPdf = await renderReportLabPdf("publication_pdf_reportlab.py", { html });
     await appendLog("info", "Publication PDF generated", { userId: user.id, source: "reportlab" });
     return reportLabPdf;
+  } catch (error) {
+    await appendLog("error", "ReportLab PDF required but unavailable", { userId: user.id, document: "publication", error: error.message });
+    throw new HttpError(503, "reportlab_unavailable", error.message);
   }
-  await appendLog("error", "ReportLab PDF required but unavailable", { userId: user.id, document: "publication" });
-  throw new HttpError(503, "reportlab_unavailable");
 }
 
 async function buildInsightsPdf(payload = {}, user = { id: LOCAL_USER_ID }) {
-  const reportLabPdf = await renderReportLabPdf("insights_pdf_reportlab.py", payload);
-  if (reportLabPdf) {
+  try {
+    const reportLabPdf = await renderReportLabPdf("insights_pdf_reportlab.py", payload);
     await appendLog("info", "Insights PDF generated", { userId: user.id, source: "reportlab" });
     return reportLabPdf;
+  } catch (error) {
+    await appendLog("error", "ReportLab PDF required but unavailable", { userId: user.id, document: "insights", error: error.message });
+    throw new HttpError(503, "reportlab_unavailable", error.message);
   }
-  await appendLog("error", "ReportLab PDF required but unavailable", { userId: user.id, document: "insights" });
-  throw new HttpError(503, "reportlab_unavailable");
 }
 
 async function buildManualPdf(html, user = { id: LOCAL_USER_ID }) {
   if (typeof html !== "string" || !html.trim()) {
     throw new HttpError(400, "manual_html_required");
   }
-  const reportLabPdf = await renderReportLabPdf("publication_pdf_reportlab.py", {
-    title: "Manual Vibe",
-    html,
-  });
-  if (reportLabPdf) {
+  try {
+    const reportLabPdf = await renderReportLabPdf("publication_pdf_reportlab.py", {
+      title: "Manual Vibe",
+      html,
+    });
     await appendLog("info", "Manual PDF generated", { userId: user.id, source: "reportlab" });
     return reportLabPdf;
+  } catch (error) {
+    await appendLog("error", "ReportLab PDF required but unavailable", { userId: user.id, document: "manual", error: error.message });
+    throw new HttpError(503, "reportlab_unavailable", error.message);
   }
-  await appendLog("error", "ReportLab PDF required but unavailable", { userId: user.id, document: "manual" });
-  throw new HttpError(503, "reportlab_unavailable");
 }
 
 function normalizePublicationHtmlForPdf(html) {
@@ -3654,7 +3659,12 @@ async function renderReportHtmlToPdf(html) {
 async function renderReportLabPdf(scriptName, payload) {
   const scriptPath = path.join(__dirname, "scripts", scriptName);
   const pythonExecutable = findPythonExecutable();
-  if (!existsSync(scriptPath) || !pythonExecutable) return null;
+  if (!existsSync(scriptPath)) {
+    throw new Error(`missing_reportlab_script:${scriptName}`);
+  }
+  if (!pythonExecutable) {
+    throw new Error("missing_python_executable_for_reportlab");
+  }
   try {
     const { stdout } = await execFileAsync(pythonExecutable, [scriptPath], {
       input: JSON.stringify(payload || {}),
@@ -3667,10 +3677,16 @@ async function renderReportLabPdf(scriptName, payload) {
         PYTHONPATH: [path.join(__dirname, ".python"), process.env.PYTHONPATH].filter(Boolean).join(path.delimiter),
       },
     });
-    return Buffer.isBuffer(stdout) && stdout.length ? stdout : null;
+    if (!Buffer.isBuffer(stdout) || !stdout.length) {
+      throw new Error("reportlab_empty_pdf_output");
+    }
+    return stdout;
   } catch (error) {
-    await appendLog("warn", "ReportLab PDF rendering failed", { scriptName, error: error.message });
-    return null;
+    const stderr = Buffer.isBuffer(error.stderr) ? error.stderr.toString("utf8") : String(error.stderr || "");
+    const stdout = Buffer.isBuffer(error.stdout) ? error.stdout.toString("utf8") : String(error.stdout || "");
+    const detail = [error.message, stderr, stdout].filter(Boolean).join(" | ").replace(/\s+/g, " ").trim().slice(0, 1800);
+    await appendLog("warn", "ReportLab PDF rendering failed", { scriptName, error: detail });
+    throw new Error(detail || "reportlab_render_failed");
   }
 }
 
@@ -4982,9 +4998,10 @@ function sanitizeExportFilename(filename) {
 }
 
 class HttpError extends Error {
-  constructor(statusCode, message) {
+  constructor(statusCode, message, detail = "") {
     super(message);
     this.statusCode = statusCode;
+    this.detail = detail;
   }
 }
 

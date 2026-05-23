@@ -1,4 +1,4 @@
-const APP_VERSION = "20260523-railpack-quote-fix-403";
+const APP_VERSION = "20260523-reportlab-runtime-fix-404";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -17644,7 +17644,7 @@ async function downloadPdfReport() {
       },
       body: JSON.stringify({ report: payload }),
     });
-    if (!response.ok) throw new Error(`PDF ${response.status}`);
+    if (!response.ok) throw new Error(await response.text());
     downloadBlob(await response.blob(), "reporte-experiencias.pdf");
     markReportExport("pdf", payload, "ok");
     renderReportAcceptancePanel();
@@ -17652,11 +17652,26 @@ async function downloadPdfReport() {
     notify(state.language === "en" ? "Edited ReportLab report PDF generated." : "PDF editado ReportLab del reporte generado.", "success");
   } catch (error) {
     console.warn("Report PDF export failed", error);
+    const detail = getExportErrorDetail(error);
     markReportExport("pdf", payload, "error");
     renderReportAcceptancePanel();
-    setReportFlowStatus(state.language === "en" ? "ReportLab PDF failed. Check server/Railway logs; HTML was not downloaded as a substitute." : "Fallo el PDF ReportLab. Revisa logs del servidor/Railway; no se descargo HTML como sustituto.");
-    notify(state.language === "en" ? "ReportLab PDF failed. HTML was not downloaded as a substitute." : "Fallo el PDF ReportLab. No se descargo HTML como sustituto.", "error");
+    setReportFlowStatus(state.language === "en" ? `ReportLab PDF failed. Detail: ${detail}` : `Fallo el PDF ReportLab. Detalle: ${detail}`);
+    notify(state.language === "en" ? `ReportLab PDF failed: ${detail}` : `Fallo el PDF ReportLab: ${detail}`, "error");
   }
+}
+
+function getExportErrorDetail(error, limit = 320) {
+  const raw = String(error?.message || error || "").trim();
+  let detail = raw;
+  try {
+    const parsed = JSON.parse(raw);
+    detail = parsed.detail || parsed.message || parsed.error || raw;
+  } catch {
+    detail = raw;
+  }
+  return String(detail || "sin detalle")
+    .replace(/\s+/g, " ")
+    .slice(0, limit);
 }
 
 function generatePublicationDraft() {
@@ -18605,7 +18620,8 @@ async function exportCurrentPublicationPdf() {
     document.getElementById("publicationStatus").textContent = state.language === "en" ? "Edited ReportLab publication PDF generated." : "PDF editado ReportLab de publicacion generado.";
   } catch (error) {
     console.warn("Publication PDF export failed", error);
-    document.getElementById("publicationStatus").textContent = state.language === "en" ? "ReportLab PDF failed. Check server/Railway logs; HTML was not downloaded as a substitute." : "Fallo el PDF ReportLab. Revisa logs del servidor/Railway; no se descargo HTML como sustituto.";
+    const detail = getExportErrorDetail(error);
+    document.getElementById("publicationStatus").textContent = state.language === "en" ? `ReportLab PDF failed. Detail: ${detail}` : `Fallo el PDF ReportLab. Detalle: ${detail}`;
     notify(document.getElementById("publicationStatus").textContent, "error");
   }
 }
@@ -19656,15 +19672,16 @@ async function exportInsightsPdf() {
       },
       body: JSON.stringify(payload),
     });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    if (!response.ok) throw new Error(await response.text());
     downloadBlob(await response.blob(), "hallazgos-experiencias.pdf");
     notify(state.language === "en" ? "Edited findings PDF generated." : "PDF editado de hallazgos generado.", "success");
   } catch (error) {
     console.warn("Insights PDF export failed", error);
+    const detail = getExportErrorDetail(error);
     notify(
       state.language === "en"
-        ? "ReportLab PDF failed. Check server/Railway logs; HTML was not downloaded as a substitute."
-        : "Fallo el PDF ReportLab. Revisa logs del servidor/Railway; no se descargo HTML como sustituto.",
+        ? `ReportLab PDF failed. Detail: ${detail}`
+        : `Fallo el PDF ReportLab. Detalle: ${detail}`,
       "error",
     );
   }
@@ -20551,7 +20568,8 @@ async function exportManualPdf() {
     notify(state.language === "en" ? "Edited manual PDF generated." : "PDF editado del manual generado.", "success");
   } catch (error) {
     console.warn("Manual PDF export failed", error);
-    notify(state.language === "en" ? "ReportLab PDF failed. Check server/Railway logs; HTML was not downloaded as a substitute." : "Fallo el PDF ReportLab. Revisa logs del servidor/Railway; no se descargo HTML como sustituto.", "error");
+    const detail = getExportErrorDetail(error);
+    notify(state.language === "en" ? `ReportLab PDF failed. Detail: ${detail}` : `Fallo el PDF ReportLab. Detalle: ${detail}`, "error");
   }
 }
 

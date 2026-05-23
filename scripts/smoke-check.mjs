@@ -240,7 +240,7 @@ assert(files.server.includes("/api/manual/pdf"), "Server must expose Manual PDF 
 assert(!files.app.includes("PDF fallback exported as printable HTML"), "Report PDF failure must not silently download HTML fallback.");
 assert(!files.app.includes("HTML was downloaded as a printable backup"), "Findings PDF failure must not silently download HTML fallback.");
 assert(!files.app.includes("HTML was exported instead"), "Publication PDF failure must not silently export HTML fallback.");
-assert(files.server.includes("throw new HttpError(503, \"reportlab_unavailable\")"), "Server must fail clearly when ReportLab is unavailable instead of returning a fake PDF.");
+assert(files.server.includes("throw new HttpError(503, \"reportlab_unavailable\", error.message)"), "Server must fail clearly when ReportLab is unavailable instead of returning a fake PDF.");
 assert(files.app.includes("function authHeader()") && files.app.includes("function authHeaders()"), "PDF exports must have a stable auth header helper.");
 
 if (failures.length) {

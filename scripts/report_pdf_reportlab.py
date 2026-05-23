@@ -3,6 +3,7 @@ import json
 import math
 import sys
 from datetime import datetime, timezone
+from html import escape
 
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
@@ -71,7 +72,7 @@ STYLES = style_sheet()
 
 
 def para(text, style="Bodyx"):
-    return Paragraph(clean(text), STYLES[style])
+    return Paragraph(escape(clean(text)), STYLES[style])
 
 
 def draw_page(canvas, doc):
