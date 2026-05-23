@@ -195,6 +195,90 @@ class PublicationDashboard(Flowable):
             c.drawCentredString(x + card_w / 2, 18, label)
 
 
+class MemoryTimeline(Flowable):
+    def __init__(self, highlights):
+        super().__init__()
+        self.highlights = (highlights or [])[:5]
+
+    def wrap(self, avail_width, avail_height):
+        self.width = avail_width
+        self.height = 1.15 * inch
+        return avail_width, self.height
+
+    def draw(self):
+        c = self.canv
+        w, h = self.width, self.height
+        if not self.highlights:
+            c.setFillColor(MUTED)
+            c.setFont("Helvetica", 9)
+            c.drawString(0, h / 2, "Sin momentos seleccionados.")
+            return
+        y = h - 22
+        step = w / max(1, len(self.highlights))
+        c.setStrokeColor(LINE)
+        c.setLineWidth(2)
+        c.line(18, y, w - 18, y)
+        for index, item in enumerate(self.highlights):
+            x = step * index + step / 2
+            c.setFillColor(BLUE if index % 2 == 0 else colors.HexColor("#0d7c66"))
+            c.circle(x, y, 8, fill=1, stroke=0)
+            c.setFillColor(BRAND)
+            c.setFont("Helvetica-Bold", 7.4)
+            title = short(item.get("title") or "Momento", 28)
+            c.drawCentredString(x, y - 22, title)
+            c.setFillColor(MUTED)
+            c.setFont("Helvetica", 6.8)
+            meta = short(item.get("category") or item.get("location") or "", 24)
+            c.drawCentredString(x, y - 34, meta)
+
+
+class MediaMosaic(Flowable):
+    def __init__(self, media):
+        super().__init__()
+        self.media = (media or [])[:8]
+
+    def wrap(self, avail_width, avail_height):
+        self.width = avail_width
+        self.height = 1.35 * inch
+        return avail_width, self.height
+
+    def draw(self):
+        c = self.canv
+        w, h = self.width, self.height
+        if not self.media:
+            c.setFillColor(MUTED)
+            c.setFont("Helvetica", 9)
+            c.drawString(0, h / 2, "Sin multimedia seleccionada.")
+            return
+        cols = 4
+        gap = 6
+        tile_w = (w - gap * (cols - 1)) / cols
+        tile_h = (h - gap) / 2
+        for index, item in enumerate(self.media):
+            row = index // cols
+            col = index % cols
+            x = col * (tile_w + gap)
+            y = h - (row + 1) * tile_h - row * gap
+            kind = human_kind(item)
+            color = {
+                "Imagen": colors.HexColor("#1f78d1"),
+                "Video": colors.HexColor("#7a5cc8"),
+                "Audio": colors.HexColor("#0d7c66"),
+                "Documento": colors.HexColor("#f2b84b"),
+            }.get(kind, colors.HexColor("#526273"))
+            c.setFillColor(colors.white)
+            c.setStrokeColor(LINE)
+            c.roundRect(x, y, tile_w, tile_h, 7, fill=1, stroke=1)
+            c.setFillColor(color)
+            c.roundRect(x + 7, y + tile_h - 18, tile_w - 14, 6, 3, fill=1, stroke=0)
+            c.setFillColor(BRAND)
+            c.setFont("Helvetica-Bold", 8)
+            c.drawString(x + 8, y + tile_h - 34, kind)
+            c.setFillColor(MUTED)
+            c.setFont("Helvetica", 6.8)
+            c.drawString(x + 8, y + 11, f"Activo {index + 1}")
+
+
 def paragraph_block(title, text, width=None):
     width = width or (PAGE_WIDTH - 2 * MARGIN)
     paragraphs = [part.strip() for part in str(text or "").split("\n") if part.strip()]
@@ -227,6 +311,76 @@ def list_lines(items, empty="Sin elementos seleccionados."):
     return "\n".join(lines[:6]) or empty
 
 
+def human_kind(item):
+    mime = str((item or {}).get("type") or "")
+    kind = str((item or {}).get("kind") or "").lower()
+    if mime.startswith("image/") or kind == "image":
+        return "Imagen"
+    if mime.startswith("video/") or kind == "video":
+        return "Video"
+    if mime.startswith("audio/") or kind == "audio":
+        return "Audio"
+    if "pdf" in mime or "text" in mime or "document" in kind:
+        return "Documento"
+    return "Activo"
+
+
+def simple_table(headers, rows, col_widths):
+    table_rows = [[para(header, "H2x") for header in headers]]
+    for row in rows:
+        table_rows.append([para(cell, "Bodyx") for cell in row])
+    table = Table(table_rows, colWidths=col_widths, repeatRows=1)
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#eef4ff")),
+        ("GRID", (0, 0), (-1, -1), 0.35, LINE),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 7),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 7),
+        ("TOPPADDING", (0, 0), (-1, -1), 6),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+    ]))
+    return table
+
+
+def moment_rows(highlights):
+    rows = []
+    for index, item in enumerate((highlights or [])[:7], 1):
+        rows.append([
+            str(index),
+            item.get("title") or "Momento",
+            item.get("category") or "-",
+            short(item.get("note") or item.get("location") or "Registrado para memoria.", 190),
+        ])
+    return rows or [["-", "Sin momentos", "-", "Genera una publicacion desde experiencias con notas o multimedia."]]
+
+
+def media_rows(media):
+    rows = []
+    for item in (media or [])[:8]:
+        rows.append([
+            human_kind(item),
+            item.get("name") or "Activo",
+            item.get("experienceTitle") or "-",
+            short(item.get("analyticalText") or item.get("manualNote") or item.get("translatedText") or "Disponible para revisar.", 170),
+        ])
+    return rows or [["-", "Sin multimedia", "-", "No se selecciono multimedia para esta publicacion."]]
+
+
+def channel_rows(channel):
+    status = {
+        "WhatsApp": "Asistido: copia el texto y abre WhatsApp; el usuario revisa y envia.",
+        "Email": "Asistido: prepara asunto y cuerpo; el usuario revisa y envia.",
+        "Facebook": "Manual por ahora: copia contenido y abre la red para pegar.",
+        "Instagram": "Manual por ahora: copia contenido y abre la red para pegar.",
+        "PDF/HTML": "Listo: exporta documento estable para lectura, impresion o envio.",
+    }.get(channel or "", "Exportacion manual revisada por el usuario.")
+    return [
+        ["Canal elegido", channel or "-", status],
+        ["Privacidad", "Revision humana", "La limpieza automatica ayuda, pero nombres, rostros y datos sensibles se revisan antes de compartir."],
+        ["Salida principal", "PDF ReportLab", "Documento editado, estable e imprimible. HTML/Markdown/JSON quedan como apoyo tecnico."],
+    ]
+
+
 def build(payload):
     html = payload.get("html") or ""
     draft = payload.get("draft") or {}
@@ -237,6 +391,9 @@ def build(payload):
     stats = draft.get("stats") or {}
     highlights = draft.get("highlights") or []
     media = draft.get("media") or []
+    purpose = draft.get("purpose") or "Pieza preparada para compartir una memoria viva, no un reporte tecnico."
+    people = ", ".join(draft.get("people") or []) or "Sin personas indicadas"
+    locations = ", ".join(draft.get("locations") or []) or "Sin ubicacion indicada"
     ficha_width = (PAGE_WIDTH - 2 * MARGIN - 12) / 3
     meta_cards = Table(
         [[
@@ -264,11 +421,28 @@ def build(payload):
         ("LEFTPADDING", (0, 0), (-1, -1), 0),
         ("RIGHTPADDING", (0, 0), (-1, -1), 6),
     ]))
+    moment_table = simple_table(
+        ["#", "Momento", "Eje", "Lectura editorial"],
+        moment_rows(highlights),
+        [0.35 * inch, 1.45 * inch, 1.05 * inch, PAGE_WIDTH - 2 * MARGIN - 2.85 * inch],
+    )
+    media_table = simple_table(
+        ["Tipo", "Activo", "Experiencia", "Uso en la memoria"],
+        media_rows(media),
+        [0.75 * inch, 1.35 * inch, 1.35 * inch, PAGE_WIDTH - 2 * MARGIN - 3.45 * inch],
+    )
+    channel_table = simple_table(
+        ["Tema", "Estado", "Que significa"],
+        channel_rows(draft.get("channel")),
+        [1.1 * inch, 1.35 * inch, PAGE_WIDTH - 2 * MARGIN - 2.45 * inch],
+    )
     return [
-        hero(title, "Pieza final con contenido curado para revisar, aprobar y compartir."),
+        hero(title, "Memoria o pieza final con contenido curado para revisar, aprobar y compartir."),
         Spacer(1, 18),
         para("Ficha editorial", "H1x"),
         meta_cards,
+        Spacer(1, 12),
+        card("Proposito de esta publicacion", f"{purpose}\nPersonas: {people}\nLugares: {locations}"),
         Spacer(1, 12),
         para("Tablero visual", "H1x"),
         PublicationDashboard(stats, len(media), len(highlights)),
@@ -276,13 +450,26 @@ def build(payload):
         para("Resumen editorial", "H1x"),
         card("Lectura rapida", summary),
         Spacer(1, 12),
-        para("Contenido principal", "H1x"),
+        para("Secuencia de memoria", "H1x"),
+        MemoryTimeline(highlights),
+        Spacer(1, 8),
+        moment_table,
+        Spacer(1, 12),
+        para("Contenido listo para compartir", "H1x"),
         paragraph_block("Borrador editado", body),
         Spacer(1, 12),
-        para("Evidencia y seleccion", "H1x"),
+        para("Galeria y evidencia seleccionada", "H1x"),
+        MediaMosaic(media),
+        Spacer(1, 8),
+        media_table,
+        Spacer(1, 12),
+        para("Salida y canal", "H1x"),
+        channel_table,
+        Spacer(1, 12),
+        para("Revision humana", "H1x"),
         checklist,
         Spacer(1, 12),
-        card("Cierre", "Este PDF es la version editada para revision humana. Si el contenido se aprueba, puede compartirse por copia manual, enlace o por una API de canal cuando este configurada."),
+        card("Cierre", "Este PDF es la version editada para revision humana. Si el contenido se aprueba, puede compartirse por copia manual, enlace o por una API de canal cuando este configurada. No publica automaticamente en redes sin confirmacion del usuario."),
     ]
 
 

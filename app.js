@@ -1,4 +1,4 @@
-const APP_VERSION = "20260523-report-legend-cover-414";
+const APP_VERSION = "20260523-publication-manual-415";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2363,6 +2363,21 @@ const manualContent = {
       ],
     },
     {
+      title: "Publicaciones Inteligentes",
+      items: [
+        "Publicaciones no es otro reporte tecnico. Su objetivo es convertir experiencias seleccionadas en una pieza para compartir: memoria de viaje, resumen de un concierto, album familiar, aprendizaje, actualizacion social o documento para enviar a otra persona.",
+        "El flujo correcto es: elegir participante y fuente, escoger tipo/estilo/canal, generar borrador, revisar texto y multimedia, aprobar y descargar PDF editado ReportLab.",
+        "El PDF es la salida principal para usuario final. HTML, Markdown, copiar texto y paquete JSON quedan como opciones tecnicas o de edicion, plegadas para no competir con el flujo principal.",
+        "La app propone multimedia ya asociada a las experiencias fuente. Puedes incluir o excluir imagenes, videos, audios y documentos sin borrar los activos originales.",
+        "El documento final contiene titulo, resumen, cuerpo, momentos seleccionados, multimedia incluida, estado de privacidad y preparacion por canal.",
+        "WhatsApp y Email son salidas asistidas: la app prepara/copiar el contenido y abre el canal cuando el navegador lo permite; el usuario revisa y envia.",
+        "Facebook e Instagram aun no tienen publicacion automatica por API. La app prepara el contenido y abre la red para pegado manual hasta tener conectores aprobados.",
+        "Antes de compartir, revisa privacidad: nombres, rostros, ubicaciones sensibles, datos medicos, documentos y cualquier informacion que no quieras publicar.",
+        "Una publicacion puede ser corta para redes o mas larga para PDF/HTML. Si quieres una memoria rica, usa Album experiencial o Reporte narrativo y selecciona multimedia relevante.",
+        "Publicaciones conserva historial del borrador: generado, editado, multimedia cambiada, diseno cambiado, aprobacion y exportaciones.",
+      ],
+    },
+    {
       title: "Hallazgos y preguntas",
       items: [
         "Hallazgos genera recomendaciones locales a partir de energía, categorías, saturación, tendencia, objetivos, personas, ubicación, aprendizajes y contexto externo activo.",
@@ -2921,6 +2936,21 @@ const manualContent = {
         "Export reports as enriched JSON with analysis, CSV, printable HTML, or a backend-generated editorial PDF. Printable HTML and PDF include a cover, executive summary, KPI cards, category bars, map routes, multimodal evidence, and images when available.",
         "Data backup downloads a full local state copy: experiences, Agenda, blocked days, publications, asset metadata, profile, Daily, routines, privacy, pilot controls, and offline queue.",
         "Restore backup lets you load a previously exported JSON file. If the backup is encrypted, enter the Local key first.",
+      ],
+    },
+    {
+      title: "Intelligent Publications",
+      items: [
+        "Publications is not another technical report. Its purpose is to turn selected experiences into something shareable: a travel memory, concert summary, family album, learning recap, social update, or document for another person.",
+        "The intended flow is: choose participant and source, choose type/style/channel, generate draft, review text and media, approve, and download the edited ReportLab PDF.",
+        "PDF is the main final-user output. HTML, Markdown, copied text, and JSON package are technical or editing options, folded away from the primary flow.",
+        "The app suggests media already linked to the source experiences. You can include or exclude images, videos, audio, and documents without deleting the original assets.",
+        "The final document contains title, summary, body, selected moments, included media, privacy state, and channel preparation.",
+        "WhatsApp and Email are assisted outputs: the app prepares or copies content and opens the channel when the browser allows it; the user reviews and sends.",
+        "Facebook and Instagram do not have automatic API publishing yet. The app prepares the content and opens the network for manual paste until approved connectors exist.",
+        "Before sharing, review privacy: names, faces, sensitive locations, health data, documents, and any information you do not want to publish.",
+        "A publication can be short for social channels or longer for PDF/HTML. For a richer memory, use Experience album or Narrative report and select relevant media.",
+        "Publications keeps draft history: generated, edited, media changed, design changed, approval, and exports.",
       ],
     },
     {
@@ -17718,6 +17748,8 @@ function buildPublicationDraft({ experiences, type, style, channel, privacy }) {
   }));
   const rawSummary = buildPublicationSummary(experiences, analysis, category, avgEnergy);
   const rawBody = buildPublicationBody({ title, type, style, channel, experiences, analysis, mediaCount, category, avgEnergy, highlights, media });
+  const people = topValues(experiences.flatMap((item) => splitPeople(item.people)), 4);
+  const locations = topValues(experiences.map((item) => item.location).filter(Boolean), 4);
   return {
     id: createId(),
     createdAt: new Date().toISOString(),
@@ -17734,6 +17766,9 @@ function buildPublicationDraft({ experiences, type, style, channel, privacy }) {
     body: privacy ? redactSensitiveText(rawBody) : rawBody,
     highlights: privacy ? highlights.map((item) => ({ ...item, note: redactSensitiveText(item.note), location: redactSensitiveText(item.location) })) : highlights,
     media,
+    people: privacy ? people.map(redactSensitiveText) : people,
+    locations: privacy ? locations.map(redactSensitiveText) : locations,
+    purpose: buildPublicationPurpose(type, channel),
     stats: {
       experiences: experiences.length,
       media: mediaCount,
@@ -17748,6 +17783,26 @@ function buildPublicationDraft({ experiences, type, style, channel, privacy }) {
       },
     ],
   };
+}
+
+function splitPeople(value) {
+  return String(value || "")
+    .split(/[,;|]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function topValues(values, limit = 4) {
+  const counts = new Map();
+  values.forEach((value) => {
+    const key = String(value || "").trim();
+    if (!key) return;
+    counts.set(key, (counts.get(key) || 0) + 1);
+  });
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, limit)
+    .map(([value]) => value);
 }
 
 function collectPublicationMedia(experiences) {
@@ -17797,19 +17852,48 @@ function buildPublicationSummary(experiences, analysis, category, avgEnergy) {
     : `${experiences.length} experiencias centradas en ${category}, con energía media de ${avgEnergy}/10. Lectura principal: ${analysis.focus}`;
 }
 
+function buildPublicationPurpose(type, channel) {
+  if (state.language === "en") {
+    if (type === "Álbum experiencial") return `Living memory for ${channel}: places, people, media, and key moments.`;
+    if (type === "Guion de story/reel") return `Short visual sequence for ${channel}: hook, moments, and closing line.`;
+    if (type === "Publicación social rápida") return `Shareable update for ${channel}: concise story with selected media.`;
+    if (type === "Resumen ejecutivo") return `Clear brief for ${channel}: what happened, what matters, and what follows.`;
+    return `Narrative piece for ${channel}: context, highlights, evidence, and final memory.`;
+  }
+  if (type === "Álbum experiencial") return `Memoria vivida para ${channel}: lugares, personas, multimedia y momentos clave.`;
+  if (type === "Guion de story/reel") return `Secuencia visual breve para ${channel}: gancho, momentos y cierre.`;
+  if (type === "Publicación social rápida") return `Actualización compartible para ${channel}: historia corta con multimedia seleccionada.`;
+  if (type === "Resumen ejecutivo") return `Resumen claro para ${channel}: qué pasó, por qué importa y qué sigue.`;
+  return `Pieza narrativa para ${channel}: contexto, momentos, evidencia y memoria final.`;
+}
+
 function buildPublicationBody({ title, type, style, channel, experiences, analysis, mediaCount, category, avgEnergy, highlights, media }) {
+  const people = topValues(experiences.flatMap((item) => splitPeople(item.people)), 4);
+  const locations = topValues(experiences.map((item) => item.location).filter(Boolean), 4);
+  const dateRange = formatPublicationDateRange(experiences);
   const intro = state.language === "en"
-    ? `This ${displayPublicationType(type).toLowerCase()} is prepared for ${channel}, with a ${displayPublicationStyle(style).toLowerCase()} tone. It summarizes ${experiences.length} experiences, ${mediaCount} media attachments, and a dominant focus on ${category}.`
-    : `Esta pieza de tipo ${displayPublicationType(type).toLowerCase()} está preparada para ${channel}, con tono ${displayPublicationStyle(style).toLowerCase()}. Resume ${experiences.length} experiencias, ${mediaCount} adjuntos multimedia y un foco dominante en ${category}.`;
+    ? `This ${displayPublicationType(type).toLowerCase()} is prepared for ${channel}, with a ${displayPublicationStyle(style).toLowerCase()} tone. It turns ${experiences.length} experiences from ${dateRange} into a shareable memory with ${mediaCount} media attachments and a dominant focus on ${category}.`
+    : `Esta pieza de tipo ${displayPublicationType(type).toLowerCase()} está preparada para ${channel}, con tono ${displayPublicationStyle(style).toLowerCase()}. Convierte ${experiences.length} experiencias de ${dateRange} en una memoria compartible con ${mediaCount} adjuntos multimedia y foco dominante en ${category}.`;
   const narrative = state.language === "en"
-    ? `The central pattern is clear: ${analysis.focus} Energy averages ${avgEnergy}/10, while the main risk is: ${analysis.risk}`
-    : `El patrón central es claro: ${analysis.focus} La energía media es ${avgEnergy}/10 y el principal riesgo es: ${analysis.risk}`;
+    ? `What should remain: ${analysis.focus} Average energy was ${avgEnergy}/10. The point is not to publish every detail, but to preserve the moments that explain the experience.`
+    : `Lo que debería quedar en la memoria: ${analysis.focus} La energía media fue ${avgEnergy}/10. La idea no es publicar todo, sino preservar los momentos que explican la experiencia.`;
+  const context = state.language === "en"
+    ? `People and places: ${people.length ? people.join(", ") : "not specified"} · ${locations.length ? locations.join(", ") : "no location specified"}.`
+    : `Personas y lugares: ${people.length ? people.join(", ") : "sin personas indicadas"} · ${locations.length ? locations.join(", ") : "sin ubicación indicada"}.`;
   const action = state.language === "en" ? `Suggested closing: ${analysis.action}` : `Cierre sugerido: ${analysis.action}`;
   const bullets = highlights
-    .map((item) => `- ${item.title} (${item.category}): ${item.note || (state.language === "en" ? "experience recorded" : "experiencia registrada")}`)
+    .map((item) => `- ${item.title} (${formatDate(item.date)} · ${item.category}): ${item.note || (state.language === "en" ? "experience recorded" : "experiencia registrada")}`)
     .join("\n");
   const evidence = buildPublicationEvidenceText(media);
-  return `${title}\n\n${intro}\n\n${narrative}\n\n${state.language === "en" ? "Selected moments" : "Momentos seleccionados"}:\n${bullets}${evidence ? `\n\n${evidence}` : ""}\n\n${action}`;
+  return `${title}\n\n${intro}\n\n${narrative}\n\n${context}\n\n${state.language === "en" ? "Selected moments" : "Momentos seleccionados"}:\n${bullets}${evidence ? `\n\n${evidence}` : ""}\n\n${action}`;
+}
+
+function formatPublicationDateRange(experiences) {
+  const dates = experiences.map((item) => new Date(item.timestamp)).filter((date) => !Number.isNaN(date.getTime())).sort((a, b) => a - b);
+  if (!dates.length) return state.language === "en" ? "the selected period" : "el periodo seleccionado";
+  const first = formatDate(dates[0].toISOString());
+  const last = formatDate(dates[dates.length - 1].toISOString());
+  return first === last ? first : `${first} - ${last}`;
 }
 
 function buildPublicationEvidenceText(media = []) {
