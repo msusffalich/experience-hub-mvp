@@ -6238,6 +6238,43 @@ button.asset-processing-summary-card {
   max-width: 100%;
 }
 
+.publication-type-help {
+  display: grid;
+  gap: 8px;
+  margin: 2px 0 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: 8px;
+  background: #f8fbfc;
+}
+
+.publication-type-help strong {
+  color: var(--text);
+}
+
+.publication-type-help p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.publication-type-help ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.publication-type-help li {
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #eef6f5;
+  color: var(--text);
+  font-size: 0.82rem;
+}
+
 .publication-cover {
   display: grid;
   gap: 8px;

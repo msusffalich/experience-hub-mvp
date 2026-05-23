@@ -1,4 +1,4 @@
-const APP_VERSION = "20260523-publication-visual-416";
+const APP_VERSION = "20260523-publication-type-templates-417";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -45,6 +45,33 @@ const agendaStatuses = [
 ];
 
 const publicationTypes = ["Publicación social rápida", "Reporte narrativo", "Álbum experiencial", "Resumen ejecutivo", "Guion de story/reel"];
+const publicationTypeGuides = {
+  "Publicación social rápida": {
+    purpose: "Para compartir algo breve en WhatsApp, Instagram o Facebook sin convertirlo en informe.",
+    bestFor: "Una noticia personal, una foto destacada, un momento corto, una actualización familiar o social.",
+    structure: ["Gancho breve", "Momento principal", "Detalle humano", "Cierre simple"],
+  },
+  "Reporte narrativo": {
+    purpose: "Para contar una experiencia o periodo como historia editada, con contexto, momentos y lectura final.",
+    bestFor: "Viajes de varios días, conciertos, reuniones, proyectos, aprendizaje o una etapa con varios eventos.",
+    structure: ["Contexto", "Historia", "Momentos clave", "Evidencia multimedia", "Lectura final"],
+  },
+  "Álbum experiencial": {
+    purpose: "Para preservar memoria visual y emocional, priorizando fotos, videos, audios y recuerdos.",
+    bestFor: "Viajes, familia, celebraciones, visitas, paseos, experiencias con muchas imágenes o videos.",
+    structure: ["Portada de memoria", "Galería", "Momentos", "Personas y lugares", "Recuerdo final"],
+  },
+  "Resumen ejecutivo": {
+    purpose: "Para enviar una síntesis clara y accionable a otra persona.",
+    bestFor: "Salud para médico, trabajo para equipo, aprendizaje para mentor, decisión personal o reporte breve.",
+    structure: ["Resumen", "Hallazgos", "Evidencia", "Riesgos o pendientes", "Próximas acciones"],
+  },
+  "Guion de story/reel": {
+    purpose: "Para transformar la experiencia en una secuencia corta de escenas.",
+    bestFor: "Instagram, TikTok, reels, presentación rápida, video corto o narración por pasos.",
+    structure: ["Escena inicial", "3-5 escenas", "Texto en pantalla", "Audio/voz sugerida", "Cierre"],
+  },
+};
 const publicationStyles = ["Profesional", "Turístico", "Científico", "Familiar", "Minimalista", "Revista Premium", "Bitácora Viva", "Educativo"];
 const publicationChannels = ["WhatsApp", "Instagram", "Facebook", "Email", "PDF/HTML"];
 const publicationTemplates = [
@@ -6479,6 +6506,7 @@ function setupActions() {
   document.getElementById("printReportButton")?.addEventListener("click", downloadPrintableReport);
   document.getElementById("downloadPdfButton")?.addEventListener("click", downloadPdfReport);
   document.getElementById("generatePublicationButton").addEventListener("click", generatePublicationDraft);
+  document.getElementById("publicationTypeInput").addEventListener("change", updatePublicationTypeHelp);
   document.getElementById("previewPublicationHtmlButton").addEventListener("click", previewCurrentPublicationHtml);
   document.getElementById("launchPublicationChannelButton").addEventListener("click", preparePublicationChannelLaunch);
   document.getElementById("copyPublicationTextButton").addEventListener("click", copyCurrentPublicationText);
@@ -7184,6 +7212,7 @@ function populateStaticControls() {
   populateOptionSelect("publicationTypeInput", publicationTypes, displayPublicationType);
   populateOptionSelect("publicationStyleInput", publicationStyles, displayPublicationStyle);
   populateOptionSelect("publicationChannelInput", publicationChannels, (value) => value);
+  updatePublicationTypeHelp();
 
   const agendaTypeSelects = [document.getElementById("agendaTypeInput"), document.getElementById("agendaTypeFilter")];
   agendaTypeSelects.forEach((select) => {
@@ -7227,6 +7256,68 @@ function populateOptionSelect(id, values, labelFn) {
   select.innerHTML = "";
   values.forEach((value) => select.append(new Option(labelFn(value), value)));
   if ([...select.options].some((option) => option.value === selectedValue)) select.value = selectedValue;
+}
+
+function getPublicationTypeGuide(type) {
+  return publicationTypeGuides[type] || publicationTypeGuides["Reporte narrativo"];
+}
+
+function updatePublicationTypeHelp() {
+  const box = document.getElementById("publicationTypeHelp");
+  const select = document.getElementById("publicationTypeInput");
+  if (!box || !select) return;
+  const type = select.value || publicationTypes[0];
+  const guide = getPublicationTypeGuide(type);
+  const title = state.language === "en" ? displayPublicationType(type) : type;
+  const purpose = state.language === "en" ? translatePublicationGuideText(guide.purpose) : guide.purpose;
+  const bestFor = state.language === "en" ? translatePublicationGuideText(guide.bestFor) : guide.bestFor;
+  const structure = (guide.structure || []).map((item) => state.language === "en" ? translatePublicationGuideText(item) : item);
+  box.innerHTML = `
+    <strong>${escapeHtml(title)}</strong>
+    <p>${escapeHtml(purpose)}</p>
+    <p><b>${escapeHtml(state.language === "en" ? "Best for" : "Sirve para")}:</b> ${escapeHtml(bestFor)}</p>
+    <ul>${structure.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+  `;
+}
+
+function translatePublicationGuideText(text) {
+  const map = {
+    "Para compartir algo breve en WhatsApp, Instagram o Facebook sin convertirlo en informe.": "For a short WhatsApp, Instagram, or Facebook update without turning it into a report.",
+    "Una noticia personal, una foto destacada, un momento corto, una actualización familiar o social.": "A personal update, one featured photo, a short moment, or a family/social update.",
+    "Para contar una experiencia o periodo como historia editada, con contexto, momentos y lectura final.": "For telling an experience or period as an edited story with context, moments, and final reading.",
+    "Viajes de varios días, conciertos, reuniones, proyectos, aprendizaje o una etapa con varios eventos.": "Multi-day trips, concerts, meetings, projects, learning, or a period with several events.",
+    "Para preservar memoria visual y emocional, priorizando fotos, videos, audios y recuerdos.": "For preserving visual and emotional memory, prioritizing photos, videos, audio, and memories.",
+    "Viajes, familia, celebraciones, visitas, paseos, experiencias con muchas imágenes o videos.": "Trips, family, celebrations, visits, outings, or image/video-rich experiences.",
+    "Para enviar una síntesis clara y accionable a otra persona.": "For sending a clear, actionable synthesis to another person.",
+    "Salud para médico, trabajo para equipo, aprendizaje para mentor, decisión personal o reporte breve.": "Health for a doctor, work for a team, learning for a mentor, personal decision, or brief report.",
+    "Para transformar la experiencia en una secuencia corta de escenas.": "For turning the experience into a short scene sequence.",
+    "Instagram, TikTok, reels, presentación rápida, video corto o narración por pasos.": "Instagram, TikTok, reels, quick presentation, short video, or step-by-step narration.",
+    "Gancho breve": "Short hook",
+    "Momento principal": "Main moment",
+    "Detalle humano": "Human detail",
+    "Cierre simple": "Simple close",
+    "Contexto": "Context",
+    "Historia": "Story",
+    "Momentos clave": "Key moments",
+    "Evidencia multimedia": "Media evidence",
+    "Lectura final": "Final reading",
+    "Portada de memoria": "Memory cover",
+    "Galería": "Gallery",
+    "Momentos": "Moments",
+    "Personas y lugares": "People and places",
+    "Recuerdo final": "Final memory",
+    "Resumen": "Summary",
+    "Hallazgos": "Findings",
+    "Evidencia": "Evidence",
+    "Riesgos o pendientes": "Risks or pending items",
+    "Próximas acciones": "Next actions",
+    "Escena inicial": "Opening scene",
+    "3-5 escenas": "3-5 scenes",
+    "Texto en pantalla": "On-screen text",
+    "Audio/voz sugerida": "Suggested audio/voice",
+    "Cierre": "Close",
+  };
+  return map[text] || text;
 }
 
 function populateExperienceTypeControl() {
