@@ -4,6 +4,7 @@ import math
 import sys
 from datetime import datetime, timezone
 from html import escape
+from pathlib import Path
 
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
@@ -33,6 +34,7 @@ GOLD = colors.HexColor("#f2b84b")
 MUTED = colors.HexColor("#526273")
 SOFT = colors.HexColor("#f3f7f8")
 LINE = colors.HexColor("#d8e0e8")
+LOGO_PATH = Path(__file__).resolve().parents[1] / "icons" / "vibe-logo-pdf.png"
 
 
 def clean(value):
@@ -40,8 +42,25 @@ def clean(value):
     return " ".join(text.split())
 
 
+def polish(value):
+    return (
+        clean(value)
+        .replace("Energia", "Energía")
+        .replace("energia", "energía")
+        .replace("Categoria", "Categoría")
+        .replace("categoria", "categoría")
+        .replace("Categorias", "Categorías")
+        .replace("libreria", "librería")
+        .replace("tecnico", "técnico")
+        .replace("accion", "acción")
+        .replace("Accion", "Acción")
+        .replace("Proyeccion", "Proyección")
+        .replace("proxima", "próxima")
+    )
+
+
 def short(value, limit=260):
-    text = clean(value)
+    text = polish(value)
     if len(text) <= limit:
         return text
     return text[: max(0, limit - 1)].rstrip() + "..."
@@ -72,7 +91,12 @@ STYLES = style_sheet()
 
 
 def para(text, style="Bodyx"):
-    return Paragraph(escape(clean(text)), STYLES[style])
+    return Paragraph(escape(polish(text)), STYLES[style])
+
+
+def draw_logo(canvas, x, y, width=1.25 * inch):
+    if LOGO_PATH.exists():
+        canvas.drawImage(str(LOGO_PATH), x, y, width=width, height=width * 0.5, preserveAspectRatio=True, mask="auto")
 
 
 def draw_page(canvas, doc):
@@ -81,7 +105,8 @@ def draw_page(canvas, doc):
     canvas.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, fill=1, stroke=0)
     canvas.setFillColor(BRAND)
     canvas.setFont("Helvetica-Bold", 8)
-    canvas.drawString(MARGIN, 0.32 * inch, "Vibe - Human Experience Intelligence Platform")
+    draw_logo(canvas, MARGIN, 0.16 * inch, 0.42 * inch)
+    canvas.drawString(MARGIN + 0.5 * inch, 0.32 * inch, "Vibe - Human Experience Intelligence Platform")
     canvas.setFillColor(MUTED)
     canvas.setFont("Helvetica", 8)
     canvas.drawRightString(PAGE_WIDTH - MARGIN, 0.32 * inch, f"Pagina {doc.page}")
@@ -100,8 +125,8 @@ def cover(report):
             metric_grid([
                 ("Experiencias", summary.get("totalExperiences", len(rows))),
                 ("Horas", summary.get("capturedHours", 0)),
-                ("Energia media", f"{summary.get('averageEnergy', 0)}/10"),
-                ("Categoria dominante", summary.get("topCategory", "-")),
+                ("Energía media", f"{summary.get('averageEnergy', 0)}/10"),
+                ("Categoría dominante", summary.get("topCategory", "-")),
             ], dark=True),
             Spacer(1, 0.24 * inch),
             para(f"Generado: {generated}", "CoverSubtitle"),
@@ -125,6 +150,7 @@ class CoverBlock(Flowable):
         canvas.saveState()
         canvas.setFillColor(BRAND)
         canvas.roundRect(x, y, PAGE_WIDTH - 2 * MARGIN, 6.75 * inch, 18, fill=1, stroke=0)
+        draw_logo(canvas, x + PAGE_WIDTH - 2.5 * inch, y + 5.35 * inch, 1.75 * inch)
         canvas.setFillColor(ACCENT)
         canvas.circle(x + PAGE_WIDTH - 2.1 * inch, y + 1.05 * inch, 1.15 * inch, fill=1, stroke=0)
         canvas.setFillColor(GOLD)
@@ -169,7 +195,7 @@ class VisualTile(Flowable):
             self._draw_radar(c, w, h)
         c.setFillColor(MUTED)
         c.setFont("Helvetica", 7)
-        c.drawString(10, 9, self.note[:62])
+        c.drawString(10, 9, polish(self.note)[:70])
         c.restoreState()
 
     def _draw_donut(self, c, w, h):
@@ -316,7 +342,7 @@ def two_column_cards(items):
 
 
 def bar_table(categories):
-    rows = [[para("Categoria", "Small"), para("Volumen", "Small"), para("Energia", "Small")]]
+    rows = [[para("Categoría", "Small"), para("Volumen", "Small"), para("Energía", "Small")]]
     max_minutes = max([num(item.get("minutes")) for item in categories] + [1])
     for item in categories[:8]:
         width = max(4, int((num(item.get("minutes")) / max_minutes) * 100))
@@ -347,10 +373,10 @@ def visual_dashboard(summary, rows, kpis, categories, quality):
     if len(kpi_values) < 3:
         kpi_values = [num(summary.get("averageEnergy")) * 10, num(quality.get("score")), 60]
     tiles = [
-        VisualTile("Proporcion por categoria", "donut", category_values, note="Dona: peso relativo del periodo"),
-        VisualTile("Evolucion de energia", "sparkline", energy_values, note="Linea: tendencia de registros recientes"),
-        VisualTile("Confiabilidad de datos", "waffle", [quality.get("score", 0)], note="Waffle: completitud de la captura"),
-        VisualTile("Radar de ejes humanos", "radar", kpi_values, note="Radar: balance entre indices principales"),
+        VisualTile("Proporción por categoría", "donut", category_values, note="Leyenda: porcentaje de la categoría principal"),
+        VisualTile("Evolución de energía", "sparkline", energy_values, note="Leyenda: tendencia de registros recientes"),
+        VisualTile("Confiabilidad de datos", "waffle", [quality.get("score", 0)], note="Leyenda: completitud de la captura"),
+        VisualTile("Radar de ejes humanos", "radar", kpi_values, note="Leyenda: balance entre índices principales"),
     ]
     table = Table([[tiles[0], tiles[1]], [tiles[2], tiles[3]]], colWidths=[(PAGE_WIDTH - 2 * MARGIN - 8) / 2] * 2)
     table.setStyle(TableStyle([
@@ -386,7 +412,7 @@ def evidence_cards(items):
 
 
 def short_register(rows):
-    table_rows = [[para("Fecha", "Small"), para("Experiencia", "Small"), para("Categoria", "Small"), para("Energia", "Small"), para("Adj.", "Small")]]
+    table_rows = [[para("Fecha", "Small"), para("Experiencia", "Small"), para("Categoría", "Small"), para("Energía", "Small"), para("Adj.", "Small")]]
     for row in rows[:16]:
         table_rows.append([
             para(row.get("fecha") or row.get("date") or "", "Small"),
@@ -427,7 +453,7 @@ def build_story(report):
     story.append(metric_grid([
         ("Experiencias", summary.get("totalExperiences", len(rows))),
         ("Adjuntos", attachment_count),
-        ("Energia", f"{summary.get('averageEnergy', 0)}/10"),
+        ("Energía", f"{summary.get('averageEnergy', 0)}/10"),
         ("Confiabilidad", f"{quality.get('score', 0)}%"),
     ]))
     story.append(Spacer(1, 10))
@@ -447,7 +473,7 @@ def build_story(report):
     kpi_cards = [(item.get("label", "Indicador"), f"{item.get('detail', '')}", f"{item.get('score', 0)}/100") for item in kpis[:4]]
     story.append(two_column_cards(kpi_cards) if kpi_cards else para("No hay indicadores suficientes.", "Muted"))
 
-    story.extend(section_title("Categorias y balance"))
+    story.extend(section_title("Categorías y balance"))
     story.append(bar_table(categories) if categories else para("No hay categorias suficientes.", "Muted"))
 
     story.extend(section_title("Rutas y conexiones"))

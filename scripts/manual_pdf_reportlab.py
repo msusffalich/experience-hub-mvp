@@ -3,13 +3,14 @@ import json
 import sys
 from html import escape
 from html.parser import HTMLParser
+from pathlib import Path
 
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_LEFT
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
-from reportlab.platypus import BaseDocTemplate, Frame, PageBreak, PageTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.platypus import BaseDocTemplate, Frame, Image, PageBreak, PageTemplate, Paragraph, Spacer, Table, TableStyle
 
 
 PAGE_WIDTH, PAGE_HEIGHT = letter
@@ -19,14 +20,27 @@ ACCENT = colors.HexColor("#0d7c66")
 SOFT = colors.HexColor("#f4f8fb")
 LINE = colors.HexColor("#d8e0e8")
 MUTED = colors.HexColor("#526273")
+LOGO_PATH = Path(__file__).resolve().parents[1] / "icons" / "vibe-logo-pdf.png"
 
 
 def clean(value):
     return " ".join(str(value or "").replace("\n", " ").replace("\r", " ").split())
 
 
+def polish(value):
+    return (
+        clean(value)
+        .replace("Guia", "Guía")
+        .replace("administracion", "administración")
+        .replace("Indice", "Índice")
+        .replace("Seccion", "Sección")
+        .replace("rapido", "rápido")
+        .replace("Version", "Versión")
+    )
+
+
 def short(value, limit=360):
-    text = clean(value)
+    text = polish(value)
     return text if len(text) <= limit else text[: max(0, limit - 1)].rstrip() + "..."
 
 
@@ -46,7 +60,21 @@ ST = styles()
 
 
 def para(text, style="Bodyx"):
-    return Paragraph(escape(clean(text)), ST[style])
+    return Paragraph(escape(polish(text)), ST[style])
+
+
+def draw_logo(canvas, x, y, width=1.25 * inch):
+    if LOGO_PATH.exists():
+        canvas.drawImage(str(LOGO_PATH), x, y, width=width, height=width * 0.5, preserveAspectRatio=True, mask="auto")
+
+
+def logo_flowable(width=1.35 * inch):
+    if not LOGO_PATH.exists():
+        return para("Vibe", "CoverSub")
+    image = Image(str(LOGO_PATH))
+    image.drawWidth = width
+    image.drawHeight = width * 0.5
+    return image
 
 
 class ManualParser(HTMLParser):
@@ -96,7 +124,7 @@ def parse_manual(html):
             sections.append(current)
             continue
         if current is None:
-            current = {"title": "Inicio rapido", "body": [], "items": []}
+            current = {"title": "Inicio rápido", "body": [], "items": []}
             sections.append(current)
         if tag == "li":
             current["items"].append(text)
@@ -111,7 +139,8 @@ def page(canvas, doc):
     canvas.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, fill=1, stroke=0)
     canvas.setFillColor(BRAND)
     canvas.setFont("Helvetica-Bold", 8)
-    canvas.drawString(MARGIN, 0.32 * inch, "Vibe - Manual operativo")
+    draw_logo(canvas, MARGIN, 0.16 * inch, 0.42 * inch)
+    canvas.drawString(MARGIN + 0.5 * inch, 0.32 * inch, "Vibe - Manual operativo")
     canvas.setFillColor(MUTED)
     canvas.setFont("Helvetica", 8)
     canvas.drawRightString(PAGE_WIDTH - MARGIN, 0.32 * inch, f"Pagina {doc.page}")
@@ -121,9 +150,10 @@ def page(canvas, doc):
 def cover(title, version, section_count):
     block = Table(
         [
+            [logo_flowable()],
             [para(title, "CoverTitle")],
-            [para("Guia practica para operar la app: captura, activos, reportes, hallazgos, publicaciones, privacidad y administracion.", "CoverSub")],
-            [para(f"Version: {version or '-'}  |  Secciones: {section_count}", "CoverSub")],
+            [para("Guía práctica para operar la app: captura, activos, reportes, hallazgos, publicaciones, privacidad y administración.", "CoverSub")],
+            [para(f"Versión: {version or '-'}  |  Secciones: {section_count}", "CoverSub")],
         ],
         colWidths=[PAGE_WIDTH - 2 * MARGIN - 0.6 * inch],
     )
@@ -138,7 +168,7 @@ def cover(title, version, section_count):
 
 
 def toc(sections):
-    rows = [[para("Seccion", "Small"), para("Contenido", "Small")]]
+    rows = [[para("Sección", "Small"), para("Contenido", "Small")]]
     for index, section in enumerate(sections[:24], 1):
         preview = short(" ".join(section.get("body", [])[:1] + section.get("items", [])[:2]), 110)
         rows.append([para(f"{index}. {section.get('title', '')}", "Small"), para(preview, "Small")])
@@ -171,7 +201,7 @@ def build(payload):
     story = [
         cover(title, version, len(sections)),
         Spacer(1, 16),
-        para("Indice operativo", "H1x"),
+        para("Índice operativo", "H1x"),
         toc(sections),
         PageBreak(),
     ]

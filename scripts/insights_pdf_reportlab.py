@@ -4,6 +4,7 @@ import math
 import sys
 from datetime import datetime, timezone
 from html import escape
+from pathlib import Path
 
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
@@ -23,6 +24,7 @@ PURPLE = colors.HexColor("#7a5cc8")
 MUTED = colors.HexColor("#526273")
 SOFT = colors.HexColor("#f4f8fb")
 LINE = colors.HexColor("#d8e0e8")
+LOGO_PATH = Path(__file__).resolve().parents[1] / "icons" / "vibe-logo-pdf.png"
 
 
 def clean(value):
@@ -30,8 +32,22 @@ def clean(value):
     return " ".join(text.split())
 
 
+def polish(value):
+    return (
+        clean(value)
+        .replace("Diagnostico", "Diagnóstico")
+        .replace("Energia", "Energía")
+        .replace("energia", "energía")
+        .replace("tematica", "temática")
+        .replace("proporcion", "proporción")
+        .replace("accion", "acción")
+        .replace("auditoria", "auditoría")
+        .replace("tecnica", "técnica")
+    )
+
+
 def short(value, limit=260):
-    text = clean(value)
+    text = polish(value)
     return text if len(text) <= limit else text[: max(0, limit - 1)].rstrip() + "..."
 
 
@@ -59,7 +75,12 @@ STYLES = styles()
 
 
 def para(text, style="Bodyx"):
-    return Paragraph(escape(clean(text)), STYLES[style])
+    return Paragraph(escape(polish(text)), STYLES[style])
+
+
+def draw_logo(canvas, x, y, width=1.25 * inch):
+    if LOGO_PATH.exists():
+        canvas.drawImage(str(LOGO_PATH), x, y, width=width, height=width * 0.5, preserveAspectRatio=True, mask="auto")
 
 
 def draw_page(canvas, doc):
@@ -68,7 +89,8 @@ def draw_page(canvas, doc):
     canvas.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, fill=1, stroke=0)
     canvas.setFillColor(BRAND)
     canvas.setFont("Helvetica-Bold", 8)
-    canvas.drawString(MARGIN, 0.32 * inch, "Vibe - Hallazgos de experiencias")
+    draw_logo(canvas, MARGIN, 0.16 * inch, 0.42 * inch)
+    canvas.drawString(MARGIN + 0.5 * inch, 0.32 * inch, "Vibe - Hallazgos de experiencias")
     canvas.setFillColor(MUTED)
     canvas.setFont("Helvetica", 8)
     canvas.drawRightString(PAGE_WIDTH - MARGIN, 0.32 * inch, f"Pagina {doc.page}")
@@ -90,6 +112,7 @@ class CoverBlock(Flowable):
         c.saveState()
         c.setFillColor(BRAND)
         c.roundRect(0, 0, self.width, self.height, 18, fill=1, stroke=0)
+        draw_logo(c, self.width - 1.9 * inch, self.height - 1.05 * inch, 1.35 * inch)
         c.setFillColor(ACCENT)
         c.circle(self.width - 1.25 * inch, 1.08 * inch, 1.15 * inch, fill=1, stroke=0)
         c.setFillColor(GOLD)
@@ -98,7 +121,7 @@ class CoverBlock(Flowable):
         c.setFont("Helvetica-Bold", 30)
         c.drawString(0.38 * inch, self.height - 1.42 * inch, "Hallazgos de experiencias")
         c.setFont("Helvetica", 12)
-        c.drawString(0.4 * inch, self.height - 1.76 * inch, "Diagnostico visual, ejes humanos y recomendaciones accionables.")
+        c.drawString(0.4 * inch, self.height - 1.76 * inch, "Diagnóstico visual, ejes humanos y recomendaciones accionables.")
         metrics = [
             ("Experiencias", self.payload.get("experiences", 0)),
             ("Ejes", len(self.payload.get("axes") or [])),

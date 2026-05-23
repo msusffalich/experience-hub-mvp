@@ -3,13 +3,14 @@ import json
 import re
 import sys
 from html import unescape
+from pathlib import Path
 
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
-from reportlab.platypus import BaseDocTemplate, Frame, PageTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.platypus import BaseDocTemplate, Frame, Image, PageTemplate, Paragraph, Spacer, Table, TableStyle
 
 
 PAGE_WIDTH, PAGE_HEIGHT = letter
@@ -20,6 +21,7 @@ BLUE = colors.HexColor("#1f78d1")
 SOFT = colors.HexColor("#f5f7fb")
 LINE = colors.HexColor("#d8e0e8")
 MUTED = colors.HexColor("#526273")
+LOGO_PATH = Path(__file__).resolve().parents[1] / "icons" / "vibe-logo-pdf.png"
 
 
 def clean_html(value):
@@ -38,8 +40,22 @@ def clean_html(value):
     return " ".join(text.split())
 
 
+def polish(value):
+    return (
+        clean_html(value)
+        .replace("Publicacion", "Publicación")
+        .replace("publicacion", "publicación")
+        .replace("Aprobacion", "Aprobación")
+        .replace("energia", "energía")
+        .replace("revision", "revisión")
+        .replace("tecnica", "técnica")
+        .replace("auditoria", "auditoría")
+        .replace("version", "versión")
+    )
+
+
 def short(value, limit=420):
-    text = clean_html(value)
+    text = polish(value)
     if len(text) <= limit:
         return text
     return text[: max(0, limit - 1)].rstrip() + "..."
@@ -74,8 +90,22 @@ ST = styles()
 
 
 def para(text, style="Bodyx"):
-    safe = str(text or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    safe = polish(text).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
     return Paragraph(safe, ST[style])
+
+
+def draw_logo(canvas, x, y, width=1.25 * inch):
+    if LOGO_PATH.exists():
+        canvas.drawImage(str(LOGO_PATH), x, y, width=width, height=width * 0.5, preserveAspectRatio=True, mask="auto")
+
+
+def logo_flowable(width=1.35 * inch):
+    if not LOGO_PATH.exists():
+        return para("Vibe", "Subx")
+    image = Image(str(LOGO_PATH))
+    image.drawWidth = width
+    image.drawHeight = width * 0.5
+    return image
 
 
 def page(canvas, doc):
@@ -84,7 +114,8 @@ def page(canvas, doc):
     canvas.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, fill=1, stroke=0)
     canvas.setFillColor(BRAND)
     canvas.setFont("Helvetica-Bold", 8)
-    canvas.drawString(MARGIN, 0.32 * inch, "Vibe - Documento editado ReportLab")
+    draw_logo(canvas, MARGIN, 0.16 * inch, 0.42 * inch)
+    canvas.drawString(MARGIN + 0.5 * inch, 0.32 * inch, "Vibe - Documento editado ReportLab")
     canvas.setFillColor(MUTED)
     canvas.setFont("Helvetica", 8)
     canvas.drawRightString(PAGE_WIDTH - MARGIN, 0.32 * inch, f"Pagina {doc.page}")
@@ -92,7 +123,7 @@ def page(canvas, doc):
 
 
 def hero(title, subtitle):
-    table = Table([[para(title, "Titlex")], [para(subtitle, "Subx")]], colWidths=[PAGE_WIDTH - 2 * MARGIN - 0.6 * inch])
+    table = Table([[logo_flowable()], [para(title, "Titlex")], [para(subtitle, "Subx")]], colWidths=[PAGE_WIDTH - 2 * MARGIN - 0.6 * inch])
     table.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, -1), BRAND),
         ("LEFTPADDING", (0, 0), (-1, -1), 22),
@@ -120,15 +151,15 @@ def card(title, body, width=None):
 
 def build(payload):
     html = payload.get("html") or ""
-    title = payload.get("title") or "Publicacion inteligente"
+    title = payload.get("title") or "Publicación inteligente"
     text = clean_html(html)
     summary = sentence_summary(text, max_sentences=2, limit=360) or "Contenido preparado para revision humana."
     body = editorial_body(text, limit=820)
     checklist_width = (PAGE_WIDTH - 2 * MARGIN - 10) / 2
     checklist = Table(
         [[
-            card("Antes de compartir", "1. Confirma privacidad. 2. Revisa nombres, lugares y datos sensibles. 3. Usa el canal elegido solo cuando el contenido este aprobado.", checklist_width),
-            card("Salida recomendada", "PDF para version final revisada. Markdown para editar texto. JSON/CSV quedan para auditoria tecnica, no para lectura del usuario final.", checklist_width),
+            card("Antes de compartir", "Confirma privacidad, nombres, lugares y datos sensibles. Usa el canal elegido solo cuando el contenido esté aprobado.", checklist_width),
+            card("Salida recomendada", "PDF para versión final revisada. Markdown sirve para editar texto. JSON/CSV quedan para auditoría técnica.", checklist_width),
         ]],
         colWidths=[checklist_width, checklist_width],
     )
@@ -138,7 +169,7 @@ def build(payload):
         ("RIGHTPADDING", (0, 0), (-1, -1), 6),
     ]))
     return [
-        hero(title, "Documento final para revisar, aprobar y compartir."),
+        hero(title, "Pieza final con contenido curado para revisar, aprobar y compartir."),
         Spacer(1, 18),
         para("Resumen editorial", "H1x"),
         card("Lectura rapida", summary),
