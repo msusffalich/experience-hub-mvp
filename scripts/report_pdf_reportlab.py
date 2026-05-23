@@ -1,7 +1,8 @@
 import io
 import json
+import math
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
@@ -88,7 +89,7 @@ def draw_page(canvas, doc):
 
 def cover(report):
     summary = report.get("summary") or {}
-    generated = clean(report.get("generatedAt") or datetime.utcnow().isoformat())
+    generated = clean(report.get("generatedAt") or datetime.now(timezone.utc).isoformat())
     rows = report.get("rows") or []
     return [
         CoverBlock([
@@ -130,6 +131,129 @@ class CoverBlock(Flowable):
         canvas.restoreState()
         frame = Frame(x + 0.38 * inch, y + 0.55 * inch, PAGE_WIDTH - 2 * MARGIN - 0.76 * inch, 5.65 * inch, showBoundary=0)
         frame.addFromList(list(self.flowables), canvas)
+
+
+class VisualTile(Flowable):
+    def __init__(self, title, kind, values=None, labels=None, note=""):
+        super().__init__()
+        self.title = clean(title)
+        self.kind = kind
+        self.values = values or []
+        self.labels = labels or []
+        self.note = clean(note)
+
+    def wrap(self, avail_width, avail_height):
+        self.width = avail_width
+        self.height = 1.85 * inch
+        return avail_width, self.height
+
+    def draw(self):
+        c = self.canv
+        w = self.width
+        h = self.height
+        c.saveState()
+        c.setFillColor(colors.white)
+        c.setStrokeColor(LINE)
+        c.roundRect(0, 0, w, h, 10, fill=1, stroke=1)
+        c.setFillColor(BRAND)
+        c.setFont("Helvetica-Bold", 8.5)
+        c.drawString(10, h - 18, self.title[:48])
+        if self.kind == "donut":
+            self._draw_donut(c, w, h)
+        elif self.kind == "sparkline":
+            self._draw_sparkline(c, w, h)
+        elif self.kind == "waffle":
+            self._draw_waffle(c, w, h)
+        elif self.kind == "radar":
+            self._draw_radar(c, w, h)
+        c.setFillColor(MUTED)
+        c.setFont("Helvetica", 7)
+        c.drawString(10, 9, self.note[:62])
+        c.restoreState()
+
+    def _draw_donut(self, c, w, h):
+        values = [max(0, num(v)) for v in self.values[:4]]
+        total = sum(values) or 1
+        cx, cy, r = 0.52 * w, 0.52 * h, 0.42 * inch
+        start = 90
+        palette = [ACCENT, GOLD, colors.HexColor("#4f83cc"), colors.HexColor("#9a67d6")]
+        for index, value in enumerate(values):
+            extent = 360 * value / total
+            c.setFillColor(palette[index % len(palette)])
+            c.wedge(cx - r, cy - r, cx + r, cy + r, start, start - extent, fill=1, stroke=0)
+            start -= extent
+        c.setFillColor(colors.white)
+        c.circle(cx, cy, r * 0.56, fill=1, stroke=0)
+        c.setFillColor(BRAND)
+        c.setFont("Helvetica-Bold", 13)
+        c.drawCentredString(cx, cy - 4, f"{int(round(values[0] / total * 100))}%")
+
+    def _draw_sparkline(self, c, w, h):
+        values = [num(v) for v in self.values[:12]]
+        if len(values) < 2:
+            values = [0, values[0] if values else 0]
+        left, bottom, chart_w, chart_h = 14, 28, w - 28, h - 58
+        lo, hi = min(values), max(values)
+        span = hi - lo or 1
+        points = []
+        for index, value in enumerate(values):
+            x = left + chart_w * index / max(1, len(values) - 1)
+            y = bottom + chart_h * (value - lo) / span
+            points.append((x, y))
+        c.setStrokeColor(colors.HexColor("#dfe7ee"))
+        for step in range(3):
+            y = bottom + chart_h * step / 2
+            c.line(left, y, left + chart_w, y)
+        c.setStrokeColor(ACCENT)
+        c.setLineWidth(2)
+        for first, second in zip(points, points[1:]):
+            c.line(first[0], first[1], second[0], second[1])
+        c.setFillColor(GOLD)
+        x, y = points[-1]
+        c.circle(x, y, 3, fill=1, stroke=0)
+
+    def _draw_waffle(self, c, w, h):
+        value = max(0, min(100, num(self.values[0] if self.values else 0)))
+        active = int(round(value / 4))
+        size = 7
+        gap = 3
+        left = (w - (5 * size + 4 * gap)) / 2
+        top = h - 38
+        for index in range(25):
+            row = index // 5
+            col = index % 5
+            c.setFillColor(ACCENT if index < active else colors.HexColor("#e6edf4"))
+            c.roundRect(left + col * (size + gap), top - row * (size + gap), size, size, 1.5, fill=1, stroke=0)
+        c.setFillColor(BRAND)
+        c.setFont("Helvetica-Bold", 14)
+        c.drawCentredString(w / 2, 30, f"{int(round(value))}%")
+
+    def _draw_radar(self, c, w, h):
+        values = [max(0, min(100, num(v))) for v in self.values[:6]]
+        if len(values) < 3:
+            values = values + [0] * (3 - len(values))
+        count = len(values)
+        cx, cy, r = w / 2, h / 2 - 2, 0.48 * inch
+        c.setStrokeColor(colors.HexColor("#dfe7ee"))
+        for scale in [0.33, 0.66, 1.0]:
+            pts = []
+            for index in range(count):
+                angle = -math.pi / 2 + 2 * math.pi * index / count
+                pts.append((cx + math.cos(angle) * r * scale, cy + math.sin(angle) * r * scale))
+            for a, b in zip(pts, pts[1:] + pts[:1]):
+                c.line(a[0], a[1], b[0], b[1])
+        pts = []
+        for index, value in enumerate(values):
+            angle = -math.pi / 2 + 2 * math.pi * index / count
+            pts.append((cx + math.cos(angle) * r * value / 100, cy + math.sin(angle) * r * value / 100))
+        path = c.beginPath()
+        path.moveTo(pts[0][0], pts[0][1])
+        for x, y in pts[1:]:
+            path.lineTo(x, y)
+        path.close()
+        c.setFillColor(colors.Color(0.05, 0.49, 0.4, alpha=0.22))
+        c.setStrokeColor(ACCENT)
+        c.drawPath(path, fill=1, stroke=1)
 
 
 def metric_grid(items, dark=False):
@@ -203,6 +327,33 @@ def bar_table(categories):
     return t
 
 
+def visual_dashboard(summary, rows, kpis, categories, quality):
+    category_values = [num(item.get("count") or item.get("minutes")) for item in categories[:4]]
+    if not category_values:
+        category_values = [num(summary.get("totalExperiences")), 1]
+    energy_values = [num(row.get("energia") or row.get("energy")) for row in rows[:12]]
+    if len(energy_values) < 2:
+        energy_values = [num(summary.get("averageEnergy")), num(summary.get("averageEnergy"))]
+    kpi_values = [num(item.get("score")) for item in kpis[:6]]
+    if len(kpi_values) < 3:
+        kpi_values = [num(summary.get("averageEnergy")) * 10, num(quality.get("score")), 60]
+    tiles = [
+        VisualTile("Proporcion por categoria", "donut", category_values, note="Dona: peso relativo del periodo"),
+        VisualTile("Evolucion de energia", "sparkline", energy_values, note="Linea: tendencia de registros recientes"),
+        VisualTile("Confiabilidad de datos", "waffle", [quality.get("score", 0)], note="Waffle: completitud de la captura"),
+        VisualTile("Radar de ejes humanos", "radar", kpi_values, note="Radar: balance entre indices principales"),
+    ]
+    table = Table([[tiles[0], tiles[1]], [tiles[2], tiles[3]]], colWidths=[(PAGE_WIDTH - 2 * MARGIN - 8) / 2] * 2)
+    table.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 0),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+        ("TOPPADDING", (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+    ]))
+    return table
+
+
 def evidence_cards(items):
     selected = []
     seen = set()
@@ -270,6 +421,8 @@ def build_story(report):
     ]))
     story.append(Spacer(1, 10))
     story.append(card("Lectura general", f"La libreria contiene {summary.get('totalExperiences', len(rows))} experiencias y {attachment_count} activos. La categoria dominante es {summary.get('topCategory', '-')}, con energia media {summary.get('averageEnergy', 0)}/10. Este reporte resume lo accionable y deja el detalle tecnico completo para JSON o CSV."))
+    story.append(Spacer(1, 8))
+    story.append(visual_dashboard(summary, rows, kpis, categories, quality))
     if predictive.get("title"):
         story.append(card("Proyeccion inicial", f"{predictive.get('title')}. {predictive.get('hypothesis', '')} Siguiente accion: {predictive.get('nextStep', '')}", f"Confianza: {predictive.get('confidence', 0)}%"))
 

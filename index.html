@@ -9,10 +9,10 @@
     <meta name="apple-mobile-web-app-title" content="Experience Hub" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>Experience Hub MVP</title>
-    <link rel="manifest" href="manifest.webmanifest?v=20260522-reportlab-outputs-396" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260523-output-polish-397" />
     <link rel="icon" href="icons/vibe-icon-192.png" type="image/png" />
     <link rel="apple-touch-icon" href="icons/vibe-apple-touch.png" />
-    <link rel="stylesheet" href="styles.css?v=20260522-reportlab-outputs-396" />
+    <link rel="stylesheet" href="styles.css?v=20260523-output-polish-397" />
   </head>
   <body>
     <noscript>
@@ -203,7 +203,7 @@
               <input id="dailyLocationInput" type="text" placeholder="Ciudad, país: San Juan, Puerto Rico..." />
               <button id="dailyRefreshButton" class="primary-button" type="button">Actualizar diario</button>
             </div>
-            <p id="dailyLocationHelp" class="card-meta daily-location-help">Ubicación manual única para Diario y Contexto. Hasta tener app nativa, noticias, clima, horóscopo y cartelera usan esta ciudad como referencia.</p>
+            <p id="dailyLocationHelp" class="card-meta daily-location-help">Ubicación manual para este dispositivo. Hasta tener app nativa, noticias, clima, horóscopo y cartelera usan esta ciudad como referencia; en otro dispositivo debes confirmar la misma ciudad.</p>
             <section id="dailyStaticActions" class="daily-action-center daily-static-actions">
               <div class="daily-news-group-heading">
                 <div>
@@ -691,7 +691,8 @@
                 <span id="insightScopeLabel">Generados localmente</span>
               </div>
               <div class="insights-main-actions">
-                <button id="exportInsightsHtmlButton" class="primary-button" type="button">Descargar lectura</button>
+                <button id="exportInsightsPdfButton" class="primary-button" type="button">Descargar PDF</button>
+                <button id="exportInsightsHtmlButton" class="ghost-button" type="button">Descargar HTML</button>
                 <button id="exportInsightsMarkdownButton" class="ghost-button" type="button">Exportar Markdown</button>
               </div>
               <div class="module-scope-bar">
@@ -840,7 +841,7 @@
             <div class="manual-version-card">
               <div>
                 <span id="manualVersionEyebrow">Versión vigente</span>
-                <strong id="manualVersionValue">20260522-reportlab-outputs-396</strong>
+                <strong id="manualVersionValue">20260523-output-polish-397</strong>
                 <p id="manualVersionSummary">Guía práctica organizada por temas para entender el flujo de la app sin leer todo de corrido.</p>
               </div>
               <div class="manual-guide-grid" aria-label="Estructura del manual">
@@ -1059,7 +1060,7 @@
       </main>
     </div>
 
-    <script src="app.js?v=20260522-reportlab-outputs-396"></script>
+    <script src="app.js?v=20260523-output-polish-397"></script>
 </body>
 </html>
 

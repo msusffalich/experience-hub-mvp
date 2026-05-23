@@ -41,7 +41,13 @@ const OCR_PROVIDER = process.env.OCR_PROVIDER || "openai";
 const OPENAI_OCR_MODEL = process.env.OPENAI_OCR_MODEL || "gpt-4o-mini";
 const SIGNAL_METADATA_SCHEMA_VERSION = "clio-inspired-signal-v1";
 const execFileAsync = promisify(execFile);
-const PYTHON_EXECUTABLE = process.env.PYTHON_EXECUTABLE || process.env.PYTHON_PATH || "C:\\Users\\msusf\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe";
+const PYTHON_EXECUTABLE_CANDIDATES = [
+  process.env.PYTHON_EXECUTABLE,
+  process.env.PYTHON_PATH,
+  "C:\\Users\\msusf\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe",
+  "python",
+  "python3",
+].filter(Boolean);
 
 const mimeTypes = {
   ".html": "text/html; charset=utf-8",
@@ -369,6 +375,13 @@ async function handleApi(req, res, url) {
     const user = await getRequestUser(req);
     const body = await readJson(req);
     sendPdf(res, await buildPdfReport(user, body.report));
+    return;
+  }
+
+  if (url.pathname === "/api/insights/pdf" && req.method === "POST") {
+    const user = await getRequestUser(req);
+    const body = await readJson(req);
+    sendPdf(res, await buildInsightsPdf(body, user), "hallazgos-experiencias.pdf");
     return;
   }
 
@@ -3473,6 +3486,33 @@ async function buildPublicationPdf(html, user = { id: LOCAL_USER_ID }) {
   ]);
 }
 
+async function buildInsightsPdf(payload = {}, user = { id: LOCAL_USER_ID }) {
+  const reportLabPdf = await renderReportLabPdf("insights_pdf_reportlab.py", payload);
+  if (reportLabPdf) {
+    await appendLog("info", "Insights PDF generated", { userId: user.id, source: "reportlab" });
+    return reportLabPdf;
+  }
+  await appendLog("warn", "Insights PDF fallback used", { userId: user.id });
+  const axes = Array.isArray(payload.axes) ? payload.axes : [];
+  const insights = Array.isArray(payload.insights) ? payload.insights : [];
+  return createSimplePdf([
+    "Vibe - Hallazgos de experiencias",
+    `Generado: ${payload.generatedAt || new Date().toISOString()}`,
+    `Alcance: ${payload.participant || "General"}`,
+    `Experiencias: ${payload.experiences || 0}`,
+    "",
+    "Ejes humanos",
+    ...axes.slice(0, 8).map((axis) => `${axis.title || ""}: ${axis.items?.length || 0} experiencias, energia ${axis.avgEnergy || 0}/10`),
+    "",
+    "Hallazgos",
+    ...insights.slice(0, 12).flatMap((item, index) => [
+      `${index + 1}. ${item.title || ""}`,
+      item.description || "",
+      item.action ? `Accion: ${item.action}` : "",
+    ]),
+  ]);
+}
+
 function normalizePublicationHtmlForPdf(html) {
   if (html.includes("</style>")) {
     return html.replace(
@@ -3670,9 +3710,10 @@ async function renderReportHtmlToPdf(html) {
 
 async function renderReportLabPdf(scriptName, payload) {
   const scriptPath = path.join(__dirname, "scripts", scriptName);
-  if (!existsSync(scriptPath) || !existsSync(PYTHON_EXECUTABLE)) return null;
+  const pythonExecutable = findPythonExecutable();
+  if (!existsSync(scriptPath) || !pythonExecutable) return null;
   try {
-    const { stdout } = await execFileAsync(PYTHON_EXECUTABLE, [scriptPath], {
+    const { stdout } = await execFileAsync(pythonExecutable, [scriptPath], {
       input: JSON.stringify(payload || {}),
       encoding: "buffer",
       maxBuffer: 30_000_000,
@@ -3684,6 +3725,10 @@ async function renderReportLabPdf(scriptName, payload) {
     await appendLog("warn", "ReportLab PDF rendering failed", { scriptName, error: error.message });
     return null;
   }
+}
+
+function findPythonExecutable() {
+  return PYTHON_EXECUTABLE_CANDIDATES.find((candidate) => candidate === "python" || candidate === "python3" || existsSync(candidate)) || "";
 }
 
 function findChromeExecutable() {
@@ -4476,26 +4521,7 @@ function decodeXml(value) {
 }
 
 async function getDailyHoroscope(language) {
-  if (language !== "en") return buildDailyHoroscope(language);
-  const signs = [
-    ["Aries", "aries"],
-    ["Taurus", "taurus"],
-    ["Gemini", "gemini"],
-    ["Cancer", "cancer"],
-    ["Leo", "leo"],
-    ["Virgo", "virgo"],
-    ["Libra", "libra"],
-    ["Scorpio", "scorpio"],
-    ["Sagittarius", "sagittarius"],
-    ["Capricorn", "capricorn"],
-    ["Aquarius", "aquarius"],
-    ["Pisces", "pisces"],
-  ];
-  const results = await Promise.allSettled(signs.map(([label, sign]) => fetchDailyHoroscopeSign(label, sign)));
-  const external = results
-    .map((result) => (result.status === "fulfilled" ? result.value : null))
-    .filter(Boolean);
-  return external.length === signs.length ? external : buildDailyHoroscope(language);
+  return buildDailyHoroscope(language);
 }
 
 async function fetchDailyHoroscopeSign(label, sign) {

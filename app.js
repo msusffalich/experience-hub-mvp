@@ -1,4 +1,4 @@
-const APP_VERSION = "20260522-reportlab-outputs-396";
+const APP_VERSION = "20260523-output-polish-397";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -608,7 +608,7 @@ const i18n = {
       dailyFlowVoice: "Comando de voz",
       dailyFlowVoiceHelp: "Navegación rápida",
       dailyFlowIntro: "Este bloque es el mando del Diario. No duplica las noticias: sirve para leer, consultar cartelera/multimedia, ver horóscopo o usar voz.",
-      dailyLocationManualHelp: "Ubicación manual única para Diario y Contexto. Hasta tener app nativa, noticias, clima, horóscopo y cartelera usan esta ciudad como referencia.",
+      dailyLocationManualHelp: "Ubicación manual para este dispositivo. Hasta tener app nativa, noticias, clima, horóscopo y cartelera usan esta ciudad como referencia; en otro dispositivo debes confirmar la misma ciudad.",
       dailyLocationSaved: "Ubicación del Diario guardada. Actualizando contenido de esa ciudad...",
       dailyFlowReadDetail: "Leer Diario es una guía de lectura. Las noticias reales aparecen abajo, separadas en Locales y Mundiales. Usa Ver detalle en una noticia para leerla, escucharla o guardarla como experiencia.",
       dailyExploreTitle: "Cartelera y multimedia",
@@ -1425,7 +1425,7 @@ const i18n = {
       dailyFlowVoice: "Voice command",
       dailyFlowVoiceHelp: "Quick navigation",
       dailyFlowIntro: "This block is the Daily control area. It does not duplicate the news: use it to read, check listings/multimedia, view horoscope, or use voice.",
-      dailyLocationManualHelp: "Single manual location for Daily and Context. Until the native app exists, news, weather, horoscope, and listings use this city as reference.",
+      dailyLocationManualHelp: "Manual location for this device. Until the native app exists, news, weather, horoscope, and listings use this city as reference; confirm the same city on each device.",
       dailyLocationSaved: "Daily location saved. Updating content for that city...",
       dailyFlowReadDetail: "Read Daily is a reading guide. The actual stories appear below, separated into Local and World. Use View detail on a story to read it, listen to it, or save it as an experience.",
       dailyExploreTitle: "Listings and multimedia",
@@ -1963,8 +1963,8 @@ const manualContent = {
         "El Panel muestra un resumen operativo de preparación del piloto con manual, pruebas, participantes y feedback para seguimiento rápido.",
         "El Panel también muestra una siguiente acción recomendada del piloto y permite copiar un resumen breve para seguimiento.",
         "Hallazgos es la salida principal de lectura humana: organiza las experiencias en 8 ejes de análisis y luego muestra hallazgos priorizados con evidencia, confianza y próxima acción.",
-        "Hallazgos permite descargar la lectura como HTML imprimible o Markdown para revisar, compartir o archivar fuera de la app.",
-        "Los PDFs de Reportes y Publicaciones usan ReportLab como motor principal para producir documentos editados, con portada, tarjetas, indicadores y evidencia curada. HTML queda como vista o respaldo.",
+        "Hallazgos permite descargar la lectura como PDF ReportLab, HTML imprimible o Markdown para revisar, compartir o archivar fuera de la app.",
+        "Todos los PDFs operativos de Reportes, Hallazgos y Publicaciones usan ReportLab como motor principal para producir documentos editados, con portada, tarjetas, indicadores, visuales mixtos y evidencia curada. HTML queda como vista o respaldo.",
         "El resumen del Panel lista los pendientes principales del piloto para convertir la recomendación en acciones concretas.",
         "Administración permite exportar un paquete piloto completo con preparación, invitación, pruebas, participantes, feedback y acta de cierre.",
         "El paquete piloto muestra una vista previa de su contenido antes de exportar, para revisar preparación, invitación, pruebas, participantes, feedback y acta.",
@@ -2157,7 +2157,7 @@ const manualContent = {
         "Hallazgos accionables permite convertir cada recomendación en un evento de Agenda con fecha sugerida, prioridad, descripción y recordatorio.",
         "La Proyección inicial del Reporte también permite programar su siguiente acción sugerida en Agenda.",
         "Diario muestra un resumen informativo independiente de las experiencias: noticias políticas, economía y finanzas, tecnología e IA, deportes, entretenimiento/eventos, noticias del mundo y horóscopo diario para todos los signos.",
-        "Diario usa una ubicación manual única compartida con Contexto. En PWA no se detecta ubicación física persistente; al cambiar la ciudad se actualizan noticias, clima, horóscopo, cartelera y análisis ambiental/geopolítico con esa referencia.",
+        "Diario usa una ubicación manual por dispositivo, compartida con Contexto. En PWA no se detecta ubicación física persistente; confirma la misma ciudad en cada dispositivo si quieres ver el mismo Diario en todos.",
         "Diario se refresca cada 6 horas si la rutina del servidor está activa o cuando la app está abierta y detecta contenido vencido. Si la PWA está cerrada, el refresco de fondo depende del backend, no del navegador.",
         "Diario se persiste por usuario, lugar e idioma. Con Supabase activo usa la tabla daily_briefings; si la tabla aún no existe, la app mantiene un respaldo local y sigue mostrando el resumen.",
         "La matriz de Confiabilidad del Diario separa contenido real de interacción: noticias, separación local/mundial, clima, horóscopo, cartelera, multimedia, voz/comandos y vigencia de 6 horas.",
@@ -2174,7 +2174,7 @@ const manualContent = {
         "Noticias locales usa la ciudad o lugar escrito arriba. Noticias mundiales agrupa señales globales independientes de esa ciudad.",
         "Cartelera y multimedia depende de fuentes externas. Por eso la app muestra opciones concretas y enlaces de salida; si una pestaña no se abre automáticamente, usa el enlace visible.",
         "La ficha Cartelera y multimedia agrupa tres zonas: cartelera vigente, imágenes editoriales reales disponibles y seguimiento en Agenda. Si el Diario no trae imágenes confiables, la app lo indica y ofrece búsquedas externas claramente marcadas.",
-        "Si la fuente externa del horóscopo no responde o el resumen guardado no trae horóscopo, la app muestra un respaldo local en el idioma activo para los 12 signos.",
+        "El horóscopo ya no depende de una fuente externa. La app genera una lectura local diaria para los 12 signos en el idioma activo, por lo que el módulo queda disponible incluso sin servicios externos.",
         "Cartelera y eventos ofrece accesos rápidos para buscar cine, conciertos, teatro, eventos del día y exposiciones del lugar seleccionado. También permite programar una revisión en Agenda para convertir la lectura del Diario en seguimiento accionable.",
         "Comando de voz permite ejecutar acciones básicas por voz: abrir secciones, actualizar Diario, analizar contexto, abrir reportes, abrir Publicaciones, abrir Manual, cargar ejemplo o crear una nueva experiencia. Puedes iniciar el comando con Hola V, V o, en inglés, Hi V. Depende de Web Speech del navegador y requiere activar el micrófono desde la app.",
         "V ya puede registrar contenido simple: toma nota agrega texto al borrador de Captura, guarda esto crea una experiencia rápida y agenda/pon en mi agenda crea un evento multidispositivo en Agenda con hora interpretada cuando la frase la incluye. Si esa frase aparece dentro de una grabación de audio, Captura también la detecta y crea el evento sin salir del formulario.",
@@ -2514,7 +2514,7 @@ const manualContent = {
       title: "Limitaciones actuales",
       items: [
         "La transcripción del navegador depende de su compatibilidad. La transcripción en el servidor local requiere configurar proveedor y clave de API.",
-        "El PDF del reporte ahora se genera como un documento editorial: portada, resumen ejecutivo, cuadros de KPIs, barras por categor\u00eda, rutas del mapa, evidencia multimodal e im\u00e1genes cuando los activos tienen vista previa disponible. Si el servidor no puede renderizar PDF avanzado, conserva el HTML imprimible como salida visual equivalente.",
+        "El PDF del reporte ahora se genera como un documento editorial con ReportLab: portada, resumen ejecutivo, tarjetas KPI, dona de proporciones, sparkline de tendencia, waffle de confiabilidad, radar de ejes, rutas del mapa, evidencia multimodal e im\u00e1genes cuando los activos tienen vista previa disponible. Si el servidor no puede renderizar PDF avanzado, conserva el HTML imprimible como salida visual equivalente.",
         "El MVP corre localmente; un deploy productivo requiere hosting, variables seguras, monitoreo y pruebas automatizadas.",
       ],
     },
@@ -2535,8 +2535,8 @@ const manualContent = {
         "Dashboard shows an operational pilot readiness summary with manual, tests, participants, and feedback for quick tracking.",
         "Dashboard also shows a recommended next pilot action and lets you copy a short follow-up summary.",
         "Insights is the main human-reading output: it organizes experiences into 8 analysis themes and then shows prioritized findings with evidence, confidence, and next action.",
-        "Insights can be downloaded as printable HTML or Markdown for review, sharing, or archiving outside the app.",
-        "Report and Publication PDFs use ReportLab as the main engine to produce edited documents with cover, cards, indicators, and curated evidence. HTML remains as preview or fallback.",
+        "Insights can be downloaded as a ReportLab PDF, printable HTML, or Markdown for review, sharing, or archiving outside the app.",
+        "Report, Findings, and Publication PDFs use ReportLab as the main engine to produce edited documents with cover pages, cards, mixed visuals, indicators, and curated evidence. HTML remains as preview or fallback.",
         "The Dashboard summary lists the main pilot pending items so the recommendation becomes concrete action.",
         "Admin can export a complete pilot package with readiness, invitation, tests, participants, feedback, and closure record.",
         "The pilot package shows a content preview before export, so you can review readiness, invitation, tests, participants, feedback, and closure record.",
@@ -2719,7 +2719,7 @@ const manualContent = {
         "Actionable Insights can turn each recommendation into an Agenda event with a suggested date, priority, description, and reminder.",
         "The Report's Initial outlook can also schedule its suggested next action in Agenda.",
         "Daily shows an informational briefing independent from experiences: politics, economy and finance, technology and AI, sports, entertainment/events, world headlines, and daily horoscope for all signs.",
-        "Daily uses one manual location shared with Context. In the PWA, persistent physical location is not detected; changing the city updates news, weather, horoscope, listings, and environmental/geopolitical analysis with that reference.",
+        "Daily uses a manual location per device shared with Context. In the PWA, persistent physical location is not detected; confirm the same city on each device if you want the same Daily briefing everywhere.",
         "Daily refreshes every 6 hours if the backend routine is active, or when the app is open and detects stale content. If the PWA is closed, background refresh depends on the backend, not the browser.",
         "Daily is persisted by user, place, and language. With Supabase active it uses the daily_briefings table; if that table is not applied yet, the app keeps a local fallback and still shows the briefing.",
         "The Daily Reliability matrix separates real content from interaction: news, local/world split, weather, horoscope, listings, multimedia, voice/commands, and six-hour freshness.",
@@ -2736,7 +2736,7 @@ const manualContent = {
         "Local news uses the city or place entered above. World news groups global signals independent from that city.",
         "Listings and multimedia depends on external sources. The app therefore shows concrete options and outbound links; if a tab does not open automatically, use the visible link.",
         "The Listings and multimedia card groups three zones: current listings, real editorial images when available, and Agenda follow-up. If Daily has no reliable images, the app says so and offers clearly marked external searches.",
-        "If the external horoscope source does not respond or the saved briefing has no horoscope, the app shows a local fallback in the active language for all 12 signs.",
+        "Horoscope no longer depends on an external source. The app generates a simple local daily reading for all 12 signs in the active language, so the module remains available offline.",
         "Listings and events provides quick links for movie showtimes, concerts, theater, events today, and exhibitions in the selected place. It can also schedule a review in Agenda so the Daily briefing becomes actionable follow-up.",
         "Voice command runs basic actions by voice: open sections, refresh Daily, analyze context, open reports, open Publications, open Manual, load example, or create a new experience. You can start the command with Hi V, V, or in Spanish, Hola V. It depends on the browser's Web Speech support and requires activating the microphone from the app.",
         "V can now record simple content: take note adds text to the Capture draft, save this creates a quick experience, and schedule/add to my calendar creates a multi-device Agenda event with interpreted time when the phrase includes it. If that phrase appears inside an audio recording, Capture also detects it and creates the event without leaving the form.",
@@ -3084,7 +3084,7 @@ const manualContent = {
       title: "Current Limitations",
       items: [
         "Browser transcription depends on browser support. Backend transcription requires provider/API key configuration.",
-        "Native PDF now includes structured sections, textual KPI/category bars, and summarized evidence. Full editorial PDF design remains reserved for a later phase with an advanced PDF engine.",
+        "Operational PDFs now use ReportLab: Report, Findings, and Publication exports generate edited documents instead of raw browser printouts.",
         "The MVP runs locally; production deployment requires hosting, secure variables, monitoring, and automated tests.",
       ],
     },
@@ -6097,14 +6097,10 @@ function setupFilters() {
     renderDashboardScopedPanels();
   });
   document.getElementById("insightsPilotParticipantFilter").addEventListener("change", (event) => {
-    state.insightsFilters.pilotParticipantId = event.target.value;
-    updatePilotParticipantScopeStatus("insightsScopeStatus", event.target.value);
-    renderInsights();
+    setAnalyticalParticipantScope(event.target.value, "insights");
   });
   document.getElementById("publicationPilotParticipantFilter").addEventListener("change", (event) => {
-    state.publicationFilters.pilotParticipantId = event.target.value;
-    updatePilotParticipantScopeStatus("publicationScopeStatus", event.target.value);
-    renderPublications();
+    setAnalyticalParticipantScope(event.target.value, "publications");
   });
   document.getElementById("librarySearchInput").addEventListener("input", (event) => {
     state.libraryFilters.query = event.target.value.trim().toLowerCase();
@@ -6204,7 +6200,7 @@ function setupFilters() {
     if (state.reportFilters.scope === "all") {
       state.reportFilters.period = "all";
       state.reportFilters.category = "all";
-      state.reportFilters.pilotParticipantId = "all";
+      setAnalyticalParticipantScope("all", "report");
       state.reportFilters.people = "";
       state.reportFilters.objective = "";
       state.reportFilters.eventQuery = "";
@@ -6234,6 +6230,7 @@ function setupFilters() {
     renderReport();
   });
   document.getElementById("reportPilotParticipantFilter").addEventListener("change", (event) => {
+    setAnalyticalParticipantScope(event.target.value, "report");
     state.reportFilters.pilotParticipantId = event.target.value;
     if (event.target.value !== "all" && state.reportFilters.scope !== "single") state.reportFilters.scope = "filters";
     syncReportFilterInputs();
@@ -6374,6 +6371,7 @@ function setupActions() {
   document.getElementById("insightList").addEventListener("click", handleInsightAction);
   document.getElementById("exportInsightsHtmlButton").addEventListener("click", exportInsightsHtml);
   document.getElementById("exportInsightsMarkdownButton").addEventListener("click", exportInsightsMarkdown);
+  document.getElementById("exportInsightsPdfButton").addEventListener("click", exportInsightsPdf);
   document.getElementById("experienceMapAskButton").addEventListener("click", answerExperienceMapQuestion);
   document.getElementById("experienceMapGraph").addEventListener("click", handleExperienceMapGraphClick);
   document.getElementById("experienceMapDetail").addEventListener("click", handleExperienceMapDetailClick);
@@ -7380,6 +7378,26 @@ function updatePilotParticipantScopeStatus(statusId, participantId) {
   status.textContent = name
     ? state.language === "en" ? `Using ${name}` : `Usando ${name}`
     : state.language === "en" ? "General source" : "Fuente general";
+}
+
+function setAnalyticalParticipantScope(participantId, source = "") {
+  const next = participantId || "all";
+  state.reportFilters.pilotParticipantId = next;
+  state.insightsFilters.pilotParticipantId = next;
+  state.publicationFilters.pilotParticipantId = next;
+  if (next !== "all" && state.reportFilters.scope !== "single") {
+    state.reportFilters.scope = "filters";
+  }
+  syncReportFilterInputs();
+  const insightsSelect = document.getElementById("insightsPilotParticipantFilter");
+  const publicationSelect = document.getElementById("publicationPilotParticipantFilter");
+  if (insightsSelect) insightsSelect.value = next;
+  if (publicationSelect) publicationSelect.value = next;
+  updatePilotParticipantScopeStatus("insightsScopeStatus", next);
+  updatePilotParticipantScopeStatus("publicationScopeStatus", next);
+  if (source !== "report") renderReport();
+  if (source !== "insights") renderInsights();
+  if (source !== "publications") renderPublications();
 }
 
 function syncExperienceToAgenda(experience = {}) {
@@ -17225,7 +17243,7 @@ function renderReportAcceptancePanel() {
         json: "Download report JSON",
         csv: "Download table CSV",
         html: "Download printable HTML",
-        pdf: "Download PDF or fallback",
+        pdf: "Download PDF",
         all: "Download acceptance evidence",
       }
     : {
@@ -17233,7 +17251,7 @@ function renderReportAcceptancePanel() {
         json: "Descargar reporte JSON",
         csv: "Descargar tabla CSV",
         html: "Descargar HTML imprimible",
-        pdf: "Descargar PDF o respaldo",
+        pdf: "Descargar PDF",
         all: "Descargar evidencia de aceptacion",
       };
   const actionHelp = ["review", "json", "csv", "html", "pdf", "all"].map((key) => ({
@@ -17309,7 +17327,7 @@ function getReportAcceptanceActionLabel(format) {
           json: "report JSON",
           csv: "table CSV",
           html: "printable HTML",
-          pdf: "PDF or fallback",
+          pdf: "PDF",
           package: "acceptance evidence",
           all: "acceptance evidence",
         }
@@ -17318,7 +17336,7 @@ function getReportAcceptanceActionLabel(format) {
           json: "reporte JSON",
           csv: "tabla CSV",
           html: "HTML imprimible",
-          pdf: "PDF o respaldo",
+          pdf: "PDF",
           package: "evidencia de aceptacion",
           all: "evidencia de aceptacion",
         };
@@ -17333,7 +17351,7 @@ function getReportAcceptanceActionPurpose(action) {
           json: "Exports the complete structured report for backup, audit, or later processing.",
           csv: "Exports the report table for Excel, Sheets, or simple data review.",
           html: "Exports a readable printable version with narrative, indicators, and evidence.",
-          pdf: "Tries to generate a PDF through the local server; if unavailable, it exports printable HTML as fallback.",
+          pdf: "Generates an edited ReportLab PDF. If the server is unavailable, the app keeps printable HTML as backup.",
           all: "Exports the acceptance evidence: readiness score, checks, actions run, and report snapshot.",
           package: "Exports the acceptance evidence: readiness score, checks, actions run, and report snapshot.",
         }
@@ -17342,7 +17360,7 @@ function getReportAcceptanceActionPurpose(action) {
           json: "Exporta el reporte completo y estructurado para respaldo, auditoria o procesamiento posterior.",
           csv: "Exporta la tabla del reporte para Excel, Sheets o revision simple de datos.",
           html: "Exporta una version legible e imprimible con narrativa, indicadores y evidencia.",
-          pdf: "Intenta generar PDF con el servidor local; si no esta disponible, exporta HTML imprimible como respaldo.",
+          pdf: "Genera un PDF editado con ReportLab. Si el servidor no esta disponible, la app conserva HTML imprimible como respaldo.",
           all: "Exporta la evidencia de aceptacion: puntaje, controles, acciones ejecutadas y copia del reporte.",
           package: "Exporta la evidencia de aceptacion: puntaje, controles, acciones ejecutadas y copia del reporte.",
         };
@@ -19632,6 +19650,31 @@ function exportInsightsHtml() {
   const content = buildInsightsHtml();
   downloadBlob(new Blob([content], { type: "text/html;charset=utf-8" }), "hallazgos-experiencias.html", content);
   notify(state.language === "en" ? "Findings reading downloaded." : "Lectura de hallazgos descargada.", "success");
+}
+
+async function exportInsightsPdf() {
+  const payload = buildInsightsExportPayload();
+  try {
+    const response = await fetch(`${API_BASE}/insights/pdf`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...authHeaders(),
+      },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    downloadBlob(await response.blob(), "hallazgos-experiencias.pdf");
+    notify(state.language === "en" ? "Findings PDF downloaded." : "PDF de hallazgos descargado.", "success");
+  } catch (error) {
+    exportInsightsHtml();
+    notify(
+      state.language === "en"
+        ? "The server could not create the PDF. HTML was downloaded as a printable backup."
+        : "El servidor no pudo crear el PDF. Se descargó HTML imprimible como respaldo.",
+      "warning",
+    );
+  }
 }
 
 function mapInsightTypeToAgendaType(insight) {
