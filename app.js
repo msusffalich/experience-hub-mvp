@@ -1,4 +1,4 @@
-const APP_VERSION = "20260523-pdf-logo-content-409";
+const APP_VERSION = "20260523-pdf-layout-polish-410";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";

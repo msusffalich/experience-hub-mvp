@@ -149,7 +149,11 @@ class CoverBlock(Flowable):
         canvas.saveState()
         canvas.setFillColor(BRAND)
         canvas.roundRect(x, y, PAGE_WIDTH - 2 * MARGIN, 6.75 * inch, 18, fill=1, stroke=0)
-        draw_logo(canvas, x + PAGE_WIDTH - 2.55 * inch, y + 5.28 * inch, 1.78 * inch)
+        logo_panel_x = x + PAGE_WIDTH - 2.82 * inch
+        logo_panel_y = y + 5.18 * inch
+        canvas.setFillColor(colors.white)
+        canvas.roundRect(logo_panel_x, logo_panel_y, 2.05 * inch, 0.82 * inch, 10, fill=1, stroke=0)
+        draw_logo(canvas, logo_panel_x + 0.16 * inch, logo_panel_y + 0.16 * inch, 1.68 * inch)
         canvas.restoreState()
         frame = Frame(x + 0.38 * inch, y + 0.55 * inch, PAGE_WIDTH - 2 * MARGIN - 0.76 * inch, 5.65 * inch, showBoundary=0)
         frame.addFromList(list(self.flowables), canvas)
@@ -233,6 +237,11 @@ class VisualTile(Flowable):
         c.setFillColor(GOLD)
         x, y = points[-1]
         c.circle(x, y, 3, fill=1, stroke=0)
+        c.setFillColor(MUTED)
+        c.setFont("Helvetica", 6.5)
+        c.drawString(left, bottom - 10, "Inicio")
+        c.drawRightString(left + chart_w, bottom - 10, "Reciente")
+        c.drawString(left - 6, bottom + chart_h + 3, "Energia")
 
     def _draw_waffle(self, c, w, h):
         value = max(0, min(100, num(self.values[0] if self.values else 0)))
@@ -276,6 +285,20 @@ class VisualTile(Flowable):
         c.setFillColor(colors.Color(0.05, 0.49, 0.4, alpha=0.22))
         c.setStrokeColor(ACCENT)
         c.drawPath(path, fill=1, stroke=1)
+        labels = self.labels or ["Energia", "Datos", "Balance", "Evidencia", "Aprendizaje", "Contexto"]
+        c.setFillColor(MUTED)
+        c.setFont("Helvetica", 6.2)
+        for index, label in enumerate(labels[:count]):
+            angle = -math.pi / 2 + 2 * math.pi * index / count
+            lx = cx + math.cos(angle) * (r + 15)
+            ly = cy + math.sin(angle) * (r + 11)
+            text = polish(label)[:14]
+            if lx < cx - 4:
+                c.drawRightString(lx, ly, text)
+            elif lx > cx + 4:
+                c.drawString(lx, ly, text)
+            else:
+                c.drawCentredString(lx, ly, text)
 
 
 def metric_grid(items, dark=False):
@@ -365,13 +388,15 @@ def visual_dashboard(summary, rows, kpis, categories, quality):
     if len(energy_values) < 2:
         energy_values = [num(summary.get("averageEnergy")), num(summary.get("averageEnergy"))]
     kpi_values = [num(item.get("score")) for item in kpis[:6]]
+    kpi_labels = [item.get("label") or item.get("title") or item.get("name") for item in kpis[:6]]
     if len(kpi_values) < 3:
         kpi_values = [num(summary.get("averageEnergy")) * 10, num(quality.get("score")), 60]
+        kpi_labels = ["Energia", "Confiabilidad", "Balance"]
     tiles = [
         VisualTile("Proporción por categoría", "donut", category_values, note="Leyenda: porcentaje de la categoría principal"),
         VisualTile("Evolución de energía", "sparkline", energy_values, note="Leyenda: tendencia de registros recientes"),
         VisualTile("Confiabilidad de datos", "waffle", [quality.get("score", 0)], note="Leyenda: completitud de la captura"),
-        VisualTile("Radar de ejes humanos", "radar", kpi_values, note="Leyenda: balance entre índices principales"),
+        VisualTile("Radar de ejes humanos", "radar", kpi_values, labels=kpi_labels, note="Leyenda: puntaje por eje humano"),
     ]
     table = Table([[tiles[0], tiles[1]], [tiles[2], tiles[3]]], colWidths=[(PAGE_WIDTH - 2 * MARGIN - 8) / 2] * 2)
     table.setStyle(TableStyle([

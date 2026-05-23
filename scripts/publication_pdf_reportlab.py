@@ -10,7 +10,7 @@ from reportlab.lib.enums import TA_CENTER, TA_LEFT
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
-from reportlab.platypus import BaseDocTemplate, Frame, Image, PageTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.platypus import BaseDocTemplate, Flowable, Frame, Image, PageTemplate, Paragraph, Spacer, Table, TableStyle
 
 
 PAGE_WIDTH, PAGE_HEIGHT = letter
@@ -157,6 +157,64 @@ def card(title, body, width=None):
     return t
 
 
+class PublicationDashboard(Flowable):
+    def __init__(self, stats, media_count=0, highlights_count=0):
+        super().__init__()
+        self.stats = stats or {}
+        self.media_count = media_count
+        self.highlights_count = highlights_count
+
+    def wrap(self, avail_width, avail_height):
+        self.width = avail_width
+        self.height = 1.58 * inch
+        return avail_width, self.height
+
+    def draw(self):
+        c = self.canv
+        w, h = self.width, self.height
+        values = [
+            ("Experiencias", self.stats.get("experiences", "-"), BLUE),
+            ("Multimedia", self.media_count, colors.HexColor("#0d7c66")),
+            ("Momentos", self.highlights_count, colors.HexColor("#f2b84b")),
+            ("Energia", f"{self.stats.get('averageEnergy', '-')}/10", colors.HexColor("#7a5cc8")),
+        ]
+        gap = 7
+        card_w = (w - gap * 3) / 4
+        for idx, (label, value, color) in enumerate(values):
+            x = idx * (card_w + gap)
+            c.setFillColor(colors.white)
+            c.setStrokeColor(LINE)
+            c.roundRect(x, 0, card_w, h, 8, fill=1, stroke=1)
+            c.setFillColor(color)
+            c.roundRect(x + 8, h - 18, card_w - 16, 6, 3, fill=1, stroke=0)
+            c.setFillColor(BRAND)
+            c.setFont("Helvetica-Bold", 15)
+            c.drawCentredString(x + card_w / 2, h / 2 + 4, str(value))
+            c.setFillColor(MUTED)
+            c.setFont("Helvetica", 7.5)
+            c.drawCentredString(x + card_w / 2, 18, label)
+
+
+def paragraph_block(title, text, width=None):
+    width = width or (PAGE_WIDTH - 2 * MARGIN)
+    paragraphs = [part.strip() for part in str(text or "").split("\n") if part.strip()]
+    if not paragraphs:
+        paragraphs = [str(text or "Sin contenido disponible.")]
+    rows = [[para(title, "H2x")]]
+    for part in paragraphs[:8]:
+        rows.append([para(short(part, 520), "Bodyx")])
+    t = Table(rows, colWidths=[width])
+    t.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), colors.white),
+        ("BOX", (0, 0), (-1, -1), 0.6, LINE),
+        ("LEFTPADDING", (0, 0), (-1, -1), 12),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 12),
+        ("TOPPADDING", (0, 0), (-1, -1), 8),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+    ]))
+    return t
+
+
 def list_lines(items, empty="Sin elementos seleccionados."):
     lines = []
     for item in items or []:
@@ -212,11 +270,14 @@ def build(payload):
         para("Ficha editorial", "H1x"),
         meta_cards,
         Spacer(1, 12),
+        para("Tablero visual", "H1x"),
+        PublicationDashboard(stats, len(media), len(highlights)),
+        Spacer(1, 12),
         para("Resumen editorial", "H1x"),
         card("Lectura rapida", summary),
         Spacer(1, 12),
         para("Contenido principal", "H1x"),
-        card("Borrador editado", body),
+        paragraph_block("Borrador editado", body),
         Spacer(1, 12),
         para("Evidencia y seleccion", "H1x"),
         checklist,
