@@ -197,7 +197,7 @@ assert(/@media \(max-width: 1040px\)[\s\S]*\.capture-layout-clean \{[\s\S]*grid-
 assert(/@media \(max-width: 720px\)[\s\S]*\.capture-layout-clean,[\s\S]*\.filters \{[\s\S]*grid-template-columns: 1fr/.test(files.styles), "Capture is not included in the mobile one-column layout.");
 assert(files.index.includes("Activos y multimedia") && files.index.includes("Opciones avanzadas de calendario"), "Assets operations or Agenda advanced tools are not properly grouped.");
 assert(!/assetLibraryView[\s\S]*Herramientas avanzadas de activos/.test(files.index), "Asset Library still exposes technical asset tools in the user view.");
-assert(files.index.includes("Más opciones de publicación") && files.index.includes("Exportar y cerrar reporte"), "Reports or Publications still lack the simplified advanced-action flow.");
+assert(files.index.includes("Opciones técnicas") && files.index.includes("Opciones técnicas del reporte"), "Reports or Publications still lack the simplified advanced-action flow.");
 assert(files.index.includes("admin-accordion-stack") && files.index.includes("Resumen ejecutivo") && files.index.includes("Persistencia y Supabase"), "Admin is not organized into thematic accordions.");
 assert(files.index.includes("manual-version-card") && files.index.includes("manualVersionValue"), "Manual does not expose the current version guide card.");
 assert(files.app.includes("Librería, Activos, Reportes, Publicaciones y Agenda usan una vista limpia"), "Spanish manual does not explain the cleaned user pages.");

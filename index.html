@@ -9,10 +9,10 @@
     <meta name="apple-mobile-web-app-title" content="Experience Hub" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>Experience Hub MVP</title>
-    <link rel="manifest" href="manifest.webmanifest?v=20260522-publication-pdf-393" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260522-report-publication-ux-394" />
     <link rel="icon" href="icons/vibe-icon-192.png" type="image/png" />
     <link rel="apple-touch-icon" href="icons/vibe-apple-touch.png" />
-    <link rel="stylesheet" href="styles.css?v=20260522-publication-pdf-393" />
+    <link rel="stylesheet" href="styles.css?v=20260522-report-publication-ux-394" />
   </head>
   <body>
     <noscript>
@@ -643,6 +643,7 @@
                   </ol>
                   <div class="report-scope-actions">
                     <button id="generateReportButton" class="primary-button" type="button" onclick="generateReportFromScope()">Generar / actualizar reporte</button>
+                    <button class="ghost-button" type="button" onclick="downloadPdfReport()">Descargar PDF ejecutivo</button>
                     <button id="resetReportScopeButton" class="ghost-button" type="button" onclick="resetReportScope()">Limpiar alcance</button>
                   </div>
                   <p id="reportFlowStatus" class="report-flow-status" aria-live="polite">Prepara el alcance, genera el reporte y usa el paquete de aceptación para exportar evidencia.</p>
@@ -671,10 +672,10 @@
                 <div id="reportCategoryBreakdown" class="report-category-breakdown"></div>
                 <div id="reportTable" class="report-table"></div>
               </details>
-              <details class="user-advanced-drawer report-export-drawer" open>
+              <details class="user-advanced-drawer report-export-drawer">
                 <summary>
-                  <span id="reportExportTitle">Exportar y cerrar reporte</span>
-                  <small id="reportExportHelp">Descargas y confirmación de revisión</small>
+                  <span id="reportExportTitle">Opciones técnicas del reporte</span>
+                  <small id="reportExportHelp">JSON, CSV, HTML y evidencia de aceptación</small>
                 </summary>
                 <div id="reportAcceptancePanel" class="report-acceptance-panel"></div>
               </details>
@@ -761,18 +762,18 @@
                 </label>
                 <div class="form-actions">
                   <button id="generatePublicationButton" class="primary-button" type="button">Generar borrador</button>
-                  <button id="exportPublicationHtmlButton" class="ghost-button" type="button">Exportar HTML</button>
-                  <button id="exportPublicationMarkdownButton" class="ghost-button" type="button">Exportar Markdown</button>
                   <button id="exportPublicationPdfButton" class="ghost-button" type="button">Exportar PDF</button>
+                  <button id="launchPublicationChannelButton" class="ghost-button" type="button">Preparar canal</button>
                 </div>
                 <details class="user-advanced-drawer publication-action-drawer">
                   <summary>
-                    <span id="publicationMoreTitle">Más opciones de publicación</span>
-                    <small id="publicationMoreHelp">Vista imprimible, copias y paquete editorial</small>
+                    <span id="publicationMoreTitle">Opciones técnicas</span>
+                    <small id="publicationMoreHelp">HTML, Markdown, copias y paquete editorial</small>
                   </summary>
                   <div class="advanced-action-row">
                     <button id="previewPublicationHtmlButton" class="ghost-button" type="button">Vista imprimible</button>
-                    <button id="launchPublicationChannelButton" class="ghost-button" type="button">Preparar canal</button>
+                    <button id="exportPublicationHtmlButton" class="ghost-button" type="button">Exportar HTML</button>
+                    <button id="exportPublicationMarkdownButton" class="ghost-button" type="button">Exportar Markdown</button>
                     <button id="copyPublicationTextButton" class="ghost-button" type="button">Copiar texto</button>
                     <button id="copyPublicationHtmlButton" class="ghost-button" type="button">Copiar HTML</button>
                     <button id="exportPublicationPackageButton" class="ghost-button" type="button">Paquete editorial</button>
@@ -835,7 +836,7 @@
             <div class="manual-version-card">
               <div>
                 <span id="manualVersionEyebrow">Versión vigente</span>
-                <strong id="manualVersionValue">20260522-publication-pdf-393</strong>
+                <strong id="manualVersionValue">20260522-report-publication-ux-394</strong>
                 <p id="manualVersionSummary">Guía práctica organizada por temas para entender el flujo de la app sin leer todo de corrido.</p>
               </div>
               <div class="manual-guide-grid" aria-label="Estructura del manual">
@@ -1054,7 +1055,7 @@
       </main>
     </div>
 
-    <script src="app.js?v=20260522-publication-pdf-393"></script>
+    <script src="app.js?v=20260522-report-publication-ux-394"></script>
 </body>
 </html>
 

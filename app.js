@@ -1,4 +1,4 @@
-const APP_VERSION = "20260522-publication-pdf-393";
+const APP_VERSION = "20260522-report-publication-ux-394";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2335,6 +2335,9 @@ const manualContent = {
         "Las exportaciones de reporte también se guardan en la carpeta local data/exports del proyecto y el Paquete de aceptación muestra la ruta exacta del archivo.",
         "El Paquete de aceptación del reporte confirma si hay datos suficientes, narrativa, gráficas y exportaciones probadas en JSON, CSV, HTML imprimible y PDF o respaldo.",
         "El Paquete de aceptación del reporte incluye botones propios para registrar revisión humana, exportar JSON, CSV, HTML imprimible, PDF/respaldo y descargar un paquete JSON de aceptación.",
+        "El PDF del reporte es ejecutivo: resume lo importante, limita evidencia repetida y deja el detalle completo para JSON o CSV.",
+        "El selector Persona de este reporte filtra el analisis por participante. Si eliges una persona, el reporte, PDF y exportaciones usan ese mismo alcance.",
+        "En Reportes y Publicaciones, las acciones principales quedan visibles. Las opciones tecnicas como JSON, CSV, HTML, Markdown, copias y paquetes quedan plegadas para no confundir al usuario.",
         "La columna Energía muestra el valor 1-10 capturado en cada experiencia. La métrica Energía media muestra el promedio del conjunto filtrado.",
         "La columna Adjuntos muestra cuántos archivos multimedia tiene cada experiencia.",
         "Hallazgos del análisis resume tendencia de energía, foco dominante, riesgo y acción recomendada para el conjunto filtrado.",
@@ -2889,6 +2892,9 @@ const manualContent = {
         "Report exports are also saved in the project's local data/exports folder, and the Acceptance Pack shows the exact file path.",
         "The Report Acceptance Pack confirms whether there is enough data, narrative, charts, and tested exports in JSON, CSV, printable HTML, and PDF or fallback.",
         "The Report Acceptance Pack includes its own buttons to register human review, export JSON, CSV, printable HTML, PDF/fallback, and download a JSON acceptance package.",
+        "The report PDF is executive: it summarizes what matters, limits repeated evidence, and leaves full technical detail to JSON or CSV.",
+        "The Person in this report selector filters the analysis by participant. If you choose one person, the report, PDF, and exports use that same scope.",
+        "In Reports and Publications, the main actions stay visible. Technical options such as JSON, CSV, HTML, Markdown, copies, and packages stay folded to avoid confusing the user.",
         "The Energy column shows the 1-10 value captured in each experience. Average energy shows the mean for the filtered set.",
         "The Attachments column shows how many media files each experience has.",
         "Analysis findings summarize energy trend, dominant focus, risk, and recommended action for the filtered set.",
@@ -5758,11 +5764,11 @@ function applyLanguage() {
   document.getElementById("agendaSaveBlockedDatesButton").textContent = t("buttons.saveBlockedDates");
   document.getElementById("publications-heading").textContent = t("viewTitles.publications");
   document.getElementById("publicationStatus").textContent = t("labels.publicationStatus");
-  document.getElementById("reportExportTitle").textContent = state.language === "en" ? "Export and close report" : "Exportar y cerrar reporte";
-  document.getElementById("reportExportHelp").textContent = state.language === "en" ? "Downloads and review confirmation" : "Descargas y confirmación de revisión";
-  document.getElementById("publicationMoreTitle").textContent = state.language === "en" ? "More publication options" : "Más opciones de publicación";
-  document.getElementById("publicationMoreHelp").textContent = state.language === "en" ? "Printable view, copies, and editorial package" : "Vista imprimible, copias y paquete editorial";
-  document.getElementById("reportParticipantLabel").textContent = state.language === "en" ? "Report participant / user" : "Participante / usuario del reporte";
+  document.getElementById("reportExportTitle").textContent = state.language === "en" ? "Technical report options" : "Opciones técnicas del reporte";
+  document.getElementById("reportExportHelp").textContent = state.language === "en" ? "JSON, CSV, HTML, and acceptance evidence" : "JSON, CSV, HTML y evidencia de aceptación";
+  document.getElementById("publicationMoreTitle").textContent = state.language === "en" ? "Technical options" : "Opciones técnicas";
+  document.getElementById("publicationMoreHelp").textContent = state.language === "en" ? "HTML, Markdown, copies, and editorial package" : "HTML, Markdown, copias y paquete editorial";
+  document.getElementById("reportParticipantLabel").textContent = state.language === "en" ? "Person in this report" : "Persona de este reporte";
   document.getElementById("insightsParticipantLabel").textContent = state.language === "en" ? "Participant / user" : "Participante / usuario";
   document.getElementById("publicationParticipantLabel").textContent = state.language === "en" ? "Source participant / user" : "Participante / usuario fuente";
   document.getElementById("generatePublicationButton").textContent = state.language === "en" ? "Generate draft" : "Generar borrador";
@@ -18936,7 +18942,6 @@ function getReportExperiences() {
       const useFieldFilters = scope === "filters";
       const categoryMatch = !useFieldFilters || state.reportFilters.category === "all" || item.category === state.reportFilters.category;
       const participantMatch =
-        !useFieldFilters ||
         !state.reportFilters.pilotParticipantId ||
         state.reportFilters.pilotParticipantId === "all" ||
         item.pilotParticipantId === state.reportFilters.pilotParticipantId;
@@ -22455,8 +22460,8 @@ function renderAdminOperationalFocusPanel() {
         liveFlowDetail: "When Capture syncs an open draft, the same device refreshes Dashboard, Library, Assets, Agenda, Timeline, Map, Reports, Publications, Insights, persistence state, and Admin.",
         biometricAssets: "Biometric files in Assets",
         biometricAssetsDetail: "CSV/JSON from Apple Health or wearables enters through Assets as cross-experience context, then informs energy and recovery by date/time.",
-        reportPdf: "Clear PDF and channel exports",
-        reportPdfDetail: "Reports and Publications now explain what each format does. Publications can export PDF and prepare WhatsApp or Email drafts; Facebook and Instagram remain manual until future connectors.",
+        reportPdf: "Cleaner reports and publications",
+        reportPdfDetail: "Reports now use an executive PDF, participant scope, and folded technical exports. Publications show the main actions first and keep technical outputs folded.",
       }
     : {
         title: "Administración operativa",
@@ -22488,8 +22493,8 @@ function renderAdminOperationalFocusPanel() {
     labels.liveFlowDetail = "Cuando Captura sincroniza una experiencia abierta, el mismo dispositivo refresca Panel, Librer\u00eda, Activos, Agenda, L\u00ednea de tiempo, Mapa, Reportes, Publicaciones, Hallazgos, persistencia y Administraci\u00f3n.";
     labels.biometricAssets = "Biometr\u00eda desde Activos";
     labels.biometricAssetsDetail = "CSV/JSON de Apple Health o wearables entra por Activos como contexto transversal y luego informa energ\u00eda o recuperaci\u00f3n por fecha/hora.";
-    labels.reportPdf = "PDF y canales claros";
-    labels.reportPdfDetail = "Reportes y Publicaciones explican para qué sirve cada formato. Publicaciones exporta PDF y prepara WhatsApp o Email; Facebook e Instagram siguen manuales hasta tener conectores futuros.";
+    labels.reportPdf = "Reportes y publicaciones limpios";
+    labels.reportPdfDetail = "Reportes usa PDF ejecutivo, alcance por persona y exportaciones tecnicas plegadas. Publicaciones muestra primero las acciones principales y deja las salidas tecnicas plegadas.";
   }
   const cards = [
     [labels.flow, labels.flowDetail],
@@ -27331,9 +27336,3 @@ function toDatetimeLocal(value) {
   const offset = date.getTimezoneOffset() * 60000;
   return new Date(date.getTime() - offset).toISOString().slice(0, 16);
 }
-
-
-
-
-
-

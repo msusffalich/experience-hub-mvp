@@ -3543,6 +3543,15 @@ function buildReportPdfHtml(report = {}) {
   const evidence = Array.isArray(report.multimodalEvidence) ? report.multimodalEvidence : [];
   const maxMinutes = Math.max(...categories.map((item) => Number(item.minutes || 0)), 1);
   const heroImage = evidence.find((item) => item.previewUrl)?.previewUrl || "";
+  const integratedSelection = integrated
+    .slice()
+    .sort((a, b) => reportPdfPriorityRank(b.priority) - reportPdfPriorityRank(a.priority))
+    .slice(0, 4);
+  const kpiSelection = kpis.slice(0, 4);
+  const categorySelection = categories.slice(0, 8);
+  const routeSelection = routes.slice(0, 4);
+  const evidenceSelection = uniqueReportPdfEvidence(evidence).slice(0, 4);
+  const rowSelection = rows.slice(0, 18);
   return `<!doctype html>
 <html lang="${language}">
 <head>
@@ -3565,7 +3574,7 @@ function buildReportPdfHtml(report = {}) {
     h3 { margin: 0 0 8px; font-size: 15px; color: #17202a; }
     p { margin: 4px 0; color: #485869; line-height: 1.45; }
     .card-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-    .card, .wide-card { padding: 14px; border: 1px solid #d8e0e8; border-radius: 14px; background: #fbfdff; break-inside: avoid; }
+    .card, .wide-card { padding: 14px; border: 1px solid #d8e0e8; border-radius: 14px; background: #fbfdff; break-inside: avoid; overflow: hidden; }
     .wide-card { background: #f3faf7; border-color: #b8d9ce; }
     .pill { display: inline-block; padding: 4px 9px; border-radius: 999px; background: #eef4ff; color: #25507a; font-size: 11px; font-weight: 700; }
     .meter { height: 9px; margin-top: 8px; background: #e6edf4; border-radius: 999px; overflow: hidden; }
@@ -3574,6 +3583,7 @@ function buildReportPdfHtml(report = {}) {
     .category-row:last-child { border-bottom: 0; }
     .evidence-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
     .evidence-image { width: 100%; height: 120px; object-fit: cover; border-radius: 10px; margin-bottom: 8px; }
+    .callout { padding: 12px 14px; border-left: 4px solid #0d7c66; background: #f3faf7; border-radius: 10px; }
     table { width: 100%; border-collapse: collapse; font-size: 10px; }
     th { text-align: left; background: #10263f; color: white; padding: 7px; }
     td { border-bottom: 1px solid #e2e8ef; padding: 7px; vertical-align: top; }
@@ -3601,18 +3611,19 @@ function buildReportPdfHtml(report = {}) {
       <p>${escapeHtmlServer(buildPdfExecutiveSummary(report, attachmentCount, language))}</p>
     </div>
   </section>
-  ${predictive?.title ? `<section><h2>${escapeHtmlServer(labels.outlook)}</h2><div class="wide-card"><span class="pill">${escapeHtmlServer(labels.confidence)} ${escapeHtmlServer(predictive.confidence || 0)}%</span><h3>${escapeHtmlServer(predictive.title)}</h3><p><b>${escapeHtmlServer(labels.hypothesis)}:</b> ${escapeHtmlServer(predictive.hypothesis || "")}</p><p><b>${escapeHtmlServer(labels.next)}:</b> ${escapeHtmlServer(predictive.nextStep || "")}</p>${renderPdfList(predictive.drivers)}</div></section>` : ""}
-  ${integrated.length ? `<section><h2>${escapeHtmlServer(labels.integrated)}</h2><div class="card-grid">${integrated.map((item) => `<article class="card"><span class="pill">${escapeHtmlServer(labels.priority)}: ${escapeHtmlServer(item.priority || "-")}</span><h3>${escapeHtmlServer(item.title || "")}</h3><p>${escapeHtmlServer(item.evidence || "")}</p><p><b>${escapeHtmlServer(labels.action)}:</b> ${escapeHtmlServer(item.action || "")}</p></article>`).join("")}</div></section>` : ""}
-  ${kpis.length ? `<section><h2>${escapeHtmlServer(labels.kpis)}</h2><div class="card-grid">${kpis.map((item) => `<article class="card"><h3>${escapeHtmlServer(item.label || "KPI")}</h3><strong>${escapeHtmlServer(item.score || 0)}/100</strong><div class="meter"><i style="width:${clampPdfWidth(item.score)}%"></i></div><p>${escapeHtmlServer(item.detail || "")}</p></article>`).join("")}</div></section>` : ""}
-  ${categories.length ? `<section><h2>${escapeHtmlServer(labels.categories)}</h2>${categories.slice(0, 12).map((item) => `<div class="category-row"><span>${escapeHtmlServer(item.category || "")}</span><div class="meter"><i style="width:${Math.max(4, Math.round((Number(item.minutes || 0) / maxMinutes) * 100))}%"></i></div><strong>${escapeHtmlServer(item.avgEnergy || 0)}/10</strong></div>`).join("")}</section>` : ""}
-  ${routes.length ? `<section><h2>${escapeHtmlServer(labels.routes)}</h2><div class="card-grid">${routes.slice(0, 6).map((route) => `<article class="card"><h3>${escapeHtmlServer(route.title || "")}</h3><p>${escapeHtmlServer(route.count || 0)} experiencias - ${escapeHtmlServer(route.avgEnergy || 0)}/10 - ${escapeHtmlServer(route.dominant || "")}</p></article>`).join("")}</div></section>` : ""}
-  ${evidence.length ? `<section><h2>${escapeHtmlServer(labels.evidence)}</h2><div class="evidence-grid">${evidence.slice(0, 8).map((item) => `<article class="card">${item.previewUrl ? `<img class="evidence-image" src="${escapeHtmlServer(item.previewUrl)}" alt="" />` : ""}<h3>${escapeHtmlServer(item.experienceTitle || item.name || "")}</h3><p><b>${escapeHtmlServer(item.kind || "")}</b> - ${escapeHtmlServer(item.name || "")}</p><p>${escapeHtmlServer(item.analyticalText || item.translatedText || item.manualNote || "")}</p></article>`).join("")}</div></section>` : ""}
+  ${predictive?.title ? `<section><h2>${escapeHtmlServer(labels.outlook)}</h2><div class="wide-card"><span class="pill">${escapeHtmlServer(labels.confidence)} ${escapeHtmlServer(predictive.confidence || 0)}%</span><h3>${escapeHtmlServer(predictive.title)}</h3><p><b>${escapeHtmlServer(labels.hypothesis)}:</b> ${escapeHtmlServer(truncatePdfText(predictive.hypothesis || "", 260))}</p><p><b>${escapeHtmlServer(labels.next)}:</b> ${escapeHtmlServer(truncatePdfText(predictive.nextStep || "", 220))}</p>${renderPdfList((predictive.drivers || []).slice(0, 4).map((item) => truncatePdfText(item, 120)))}</div></section>` : ""}
+  ${integratedSelection.length ? `<section><h2>${escapeHtmlServer(labels.integrated)}</h2><div class="card-grid">${integratedSelection.map((item) => `<article class="card"><span class="pill">${escapeHtmlServer(labels.priority)}: ${escapeHtmlServer(item.priority || "-")}</span><h3>${escapeHtmlServer(item.title || "")}</h3><p>${escapeHtmlServer(truncatePdfText(item.evidence || "", 160))}</p><p><b>${escapeHtmlServer(labels.action)}:</b> ${escapeHtmlServer(truncatePdfText(item.action || "", 190))}</p></article>`).join("")}</div></section>` : ""}
+  ${kpiSelection.length ? `<section><h2>${escapeHtmlServer(labels.kpis)}</h2><div class="card-grid">${kpiSelection.map((item) => `<article class="card"><h3>${escapeHtmlServer(item.label || "KPI")}</h3><strong>${escapeHtmlServer(item.score || 0)}/100</strong><div class="meter"><i style="width:${clampPdfWidth(item.score)}%"></i></div><p>${escapeHtmlServer(truncatePdfText(item.detail || "", 150))}</p></article>`).join("")}</div></section>` : ""}
+  ${categorySelection.length ? `<section><h2>${escapeHtmlServer(labels.categories)}</h2>${categorySelection.map((item) => `<div class="category-row"><span>${escapeHtmlServer(item.category || "")}</span><div class="meter"><i style="width:${Math.max(4, Math.round((Number(item.minutes || 0) / maxMinutes) * 100))}%"></i></div><strong>${escapeHtmlServer(item.avgEnergy || 0)}/10</strong></div>`).join("")}</section>` : ""}
+  ${routeSelection.length ? `<section><h2>${escapeHtmlServer(labels.routes)}</h2><div class="card-grid">${routeSelection.map((route) => `<article class="card"><h3>${escapeHtmlServer(route.title || "")}</h3><p>${escapeHtmlServer(route.count || 0)} experiencias - ${escapeHtmlServer(route.avgEnergy || 0)}/10 - ${escapeHtmlServer(route.dominant || "")}</p></article>`).join("")}</div></section>` : ""}
+  ${evidenceSelection.length ? `<section><h2>${escapeHtmlServer(labels.evidence)}</h2><p class="callout">${escapeHtmlServer(language === "en" ? "Selected evidence only. Use JSON or CSV for the complete technical register." : "Solo evidencia seleccionada. JSON y CSV conservan el registro tecnico completo.")}</p><div class="evidence-grid">${evidenceSelection.map((item) => `<article class="card">${item.previewUrl ? `<img class="evidence-image" src="${escapeHtmlServer(item.previewUrl)}" alt="" />` : ""}<h3>${escapeHtmlServer(item.experienceTitle || item.name || "")}</h3><p><b>${escapeHtmlServer(item.kind || "")}</b> - ${escapeHtmlServer(item.name || "")}</p><p>${escapeHtmlServer(truncatePdfText(item.analyticalText || item.translatedText || item.manualNote || "", 220))}</p></article>`).join("")}</div></section>` : ""}
   <section>
-    <h2>${escapeHtmlServer(labels.table)}</h2>
+    <h2>${escapeHtmlServer(language === "en" ? "Short register" : "Registro resumido")}</h2>
     <table>
       <thead><tr><th>Fecha</th><th>Experiencia</th><th>Categoría</th><th>Energía</th><th>Adjuntos</th></tr></thead>
-      <tbody>${rows.slice(0, 60).map((row) => `<tr><td>${escapeHtmlServer(row.fecha || row.date || "")}</td><td>${escapeHtmlServer(row.titulo || row.title || "")}</td><td>${escapeHtmlServer(row.categoría || row.categoria || row.category || "")}</td><td>${escapeHtmlServer(row.energia || row.energy || "")}/10</td><td>${escapeHtmlServer(row.adjuntos || row.attachments || 0)}</td></tr>`).join("")}</tbody>
+      <tbody>${rowSelection.map((row) => `<tr><td>${escapeHtmlServer(row.fecha || row.date || "")}</td><td>${escapeHtmlServer(row.titulo || row.title || "")}</td><td>${escapeHtmlServer(row.categoría || row.categoria || row.category || "")}</td><td>${escapeHtmlServer(row.energia || row.energy || "")}/10</td><td>${escapeHtmlServer(row.adjuntos || row.attachments || 0)}</td></tr>`).join("")}</tbody>
     </table>
+    <p class="footer-note">${escapeHtmlServer(language === "en" ? "This PDF is an executive report. Full evidence, rows, and technical fields remain in JSON and CSV." : "Este PDF es un reporte ejecutivo. La evidencia completa, filas y campos tecnicos quedan en JSON y CSV.")}</p>
     <p class="footer-note">Experience Hub - Vibe</p>
   </section>
 </body>
@@ -3673,6 +3684,30 @@ function buildPdfExecutiveSummary(report, attachmentCount, language) {
 function renderPdfList(items = []) {
   const list = Array.isArray(items) ? items.filter(Boolean).slice(0, 5) : [];
   return list.length ? `<ul>${list.map((item) => `<li>${escapeHtmlServer(item)}</li>`).join("")}</ul>` : "";
+}
+
+function truncatePdfText(value, limit = 220) {
+  const text = String(value || "").replace(/\s+/g, " ").trim();
+  if (text.length <= limit) return text;
+  return `${text.slice(0, Math.max(0, limit - 1)).trim()}...`;
+}
+
+function uniqueReportPdfEvidence(items = []) {
+  const seen = new Set();
+  return items.filter((item) => {
+    const key = `${item.id || ""}|${item.name || ""}|${item.experienceTitle || ""}|${item.kind || ""}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function reportPdfPriorityRank(priority = "") {
+  const value = String(priority || "").toLowerCase();
+  if (value.includes("alta") || value.includes("high")) return 3;
+  if (value.includes("media") || value.includes("medium")) return 2;
+  if (value.includes("baja") || value.includes("low")) return 1;
+  return 0;
 }
 
 function clampPdfWidth(value) {
