@@ -184,18 +184,36 @@ class AxisRadar(Flowable):
         c.setFillColor(colors.Color(0.05, 0.49, 0.4, alpha=0.22))
         c.setStrokeColor(ACCENT)
         c.drawPath(path, fill=1, stroke=1)
+        c.setFillColor(MUTED)
+        c.setFont("Helvetica", 6.4)
+        axis_labels = [short(axis.get("title"), 14) for axis in self.axes]
+        while len(axis_labels) < count:
+            axis_labels.append("-")
+        for index, label in enumerate(axis_labels[:count]):
+            angle = -math.pi / 2 + 2 * math.pi * index / count
+            lx = cx + math.cos(angle) * (r + 0.18 * inch)
+            ly = cy + math.sin(angle) * (r + 0.15 * inch)
+            if lx < cx - 4:
+                c.drawRightString(lx, ly, label)
+            elif lx > cx + 4:
+                c.drawString(lx, ly, label)
+            else:
+                c.drawCentredString(lx, ly, label)
         x0 = 2.35 * inch
         c.setFont("Helvetica-Bold", 10)
         c.setFillColor(BRAND)
         c.drawString(x0, h - 0.34 * inch, "Radar de ejes humanos")
+        c.setFont("Helvetica-Bold", 7.4)
+        c.setFillColor(MUTED)
+        c.drawString(x0, h - 0.50 * inch, "Leyenda: nombre del eje + experiencias vinculadas")
         c.setFont("Helvetica", 7.8)
         c.setFillColor(MUTED)
         for index, axis in enumerate(self.axes[:6]):
-            y = h - 0.64 * inch - index * 0.25 * inch
+            y = h - 0.78 * inch - index * 0.23 * inch
             c.setFillColor([ACCENT, GOLD, BLUE, PURPLE][index % 4])
             c.circle(x0 + 4, y + 3, 3, fill=1, stroke=0)
             c.setFillColor(MUTED)
-            c.drawString(x0 + 14, y, f"{short(axis.get('title'), 36)} - {len(axis.get('items') or [])} exp.")
+            c.drawString(x0 + 14, y, f"{short(axis.get('title'), 32)} - {len(axis.get('items') or [])} exp.")
         c.restoreState()
 
 
