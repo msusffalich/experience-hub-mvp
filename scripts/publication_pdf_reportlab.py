@@ -2,15 +2,18 @@ import io
 import json
 import re
 import sys
+import base64
+import urllib.request
 from html import unescape
 from pathlib import Path
 
+from PIL import Image as PILImage, ImageFile
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
-from reportlab.platypus import BaseDocTemplate, Flowable, Frame, Image, PageTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.platypus import BaseDocTemplate, Flowable, Frame, Image, KeepTogether, PageBreak, PageTemplate, Paragraph, Spacer, Table, TableStyle
 
 
 PAGE_WIDTH, PAGE_HEIGHT = letter
@@ -20,6 +23,7 @@ BLUE = colors.HexColor("#1f78d1")
 LINE = colors.HexColor("#d8e0e8")
 MUTED = colors.HexColor("#526273")
 LOGO_PATH = Path(__file__).resolve().parents[1] / "icons" / "vibe-logo-pdf.png"
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
 def clean_html(value):
@@ -279,14 +283,16 @@ class MediaMosaic(Flowable):
             c.drawString(x + 8, y + 11, f"Activo {index + 1}")
 
 
-def paragraph_block(title, text, width=None):
+def paragraph_block(title, text, width=None, max_parts=5, part_limit=420):
     width = width or (PAGE_WIDTH - 2 * MARGIN)
     paragraphs = [part.strip() for part in str(text or "").split("\n") if part.strip()]
     if not paragraphs:
         paragraphs = [str(text or "Sin contenido disponible.")]
     rows = [[para(title, "H2x")]]
-    for part in paragraphs[:8]:
-        rows.append([para(short(part, 520), "Bodyx")])
+    for part in paragraphs[:max_parts]:
+        if part.startswith("- "):
+            continue
+        rows.append([para(short(part, part_limit), "Bodyx")])
     t = Table(rows, colWidths=[width])
     t.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, -1), colors.white),
@@ -297,6 +303,153 @@ def paragraph_block(title, text, width=None):
         ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
     ]))
     return t
+
+
+def section_heading(title, subtitle=""):
+    rows = [[para(title, "H1x")]]
+    if subtitle:
+        rows.append([para(subtitle, "Muted")])
+    table = Table(rows, colWidths=[PAGE_WIDTH - 2 * MARGIN])
+    table.setStyle(TableStyle([
+        ("LEFTPADDING", (0, 0), (-1, -1), 0),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+        ("TOPPADDING", (0, 0), (-1, -1), 0),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+    ]))
+    return table
+
+
+def story_paragraphs(body):
+    parts = [part.strip() for part in str(body or "").split("\n") if part.strip()]
+    cleaned = []
+    skip_labels = {
+        "Momentos seleccionados:",
+        "Selected moments:",
+    }
+    for part in parts:
+        if part in skip_labels or part.startswith("- "):
+            continue
+        if part.lower().startswith("reporte narrativo:") or part.lower().startswith("album") or part.lower().startswith("memoria"):
+            continue
+        cleaned.append(part)
+    return cleaned[:4]
+
+
+def text_card(title, text, accent=BLUE, width=None):
+    width = width or PAGE_WIDTH - 2 * MARGIN
+    table = Table([[para(title, "H2x")], [para(text, "Bodyx")]], colWidths=[width])
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), colors.white),
+        ("BOX", (0, 0), (-1, -1), 0.6, LINE),
+        ("LINEBEFORE", (0, 0), (0, -1), 4, accent),
+        ("LEFTPADDING", (0, 0), (-1, -1), 12),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 12),
+        ("TOPPADDING", (0, 0), (-1, -1), 8),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+    ]))
+    return table
+
+
+def image_bytes_from_media(item):
+    source = str((item or {}).get("dataUrl") or (item or {}).get("url") or "")
+    if not source:
+        return None
+    try:
+        if source.startswith("data:"):
+            _, encoded = source.split(",", 1)
+            return base64.b64decode(encoded)
+        if source.startswith("http://") or source.startswith("https://"):
+            request = urllib.request.Request(source, headers={"User-Agent": "Vibe-PDF/1.0"})
+            with urllib.request.urlopen(request, timeout=8) as response:
+                return response.read(6_000_000)
+        path = Path(source)
+        if path.exists() and path.is_file():
+            return path.read_bytes()
+    except Exception:
+        return None
+    return None
+
+
+def image_flowable_from_media(item, width=PAGE_WIDTH - 2 * MARGIN, max_height=3.25 * inch):
+    if not str((item or {}).get("type") or "").startswith("image/"):
+        return None
+    data = image_bytes_from_media(item)
+    if not data:
+        return None
+    try:
+        source = io.BytesIO(data)
+        with PILImage.open(source) as pil:
+            pil.load()
+            normalized = io.BytesIO()
+            pil.convert("RGB").save(normalized, format="PNG")
+        normalized.seek(0)
+        image = Image(normalized)
+        ratio = image.imageHeight / max(1, image.imageWidth)
+        image.drawWidth = width
+        image.drawHeight = min(max_height, width * ratio)
+        if width * ratio > max_height:
+            image.drawWidth = max_height / ratio
+        h_align = "CENTER"
+        image.hAlign = h_align
+        return image
+    except Exception:
+        return None
+
+
+def media_caption(item):
+    pieces = [
+        item.get("name") or "Activo",
+        item.get("experienceTitle") or "",
+        human_kind(item),
+    ]
+    context = item.get("manualNote") or item.get("analyticalText") or item.get("translatedText") or ""
+    if context:
+        pieces.append(short(context, 160))
+    return " - ".join([piece for piece in pieces if piece])
+
+
+def media_gallery(media):
+    flow = []
+    images = [item for item in media if str(item.get("type") or "").startswith("image/") and item.get("included", True) is not False]
+    non_images = [item for item in media if item not in images and item.get("included", True) is not False]
+    rendered = 0
+    for item in images[:3]:
+        image = image_flowable_from_media(item)
+        if image:
+            flow.append(KeepTogether([
+                image,
+                Spacer(1, 4),
+                para(media_caption(item), "Muted"),
+                Spacer(1, 10),
+            ]))
+            rendered += 1
+        else:
+            non_images.insert(0, item)
+    if not rendered:
+        flow.append(text_card("Imagenes", "No fue posible incrustar imagenes en el PDF. Revisa que el activo tenga URL firmada o data URL disponible al exportar.", colors.HexColor("#f2b84b")))
+        flow.append(Spacer(1, 8))
+    if non_images:
+        rows = [[para("Tipo", "H2x"), para("Activo", "H2x"), para("Uso editorial", "H2x")]]
+        for item in non_images[:8]:
+            rows.append([
+                para(human_kind(item), "Bodyx"),
+                para(short(item.get("name") or "Activo", 55), "Bodyx"),
+                para(short(item.get("manualNote") or item.get("analyticalText") or item.get("translatedText") or item.get("experienceTitle") or "Disponible para revisar.", 180), "Bodyx"),
+            ])
+        table = Table(rows, colWidths=[0.9 * inch, 1.55 * inch, PAGE_WIDTH - 2 * MARGIN - 2.45 * inch], repeatRows=1)
+        table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#eef4ff")),
+            ("GRID", (0, 0), (-1, -1), 0.3, LINE),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 7),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 7),
+            ("TOPPADDING", (0, 0), (-1, -1), 6),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+        ]))
+        flow.append(table)
+    if not media:
+        flow.append(text_card("Multimedia", "No hay multimedia seleccionada para esta publicacion.", colors.HexColor("#f2b84b")))
+    return flow
 
 
 def list_lines(items, empty="Sin elementos seleccionados."):
@@ -394,83 +547,54 @@ def build(payload):
     purpose = draft.get("purpose") or "Pieza preparada para compartir una memoria viva, no un reporte tecnico."
     people = ", ".join(draft.get("people") or []) or "Sin personas indicadas"
     locations = ", ".join(draft.get("locations") or []) or "Sin ubicacion indicada"
-    ficha_width = (PAGE_WIDTH - 2 * MARGIN - 12) / 3
-    meta_cards = Table(
-        [[
-            card("Formato", f"{draft.get('type') or 'Publicacion'}\nCanal: {draft.get('channel') or '-'}", ficha_width),
-            card("Alcance", f"{stats.get('experiences', '-')} experiencias\nCategoria: {stats.get('category', '-')}", ficha_width),
-            card("Estado", f"{draft.get('approvalStatus') or 'revision'}\nEnergia media: {stats.get('averageEnergy', '-')}/10", ficha_width),
-        ]],
-        colWidths=[ficha_width, ficha_width, ficha_width],
-    )
-    meta_cards.setStyle(TableStyle([
-        ("VALIGN", (0, 0), (-1, -1), "TOP"),
-        ("LEFTPADDING", (0, 0), (-1, -1), 0),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
-    ]))
-    checklist_width = (PAGE_WIDTH - 2 * MARGIN - 10) / 2
-    checklist = Table(
-        [[
-            card("Multimedia seleccionada", list_lines(media, "No se selecciono multimedia para esta publicacion."), checklist_width),
-            card("Momentos destacados", list_lines(highlights, "No hay momentos destacados en el borrador."), checklist_width),
-        ]],
-        colWidths=[checklist_width, checklist_width],
-    )
-    checklist.setStyle(TableStyle([
-        ("VALIGN", (0, 0), (-1, -1), "TOP"),
-        ("LEFTPADDING", (0, 0), (-1, -1), 0),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
-    ]))
-    moment_table = simple_table(
-        ["#", "Momento", "Eje", "Lectura editorial"],
-        moment_rows(highlights),
-        [0.35 * inch, 1.45 * inch, 1.05 * inch, PAGE_WIDTH - 2 * MARGIN - 2.85 * inch],
-    )
-    media_table = simple_table(
-        ["Tipo", "Activo", "Experiencia", "Uso en la memoria"],
-        media_rows(media),
-        [0.75 * inch, 1.35 * inch, 1.35 * inch, PAGE_WIDTH - 2 * MARGIN - 3.45 * inch],
-    )
-    channel_table = simple_table(
-        ["Tema", "Estado", "Que significa"],
-        channel_rows(draft.get("channel")),
-        [1.1 * inch, 1.35 * inch, PAGE_WIDTH - 2 * MARGIN - 2.45 * inch],
-    )
-    return [
-        hero(title, "Memoria o pieza final con contenido curado para revisar, aprobar y compartir."),
-        Spacer(1, 18),
-        para("Ficha editorial", "H1x"),
-        meta_cards,
-        Spacer(1, 12),
-        card("Proposito de esta publicacion", f"{purpose}\nPersonas: {people}\nLugares: {locations}"),
-        Spacer(1, 12),
-        para("Tablero visual", "H1x"),
+    flow = [
+        hero(title, "Memoria final para revisar, aprobar y compartir."),
+        Spacer(1, 16),
         PublicationDashboard(stats, len(media), len(highlights)),
         Spacer(1, 12),
-        para("Resumen editorial", "H1x"),
-        card("Lectura rapida", summary),
+        text_card("Proposito", f"{purpose}\nPersonas: {people}\nLugares: {locations}", colors.HexColor("#0d7c66")),
+        Spacer(1, 10),
+        text_card("Resumen editorial", summary, BLUE),
         Spacer(1, 12),
-        para("Secuencia de memoria", "H1x"),
-        MemoryTimeline(highlights),
-        Spacer(1, 8),
-        moment_table,
-        Spacer(1, 12),
-        para("Contenido listo para compartir", "H1x"),
-        paragraph_block("Borrador editado", body),
-        Spacer(1, 12),
-        para("Galeria y evidencia seleccionada", "H1x"),
-        MediaMosaic(media),
-        Spacer(1, 8),
-        media_table,
-        Spacer(1, 12),
-        para("Salida y canal", "H1x"),
-        channel_table,
-        Spacer(1, 12),
-        para("Revision humana", "H1x"),
-        checklist,
-        Spacer(1, 12),
-        card("Cierre", "Este PDF es la version editada para revision humana. Si el contenido se aprueba, puede compartirse por copia manual, enlace o por una API de canal cuando este configurada. No publica automaticamente en redes sin confirmacion del usuario."),
+        section_heading("Historia", "Texto limpio para compartir. El detalle tecnico queda fuera de esta pieza."),
     ]
+    for paragraph in story_paragraphs(body):
+        flow.append(para(paragraph, "Bodyx"))
+        flow.append(Spacer(1, 5))
+    flow.extend([
+        Spacer(1, 8),
+        section_heading("Momentos seleccionados", "Secuencia vertical para evitar paneles montados."),
+    ])
+    for index, item in enumerate(highlights[:6], 1):
+        flow.append(KeepTogether([
+            text_card(
+                f"{index}. {item.get('title') or 'Momento'}",
+                f"{item.get('category') or '-'} - {short(item.get('note') or item.get('location') or 'Registrado para memoria.', 260)}",
+                colors.HexColor("#7a5cc8") if index % 2 else colors.HexColor("#0d7c66"),
+            ),
+            Spacer(1, 7),
+        ]))
+    if not highlights:
+        flow.append(text_card("Momentos", "No hay momentos destacados en el borrador.", colors.HexColor("#f2b84b")))
+    flow.extend([
+        Spacer(1, 12),
+        section_heading("Multimedia incluida", "Las imagenes disponibles se incrustan; audio, video y documentos se listan como evidencia para revisar."),
+        *media_gallery(media),
+        Spacer(1, 12),
+        section_heading("Salida y canal"),
+        simple_table(
+            ["Tema", "Estado", "Que significa"],
+            channel_rows(draft.get("channel")),
+            [1.1 * inch, 1.35 * inch, PAGE_WIDTH - 2 * MARGIN - 2.45 * inch],
+        ),
+        Spacer(1, 12),
+        text_card(
+            "Cierre",
+            "Este PDF es la version editada para revision humana. No publica automaticamente en redes. Si el contenido se aprueba, puede compartirse por copia manual, enlace o por una API de canal cuando este configurada.",
+            colors.HexColor("#f2b84b"),
+        ),
+    ])
+    return flow
 
 
 def main():
