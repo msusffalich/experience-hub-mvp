@@ -1,4 +1,4 @@
-const APP_VERSION = "20260523-reportlab-prod-398";
+const APP_VERSION = "20260523-pdf-primary-scope-400";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -7413,6 +7413,10 @@ function setAnalyticalParticipantScope(participantId, source = "") {
   syncReportFilterInputs();
   const insightsSelect = document.getElementById("insightsPilotParticipantFilter");
   const publicationSelect = document.getElementById("publicationPilotParticipantFilter");
+  const reportSelect = document.getElementById("reportPilotParticipantFilter");
+  const scopeSelect = document.getElementById("reportScopeFilter");
+  if (reportSelect) reportSelect.value = next;
+  if (scopeSelect) scopeSelect.value = state.reportFilters.scope || "all";
   if (insightsSelect) insightsSelect.value = next;
   if (publicationSelect) publicationSelect.value = next;
   updatePilotParticipantScopeStatus("insightsScopeStatus", next);
@@ -15600,11 +15604,12 @@ function updateReportScopeControls() {
   if (singleLabel) singleLabel.hidden = scopeSelect.value !== "single";
   if (periodFilter) periodFilter.disabled = !["period", "filters"].includes(activeScope);
   if (categoryFilter) categoryFilter.disabled = activeScope !== "filters";
-  if (pilotParticipantFilter) pilotParticipantFilter.disabled = activeScope !== "filters";
+  if (pilotParticipantFilter) pilotParticipantFilter.disabled = false;
   if (peopleFilter) peopleFilter.disabled = activeScope !== "filters";
   if (objectiveFilter) objectiveFilter.disabled = activeScope !== "filters";
   if (eventFilter) eventFilter.disabled = activeScope !== "filters";
   const generateButton = document.getElementById("generateReportButton");
+  const editedPdfButton = document.getElementById("downloadEditedReportPdfButton");
   const jumpButton = document.getElementById("jumpReportAcceptanceButton");
   const resetButton = document.getElementById("resetReportScopeButton");
   const flowStatus = document.getElementById("reportFlowStatus");
@@ -15618,6 +15623,7 @@ function updateReportScopeControls() {
     flowSteps.innerHTML = steps.map((step, index) => `<li><strong>${index + 1}</strong><span>${escapeHtml(step)}</span></li>`).join("");
   }
   if (generateButton) generateButton.textContent = state.language === "en" ? "Generate / update report" : "Generar / actualizar reporte";
+  if (editedPdfButton) editedPdfButton.textContent = state.language === "en" ? "Download edited ReportLab PDF" : "Descargar PDF editado ReportLab";
   if (jumpButton) jumpButton.textContent = state.language === "en" ? "Go to acceptance" : "Ir a aceptación";
   if (resetButton) resetButton.textContent = state.language === "en" ? "Clear scope" : "Limpiar alcance";
   if (detailSummary) detailSummary.textContent = state.language === "en" ? "View technical detail, charts, and table" : "Ver detalle técnico, gráficas y tabla";
@@ -15636,10 +15642,10 @@ function renderReportScopeSummary(experiences) {
   title.textContent = state.language === "en" ? "Report scope" : "Alcance del reporte";
   const labels = state.language === "en"
     ? {
-        all: "all saved experiences. Period, category, person, and objective fields are ignored.",
-        period: `quick range only: ${state.reportFilters.period === "all" ? "all history" : `last ${state.reportFilters.period} days`}. Category, person, and objective are ignored.`,
-        filters: "category, person, objective, or internal-event filters. The quick range also applies if selected.",
-        single: "one specific experience. Other filters are ignored.",
+        all: "all saved experiences. Filters are off, so the report is a complete baseline.",
+        period: `quick range: ${state.reportFilters.period === "all" ? "all history" : `last ${state.reportFilters.period} days`}.`,
+        filters: "active filters by category, participant, person text, objective, or internal event.",
+        single: "one specific experience.",
         empty: "No experiences match this scope.",
       }
     : {
@@ -15649,6 +15655,12 @@ function renderReportScopeSummary(experiences) {
         single: "una experiencia específica. Se ignoran los demás filtros.",
         empty: "No hay experiencias que coincidan con este alcance.",
       };
+  if (state.language !== "en") {
+    labels.all = "todas las experiencias guardadas. Los filtros estan apagados, asi que sirve como linea base completa.";
+    labels.period = `rango rapido: ${state.reportFilters.period === "all" ? "todo el historial" : `ultimos ${state.reportFilters.period} dias`}.`;
+    labels.filters = "filtros activos por categoria, participante, texto de persona, objetivo o evento interno.";
+    labels.single = "una experiencia especifica.";
+  }
   const scopeLabel = labels[state.reportFilters.scope] || labels.all;
   const dateText = experiences.length
     ? `${formatShortDate(experiences[0].timestamp)} - ${formatShortDate(experiences[experiences.length - 1].timestamp)}`
@@ -17136,9 +17148,6 @@ function buildReportAcceptanceChecksLegacy() {
       ok: hasCharts,
       detail: state.language === "en" ? `${payload.categoryBreakdown?.length || 0} categories and ${payload.energyTrend?.length || 0} trend points.` : `${payload.categoryBreakdown?.length || 0} categorías y ${payload.energyTrend?.length || 0} puntos de tendencia.`,
     },
-    { key: "json", label: labels.json, ok: audit.json?.status === "ok", detail: formatDetail("json") },
-    { key: "csv", label: labels.csv, ok: audit.csv?.status === "ok", detail: formatDetail("csv") },
-    { key: "html", label: labels.html, ok: audit.html?.status === "ok", detail: formatDetail("html") },
     { key: "pdf", label: labels.pdf, ok: Boolean(audit.pdf?.at), detail: formatDetail("pdf") },
     { key: "review", label: labels.review, ok: audit.review?.status === "ok", detail: formatDetail("review") },
     { key: "package", label: labels.pack, ok: audit.package?.status === "ok", detail: formatDetail("package") },
@@ -17215,7 +17224,7 @@ function renderReportAcceptancePanel() {
         json: "Download report JSON",
         csv: "Download table CSV",
         html: "Download printable HTML",
-        pdf: "Download PDF",
+        pdf: "Download edited ReportLab PDF",
         all: "Download acceptance evidence",
       }
     : {
@@ -17223,10 +17232,11 @@ function renderReportAcceptancePanel() {
         json: "Descargar reporte JSON",
         csv: "Descargar tabla CSV",
         html: "Descargar HTML imprimible",
-        pdf: "Descargar PDF",
+        pdf: "Descargar PDF editado ReportLab",
         all: "Descargar evidencia de aceptacion",
       };
-  const actionHelp = ["review", "json", "csv", "html", "pdf", "all"].map((key) => ({
+  const primaryActionKeys = ["review", "pdf", "all"];
+  const actionHelp = primaryActionKeys.map((key) => ({
     key,
     label: actions[key],
     purpose: getReportAcceptanceActionPurpose(key),
@@ -17242,9 +17252,6 @@ function renderReportAcceptancePanel() {
       </div>
       <div class="report-acceptance-actions">
         <button class="primary-button" type="button" data-report-acceptance-action="review" title="${escapeHtml(getReportAcceptanceActionPurpose("review"))}" onclick="markReportAcceptanceReview()">${escapeHtml(actions.review)}</button>
-        <button class="ghost-button" type="button" data-report-acceptance-action="json" title="${escapeHtml(getReportAcceptanceActionPurpose("json"))}" onclick="downloadReport()">${escapeHtml(actions.json)}</button>
-        <button class="ghost-button" type="button" data-report-acceptance-action="csv" title="${escapeHtml(getReportAcceptanceActionPurpose("csv"))}" onclick="downloadCsvReport()">${escapeHtml(actions.csv)}</button>
-        <button class="ghost-button" type="button" data-report-acceptance-action="html" title="${escapeHtml(getReportAcceptanceActionPurpose("html"))}" onclick="downloadPrintableReport()">${escapeHtml(actions.html)}</button>
         <button class="ghost-button" type="button" data-report-acceptance-action="pdf" title="${escapeHtml(getReportAcceptanceActionPurpose("pdf"))}" onclick="downloadPdfReport()">${escapeHtml(actions.pdf)}</button>
         <button class="ghost-button" type="button" data-report-acceptance-action="all" title="${escapeHtml(getReportAcceptanceActionPurpose("all"))}" onclick="exportReportAcceptancePackage()">${escapeHtml(actions.all)}</button>
       </div>
