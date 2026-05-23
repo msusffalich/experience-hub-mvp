@@ -3719,6 +3719,10 @@ async function renderReportLabPdf(scriptName, payload) {
       maxBuffer: 30_000_000,
       timeout: 45000,
       windowsHide: true,
+      env: {
+        ...process.env,
+        PYTHONPATH: [path.join(__dirname, ".python"), process.env.PYTHONPATH].filter(Boolean).join(path.delimiter),
+      },
     });
     return Buffer.isBuffer(stdout) && stdout.length ? stdout : null;
   } catch (error) {

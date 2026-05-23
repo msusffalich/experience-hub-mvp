@@ -1,4 +1,4 @@
-const APP_VERSION = "20260523-output-polish-397";
+const APP_VERSION = "20260523-reportlab-prod-398";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -607,8 +607,8 @@ const i18n = {
       dailyFlowHoroscopeHelp: "Ver 12 signos aquí",
       dailyFlowVoice: "Comando de voz",
       dailyFlowVoiceHelp: "Navegación rápida",
-      dailyFlowIntro: "Este bloque es el mando del Diario. No duplica las noticias: sirve para leer, consultar cartelera/multimedia, ver horóscopo o usar voz.",
-      dailyLocationManualHelp: "Ubicación manual para este dispositivo. Hasta tener app nativa, noticias, clima, horóscopo y cartelera usan esta ciudad como referencia; en otro dispositivo debes confirmar la misma ciudad.",
+      dailyFlowIntro: "Este bloque es el mando del Diario. No duplica las noticias: sirve para leer, consultar cartelera/multimedia o usar voz.",
+      dailyLocationManualHelp: "Ubicación manual para este dispositivo. Hasta tener app nativa, noticias, clima y cartelera usan esta ciudad como referencia; en otro dispositivo debes confirmar la misma ciudad.",
       dailyLocationSaved: "Ubicación del Diario guardada. Actualizando contenido de esa ciudad...",
       dailyFlowReadDetail: "Leer Diario es una guía de lectura. Las noticias reales aparecen abajo, separadas en Locales y Mundiales. Usa Ver detalle en una noticia para leerla, escucharla o guardarla como experiencia.",
       dailyExploreTitle: "Cartelera y multimedia",
@@ -1424,8 +1424,8 @@ const i18n = {
       dailyFlowHoroscopeHelp: "View all 12 signs here",
       dailyFlowVoice: "Voice command",
       dailyFlowVoiceHelp: "Quick navigation",
-      dailyFlowIntro: "This block is the Daily control area. It does not duplicate the news: use it to read, check listings/multimedia, view horoscope, or use voice.",
-      dailyLocationManualHelp: "Manual location for this device. Until the native app exists, news, weather, horoscope, and listings use this city as reference; confirm the same city on each device.",
+      dailyFlowIntro: "This block is the Daily control area. It does not duplicate the news: use it to read, check listings/multimedia, or use voice.",
+      dailyLocationManualHelp: "Manual location for this device. Until the native app exists, news, weather, and listings use this city as reference; confirm the same city on each device.",
       dailyLocationSaved: "Daily location saved. Updating content for that city...",
       dailyFlowReadDetail: "Read Daily is a reading guide. The actual stories appear below, separated into Local and World. Use View detail on a story to read it, listen to it, or save it as an experience.",
       dailyExploreTitle: "Listings and multimedia",
@@ -1790,7 +1790,7 @@ const automationCatalog = {
       {
         id: "daily-briefing",
         name: "Diario",
-        description: "Actualiza cada 6 horas un resumen informativo local y mundial con noticias, agenda cultural y horóscopo.",
+        description: "Actualiza cada 6 horas un resumen informativo local y mundial con noticias, clima y agenda cultural.",
       },
       {
         id: "weekly-report",
@@ -1893,7 +1893,7 @@ const automationCatalog = {
       {
         id: "daily-briefing",
         name: "Daily",
-        description: "Updates every 6 hours with a local and world briefing, cultural agenda, and horoscope.",
+        description: "Updates every 6 hours with a local and world briefing, weather, and cultural agenda.",
       },
       {
         id: "weekly-report",
@@ -1965,6 +1965,7 @@ const manualContent = {
         "Hallazgos es la salida principal de lectura humana: organiza las experiencias en 8 ejes de análisis y luego muestra hallazgos priorizados con evidencia, confianza y próxima acción.",
         "Hallazgos permite descargar la lectura como PDF ReportLab, HTML imprimible o Markdown para revisar, compartir o archivar fuera de la app.",
         "Todos los PDFs operativos de Reportes, Hallazgos y Publicaciones usan ReportLab como motor principal para producir documentos editados, con portada, tarjetas, indicadores, visuales mixtos y evidencia curada. HTML queda como vista o respaldo.",
+        "En Railway, ReportLab requiere Python y dependencias instaladas en el build. El proyecto incluye railpack.json y requirements.txt para que producción no caiga al PDF simple anterior.",
         "El resumen del Panel lista los pendientes principales del piloto para convertir la recomendación en acciones concretas.",
         "Administración permite exportar un paquete piloto completo con preparación, invitación, pruebas, participantes, feedback y acta de cierre.",
         "El paquete piloto muestra una vista previa de su contenido antes de exportar, para revisar preparación, invitación, pruebas, participantes, feedback y acta.",
@@ -2022,7 +2023,7 @@ const manualContent = {
         "El patrón recomendado, tomado del análisis de CLIO, es mantener Supabase como fuente de verdad, usar Storage privado para archivos, URLs firmadas temporales para lectura, registros de auditoría para cada subida y caché local solo como respaldo o cola de reintento.",
         "El servidor ya soporta modo cloud mediante HOST=0.0.0.0 y NODE_ENV=production. Usa .env.production.example como base para desplegar sin depender de localhost.",
         "La guía docs/deploy-publicacion.md define el orden recomendado: GitHub privado, Supabase productivo, variables seguras, hosting Node, prueba desde varios dispositivos y validación privada.",
-        "El proyecto queda preparado para Railway con railway.json, healthcheck /api/health, Node >=20 y .gitignore para evitar publicar .env, datos locales, logs o claves.",
+        "El proyecto queda preparado para Railway con railway.json, railpack.json, healthcheck /api/health, Node >=20, Python para ReportLab y .gitignore para evitar publicar .env, datos locales, logs o claves.",
         "La sección Dispositivos ahora documenta un contrato único de integración. Cualquier fuente nueva debe entregar sourceId, sourceType, capturedAt, participantId, payloadType y payload antes de alimentar experiencias, activos, Agenda o contexto.",
         "El contrato de dispositivos se puede exportar como Markdown o JSON para compartirlo con desarrolladores, integraciones API/MCP o proveedores de wearables.",
         "Activos multimodales incluye Procesar ahora y Procesar visibles. Los documentos de texto se extraen localmente; los PDFs escaneados usan OCR del backend cuando OCR_PROVIDER=openai y OPENAI_API_KEY están configurados; los audios usan transcripción del backend si está configurada; las imágenes usan OCR automático del backend.",
@@ -2156,12 +2157,12 @@ const manualContent = {
         "Calidad de captura mide completitud de objetivo, ubicación, personas, notas y adjuntos para estimar qué tan confiables serán los reportes y hallazgos.",
         "Hallazgos accionables permite convertir cada recomendación en un evento de Agenda con fecha sugerida, prioridad, descripción y recordatorio.",
         "La Proyección inicial del Reporte también permite programar su siguiente acción sugerida en Agenda.",
-        "Diario muestra un resumen informativo independiente de las experiencias: noticias políticas, economía y finanzas, tecnología e IA, deportes, entretenimiento/eventos, noticias del mundo y horóscopo diario para todos los signos.",
+        "Diario muestra un resumen informativo independiente de las experiencias: noticias políticas, economía y finanzas, tecnología e IA, deportes, entretenimiento/eventos y noticias del mundo.",
         "Diario usa una ubicación manual por dispositivo, compartida con Contexto. En PWA no se detecta ubicación física persistente; confirma la misma ciudad en cada dispositivo si quieres ver el mismo Diario en todos.",
         "Diario se refresca cada 6 horas si la rutina del servidor está activa o cuando la app está abierta y detecta contenido vencido. Si la PWA está cerrada, el refresco de fondo depende del backend, no del navegador.",
         "Diario se persiste por usuario, lugar e idioma. Con Supabase activo usa la tabla daily_briefings; si la tabla aún no existe, la app mantiene un respaldo local y sigue mostrando el resumen.",
-        "La matriz de Confiabilidad del Diario separa contenido real de interacción: noticias, separación local/mundial, clima, horóscopo, cartelera, multimedia, voz/comandos y vigencia de 6 horas.",
-        "Diario muestra módulos activos de clima, noticias, multimedia y horóscopo. El clima usa Open-Meteo y el horóscopo se genera por idioma activo.",
+        "La matriz de Confiabilidad del Diario separa contenido real de interacción: noticias, separación local/mundial, clima, cartelera, multimedia, voz/comandos y vigencia de 6 horas.",
+        "Diario muestra módulos activos de clima, noticias y multimedia. El clima usa Open-Meteo; el horóscopo se retiró del flujo visible hasta tener una fuente o lógica personalizada confiable.",
         "Las noticias de Diario combinan GDELT y Google News RSS. Cada sección muestra su fuente activa; si una fuente externa no responde, se conserva un mensaje de disponibilidad sin bloquear el resto del Panel.",
         "Diario separa noticias locales y mundiales. Las consultas se adaptan al idioma activo del usuario para priorizar resultados en español o inglés.",
         "La capa multimodal del Diario separa dos cosas: multimedia específica de la noticia e investigación externa. Solo se muestra como propia de la noticia cuando la fuente entrega una imagen editorial confiable; videos, audio, podcasts y galerías se abren como búsquedas externas relacionadas.",
@@ -2169,12 +2170,12 @@ const manualContent = {
         "Desde el detalle de una noticia puedes usar Guardar como experiencia para convertirla en una experiencia editable con fuente, contexto, fecha, lectura e imagen editorial cuando esté disponible. Si intentas guardar la misma noticia otra vez, la app abre la experiencia existente para evitar duplicados.",
         "Las imágenes del Diario se muestran solo cuando parecen ser imágenes editoriales confiables; logos, iconos, placeholders y assets pequeños se descartan.",
         "Cuando no hay imagen editorial confiable, el Diario lo indica en la ficha de detalle y ofrece búsquedas externas de galería, videos y audio/podcasts sin presentarlas como adjuntos confirmados.",
-        "El Diario tiene un flujo simplificado: Leer Diario, Cartelera y multimedia, Horóscopo y Comando de voz. Ese bloque superior es solo el mando del Diario; las noticias reales aparecen debajo, separadas en Locales y Mundiales para evitar duplicidad conceptual.",
-        "Administración separa la preparación interactiva del Diario del contenido actualizado: la cartelera, multimedia, horóscopo y voz pueden estar listos aunque falte refrescar noticias o clima reales.",
+        "El Diario tiene un flujo simplificado: Leer Diario, Cartelera y multimedia y Comando de voz. Ese bloque superior es solo el mando del Diario; las noticias reales aparecen debajo, separadas en Locales y Mundiales para evitar duplicidad conceptual.",
+        "Administración separa la preparación interactiva del Diario del contenido actualizado: la cartelera, multimedia y voz pueden estar listos aunque falte refrescar noticias o clima reales.",
         "Noticias locales usa la ciudad o lugar escrito arriba. Noticias mundiales agrupa señales globales independientes de esa ciudad.",
         "Cartelera y multimedia depende de fuentes externas. Por eso la app muestra opciones concretas y enlaces de salida; si una pestaña no se abre automáticamente, usa el enlace visible.",
         "La ficha Cartelera y multimedia agrupa tres zonas: cartelera vigente, imágenes editoriales reales disponibles y seguimiento en Agenda. Si el Diario no trae imágenes confiables, la app lo indica y ofrece búsquedas externas claramente marcadas.",
-        "El horóscopo ya no depende de una fuente externa. La app genera una lectura local diaria para los 12 signos en el idioma activo, por lo que el módulo queda disponible incluso sin servicios externos.",
+        "Horóscopo queda fuera del flujo principal hasta que exista una fuente confiable o una lectura personalizada real; así evitamos mostrar contenido genérico como si fuera una función completa.",
         "Cartelera y eventos ofrece accesos rápidos para buscar cine, conciertos, teatro, eventos del día y exposiciones del lugar seleccionado. También permite programar una revisión en Agenda para convertir la lectura del Diario en seguimiento accionable.",
         "Comando de voz permite ejecutar acciones básicas por voz: abrir secciones, actualizar Diario, analizar contexto, abrir reportes, abrir Publicaciones, abrir Manual, cargar ejemplo o crear una nueva experiencia. Puedes iniciar el comando con Hola V, V o, en inglés, Hi V. Depende de Web Speech del navegador y requiere activar el micrófono desde la app.",
         "V ya puede registrar contenido simple: toma nota agrega texto al borrador de Captura, guarda esto crea una experiencia rápida y agenda/pon en mi agenda crea un evento multidispositivo en Agenda con hora interpretada cuando la frase la incluye. Si esa frase aparece dentro de una grabación de audio, Captura también la detecta y crea el evento sin salir del formulario.",
@@ -2537,6 +2538,7 @@ const manualContent = {
         "Insights is the main human-reading output: it organizes experiences into 8 analysis themes and then shows prioritized findings with evidence, confidence, and next action.",
         "Insights can be downloaded as a ReportLab PDF, printable HTML, or Markdown for review, sharing, or archiving outside the app.",
         "Report, Findings, and Publication PDFs use ReportLab as the main engine to produce edited documents with cover pages, cards, mixed visuals, indicators, and curated evidence. HTML remains as preview or fallback.",
+        "On Railway, ReportLab requires Python and build-time dependencies. The project includes railpack.json and requirements.txt so production does not fall back to the previous simple PDF.",
         "The Dashboard summary lists the main pilot pending items so the recommendation becomes concrete action.",
         "Admin can export a complete pilot package with readiness, invitation, tests, participants, feedback, and closure record.",
         "The pilot package shows a content preview before export, so you can review readiness, invitation, tests, participants, feedback, and closure record.",
@@ -2591,7 +2593,7 @@ const manualContent = {
         "The recommended pattern, based on the CLIO review, is to keep Supabase as the source of truth, use private Storage for files, temporary signed URLs for reading, audit records for every upload, and local cache only as fallback or retry queue.",
         "The server now supports cloud mode through HOST=0.0.0.0 and NODE_ENV=production. Use .env.production.example as the deployment baseline so the app does not depend on localhost.",
         "The docs/deploy-publicacion.md guide defines the recommended order: private GitHub, production Supabase, secure variables, Node hosting, multi-device test, and private validation.",
-        "The project is prepared for Railway with railway.json, healthcheck /api/health, Node >=20, and .gitignore to avoid publishing .env, local data, logs, or keys.",
+        "The project is prepared for Railway with railway.json, railpack.json, healthcheck /api/health, Node >=20, Python for ReportLab, and .gitignore to avoid publishing .env, local data, logs, or keys.",
         "The Devices section now documents a single integration contract. Every new source must provide sourceId, sourceType, capturedAt, participantId, payloadType, and payload before feeding experiences, assets, Agenda, or context.",
         "The device contract can be exported as Markdown or JSON to share with developers, API/MCP integrations, or wearable providers.",
         "Multimodal Assets includes Process now and Process visible. Text documents are extracted locally; scanned PDFs use backend OCR when OCR_PROVIDER=openai and OPENAI_API_KEY are configured; audio uses backend transcription when configured; images use automatic backend OCR.",
@@ -2718,12 +2720,12 @@ const manualContent = {
         "Capture quality measures completeness of objective, location, people, notes, and attachments to estimate how reliable reports and insights will be.",
         "Actionable Insights can turn each recommendation into an Agenda event with a suggested date, priority, description, and reminder.",
         "The Report's Initial outlook can also schedule its suggested next action in Agenda.",
-        "Daily shows an informational briefing independent from experiences: politics, economy and finance, technology and AI, sports, entertainment/events, world headlines, and daily horoscope for all signs.",
+        "Daily shows an informational briefing independent from experiences: politics, economy and finance, technology and AI, sports, entertainment/events, and world headlines.",
         "Daily uses a manual location per device shared with Context. In the PWA, persistent physical location is not detected; confirm the same city on each device if you want the same Daily briefing everywhere.",
         "Daily refreshes every 6 hours if the backend routine is active, or when the app is open and detects stale content. If the PWA is closed, background refresh depends on the backend, not the browser.",
         "Daily is persisted by user, place, and language. With Supabase active it uses the daily_briefings table; if that table is not applied yet, the app keeps a local fallback and still shows the briefing.",
-        "The Daily Reliability matrix separates real content from interaction: news, local/world split, weather, horoscope, listings, multimedia, voice/commands, and six-hour freshness.",
-        "Daily shows active weather, news, multimedia, and horoscope modules. Weather uses Open-Meteo and horoscope follows the active language.",
+        "The Daily Reliability matrix separates real content from interaction: news, local/world split, weather, listings, multimedia, voice/commands, and six-hour freshness.",
+        "Daily shows active weather, news, and multimedia modules. Weather uses Open-Meteo; horoscope is removed from the visible flow until there is a reliable source or real personalization.",
         "Daily news combines GDELT and Google News RSS. Each section shows its active source; if an external source is unavailable, the Dashboard keeps the rest of the briefing working.",
         "Daily separates local and world news. Queries adapt to the active user language to prioritize Spanish or English results.",
         "Daily's multimodal layer separates article-owned media from external research. It only shows media as article-specific when the source provides a reliable editorial image; videos, audio, podcasts, and galleries open as related external searches.",
@@ -2731,12 +2733,12 @@ const manualContent = {
         "From a story detail you can use Save as experience to turn it into an editable experience with source, context, date, reading, and editorial image when available. If you try to save the same story again, the app opens the existing experience to avoid duplicates.",
         "Daily images are shown only when they look like reliable editorial images; logos, icons, placeholders, and small assets are discarded.",
         "When no reliable editorial image is available, Daily says so in the detail card and offers gallery, video, and audio/podcast searches without presenting them as confirmed attachments.",
-        "Daily has a simplified flow: Read Daily, Listings and multimedia, Horoscope, and Voice command. That top block is only the Daily control area; the actual stories appear below, separated into Local and World to avoid conceptual duplication.",
-        "Admin separates Daily interactive readiness from updated content: listings, multimedia, horoscope, and voice can be ready even if real news or weather still need refresh.",
+        "Daily has a simplified flow: Read Daily, Listings and multimedia, and Voice command. That top block is only the Daily control area; the actual stories appear below, separated into Local and World to avoid conceptual duplication.",
+        "Admin separates Daily interactive readiness from updated content: listings, multimedia, and voice can be ready even if real news or weather still need refresh.",
         "Local news uses the city or place entered above. World news groups global signals independent from that city.",
         "Listings and multimedia depends on external sources. The app therefore shows concrete options and outbound links; if a tab does not open automatically, use the visible link.",
         "The Listings and multimedia card groups three zones: current listings, real editorial images when available, and Agenda follow-up. If Daily has no reliable images, the app says so and offers clearly marked external searches.",
-        "Horoscope no longer depends on an external source. The app generates a simple local daily reading for all 12 signs in the active language, so the module remains available offline.",
+        "Horoscope is out of the main flow until there is a reliable source or real personalization; this avoids presenting generic text as a complete feature.",
         "Listings and events provides quick links for movie showtimes, concerts, theater, events today, and exhibitions in the selected place. It can also schedule a review in Agenda so the Daily briefing becomes actionable follow-up.",
         "Voice command runs basic actions by voice: open sections, refresh Daily, analyze context, open reports, open Publications, open Manual, load example, or create a new experience. You can start the command with Hi V, V, or in Spanish, Hola V. It depends on the browser's Web Speech support and requires activating the microphone from the app.",
         "V can now record simple content: take note adds text to the Capture draft, save this creates a quick experience, and schedule/add to my calendar creates a multi-device Agenda event with interpreted time when the phrase includes it. If that phrase appears inside an audio recording, Capture also detects it and creates the event without leaving the form.",
@@ -7206,6 +7208,26 @@ function getExperiencePilotParticipantLabel(experience = {}) {
   return getPilotParticipantName(experience.pilotParticipantId) || experience.pilotParticipantName || "";
 }
 
+function experienceMatchesPilotParticipant(experience = {}, participantId = "all") {
+  if (!participantId || participantId === "all") return true;
+  if (experience.pilotParticipantId === participantId) return true;
+  const participant = state.pilotParticipants.find((item) => item.id === participantId);
+  const participantName = String(participant?.name || participant?.role || "").trim().toLowerCase();
+  const participantRole = String(participant?.role || "").trim().toLowerCase();
+  if (!participantName && !participantRole) return false;
+  const fields = [
+    experience.pilotParticipantName,
+    getPilotParticipantName(experience.pilotParticipantId),
+    experience.people,
+    experience.participants,
+    experience.person,
+    experience.ownerName,
+  ]
+    .map((value) => String(value || "").toLowerCase())
+    .filter(Boolean);
+  return fields.some((field) => (participantName && field.includes(participantName)) || (participantRole && field.includes(participantRole)));
+}
+
 function normalizePilotParticipantId(value = "") {
   const id = String(value || "").trim();
   if (!id || id === "all") return "";
@@ -7250,7 +7272,7 @@ function getDashboardAgendaEvents() {
 
 function getExperiencesByPilotParticipant(participantId = "all") {
   if (!participantId || participantId === "all") return state.experiences;
-  return state.experiences.filter((item) => item.pilotParticipantId === participantId);
+  return state.experiences.filter((item) => experienceMatchesPilotParticipant(item, participantId));
 }
 
 function getInsightsExperiences() {
@@ -9478,21 +9500,11 @@ function renderDailyBriefing() {
   syncDailyLocationInputs(input.value.trim() || inferred);
   const briefing = state.dailyBriefing;
   if (!briefing) {
-    const horoscopeItems = buildClientDailyHoroscope();
     status.textContent = t("labels.dailyReady");
     box.innerHTML = `
       <div id="dailyMediaStatus" class="daily-media-status" aria-live="polite"></div>
       <p class="card-meta">${t("labels.dailyEmpty")}</p>
       ${renderDailyReliabilityPanel(null)}
-      <section class="daily-horoscope" id="dailyHoroscopeSection">
-        <div class="daily-news-group-heading">
-          <h3>${t("labels.dailyHoroscope")}</h3>
-          <span class="pill">${t("labels.dailySourceLocalFallback")}</span>
-        </div>
-        <div class="horoscope-grid">
-          ${horoscopeItems.map((item) => `<article><strong>${escapeHtml(item.sign)}</strong><p>${escapeHtml(item.text)}</p></article>`).join("")}
-        </div>
-      </section>
     `;
     refreshDailyBriefing({ silent: true });
     return;
@@ -9501,7 +9513,6 @@ function renderDailyBriefing() {
     refreshDailyBriefing({ silent: true });
   }
   hydrateDailyRouteFromHash();
-  const horoscopeItems = (briefing.horoscope || []).length ? briefing.horoscope : buildClientDailyHoroscope();
   status.textContent = `${t("labels.dailyReady")} · ${formatDate(briefing.generatedAt)}`;
   box.innerHTML = `
     <div class="daily-briefing-header">
@@ -9516,17 +9527,6 @@ function renderDailyBriefing() {
     ${renderDailyArticleDetail()}
     ${renderDailyWeather(briefing.weather)}
     ${renderDailyGroups(briefing)}
-    <section class="daily-horoscope" id="dailyHoroscopeSection">
-      <div class="daily-news-group-heading">
-        <h3>${t("labels.dailyHoroscope")}</h3>
-        <span class="pill">${t("labels.dailyHoroscopeActive")}</span>
-      </div>
-      <div class="horoscope-grid">
-        ${horoscopeItems
-          .map((item) => `<article><strong>${escapeHtml(item.sign)}</strong><p>${escapeHtml(item.text)}</p></article>`)
-          .join("")}
-      </div>
-    </section>
 `;
 }
 
@@ -9538,8 +9538,6 @@ function buildDailyReliabilityChecks(briefing = state.dailyBriefing) {
   const hasLocalGroup = groups.some((group) => group.id === "local") || localSections.length > 0;
   const hasWorldGroup = groups.some((group) => group.id === "world") || worldSections.length > 0;
   const hasWeather = Boolean(briefing?.weather && !briefing.weather.unavailable);
-  const hasRemoteHoroscope = Boolean(briefing?.horoscope?.length);
-  const hasFallbackHoroscope = buildClientDailyHoroscope().length >= 12;
   const agendaLinks = buildClientAgendaLinks(briefing?.location || inferPrimaryLocation());
   const mediaLinks = buildClientDailyMediaLinks(briefing?.location || inferPrimaryLocation());
   const mediaPreviews = collectDailyMediaPreviews();
@@ -9553,7 +9551,6 @@ function buildDailyReliabilityChecks(briefing = state.dailyBriefing) {
           news: "News content",
           split: "Local/world separation",
           weather: "Weather active",
-          horoscope: "Horoscope",
           listings: "Listings actions",
           multimedia: "Multimedia paths",
           voice: "Voice/manual commands",
@@ -9566,7 +9563,6 @@ function buildDailyReliabilityChecks(briefing = state.dailyBriefing) {
           news: "Contenido de noticias",
           split: "Separación local/mundial",
           weather: "Clima activo",
-          horoscope: "Horóscopo",
           listings: "Acciones de cartelera",
           multimedia: "Rutas multimedia",
           voice: "Voz/comandos manuales",
@@ -9596,14 +9592,6 @@ function buildDailyReliabilityChecks(briefing = state.dailyBriefing) {
       ok: hasWeather,
       content: true,
       detail: hasWeather ? `${briefing.weather?.source || "Open-Meteo"}` : state.language === "en" ? "Weather is unavailable or pending refresh." : "El clima no está disponible o falta refrescar.",
-    },
-    {
-      key: "horoscope",
-      label: labels.horoscope,
-      ok: hasRemoteHoroscope || hasFallbackHoroscope,
-      interactive: true,
-      fallback: !hasRemoteHoroscope && hasFallbackHoroscope,
-      detail: hasRemoteHoroscope ? state.language === "en" ? "Briefing includes horoscope." : "El Diario incluye horóscopo." : `${labels.fallback}: ${hasFallbackHoroscope ? "12" : "0"} ${state.language === "en" ? "signs" : "signos"}.`,
     },
     {
       key: "listings",
@@ -9769,7 +9757,7 @@ function renderAgendaLinks(links) {
   `;
 }
 
-function renderDailyActionCenter(agendaLinks, mediaActions, horoscopeItems) {
+function renderDailyActionCenter(agendaLinks, mediaActions) {
   return `
     <section class="daily-action-center">
       <div class="daily-news-group-heading">
@@ -9797,13 +9785,6 @@ function renderDailyActionCenter(agendaLinks, mediaActions, horoscopeItems) {
           <div class="daily-action-buttons">
             ${mediaActions.map(renderDailyActionButton).join("")}
           </div>
-        </article>
-        <article class="daily-action-card">
-          <strong>${escapeHtml(t("labels.dailyActionHoroscope"))}</strong>
-          <p>${escapeHtml(t("labels.dailyActionHoroscopeDetail"))}</p>
-          <button class="primary-button" type="button" data-daily-scroll="#dailyHoroscopeSection">
-            ${escapeHtml(t("labels.dailyViewHoroscope"))} · ${horoscopeItems.length}
-          </button>
         </article>
         <article class="daily-action-card">
           <strong>${escapeHtml(t("labels.dailyActionVoice"))}</strong>
@@ -10212,15 +10193,6 @@ function handleDailyFlowAction(flow) {
       detail: t("labels.dailyExploreDetail"),
       bodyHtml: renderDailyExplorePanel(),
     });
-    return;
-  }
-  if (flow === "horoscope") {
-    setDailyActionResult({
-      title: t("labels.dailyActionHoroscope"),
-      detail: t("labels.dailyHoroscopeVisible"),
-      bodyHtml: renderDailyHoroscopeInline(),
-    });
-    document.getElementById("dailyStaticActionResult")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     return;
   }
   if (flow === "voice") {
@@ -17675,7 +17647,7 @@ function generatePublicationDraft() {
   const publicationExperiences = getPublicationExperiences();
   const selectedParticipantId = state.publicationFilters?.pilotParticipantId || "all";
   const reportExperiences = getReportExperiences().filter(
-    (item) => selectedParticipantId === "all" || item.pilotParticipantId === selectedParticipantId,
+    (item) => experienceMatchesPilotParticipant(item, selectedParticipantId),
   );
   const experiences = source === "latest"
     ? [...publicationExperiences].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 8)
@@ -18970,7 +18942,7 @@ function getReportExperiences() {
       const participantMatch =
         !state.reportFilters.pilotParticipantId ||
         state.reportFilters.pilotParticipantId === "all" ||
-        item.pilotParticipantId === state.reportFilters.pilotParticipantId;
+        experienceMatchesPilotParticipant(item, state.reportFilters.pilotParticipantId);
       const peopleText = `${item.people || ""}`.toLowerCase();
       const objectiveText = `${item.objective || ""}`.toLowerCase();
       const eventText = buildExperienceEventSearchText(item).toLowerCase();
@@ -26362,7 +26334,7 @@ function buildParallelBacklog() {
     es: {
       dailyTitle: "Diario informativo",
       dailyDetail: dailyReady
-        ? `${dailyReadiness.score}% listo: flujo de lectura, cartelera, multimedia, horóscopo y voz están operativos. ${dailyReadiness.contentReady ? "Contenido actualizado disponible." : "Falta refrescar contenido real."}`
+        ? `${dailyReadiness.score}% listo: flujo de lectura, cartelera, multimedia y voz están operativos. ${dailyReadiness.contentReady ? "Contenido actualizado disponible." : "Falta refrescar contenido real."}`
         : `Falta cerrar módulos del Diario: ${dailyReadiness.missing.join(", ")}.`,
       dailyAction: "Revisar panel",
       qualityTitle: "Calidad de captura",
@@ -26416,7 +26388,7 @@ function buildParallelBacklog() {
     en: {
       dailyTitle: "Daily briefing",
       dailyDetail: dailyReady
-        ? `${dailyReadiness.score}% ready: reading flow, listings, multimedia, horoscope, and voice are operational. ${dailyReadiness.contentReady ? "Updated content is available." : "Real content still needs refresh."}`
+        ? `${dailyReadiness.score}% ready: reading flow, listings, multimedia, and voice are operational. ${dailyReadiness.contentReady ? "Updated content is available." : "Real content still needs refresh."}`
         : `Daily modules still missing: ${dailyReadiness.missing.join(", ")}.`,
       dailyAction: "Review Dashboard",
       qualityTitle: "Capture quality",
@@ -27081,7 +27053,7 @@ async function answerQuestion() {
   const scopedExperiences = getInsightsExperiences();
   const selectedParticipantId = state.insightsFilters?.pilotParticipantId || "all";
   const matches = (await semanticSearch(question)).filter(
-    (item) => selectedParticipantId === "all" || item.pilotParticipantId === selectedParticipantId,
+    (item) => experienceMatchesPilotParticipant(item, selectedParticipantId),
   );
 
   const target = matches.length ? matches : scopedExperiences;

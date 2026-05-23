@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260523-output-polish-397";
+const CACHE_NAME = "experience-hub-pwa-20260523-reportlab-prod-398";
 const APP_SHELL = [
   "/",
   "/index.html",

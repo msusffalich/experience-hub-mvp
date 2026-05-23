@@ -6,6 +6,10 @@ const files = {
   serviceWorker: readFileSync("service-worker.js", "utf8"),
   manifest: readFileSync("manifest.webmanifest", "utf8"),
   server: readFileSync("server.js", "utf8"),
+  packageJson: readFileSync("package.json", "utf8"),
+  requirements: readFileSync("requirements.txt", "utf8"),
+  railpack: readFileSync("railpack.json", "utf8"),
+  pythonInstall: readFileSync("scripts/install-python-deps.mjs", "utf8"),
   styles: readFileSync("styles.css", "utf8"),
   sql: readFileSync("database/workspace-events-assets.sql", "utf8"),
   uploadAttemptsSql: readFileSync("database/asset-upload-attempts.sql", "utf8"),
@@ -216,6 +220,13 @@ assert(files.app.includes("Reparación de adjuntos") && files.app.includes("Atta
 assert(files.app.includes("dashboardAttachmentFeedback"), "Attachment repair feedback still depends only on global notifications.");
 assert(files.styles.includes(".dashboard-attachment-summary") && files.styles.includes(".dashboard-attachment-actions") && files.styles.includes(".dashboard-attachment-feedback"), "Styles are missing Dashboard attachment repair UI.");
 assert(files.uxAudit.includes("Usuario diario") && files.uxAudit.includes("Administración") && files.uxAudit.includes("simple por fuera"), "UX/UI audit does not document the daily/admin separation.");
+assert(files.requirements.includes("reportlab"), "Python requirements must install ReportLab for production PDFs.");
+assert(files.railpack.includes("\"python\""), "railpack.json must include Python so Railway can run ReportLab PDFs.");
+assert(files.packageJson.includes("\"postinstall\"") && files.packageJson.includes("install-python-deps"), "package.json must install Python PDF dependencies during deployment.");
+assert(files.pythonInstall.includes("--target") && files.pythonInstall.includes("./.python"), "Python PDF dependency installer must install into ./.python.");
+assert(files.server.includes("PYTHONPATH") && files.server.includes(".python"), "Server must expose bundled Python packages to ReportLab scripts.");
+assert(!files.index.includes('data-daily-flow="horoscope"'), "Daily should not expose horoscope until the module is reliable.");
+assert(files.app.includes("function experienceMatchesPilotParticipant"), "Participant filtering must support legacy records by participant name.");
 
 if (failures.length) {
   console.error("Smoke check failed:");
