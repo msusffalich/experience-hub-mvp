@@ -3788,6 +3788,95 @@ button,
   min-width: 0;
 }
 
+.insights-main-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 14px;
+}
+
+.insight-hub-intro {
+  display: grid;
+  gap: 8px;
+  border: 1px solid rgba(45, 116, 113, 0.18);
+  border-radius: 8px;
+  padding: 14px;
+  background: linear-gradient(145deg, rgba(13, 124, 102, 0.08), rgba(255, 255, 255, 0.96));
+}
+
+.insight-hub-intro h3 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.insight-hub-intro p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.insight-axis-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.insight-axis-card {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  border: 1px solid rgba(45, 116, 113, 0.18);
+  border-radius: 8px;
+  padding: 14px;
+  background: #fff;
+}
+
+.insight-axis-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.insight-axis-heading strong {
+  font-size: 16px;
+}
+
+.insight-axis-heading span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.insight-axis-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.insight-axis-metrics article {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  background: var(--surface);
+}
+
+.insight-axis-metrics span {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.insight-axis-metrics strong {
+  display: block;
+  margin-top: 3px;
+}
+
+.insight-priority-section {
+  display: grid;
+  gap: 12px;
+}
+
 .insight-marker {
   display: grid;
   place-items: center;
