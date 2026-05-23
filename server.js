@@ -392,6 +392,13 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (url.pathname === "/api/manual/pdf" && req.method === "POST") {
+    const user = await getRequestUser(req);
+    const body = await readJson(req);
+    sendPdf(res, await buildManualPdf(body.html, user), "manual-vibe.pdf");
+    return;
+  }
+
   if (url.pathname === "/api/exports/file" && req.method === "POST") {
     const body = await readJson(req);
     sendJson(res, 201, await saveExportFile(body));
@@ -3389,61 +3396,8 @@ async function buildPdfReport(user, report = null) {
       await appendLog("info", "PDF report generated", { count: report.rows.length, userId: user.id, source: "reportlab" });
       return reportLabPdf;
     }
-    const richPdf = await renderReportHtmlToPdf(buildReportPdfHtml(report));
-    if (richPdf) {
-      await appendLog("info", "PDF report generated", { count: report.rows.length, userId: user.id, source: "client-report-html" });
-      return richPdf;
-    }
-    const kpiLines = (report.humanKpis || []).flatMap((item) => [
-      `${item.label || "KPI"}: ${item.score || 0}/100 ${pdfBar(item.score || 0)}`,
-      item.detail || "",
-    ]);
-    const categoryLines = (report.categoryBreakdown || []).slice(0, 10).flatMap((item) => [
-      `${item.category || ""}: ${item.count || 0} experiencias | ${((Number(item.minutes || 0) / 60) || 0).toFixed(1)} h | energia ${item.avgEnergy || 0}/10 ${pdfBar(Number(item.avgEnergy || 0) * 10)}`,
-    ]);
-    const predictive = report.predictiveOutlook || null;
-    const lines = [
-      "Experience Hub MVP",
-      report.language === "en" ? "Experience report" : "Reporte de experiencias",
-      `Generado: ${report.generatedAt || new Date().toISOString()}`,
-      `Experiencias: ${report.summary.totalExperiences || 0}`,
-      `Horas capturadas: ${report.summary.capturedHours || 0}`,
-      `Energia media: ${report.summary.averageEnergy || 0}/10`,
-      `Categoria dominante: ${report.summary.topCategory || ""}`,
-      "",
-      predictive ? (report.language === "en" ? "Initial outlook" : "Proyeccion inicial") : "",
-      predictive ? `${predictive.title || ""} | confianza ${predictive.confidence || 0}% ${pdfBar(predictive.confidence || 0)}` : "",
-      predictive ? `Hipotesis: ${predictive.hypothesis || ""}` : "",
-      predictive ? `Siguiente accion: ${predictive.nextStep || ""}` : "",
-      ...((predictive?.drivers || []).slice(0, 5).map((driver) => `- ${driver}`)),
-      predictive ? "" : "",
-      report.language === "en" ? "Integrated reading" : "Lectura integrada",
-      ...(report.integratedReading || []).flatMap((item) => [
-        `${item.title || ""}`,
-        `Prioridad: ${item.priority || ""}`,
-        `Evidencia: ${item.evidence || ""}`,
-        `Accion: ${item.action || ""}`,
-        "",
-      ]),
-      kpiLines.length ? (report.language === "en" ? "Human indexes" : "Indices humanos") : "",
-      ...kpiLines,
-      kpiLines.length ? "" : "",
-      categoryLines.length ? (report.language === "en" ? "Category breakdown" : "Desglose por categoria") : "",
-      ...categoryLines,
-      categoryLines.length ? "" : "",
-      report.language === "en" ? "Map routes" : "Rutas del mapa",
-      ...(report.mapRoutes || []).map((route) => `${route.title || ""}: ${route.count || 0} experiencias | energia ${route.avgEnergy || 0}/10`),
-      "",
-      (report.multimodalEvidence || []).length ? (report.language === "en" ? "Multimodal evidence" : "Evidencia multimodal") : "",
-      ...(report.multimodalEvidence || []).slice(0, 8).flatMap((item) => [
-        `${item.experienceTitle || ""} | ${item.name || ""} | ${item.kind || ""}`,
-        `${item.analyticalText || item.manualNote || ""}`,
-      ]),
-      (report.multimodalEvidence || []).length ? "" : "",
-      ...report.rows.slice(0, 40).map((item) => `${item.fecha || ""} | ${item.titulo || ""} | ${item.categoría || item.categoria || ""} | ${item.energia || ""}/10`),
-    ];
-    await appendLog("info", "PDF report generated", { count: report.rows.length, userId: user.id, source: "client-report" });
-    return createSimplePdf(lines);
+    await appendLog("error", "ReportLab PDF required but unavailable", { userId: user.id, document: "report" });
+    throw new HttpError(503, "reportlab_unavailable");
   }
   const experiences = await listExperiences(user);
   const sorted = [...experiences].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
@@ -3472,18 +3426,8 @@ async function buildPublicationPdf(html, user = { id: LOCAL_USER_ID }) {
     await appendLog("info", "Publication PDF generated", { userId: user.id, source: "reportlab" });
     return reportLabPdf;
   }
-  const printable = normalizePublicationHtmlForPdf(html);
-  const pdf = await renderReportHtmlToPdf(printable);
-  if (pdf) {
-    await appendLog("info", "Publication PDF generated", { userId: user.id, source: "publication-html" });
-    return pdf;
-  }
-  await appendLog("warn", "Publication PDF fallback used", { userId: user.id });
-  return createSimplePdf([
-    "Experience Hub - Publicacion inteligente",
-    "El servidor no pudo renderizar el PDF visual avanzado.",
-    "Usa Exportar HTML como salida visual equivalente o configura Chrome/Edge en el entorno del servidor.",
-  ]);
+  await appendLog("error", "ReportLab PDF required but unavailable", { userId: user.id, document: "publication" });
+  throw new HttpError(503, "reportlab_unavailable");
 }
 
 async function buildInsightsPdf(payload = {}, user = { id: LOCAL_USER_ID }) {
@@ -3492,25 +3436,24 @@ async function buildInsightsPdf(payload = {}, user = { id: LOCAL_USER_ID }) {
     await appendLog("info", "Insights PDF generated", { userId: user.id, source: "reportlab" });
     return reportLabPdf;
   }
-  await appendLog("warn", "Insights PDF fallback used", { userId: user.id });
-  const axes = Array.isArray(payload.axes) ? payload.axes : [];
-  const insights = Array.isArray(payload.insights) ? payload.insights : [];
-  return createSimplePdf([
-    "Vibe - Hallazgos de experiencias",
-    `Generado: ${payload.generatedAt || new Date().toISOString()}`,
-    `Alcance: ${payload.participant || "General"}`,
-    `Experiencias: ${payload.experiences || 0}`,
-    "",
-    "Ejes humanos",
-    ...axes.slice(0, 8).map((axis) => `${axis.title || ""}: ${axis.items?.length || 0} experiencias, energia ${axis.avgEnergy || 0}/10`),
-    "",
-    "Hallazgos",
-    ...insights.slice(0, 12).flatMap((item, index) => [
-      `${index + 1}. ${item.title || ""}`,
-      item.description || "",
-      item.action ? `Accion: ${item.action}` : "",
-    ]),
-  ]);
+  await appendLog("error", "ReportLab PDF required but unavailable", { userId: user.id, document: "insights" });
+  throw new HttpError(503, "reportlab_unavailable");
+}
+
+async function buildManualPdf(html, user = { id: LOCAL_USER_ID }) {
+  if (typeof html !== "string" || !html.trim()) {
+    throw new HttpError(400, "manual_html_required");
+  }
+  const reportLabPdf = await renderReportLabPdf("publication_pdf_reportlab.py", {
+    title: "Manual Vibe",
+    html,
+  });
+  if (reportLabPdf) {
+    await appendLog("info", "Manual PDF generated", { userId: user.id, source: "reportlab" });
+    return reportLabPdf;
+  }
+  await appendLog("error", "ReportLab PDF required but unavailable", { userId: user.id, document: "manual" });
+  throw new HttpError(503, "reportlab_unavailable");
 }
 
 function normalizePublicationHtmlForPdf(html) {

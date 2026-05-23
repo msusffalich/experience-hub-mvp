@@ -9,10 +9,10 @@
     <meta name="apple-mobile-web-app-title" content="Experience Hub" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>Experience Hub MVP</title>
-    <link rel="manifest" href="manifest.webmanifest?v=20260523-pdf-primary-scope-400" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260523-reportlab-only-401" />
     <link rel="icon" href="icons/vibe-icon-192.png" type="image/png" />
     <link rel="apple-touch-icon" href="icons/vibe-apple-touch.png" />
-    <link rel="stylesheet" href="styles.css?v=20260523-pdf-primary-scope-400" />
+    <link rel="stylesheet" href="styles.css?v=20260523-reportlab-only-401" />
   </head>
   <body>
     <noscript>
@@ -840,7 +840,7 @@
             <div class="manual-version-card">
               <div>
                 <span id="manualVersionEyebrow">Versión vigente</span>
-                <strong id="manualVersionValue">20260523-pdf-primary-scope-400</strong>
+                <strong id="manualVersionValue">20260523-reportlab-only-401</strong>
                 <p id="manualVersionSummary">Guía práctica organizada por temas para entender el flujo de la app sin leer todo de corrido.</p>
               </div>
               <div class="manual-guide-grid" aria-label="Estructura del manual">
@@ -873,7 +873,8 @@
               </label>
               <button id="manualClearSearchButton" class="ghost-button" type="button">Limpiar búsqueda</button>
               <button id="manualExportMarkdownButton" class="ghost-button" type="button">Exportar Markdown</button>
-              <button id="manualExportHtmlButton" class="ghost-button" type="button">HTML imprimible</button>
+              <button id="manualExportPdfButton" class="primary-button" type="button">Descargar PDF editado ReportLab</button>
+              <button id="manualExportHtmlButton" class="ghost-button technical-export" type="button" hidden>HTML imprimible</button>
               <button id="manualMarkAllButton" class="ghost-button" type="button">Marcar todo</button>
               <button id="manualResetReviewButton" class="ghost-button" type="button">Reiniciar revisión</button>
               <span id="manualResultCount" class="card-meta"></span>
@@ -1059,7 +1060,7 @@
       </main>
     </div>
 
-    <script src="app.js?v=20260523-pdf-primary-scope-400"></script>
+    <script src="app.js?v=20260523-reportlab-only-401"></script>
 </body>
 </html>
 

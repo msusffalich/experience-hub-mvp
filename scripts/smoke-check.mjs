@@ -231,6 +231,12 @@ assert(files.app.includes("pilotParticipantFilter.disabled = false"), "Report pa
 assert(files.index.includes("Descargar PDF editado ReportLab"), "Reports must expose edited ReportLab PDF as a primary action.");
 assert(files.index.includes("Descargar PDF de hallazgos"), "Findings must expose PDF as the primary output.");
 assert(files.index.includes('id="exportInsightsHtmlButton"') && files.index.includes('id="exportInsightsHtmlButton" class="ghost-button technical-export" type="button" hidden'), "Findings HTML export must not appear as a primary user action.");
+assert(files.index.includes("manualExportPdfButton"), "Manual must expose edited ReportLab PDF export.");
+assert(files.server.includes("/api/manual/pdf"), "Server must expose Manual PDF generation.");
+assert(!files.app.includes("PDF fallback exported as printable HTML"), "Report PDF failure must not silently download HTML fallback.");
+assert(!files.app.includes("HTML was downloaded as a printable backup"), "Findings PDF failure must not silently download HTML fallback.");
+assert(!files.app.includes("HTML was exported instead"), "Publication PDF failure must not silently export HTML fallback.");
+assert(files.server.includes("throw new HttpError(503, \"reportlab_unavailable\")"), "Server must fail clearly when ReportLab is unavailable instead of returning a fake PDF.");
 
 if (failures.length) {
   console.error("Smoke check failed:");

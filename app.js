@@ -1,4 +1,4 @@
-const APP_VERSION = "20260523-pdf-primary-scope-400";
+const APP_VERSION = "20260523-reportlab-only-401";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -5730,6 +5730,7 @@ function applyLanguage() {
   manualReviewFilter.options[2].textContent = state.language === "en" ? "Reviewed" : "Revisadas";
   document.getElementById("manualClearSearchButton").textContent = state.language === "en" ? "Clear search" : "Limpiar búsqueda";
   document.getElementById("manualExportMarkdownButton").textContent = state.language === "en" ? "Export Markdown" : "Exportar Markdown";
+  document.getElementById("manualExportPdfButton").textContent = state.language === "en" ? "Download edited ReportLab PDF" : "Descargar PDF editado ReportLab";
   document.getElementById("manualExportHtmlButton").textContent = state.language === "en" ? "Printable HTML" : "HTML imprimible";
   document.getElementById("manualMarkAllButton").textContent = state.language === "en" ? "Mark all" : "Marcar todo";
   document.getElementById("manualResetReviewButton").textContent = state.language === "en" ? "Reset review" : "Reiniciar revisión";
@@ -6408,6 +6409,7 @@ function setupActions() {
   document.getElementById("manualExportMarkdownButton").addEventListener("click", () => {
     downloadBlob(new Blob([buildManualMarkdown()], { type: "text/markdown;charset=utf-8" }), "manual-usuario-experience-hub.md");
   });
+  document.getElementById("manualExportPdfButton").addEventListener("click", exportManualPdf);
   document.getElementById("manualExportHtmlButton").addEventListener("click", () => {
     downloadBlob(new Blob([buildManualPrintableHtml()], { type: "text/html;charset=utf-8" }), "manual-usuario-experience-hub.html");
   });
@@ -17618,9 +17620,10 @@ function downloadPrintableReport() {
 }
 
 async function downloadPdfReport() {
+  setReportFlowStatus(state.language === "en" ? "Generating edited ReportLab PDF..." : "Generando PDF editado ReportLab...");
   if (!state.apiOnline) {
-    markReportExport("pdf", buildReportExportPayload(), "fallback-html");
-    downloadPrintableReport();
+    setReportFlowStatus(state.language === "en" ? "PDF requires the API. No HTML fallback was downloaded." : "El PDF requiere la API. No se descargo HTML como sustituto.");
+    notify(state.language === "en" ? "PDF requires the API. No HTML fallback was downloaded." : "El PDF requiere la API. No se descargo HTML como sustituto.", "error");
     return;
   }
   const payload = buildReportExportPayload();
@@ -17637,11 +17640,14 @@ async function downloadPdfReport() {
     downloadBlob(await response.blob(), "reporte-experiencias.pdf");
     markReportExport("pdf", payload, "ok");
     renderReportAcceptancePanel();
-    notify(state.language === "en" ? "Report PDF exported." : "PDF del reporte exportado.", "success");
-  } catch {
-    markReportExport("pdf", payload, "fallback-html");
-    downloadPrintableReport();
-    notify(state.language === "en" ? "PDF fallback exported as printable HTML." : "Respaldo PDF exportado como HTML imprimible.", "warn");
+    setReportFlowStatus(state.language === "en" ? "Edited ReportLab PDF generated." : "PDF editado ReportLab generado.");
+    notify(state.language === "en" ? "Edited ReportLab report PDF generated." : "PDF editado ReportLab del reporte generado.", "success");
+  } catch (error) {
+    console.warn("Report PDF export failed", error);
+    markReportExport("pdf", payload, "error");
+    renderReportAcceptancePanel();
+    setReportFlowStatus(state.language === "en" ? "ReportLab PDF failed. Check server/Railway logs; HTML was not downloaded as a substitute." : "Fallo el PDF ReportLab. Revisa logs del servidor/Railway; no se descargo HTML como sustituto.");
+    notify(state.language === "en" ? "ReportLab PDF failed. HTML was not downloaded as a substitute." : "Fallo el PDF ReportLab. No se descargo HTML como sustituto.", "error");
   }
 }
 
@@ -18572,13 +18578,12 @@ async function exportCurrentPublicationPdf() {
   const warning = draft.approvalStatus !== "approved" ? t("labels.publicationExportReviewWarning") : "";
   const html = buildPublicationHtml(draft);
   if (!state.apiOnline) {
-    addPublicationHistory(draft, "exported", "PDF fallback HTML");
-    persistPublicationDraft(draft);
-    downloadPublicationBlob(new Blob([html], { type: "text/html;charset=utf-8" }), "publicacion-inteligente.html", warning || (state.language === "en" ? "PDF requires the local API. HTML was exported instead." : "El PDF requiere la API local. Se exportó HTML como alternativa."));
+    document.getElementById("publicationStatus").textContent = state.language === "en" ? "PDF requires the API. No HTML fallback was downloaded." : "El PDF requiere la API. No se descargo HTML como sustituto.";
+    notify(document.getElementById("publicationStatus").textContent, "error");
     return;
   }
   try {
-    document.getElementById("publicationStatus").textContent = state.language === "en" ? "Generating publication PDF..." : "Generando PDF de publicación...";
+    document.getElementById("publicationStatus").textContent = state.language === "en" ? "Generating edited ReportLab publication PDF..." : "Generando PDF editado ReportLab de publicacion...";
     const response = await fetch(`${API_BASE}/publication/pdf`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...authHeader() },
@@ -18586,14 +18591,14 @@ async function exportCurrentPublicationPdf() {
     });
     if (!response.ok) throw new Error(await response.text());
     const blob = await response.blob();
-    addPublicationHistory(draft, "exported", "PDF");
+    addPublicationHistory(draft, "exported", "PDF ReportLab");
     persistPublicationDraft(draft);
     downloadPublicationBlob(blob, "publicacion-inteligente.pdf", warning);
+    document.getElementById("publicationStatus").textContent = state.language === "en" ? "Edited ReportLab publication PDF generated." : "PDF editado ReportLab de publicacion generado.";
   } catch (error) {
     console.warn("Publication PDF export failed", error);
-    addPublicationHistory(draft, "exported", "PDF fallback HTML");
-    persistPublicationDraft(draft);
-    downloadPublicationBlob(new Blob([html], { type: "text/html;charset=utf-8" }), "publicacion-inteligente.html", warning || (state.language === "en" ? "PDF could not be generated. HTML was exported instead." : "No se pudo generar el PDF. Se exportó HTML como alternativa."));
+    document.getElementById("publicationStatus").textContent = state.language === "en" ? "ReportLab PDF failed. Check server/Railway logs; HTML was not downloaded as a substitute." : "Fallo el PDF ReportLab. Revisa logs del servidor/Railway; no se descargo HTML como sustituto.";
+    notify(document.getElementById("publicationStatus").textContent, "error");
   }
 }
 
@@ -19633,6 +19638,7 @@ function exportInsightsHtml() {
 
 async function exportInsightsPdf() {
   const payload = buildInsightsExportPayload();
+  notify(state.language === "en" ? "Generating edited findings PDF..." : "Generando PDF editado de hallazgos...", "info");
   try {
     const response = await fetch(`${API_BASE}/insights/pdf`, {
       method: "POST",
@@ -19644,14 +19650,14 @@ async function exportInsightsPdf() {
     });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     downloadBlob(await response.blob(), "hallazgos-experiencias.pdf");
-    notify(state.language === "en" ? "Findings PDF downloaded." : "PDF de hallazgos descargado.", "success");
+    notify(state.language === "en" ? "Edited findings PDF generated." : "PDF editado de hallazgos generado.", "success");
   } catch (error) {
-    exportInsightsHtml();
+    console.warn("Insights PDF export failed", error);
     notify(
       state.language === "en"
-        ? "The server could not create the PDF. HTML was downloaded as a printable backup."
-        : "El servidor no pudo crear el PDF. Se descargó HTML imprimible como respaldo.",
-      "warning",
+        ? "ReportLab PDF failed. Check server/Railway logs; HTML was not downloaded as a substitute."
+        : "Fallo el PDF ReportLab. Revisa logs del servidor/Railway; no se descargo HTML como sustituto.",
+      "error",
     );
   }
 }
@@ -20517,6 +20523,28 @@ function buildManualPrintableHtml() {
   ${sectionsHtml}
 </body>
 </html>`;
+}
+
+async function exportManualPdf() {
+  const html = buildManualPrintableHtml();
+  notify(state.language === "en" ? "Generating edited manual PDF..." : "Generando PDF editado del manual...", "info");
+  if (!state.apiOnline) {
+    notify(state.language === "en" ? "PDF requires the API. No HTML fallback was downloaded." : "El PDF requiere la API. No se descargo HTML como sustituto.", "error");
+    return;
+  }
+  try {
+    const response = await fetch(`${API_BASE}/manual/pdf`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify({ html, language: state.language, version: APP_VERSION }),
+    });
+    if (!response.ok) throw new Error(await response.text());
+    downloadBlob(await response.blob(), "manual-vibe.pdf");
+    notify(state.language === "en" ? "Edited manual PDF generated." : "PDF editado del manual generado.", "success");
+  } catch (error) {
+    console.warn("Manual PDF export failed", error);
+    notify(state.language === "en" ? "ReportLab PDF failed. Check server/Railway logs; HTML was not downloaded as a substitute." : "Fallo el PDF ReportLab. Revisa logs del servidor/Railway; no se descargo HTML como sustituto.", "error");
+  }
 }
 
 function renderDevelopmentRulesPanel() {
@@ -21520,7 +21548,7 @@ async function runCoreMvpOperationalTest() {
   }
   const reportPayload = buildReportExportPayload();
   ["json", "csv", "html"].forEach((format) => markReportExport(format, reportPayload, "ok"));
-  markReportExport("pdf", reportPayload, "fallback-html");
+  markReportExport("pdf", reportPayload, "pending-reportlab");
   const backupPayload = buildLocalBackupPayload();
   await attachBackupIntegrity(backupPayload);
   recordBackupAudit("test", backupPayload);

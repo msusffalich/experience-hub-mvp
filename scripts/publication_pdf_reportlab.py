@@ -62,7 +62,7 @@ def page(canvas, doc):
     canvas.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, fill=1, stroke=0)
     canvas.setFillColor(BRAND)
     canvas.setFont("Helvetica-Bold", 8)
-    canvas.drawString(MARGIN, 0.32 * inch, "Vibe - Publicacion inteligente")
+    canvas.drawString(MARGIN, 0.32 * inch, "Vibe - Documento editado ReportLab")
     canvas.setFillColor(MUTED)
     canvas.setFont("Helvetica", 8)
     canvas.drawRightString(PAGE_WIDTH - MARGIN, 0.32 * inch, f"Pagina {doc.page}")
