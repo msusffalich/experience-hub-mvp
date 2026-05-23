@@ -1,4 +1,4 @@
-const APP_VERSION = "20260523-report-insight-labels-412";
+const APP_VERSION = "20260523-pdf-stable-layout-413";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";

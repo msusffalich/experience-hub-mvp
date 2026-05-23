@@ -217,6 +217,35 @@ class AxisRadar(Flowable):
         c.restoreState()
 
 
+def axis_legend_panel(axes):
+    rows = [[
+        para("Eje de analisis", "Small"),
+        para("Lectura", "Small"),
+        para("Evidencia", "Small"),
+        para("Accion sugerida", "Small"),
+    ]]
+    for axis in axes[:8]:
+        rows.append([
+            para(axis.get("title", ""), "Small"),
+            para(f"{axis.get('status', '-')}. Energia {axis.get('avgEnergy', 0)}/10.", "Small"),
+            para(f"{len(axis.get('items') or [])} experiencias · {axis.get('assets', 0)} activos", "Small"),
+            para(short(axis.get("action", ""), 110), "Small"),
+        ])
+    table = Table(rows, colWidths=[1.35 * inch, 1.35 * inch, 1.2 * inch, 1.77 * inch])
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), BRAND),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("BACKGROUND", (0, 1), (-1, -1), colors.white),
+        ("GRID", (0, 0), (-1, -1), 0.35, LINE),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 6),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+        ("TOPPADDING", (0, 0), (-1, -1), 6),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+    ]))
+    return table
+
+
 class Waffle(Flowable):
     def __init__(self, title, value, note):
         super().__init__()
@@ -332,7 +361,8 @@ def build_story(payload):
         ("Participante", short(payload.get("participant") or "General", 16)),
     ]))
     story.append(Spacer(1, 10))
-    story.append(AxisRadar(axes))
+    story.append(para("Leyenda de ejes humanos", "H1x"))
+    story.append(axis_legend_panel(axes))
     story.append(Spacer(1, 8))
     avg_axis_energy = sum(num(axis.get("avgEnergy")) for axis in axes) / max(1, len(axes))
     coverage = min(100, (sum(len(axis.get("items") or []) for axis in axes) / max(1, len(axes) * max(1, num(experiences)))) * 100)

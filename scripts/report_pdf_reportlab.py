@@ -35,6 +35,7 @@ MUTED = colors.HexColor("#526273")
 SOFT = colors.HexColor("#f3f7f8")
 LINE = colors.HexColor("#d8e0e8")
 LOGO_PATH = Path(__file__).resolve().parents[1] / "icons" / "vibe-logo-pdf.png"
+ICON_PATH = Path(__file__).resolve().parents[1] / "icons" / "vibe-icon-192.png"
 
 
 def clean(value):
@@ -99,6 +100,11 @@ def draw_logo(canvas, x, y, width=1.25 * inch):
         canvas.drawImage(str(LOGO_PATH), x, y, width=width, height=width * 0.545, preserveAspectRatio=True, mask="auto")
 
 
+def draw_icon(canvas, x, y, size=0.62 * inch):
+    if ICON_PATH.exists():
+        canvas.drawImage(str(ICON_PATH), x, y, width=size, height=size, preserveAspectRatio=True, mask="auto")
+
+
 def draw_page(canvas, doc):
     canvas.saveState()
     canvas.setFillColor(colors.HexColor("#f8fafb"))
@@ -149,11 +155,11 @@ class CoverBlock(Flowable):
         canvas.saveState()
         canvas.setFillColor(BRAND)
         canvas.roundRect(x, y, self.width, 6.75 * inch, 18, fill=1, stroke=0)
-        logo_panel_x = x + self.width - 2.22 * inch
-        logo_panel_y = y + 5.18 * inch
+        logo_panel_x = x + self.width - 0.98 * inch
+        logo_panel_y = y + 5.45 * inch
         canvas.setFillColor(colors.white)
-        canvas.roundRect(logo_panel_x, logo_panel_y, 1.88 * inch, 0.82 * inch, 10, fill=1, stroke=0)
-        draw_logo(canvas, logo_panel_x + 0.16 * inch, logo_panel_y + 0.16 * inch, 1.55 * inch)
+        canvas.roundRect(logo_panel_x, logo_panel_y, 0.68 * inch, 0.68 * inch, 8, fill=1, stroke=0)
+        draw_icon(canvas, logo_panel_x + 0.06 * inch, logo_panel_y + 0.06 * inch, 0.56 * inch)
         canvas.restoreState()
         frame = Frame(x + 0.38 * inch, y + 0.55 * inch, PAGE_WIDTH - 2 * MARGIN - 0.76 * inch, 5.65 * inch, showBoundary=0)
         frame.addFromList(list(self.flowables), canvas)
