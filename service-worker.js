@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260523-pdf-stable-layout-413";
+const CACHE_NAME = "experience-hub-pwa-20260523-report-legend-cover-414";
 const APP_SHELL = [
   "/",
   "/index.html",

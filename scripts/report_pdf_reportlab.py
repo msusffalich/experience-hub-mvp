@@ -55,6 +55,10 @@ def polish(value):
         .replace("tecnico", "técnico")
         .replace("accion", "acción")
         .replace("Accion", "Acción")
+        .replace("acciónable", "accionable")
+        .replace("acciónables", "accionables")
+        .replace("acciónes", "acciones")
+        .replace("Acciónes", "Acciones")
         .replace("Proyeccion", "Proyección")
         .replace("proxima", "próxima")
     )
@@ -76,7 +80,7 @@ def num(value, default=0):
 
 def style_sheet():
     base = getSampleStyleSheet()
-    base.add(ParagraphStyle("CoverTitle", parent=base["Title"], fontName="Helvetica-Bold", fontSize=34, leading=38, textColor=colors.white, alignment=TA_LEFT, spaceAfter=12))
+    base.add(ParagraphStyle("CoverTitle", parent=base["Title"], fontName="Helvetica-Bold", fontSize=24, leading=29, textColor=colors.white, alignment=TA_LEFT, spaceAfter=10))
     base.add(ParagraphStyle("CoverSubtitle", parent=base["Normal"], fontSize=12, leading=17, textColor=colors.HexColor("#eaf3f4")))
     base.add(ParagraphStyle("H1x", parent=base["Heading1"], fontName="Helvetica-Bold", fontSize=20, leading=24, textColor=BRAND, spaceBefore=12, spaceAfter=10))
     base.add(ParagraphStyle("H2x", parent=base["Heading2"], fontName="Helvetica-Bold", fontSize=13, leading=16, textColor=BRAND, spaceBefore=4, spaceAfter=6))
@@ -105,6 +109,15 @@ def draw_icon(canvas, x, y, size=0.62 * inch):
         canvas.drawImage(str(ICON_PATH), x, y, width=size, height=size, preserveAspectRatio=True, mask="auto")
 
 
+def icon_flowable(size=0.78 * inch):
+    if not ICON_PATH.exists():
+        return para("Vibe", "CoverSubtitle")
+    image = Image(str(ICON_PATH))
+    image.drawWidth = size
+    image.drawHeight = size
+    return image
+
+
 def draw_page(canvas, doc):
     canvas.saveState()
     canvas.setFillColor(colors.HexColor("#f8fafb"))
@@ -122,20 +135,35 @@ def cover(report):
     summary = report.get("summary") or {}
     generated = clean(report.get("generatedAt") or datetime.now(timezone.utc).isoformat())
     rows = report.get("rows") or []
+    title_block = Table(
+        [[
+            [para("Reporte ejecutivo de experiencias", "CoverTitle"), para("Lectura humana, evidencia multimodal y recomendaciones accionables.", "CoverSubtitle")],
+            icon_flowable(),
+        ]],
+        colWidths=[PAGE_WIDTH - 2 * MARGIN - 1.18 * inch, 0.84 * inch],
+    )
+    title_block.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), BRAND),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("ALIGN", (1, 0), (1, 0), "RIGHT"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 20),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 18),
+        ("TOPPADDING", (0, 0), (-1, -1), 22),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 22),
+        ("BOX", (0, 0), (-1, -1), 0, BRAND),
+    ]))
     return [
-        CoverBlock([
-            para("Reporte ejecutivo de experiencias", "CoverTitle"),
-            para("Lectura humana, evidencia multimodal y recomendaciones accionables.", "CoverSubtitle"),
-            Spacer(1, 0.22 * inch),
-            metric_grid([
-                ("Experiencias", summary.get("totalExperiences", len(rows))),
-                ("Horas", summary.get("capturedHours", 0)),
-                ("Energía media", f"{summary.get('averageEnergy', 0)}/10"),
-                ("Categoría dominante", summary.get("topCategory", "-")),
-            ], dark=True),
-            Spacer(1, 0.24 * inch),
-            para(f"Generado: {generated}", "CoverSubtitle"),
+        title_block,
+        Spacer(1, 0.24 * inch),
+        metric_grid([
+            ("Experiencias", summary.get("totalExperiences", len(rows))),
+            ("Horas", summary.get("capturedHours", 0)),
+            ("Energia media", f"{summary.get('averageEnergy', 0)}/10"),
         ]),
+        Spacer(1, 0.18 * inch),
+        card("Categoria dominante", summary.get("topCategory", "-"), body_limit=360),
+        Spacer(1, 0.12 * inch),
+        card("Alcance del documento", f"Generado: {generated}. Este reporte resume patrones, evidencia multimodal, indicadores humanos y acciones sugeridas para el alcance seleccionado.", body_limit=320),
         PageBreak(),
     ]
 
@@ -291,27 +319,14 @@ class VisualTile(Flowable):
         c.setFillColor(colors.Color(0.05, 0.49, 0.4, alpha=0.22))
         c.setStrokeColor(ACCENT)
         c.drawPath(path, fill=1, stroke=1)
-        labels = self.labels or ["Energia", "Datos", "Balance", "Evidencia", "Aprendizaje", "Contexto"]
-        c.setFillColor(MUTED)
-        c.setFont("Helvetica", 6.2)
-        for index, label in enumerate(labels[:count]):
-            angle = -math.pi / 2 + 2 * math.pi * index / count
-            lx = cx + math.cos(angle) * (r + 15)
-            ly = cy + math.sin(angle) * (r + 11)
-            text = polish(label)[:14]
-            if lx < cx - 4:
-                c.drawRightString(lx, ly, text)
-            elif lx > cx + 4:
-                c.drawString(lx, ly, text)
-            else:
-                c.drawCentredString(lx, ly, text)
 
 
 def metric_grid(items, dark=False):
     cells = []
     for label, value in items:
         cells.append([para(str(value), "Metric"), para(label, "MetricLabel")])
-    table = Table([cells], colWidths=[(PAGE_WIDTH - 2 * MARGIN) / 4 - 6] * 4)
+    col_count = max(1, len(items))
+    table = Table([cells], colWidths=[(PAGE_WIDTH - 2 * MARGIN) / col_count - 6] * col_count)
     table.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, -1), colors.white if not dark else colors.HexColor("#eaf3f4")),
         ("BOX", (0, 0), (-1, -1), 0.6, LINE),
@@ -415,6 +430,29 @@ def visual_dashboard(summary, rows, kpis, categories, quality):
     return table
 
 
+def full_legend_table(categories, kpis):
+    category_names = [clean(item.get("category") or "-") for item in categories[:6]]
+    kpi_names = [clean(item.get("label") or item.get("title") or item.get("name") or "-") for item in kpis[:6]]
+    rows = [[para("Grafico", "Small"), para("Nombres completos", "Small")]]
+    rows.append([para("Proporcion por categoria", "Small"), para(", ".join(category_names) or "Sin categorias suficientes", "Small")])
+    rows.append([para("Radar de ejes humanos", "Small"), para(", ".join(kpi_names) or "Energia, Confiabilidad, Balance", "Small")])
+    rows.append([para("Evolucion de energia", "Small"), para("Inicio del periodo, registros intermedios y registros recientes", "Small")])
+    rows.append([para("Confiabilidad de datos", "Small"), para("Completitud de campos: objetivo, ubicacion, personas, notas y adjuntos", "Small")])
+    table = Table(rows, colWidths=[1.65 * inch, 4.05 * inch])
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), BRAND),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("BACKGROUND", (0, 1), (-1, -1), colors.white),
+        ("GRID", (0, 0), (-1, -1), 0.35, LINE),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 6),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+        ("TOPPADDING", (0, 0), (-1, -1), 5),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+    ]))
+    return table
+
+
 def evidence_cards(items):
     selected = []
     seen = set()
@@ -486,6 +524,8 @@ def build_story(report):
     story.append(card("Lectura general", f"La libreria contiene {summary.get('totalExperiences', len(rows))} experiencias y {attachment_count} activos. La categoria dominante es {summary.get('topCategory', '-')}, con energia media {summary.get('averageEnergy', 0)}/10. Este reporte resume lo accionable y deja el detalle tecnico completo para JSON o CSV."))
     story.append(Spacer(1, 8))
     story.append(visual_dashboard(summary, rows, kpis, categories, quality))
+    story.append(Spacer(1, 8))
+    story.append(full_legend_table(categories, kpis))
     if predictive.get("title"):
         story.append(card("Proyeccion inicial", f"{predictive.get('title')}. {predictive.get('hypothesis', '')} Siguiente accion: {predictive.get('nextStep', '')}", f"Confianza: {predictive.get('confidence', 0)}%"))
 
