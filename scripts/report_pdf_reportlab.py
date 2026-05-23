@@ -96,7 +96,7 @@ def para(text, style="Bodyx"):
 
 def draw_logo(canvas, x, y, width=1.25 * inch):
     if LOGO_PATH.exists():
-        canvas.drawImage(str(LOGO_PATH), x, y, width=width, height=width * 0.5, preserveAspectRatio=True, mask="auto")
+        canvas.drawImage(str(LOGO_PATH), x, y, width=width, height=width * 0.545, preserveAspectRatio=True, mask="auto")
 
 
 def draw_page(canvas, doc):
@@ -105,8 +105,7 @@ def draw_page(canvas, doc):
     canvas.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, fill=1, stroke=0)
     canvas.setFillColor(BRAND)
     canvas.setFont("Helvetica-Bold", 8)
-    draw_logo(canvas, MARGIN, 0.16 * inch, 0.42 * inch)
-    canvas.drawString(MARGIN + 0.5 * inch, 0.32 * inch, "Vibe - Human Experience Intelligence Platform")
+    canvas.drawString(MARGIN, 0.32 * inch, "Vibe - Human Experience Intelligence Platform")
     canvas.setFillColor(MUTED)
     canvas.setFont("Helvetica", 8)
     canvas.drawRightString(PAGE_WIDTH - MARGIN, 0.32 * inch, f"Pagina {doc.page}")
@@ -150,11 +149,7 @@ class CoverBlock(Flowable):
         canvas.saveState()
         canvas.setFillColor(BRAND)
         canvas.roundRect(x, y, PAGE_WIDTH - 2 * MARGIN, 6.75 * inch, 18, fill=1, stroke=0)
-        draw_logo(canvas, x + PAGE_WIDTH - 2.5 * inch, y + 5.35 * inch, 1.75 * inch)
-        canvas.setFillColor(ACCENT)
-        canvas.circle(x + PAGE_WIDTH - 2.1 * inch, y + 1.05 * inch, 1.15 * inch, fill=1, stroke=0)
-        canvas.setFillColor(GOLD)
-        canvas.circle(x + PAGE_WIDTH - 1.2 * inch, y + 5.85 * inch, 0.55 * inch, fill=1, stroke=0)
+        draw_logo(canvas, x + PAGE_WIDTH - 2.55 * inch, y + 5.28 * inch, 1.78 * inch)
         canvas.restoreState()
         frame = Frame(x + 0.38 * inch, y + 0.55 * inch, PAGE_WIDTH - 2 * MARGIN - 0.76 * inch, 5.65 * inch, showBoundary=0)
         frame.addFromList(list(self.flowables), canvas)

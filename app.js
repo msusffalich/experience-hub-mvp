@@ -1,4 +1,4 @@
-const APP_VERSION = "20260523-pdf-logo-editorial-408";
+const APP_VERSION = "20260523-pdf-logo-content-409";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -18610,7 +18610,7 @@ async function exportCurrentPublicationPdf() {
     const response = await fetch(`${API_BASE}/publication/pdf`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...authHeader() },
-      body: JSON.stringify({ html, title: draft.title, language: state.language }),
+      body: JSON.stringify({ html, draft, title: draft.title, language: state.language }),
     });
     if (!response.ok) throw new Error(await response.text());
     const blob = await response.blob();

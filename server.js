@@ -389,7 +389,7 @@ async function handleApi(req, res, url) {
   if (url.pathname === "/api/publication/pdf" && req.method === "POST") {
     const user = await getRequestUser(req);
     const body = await readJson(req);
-    sendPdf(res, await buildPublicationPdf(body.html, user), "publicacion-inteligente.pdf");
+    sendPdf(res, await buildPublicationPdf(body, user), "publicacion-inteligente.pdf");
     return;
   }
 
@@ -3419,12 +3419,19 @@ async function buildPdfReport(user, report = null) {
   return createSimplePdf(lines);
 }
 
-async function buildPublicationPdf(html, user = { id: LOCAL_USER_ID }) {
-  if (typeof html !== "string" || !html.trim()) {
-    throw new HttpError(400, "publication_html_required");
+async function buildPublicationPdf(payload = {}, user = { id: LOCAL_USER_ID }) {
+  const html = typeof payload === "string" ? payload : payload.html;
+  const draft = typeof payload === "object" && payload ? payload.draft : null;
+  if ((!html || typeof html !== "string" || !html.trim()) && !draft) {
+    throw new HttpError(400, "publication_payload_required");
   }
   try {
-    const reportLabPdf = await renderReportLabPdf("publication_pdf_reportlab.py", { html });
+    const reportLabPdf = await renderReportLabPdf("publication_pdf_reportlab.py", {
+      html: html || "",
+      draft,
+      title: typeof payload === "object" ? payload.title : "",
+      language: typeof payload === "object" ? payload.language : "",
+    });
     await appendLog("info", "Publication PDF generated", { userId: user.id, source: "reportlab" });
     return reportLabPdf;
   } catch (error) {

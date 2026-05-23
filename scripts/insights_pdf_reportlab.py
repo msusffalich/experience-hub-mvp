@@ -80,7 +80,7 @@ def para(text, style="Bodyx"):
 
 def draw_logo(canvas, x, y, width=1.25 * inch):
     if LOGO_PATH.exists():
-        canvas.drawImage(str(LOGO_PATH), x, y, width=width, height=width * 0.5, preserveAspectRatio=True, mask="auto")
+        canvas.drawImage(str(LOGO_PATH), x, y, width=width, height=width * 0.545, preserveAspectRatio=True, mask="auto")
 
 
 def draw_page(canvas, doc):
@@ -89,8 +89,7 @@ def draw_page(canvas, doc):
     canvas.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, fill=1, stroke=0)
     canvas.setFillColor(BRAND)
     canvas.setFont("Helvetica-Bold", 8)
-    draw_logo(canvas, MARGIN, 0.16 * inch, 0.42 * inch)
-    canvas.drawString(MARGIN + 0.5 * inch, 0.32 * inch, "Vibe - Hallazgos de experiencias")
+    canvas.drawString(MARGIN, 0.32 * inch, "Vibe - Hallazgos de experiencias")
     canvas.setFillColor(MUTED)
     canvas.setFont("Helvetica", 8)
     canvas.drawRightString(PAGE_WIDTH - MARGIN, 0.32 * inch, f"Pagina {doc.page}")
@@ -113,10 +112,6 @@ class CoverBlock(Flowable):
         c.setFillColor(BRAND)
         c.roundRect(0, 0, self.width, self.height, 18, fill=1, stroke=0)
         draw_logo(c, self.width - 1.9 * inch, self.height - 1.05 * inch, 1.35 * inch)
-        c.setFillColor(ACCENT)
-        c.circle(self.width - 1.25 * inch, 1.08 * inch, 1.15 * inch, fill=1, stroke=0)
-        c.setFillColor(GOLD)
-        c.circle(self.width - 0.92 * inch, self.height - 0.9 * inch, 0.52 * inch, fill=1, stroke=0)
         c.setFillColor(colors.white)
         c.setFont("Helvetica-Bold", 30)
         c.drawString(0.38 * inch, self.height - 1.42 * inch, "Hallazgos de experiencias")

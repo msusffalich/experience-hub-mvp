@@ -65,7 +65,7 @@ def para(text, style="Bodyx"):
 
 def draw_logo(canvas, x, y, width=1.25 * inch):
     if LOGO_PATH.exists():
-        canvas.drawImage(str(LOGO_PATH), x, y, width=width, height=width * 0.5, preserveAspectRatio=True, mask="auto")
+        canvas.drawImage(str(LOGO_PATH), x, y, width=width, height=width * 0.545, preserveAspectRatio=True, mask="auto")
 
 
 def logo_flowable(width=1.35 * inch):
@@ -73,7 +73,7 @@ def logo_flowable(width=1.35 * inch):
         return para("Vibe", "CoverSub")
     image = Image(str(LOGO_PATH))
     image.drawWidth = width
-    image.drawHeight = width * 0.5
+    image.drawHeight = width * 0.545
     return image
 
 
@@ -139,8 +139,7 @@ def page(canvas, doc):
     canvas.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, fill=1, stroke=0)
     canvas.setFillColor(BRAND)
     canvas.setFont("Helvetica-Bold", 8)
-    draw_logo(canvas, MARGIN, 0.16 * inch, 0.42 * inch)
-    canvas.drawString(MARGIN + 0.5 * inch, 0.32 * inch, "Vibe - Manual operativo")
+    canvas.drawString(MARGIN, 0.32 * inch, "Vibe - Manual operativo")
     canvas.setFillColor(MUTED)
     canvas.setFont("Helvetica", 8)
     canvas.drawRightString(PAGE_WIDTH - MARGIN, 0.32 * inch, f"Pagina {doc.page}")
