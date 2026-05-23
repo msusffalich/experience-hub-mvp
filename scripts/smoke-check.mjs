@@ -222,8 +222,10 @@ assert(files.styles.includes(".dashboard-attachment-summary") && files.styles.in
 assert(files.uxAudit.includes("Usuario diario") && files.uxAudit.includes("Administración") && files.uxAudit.includes("simple por fuera"), "UX/UI audit does not document the daily/admin separation.");
 assert(files.requirements.includes("reportlab"), "Python requirements must install ReportLab for production PDFs.");
 assert(files.railpack.includes("\"python\""), "railpack.json must include Python so Railway can run ReportLab PDFs.");
+assert(files.railpack.includes("python -m pip install") && files.railpack.includes("import reportlab"), "railpack.json must install and verify ReportLab during the Railway build.");
 assert(files.packageJson.includes("\"postinstall\"") && files.packageJson.includes("install-python-deps"), "package.json must install Python PDF dependencies during deployment.");
 assert(files.pythonInstall.includes("--target") && files.pythonInstall.includes("./.python"), "Python PDF dependency installer must install into ./.python.");
+assert(files.pythonInstall.includes("RAILWAY_PROJECT_ID") && files.pythonInstall.includes("NODE_ENV"), "Python dependency installer must treat Railway/production as a hard failure when Python is missing.");
 assert(files.server.includes("PYTHONPATH") && files.server.includes(".python"), "Server must expose bundled Python packages to ReportLab scripts.");
 assert(!files.index.includes('data-daily-flow="horoscope"'), "Daily should not expose horoscope until the module is reliable.");
 assert(files.app.includes("function experienceMatchesPilotParticipant"), "Participant filtering must support legacy records by participant name.");
@@ -237,6 +239,7 @@ assert(!files.app.includes("PDF fallback exported as printable HTML"), "Report P
 assert(!files.app.includes("HTML was downloaded as a printable backup"), "Findings PDF failure must not silently download HTML fallback.");
 assert(!files.app.includes("HTML was exported instead"), "Publication PDF failure must not silently export HTML fallback.");
 assert(files.server.includes("throw new HttpError(503, \"reportlab_unavailable\")"), "Server must fail clearly when ReportLab is unavailable instead of returning a fake PDF.");
+assert(files.app.includes("function authHeader()") && files.app.includes("function authHeaders()"), "PDF exports must have a stable auth header helper.");
 
 if (failures.length) {
   console.error("Smoke check failed:");

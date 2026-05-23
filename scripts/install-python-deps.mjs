@@ -1,7 +1,14 @@
 import { existsSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 
-const isProductionBuild = Boolean(process.env.RAILWAY_ENVIRONMENT || process.env.CI);
+const isProductionBuild = Boolean(
+  process.env.RAILWAY_ENVIRONMENT
+    || process.env.RAILWAY_ENVIRONMENT_ID
+    || process.env.RAILWAY_PROJECT_ID
+    || process.env.RAILWAY_SERVICE_ID
+    || process.env.CI
+    || process.env.NODE_ENV === "production",
+);
 const requirementsPath = "requirements.txt";
 
 if (!existsSync(requirementsPath)) {

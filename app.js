@@ -1,4 +1,4 @@
-const APP_VERSION = "20260523-reportlab-only-401";
+const APP_VERSION = "20260523-reportlab-build-fix-402";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -3497,6 +3497,14 @@ const state = {
     review: "all",
   },
 };
+
+function authHeader() {
+  return state.session?.access_token ? { Authorization: `Bearer ${state.session.access_token}` } : {};
+}
+
+function authHeaders() {
+  return authHeader();
+}
 
 document.addEventListener("DOMContentLoaded", async () => {
   registerServiceWorker();
