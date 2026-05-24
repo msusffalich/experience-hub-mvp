@@ -325,6 +325,16 @@ def story_paragraphs(body):
     skip_labels = {
         "Momentos seleccionados:",
         "Selected moments:",
+        "Direccion editorial",
+        "Editorial direction",
+        "Interpretacion clara",
+        "Readable interpretation",
+        "Contexto",
+        "Context",
+        "Evidencia e interpretacion multimedia",
+        "Evidence and media interpretation",
+        "Plan de diseno y publicacion",
+        "Design and publication plan",
     }
     for part in parts:
         if part in skip_labels or part.startswith("- "):
@@ -509,14 +519,66 @@ def moment_rows(highlights):
 
 def media_rows(media):
     rows = []
-    for item in (media or [])[:8]:
+    for item in [item for item in (media or []) if item.get("included", True) is not False][:8]:
         rows.append([
             human_kind(item),
             item.get("name") or "Activo",
             item.get("experienceTitle") or "-",
-            short(item.get("analyticalText") or item.get("manualNote") or item.get("translatedText") or "Disponible para revisar.", 170),
+            evidence_plain_language(item),
         ])
     return rows or [["-", "Sin multimedia", "-", "No se selecciono multimedia para esta publicacion."]]
+
+
+def selected_media(media):
+    return [item for item in (media or []) if item.get("included", True) is not False]
+
+
+def media_selection_label(all_media, media):
+    if not all_media:
+        return "Sin multimedia disponible"
+    if not media:
+        return "Sin multimedia seleccionada"
+    if len(media) == len(all_media):
+        return "Toda la multimedia incluida"
+    return f"{len(media)} de {len(all_media)} activos seleccionados"
+
+
+def evidence_plain_language(item):
+    text = item.get("translatedText") or item.get("analyticalText") or item.get("manualNote") or item.get("originalText") or ""
+    name = item.get("name") or ""
+    health = re.search(r"salud|medic|doctor|examen|laboratorio|diagnost|glucosa|colesterol|presion|sangre|health|medical|lab", f"{text} {name}", re.I)
+    if health:
+        prefix = "Resumen claro de salud: explicar hallazgos sin diagnosticar, separando dato observado y posible siguiente paso."
+    elif str(item.get("type") or "").startswith("image/"):
+        prefix = "Lectura visual: usar como portada, galeria o evidencia contextual."
+    elif str(item.get("type") or "").startswith(("audio/", "video/")):
+        prefix = "Memoria hablada o audiovisual: usar transcripcion, tono y momento vivido."
+    else:
+        prefix = "Documento de soporte: convertir el contenido en lenguaje claro."
+    detail = short(text, 170)
+    return f"{prefix} {detail}" if detail else prefix
+
+
+def editorial_plan_rows(draft, media, all_media):
+    publication_type = draft.get("type") or "Publicacion"
+    channel = draft.get("channel") or "Canal por definir"
+    style = draft.get("style") or "Tono por revisar"
+    return [
+        ["Tipo de pieza", publication_type, "Define si el resultado debe sentirse como album, resumen ejecutivo, historia breve o memoria documental."],
+        ["Canal", channel, "Ajusta extension, portada y llamado a la accion segun donde se compartira."],
+        ["Tono", style, "Mantiene coherencia entre texto, imagenes y nivel de detalle."],
+        ["Multimedia", media_selection_label(all_media, media), "El usuario decide si incluye todo, algunos activos o ninguno antes de aprobar."],
+        ["Portada", cover_direction(draft, media), "La primera pantalla debe explicar el tema sin obligar a leer todo el documento."],
+    ]
+
+
+def cover_direction(draft, media):
+    if media:
+        first_image = next((item for item in media if str(item.get("type") or "").startswith("image/")), None)
+        if first_image:
+            return f"Usar imagen principal: {short(first_image.get('name') or 'imagen seleccionada', 55)}."
+    title = draft.get("title") or "la experiencia"
+    return f"Crear portada tipografica con titulo breve sobre {short(title, 60)}."
 
 
 def channel_rows(channel):
@@ -543,7 +605,8 @@ def build(payload):
     body = draft.get("body") or editorial_body(text, limit=940)
     stats = draft.get("stats") or {}
     highlights = draft.get("highlights") or []
-    media = draft.get("media") or []
+    all_media = draft.get("media") or []
+    media = selected_media(all_media)
     purpose = draft.get("purpose") or "Pieza preparada para compartir una memoria viva, no un reporte tecnico."
     people = ", ".join(draft.get("people") or []) or "Sin personas indicadas"
     locations = ", ".join(draft.get("locations") or []) or "Sin ubicacion indicada"
@@ -555,6 +618,13 @@ def build(payload):
         text_card("Proposito", f"{purpose}\nPersonas: {people}\nLugares: {locations}", colors.HexColor("#0d7c66")),
         Spacer(1, 10),
         text_card("Resumen editorial", summary, BLUE),
+        Spacer(1, 12),
+        section_heading("Direccion editorial", "Decisiones previas a publicar: formato, canal, portada, multimedia y tono."),
+        simple_table(
+            ["Decision", "Seleccion", "Criterio editorial"],
+            editorial_plan_rows(draft, media, all_media),
+            [1.25 * inch, 1.65 * inch, PAGE_WIDTH - 2 * MARGIN - 2.9 * inch],
+        ),
         Spacer(1, 12),
         section_heading("Historia", "Texto limpio para compartir. El detalle tecnico queda fuera de esta pieza."),
     ]
@@ -577,6 +647,13 @@ def build(payload):
     if not highlights:
         flow.append(text_card("Momentos", "No hay momentos destacados en el borrador.", colors.HexColor("#f2b84b")))
     flow.extend([
+        Spacer(1, 12),
+        section_heading("Interpretacion de evidencia", "Lectura humana de documentos, imagenes, audio y video antes de compartir."),
+        simple_table(
+            ["Tipo", "Activo", "Resumen claro"],
+            media_rows(media),
+            [0.8 * inch, 1.45 * inch, PAGE_WIDTH - 2 * MARGIN - 2.25 * inch],
+        ),
         Spacer(1, 12),
         section_heading("Multimedia incluida", "Las imagenes disponibles se incrustan; audio, video y documentos se listan como evidencia para revisar."),
         *media_gallery(media),

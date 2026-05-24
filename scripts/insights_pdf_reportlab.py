@@ -51,6 +51,14 @@ def short(value, limit=260):
     return text if len(text) <= limit else text[: max(0, limit - 1)].rstrip() + "..."
 
 
+def human_action(value, limit=150):
+    text = short(value, limit).strip()
+    if not text:
+        return "Prueba un ajuste pequeno, observa que cambia y vuelve a registrarlo."
+    text = text[:-1] if text.endswith(".") else text
+    return f"{text}. Tomalo como una prueba breve: observa que cambia y vuelve a registrarlo."
+
+
 def num(value, default=0):
     try:
         return float(value)
@@ -229,7 +237,7 @@ def axis_legend_panel(axes):
             para(axis.get("title", ""), "Small"),
             para(f"{axis.get('status', '-')}. Energia {axis.get('avgEnergy', 0)}/10.", "Small"),
             para(f"{len(axis.get('items') or [])} experiencias · {axis.get('assets', 0)} activos", "Small"),
-            para(short(axis.get("action", ""), 110), "Small"),
+            para(human_action(axis.get("action", ""), 120), "Small"),
         ])
     table = Table(rows, colWidths=[1.35 * inch, 1.35 * inch, 1.2 * inch, 1.77 * inch])
     table.setStyle(TableStyle([
@@ -332,7 +340,7 @@ def axis_table(axes):
             para(axis.get("title", ""), "Small"),
             para(str(len(axis.get("items") or [])), "Small"),
             para(f"{axis.get('avgEnergy', 0)}/10", "Small"),
-            para(short(axis.get("action", ""), 92), "Small"),
+            para(human_action(axis.get("action", ""), 115), "Small"),
         ])
     table = Table(rows, colWidths=[1.35 * inch, 0.75 * inch, 0.62 * inch, 2.95 * inch])
     table.setStyle(TableStyle([
@@ -374,7 +382,7 @@ def build_story(payload):
     cards = []
     for index, insight in enumerate(insights[:8]):
         meta = f"{clean(insight.get('type') or 'Hallazgo')} - confianza {insight.get('confidence', 0)}%"
-        body = f"{insight.get('description', '')} Accion recomendada: {insight.get('action', '')}"
+        body = f"{insight.get('description', '')} Siguiente paso sugerido: {human_action(insight.get('action', ''), 140)}"
         cards.append(card(f"{index + 1}. {insight.get('title', 'Hallazgo')}", body, meta))
     story.append(two_columns(cards) if cards else para("No hay hallazgos suficientes para este alcance.", "Bodyx"))
     story.append(para("Ejes de exploracion", "H1x"))

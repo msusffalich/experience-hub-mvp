@@ -1,6 +1,6 @@
 {
-  "name": "Experience Hub",
-  "short_name": "Experience Hub",
+  "name": "Vibe",
+  "short_name": "Vibe",
   "description": "Plataforma de inteligencia de experiencias humanas.",
   "id": "/",
   "start_url": "/index.html?view=dashboard",

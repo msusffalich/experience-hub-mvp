@@ -1,4 +1,4 @@
-const APP_VERSION = "20260523-audit-infographic-418";
+const APP_VERSION = "20260524-output-polish-419";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -6518,6 +6518,7 @@ function setupActions() {
   document.getElementById("publicationDraftList").addEventListener("click", handlePublicationDraftAction);
   document.getElementById("publicationPreview").addEventListener("change", handlePublicationMediaSelection);
   document.getElementById("publicationPreview").addEventListener("input", handlePublicationDraftEdit);
+  document.getElementById("publicationPreview").addEventListener("click", handlePublicationMediaBulkAction);
   document.getElementById("publicationPreview").addEventListener("click", handlePublicationTemplateClick);
   document.getElementById("publicationPreview").addEventListener("click", handlePublicationApprovalClick);
   document.getElementById("contextPrimaryButton").addEventListener("click", applyPrimaryContextLocation);
@@ -17958,7 +17959,7 @@ function buildPublicationPurpose(type, channel) {
   return `Pieza narrativa para ${channel}: contexto, momentos, evidencia y memoria final.`;
 }
 
-function buildPublicationBody({ title, type, style, channel, experiences, analysis, mediaCount, category, avgEnergy, highlights, media }) {
+function buildPublicationBodyLegacy({ title, type, style, channel, experiences, analysis, mediaCount, category, avgEnergy, highlights, media }) {
   const people = topValues(experiences.flatMap((item) => splitPeople(item.people)), 4);
   const locations = topValues(experiences.map((item) => item.location).filter(Boolean), 4);
   const dateRange = formatPublicationDateRange(experiences);
@@ -17997,6 +17998,108 @@ function buildPublicationEvidenceText(media = []) {
     return `- ${item.name} (${item.experienceTitle}): ${context}`;
   });
   return `${t("labels.publicationEvidenceBlock")}:\n${lines.join("\n")}`;
+}
+
+function buildPublicationBody({ title, type, style, channel, experiences, analysis, mediaCount, category, avgEnergy, highlights, media }) {
+  const people = topValues(experiences.flatMap((item) => splitPeople(item.people)), 4);
+  const locations = topValues(experiences.map((item) => item.location).filter(Boolean), 4);
+  const dateRange = formatPublicationDateRange(experiences);
+  const editorialGuide = buildPublicationEditorialGuide({ type, channel, media });
+  const interpretation = buildPublicationInterpretationSummary(media);
+  const intro = state.language === "en"
+    ? `This ${displayPublicationType(type).toLowerCase()} is prepared for ${channel}, with a ${displayPublicationStyle(style).toLowerCase()} tone. It turns ${experiences.length} experiences from ${dateRange} into a shareable memory, with an editorial focus on ${category} and ${mediaCount} selected media item(s).`
+    : `Esta pieza de tipo ${displayPublicationType(type).toLowerCase()} esta preparada para ${channel}, con tono ${displayPublicationStyle(style).toLowerCase()}. Convierte ${experiences.length} experiencias de ${dateRange} en una memoria compartible, con foco editorial en ${category} y ${mediaCount} elemento(s) multimedia seleccionados.`;
+  const narrative = state.language === "en"
+    ? `What should remain: ${analysis.focus} Average energy was ${avgEnergy}/10. The piece should not publish every detail; it should select what helps another person understand the lived experience, its evidence, and its practical meaning.`
+    : `Lo que debe quedar en la memoria: ${analysis.focus} La energia media fue ${avgEnergy}/10. La pieza no debe publicar todo; debe seleccionar lo que ayuda a otra persona a entender la experiencia vivida, su evidencia y su significado practico.`;
+  const context = state.language === "en"
+    ? `People and places: ${people.length ? people.join(", ") : "not specified"} - ${locations.length ? locations.join(", ") : "no location specified"}.`
+    : `Personas y lugares: ${people.length ? people.join(", ") : "sin personas indicadas"} - ${locations.length ? locations.join(", ") : "sin ubicacion indicada"}.`;
+  const action = state.language === "en" ? `Suggested closing: ${analysis.action}` : `Cierre sugerido: ${analysis.action}`;
+  const bullets = highlights
+    .map((item) => `- ${item.title} (${formatDate(item.date)} - ${item.category}): ${item.note || (state.language === "en" ? "experience recorded" : "experiencia registrada")}`)
+    .join("\n");
+  const evidence = buildPublicationEvidenceText(media);
+  return `${title}
+
+${state.language === "en" ? "Editorial direction" : "Direccion editorial"}
+${intro}
+
+${state.language === "en" ? "Readable interpretation" : "Interpretacion clara"}
+${narrative}
+
+${state.language === "en" ? "Context" : "Contexto"}
+${context}
+
+${state.language === "en" ? "Selected moments" : "Momentos seleccionados"}:
+${bullets || (state.language === "en" ? "- No specific moments selected yet." : "- Aun no hay momentos especificos seleccionados.")}
+
+${state.language === "en" ? "Evidence and media interpretation" : "Evidencia e interpretacion multimedia"}
+${interpretation}
+${evidence ? `\n\n${evidence}` : ""}
+
+${state.language === "en" ? "Design and publication plan" : "Plan de diseno y publicacion"}
+${editorialGuide}
+
+${action}`;
+}
+
+function buildPublicationEditorialGuide({ type, channel, media = [] }) {
+  const included = media.filter((item) => item.included !== false).length;
+  const mediaMode = included === media.length && media.length
+    ? (state.language === "en" ? "use the complete media set" : "usar todo el conjunto multimedia")
+    : included === 0
+      ? (state.language === "en" ? "publish as text only" : "publicar solo como texto")
+      : (state.language === "en" ? `use ${included} curated media items` : `usar ${included} activos multimedia curados`);
+  const cover = state.language === "en"
+    ? `Create a cover aligned with ${displayPublicationType(type).toLowerCase()}: one main visual, a short title, and a human subtitle.`
+    : `Crear una portada alineada con ${displayPublicationType(type).toLowerCase()}: una imagen principal, titulo breve y subtitulo humano.`;
+  const structure = state.language === "en"
+    ? `For ${channel}, keep the first screen clear, then sequence context, evidence, memory, and next action.`
+    : `Para ${channel}, mantener clara la primera pantalla y luego ordenar contexto, evidencia, memoria y accion siguiente.`;
+  return `${cover}\n${structure}\n${state.language === "en" ? "Media policy" : "Politica multimedia"}: ${mediaMode}.`;
+}
+
+function buildPublicationInterpretationSummary(media = []) {
+  const included = media.filter((item) => item.included !== false).slice(0, 5);
+  if (!included.length) {
+    return state.language === "en"
+      ? "No media was selected for this version. The publication should rely on edited text, context, and the user's final review."
+      : "No se selecciono multimedia para esta version. La publicacion debe apoyarse en el texto editado, el contexto y la revision final del usuario.";
+  }
+  return included.map((item) => summarizePublicationEvidenceItem(item)).join("\n");
+}
+
+function summarizePublicationEvidenceItem(item) {
+  const sourceText = [item.translatedText, item.analyticalText, item.originalText, item.manualNote, item.caption]
+    .filter(Boolean)
+    .join(" ");
+  const cleanText = shortPublicationText(sourceText, 240);
+  const name = item.name || (state.language === "en" ? "media item" : "activo");
+  const isHealth = /salud|medic|doctor|examen|laboratorio|diagnost|glucosa|colesterol|presion|sangre|health|medical|lab/i.test(`${sourceText} ${name}`);
+  if (isHealth) {
+    return state.language === "en"
+      ? `- ${name}: health-related evidence. Explain it in plain language, avoid diagnosis, and separate observed data from recommendations.${cleanText ? ` Summary: ${cleanText}` : ""}`
+      : `- ${name}: evidencia relacionada con salud. Explicarla en lenguaje claro, sin diagnosticar, separando datos observados de recomendaciones.${cleanText ? ` Resumen: ${cleanText}` : ""}`;
+  }
+  if (String(item.type || "").startsWith("image/")) {
+    return state.language === "en"
+      ? `- ${name}: visual evidence for the cover or gallery.${cleanText ? ` Interpreted context: ${cleanText}` : ""}`
+      : `- ${name}: evidencia visual para portada o galeria.${cleanText ? ` Contexto interpretado: ${cleanText}` : ""}`;
+  }
+  if (String(item.type || "").startsWith("audio/") || String(item.type || "").startsWith("video/")) {
+    return state.language === "en"
+      ? `- ${name}: spoken or audiovisual memory.${cleanText ? ` Transcript/reading: ${cleanText}` : ""}`
+      : `- ${name}: memoria hablada o audiovisual.${cleanText ? ` Transcripcion/lectura: ${cleanText}` : ""}`;
+  }
+  return state.language === "en"
+    ? `- ${name}: document or supporting file.${cleanText ? ` Plain summary: ${cleanText}` : ""}`
+    : `- ${name}: documento o archivo de soporte.${cleanText ? ` Resumen claro: ${cleanText}` : ""}`;
+}
+
+function shortPublicationText(value, limit = 220) {
+  const text = String(value || "").replace(/\s+/g, " ").trim();
+  return text.length > limit ? `${text.slice(0, limit - 1).trim()}...` : text;
 }
 
 function redactSensitiveText(value) {
@@ -18575,12 +18678,21 @@ function buildPublicationSuggestions({ draft, words, includedMedia, totalMedia, 
 function renderPublicationMedia(media) {
   if (!media.length) return `<p class="card-meta">${escapeHtml(t("labels.publicationMediaEmpty"))}</p>`;
   const included = media.filter((item) => item.included !== false).length;
+  const selectionLabel = included === media.length
+    ? (state.language === "en" ? "All media included" : "Toda la multimedia incluida")
+    : included === 0
+      ? (state.language === "en" ? "No media included" : "Sin multimedia incluida")
+      : (state.language === "en" ? `${included} selected manually` : `${included} seleccionados manualmente`);
   return `
     <section class="publication-media">
       <div class="publication-section-heading">
         <div>
           <h3>${escapeHtml(t("labels.publicationMedia"))} · ${included}/${media.length}</h3>
-          <p class="card-meta">${escapeHtml(t("labels.publicationMediaHelp"))}</p>
+          <p class="card-meta">${escapeHtml(selectionLabel)}. ${escapeHtml(t("labels.publicationMediaHelp"))}</p>
+        </div>
+        <div class="pill-row publication-media-actions">
+          <button class="secondary-button" type="button" data-publication-media-bulk="all">${escapeHtml(state.language === "en" ? "Include all" : "Incluir todo")}</button>
+          <button class="secondary-button" type="button" data-publication-media-bulk="none">${escapeHtml(state.language === "en" ? "No media" : "Sin multimedia")}</button>
         </div>
       </div>
       <div class="publication-media-grid">
@@ -18640,6 +18752,32 @@ function renderPublicationMediaCaption(item) {
       }
     </figcaption>
   `;
+}
+
+function handlePublicationMediaBulkAction(event) {
+  const button = event.target.closest("[data-publication-media-bulk]");
+  if (!button) return;
+  const draft = state.currentPublicationDraft || state.publicationDrafts[0];
+  if (!draft) return;
+  const include = button.dataset.publicationMediaBulk === "all";
+  draft.media = (draft.media || []).map((item) => ({ ...item, included: include }));
+  draft.stats = { ...(draft.stats || {}), media: draft.media.filter((item) => item.included !== false).length };
+  draft.approvalStatus = "review";
+  draft.approvedAt = "";
+  addPublicationHistory(
+    draft,
+    "media",
+    include
+      ? (state.language === "en" ? "All media included" : "Toda la multimedia incluida")
+      : (state.language === "en" ? "Publication without media" : "Publicacion sin multimedia"),
+  );
+  state.currentPublicationDraft = draft;
+  state.publicationDrafts = state.publicationDrafts.map((item) => (item.id === draft.id ? draft : item));
+  savePublicationDrafts();
+  renderPublications();
+  document.getElementById("publicationStatus").textContent = include
+    ? (state.language === "en" ? "All media will be included in the publication." : "Toda la multimedia quedo incluida en la publicacion.")
+    : (state.language === "en" ? "The publication will be generated without media." : "La publicacion se generara sin multimedia.");
 }
 
 function handlePublicationMediaSelection(event) {
@@ -19637,17 +19775,17 @@ function renderQuestionSuggestions() {
   `;
 }
 
-function getInsightThematicDefinitions() {
+function getInsightThematicDefinitionsLegacy() {
   return state.language === "en"
     ? [
-        { id: "health", title: "Health and wellbeing", categories: ["Salud", "Hogar", "Espiritualidad"], question: "How are energy, recovery, habits, and emotional stability behaving?", action: "Review rest, movement, recovery, and biometric context." },
-        { id: "work", title: "Work and productivity", categories: ["Trabajo"], question: "Where is real productivity rising or creating load?", action: "Compare focus, overload, agreements, and recovery after work blocks." },
-        { id: "learning", title: "Learning and growth", categories: ["Aprendizaje"], question: "What lessons repeat and which should become routines?", action: "Turn repeated learning into one next experiment." },
-        { id: "travel", title: "Travel and outings", categories: ["Viajes / Paseos"], question: "Which places, routes, and visits create energy or friction?", action: "Compare place, weather, company, and enjoyment." },
-        { id: "social", title: "Relationships and social life", categories: ["Social"], question: "Which people or groups lift, drain, or connect experiences?", action: "Review repeated people and emotional effect." },
-        { id: "leisure", title: "Leisure and entertainment", categories: ["Entretenimiento"], question: "Is leisure helping recovery or becoming noise?", action: "Capture enjoyment, company, and energy after leisure." },
-        { id: "finance", title: "Finance and consumption", categories: ["Compras"], question: "What purchases or decisions reflect intention, stress, or value?", action: "Log purchase intent and later satisfaction." },
-        { id: "creative", title: "Creativity and purpose", categories: ["Creatividad"], question: "Where do creation, meaning, and personal expression appear?", action: "Protect creative contexts and document outputs." },
+        { id: "health", title: "Health and wellbeing", categories: ["Salud", "Hogar", "Espiritualidad"], question: "How are energy, recovery, habits, and emotional stability behaving?", action: "Choose one small rest, movement, or recovery adjustment this week and notice whether your energy responds." },
+        { id: "work", title: "Work and productivity", categories: ["Trabajo"], question: "Where is real productivity rising or creating load?", action: "Review one recent work block and decide what to keep, delegate, pause, or simplify." },
+        { id: "learning", title: "Learning and growth", categories: ["Aprendizaje"], question: "What lessons repeat and which should become routines?", action: "Turn one repeated lesson into a brief practice that is easy to repeat." },
+        { id: "travel", title: "Travel and outings", categories: ["Viajes / Paseos"], question: "Which places, routes, and visits create energy or friction?", action: "Compare which place, company, or context left the best memory, then use it to plan the next outing." },
+        { id: "social", title: "Relationships and social life", categories: ["Social"], question: "Which people or groups lift, drain, or connect experiences?", action: "Notice which people leave you calmer or more energized, and protect those spaces intentionally." },
+        { id: "leisure", title: "Leisure and entertainment", categories: ["Entretenimiento"], question: "Is leisure helping recovery or becoming noise?", action: "After leisure, note whether it restored you or scattered you, then adjust the next choice." },
+        { id: "finance", title: "Finance and consumption", categories: ["Compras"], question: "What purchases or decisions reflect intention, stress, or value?", action: "Before repeating a purchase, check whether it brought real value or only short relief." },
+        { id: "creative", title: "Creativity and purpose", categories: ["Creatividad"], question: "Where do creation, meaning, and personal expression appear?", action: "Reserve a small space to continue what felt meaningful, even if it is only a short note." },
       ]
     : [
         { id: "health", title: "Salud y bienestar", categories: ["Salud", "Hogar", "Espiritualidad"], question: "¿Cómo se comportan energía, recuperación, hábitos y estabilidad emocional?", action: "Revisa descanso, movimiento, recuperación y contexto biométrico." },
@@ -19658,6 +19796,30 @@ function getInsightThematicDefinitions() {
         { id: "leisure", title: "Ocio y entretenimiento", categories: ["Entretenimiento"], question: "¿El ocio ayuda a recuperar o se vuelve ruido?", action: "Captura disfrute, compañía y energía posterior al ocio." },
         { id: "finance", title: "Finanzas y consumo", categories: ["Compras"], question: "¿Qué compras o decisiones reflejan intención, estrés o valor?", action: "Registra intención de compra y satisfacción posterior." },
         { id: "creative", title: "Creatividad y propósito", categories: ["Creatividad"], question: "¿Dónde aparecen creación, sentido y expresión personal?", action: "Protege contextos creativos y documenta resultados." },
+      ];
+}
+
+function getInsightThematicDefinitions() {
+  return state.language === "en"
+    ? [
+        { id: "health", title: "Health and wellbeing", categories: ["Salud", "Hogar", "Espiritualidad"], question: "How are energy, recovery, habits, and emotional stability behaving?", action: "Choose one small rest, movement, or recovery adjustment this week and notice whether your energy responds." },
+        { id: "work", title: "Work and productivity", categories: ["Trabajo"], question: "Where is real productivity rising or creating load?", action: "Review one recent work block and decide what to keep, delegate, pause, or simplify." },
+        { id: "learning", title: "Learning and growth", categories: ["Aprendizaje"], question: "What lessons repeat and which should become routines?", action: "Turn one repeated lesson into a brief practice that is easy to repeat." },
+        { id: "travel", title: "Travel and outings", categories: ["Viajes / Paseos"], question: "Which places, routes, and visits create energy or friction?", action: "Compare which place, company, or context left the best memory, then use it to plan the next outing." },
+        { id: "social", title: "Relationships and social life", categories: ["Social"], question: "Which people or groups lift, drain, or connect experiences?", action: "Notice which people leave you calmer or more energized, and protect those spaces intentionally." },
+        { id: "leisure", title: "Leisure and entertainment", categories: ["Entretenimiento"], question: "Is leisure helping recovery or becoming noise?", action: "After leisure, note whether it restored you or scattered you, then adjust the next choice." },
+        { id: "finance", title: "Finance and consumption", categories: ["Compras"], question: "What purchases or decisions reflect intention, stress, or value?", action: "Before repeating a purchase, check whether it brought real value or only short relief." },
+        { id: "creative", title: "Creativity and purpose", categories: ["Creatividad"], question: "Where do creation, meaning, and personal expression appear?", action: "Reserve a small space to continue what felt meaningful, even if it is only a short note." },
+      ]
+    : [
+        { id: "health", title: "Salud y bienestar", categories: ["Salud", "Hogar", "Espiritualidad"], question: "Como se comportan energia, recuperacion, habitos y estabilidad emocional?", action: "Elige un pequeno ajuste de descanso, movimiento o recuperacion para esta semana y observa si tu energia responde mejor." },
+        { id: "work", title: "Trabajo y productividad", categories: ["Trabajo"], question: "Donde sube la productividad real o aparece carga?", action: "Revisa un bloque de trabajo reciente y decide que mantener, delegar, pausar o simplificar." },
+        { id: "learning", title: "Aprendizaje y crecimiento", categories: ["Aprendizaje"], question: "Que aprendizajes se repiten y cuales deben volverse rutina?", action: "Toma un aprendizaje repetido y conviertelo en una practica breve, concreta y facil de repetir." },
+        { id: "travel", title: "Viajes / Paseos", categories: ["Viajes / Paseos"], question: "Que lugares, rutas y visitas generan energia o friccion?", action: "Compara que lugar, compania o contexto te dejo mejor recuerdo y usalo para planear la proxima salida." },
+        { id: "social", title: "Relaciones y vida social", categories: ["Social"], question: "Que personas o grupos elevan, drenan o conectan experiencias?", action: "Observa que personas te dejan con mas calma o energia, y cuida esos espacios con intencion." },
+        { id: "leisure", title: "Ocio y entretenimiento", categories: ["Entretenimiento"], question: "El ocio ayuda a recuperar o se vuelve ruido?", action: "Despues del ocio, anota si te recupero o te disperso; ajusta la proxima eleccion desde ahi." },
+        { id: "finance", title: "Finanzas y consumo", categories: ["Compras"], question: "Que compras o decisiones reflejan intencion, estres o valor?", action: "Antes de repetir una compra, revisa si trajo valor real o solo alivio momentaneo." },
+        { id: "creative", title: "Creatividad y proposito", categories: ["Creatividad"], question: "Donde aparecen creacion, sentido y expresion personal?", action: "Reserva un pequeno espacio para continuar lo que te dio sentido, aunque sea en una nota breve." },
       ];
 }
 

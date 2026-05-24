@@ -234,7 +234,7 @@ class VisualTile(Flowable):
     def _draw_donut(self, c, w, h):
         values = [max(0, num(v)) for v in self.values[:4]]
         total = sum(values) or 1
-        cx, cy, r = 0.52 * w, 0.52 * h, 0.42 * inch
+        cx, cy, r = 0.34 * w, 0.52 * h, 0.38 * inch
         start = 90
         palette = [ACCENT, GOLD, colors.HexColor("#4f83cc"), colors.HexColor("#9a67d6")]
         for index, value in enumerate(values):
@@ -247,6 +247,20 @@ class VisualTile(Flowable):
         c.setFillColor(BRAND)
         c.setFont("Helvetica-Bold", 13)
         c.drawCentredString(cx, cy - 4, f"{int(round(values[0] / total * 100))}%")
+        c.setFont("Helvetica", 6.8)
+        c.setFillColor(MUTED)
+        legend_x = 0.58 * w
+        legend_y = h - 38
+        labels = [short(label, 30) for label in (self.labels or [])[:4]]
+        while len(labels) < len(values):
+            labels.append(f"Categoria {len(labels) + 1}")
+        for index, (label, value) in enumerate(zip(labels, values)):
+            y = legend_y - index * 15
+            c.setFillColor(palette[index % len(palette)])
+            c.roundRect(legend_x, y - 1, 7, 7, 1.5, fill=1, stroke=0)
+            c.setFillColor(MUTED)
+            share = int(round(value / total * 100))
+            c.drawString(legend_x + 11, y - 1, f"{label}: {share}%")
 
     def _draw_sparkline(self, c, w, h):
         values = [num(v) for v in self.values[:12]]
@@ -319,6 +333,21 @@ class VisualTile(Flowable):
         c.setFillColor(colors.Color(0.05, 0.49, 0.4, alpha=0.22))
         c.setStrokeColor(ACCENT)
         c.drawPath(path, fill=1, stroke=1)
+        labels = [short(label, 18) for label in (self.labels or [])[:count]]
+        while len(labels) < count:
+            labels.append(f"Eje {len(labels) + 1}")
+        c.setFont("Helvetica", 6.2)
+        c.setFillColor(MUTED)
+        for index, label in enumerate(labels[:count]):
+            angle = -math.pi / 2 + 2 * math.pi * index / count
+            lx = cx + math.cos(angle) * (r + 0.12 * inch)
+            ly = cy + math.sin(angle) * (r + 0.10 * inch)
+            if lx < cx - 3:
+                c.drawRightString(lx, ly, label)
+            elif lx > cx + 3:
+                c.drawString(lx, ly, label)
+            else:
+                c.drawCentredString(lx, ly, label)
 
 
 def metric_grid(items, dark=False):
@@ -403,8 +432,10 @@ def bar_table(categories):
 
 def visual_dashboard(summary, rows, kpis, categories, quality):
     category_values = [num(item.get("count") or item.get("minutes")) for item in categories[:4]]
+    category_labels = [item.get("category") or item.get("label") or item.get("title") for item in categories[:4]]
     if not category_values:
         category_values = [num(summary.get("totalExperiences")), 1]
+        category_labels = ["Experiencias", "Referencia"]
     energy_values = [num(row.get("energia") or row.get("energy")) for row in rows[:12]]
     if len(energy_values) < 2:
         energy_values = [num(summary.get("averageEnergy")), num(summary.get("averageEnergy"))]
@@ -419,6 +450,7 @@ def visual_dashboard(summary, rows, kpis, categories, quality):
         VisualTile("Confiabilidad de datos", "waffle", [quality.get("score", 0)], note="Leyenda: completitud de la captura"),
         VisualTile("Radar de ejes humanos", "radar", kpi_values, labels=kpi_labels, note="Leyenda: puntaje por eje humano"),
     ]
+    tiles[0].labels = category_labels
     table = Table([[tiles[0], tiles[1]], [tiles[2], tiles[3]]], colWidths=[(PAGE_WIDTH - 2 * MARGIN - 8) / 2] * 2)
     table.setStyle(TableStyle([
         ("VALIGN", (0, 0), (-1, -1), "TOP"),
