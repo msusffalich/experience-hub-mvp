@@ -60,6 +60,11 @@ FONT_REGULAR, FONT_BOLD = register_pdf_fonts()
 
 def clean(value):
     text = str(value or "").replace("\n", " ").replace("\r", " ")
+    if any(marker in text for marker in (chr(0x00C3), chr(0x00C2), chr(0xFFFD))):
+        try:
+            text = text.encode("latin1").decode("utf-8")
+        except Exception:
+            pass
     return " ".join(text.split())
 
 
@@ -71,8 +76,10 @@ def polish(value):
         .replace("Categoria", "Categoría")
         .replace("categoria", "categoría")
         .replace("Categorias", "Categorías")
+        .replace("categorias", "categorías")
         .replace("libreria", "librería")
         .replace("tecnico", "técnico")
+        .replace("tecnicos", "técnicos")
         .replace("accion", "acción")
         .replace("Accion", "Acción")
         .replace("acciónable", "accionable")
@@ -80,7 +87,12 @@ def polish(value):
         .replace("acciónes", "acciones")
         .replace("Acciónes", "Acciones")
         .replace("Proyeccion", "Proyección")
+        .replace("Proporcion", "Proporción")
+        .replace("proporcion", "proporción")
+        .replace("Evolucion", "Evolución")
+        .replace("evolucion", "evolución")
         .replace("proxima", "próxima")
+        .replace("ubicacion", "ubicación")
     )
 
 
@@ -172,19 +184,21 @@ def cover(report):
     summary = report.get("summary") or {}
     generated = clean(report.get("generatedAt") or datetime.now(timezone.utc).isoformat())
     rows = report.get("rows") or []
+    content_width = PAGE_WIDTH - 2 * MARGIN
+    logo_column = 1.62 * inch
     title_block = Table(
         [[
-            [para("Reporte ejecutivo de experiencias", "CoverTitle"), para("Lectura humana, evidencia multimodal y recomendaciones accionables.", "CoverSubtitle")],
-            logo_flowable(1.25 * inch),
+            [para("Reporte de experiencias", "CoverTitle"), para("Lectura ejecutiva, evidencia multimodal y recomendaciones.", "CoverSubtitle")],
+            logo_flowable(1.18 * inch),
         ]],
-        colWidths=[PAGE_WIDTH - 2 * MARGIN - 1.18 * inch, 0.84 * inch],
+        colWidths=[content_width - logo_column, logo_column],
     )
     title_block.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, -1), NAVY),
         ("VALIGN", (0, 0), (-1, -1), "TOP"),
         ("ALIGN", (1, 0), (1, 0), "RIGHT"),
         ("LEFTPADDING", (0, 0), (-1, -1), 20),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 18),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 16),
         ("TOPPADDING", (0, 0), (-1, -1), 30),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 30),
         ("LINEBELOW", (0, -1), (-1, -1), 3, ACCENT),

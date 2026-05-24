@@ -47,6 +47,11 @@ FONT_REGULAR, FONT_BOLD = register_pdf_fonts()
 
 def clean(value):
     text = str(value or "").replace("\n", " ").replace("\r", " ")
+    if any(marker in text for marker in (chr(0x00C3), chr(0x00C2), chr(0xFFFD))):
+        try:
+            text = text.encode("latin1").decode("utf-8")
+        except Exception:
+            pass
     return " ".join(text.split())
 
 
@@ -57,10 +62,16 @@ def polish(value):
         .replace("Energia", "Energía")
         .replace("energia", "energía")
         .replace("tematica", "temática")
+        .replace("Tematica", "Temática")
         .replace("proporcion", "proporción")
+        .replace("Proporcion", "Proporción")
         .replace("accion", "acción")
+        .replace("Accion", "Acción")
         .replace("auditoria", "auditoría")
         .replace("tecnica", "técnica")
+        .replace("analisis", "análisis")
+        .replace("Analisis", "Análisis")
+        .replace("proxima", "próxima")
     )
 
 

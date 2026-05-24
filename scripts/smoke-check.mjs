@@ -11,6 +11,10 @@ const files = {
   railpack: readFileSync("railpack.json", "utf8"),
   pythonInstall: readFileSync("scripts/install-python-deps.mjs", "utf8"),
   reportlabVerify: readFileSync("scripts/verify-reportlab.mjs", "utf8"),
+  reportPdf: readFileSync("scripts/report_pdf_reportlab.py", "utf8"),
+  insightsPdf: readFileSync("scripts/insights_pdf_reportlab.py", "utf8"),
+  publicationPdf: readFileSync("scripts/publication_pdf_reportlab.py", "utf8"),
+  manualPdf: readFileSync("scripts/manual_pdf_reportlab.py", "utf8"),
   styles: readFileSync("styles.css", "utf8"),
   sql: readFileSync("database/workspace-events-assets.sql", "utf8"),
   uploadAttemptsSql: readFileSync("database/asset-upload-attempts.sql", "utf8"),
@@ -42,7 +46,8 @@ assert(Array.isArray(manifest.icons) && manifest.icons.some((icon) => icon.src =
 ["icons/vibe-logo.jpg", "icons/vibe-icon-192.png", "icons/vibe-icon-512.png", "icons/vibe-apple-touch.png"].forEach((path) => {
   assert(existsSync(path), `Missing Vibe logo asset: ${path}`);
 });
-assert(!/[ÃÂ�]/.test(files.app + files.index + files.styles + files.manifest + files.serviceWorker + files.uxAudit), "Visible app files contain mojibake characters.");
+const visibleAndPdfText = files.app + files.index + files.styles + files.manifest + files.serviceWorker + files.uxAudit + files.reportPdf + files.insightsPdf + files.publicationPdf + files.manualPdf;
+assert(!/[\u00c3\u00c2\ufffd]/u.test(visibleAndPdfText), "Visible app files or ReportLab scripts contain mojibake characters.");
 
 assert(!/\bnormalizeExperience\s*\(/.test(files.app), "app.js still calls normalizeExperience(); use normalizeExperienceItem() or normalizeExperiences().");
 [

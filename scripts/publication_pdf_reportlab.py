@@ -59,6 +59,11 @@ def clean_html(value):
     text = re.sub(r"<script[\s\S]*?</script>", " ", text, flags=re.I)
     text = re.sub(r"<[^>]+>", " ", text)
     text = unescape(text)
+    if any(marker in text for marker in (chr(0x00C3), chr(0x00C2), chr(0xFFFD))):
+        try:
+            text = text.encode("latin1").decode("utf-8")
+        except Exception:
+            pass
     noise = [
         "Uso: evidencia consultable para reportes, memoria y publicaciones. Revisar antes de publicar.",
         "Si necesitas conservar diseno visual completo, usa tambien la exportacion HTML.",
@@ -79,6 +84,17 @@ def polish(value):
         "tecnica": "técnica",
         "auditoria": "auditoría",
         "version": "versión",
+        "diseno": "diseño",
+        "tambien": "también",
+        "exportacion": "exportación",
+        "album": "álbum",
+        "Album": "Álbum",
+        "extension": "extensión",
+        "segun": "según",
+        "compartira": "compartirá",
+        "automaticamente": "automáticamente",
+        "esta configurada": "esté configurada",
+        "imagenes": "imágenes",
     }
     for src, dst in replacements.items():
         text = text.replace(src, dst)
@@ -614,8 +630,8 @@ def editorial_plan_rows(draft, media, all_media):
     channel = draft.get("channel") or "Canal por definir"
     style = draft.get("style") or "Tono por revisar"
     return [
-        ["Tipo de pieza", publication_type, "Define si el resultado debe sentirse como album, resumen ejecutivo, historia breve o memoria documental."],
-        ["Canal", channel, "Ajusta extension, portada y llamado a la accion segun donde se compartira."],
+        ["Tipo de pieza", publication_type, "Define si el resultado debe sentirse como álbum, resumen ejecutivo, historia breve o memoria documental."],
+        ["Canal", channel, "Ajusta extensión, portada y llamado a la acción según donde se compartirá."],
         ["Tono", style, "Mantiene coherencia entre texto, imágenes y nivel de detalle."],
         ["Multimedia", media_selection_label(all_media, media), "El usuario decide si incluye todo, algunos activos o ninguno antes de aprobar."],
         ["Portada", cover_direction(draft, media), "La primera pantalla debe explicar el tema sin obligar a leer todo el documento."],
@@ -642,7 +658,7 @@ def channel_rows(channel):
     return [
         ["Canal elegido", channel or "-", status],
         ["Privacidad", "Revisión humana", "La limpieza automática ayuda, pero nombres, rostros y datos sensibles se revisan antes de compartir."],
-        ["Salida principal", "PDF ReportLab", "Documento editado, estable e imprimible. HTML/Markdown/JSON quedan como apoyo tecnico."],
+        ["Salida principal", "PDF ReportLab", "Documento editado, estable e imprimible. HTML/Markdown/JSON quedan como apoyo técnico."],
     ]
 
 
@@ -697,7 +713,7 @@ def build(payload):
     highlights = draft.get("highlights") or []
     all_media = draft.get("media") or []
     media = selected_media(all_media)
-    purpose = draft.get("purpose") or "Pieza preparada para compartir una memoria viva, no un reporte tecnico."
+    purpose = draft.get("purpose") or "Pieza preparada para compartir una memoria viva, no un reporte técnico."
     people = ", ".join(draft.get("people") or []) or "Sin personas indicadas"
     locations = ", ".join(draft.get("locations") or []) or "Sin ubicacion indicada"
     flow = [
@@ -715,7 +731,7 @@ def build(payload):
         section_heading("Dirección editorial", "Decisiones previas a publicar: formato, canal, portada, multimedia y tono."),
         *decision_cards(editorial_plan_rows(draft, media, all_media)),
         Spacer(1, 12),
-        section_heading("Historia", "Texto limpio para compartir. El detalle tecnico queda fuera de esta pieza."),
+        section_heading("Historia", "Texto limpio para compartir. El detalle técnico queda fuera de esta pieza."),
     ]
     for paragraph in story_paragraphs(body):
         flow.append(para(paragraph, "Bodyx"))

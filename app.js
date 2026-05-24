@@ -1,4 +1,4 @@
-const APP_VERSION = "20260524-visual-native-423";
+const APP_VERSION = "20260524-pdf-polish-flutter-424";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
