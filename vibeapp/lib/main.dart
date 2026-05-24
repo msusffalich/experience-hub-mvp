@@ -36,16 +36,49 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
   final TextEditingController _noteController = TextEditingController();
   final TextEditingController _apiUrlController = TextEditingController(
       text: 'https://experience-hub-web-production.up.railway.app');
-  final TextEditingController _tokenController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
   final List<CaptureQueueItem> _queue = [];
   SyncState _syncState = SyncState.ready;
+  String _accessToken = '';
+  String _signedInEmail = '';
 
   @override
   void dispose() {
     _noteController.dispose();
     _apiUrlController.dispose();
-    _tokenController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _signIn() async {
+    final settings = SyncSettings(
+      apiBaseUrl: _apiUrlController.text.trim(),
+      accessToken: _accessToken,
+    );
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    if (email.isEmpty || password.isEmpty) return;
+    setState(() => _syncState = SyncState.syncing);
+    final result = await VibeAuthClient(settings).signIn(email, password);
+    if (!mounted) return;
+    if (result.ok && result.accessToken.isNotEmpty) {
+      setState(() {
+        _accessToken = result.accessToken;
+        _signedInEmail = email;
+        _syncState = SyncState.synced;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sesión lista. Reintentando cola.')),
+      );
+      await _syncPendingQueue(showSnackBar: true);
+    } else {
+      setState(() => _syncState = SyncState.needsAttention);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result.message)),
+      );
+    }
   }
 
   Future<void> _saveDraft() async {
@@ -63,7 +96,7 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
   Future<void> _syncPendingQueue({bool showSnackBar = false}) async {
     final settings = SyncSettings(
       apiBaseUrl: _apiUrlController.text.trim(),
-      accessToken: _tokenController.text.trim(),
+      accessToken: _accessToken,
     );
     final pending = _queue
         .where(
@@ -193,7 +226,10 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
             const SizedBox(height: 16),
             SyncSettingsCard(
               apiUrlController: _apiUrlController,
-              tokenController: _tokenController,
+              emailController: _emailController,
+              passwordController: _passwordController,
+              signedInEmail: _signedInEmail,
+              onSignIn: _signIn,
               onRetry: _syncPendingQueue,
             ),
             const SizedBox(height: 16),
@@ -239,13 +275,19 @@ class NativeFlowSummary extends StatelessWidget {
 class SyncSettingsCard extends StatelessWidget {
   const SyncSettingsCard({
     required this.apiUrlController,
-    required this.tokenController,
+    required this.emailController,
+    required this.passwordController,
+    required this.signedInEmail,
+    required this.onSignIn,
     required this.onRetry,
     super.key,
   });
 
   final TextEditingController apiUrlController;
-  final TextEditingController tokenController;
+  final TextEditingController emailController;
+  final TextEditingController passwordController;
+  final String signedInEmail;
+  final Future<void> Function() onSignIn;
   final Future<void> Function({bool showSnackBar}) onRetry;
 
   @override
@@ -265,7 +307,7 @@ class SyncSettingsCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             const Text(
-                'Primer contrato real: endpoint de Vibe + token de sesión. Luego esto será login Supabase nativo.'),
+                'Primer contrato real: entra con el mismo usuario de Vibe PWA y reintenta la cola sin copiar tokens manualmente.'),
             const SizedBox(height: 12),
             TextField(
               controller: apiUrlController,
@@ -276,20 +318,44 @@ class SyncSettingsCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             TextField(
-              controller: tokenController,
-              obscureText: true,
+              controller: emailController,
+              keyboardType: TextInputType.emailAddress,
               decoration: const InputDecoration(
-                labelText: 'Token de sesión',
-                helperText:
-                    'Temporal para desarrollo; no es el flujo final del usuario.',
+                labelText: 'Correo',
                 border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: () => onRetry(showSnackBar: true),
-              icon: const Icon(Icons.sync_outlined),
-              label: const Text('Reintentar cola'),
+            TextField(
+              controller: passwordController,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Clave',
+                helperText:
+                    'Se usa contra Supabase Auth mediante la clave pública de la PWA.',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            if (signedInEmail.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Text('Sesión activa: $signedInEmail'),
+            ],
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                FilledButton.icon(
+                  onPressed: onSignIn,
+                  icon: const Icon(Icons.login_outlined),
+                  label: const Text('Entrar'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () => onRetry(showSnackBar: true),
+                  icon: const Icon(Icons.sync_outlined),
+                  label: const Text('Reintentar cola'),
+                ),
+              ],
             ),
           ],
         ),
@@ -429,6 +495,61 @@ class ExperienceSyncClient {
   }
 }
 
+class VibeAuthClient {
+  VibeAuthClient(this.settings);
+
+  final SyncSettings settings;
+
+  Future<AuthResult> signIn(String email, String password) async {
+    try {
+      final config = await _loadConfig();
+      final supabaseUrl = (config['supabaseUrl'] ?? '').toString();
+      final publishableKey =
+          (config['supabasePublishableKey'] ?? '').toString();
+      if (supabaseUrl.isEmpty || publishableKey.isEmpty) {
+        return AuthResult.failure(
+            'La API de Vibe no expone configuración Supabase.');
+      }
+      final uri =
+          Uri.parse(supabaseUrl).resolve('/auth/v1/token?grant_type=password');
+      final request =
+          await HttpClient().postUrl(uri).timeout(const Duration(seconds: 10));
+      request.headers.contentType = ContentType.json;
+      request.headers.set('apikey', publishableKey);
+      request.write(jsonEncode({'email': email, 'password': password}));
+      final response =
+          await request.close().timeout(const Duration(seconds: 20));
+      final responseText = await response.transform(utf8.decoder).join();
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        return AuthResult.failure('Acceso rechazado: ${shorten(responseText)}');
+      }
+      final decoded = jsonDecode(responseText) as Map<String, dynamic>;
+      return AuthResult.success((decoded['access_token'] ?? '').toString());
+    } on TimeoutException {
+      return AuthResult.failure('Tiempo de espera agotado al entrar.');
+    } on SocketException {
+      return AuthResult.failure('Sin conexión con Vibe o Supabase.');
+    } on FormatException {
+      return AuthResult.failure('Respuesta de acceso inválida.');
+    } catch (error) {
+      return AuthResult.failure(shorten(error.toString()));
+    }
+  }
+
+  Future<Map<String, dynamic>> _loadConfig() async {
+    final uri = Uri.parse(settings.apiBaseUrl).resolve('/api/config');
+    final request =
+        await HttpClient().getUrl(uri).timeout(const Duration(seconds: 10));
+    final response = await request.close().timeout(const Duration(seconds: 15));
+    final responseText = await response.transform(utf8.decoder).join();
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw StateError(
+          'config_http_${response.statusCode}: ${shorten(responseText)}');
+    }
+    return jsonDecode(responseText) as Map<String, dynamic>;
+  }
+}
+
 class SyncSettings {
   const SyncSettings({required this.apiBaseUrl, required this.accessToken});
 
@@ -436,6 +557,28 @@ class SyncSettings {
   final String accessToken;
 
   bool get hasSession => apiBaseUrl.isNotEmpty && accessToken.isNotEmpty;
+}
+
+class AuthResult {
+  const AuthResult._({
+    required this.ok,
+    required this.message,
+    this.accessToken = '',
+  });
+
+  factory AuthResult.success(String accessToken) => AuthResult._(
+        ok: accessToken.isNotEmpty,
+        message: accessToken.isNotEmpty
+            ? 'Sesión iniciada'
+            : 'Supabase no devolvió token.',
+        accessToken: accessToken,
+      );
+  factory AuthResult.failure(String message) =>
+      AuthResult._(ok: false, message: message);
+
+  final bool ok;
+  final String message;
+  final String accessToken;
 }
 
 class SyncResult {

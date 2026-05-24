@@ -17,6 +17,8 @@ void main() {
     expect(find.text('Vibeapp'), findsOneWidget);
     expect(find.text('Captura rápida'), findsOneWidget);
     expect(find.text('Guardar captura'), findsOneWidget);
+    expect(find.text('Entrar'), findsOneWidget);
+    expect(find.text('Correo'), findsOneWidget);
 
     await tester.enterText(
         find.widgetWithText(TextField, 'Nota'), 'V, toma nota de prueba.');

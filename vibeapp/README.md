@@ -9,8 +9,8 @@ This folder is a starter skeleton. Flutter SDK is available locally at `C:\Users
 - Quick text capture with visible sync state.
 - Local queue panel for captures and pending device actions.
 - Native action placeholders for audio, photo, video, calendar, biometrics, and location.
-- Development sync settings: Vibe API endpoint + session token.
-- Text notes can attempt `POST /api/experiences` through the Vibe backend; native media actions stay queued until plugins are connected.
+- Development sync settings: Vibe API endpoint + Supabase Auth email/password.
+- Text notes can sign in through the PWA public Supabase config, then attempt `POST /api/experiences` through the Vibe backend; native media actions stay queued until plugins are connected.
 - User-facing states kept simple: ready, syncing, synced, or needs attention.
 
 ## First milestone

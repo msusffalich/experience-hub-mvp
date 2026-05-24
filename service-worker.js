@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260524-native-sync-publication-channels-427";
+const CACHE_NAME = "experience-hub-pwa-20260524-native-auth-sync-428";
 const APP_SHELL = [
   "/",
   "/index.html",
