@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260524-pdf-polish-flutter-424";
+const CACHE_NAME = "experience-hub-pwa-20260524-publication-media-native-425";
 const APP_SHELL = [
   "/",
   "/index.html",

@@ -1,4 +1,4 @@
-const APP_VERSION = "20260524-pdf-polish-flutter-424";
+const APP_VERSION = "20260524-publication-media-native-425";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -49,26 +49,36 @@ const publicationTypeGuides = {
   "Publicación social rápida": {
     purpose: "Para compartir algo breve en WhatsApp, Instagram o Facebook sin convertirlo en informe.",
     bestFor: "Una noticia personal, una foto destacada, un momento corto, una actualización familiar o social.",
+    mediaPolicy: "Funciona con una imagen o video protagonista. Si incluyes audio o documentos, la app los resume como contexto, no como pieza principal.",
+    channels: ["WhatsApp", "Instagram", "Facebook"],
     structure: ["Gancho breve", "Momento principal", "Detalle humano", "Cierre simple"],
   },
   "Reporte narrativo": {
     purpose: "Para contar una experiencia o periodo como historia editada, con contexto, momentos y lectura final.",
     bestFor: "Viajes de varios días, conciertos, reuniones, proyectos, aprendizaje o una etapa con varios eventos.",
+    mediaPolicy: "Puede usar imágenes, audio, video y documentos. Las imágenes se muestran; los demás medios se citan con resumen y acción para abrir o descargar.",
+    channels: ["PDF/HTML", "Email", "WhatsApp"],
     structure: ["Contexto", "Historia", "Momentos clave", "Evidencia multimedia", "Lectura final"],
   },
   "Álbum experiencial": {
     purpose: "Para preservar memoria visual y emocional, priorizando fotos, videos, audios y recuerdos.",
     bestFor: "Viajes, familia, celebraciones, visitas, paseos, experiencias con muchas imágenes o videos.",
+    mediaPolicy: "Es el formato más visual. Imágenes y videos son protagonistas; audio y documentos quedan como notas de apoyo o enlaces de revisión.",
+    channels: ["PDF/HTML", "WhatsApp", "Facebook"],
     structure: ["Portada de memoria", "Galería", "Momentos", "Personas y lugares", "Recuerdo final"],
   },
   "Resumen ejecutivo": {
     purpose: "Para enviar una síntesis clara y accionable a otra persona.",
     bestFor: "Salud para médico, trabajo para equipo, aprendizaje para mentor, decisión personal o reporte breve.",
+    mediaPolicy: "Prioriza texto claro, evidencia resumida y documentos interpretados. Las imágenes solo se muestran si aportan evidencia o contexto.",
+    channels: ["Email", "PDF/HTML", "WhatsApp"],
     structure: ["Resumen", "Hallazgos", "Evidencia", "Riesgos o pendientes", "Próximas acciones"],
   },
   "Guion de story/reel": {
     purpose: "Para transformar la experiencia en una secuencia corta de escenas.",
     bestFor: "Instagram, TikTok, reels, presentación rápida, video corto o narración por pasos.",
+    mediaPolicy: "Funciona mejor con video, imagen y audio breve. Documentos o ZIP no se muestran: se convierten en texto de apoyo si tienen interpretación.",
+    channels: ["Instagram", "Facebook", "WhatsApp"],
     structure: ["Escena inicial", "3-5 escenas", "Texto en pantalla", "Audio/voz sugerida", "Cierre"],
   },
 };
@@ -2321,11 +2331,14 @@ const manualContent = {
         "La agenda usa estados del blueprint: planificado, confirmado, reprogramado, cancelado, completado, pendiente de seguimiento y convertido en experiencia.",
         "Los eventos de Agenda se guardan localmente y se sincronizan con el backend para verse en otros dispositivos con la misma sesión. Si la tabla agenda_events aún no existe en Supabase, el servidor usa un respaldo central temporal hasta aplicar database/agenda-events.sql.",
         "Al convertir un evento, la app crea una experiencia vinculada con duración, ubicación, participantes y notas de origen para mantener la continuidad Agenda -> Evento -> Experiencia -> Memoria viva.",
-        "Publicaciones Inteligentes genera borradores locales desde el reporte filtrado o las últimas experiencias. Permite elegir tipo, estilo narrativo, canal, incluir o excluir multimedia sugerida, aplicar limpieza de privacidad y exportar como HTML, Markdown o paquete editorial JSON.",
+        "Publicaciones Inteligentes genera borradores locales desde el reporte filtrado o las últimas experiencias. Permite elegir tipo, estilo narrativo, canal, incluir o excluir multimedia sugerida, aplicar limpieza de privacidad y exportar como PDF ReportLab, HTML, Markdown o paquete editorial JSON.",
+        "Los tipos de publicación no son iguales: publicación social rápida sirve para mensajes breves, reporte narrativo para contar un periodo, álbum experiencial para memorias visuales, resumen ejecutivo para enviar evidencia clara y guion de story/reel para una secuencia corta.",
         "Aprobación humana marca si el borrador está en revisión o aprobado. Cualquier edición, cambio de diseño o curaduría multimedia lo devuelve a revisión.",
         "Historial del borrador registra generación, ediciones, cambios de multimedia, diseño, aprobación y exportaciones recientes.",
         "Multimedia sugerida significa archivos ya adjuntos a las experiencias fuente. La app los propone para la publicación; incluirlos o excluirlos no modifica ni borra la experiencia original.",
         "Cuando un activo tiene etiquetas, nota o texto analítico, Publicaciones lo usa como contexto editorial en la multimedia sugerida y como evidencia editable dentro del borrador.",
+        "Las imágenes pueden incrustarse visualmente en el PDF. Audio, video, documentos y ZIP no se fuerzan como imágenes: se muestran con controles o acciones de abrir/descargar en la app y en HTML, y en el PDF se resumen como evidencia o referencia.",
+        "Si el texto de una publicación se ve breve, no significa que ese sea el límite del sistema: el borrador depende de la riqueza de las experiencias, notas, transcripciones, OCR, documentos interpretados y edición manual del usuario.",
         "Los títulos de multimedia se muestran con nombre de archivo y experiencia de origen para que el usuario entienda de dónde viene cada activo sin romper la maqueta visual.",
         "La salida imprimible y el HTML exportado usan márgenes de página, reglas de salto y protección de tarjetas para reducir cortes de paneles o multimedia entre páginas.",
         "El HTML exportado conserva el diseño visual seleccionado: social, ejecutivo, revista, álbum o guion.",
@@ -7278,11 +7291,16 @@ function updatePublicationTypeHelp() {
   const title = state.language === "en" ? displayPublicationType(type) : type;
   const purpose = state.language === "en" ? translatePublicationGuideText(guide.purpose) : guide.purpose;
   const bestFor = state.language === "en" ? translatePublicationGuideText(guide.bestFor) : guide.bestFor;
+  const mediaPolicy = state.language === "en" ? translatePublicationGuideText(guide.mediaPolicy) : guide.mediaPolicy;
+  const channelLabel = state.language === "en" ? "Recommended channels" : "Canales recomendados";
+  const mediaLabel = state.language === "en" ? "How media is used" : "Cómo usa la multimedia";
   const structure = (guide.structure || []).map((item) => state.language === "en" ? translatePublicationGuideText(item) : item);
   box.innerHTML = `
     <strong>${escapeHtml(title)}</strong>
     <p>${escapeHtml(purpose)}</p>
     <p><b>${escapeHtml(state.language === "en" ? "Best for" : "Sirve para")}:</b> ${escapeHtml(bestFor)}</p>
+    <p><b>${escapeHtml(mediaLabel)}:</b> ${escapeHtml(mediaPolicy || "")}</p>
+    <p><b>${escapeHtml(channelLabel)}:</b> ${(guide.channels || []).map((item) => `<span class="publication-guide-chip">${escapeHtml(item)}</span>`).join(" ")}</p>
     <ul>${structure.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
   `;
 }
@@ -7291,14 +7309,19 @@ function translatePublicationGuideText(text) {
   const map = {
     "Para compartir algo breve en WhatsApp, Instagram o Facebook sin convertirlo en informe.": "For a short WhatsApp, Instagram, or Facebook update without turning it into a report.",
     "Una noticia personal, una foto destacada, un momento corto, una actualización familiar o social.": "A personal update, one featured photo, a short moment, or a family/social update.",
+    "Funciona con una imagen o video protagonista. Si incluyes audio o documentos, la app los resume como contexto, no como pieza principal.": "Works with one lead image or video. If audio or documents are included, the app summarizes them as context, not as the main piece.",
     "Para contar una experiencia o periodo como historia editada, con contexto, momentos y lectura final.": "For telling an experience or period as an edited story with context, moments, and final reading.",
     "Viajes de varios días, conciertos, reuniones, proyectos, aprendizaje o una etapa con varios eventos.": "Multi-day trips, concerts, meetings, projects, learning, or a period with several events.",
+    "Puede usar imágenes, audio, video y documentos. Las imágenes se muestran; los demás medios se citan con resumen y acción para abrir o descargar.": "Can use images, audio, video, and documents. Images are displayed; other media are cited with a summary and an open/download action.",
     "Para preservar memoria visual y emocional, priorizando fotos, videos, audios y recuerdos.": "For preserving visual and emotional memory, prioritizing photos, videos, audio, and memories.",
     "Viajes, familia, celebraciones, visitas, paseos, experiencias con muchas imágenes o videos.": "Trips, family, celebrations, visits, outings, or image/video-rich experiences.",
+    "Es el formato más visual. Imágenes y videos son protagonistas; audio y documentos quedan como notas de apoyo o enlaces de revisión.": "This is the most visual format. Images and videos lead; audio and documents become support notes or review links.",
     "Para enviar una síntesis clara y accionable a otra persona.": "For sending a clear, actionable synthesis to another person.",
     "Salud para médico, trabajo para equipo, aprendizaje para mentor, decisión personal o reporte breve.": "Health for a doctor, work for a team, learning for a mentor, personal decision, or brief report.",
+    "Prioriza texto claro, evidencia resumida y documentos interpretados. Las imágenes solo se muestran si aportan evidencia o contexto.": "Prioritizes clear text, summarized evidence, and interpreted documents. Images are shown only when they add evidence or context.",
     "Para transformar la experiencia en una secuencia corta de escenas.": "For turning the experience into a short scene sequence.",
     "Instagram, TikTok, reels, presentación rápida, video corto o narración por pasos.": "Instagram, TikTok, reels, quick presentation, short video, or step-by-step narration.",
+    "Funciona mejor con video, imagen y audio breve. Documentos o ZIP no se muestran: se convierten en texto de apoyo si tienen interpretación.": "Works best with video, image, and short audio. Documents or ZIP files are not displayed; they become support text when interpreted.",
     "Gancho breve": "Short hook",
     "Momento principal": "Main moment",
     "Detalle humano": "Human detail",
@@ -18142,6 +18165,7 @@ function renderPublicationPreview(draft) {
           ${draft.privacy ? `<span class="pill">${escapeHtml(t("labels.publicationPrivacyApplied"))}</span>` : ""}
         </div>
         ${renderPublicationApproval(draft)}
+        ${renderPublicationUseGuide(draft)}
         ${renderPublicationEditor(draft)}
         ${renderPublicationTemplateGallery(draft)}
         ${renderPublicationMedia(draft.media || [])}
@@ -18164,6 +18188,43 @@ function renderPublicationPreview(draft) {
         <p class="card-meta">${escapeHtml(t("labels.publicationPrivacyNote"))}</p>
       </div>
     </article>
+  `;
+}
+
+function renderPublicationUseGuide(draft) {
+  const guide = getPublicationTypeGuide(draft.type);
+  const mediaPolicy = state.language === "en" ? translatePublicationGuideText(guide.mediaPolicy) : guide.mediaPolicy;
+  const bestFor = state.language === "en" ? translatePublicationGuideText(guide.bestFor) : guide.bestFor;
+  const textSource = state.language === "en"
+    ? "Text source: the PDF uses the edited title, summary, and body shown below. If the source data is sparse or test-only, the draft will be short until you enrich it in the editor."
+    : "Fuente del texto: el PDF usa el título, resumen y cuerpo editados abajo. Si los datos fuente son escasos o de prueba, el borrador será breve hasta que lo enriquezcas en el editor.";
+  const mediaUse = state.language === "en"
+    ? "Media rule: images are embedded when possible. Audio, video, documents, and ZIP files keep controls or download/open actions in the app/HTML; the PDF summarizes their meaning and preserves the reference."
+    : "Regla multimedia: las imágenes se incrustan cuando es posible. Audio, video, documentos y ZIP conservan controles o acciones de abrir/descargar en la app/HTML; el PDF resume su significado y conserva la referencia.";
+  return `
+    <section class="publication-use-guide">
+      <div class="publication-section-heading">
+        <div>
+          <h3>${escapeHtml(state.language === "en" ? "How this publication works" : "Cómo funciona esta publicación")}</h3>
+          <p class="card-meta">${escapeHtml(bestFor)}</p>
+        </div>
+        <span>${escapeHtml(displayPublicationType(draft.type))}</span>
+      </div>
+      <div class="publication-use-grid">
+        <article>
+          <strong>${escapeHtml(state.language === "en" ? "Format fit" : "Uso del formato")}</strong>
+          <p>${escapeHtml(mediaPolicy || "")}</p>
+        </article>
+        <article>
+          <strong>${escapeHtml(state.language === "en" ? "Edited text" : "Texto editado")}</strong>
+          <p>${escapeHtml(textSource)}</p>
+        </article>
+        <article>
+          <strong>${escapeHtml(state.language === "en" ? "Non-image media" : "Medios que no son imagen")}</strong>
+          <p>${escapeHtml(mediaUse)}</p>
+        </article>
+      </div>
+    </section>
   `;
 }
 
@@ -18416,15 +18477,15 @@ function renderPublicationFinalMediaItem(item) {
   }
   const source = escapeHtml(item.url || item.dataUrl);
   if (item.type.startsWith("image/")) {
-    return `<figure><img src="${source}" alt="${escapeHtml(item.name)}" loading="lazy" />${caption}</figure>`;
+    return `<figure><img src="${source}" alt="${escapeHtml(item.name)}" loading="lazy" />${caption}${renderPublicationMediaAction(item)}</figure>`;
   }
   if (item.type.startsWith("video/")) {
-    return `<figure><video src="${source}" controls muted playsinline preload="metadata"></video>${caption}</figure>`;
+    return `<figure><video src="${source}" controls muted playsinline preload="metadata"></video>${caption}${renderPublicationMediaAction(item)}</figure>`;
   }
   if (item.type.startsWith("audio/")) {
-    return `<figure class="publication-audio"><audio src="${source}" controls preload="metadata"></audio>${caption}</figure>`;
+    return `<figure class="publication-audio"><audio src="${source}" controls preload="metadata"></audio>${caption}${renderPublicationMediaAction(item)}</figure>`;
   }
-  return `<figure class="publication-file">${caption}</figure>`;
+  return `<figure class="publication-file">${renderPublicationFileBadge(item)}${caption}${renderPublicationMediaAction(item)}</figure>`;
 }
 
 function renderPublicationReadiness(draft) {
@@ -18725,15 +18786,57 @@ function renderPublicationMediaItem(item) {
   }
   const source = escapeHtml(item.url || item.dataUrl);
   if (item.type.startsWith("image/")) {
-    return `<figure class="${stateClass}"><img src="${source}" alt="${escapeHtml(item.name)}" loading="lazy" />${caption}${control}</figure>`;
+    return `<figure class="${stateClass}"><img src="${source}" alt="${escapeHtml(item.name)}" loading="lazy" />${caption}${renderPublicationMediaAction(item)}${control}</figure>`;
   }
   if (item.type.startsWith("video/")) {
-    return `<figure class="${stateClass}"><video src="${source}" controls muted playsinline preload="metadata"></video>${caption}${control}</figure>`;
+    return `<figure class="${stateClass}"><video src="${source}" controls muted playsinline preload="metadata"></video>${caption}${renderPublicationMediaAction(item)}${control}</figure>`;
   }
   if (item.type.startsWith("audio/")) {
-    return `<figure class="publication-audio ${stateClass}"><audio src="${source}" controls preload="metadata"></audio>${caption}${control}</figure>`;
+    return `<figure class="publication-audio ${stateClass}"><audio src="${source}" controls preload="metadata"></audio>${caption}${renderPublicationMediaAction(item)}${control}</figure>`;
   }
-  return `<figure class="publication-file ${stateClass}">${caption}${control}</figure>`;
+  return `<figure class="publication-file ${stateClass}">${renderPublicationFileBadge(item)}${caption}${renderPublicationMediaAction(item)}${control}</figure>`;
+}
+
+function renderPublicationFileBadge(item) {
+  return `
+    <div class="publication-file-badge">
+      <strong>${escapeHtml(getPublicationMediaKindLabel(item))}</strong>
+      <span>${escapeHtml(state.language === "en" ? "Referenced in the story, not embedded visually." : "Referenciado en la historia; no se incrusta como imagen.")}</span>
+    </div>
+  `;
+}
+
+function renderPublicationMediaAction(item) {
+  const source = item.url || item.dataUrl || "";
+  if (!source) return "";
+  const label = getPublicationMediaActionLabel(item);
+  const downloadName = item.name || "vibe-media";
+  return `
+    <a class="publication-media-action" href="${escapeHtml(source)}" target="_blank" rel="noopener noreferrer" download="${escapeHtml(downloadName)}">
+      ${escapeHtml(label)}
+    </a>
+  `;
+}
+
+function getPublicationMediaActionLabel(item) {
+  if (String(item.type || "").startsWith("image/")) return state.language === "en" ? "Open image" : "Abrir imagen";
+  if (String(item.type || "").startsWith("video/")) return state.language === "en" ? "Open or download video" : "Abrir o descargar video";
+  if (String(item.type || "").startsWith("audio/")) return state.language === "en" ? "Open or download audio" : "Abrir o descargar audio";
+  if (isArchiveLikePublicationMedia(item)) return state.language === "en" ? "Download ZIP/archive" : "Descargar ZIP/archivo";
+  return state.language === "en" ? "Open or download file" : "Abrir o descargar archivo";
+}
+
+function getPublicationMediaKindLabel(item) {
+  if (String(item.type || "").startsWith("image/")) return state.language === "en" ? "Image" : "Imagen";
+  if (String(item.type || "").startsWith("video/")) return state.language === "en" ? "Video" : "Video";
+  if (String(item.type || "").startsWith("audio/")) return state.language === "en" ? "Audio" : "Audio";
+  if (isArchiveLikePublicationMedia(item)) return "ZIP";
+  return state.language === "en" ? "Document" : "Documento";
+}
+
+function isArchiveLikePublicationMedia(item) {
+  const text = `${item.name || ""} ${item.type || ""}`.toLowerCase();
+  return /\b(zip|rar|7z)\b/.test(text) || /\.(zip|rar|7z)$/.test(text);
 }
 
 function renderPublicationMediaSyncNotice(item) {
@@ -18746,16 +18849,20 @@ function renderPublicationMediaSyncNotice(item) {
 }
 
 function renderPublicationMediaCaption(item) {
-  const context = [item.analyticalText, item.manualNote].filter(Boolean).join(" ");
+  const context = [item.translatedText, item.analyticalText, item.manualNote, item.originalText].filter(Boolean).join(" ");
   const tags = (item.tags || []).slice(0, 4);
+  const mediaRole = String(item.type || "").startsWith("image/")
+    ? (state.language === "en" ? "Visual asset: can be shown in the PDF." : "Activo visual: puede mostrarse en el PDF.")
+    : (state.language === "en" ? "Support asset: summarized here; open/download from the app or HTML." : "Activo de apoyo: se resume aquí; se abre o descarga desde la app o HTML.");
   return `
     <figcaption class="publication-media-caption">
       <strong title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</strong>
       <span title="${escapeHtml(item.experienceTitle)}">${escapeHtml(item.experienceTitle)}</span>
       <span class="publication-provenance ${item.isDemo ? "is-demo" : "is-user"}">${escapeHtml(item.provenance || "")}</span>
+      <small><b>${escapeHtml(state.language === "en" ? "Use" : "Uso")}:</b> ${escapeHtml(mediaRole)}</small>
       ${
         context || tags.length
-          ? `<small><b>${escapeHtml(t("labels.publicationMediaContext"))}:</b> ${escapeHtml(context || tags.join(", "))}</small>`
+          ? `<small><b>${escapeHtml(t("labels.publicationMediaContext"))}:</b> ${escapeHtml(shortPublicationText(context || tags.join(", "), 260))}</small>`
           : ""
       }
     </figcaption>
@@ -19063,7 +19170,7 @@ function buildPublicationHtml(draft) {
               ? `<figure><video src="${escapeHtml(item.url || item.dataUrl)}" controls></video><figcaption>${escapeHtml(buildPublicationExportCaption(item))}</figcaption></figure>`
               : item.type.startsWith("audio/")
                 ? `<figure><audio src="${escapeHtml(item.url || item.dataUrl)}" controls></audio><figcaption>${escapeHtml(buildPublicationExportCaption(item))}</figcaption></figure>`
-                : `<p>${escapeHtml(buildPublicationExportCaption(item))}</p>`,
+                : `<p><strong>${escapeHtml(getPublicationMediaKindLabel(item))}:</strong> ${escapeHtml(buildPublicationExportCaption(item))}<br /><a href="${escapeHtml(item.url || item.dataUrl)}" download="${escapeHtml(item.name || "vibe-media")}" target="_blank" rel="noopener noreferrer">${escapeHtml(getPublicationMediaActionLabel(item))}</a></p>`,
         )
         .join("")}</div></section>`
     : "";
@@ -19135,6 +19242,8 @@ function exportCurrentPublicationPackage() {
       provenance: item.provenance || "",
       experienceTitle: item.experienceTitle || "",
       caption: buildPublicationExportCaption(item),
+      url: item.url || item.dataUrl || "",
+      action: getPublicationMediaActionLabel(item),
       analyticalText: item.analyticalText || "",
       manualNote: item.manualNote || "",
       tags: item.tags || [],
@@ -19212,12 +19321,15 @@ function downloadPublicationBlob(blob, filename, warning = "") {
 function formatPublicationMediaMarkdown(media) {
   if (!media.length) return `${t("labels.publicationMedia")}: ${t("labels.publicationMediaEmpty")}`;
   return `## ${t("labels.publicationMedia")}\n\n${media
-    .map((item) => `- ${buildPublicationExportCaption(item)}`)
+    .map((item) => {
+      const action = item.url || item.dataUrl ? ` ${getPublicationMediaActionLabel(item)}: ${item.url || item.dataUrl}` : "";
+      return `- ${buildPublicationExportCaption(item)}${action}`;
+    })
     .join("\n")}`;
 }
 
 function buildPublicationExportCaption(item) {
-  const context = [item.analyticalText, item.manualNote, ...(item.tags || []).slice(0, 3)].filter(Boolean).join(" · ");
+  const context = [item.translatedText, item.analyticalText, item.manualNote, item.originalText, ...(item.tags || []).slice(0, 3)].filter(Boolean).join(" · ");
   return `${item.name} · ${item.experienceTitle}${item.provenance ? ` · ${item.provenance}` : ""}${context ? ` · ${context}` : ""}`;
 }
 
@@ -23089,7 +23201,7 @@ function renderAdminOperationalFocusPanel() {
         biometricAssets: "Biometric files in Assets",
         biometricAssetsDetail: "CSV/JSON from Apple Health or wearables enters through Assets as cross-experience context, then informs energy and recovery by date/time.",
         reportPdf: "Cleaner reports, publications, and findings",
-        reportPdfDetail: "Reports now use an executive PDF, participant scope, and folded technical exports. Publications show the main actions first. Findings are organized by 8 human themes and can be downloaded.",
+        reportPdfDetail: "Reports now use an executive PDF, participant scope, and folded technical exports. Publications explain format fit, edited text, media actions, and non-image handling. Findings are organized by 8 human themes and can be downloaded.",
       }
     : {
         title: "Administración operativa",
@@ -23122,7 +23234,7 @@ function renderAdminOperationalFocusPanel() {
     labels.biometricAssets = "Biometr\u00eda desde Activos";
     labels.biometricAssetsDetail = "CSV/JSON de Apple Health o wearables entra por Activos como contexto transversal y luego informa energ\u00eda o recuperaci\u00f3n por fecha/hora.";
     labels.reportPdf = "Reportes, publicaciones y hallazgos limpios";
-    labels.reportPdfDetail = "Reportes usa PDF ejecutivo, alcance por persona y exportaciones tecnicas plegadas. Publicaciones muestra primero las acciones principales. Hallazgos se organiza en 8 ejes humanos y se puede descargar.";
+    labels.reportPdfDetail = "Reportes usa PDF ejecutivo, alcance por persona y exportaciones técnicas plegadas. Publicaciones explica uso de formatos, texto editado, acciones multimedia y manejo de medios que no son imagen. Hallazgos se organiza en 8 ejes humanos y se puede descargar.";
   }
   const cards = [
     [labels.flow, labels.flowDetail],

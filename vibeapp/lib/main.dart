@@ -94,7 +94,35 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
               label: const Text('Guardar captura'),
             ),
             const SizedBox(height: 24),
+            const NativeFlowSummary(),
+            const SizedBox(height: 16),
             const CaptureActionGrid(),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class NativeFlowSummary extends StatelessWidget {
+  const NativeFlowSummary({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Contrato nativo',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'La app nativa se encargará de capturar permisos reales del dispositivo, guardar en cola local y sincronizar con Supabase para que la PWA lo vea sin pasos manuales.',
+            ),
           ],
         ),
       ),
@@ -108,29 +136,55 @@ class CaptureActionGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final actions = [
-      (Icons.mic_none, 'Audio'),
-      (Icons.photo_camera_outlined, 'Foto'),
-      (Icons.videocam_outlined, 'Video'),
-      (Icons.event_available_outlined, 'Agenda'),
+      const NativeCaptureAction(Icons.mic_none, 'Audio', 'Grabar, transcribir y vincular a una experiencia abierta.'),
+      const NativeCaptureAction(Icons.photo_camera_outlined, 'Foto', 'Tomar foto con cámara nativa y subir a Storage privado.'),
+      const NativeCaptureAction(Icons.videocam_outlined, 'Video', 'Capturar video y registrar metadatos de fecha, lugar y usuario.'),
+      const NativeCaptureAction(Icons.event_available_outlined, 'Agenda', 'Detectar intención de calendario y crear evento confirmado.'),
     ];
 
     return GridView.count(
       crossAxisCount: 2,
-      childAspectRatio: 2.5,
+      childAspectRatio: 1.55,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       mainAxisSpacing: 12,
       crossAxisSpacing: 12,
       children: [
         for (final action in actions)
-          OutlinedButton.icon(
-            onPressed: () {},
-            icon: Icon(action.$1),
-            label: Text(action.$2),
+          OutlinedButton(
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('${action.label}: contrato definido; falta conectar plugin nativo.')),
+              );
+            },
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(action.icon),
+                const SizedBox(height: 8),
+                Text(action.label, style: const TextStyle(fontWeight: FontWeight.w700)),
+                const SizedBox(height: 4),
+                Text(
+                  action.detail,
+                  textAlign: TextAlign.center,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
           ),
       ],
     );
   }
+}
+
+class NativeCaptureAction {
+  const NativeCaptureAction(this.icon, this.label, this.detail);
+
+  final IconData icon;
+  final String label;
+  final String detail;
 }
 
 class SyncBadge extends StatelessWidget {

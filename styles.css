@@ -6275,6 +6275,18 @@ button.asset-processing-summary-card {
   font-size: 0.82rem;
 }
 
+.publication-guide-chip {
+  display: inline-flex;
+  margin: 2px 4px 2px 0;
+  padding: 4px 8px;
+  border: 1px solid rgba(13, 124, 102, 0.2);
+  border-radius: 999px;
+  background: #eef6f5;
+  color: var(--accent-dark);
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .publication-cover {
   display: grid;
   gap: 8px;
@@ -6322,6 +6334,7 @@ button.asset-processing-summary-card {
 
 .publication-editor,
 .publication-approval,
+.publication-use-guide,
 .publication-history-panel,
 .publication-template-gallery,
 .publication-export-guide,
@@ -6387,6 +6400,39 @@ button.asset-processing-summary-card {
 .publication-approval.is-review {
   border-color: rgba(200, 121, 19, 0.28);
   background: rgba(200, 121, 19, 0.08);
+}
+
+.publication-use-guide {
+  border-color: rgba(46, 110, 166, 0.22);
+  background: linear-gradient(180deg, rgba(239, 246, 255, 0.78), rgba(255, 255, 255, 0.9));
+}
+
+.publication-use-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.publication-use-grid article {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid rgba(18, 33, 61, 0.08);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.publication-use-grid strong,
+.publication-use-grid p {
+  overflow-wrap: anywhere;
+}
+
+.publication-use-grid p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 .pill-approved {
@@ -6878,6 +6924,46 @@ button.asset-processing-summary-card {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface-strong);
+}
+
+.publication-file-badge {
+  display: grid;
+  gap: 4px;
+  min-height: 82px;
+  align-content: center;
+  padding: 12px;
+  border: 1px dashed rgba(13, 124, 102, 0.28);
+  border-radius: 8px;
+  background: rgba(239, 248, 244, 0.84);
+  text-align: center;
+}
+
+.publication-file-badge strong {
+  color: var(--accent-dark);
+  font-size: 15px;
+}
+
+.publication-file-badge span {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.publication-media-action {
+  display: inline-flex;
+  width: max-content;
+  max-width: 100%;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 9px;
+  border: 1px solid rgba(46, 110, 166, 0.24);
+  border-radius: 999px;
+  background: rgba(239, 246, 255, 0.88);
+  color: var(--blue);
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+  overflow-wrap: anywhere;
 }
 
 .publication-media-toggle {
@@ -10780,6 +10866,7 @@ button.asset-processing-summary-card {
   .agenda-conflict-item,
   .publication-approval,
   .publication-export-grid,
+  .publication-use-grid,
   .publication-check-grid,
   .publication-closure-grid,
   .publication-draft-item,

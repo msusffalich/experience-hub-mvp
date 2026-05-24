@@ -488,7 +488,20 @@ def media_caption(item):
     context = item.get("manualNote") or item.get("analyticalText") or item.get("translatedText") or ""
     if context:
         pieces.append(short(context, 160))
+    if not str((item or {}).get("type") or "").startswith("image/"):
+        pieces.append(media_action_note(item))
     return " - ".join([piece for piece in pieces if piece])
+
+
+def media_action_note(item):
+    kind = human_kind(item).lower()
+    if kind == "audio":
+        return "Acción: reproducir o descargar desde la app/HTML; el PDF conserva la transcripción o resumen."
+    if kind == "video":
+        return "Acción: reproducir o descargar desde la app/HTML; el PDF conserva la lectura editorial."
+    if kind == "documento":
+        return "Acción: abrir o descargar desde la app/HTML; el PDF resume el contenido interpretado."
+    return "Acción: descargar desde la app/HTML; se conserva como activo de transporte."
 
 
 def media_gallery(media):
@@ -518,7 +531,7 @@ def media_gallery(media):
             flow.append(KeepTogether([
                 text_card(
                     f"{human_kind(item)}: {short(item.get('name') or 'Activo', 64)}",
-                    f"Uso editorial: {short(body, 260)}",
+                    f"Uso editorial: {short(body, 260)} {media_action_note(item)}",
                     colors.HexColor("#0d7c66"),
                 ),
                 Spacer(1, 7),
@@ -618,9 +631,9 @@ def evidence_plain_language(item):
     elif str(item.get("type") or "").startswith("image/"):
         prefix = "Lectura visual: usar como portada, galeria o evidencia contextual."
     elif str(item.get("type") or "").startswith(("audio/", "video/")):
-        prefix = "Memoria hablada o audiovisual: usar transcripcion, tono y momento vivido."
+        prefix = "Memoria hablada o audiovisual: usar transcripcion, tono y momento vivido. Se reproduce o descarga desde app/HTML."
     else:
-        prefix = "Documento de soporte: convertir el contenido en lenguaje claro."
+        prefix = "Documento de soporte: convertir el contenido en lenguaje claro. Se abre o descarga desde app/HTML."
     detail = short(text, 170)
     return f"{prefix} {detail}" if detail else prefix
 
