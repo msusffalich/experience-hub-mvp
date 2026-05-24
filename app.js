@@ -1,4 +1,4 @@
-const APP_VERSION = "20260524-native-auth-sync-428";
+const APP_VERSION = "20260524-scope-filters-native-session-429";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2114,6 +2114,7 @@ const manualContent = {
         "El blueprint inicial de Vibeapp está documentado en docs/vibeapp-native-blueprint.md. Ese documento define contrato de sincronización, pantallas iniciales, flujo offline, permisos, privacidad y los primeros incrementos Flutter.",
         "El esqueleto Flutter de Vibeapp ya muestra cola local y acciones nativas separadas para texto, audio, foto, video, agenda, biometría y lugar. En esta fase todavía no toma control real de cámara o sensores; prepara el contrato visual y técnico para conectar plugins nativos y Supabase sin mezclarlo con la PWA.",
         "Vibeapp ya incluye un primer contrato de sincronización: guarda notas en cola local, permite entrar con el mismo usuario Supabase de la PWA y luego intenta crear una experiencia mediante POST /api/experiences. El usuario ya no necesita copiar tokens manualmente en este esqueleto.",
+        "Vibeapp suma modo Experiencia activa: puedes iniciar una experiencia larga, agregar varias notas o acciones como eventos internos y cerrar el registro sin crear experiencias sueltas. La sincronización usa el mismo identificador de experiencia para que la PWA lea una línea de eventos coherente.",
         "El contrato de dispositivos se puede exportar como Markdown o JSON para compartirlo con desarrolladores, integraciones API/MCP o proveedores de wearables.",
         "Activos multimodales incluye Procesar ahora y Procesar visibles. Los documentos de texto se extraen localmente; los PDFs escaneados usan OCR del backend cuando OCR_PROVIDER=openai y OPENAI_API_KEY están configurados; los audios usan transcripción del backend si está configurada; las imágenes usan OCR automático del backend.",
         "Siguiendo el patrón del blueprint de CLIO, los activos sincronizados se leen desde el backend usando URLs firmadas temporales de Supabase. Otro dispositivo puede procesar documentos, imágenes y audios sin depender del archivo local original.",
@@ -2462,6 +2463,7 @@ const manualContent = {
         "El flujo correcto es: elegir participante y fuente, escoger tipo/estilo/canal, generar borrador, revisar texto y multimedia, aprobar y descargar PDF editado ReportLab.",
         "El PDF es la salida principal para usuario final. HTML, Markdown, copiar texto y paquete JSON quedan como opciones tecnicas o de edicion, plegadas para no competir con el flujo principal.",
         "La app propone multimedia ya asociada a las experiencias fuente. Puedes incluir o excluir imagenes, videos, audios y documentos sin borrar los activos originales.",
+        "Reportes, Hallazgos y Publicaciones comparten el mismo alcance base: participante, categoría, fecha desde y fecha hasta. Así puedes trabajar con un grupo de experiencias o un segmento de fechas sin limitarte a todo el historial o a una sola experiencia.",
         "El documento final contiene titulo, resumen, cuerpo, momentos seleccionados, multimedia incluida, estado de privacidad y preparacion por canal.",
         "WhatsApp y Email son salidas asistidas: la app prepara/copiar el contenido y abre el canal cuando el navegador lo permite; el usuario revisa y envia.",
         "Facebook e Instagram aun no tienen publicacion automatica por API. La app prepara el contenido y abre la red para pegado manual hasta tener conectores aprobados.",
@@ -3602,9 +3604,15 @@ const state = {
   },
   insightsFilters: {
     pilotParticipantId: "all",
+    category: "all",
+    dateFrom: "",
+    dateTo: "",
   },
   publicationFilters: {
     pilotParticipantId: "all",
+    category: "all",
+    dateFrom: "",
+    dateTo: "",
   },
   reportFilters: {
     scope: "all",
@@ -3612,6 +3620,8 @@ const state = {
     experienceId: "",
     category: "all",
     pilotParticipantId: "all",
+    dateFrom: "",
+    dateTo: "",
     people: "",
     objective: "",
     eventQuery: "",
@@ -6235,8 +6245,42 @@ function setupFilters() {
   document.getElementById("insightsPilotParticipantFilter").addEventListener("change", (event) => {
     setAnalyticalParticipantScope(event.target.value, "insights");
   });
+  document.getElementById("insightsCategoryFilter").addEventListener("change", (event) => {
+    state.insightsFilters.category = event.target.value || "all";
+    renderInsights();
+  });
+  document.getElementById("insightsDateFromFilter").addEventListener("change", (event) => {
+    state.insightsFilters.dateFrom = event.target.value || "";
+    renderInsights();
+  });
+  document.getElementById("insightsDateToFilter").addEventListener("change", (event) => {
+    state.insightsFilters.dateTo = event.target.value || "";
+    renderInsights();
+  });
+  document.getElementById("clearInsightsScopeButton").addEventListener("click", () => {
+    state.insightsFilters = { pilotParticipantId: "all", category: "all", dateFrom: "", dateTo: "" };
+    syncAnalyticalScopeInputs();
+    renderInsights();
+  });
   document.getElementById("publicationPilotParticipantFilter").addEventListener("change", (event) => {
     setAnalyticalParticipantScope(event.target.value, "publications");
+  });
+  document.getElementById("publicationCategoryFilter").addEventListener("change", (event) => {
+    state.publicationFilters.category = event.target.value || "all";
+    renderPublications();
+  });
+  document.getElementById("publicationDateFromFilter").addEventListener("change", (event) => {
+    state.publicationFilters.dateFrom = event.target.value || "";
+    renderPublications();
+  });
+  document.getElementById("publicationDateToFilter").addEventListener("change", (event) => {
+    state.publicationFilters.dateTo = event.target.value || "";
+    renderPublications();
+  });
+  document.getElementById("clearPublicationScopeButton").addEventListener("click", () => {
+    state.publicationFilters = { pilotParticipantId: "all", category: "all", dateFrom: "", dateTo: "" };
+    syncAnalyticalScopeInputs();
+    renderPublications();
   });
   document.getElementById("librarySearchInput").addEventListener("input", (event) => {
     state.libraryFilters.query = event.target.value.trim().toLowerCase();
@@ -6346,6 +6390,7 @@ function setupFilters() {
     renderReport();
     setReportFlowStatus(state.language === "en" ? "Scope changed. Press Generate / update report to confirm the reading." : "Alcance cambiado. Pulsa Generar / actualizar reporte para confirmar la lectura.");
   });
+  document.getElementById("resetReportScopeInlineButton").addEventListener("click", resetReportScope);
   document.getElementById("reportExperienceFilter").addEventListener("change", (event) => {
     state.reportFilters.experienceId = event.target.value;
     state.reportFilters.scope = "single";
@@ -6362,6 +6407,18 @@ function setupFilters() {
   document.getElementById("reportCategoryFilter").addEventListener("change", (event) => {
     state.reportFilters.category = event.target.value;
     if (event.target.value !== "all" && state.reportFilters.scope !== "single") state.reportFilters.scope = "filters";
+    syncReportFilterInputs();
+    renderReport();
+  });
+  document.getElementById("reportDateFromFilter").addEventListener("change", (event) => {
+    state.reportFilters.dateFrom = event.target.value || "";
+    if (state.reportFilters.dateFrom && state.reportFilters.scope !== "single") state.reportFilters.scope = "filters";
+    syncReportFilterInputs();
+    renderReport();
+  });
+  document.getElementById("reportDateToFilter").addEventListener("change", (event) => {
+    state.reportFilters.dateTo = event.target.value || "";
+    if (state.reportFilters.dateTo && state.reportFilters.scope !== "single") state.reportFilters.scope = "filters";
     syncReportFilterInputs();
     renderReport();
   });
@@ -6396,6 +6453,8 @@ function syncReportFilterInputs() {
   const scope = document.getElementById("reportScopeFilter");
   const period = document.getElementById("reportPeriodFilter");
   const category = document.getElementById("reportCategoryFilter");
+  const dateFrom = document.getElementById("reportDateFromFilter");
+  const dateTo = document.getElementById("reportDateToFilter");
   const pilotParticipant = document.getElementById("reportPilotParticipantFilter");
   const people = document.getElementById("reportPeopleFilter");
   const objective = document.getElementById("reportObjectiveFilter");
@@ -6404,11 +6463,49 @@ function syncReportFilterInputs() {
   if (scope) scope.value = state.reportFilters.scope || "all";
   if (period) period.value = state.reportFilters.period || "all";
   if (category) category.value = state.reportFilters.category || "all";
+  if (dateFrom) dateFrom.value = state.reportFilters.dateFrom || "";
+  if (dateTo) dateTo.value = state.reportFilters.dateTo || "";
   if (pilotParticipant) pilotParticipant.value = state.reportFilters.pilotParticipantId || "all";
   if (people) people.value = state.reportFilters.people || "";
   if (objective) objective.value = state.reportFilters.objective || "";
   if (eventQuery) eventQuery.value = state.reportFilters.eventQuery || "";
   if (experience) experience.value = state.reportFilters.experienceId || "";
+}
+
+function syncAnalyticalScopeInputs() {
+  const bindings = [
+    ["insightsPilotParticipantFilter", state.insightsFilters.pilotParticipantId || "all"],
+    ["insightsCategoryFilter", state.insightsFilters.category || "all"],
+    ["insightsDateFromFilter", state.insightsFilters.dateFrom || ""],
+    ["insightsDateToFilter", state.insightsFilters.dateTo || ""],
+    ["publicationPilotParticipantFilter", state.publicationFilters.pilotParticipantId || "all"],
+    ["publicationCategoryFilter", state.publicationFilters.category || "all"],
+    ["publicationDateFromFilter", state.publicationFilters.dateFrom || ""],
+    ["publicationDateToFilter", state.publicationFilters.dateTo || ""],
+  ];
+  bindings.forEach(([id, value]) => {
+    const element = document.getElementById(id);
+    if (element) element.value = value;
+  });
+  updateAnalyticalScopeStatus("insightsScopeStatus", state.insightsFilters, getInsightsExperiences().length);
+  updateAnalyticalScopeStatus("publicationScopeStatus", state.publicationFilters, getPublicationExperiences().length);
+}
+
+function updateAnalyticalScopeStatus(statusId, filters = {}, count = 0) {
+  const status = statusId ? document.getElementById(statusId) : null;
+  if (!status) return;
+  const parts = buildAnalyticalScopeParts(filters);
+  const base = parts.length ? parts.join(" · ") : state.language === "en" ? "General source" : "Fuente general";
+  status.textContent = `${base} · ${count} ${state.language === "en" ? "items" : "experiencias"}`;
+}
+
+function buildAnalyticalScopeParts(filters = {}) {
+  const parts = [];
+  const participantName = filters.pilotParticipantId && filters.pilotParticipantId !== "all" ? getPilotParticipantName(filters.pilotParticipantId) : "";
+  if (participantName) parts.push(participantName);
+  if (filters.category && filters.category !== "all") parts.push(displayCategory(filters.category));
+  if (filters.dateFrom || filters.dateTo) parts.push(`${filters.dateFrom || "inicio"} - ${filters.dateTo || "hoy"}`);
+  return parts;
 }
 
 function generateReportFromScope() {
@@ -6432,6 +6529,8 @@ function resetReportScope() {
     experienceId: "",
     category: "all",
     pilotParticipantId: "all",
+    dateFrom: "",
+    dateTo: "",
     people: "",
     objective: "",
     eventQuery: "",
@@ -7153,11 +7252,14 @@ function populateStaticControls() {
     document.getElementById("libraryCategory"),
     document.getElementById("assetCategoryFilter"),
     document.getElementById("reportCategoryFilter"),
+    document.getElementById("insightsCategoryFilter"),
+    document.getElementById("publicationCategoryFilter"),
   ];
   categorySelects.forEach((select) => {
+    if (!select) return;
     const selectedValue = select.value;
     select.innerHTML = "";
-    if (select.id === "filterCategory" || select.id === "libraryCategory" || select.id === "assetCategoryFilter" || select.id === "reportCategoryFilter") {
+    if (select.id === "filterCategory" || select.id === "libraryCategory" || select.id === "assetCategoryFilter" || select.id === "reportCategoryFilter" || select.id === "insightsCategoryFilter" || select.id === "publicationCategoryFilter") {
       select.append(new Option(t("labels.categoryAll"), "all"));
     }
     categories.forEach((category) => select.append(new Option(displayCategory(category), category)));
@@ -7512,12 +7614,38 @@ function getExperiencesByPilotParticipant(participantId = "all") {
   return state.experiences.filter((item) => experienceMatchesPilotParticipant(item, participantId));
 }
 
+function experienceMatchesDateRange(item, dateFrom = "", dateTo = "") {
+  const time = new Date(item.timestamp).getTime();
+  if (!Number.isFinite(time)) return false;
+  if (dateFrom) {
+    const fromTime = new Date(`${dateFrom}T00:00:00`).getTime();
+    if (Number.isFinite(fromTime) && time < fromTime) return false;
+  }
+  if (dateTo) {
+    const toTime = new Date(`${dateTo}T23:59:59`).getTime();
+    if (Number.isFinite(toTime) && time > toTime) return false;
+  }
+  return true;
+}
+
+function getExperiencesByAnalyticalFilters(filters = {}) {
+  return filterExperiencesByAnalyticalFilters(state.experiences, filters);
+}
+
+function filterExperiencesByAnalyticalFilters(experiences = [], filters = {}) {
+  const participantId = filters.pilotParticipantId || "all";
+  return experiences
+    .filter((item) => !participantId || participantId === "all" || experienceMatchesPilotParticipant(item, participantId))
+    .filter((item) => !filters.category || filters.category === "all" || item.category === filters.category)
+    .filter((item) => experienceMatchesDateRange(item, filters.dateFrom || "", filters.dateTo || ""));
+}
+
 function getInsightsExperiences() {
-  return getExperiencesByPilotParticipant(state.insightsFilters?.pilotParticipantId || "all");
+  return getExperiencesByAnalyticalFilters(state.insightsFilters || {});
 }
 
 function getPublicationExperiences() {
-  return getExperiencesByPilotParticipant(state.publicationFilters?.pilotParticipantId || "all");
+  return getExperiencesByAnalyticalFilters(state.publicationFilters || {});
 }
 
 function renderDashboardScopedPanels() {
@@ -7633,6 +7761,14 @@ function updatePilotParticipantControls() {
 function updatePilotParticipantScopeStatus(statusId, participantId) {
   const status = statusId ? document.getElementById(statusId) : null;
   if (!status) return;
+  if (statusId === "insightsScopeStatus") {
+    updateAnalyticalScopeStatus(statusId, state.insightsFilters, getInsightsExperiences().length);
+    return;
+  }
+  if (statusId === "publicationScopeStatus") {
+    updateAnalyticalScopeStatus(statusId, state.publicationFilters, getPublicationExperiences().length);
+    return;
+  }
   const name = participantId === "all" ? "" : getPilotParticipantName(participantId);
   status.textContent = name
     ? state.language === "en" ? `Using ${name}` : `Usando ${name}`
@@ -15808,6 +15944,8 @@ function updateReportScopeControls() {
   const singleLabel = document.getElementById("reportSingleExperienceLabel");
   const periodFilter = document.getElementById("reportPeriodFilter");
   const categoryFilter = document.getElementById("reportCategoryFilter");
+  const dateFromFilter = document.getElementById("reportDateFromFilter");
+  const dateToFilter = document.getElementById("reportDateToFilter");
   const pilotParticipantFilter = document.getElementById("reportPilotParticipantFilter");
   const peopleFilter = document.getElementById("reportPeopleFilter");
   const objectiveFilter = document.getElementById("reportObjectiveFilter");
@@ -15840,7 +15978,9 @@ function updateReportScopeControls() {
   experienceSelect.value = ordered.some((item) => item.id === selected) ? selected : "";
   if (singleLabel) singleLabel.hidden = scopeSelect.value !== "single";
   if (periodFilter) periodFilter.disabled = !["period", "filters"].includes(activeScope);
-  if (categoryFilter) categoryFilter.disabled = activeScope !== "filters";
+  if (categoryFilter) categoryFilter.disabled = activeScope === "single";
+  if (dateFromFilter) dateFromFilter.disabled = activeScope === "single";
+  if (dateToFilter) dateToFilter.disabled = activeScope === "single";
   if (pilotParticipantFilter) pilotParticipantFilter.disabled = false;
   if (peopleFilter) peopleFilter.disabled = activeScope !== "filters";
   if (objectiveFilter) objectiveFilter.disabled = activeScope !== "filters";
@@ -15849,6 +15989,7 @@ function updateReportScopeControls() {
   const editedPdfButton = document.getElementById("downloadEditedReportPdfButton");
   const jumpButton = document.getElementById("jumpReportAcceptanceButton");
   const resetButton = document.getElementById("resetReportScopeButton");
+  const resetInlineButton = document.getElementById("resetReportScopeInlineButton");
   const flowStatus = document.getElementById("reportFlowStatus");
   const flowSteps = document.querySelector(".report-flow-steps");
   const detailSummary = document.querySelector(".report-detail-drawer summary");
@@ -15863,6 +16004,7 @@ function updateReportScopeControls() {
   if (editedPdfButton) editedPdfButton.textContent = state.language === "en" ? "Download edited ReportLab PDF" : "Descargar PDF editado ReportLab";
   if (jumpButton) jumpButton.textContent = state.language === "en" ? "Go to acceptance" : "Ir a aceptación";
   if (resetButton) resetButton.textContent = state.language === "en" ? "Clear scope" : "Limpiar alcance";
+  if (resetInlineButton) resetInlineButton.textContent = state.language === "en" ? "Clear filters" : "Limpiar filtros";
   if (detailSummary) detailSummary.textContent = state.language === "en" ? "View technical detail, charts, and table" : "Ver detalle técnico, gráficas y tabla";
   if (flowStatus && /^(El reporte|The report|Prepara|Prepare)/.test(flowStatus.textContent || "")) {
     flowStatus.textContent =
@@ -15909,9 +16051,14 @@ function renderReportScopeSummary(experiences) {
   const eventText = state.reportFilters.eventQuery
     ? state.language === "en" ? ` Internal event: ${state.reportFilters.eventQuery}.` : ` Evento interno: ${state.reportFilters.eventQuery}.`
     : "";
+  const customDateText = state.reportFilters.dateFrom || state.reportFilters.dateTo
+    ? state.language === "en"
+      ? ` Selected dates: ${state.reportFilters.dateFrom || "start"} to ${state.reportFilters.dateTo || "today"}.`
+      : ` Fechas seleccionadas: ${state.reportFilters.dateFrom || "inicio"} a ${state.reportFilters.dateTo || "hoy"}.`
+    : "";
   summary.textContent = state.language === "en"
-    ? `This report analyzes ${experiences.length} experience(s): ${scopeLabel}. Range: ${dateText}.${participantText}${eventText}`
-    : `Este reporte analiza ${experiences.length} experiencia(s): ${scopeLabel}. Rango: ${dateText}.${participantText}${eventText}`;
+    ? `This report analyzes ${experiences.length} experience(s): ${scopeLabel}. Range: ${dateText}.${participantText}${eventText}${customDateText}`
+    : `Este reporte analiza ${experiences.length} experiencia(s): ${scopeLabel}. Rango: ${dateText}.${participantText}${eventText}${customDateText}`;
 }
 
 function buildReportMultimodalEvidence(experiences) {
@@ -17908,10 +18055,7 @@ function generatePublicationDraft() {
   const channel = document.getElementById("publicationChannelInput").value;
   const privacy = document.getElementById("publicationPrivacyInput").checked;
   const publicationExperiences = getPublicationExperiences();
-  const selectedParticipantId = state.publicationFilters?.pilotParticipantId || "all";
-  const reportExperiences = getReportExperiences().filter(
-    (item) => experienceMatchesPilotParticipant(item, selectedParticipantId),
-  );
+  const reportExperiences = filterExperiencesByAnalyticalFilters(getReportExperiences(), state.publicationFilters || {});
   const experiences = source === "latest"
     ? [...publicationExperiences].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 8)
     : reportExperiences;
@@ -17957,6 +18101,7 @@ function buildPublicationDraft({ experiences, type, style, channel, privacy }) {
     type,
     style,
     channel,
+    filters: { ...state.publicationFilters },
     templateId: resolvePublicationTemplateId(type, style, channel),
     approvalStatus: "review",
     approvedAt: "",
@@ -18218,7 +18363,7 @@ function redactSensitiveText(value) {
 
 function renderPublications() {
   const draft = state.currentPublicationDraft || state.publicationDrafts[0] || null;
-  updatePilotParticipantScopeStatus("publicationScopeStatus", state.publicationFilters?.pilotParticipantId || "all");
+  syncAnalyticalScopeInputs();
   document.getElementById("publicationCount").textContent = `${state.publicationDrafts.length} ${t("labels.items")}`;
   document.getElementById("publicationPreview").innerHTML = draft ? renderPublicationPreview(draft) : `<p class="card-meta">${t("labels.publicationEmpty")}</p>`;
   document.getElementById("publicationDraftList").innerHTML = state.publicationDrafts.length
@@ -19586,6 +19731,7 @@ function getReportExperiences() {
   return [...state.experiences]
     .filter((item) => {
       const dateMatch = !since || new Date(item.timestamp).getTime() >= since;
+      const customDateMatch = experienceMatchesDateRange(item, state.reportFilters.dateFrom || "", state.reportFilters.dateTo || "");
       const useFieldFilters = scope === "filters";
       const categoryMatch = !useFieldFilters || state.reportFilters.category === "all" || item.category === state.reportFilters.category;
       const participantMatch =
@@ -19598,7 +19744,7 @@ function getReportExperiences() {
       const peopleMatch = !useFieldFilters || !state.reportFilters.people || peopleText.includes(state.reportFilters.people);
       const objectiveMatch = !useFieldFilters || !state.reportFilters.objective || objectiveText.includes(state.reportFilters.objective);
       const eventMatch = !useFieldFilters || !state.reportFilters.eventQuery || eventText.includes(state.reportFilters.eventQuery);
-      return dateMatch && categoryMatch && participantMatch && peopleMatch && objectiveMatch && eventMatch;
+      return dateMatch && customDateMatch && categoryMatch && participantMatch && peopleMatch && objectiveMatch && eventMatch;
     })
     .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 }
@@ -20002,13 +20148,12 @@ function renderInsights() {
   const sourceExperiences = getInsightsExperiences();
   const insights = buildInsights(sourceExperiences);
   const thematicAxes = buildInsightThematicAxes(sourceExperiences);
-  updatePilotParticipantScopeStatus("insightsScopeStatus", state.insightsFilters?.pilotParticipantId || "all");
+  syncAnalyticalScopeInputs();
   const scopeLabel = document.getElementById("insightScopeLabel");
   if (scopeLabel) {
-    const participantName = state.insightsFilters.pilotParticipantId === "all" ? "" : getPilotParticipantName(state.insightsFilters.pilotParticipantId);
-    scopeLabel.textContent = participantName
-      ? `${participantName} · ${sourceExperiences.length} ${t("labels.items")}`
-      : `${sourceExperiences.length} ${t("labels.items")}`;
+    const scopeParts = buildAnalyticalScopeParts(state.insightsFilters);
+    const base = scopeParts.length ? scopeParts.join(" · ") : state.language === "en" ? "General view" : "Vista general";
+    scopeLabel.textContent = `${base} · ${sourceExperiences.length} ${t("labels.items")}`;
   }
   renderQuestionSuggestions();
   document.getElementById("insightList").innerHTML = `
@@ -20213,6 +20358,7 @@ function buildInsightsExportPayload() {
     generatedAt: new Date().toISOString(),
     appVersion: APP_VERSION,
     participant: participantId === "all" ? (state.language === "en" ? "All participants" : "Todos los participantes") : getPilotParticipantName(participantId),
+    filters: { ...state.insightsFilters },
     experiences: experiences.length,
     axes: buildInsightThematicAxes(experiences),
     insights: buildInsights(experiences),
@@ -23353,10 +23499,12 @@ function renderAdminOperationalFocusPanel() {
         liveFlowDetail: "When Capture syncs an open draft, the same device refreshes Dashboard, Library, Assets, Agenda, Timeline, Map, Reports, Publications, Insights, persistence state, and Admin.",
         biometricAssets: "Biometric files in Assets",
         biometricAssetsDetail: "CSV/JSON from Apple Health or wearables enters through Assets as cross-experience context, then informs energy and recovery by date/time.",
+        scopeFilters: "Unified analytical scope",
+        scopeFiltersDetail: "Reports, Findings, and Publications now share participant, category, from-date, and to-date filters so the user can analyze a coherent group of experiences.",
         reportPdf: "Cleaner reports, publications, and findings",
         reportPdfDetail: "Reports now use an executive PDF, participant scope, and folded technical exports. Publications explain format fit, edited text, media actions, and non-image handling. Findings are organized by 8 human themes and can be downloaded.",
         nativeSync: "Vibeapp real queue",
-        nativeSyncDetail: "The Flutter skeleton now queues notes, shows item status, reads public config from /api/config, signs in with Supabase Auth, and can attempt POST /api/experiences. Camera, audio, biometrics, and location remain separated for native plugins.",
+        nativeSyncDetail: "The Flutter skeleton now queues notes, supports active multi-event sessions, reads public config from /api/config, signs in with Supabase Auth, and can attempt POST /api/experiences. Camera, audio, biometrics, and location remain separated for native plugins.",
       }
     : {
         title: "Administración operativa",
@@ -23388,10 +23536,12 @@ function renderAdminOperationalFocusPanel() {
     labels.liveFlowDetail = "Cuando Captura sincroniza una experiencia abierta, el mismo dispositivo refresca Panel, Librer\u00eda, Activos, Agenda, L\u00ednea de tiempo, Mapa, Reportes, Publicaciones, Hallazgos, persistencia y Administraci\u00f3n.";
     labels.biometricAssets = "Biometr\u00eda desde Activos";
     labels.biometricAssetsDetail = "CSV/JSON de Apple Health o wearables entra por Activos como contexto transversal y luego informa energ\u00eda o recuperaci\u00f3n por fecha/hora.";
+    labels.scopeFilters = "Alcance anal\u00edtico uniforme";
+    labels.scopeFiltersDetail = "Reportes, Hallazgos y Publicaciones comparten filtros de participante, categor\u00eda, fecha desde y fecha hasta para analizar grupos coherentes de experiencias.";
     labels.reportPdf = "Reportes, publicaciones y hallazgos limpios";
     labels.reportPdfDetail = "Reportes usa PDF ejecutivo, alcance por persona y exportaciones técnicas plegadas. Publicaciones suma matriz por canal: carrusel, carta/email, dossier, ficha de salud, blog/web, LinkedIn y PDF/HTML, con medios seleccionables y acciones claras para audio, video, documentos y ZIP. Hallazgos se organiza en 8 ejes humanos y se puede descargar.";
     labels.nativeSync = "Vibeapp con cola real";
-    labels.nativeSyncDetail = "El esqueleto Flutter ahora guarda notas en cola, muestra estado por item, obtiene configuración pública desde /api/config, permite entrar con Supabase Auth y puede intentar POST /api/experiences. Cámara, audio, biometría y lugar quedan separados para plugins nativos.";
+    labels.nativeSyncDetail = "El esqueleto Flutter ahora guarda notas en cola, permite experiencias activas con varios eventos internos, obtiene configuración pública desde /api/config, permite entrar con Supabase Auth y puede intentar POST /api/experiences. Cámara, audio, biometría y lugar quedan separados para plugins nativos.";
   }
   const cards = [
     [labels.flow, labels.flowDetail],
@@ -23405,6 +23555,7 @@ function renderAdminOperationalFocusPanel() {
     [labels.assetProcessing, labels.assetProcessingDetail],
     [labels.liveFlow, labels.liveFlowDetail],
     [labels.biometricAssets, labels.biometricAssetsDetail],
+    [labels.scopeFilters, labels.scopeFiltersDetail],
     [labels.reportPdf, labels.reportPdfDetail],
     [labels.nativeSync, labels.nativeSyncDetail],
     [labels.next, labels.nextDetail],

@@ -9,10 +9,10 @@
     <meta name="apple-mobile-web-app-title" content="Vibe" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>Vibe</title>
-    <link rel="manifest" href="manifest.webmanifest?v=20260524-native-auth-sync-428" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260524-scope-filters-native-session-429" />
     <link rel="icon" href="icons/vibe-icon-192.png" type="image/png" />
     <link rel="apple-touch-icon" href="icons/vibe-apple-touch.png" />
-    <link rel="stylesheet" href="styles.css?v=20260524-native-auth-sync-428" />
+    <link rel="stylesheet" href="styles.css?v=20260524-scope-filters-native-session-429" />
   </head>
   <body>
     <noscript>
@@ -629,6 +629,21 @@
                       <option value="all">Todos los participantes</option>
                     </select>
                   </label>
+                  <label>
+                    Categoría
+                    <select id="reportCategoryFilter" aria-label="Categoría del reporte">
+                      <option value="all">Todas las categorías</option>
+                    </select>
+                  </label>
+                  <label class="compact-date-filter">
+                    Desde
+                    <input id="reportDateFromFilter" type="date" />
+                  </label>
+                  <label class="compact-date-filter">
+                    Hasta
+                    <input id="reportDateToFilter" type="date" />
+                  </label>
+                  <button id="resetReportScopeInlineButton" class="ghost-button" type="button">Limpiar filtros</button>
                   <label id="reportSingleExperienceLabel">
                     Experiencia específica
                     <select id="reportExperienceFilter" aria-label="Experiencia específica del reporte"></select>
@@ -654,9 +669,6 @@
                   <option value="7">Últimos 7 días</option>
                   <option value="30">Últimos 30 días</option>
                   <option value="90">Últimos 90 días</option>
-                </select>
-                <select id="reportCategoryFilter" aria-label="Categoría del reporte">
-                  <option value="all">Todas las categorías</option>
                 </select>
                 <input id="reportPeopleFilter" type="search" placeholder="Filtrar por persona" />
                 <input id="reportObjectiveFilter" type="search" placeholder="Filtrar por objetivo" />
@@ -701,6 +713,21 @@
                     <option value="all">Todos los participantes</option>
                   </select>
                 </label>
+                <label>
+                  Categoría
+                  <select id="insightsCategoryFilter">
+                    <option value="all">Todas las categorías</option>
+                  </select>
+                </label>
+                <label class="compact-date-filter">
+                  Desde
+                  <input id="insightsDateFromFilter" type="date" />
+                </label>
+                <label class="compact-date-filter">
+                  Hasta
+                  <input id="insightsDateToFilter" type="date" />
+                </label>
+                <button id="clearInsightsScopeButton" class="ghost-button" type="button">Limpiar filtros</button>
                 <span id="insightsScopeStatus">Vista general</span>
               </div>
               <div id="insightList" class="insight-list"></div>
@@ -734,6 +761,21 @@
                     <option value="all">Todos los participantes</option>
                   </select>
                 </label>
+                <label>
+                  Categoría
+                  <select id="publicationCategoryFilter">
+                    <option value="all">Todas las categorías</option>
+                  </select>
+                </label>
+                <label class="compact-date-filter">
+                  Desde
+                  <input id="publicationDateFromFilter" type="date" />
+                </label>
+                <label class="compact-date-filter">
+                  Hasta
+                  <input id="publicationDateToFilter" type="date" />
+                </label>
+                <button id="clearPublicationScopeButton" class="ghost-button" type="button">Limpiar filtros</button>
                 <span id="publicationScopeStatus">Fuente general</span>
               </div>
               <form id="publicationForm" class="experience-form">
@@ -841,7 +883,7 @@
             <div class="manual-version-card">
               <div>
                 <span id="manualVersionEyebrow">Versión vigente</span>
-                <strong id="manualVersionValue">20260524-native-auth-sync-428</strong>
+                <strong id="manualVersionValue">20260524-scope-filters-native-session-429</strong>
                 <p id="manualVersionSummary">Guía práctica organizada por temas para entender el flujo de la app sin leer todo de corrido.</p>
               </div>
               <div class="manual-guide-grid" aria-label="Estructura del manual">
@@ -1061,7 +1103,7 @@
       </main>
     </div>
 
-    <script src="app.js?v=20260524-native-auth-sync-428"></script>
+    <script src="app.js?v=20260524-scope-filters-native-session-429"></script>
 </body>
 </html>
 

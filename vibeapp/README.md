@@ -7,10 +7,12 @@ This folder is a starter skeleton. Flutter SDK is available locally at `C:\Users
 ## Current skeleton
 
 - Quick text capture with visible sync state.
+- Active experience mode: one long experience can collect several internal events before closing.
 - Local queue panel for captures and pending device actions.
 - Native action placeholders for audio, photo, video, calendar, biometrics, and location.
 - Development sync settings: Vibe API endpoint + Supabase Auth email/password.
-- Text notes can sign in through the PWA public Supabase config, then attempt `POST /api/experiences` through the Vibe backend; native media actions stay queued until plugins are connected.
+- Text notes can sign in through the PWA public Supabase config, then attempt `POST /api/experiences` through the Vibe backend. If an experience is active, every note or native action becomes an internal event under the same experience ID.
+- Native media actions stay queued as clear event placeholders until plugins are connected.
 - User-facing states kept simple: ready, syncing, synced, or needs attention.
 
 ## First milestone
@@ -20,6 +22,7 @@ This folder is a starter skeleton. Flutter SDK is available locally at `C:\Users
 3. Local queue.
 4. Sync one experience to Supabase.
 5. Confirm the experience appears in Vibe PWA.
+6. Start an active experience, add multiple notes/actions, close it, and confirm the PWA receives one experience with an event timeline.
 
 ## Second milestone
 

@@ -38,10 +38,12 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
       text: 'https://experience-hub-web-production.up.railway.app');
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _sessionTitleController = TextEditingController();
   final List<CaptureQueueItem> _queue = [];
   SyncState _syncState = SyncState.ready;
   String _accessToken = '';
   String _signedInEmail = '';
+  ActiveExperienceSession? _activeSession;
 
   @override
   void dispose() {
@@ -49,6 +51,7 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
     _apiUrlController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _sessionTitleController.dispose();
     super.dispose();
   }
 
@@ -84,9 +87,14 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
   Future<void> _saveDraft() async {
     final text = _noteController.text.trim();
     if (text.isEmpty) return;
-    final item = CaptureQueueItem.text(text);
+    final session = _activeSession;
     setState(() {
-      _queue.insert(0, item);
+      if (session == null) {
+        _queue.insert(0, CaptureQueueItem.text(text));
+      } else {
+        session.addTextEvent(text);
+        _upsertSessionQueueItem(session);
+      }
       _noteController.clear();
       _syncState = SyncState.syncing;
     });
@@ -112,7 +120,7 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
       setState(() {
         for (final item in pending) {
           item.status = CaptureSyncStatus.needsSession;
-          item.error = 'Falta token de sesion para enviar a Supabase.';
+          item.error = 'Falta iniciar sesion para enviar a Supabase.';
         }
         _syncState = SyncState.needsAttention;
       });
@@ -167,13 +175,64 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
   void _registerNativeAction(NativeCaptureAction action) {
     setState(() {
       _syncState = SyncState.needsAttention;
-      _queue.insert(0, CaptureQueueItem.nativeAction(action));
+      final session = _activeSession;
+      if (session == null) {
+        _queue.insert(0, CaptureQueueItem.nativeAction(action));
+      } else {
+        session.addNativeAction(action);
+        _upsertSessionQueueItem(session);
+      }
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
           content: Text(
               '${action.label}: contrato definido; falta conectar plugin nativo.')),
     );
+  }
+
+  void _startExperienceSession() {
+    final title = _sessionTitleController.text.trim().isEmpty
+        ? 'Experiencia desde Vibeapp'
+        : _sessionTitleController.text.trim();
+    setState(() {
+      _activeSession = ActiveExperienceSession.start(title);
+      _syncState = SyncState.ready;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Experiencia activa: $title')),
+    );
+  }
+
+  Future<void> _closeExperienceSession() async {
+    final session = _activeSession;
+    if (session == null) return;
+    setState(() {
+      session.close();
+      _upsertSessionQueueItem(session);
+      _activeSession = null;
+      _sessionTitleController.clear();
+      _syncState = SyncState.syncing;
+    });
+    await _syncPendingQueue(showSnackBar: true);
+  }
+
+  void _upsertSessionQueueItem(ActiveExperienceSession session) {
+    final item = CaptureQueueItem.fromSession(session);
+    final index = _queue.indexWhere((queued) => queued.id == item.id);
+    if (index >= 0) {
+      final previous = _queue[index];
+      item.remoteId = previous.remoteId;
+      item.status = previous.status == CaptureSyncStatus.synced
+          ? CaptureSyncStatus.queued
+          : previous.status;
+      if (item.status == CaptureSyncStatus.needsSession ||
+          item.status == CaptureSyncStatus.failed) {
+        item.status = CaptureSyncStatus.queued;
+      }
+      _queue[index] = item;
+    } else {
+      _queue.insert(0, item);
+    }
   }
 
   @override
@@ -222,6 +281,13 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
               label: const Text('Guardar captura'),
             ),
             const SizedBox(height: 24),
+            ExperienceSessionCard(
+              titleController: _sessionTitleController,
+              session: _activeSession,
+              onStart: _startExperienceSession,
+              onClose: _closeExperienceSession,
+            ),
+            const SizedBox(height: 16),
             const NativeFlowSummary(),
             const SizedBox(height: 16),
             SyncSettingsCard(
@@ -265,6 +331,79 @@ class NativeFlowSummary extends StatelessWidget {
             const Text(
               'La app nativa captura permisos reales del dispositivo, guarda en cola local y sincroniza con Supabase a través del backend de Vibe.',
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class ExperienceSessionCard extends StatelessWidget {
+  const ExperienceSessionCard({
+    required this.titleController,
+    required this.session,
+    required this.onStart,
+    required this.onClose,
+    super.key,
+  });
+
+  final TextEditingController titleController;
+  final ActiveExperienceSession? session;
+  final VoidCallback onStart;
+  final Future<void> Function() onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    final active = session;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Experiencia activa',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 8),
+            if (active == null) ...[
+              const Text(
+                'Usa este modo cuando una experiencia tenga varios momentos. Cada nota o acción queda como evento interno del mismo registro.',
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: titleController,
+                decoration: const InputDecoration(
+                  labelText: 'Título de la experiencia',
+                  hintText: 'Ejemplo: Visita al museo',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                onPressed: onStart,
+                icon: const Icon(Icons.play_circle_outline),
+                label: const Text('Iniciar experiencia'),
+              ),
+            ] else ...[
+              Text(active.title,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      )),
+              const SizedBox(height: 6),
+              Text(
+                '${active.events.length} evento(s) · inicio ${formatClock(active.startedAt)}',
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: onClose,
+                icon: const Icon(Icons.stop_circle_outlined),
+                label: const Text('Cerrar experiencia'),
+              ),
+            ],
           ],
         ),
       ),
@@ -612,6 +751,8 @@ class CaptureQueueItem {
     required this.status,
     this.error = '',
     this.remoteId,
+    this.events = const [],
+    this.closedAt,
   });
 
   factory CaptureQueueItem.text(String text) {
@@ -623,6 +764,22 @@ class CaptureQueueItem {
       sourceType: 'text',
       createdAt: now,
       status: CaptureSyncStatus.queued,
+    );
+  }
+
+  factory CaptureQueueItem.fromSession(ActiveExperienceSession session) {
+    final details = session.events
+        .map((event) => '${event.order}. ${event.title}: ${event.description}')
+        .join('\n');
+    return CaptureQueueItem(
+      id: session.id,
+      title: session.title,
+      detail: details.isEmpty ? 'Experiencia iniciada desde Vibeapp.' : details,
+      sourceType: 'experience-session',
+      createdAt: session.startedAt,
+      status: CaptureSyncStatus.queued,
+      events: List<ExperienceEventDraft>.from(session.events),
+      closedAt: session.closedAt,
     );
   }
 
@@ -647,8 +804,11 @@ class CaptureQueueItem {
   CaptureSyncStatus status;
   String error;
   String? remoteId;
+  final List<ExperienceEventDraft> events;
+  final DateTime? closedAt;
 
-  bool get canSync => sourceType == 'text';
+  bool get canSync =>
+      sourceType == 'text' || sourceType == 'experience-session';
 
   String get subtitle {
     final reason = error.isEmpty ? detail : '$detail\n$error';
@@ -657,17 +817,38 @@ class CaptureQueueItem {
 
   Map<String, dynamic> toExperiencePayload() {
     final iso = createdAt.toIso8601String();
+    final eventList = events.isEmpty
+        ? [
+            ExperienceEventDraft(
+              id: '$id-event-1',
+              title: 'Nota rápida',
+              description: detail,
+              order: 1,
+              timestamp: createdAt,
+            )
+          ]
+        : events;
+    final duration = (closedAt ?? DateTime.now().toUtc())
+        .difference(createdAt)
+        .inMinutes
+        .clamp(0, 1440);
     return {
       'id': id,
-      'title': detail.length > 48 ? '${detail.substring(0, 48)}...' : detail,
+      'title': sourceType == 'experience-session'
+          ? title
+          : detail.length > 48
+              ? '${detail.substring(0, 48)}...'
+              : detail,
       'category': 'Dato del usuario',
       'timestamp': iso,
-      'duration': 0,
+      'duration': duration,
       'mood': 'Calmo',
       'energy': 5,
       'location': 'Captura móvil',
       'people': 'Usuario',
-      'objective': 'Captura rápida desde Vibeapp',
+      'objective': sourceType == 'experience-session'
+          ? 'Experiencia con eventos desde Vibeapp'
+          : 'Captura rápida desde Vibeapp',
       'notes': detail,
       'locale': 'es',
       'metadata': {
@@ -675,18 +856,89 @@ class CaptureQueueItem {
         'sourceDevice': Platform.operatingSystem,
         'sourceEventId': id,
         'capturedAt': iso,
-        'syncContract': 'vibeapp-text-v1',
+        'closedAt': closedAt?.toIso8601String(),
+        'syncContract': sourceType == 'experience-session'
+            ? 'vibeapp-session-v1'
+            : 'vibeapp-text-v1',
       },
-      'events': [
-        {
-          'id': '$id-event-1',
-          'title': 'Nota rápida',
-          'description': detail,
-          'order': 1,
-          'timestamp': iso,
-        }
-      ],
+      'events': eventList.map((event) => event.toJson()).toList(),
       'attachments': [],
+    };
+  }
+}
+
+class ActiveExperienceSession {
+  ActiveExperienceSession({
+    required this.id,
+    required this.title,
+    required this.startedAt,
+    this.closedAt,
+    List<ExperienceEventDraft>? events,
+  }) : events = events ?? [];
+
+  factory ActiveExperienceSession.start(String title) {
+    final now = DateTime.now().toUtc();
+    return ActiveExperienceSession(
+      id: 'native-session-${now.microsecondsSinceEpoch}',
+      title: title,
+      startedAt: now,
+    );
+  }
+
+  final String id;
+  final String title;
+  final DateTime startedAt;
+  DateTime? closedAt;
+  final List<ExperienceEventDraft> events;
+
+  void addTextEvent(String text) {
+    events.add(ExperienceEventDraft(
+      id: '$id-event-${events.length + 1}',
+      title: 'Nota ${events.length + 1}',
+      description: text,
+      order: events.length + 1,
+      timestamp: DateTime.now().toUtc(),
+    ));
+  }
+
+  void addNativeAction(NativeCaptureAction action) {
+    events.add(ExperienceEventDraft(
+      id: '$id-event-${events.length + 1}',
+      title: '${action.label} pendiente',
+      description:
+          '${action.detail} Estado: falta conectar el plugin nativo antes de capturar el archivo real.',
+      order: events.length + 1,
+      timestamp: DateTime.now().toUtc(),
+    ));
+  }
+
+  void close() {
+    closedAt = DateTime.now().toUtc();
+  }
+}
+
+class ExperienceEventDraft {
+  const ExperienceEventDraft({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.order,
+    required this.timestamp,
+  });
+
+  final String id;
+  final String title;
+  final String description;
+  final int order;
+  final DateTime timestamp;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'order': order,
+      'timestamp': timestamp.toIso8601String(),
     };
   }
 }
@@ -745,4 +997,11 @@ enum CaptureSyncStatus {
 String shorten(String value, [int max = 180]) {
   if (value.length <= max) return value;
   return '${value.substring(0, max)}...';
+}
+
+String formatClock(DateTime value) {
+  final local = value.toLocal();
+  final hour = local.hour.toString().padLeft(2, '0');
+  final minute = local.minute.toString().padLeft(2, '0');
+  return '$hour:$minute';
 }
