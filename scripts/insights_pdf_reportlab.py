@@ -113,9 +113,15 @@ def draw_page(canvas, doc):
     canvas.saveState()
     canvas.setFillColor(colors.HexColor("#f8fafb"))
     canvas.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, fill=1, stroke=0)
+    canvas.setFillColor(colors.HexColor("#edf7f0"))
+    canvas.rect(0, PAGE_HEIGHT - 0.18 * inch, PAGE_WIDTH, 0.18 * inch, fill=1, stroke=0)
+    canvas.setFillColor(ACCENT)
+    canvas.rect(0, PAGE_HEIGHT - 0.035 * inch, PAGE_WIDTH, 0.035 * inch, fill=1, stroke=0)
     canvas.setFillColor(BRAND)
     canvas.setFont(FONT_BOLD, 8)
     canvas.drawString(MARGIN, 0.32 * inch, "Vibe - Hallazgos de experiencias")
+    canvas.setFillColor(ACCENT)
+    canvas.roundRect(MARGIN, 0.22 * inch, 0.38 * inch, 0.035 * inch, 1, fill=1, stroke=0)
     canvas.setFillColor(MUTED)
     canvas.setFont(FONT_REGULAR, 8)
     canvas.drawRightString(PAGE_WIDTH - MARGIN, 0.32 * inch, f"Página {doc.page}")
@@ -298,6 +304,7 @@ def text_axis_card(title, body, accent, width):
     table = Table([[para(title, "H2x")], [para(short(body, 520), "Bodyx")]], colWidths=[width])
     table.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, -1), colors.white),
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#f2faf4")),
         ("BOX", (0, 0), (-1, -1), 0.6, LINE),
         ("LINEBEFORE", (0, 0), (0, -1), 4, accent),
         ("LEFTPADDING", (0, 0), (-1, -1), 10),

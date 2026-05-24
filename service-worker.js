@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260524-pdf-layout-422";
+const CACHE_NAME = "experience-hub-pwa-20260524-visual-native-423";
 const APP_SHELL = [
   "/",
   "/index.html",

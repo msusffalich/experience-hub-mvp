@@ -143,9 +143,15 @@ def page(canvas, doc):
     canvas.saveState()
     canvas.setFillColor(colors.HexColor("#fbfcfe"))
     canvas.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, fill=1, stroke=0)
+    canvas.setFillColor(colors.HexColor("#f8efe3"))
+    canvas.rect(0, PAGE_HEIGHT - 0.2 * inch, PAGE_WIDTH, 0.2 * inch, fill=1, stroke=0)
+    canvas.setFillColor(GOLD)
+    canvas.rect(0, PAGE_HEIGHT - 0.035 * inch, PAGE_WIDTH, 0.035 * inch, fill=1, stroke=0)
     canvas.setFillColor(BRAND)
     canvas.setFont(FONT_BOLD, 8)
     canvas.drawString(MARGIN, 0.32 * inch, "Vibe - Documento editado ReportLab")
+    canvas.setFillColor(GOLD)
+    canvas.roundRect(MARGIN, 0.22 * inch, 0.38 * inch, 0.035 * inch, 1, fill=1, stroke=0)
     canvas.setFillColor(MUTED)
     canvas.setFont(FONT_REGULAR, 8)
     canvas.drawRightString(PAGE_WIDTH - MARGIN, 0.32 * inch, f"Página {doc.page}")
@@ -181,6 +187,7 @@ def card(title, body, width=None):
     t = Table([[para(title, "H2x")], [para(body, "Bodyx")]], colWidths=[width])
     t.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, -1), colors.white),
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#fbf6ed")),
         ("BOX", (0, 0), (-1, -1), 0.6, LINE),
         ("LEFTPADDING", (0, 0), (-1, -1), 12),
         ("RIGHTPADDING", (0, 0), (-1, -1), 12),

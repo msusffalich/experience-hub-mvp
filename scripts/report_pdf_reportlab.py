@@ -153,9 +153,15 @@ def draw_page(canvas, doc):
     canvas.saveState()
     canvas.setFillColor(colors.HexColor("#f8fafb"))
     canvas.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, fill=1, stroke=0)
+    canvas.setFillColor(colors.HexColor("#edf4f7"))
+    canvas.rect(0, PAGE_HEIGHT - 0.18 * inch, PAGE_WIDTH, 0.18 * inch, fill=1, stroke=0)
+    canvas.setFillColor(ACCENT)
+    canvas.rect(0, PAGE_HEIGHT - 0.035 * inch, PAGE_WIDTH, 0.035 * inch, fill=1, stroke=0)
     canvas.setFillColor(BRAND)
     canvas.setFont(FONT_BOLD, 8)
     canvas.drawString(MARGIN, 0.32 * inch, "Vibe - Human Experience Intelligence Platform")
+    canvas.setFillColor(ACCENT)
+    canvas.roundRect(MARGIN, 0.22 * inch, 0.38 * inch, 0.035 * inch, 1, fill=1, stroke=0)
     canvas.setFillColor(MUTED)
     canvas.setFont(FONT_REGULAR, 8)
     canvas.drawRightString(PAGE_WIDTH - MARGIN, 0.32 * inch, f"Página {doc.page}")
@@ -426,7 +432,9 @@ def card(title, body, meta=None, width=None, body_limit=210):
     t = Table(data, colWidths=[width], hAlign="LEFT")
     t.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, -1), colors.white),
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#f3f8fa")),
         ("BOX", (0, 0), (-1, -1), 0.7, LINE),
+        ("LINEBEFORE", (0, 0), (0, -1), 3, ACCENT),
         ("LEFTPADDING", (0, 0), (-1, -1), 10),
         ("RIGHTPADDING", (0, 0), (-1, -1), 10),
         ("TOPPADDING", (0, 0), (-1, -1), 8),
