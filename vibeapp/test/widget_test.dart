@@ -5,7 +5,7 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:vibeapp/main.dart';
@@ -19,12 +19,11 @@ void main() {
     expect(find.text('Guardar captura'), findsOneWidget);
 
     await tester.enterText(
-        find.byType(EditableText), 'V, toma nota de prueba.');
+        find.widgetWithText(TextField, 'Nota'), 'V, toma nota de prueba.');
     await tester.tap(find.text('Guardar captura'));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
-    expect(find.text('Sincronizando'), findsOneWidget);
-    await tester.pump(const Duration(milliseconds: 500));
-    expect(find.text('Sincronizado'), findsOneWidget);
+    expect(find.text('Revisar'), findsOneWidget);
+    expect(find.text('Reintentar cola'), findsOneWidget);
   });
 }

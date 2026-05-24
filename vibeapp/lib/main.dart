@@ -1,3 +1,7 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 void main() {
@@ -30,38 +34,107 @@ class QuickCaptureScreen extends StatefulWidget {
 
 class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
   final TextEditingController _noteController = TextEditingController();
+  final TextEditingController _apiUrlController = TextEditingController(
+      text: 'https://experience-hub-web-production.up.railway.app');
+  final TextEditingController _tokenController = TextEditingController();
   final List<CaptureQueueItem> _queue = [];
   SyncState _syncState = SyncState.ready;
 
   @override
   void dispose() {
     _noteController.dispose();
+    _apiUrlController.dispose();
+    _tokenController.dispose();
     super.dispose();
   }
 
   Future<void> _saveDraft() async {
     final text = _noteController.text.trim();
     if (text.isEmpty) return;
-    setState(() => _syncState = SyncState.syncing);
+    final item = CaptureQueueItem.text(text);
+    setState(() {
+      _queue.insert(0, item);
+      _noteController.clear();
+      _syncState = SyncState.syncing;
+    });
+    await _syncPendingQueue(showSnackBar: true);
+  }
 
-    // This first skeleton keeps the contract visible without wiring secrets in the app.
-    // The next increment will replace this delay with Supabase Auth + queue + upload.
-    await Future<void>.delayed(const Duration(milliseconds: 450));
+  Future<void> _syncPendingQueue({bool showSnackBar = false}) async {
+    final settings = SyncSettings(
+      apiBaseUrl: _apiUrlController.text.trim(),
+      accessToken: _tokenController.text.trim(),
+    );
+    final pending = _queue
+        .where(
+            (item) => item.canSync && item.status != CaptureSyncStatus.synced)
+        .toList();
+
+    if (pending.isEmpty) {
+      setState(() => _syncState = SyncState.ready);
+      return;
+    }
+
+    if (!settings.hasSession) {
+      setState(() {
+        for (final item in pending) {
+          item.status = CaptureSyncStatus.needsSession;
+          item.error = 'Falta token de sesion para enviar a Supabase.';
+        }
+        _syncState = SyncState.needsAttention;
+      });
+      if (showSnackBar && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text(
+                  'Captura guardada localmente. Falta token de sesión para sincronizar.')),
+        );
+      }
+      return;
+    }
+
+    final client = ExperienceSyncClient(settings);
+    var failures = 0;
+    for (final item in pending) {
+      setState(() {
+        item.status = CaptureSyncStatus.uploading;
+        item.error = '';
+        _syncState = SyncState.syncing;
+      });
+      final result = await client.upsertTextExperience(item);
+      if (!mounted) return;
+      setState(() {
+        if (result.ok) {
+          item.status = CaptureSyncStatus.synced;
+          item.remoteId = result.remoteId;
+        } else {
+          failures += 1;
+          item.status = CaptureSyncStatus.failed;
+          item.error = result.message;
+        }
+      });
+    }
 
     if (!mounted) return;
-    setState(() {
-      _queue.insert(0, CaptureQueueItem.text(text));
-      _syncState = SyncState.synced;
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Nota guardada para sincronización.')),
-    );
+    setState(() => _syncState =
+        failures == 0 ? SyncState.synced : SyncState.needsAttention);
+    if (showSnackBar) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            failures == 0
+                ? 'Captura sincronizada con Vibe PWA.'
+                : 'Captura en cola. Revisa conexión o sesión.',
+          ),
+        ),
+      );
+    }
   }
 
   void _registerNativeAction(NativeCaptureAction action) {
     setState(() {
       _syncState = SyncState.needsAttention;
-      _queue.insert(0, CaptureQueueItem.pending(action.label, action.detail));
+      _queue.insert(0, CaptureQueueItem.nativeAction(action));
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -95,7 +168,8 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
             ),
             const SizedBox(height: 8),
             const Text(
-                'Registra una nota al paso. La sincronización real con Supabase se conectará en el siguiente incremento.'),
+              'Registra una nota al paso. Si hay sesión, Vibeapp la envía al backend de Vibe para que aparezca en la PWA.',
+            ),
             const SizedBox(height: 20),
             TextField(
               controller: _noteController,
@@ -116,6 +190,12 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
             ),
             const SizedBox(height: 24),
             const NativeFlowSummary(),
+            const SizedBox(height: 16),
+            SyncSettingsCard(
+              apiUrlController: _apiUrlController,
+              tokenController: _tokenController,
+              onRetry: _syncPendingQueue,
+            ),
             const SizedBox(height: 16),
             CaptureActionGrid(onAction: _registerNativeAction),
             const SizedBox(height: 16),
@@ -147,7 +227,69 @@ class NativeFlowSummary extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             const Text(
-              'La app nativa se encargará de capturar permisos reales del dispositivo, guardar en cola local y sincronizar con Supabase para que la PWA lo vea sin pasos manuales.',
+              'La app nativa captura permisos reales del dispositivo, guarda en cola local y sincroniza con Supabase a través del backend de Vibe.',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class SyncSettingsCard extends StatelessWidget {
+  const SyncSettingsCard({
+    required this.apiUrlController,
+    required this.tokenController,
+    required this.onRetry,
+    super.key,
+  });
+
+  final TextEditingController apiUrlController;
+  final TextEditingController tokenController;
+  final Future<void> Function({bool showSnackBar}) onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Sincronización',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+                'Primer contrato real: endpoint de Vibe + token de sesión. Luego esto será login Supabase nativo.'),
+            const SizedBox(height: 12),
+            TextField(
+              controller: apiUrlController,
+              decoration: const InputDecoration(
+                labelText: 'API de Vibe',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: tokenController,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Token de sesión',
+                helperText:
+                    'Temporal para desarrollo; no es el flujo final del usuario.',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () => onRetry(showSnackBar: true),
+              icon: const Icon(Icons.sync_outlined),
+              label: const Text('Reintentar cola'),
             ),
           ],
         ),
@@ -237,21 +379,76 @@ class CaptureQueuePanel extends StatelessWidget {
               const Text(
                   'Sin capturas pendientes. Cuando guardes una nota o acciones un medio, aparecerá aquí antes de sincronizar.')
             else
-              for (final item in queue.take(5))
+              for (final item in queue.take(8))
                 ListTile(
                   contentPadding: EdgeInsets.zero,
-                  leading: Icon(item.synced
-                      ? Icons.cloud_done_outlined
-                      : Icons.pending_actions_outlined),
+                  leading: Icon(item.status.icon),
                   title: Text(item.title),
-                  subtitle: Text(item.detail),
-                  trailing: Text(item.synced ? 'Listo' : 'Pendiente'),
+                  subtitle: Text(item.subtitle),
+                  trailing: Text(item.status.label),
                 ),
           ],
         ),
       ),
     );
   }
+}
+
+class ExperienceSyncClient {
+  ExperienceSyncClient(this.settings);
+
+  final SyncSettings settings;
+
+  Future<SyncResult> upsertTextExperience(CaptureQueueItem item) async {
+    try {
+      final uri = Uri.parse(settings.apiBaseUrl).resolve('/api/experiences');
+      final request =
+          await HttpClient().postUrl(uri).timeout(const Duration(seconds: 10));
+      request.headers.contentType = ContentType.json;
+      request.headers.set(
+          HttpHeaders.authorizationHeader, 'Bearer ${settings.accessToken}');
+      request.write(jsonEncode(item.toExperiencePayload()));
+      final response =
+          await request.close().timeout(const Duration(seconds: 20));
+      final responseText = await response.transform(utf8.decoder).join();
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        return SyncResult.failure(
+            'HTTP ${response.statusCode}: ${shorten(responseText)}');
+      }
+      final decoded = jsonDecode(responseText) as Map<String, dynamic>;
+      return SyncResult.success((decoded['id'] ?? item.id).toString());
+    } on TimeoutException {
+      return SyncResult.failure('Tiempo de espera agotado.');
+    } on SocketException {
+      return SyncResult.failure('Sin conexión con la API.');
+    } on FormatException {
+      return SyncResult.failure('Respuesta inválida del servidor.');
+    } catch (error) {
+      return SyncResult.failure(shorten(error.toString()));
+    }
+  }
+}
+
+class SyncSettings {
+  const SyncSettings({required this.apiBaseUrl, required this.accessToken});
+
+  final String apiBaseUrl;
+  final String accessToken;
+
+  bool get hasSession => apiBaseUrl.isNotEmpty && accessToken.isNotEmpty;
+}
+
+class SyncResult {
+  const SyncResult._({required this.ok, required this.message, this.remoteId});
+
+  factory SyncResult.success(String remoteId) =>
+      SyncResult._(ok: true, message: 'Sincronizado', remoteId: remoteId);
+  factory SyncResult.failure(String message) =>
+      SyncResult._(ok: false, message: message);
+
+  final bool ok;
+  final String message;
+  final String? remoteId;
 }
 
 class NativeCaptureAction {
@@ -263,28 +460,92 @@ class NativeCaptureAction {
 }
 
 class CaptureQueueItem {
-  const CaptureQueueItem({
+  CaptureQueueItem({
+    required this.id,
     required this.title,
     required this.detail,
-    required this.synced,
+    required this.sourceType,
+    required this.createdAt,
+    required this.status,
+    this.error = '',
+    this.remoteId,
   });
 
-  factory CaptureQueueItem.text(String text) => CaptureQueueItem(
-        title: 'Texto',
-        detail: text,
-        synced: true,
-      );
+  factory CaptureQueueItem.text(String text) {
+    final now = DateTime.now().toUtc();
+    return CaptureQueueItem(
+      id: 'native-${now.microsecondsSinceEpoch}',
+      title: 'Texto',
+      detail: text,
+      sourceType: 'text',
+      createdAt: now,
+      status: CaptureSyncStatus.queued,
+    );
+  }
 
-  factory CaptureQueueItem.pending(String title, String detail) =>
-      CaptureQueueItem(
-        title: title,
-        detail: detail,
-        synced: false,
-      );
+  factory CaptureQueueItem.nativeAction(NativeCaptureAction action) {
+    final now = DateTime.now().toUtc();
+    return CaptureQueueItem(
+      id: 'native-action-${now.microsecondsSinceEpoch}',
+      title: action.label,
+      detail: action.detail,
+      sourceType: action.label.toLowerCase(),
+      createdAt: now,
+      status: CaptureSyncStatus.needsNativePlugin,
+      error: 'Falta conectar plugin nativo.',
+    );
+  }
 
+  final String id;
   final String title;
   final String detail;
-  final bool synced;
+  final String sourceType;
+  final DateTime createdAt;
+  CaptureSyncStatus status;
+  String error;
+  String? remoteId;
+
+  bool get canSync => sourceType == 'text';
+
+  String get subtitle {
+    final reason = error.isEmpty ? detail : '$detail\n$error';
+    return reason;
+  }
+
+  Map<String, dynamic> toExperiencePayload() {
+    final iso = createdAt.toIso8601String();
+    return {
+      'id': id,
+      'title': detail.length > 48 ? '${detail.substring(0, 48)}...' : detail,
+      'category': 'Dato del usuario',
+      'timestamp': iso,
+      'duration': 0,
+      'mood': 'Calmo',
+      'energy': 5,
+      'location': 'Captura móvil',
+      'people': 'Usuario',
+      'objective': 'Captura rápida desde Vibeapp',
+      'notes': detail,
+      'locale': 'es',
+      'metadata': {
+        'sourceType': 'vibeapp-native',
+        'sourceDevice': Platform.operatingSystem,
+        'sourceEventId': id,
+        'capturedAt': iso,
+        'syncContract': 'vibeapp-text-v1',
+      },
+      'events': [
+        {
+          'id': '$id-event-1',
+          'title': 'Nota rápida',
+          'description': detail,
+          'order': 1,
+          'timestamp': iso,
+        }
+      ],
+      'attachments': [],
+    };
+  }
 }
 
 class SyncBadge extends StatelessWidget {
@@ -323,3 +584,22 @@ class SyncBadge extends StatelessWidget {
 }
 
 enum SyncState { ready, syncing, synced, needsAttention }
+
+enum CaptureSyncStatus {
+  queued('Pendiente', Icons.pending_actions_outlined),
+  uploading('Subiendo', Icons.cloud_upload_outlined),
+  synced('Listo', Icons.cloud_done_outlined),
+  failed('Error', Icons.error_outline),
+  needsSession('Sesión', Icons.lock_outline),
+  needsNativePlugin('Nativo', Icons.extension_outlined);
+
+  const CaptureSyncStatus(this.label, this.icon);
+
+  final String label;
+  final IconData icon;
+}
+
+String shorten(String value, [int max = 180]) {
+  if (value.length <= max) return value;
+  return '${value.substring(0, max)}...';
+}

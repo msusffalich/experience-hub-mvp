@@ -1,4 +1,4 @@
-const APP_VERSION = "20260524-publication-formats-native-426";
+const APP_VERSION = "20260524-native-sync-publication-channels-427";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2113,6 +2113,7 @@ const manualContent = {
         "Vibeapp nativa se planifica como complemento de la PWA: la PWA queda para análisis, reportes, hallazgos, publicaciones y administración; Vibeapp cubre captura real con cámara, audio, video, ubicación, sensores, biometría, notificaciones y sincronización transparente con Supabase.",
         "El blueprint inicial de Vibeapp está documentado en docs/vibeapp-native-blueprint.md. Ese documento define contrato de sincronización, pantallas iniciales, flujo offline, permisos, privacidad y los primeros incrementos Flutter.",
         "El esqueleto Flutter de Vibeapp ya muestra cola local y acciones nativas separadas para texto, audio, foto, video, agenda, biometría y lugar. En esta fase todavía no toma control real de cámara o sensores; prepara el contrato visual y técnico para conectar plugins nativos y Supabase sin mezclarlo con la PWA.",
+        "Vibeapp ya incluye un primer contrato de sincronización: guarda notas en cola local y, si se configura endpoint de Vibe y token de sesión, intenta crear una experiencia mediante POST /api/experiences. En el flujo final el token manual será reemplazado por login Supabase nativo.",
         "El contrato de dispositivos se puede exportar como Markdown o JSON para compartirlo con desarrolladores, integraciones API/MCP o proveedores de wearables.",
         "Activos multimodales incluye Procesar ahora y Procesar visibles. Los documentos de texto se extraen localmente; los PDFs escaneados usan OCR del backend cuando OCR_PROVIDER=openai y OPENAI_API_KEY están configurados; los audios usan transcripción del backend si está configurada; las imágenes usan OCR automático del backend.",
         "Siguiendo el patrón del blueprint de CLIO, los activos sincronizados se leen desde el backend usando URLs firmadas temporales de Supabase. Otro dispositivo puede procesar documentos, imágenes y audios sin depender del archivo local original.",
@@ -2467,6 +2468,7 @@ const manualContent = {
         "Antes de compartir, revisa privacidad: nombres, rostros, ubicaciones sensibles, datos medicos, documentos y cualquier informacion que no quieras publicar.",
         "Una publicacion puede ser corta para redes o mas larga para PDF/HTML. Si quieres una memoria rica, usa Album experiencial o Reporte narrativo y selecciona multimedia relevante.",
         "Si buscas una salida por canal, usa esta regla rápida: WhatsApp para mensaje breve, Instagram/Facebook para carrusel o álbum visual, LinkedIn para aprendizaje o resumen profesional, Email para carta o ficha explicativa, Blog/Web para historia extendida y PDF/HTML para memoria final o dossier.",
+        "La guía de salida de Publicaciones muestra una matriz por canal para elegir formato, uso de medios y acción final. Esa matriz evita confundir plantillas visuales con publicación automática: algunos canales exportan archivo, otros abren borrador y otros requieren copiar/pegar por ahora.",
         "Publicaciones conserva historial del borrador: generado, editado, multimedia cambiada, diseno cambiado, aprobacion y exportaciones.",
       ],
     },
@@ -7349,6 +7351,7 @@ function updatePublicationTypeHelp() {
     <p><b>${escapeHtml(mediaLabel)}:</b> ${escapeHtml(mediaPolicy || "")}</p>
     <p><b>${escapeHtml(channelLabel)}:</b> ${(guide.channels || []).map((item) => `<span class="publication-guide-chip">${escapeHtml(item)}</span>`).join(" ")}</p>
     <ul>${structure.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+    ${renderPublicationChannelMatrix({ channel: "" })}
   `;
 }
 
@@ -18362,9 +18365,59 @@ function renderPublicationExportGuide(draft) {
           <p>${escapeHtml(direct.detail)}</p>
         </article>
       </div>
+      ${renderPublicationChannelMatrix(draft)}
       <p class="card-meta">${escapeHtml(getPublicationFormatHelpText())}</p>
       <p class="card-meta">${escapeHtml(state.language === "en" ? "Direct posting to Facebook and Instagram is planned for a later connector. For now, use Prepare channel, review, and paste." : "La publicación directa en Facebook e Instagram queda para un conector futuro. Por ahora usa Preparar canal, revisa y pega.")}</p>
     </section>
+  `;
+}
+
+function renderPublicationChannelMatrix(draft) {
+  const labels = state.language === "en"
+    ? {
+        title: "Channel fit",
+        channel: "Channel",
+        bestFormat: "Best format",
+        media: "Media use",
+        action: "Output action",
+        rows: [
+          ["WhatsApp", "Short update / long message", "1-3 highlights; links or key images only", "Open draft or copy text"],
+          ["Instagram / Facebook", "Visual carousel or album", "Images first; audio/video as references", "Copy and paste until connectors exist"],
+          ["LinkedIn", "Professional carousel or learning recap", "Evidence, metrics, and concise visuals", "Copy and paste into LinkedIn"],
+          ["Email", "Letter, health brief, or executive summary", "Images embedded; documents/audio/video as annexes", "Open email draft"],
+          ["PDF/HTML / Blog", "Dossier, story, or final memory", "All selected media with captions and links", "Export file"],
+        ],
+      }
+    : {
+        title: "Uso recomendado por canal",
+        channel: "Canal",
+        bestFormat: "Formato recomendado",
+        media: "Uso de medios",
+        action: "Acción de salida",
+        rows: [
+          ["WhatsApp", "Mensaje breve o carta corta", "1-3 momentos; enlaces o imágenes clave", "Abrir borrador o copiar texto"],
+          ["Instagram / Facebook", "Carrusel visual o álbum", "Imágenes primero; audio/video como referencia", "Copiar y pegar hasta tener conectores"],
+          ["LinkedIn", "Carrusel profesional o aprendizaje", "Evidencia, métricas y visuales concisos", "Copiar y pegar en LinkedIn"],
+          ["Email", "Carta, ficha de salud o resumen ejecutivo", "Imágenes incrustadas; documentos/audio/video como anexos", "Abrir borrador de correo"],
+          ["PDF/HTML / Blog", "Dossier, historia o memoria final", "Todos los medios seleccionados con leyendas y enlaces", "Exportar archivo"],
+        ],
+      };
+  return `
+    <div class="publication-channel-matrix" aria-label="${escapeHtml(labels.title)}">
+      <h4>${escapeHtml(labels.title)}</h4>
+      <div class="publication-channel-matrix-grid">
+        <strong>${escapeHtml(labels.channel)}</strong>
+        <strong>${escapeHtml(labels.bestFormat)}</strong>
+        <strong>${escapeHtml(labels.media)}</strong>
+        <strong>${escapeHtml(labels.action)}</strong>
+        ${labels.rows.map(([channel, format, media, action]) => `
+          <span class="${draft.channel && channel.includes(draft.channel) ? "is-current" : ""}">${escapeHtml(channel)}</span>
+          <span>${escapeHtml(format)}</span>
+          <span>${escapeHtml(media)}</span>
+          <span>${escapeHtml(action)}</span>
+        `).join("")}
+      </div>
+    </div>
   `;
 }
 
@@ -23302,6 +23355,8 @@ function renderAdminOperationalFocusPanel() {
         biometricAssetsDetail: "CSV/JSON from Apple Health or wearables enters through Assets as cross-experience context, then informs energy and recovery by date/time.",
         reportPdf: "Cleaner reports, publications, and findings",
         reportPdfDetail: "Reports now use an executive PDF, participant scope, and folded technical exports. Publications explain format fit, edited text, media actions, and non-image handling. Findings are organized by 8 human themes and can be downloaded.",
+        nativeSync: "Vibeapp real queue",
+        nativeSyncDetail: "The Flutter skeleton now queues notes, shows item status, and can attempt POST /api/experiences with a Vibe endpoint and session token. Camera, audio, biometrics, and location remain separated for native plugins.",
       }
     : {
         title: "Administración operativa",
@@ -23335,6 +23390,8 @@ function renderAdminOperationalFocusPanel() {
     labels.biometricAssetsDetail = "CSV/JSON de Apple Health o wearables entra por Activos como contexto transversal y luego informa energ\u00eda o recuperaci\u00f3n por fecha/hora.";
     labels.reportPdf = "Reportes, publicaciones y hallazgos limpios";
     labels.reportPdfDetail = "Reportes usa PDF ejecutivo, alcance por persona y exportaciones técnicas plegadas. Publicaciones suma matriz por canal: carrusel, carta/email, dossier, ficha de salud, blog/web, LinkedIn y PDF/HTML, con medios seleccionables y acciones claras para audio, video, documentos y ZIP. Hallazgos se organiza en 8 ejes humanos y se puede descargar.";
+    labels.nativeSync = "Vibeapp con cola real";
+    labels.nativeSyncDetail = "El esqueleto Flutter ahora guarda notas en cola, muestra estado por item y puede intentar POST /api/experiences con endpoint y token de sesión. Las acciones de cámara, audio, biometría y lugar quedan separadas para plugins nativos.";
   }
   const cards = [
     [labels.flow, labels.flowDetail],
@@ -23349,6 +23406,7 @@ function renderAdminOperationalFocusPanel() {
     [labels.liveFlow, labels.liveFlowDetail],
     [labels.biometricAssets, labels.biometricAssetsDetail],
     [labels.reportPdf, labels.reportPdfDetail],
+    [labels.nativeSync, labels.nativeSyncDetail],
     [labels.next, labels.nextDetail],
   ];
   container.innerHTML = `
