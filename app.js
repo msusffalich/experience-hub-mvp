@@ -1,4 +1,4 @@
-const APP_VERSION = "20260524-publication-editor-420";
+const APP_VERSION = "20260524-editorial-v3-421";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";

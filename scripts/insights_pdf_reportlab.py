@@ -25,6 +25,7 @@ MUTED = colors.HexColor("#526273")
 SOFT = colors.HexColor("#f4f8fb")
 LINE = colors.HexColor("#d8e0e8")
 LOGO_PATH = Path(__file__).resolve().parents[1] / "icons" / "vibe-logo-pdf.png"
+AXIS_COLORS = [ACCENT, GOLD, BLUE, PURPLE, colors.HexColor("#22c55e"), colors.HexColor("#f472b6"), colors.HexColor("#06b6d4"), colors.HexColor("#fb923c")]
 
 
 def clean(value):
@@ -254,6 +255,48 @@ def axis_legend_panel(axes):
     return table
 
 
+def axis_cards(axes):
+    rows = []
+    width = (PAGE_WIDTH - 2 * MARGIN - 10) / 2
+    cards = []
+    for index, axis in enumerate(axes[:8]):
+        color = AXIS_COLORS[index % len(AXIS_COLORS)]
+        body = (
+            f"Estado: {axis.get('status', '-')}. Energia media: {axis.get('avgEnergy', 0)}/10. "
+            f"Evidencia: {len(axis.get('items') or [])} experiencias y {axis.get('assets', 0)} activos. "
+            f"Siguiente paso: {human_action(axis.get('action', ''), 110)}"
+        )
+        cards.append(text_axis_card(axis.get("title") or "Eje", body, color, width))
+    for index in range(0, len(cards), 2):
+        row = cards[index:index + 2]
+        while len(row) < 2:
+            row.append("")
+        rows.append(row)
+    table = Table(rows, colWidths=[width, width])
+    table.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 0),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+        ("TOPPADDING", (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+    ]))
+    return table
+
+
+def text_axis_card(title, body, accent, width):
+    table = Table([[para(title, "H2x")], [para(short(body, 230), "Bodyx")]], colWidths=[width])
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), colors.white),
+        ("BOX", (0, 0), (-1, -1), 0.6, LINE),
+        ("LINEBEFORE", (0, 0), (0, -1), 4, accent),
+        ("LEFTPADDING", (0, 0), (-1, -1), 10),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+        ("TOPPADDING", (0, 0), (-1, -1), 8),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+    ]))
+    return table
+
+
 class Waffle(Flowable):
     def __init__(self, title, value, note):
         super().__init__()
@@ -369,8 +412,8 @@ def build_story(payload):
         ("Participante", short(payload.get("participant") or "General", 16)),
     ]))
     story.append(Spacer(1, 10))
-    story.append(para("Leyenda de ejes humanos", "H1x"))
-    story.append(axis_legend_panel(axes))
+    story.append(para("Mapa de ejes humanos", "H1x"))
+    story.append(axis_cards(axes))
     story.append(Spacer(1, 8))
     avg_axis_energy = sum(num(axis.get("avgEnergy")) for axis in axes) / max(1, len(axes))
     coverage = min(100, (sum(len(axis.get("items") or []) for axis in axes) / max(1, len(axes) * max(1, num(experiences)))) * 100)

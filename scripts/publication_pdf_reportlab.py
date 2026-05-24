@@ -22,6 +22,11 @@ BRAND = colors.HexColor("#10263f")
 BLUE = colors.HexColor("#1f78d1")
 LINE = colors.HexColor("#d8e0e8")
 MUTED = colors.HexColor("#526273")
+WARM = colors.HexColor("#1a1510")
+CARD = colors.HexColor("#1f1a14")
+GOLD = colors.HexColor("#d4a853")
+CREAM = colors.HexColor("#f5efe4")
+RUST = colors.HexColor("#c0603a")
 LOGO_PATH = Path(__file__).resolve().parents[1] / "icons" / "vibe-logo-pdf.png"
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -134,15 +139,16 @@ def hero(title, subtitle):
         colWidths=[left_width, 1.55 * inch],
     )
     table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, -1), BRAND),
+        ("BACKGROUND", (0, 0), (-1, -1), WARM),
         ("SPAN", (1, 0), (1, 1)),
         ("VALIGN", (0, 0), (-1, -1), "TOP"),
         ("ALIGN", (1, 0), (1, 0), "RIGHT"),
-        ("LEFTPADDING", (0, 0), (-1, -1), 22),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 22),
-        ("TOPPADDING", (0, 0), (-1, -1), 18),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 18),
-        ("BOX", (0, 0), (-1, -1), 0, BRAND),
+        ("LEFTPADDING", (0, 0), (-1, -1), 26),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 24),
+        ("TOPPADDING", (0, 0), (-1, -1), 30),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 34),
+        ("LINEBELOW", (0, -1), (-1, -1), 3, GOLD),
+        ("BOX", (0, 0), (-1, -1), 0, WARM),
     ]))
     return table
 
@@ -186,17 +192,38 @@ class PublicationDashboard(Flowable):
         card_w = (w - gap * 3) / 4
         for idx, (label, value, color) in enumerate(values):
             x = idx * (card_w + gap)
-            c.setFillColor(colors.white)
-            c.setStrokeColor(LINE)
+            c.setFillColor(CARD)
+            c.setStrokeColor(colors.HexColor("#2e2820"))
             c.roundRect(x, 0, card_w, h, 8, fill=1, stroke=1)
             c.setFillColor(color)
             c.roundRect(x + 8, h - 18, card_w - 16, 6, 3, fill=1, stroke=0)
-            c.setFillColor(BRAND)
+            c.setFillColor(colors.white)
             c.setFont("Helvetica-Bold", 15)
             c.drawCentredString(x + card_w / 2, h / 2 + 4, str(value))
-            c.setFillColor(MUTED)
+            c.setFillColor(colors.HexColor("#b0a090"))
             c.setFont("Helvetica", 7.5)
             c.drawCentredString(x + card_w / 2, 18, label)
+
+
+def editorial_cards(rows):
+    table_rows = []
+    card_width = (PAGE_WIDTH - 2 * MARGIN - 10) / 2
+    for index in range(0, len(rows), 2):
+        row = []
+        for title, body, accent in rows[index:index + 2]:
+            row.append(text_card(title, body, accent, width=card_width))
+        while len(row) < 2:
+            row.append("")
+        table_rows.append(row)
+    table = Table(table_rows, colWidths=[card_width, card_width])
+    table.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 0),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+        ("TOPPADDING", (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+    ]))
+    return table
 
 
 class MemoryTimeline(Flowable):
@@ -611,13 +638,16 @@ def build(payload):
     people = ", ".join(draft.get("people") or []) or "Sin personas indicadas"
     locations = ", ".join(draft.get("locations") or []) or "Sin ubicacion indicada"
     flow = [
-        hero(title, "Memoria final para revisar, aprobar y compartir."),
+        hero(title, "Memoria editorial para revisar, aprobar y compartir."),
         Spacer(1, 16),
         PublicationDashboard(stats, len(media), len(highlights)),
         Spacer(1, 12),
-        text_card("Proposito", f"{purpose}\nPersonas: {people}\nLugares: {locations}", colors.HexColor("#0d7c66")),
-        Spacer(1, 10),
-        text_card("Resumen editorial", summary, BLUE),
+        editorial_cards([
+            ("Proposito de la pieza", f"{purpose}\nPersonas: {people}\nLugares: {locations}", GOLD),
+            ("Resumen editorial", summary, RUST),
+            ("Portada sugerida", cover_direction(draft, media), colors.HexColor("#7a5cc8")),
+            ("Seleccion multimedia", media_selection_label(all_media, media), colors.HexColor("#0d7c66")),
+        ]),
         Spacer(1, 12),
         section_heading("Direccion editorial", "Decisiones previas a publicar: formato, canal, portada, multimedia y tono."),
         simple_table(

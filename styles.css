@@ -6665,6 +6665,34 @@ button.asset-processing-summary-card {
   background: linear-gradient(180deg, #ffffff, #f6f7f4);
 }
 
+.publication-template-travel-magazine .publication-cover,
+.publication-template-memory-album .publication-cover {
+  background:
+    radial-gradient(circle at 78% 20%, rgba(240, 200, 120, 0.28), transparent 30%),
+    linear-gradient(145deg, rgba(13, 124, 102, 0.2), rgba(16, 38, 63, 0.16)),
+    var(--surface-strong);
+}
+
+.publication-template-medical-brief .publication-cover,
+.publication-template-executive-brief .publication-cover {
+  background:
+    linear-gradient(135deg, rgba(46, 110, 166, 0.22), rgba(13, 124, 102, 0.12)),
+    var(--surface-strong);
+}
+
+.publication-template-family-memory .publication-cover {
+  background:
+    radial-gradient(circle at 85% 25%, rgba(242, 184, 75, 0.3), transparent 34%),
+    linear-gradient(135deg, rgba(244, 114, 182, 0.14), rgba(13, 124, 102, 0.12)),
+    var(--surface-strong);
+}
+
+.publication-template-learning-dossier .publication-cover {
+  background:
+    linear-gradient(135deg, rgba(122, 92, 200, 0.22), rgba(46, 110, 166, 0.12)),
+    var(--surface-strong);
+}
+
 .publication-template-magazine-story .publication-final-document h2 {
   font-size: 32px;
 }

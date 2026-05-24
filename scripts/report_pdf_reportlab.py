@@ -34,6 +34,9 @@ GOLD = colors.HexColor("#f2b84b")
 MUTED = colors.HexColor("#526273")
 SOFT = colors.HexColor("#f3f7f8")
 LINE = colors.HexColor("#d8e0e8")
+NAVY = colors.HexColor("#0d1b2e")
+NAVY_CARD = colors.HexColor("#1a2d47")
+NAVY_LINE = colors.HexColor("#1f3554")
 LOGO_PATH = Path(__file__).resolve().parents[1] / "icons" / "vibe-logo-pdf.png"
 ICON_PATH = Path(__file__).resolve().parents[1] / "icons" / "vibe-icon-192.png"
 
@@ -143,19 +146,20 @@ def cover(report):
         colWidths=[PAGE_WIDTH - 2 * MARGIN - 1.18 * inch, 0.84 * inch],
     )
     title_block.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, -1), BRAND),
+        ("BACKGROUND", (0, 0), (-1, -1), NAVY),
         ("VALIGN", (0, 0), (-1, -1), "TOP"),
         ("ALIGN", (1, 0), (1, 0), "RIGHT"),
         ("LEFTPADDING", (0, 0), (-1, -1), 20),
         ("RIGHTPADDING", (0, 0), (-1, -1), 18),
-        ("TOPPADDING", (0, 0), (-1, -1), 22),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 22),
-        ("BOX", (0, 0), (-1, -1), 0, BRAND),
+        ("TOPPADDING", (0, 0), (-1, -1), 30),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 30),
+        ("LINEBELOW", (0, -1), (-1, -1), 3, ACCENT),
+        ("BOX", (0, 0), (-1, -1), 0, NAVY),
     ]))
     return [
         title_block,
         Spacer(1, 0.24 * inch),
-        metric_grid([
+        executive_kpi_strip([
             ("Experiencias", summary.get("totalExperiences", len(rows))),
             ("Horas", summary.get("capturedHours", 0)),
             ("Energia media", f"{summary.get('averageEnergy', 0)}/10"),
@@ -363,6 +367,21 @@ def metric_grid(items, dark=False):
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
         ("TOPPADDING", (0, 0), (-1, -1), 9),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 9),
+    ]))
+    return table
+
+
+def executive_kpi_strip(items):
+    cells = [[para(str(value), "Metric"), para(label, "MetricLabel")] for label, value in items]
+    count = max(1, len(cells))
+    table = Table([cells], colWidths=[(PAGE_WIDTH - 2 * MARGIN) / count] * count)
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), NAVY_CARD),
+        ("BOX", (0, 0), (-1, -1), 0.6, NAVY_LINE),
+        ("INNERGRID", (0, 0), (-1, -1), 0.6, NAVY_LINE),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("TOPPADDING", (0, 0), (-1, -1), 12),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 12),
     ]))
     return table
 
