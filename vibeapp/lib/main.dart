@@ -30,6 +30,7 @@ class QuickCaptureScreen extends StatefulWidget {
 
 class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
   final TextEditingController _noteController = TextEditingController();
+  final List<CaptureQueueItem> _queue = [];
   SyncState _syncState = SyncState.ready;
 
   @override
@@ -48,9 +49,24 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
     await Future<void>.delayed(const Duration(milliseconds: 450));
 
     if (!mounted) return;
-    setState(() => _syncState = SyncState.synced);
+    setState(() {
+      _queue.insert(0, CaptureQueueItem.text(text));
+      _syncState = SyncState.synced;
+    });
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Nota guardada para sincronización.')),
+    );
+  }
+
+  void _registerNativeAction(NativeCaptureAction action) {
+    setState(() {
+      _syncState = SyncState.needsAttention;
+      _queue.insert(0, CaptureQueueItem.pending(action.label, action.detail));
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+          content: Text(
+              '${action.label}: contrato definido; falta conectar plugin nativo.')),
     );
   }
 
@@ -72,10 +88,14 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
           children: [
             Text(
               'Captura rápida',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
+              style: Theme.of(context)
+                  .textTheme
+                  .headlineMedium
+                  ?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
-            const Text('Registra una nota al paso. La sincronización real con Supabase se conectará en el siguiente incremento.'),
+            const Text(
+                'Registra una nota al paso. La sincronización real con Supabase se conectará en el siguiente incremento.'),
             const SizedBox(height: 20),
             TextField(
               controller: _noteController,
@@ -83,7 +103,8 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
               maxLines: 8,
               decoration: const InputDecoration(
                 labelText: 'Nota',
-                hintText: 'Ejemplo: V, toma nota que estoy llegando al museo...',
+                hintText:
+                    'Ejemplo: V, toma nota que estoy llegando al museo...',
                 border: OutlineInputBorder(),
               ),
             ),
@@ -96,7 +117,9 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
             const SizedBox(height: 24),
             const NativeFlowSummary(),
             const SizedBox(height: 16),
-            const CaptureActionGrid(),
+            CaptureActionGrid(onAction: _registerNativeAction),
+            const SizedBox(height: 16),
+            CaptureQueuePanel(queue: _queue),
           ],
         ),
       ),
@@ -117,7 +140,10 @@ class NativeFlowSummary extends StatelessWidget {
           children: [
             Text(
               'Contrato nativo',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
             const Text(
@@ -131,20 +157,30 @@ class NativeFlowSummary extends StatelessWidget {
 }
 
 class CaptureActionGrid extends StatelessWidget {
-  const CaptureActionGrid({super.key});
+  const CaptureActionGrid({required this.onAction, super.key});
+
+  final ValueChanged<NativeCaptureAction> onAction;
 
   @override
   Widget build(BuildContext context) {
     final actions = [
-      const NativeCaptureAction(Icons.mic_none, 'Audio', 'Grabar, transcribir y vincular a una experiencia abierta.'),
-      const NativeCaptureAction(Icons.photo_camera_outlined, 'Foto', 'Tomar foto con cámara nativa y subir a Storage privado.'),
-      const NativeCaptureAction(Icons.videocam_outlined, 'Video', 'Capturar video y registrar metadatos de fecha, lugar y usuario.'),
-      const NativeCaptureAction(Icons.event_available_outlined, 'Agenda', 'Detectar intención de calendario y crear evento confirmado.'),
+      const NativeCaptureAction(Icons.mic_none, 'Audio',
+          'Grabar, transcribir y vincular a una experiencia abierta.'),
+      const NativeCaptureAction(Icons.photo_camera_outlined, 'Foto',
+          'Tomar foto con cámara nativa y subir a Storage privado.'),
+      const NativeCaptureAction(Icons.videocam_outlined, 'Video',
+          'Capturar video y registrar metadatos de fecha, lugar y usuario.'),
+      const NativeCaptureAction(Icons.event_available_outlined, 'Agenda',
+          'Detectar intención de calendario y crear evento confirmado.'),
+      const NativeCaptureAction(Icons.favorite_border, 'Biometría',
+          'Importar señales de salud autorizadas y asociarlas por fecha y hora.'),
+      const NativeCaptureAction(Icons.place_outlined, 'Lugar',
+          'Guardar ubicación nativa cuando el usuario otorgue permiso.'),
     ];
 
     return GridView.count(
       crossAxisCount: 2,
-      childAspectRatio: 1.55,
+      childAspectRatio: 1.4,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       mainAxisSpacing: 12,
@@ -152,17 +188,14 @@ class CaptureActionGrid extends StatelessWidget {
       children: [
         for (final action in actions)
           OutlinedButton(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('${action.label}: contrato definido; falta conectar plugin nativo.')),
-              );
-            },
+            onPressed: () => onAction(action),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(action.icon),
                 const SizedBox(height: 8),
-                Text(action.label, style: const TextStyle(fontWeight: FontWeight.w700)),
+                Text(action.label,
+                    style: const TextStyle(fontWeight: FontWeight.w700)),
                 const SizedBox(height: 4),
                 Text(
                   action.detail,
@@ -179,12 +212,79 @@ class CaptureActionGrid extends StatelessWidget {
   }
 }
 
+class CaptureQueuePanel extends StatelessWidget {
+  const CaptureQueuePanel({required this.queue, super.key});
+
+  final List<CaptureQueueItem> queue;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Cola local',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 8),
+            if (queue.isEmpty)
+              const Text(
+                  'Sin capturas pendientes. Cuando guardes una nota o acciones un medio, aparecerá aquí antes de sincronizar.')
+            else
+              for (final item in queue.take(5))
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(item.synced
+                      ? Icons.cloud_done_outlined
+                      : Icons.pending_actions_outlined),
+                  title: Text(item.title),
+                  subtitle: Text(item.detail),
+                  trailing: Text(item.synced ? 'Listo' : 'Pendiente'),
+                ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class NativeCaptureAction {
   const NativeCaptureAction(this.icon, this.label, this.detail);
 
   final IconData icon;
   final String label;
   final String detail;
+}
+
+class CaptureQueueItem {
+  const CaptureQueueItem({
+    required this.title,
+    required this.detail,
+    required this.synced,
+  });
+
+  factory CaptureQueueItem.text(String text) => CaptureQueueItem(
+        title: 'Texto',
+        detail: text,
+        synced: true,
+      );
+
+  factory CaptureQueueItem.pending(String title, String detail) =>
+      CaptureQueueItem(
+        title: title,
+        detail: detail,
+        synced: false,
+      );
+
+  final String title;
+  final String detail;
+  final bool synced;
 }
 
 class SyncBadge extends StatelessWidget {
@@ -215,7 +315,8 @@ class SyncBadge extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        child: Text(label, style: TextStyle(color: color, fontWeight: FontWeight.w600)),
+        child: Text(label,
+            style: TextStyle(color: color, fontWeight: FontWeight.w600)),
       ),
     );
   }

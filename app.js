@@ -1,4 +1,4 @@
-const APP_VERSION = "20260524-publication-media-native-425";
+const APP_VERSION = "20260524-publication-formats-native-426";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -44,7 +44,17 @@ const agendaStatuses = [
   "Convertido en experiencia",
 ];
 
-const publicationTypes = ["Publicación social rápida", "Reporte narrativo", "Álbum experiencial", "Resumen ejecutivo", "Guion de story/reel"];
+const publicationTypes = [
+  "Publicación social rápida",
+  "Reporte narrativo",
+  "Álbum experiencial",
+  "Resumen ejecutivo",
+  "Guion de story/reel",
+  "Carrusel visual",
+  "Carta / email largo",
+  "Dossier PDF",
+  "Ficha de salud",
+];
 const publicationTypeGuides = {
   "Publicación social rápida": {
     purpose: "Para compartir algo breve en WhatsApp, Instagram o Facebook sin convertirlo en informe.",
@@ -81,9 +91,37 @@ const publicationTypeGuides = {
     channels: ["Instagram", "Facebook", "WhatsApp"],
     structure: ["Escena inicial", "3-5 escenas", "Texto en pantalla", "Audio/voz sugerida", "Cierre"],
   },
+  "Carrusel visual": {
+    purpose: "Para convertir una experiencia en láminas breves, visuales y fáciles de recorrer.",
+    bestFor: "Instagram, Facebook, LinkedIn o una secuencia explicativa con varias imágenes, datos o momentos.",
+    mediaPolicy: "Usa imágenes como láminas principales. Audio, video y documentos se transforman en textos cortos, citas o notas de apoyo.",
+    channels: ["Instagram", "Facebook", "LinkedIn"],
+    structure: ["Portada", "3-7 láminas", "Dato o momento por lámina", "Cierre / llamada a la acción"],
+  },
+  "Carta / email largo": {
+    purpose: "Para escribir una comunicación más personal, extensa y cuidada.",
+    bestFor: "Email a familia, amigos, equipo de trabajo, mentor, médico o una persona específica.",
+    mediaPolicy: "Prioriza texto editado y enlaces a medios. Las imágenes se pueden incluir como apoyo; audio, video y documentos se listan como anexos.",
+    channels: ["Email", "WhatsApp", "PDF/HTML"],
+    structure: ["Saludo", "Contexto", "Relato o explicación", "Anexos relevantes", "Cierre"],
+  },
+  "Dossier PDF": {
+    purpose: "Para reunir experiencia, evidencia, multimedia e interpretación en un documento más completo.",
+    bestFor: "Viajes de varios días, proyecto, aprendizaje, seguimiento de salud, investigación personal o entrega formal.",
+    mediaPolicy: "Acepta todos los medios. Imágenes se incrustan; audio, video, documentos y ZIP quedan como referencias con resumen y acción de revisión.",
+    channels: ["PDF/HTML", "Email", "Blog/Web"],
+    structure: ["Portada", "Resumen", "Capítulos", "Evidencia", "Recomendaciones", "Anexos"],
+  },
+  "Ficha de salud": {
+    purpose: "Para compartir información de salud en lenguaje claro, con cuidado y sin diagnóstico automático.",
+    bestFor: "Resumen para médico, seguimiento personal, biometría, resultados de examen o síntomas narrados.",
+    mediaPolicy: "Prioriza documentos interpretados, biometría y notas. Imágenes se incluyen solo si ayudan; audio y video se resumen como relato del usuario.",
+    channels: ["PDF/HTML", "Email"],
+    structure: ["Motivo", "Datos observados", "Evidencia", "Preguntas para el profesional", "Próximo paso"],
+  },
 };
-const publicationStyles = ["Profesional", "Turístico", "Científico", "Familiar", "Minimalista", "Revista Premium", "Bitácora Viva", "Educativo"];
-const publicationChannels = ["WhatsApp", "Instagram", "Facebook", "Email", "PDF/HTML"];
+const publicationStyles = ["Profesional", "Turístico", "Científico", "Familiar", "Minimalista", "Revista Premium", "Bitácora Viva", "Educativo", "Editorial visual", "Clínico claro", "Corporativo", "Social cálido"];
+const publicationChannels = ["WhatsApp", "Instagram", "Facebook", "LinkedIn", "Email", "PDF/HTML", "Blog/Web"];
 const publicationTemplates = [
   { id: "social-card", type: "Publicación social rápida", style: "Minimalista", channel: "Instagram", tone: "visual" },
   { id: "executive-brief", type: "Resumen ejecutivo", style: "Profesional", channel: "Email", tone: "business" },
@@ -94,6 +132,12 @@ const publicationTemplates = [
   { id: "travel-magazine", type: "Álbum experiencial", style: "Turístico", channel: "PDF/HTML", tone: "travel" },
   { id: "learning-dossier", type: "Reporte narrativo", style: "Educativo", channel: "Email", tone: "learning" },
   { id: "family-memory", type: "Álbum experiencial", style: "Familiar", channel: "WhatsApp", tone: "family" },
+  { id: "instagram-carousel", type: "Carrusel visual", style: "Editorial visual", channel: "Instagram", tone: "carousel" },
+  { id: "linkedin-carousel", type: "Carrusel visual", style: "Corporativo", channel: "LinkedIn", tone: "carouselBusiness" },
+  { id: "personal-letter", type: "Carta / email largo", style: "Social cálido", channel: "Email", tone: "letter" },
+  { id: "formal-dossier", type: "Dossier PDF", style: "Revista Premium", channel: "PDF/HTML", tone: "dossier" },
+  { id: "health-share", type: "Ficha de salud", style: "Clínico claro", channel: "PDF/HTML", tone: "health" },
+  { id: "blog-story", type: "Reporte narrativo", style: "Editorial visual", channel: "Blog/Web", tone: "blog" },
 ];
 const DEMO_BATCH = "experience-hub-demo-v4-multimodal-evidence";
 const DEMO_AGENDA_BATCH = "experience-hub-demo-agenda-v1";
@@ -2068,6 +2112,7 @@ const manualContent = {
         "La sección Dispositivos ahora documenta un contrato único de integración. Cualquier fuente nueva debe entregar sourceId, sourceType, capturedAt, participantId, payloadType y payload antes de alimentar experiencias, activos, Agenda o contexto.",
         "Vibeapp nativa se planifica como complemento de la PWA: la PWA queda para análisis, reportes, hallazgos, publicaciones y administración; Vibeapp cubre captura real con cámara, audio, video, ubicación, sensores, biometría, notificaciones y sincronización transparente con Supabase.",
         "El blueprint inicial de Vibeapp está documentado en docs/vibeapp-native-blueprint.md. Ese documento define contrato de sincronización, pantallas iniciales, flujo offline, permisos, privacidad y los primeros incrementos Flutter.",
+        "El esqueleto Flutter de Vibeapp ya muestra cola local y acciones nativas separadas para texto, audio, foto, video, agenda, biometría y lugar. En esta fase todavía no toma control real de cámara o sensores; prepara el contrato visual y técnico para conectar plugins nativos y Supabase sin mezclarlo con la PWA.",
         "El contrato de dispositivos se puede exportar como Markdown o JSON para compartirlo con desarrolladores, integraciones API/MCP o proveedores de wearables.",
         "Activos multimodales incluye Procesar ahora y Procesar visibles. Los documentos de texto se extraen localmente; los PDFs escaneados usan OCR del backend cuando OCR_PROVIDER=openai y OPENAI_API_KEY están configurados; los audios usan transcripción del backend si está configurada; las imágenes usan OCR automático del backend.",
         "Siguiendo el patrón del blueprint de CLIO, los activos sincronizados se leen desde el backend usando URLs firmadas temporales de Supabase. Otro dispositivo puede procesar documentos, imágenes y audios sin depender del archivo local original.",
@@ -2333,6 +2378,7 @@ const manualContent = {
         "Al convertir un evento, la app crea una experiencia vinculada con duración, ubicación, participantes y notas de origen para mantener la continuidad Agenda -> Evento -> Experiencia -> Memoria viva.",
         "Publicaciones Inteligentes genera borradores locales desde el reporte filtrado o las últimas experiencias. Permite elegir tipo, estilo narrativo, canal, incluir o excluir multimedia sugerida, aplicar limpieza de privacidad y exportar como PDF ReportLab, HTML, Markdown o paquete editorial JSON.",
         "Los tipos de publicación no son iguales: publicación social rápida sirve para mensajes breves, reporte narrativo para contar un periodo, álbum experiencial para memorias visuales, resumen ejecutivo para enviar evidencia clara y guion de story/reel para una secuencia corta.",
+        "Los nuevos formatos amplían el uso por canal: carrusel visual para Instagram, Facebook o LinkedIn; carta/email largo para compartir una memoria personal; dossier PDF para un documento más formal; ficha de salud para explicar información médica o biométrica en lenguaje claro; y blog/web para publicar una historia más extensa.",
         "Aprobación humana marca si el borrador está en revisión o aprobado. Cualquier edición, cambio de diseño o curaduría multimedia lo devuelve a revisión.",
         "Historial del borrador registra generación, ediciones, cambios de multimedia, diseño, aprobación y exportaciones recientes.",
         "Multimedia sugerida significa archivos ya adjuntos a las experiencias fuente. La app los propone para la publicación; incluirlos o excluirlos no modifica ni borra la experiencia original.",
@@ -2345,7 +2391,7 @@ const manualContent = {
         "Guía de salida aclara qué se exporta: HTML para pieza visual/imprimible con multimedia y Markdown para edición, documentación u Obsidian.",
         "Vista imprimible muestra el mismo HTML final dentro de la app para revisar diseño, márgenes y saltos antes de descargar.",
         "Copiar texto y Copiar HTML usan el mismo Documento final que se exporta, para pegar manualmente la publicación en email, mensajería, CMS o redes mientras los conectores directos quedan para una fase posterior.",
-        "En Publicaciones, Preparar canal no publica solo: WhatsApp y Email abren un mensaje listo para revisar y enviar; Facebook e Instagram copian el contenido para pegarlo manualmente hasta tener conectores futuros.",
+        "En Publicaciones, Preparar canal no publica solo: WhatsApp y Email abren un mensaje listo para revisar y enviar; Facebook, Instagram y LinkedIn preparan contenido para pegado manual; Blog/Web y PDF/HTML exportan un archivo revisable. La publicación automática por API queda para una fase posterior con conectores aprobados.",
         "Formatos de publicación en lenguaje simple: PDF es para leer, imprimir o enviar; HTML conserva el diseño visual; Markdown sirve para editar en notas o documentos; JSON es respaldo técnico para Administración.",
         "Exportar HTML y Exportar Markdown generan un enlace visible de descarga, además de intentar la descarga automática.",
         "Si se exporta un borrador en revisión, el archivo incluye esa marca de aprobación para evitar confundirlo con una versión final.",
@@ -2420,6 +2466,7 @@ const manualContent = {
         "Facebook e Instagram aun no tienen publicacion automatica por API. La app prepara el contenido y abre la red para pegado manual hasta tener conectores aprobados.",
         "Antes de compartir, revisa privacidad: nombres, rostros, ubicaciones sensibles, datos medicos, documentos y cualquier informacion que no quieras publicar.",
         "Una publicacion puede ser corta para redes o mas larga para PDF/HTML. Si quieres una memoria rica, usa Album experiencial o Reporte narrativo y selecciona multimedia relevante.",
+        "Si buscas una salida por canal, usa esta regla rápida: WhatsApp para mensaje breve, Instagram/Facebook para carrusel o álbum visual, LinkedIn para aprendizaje o resumen profesional, Email para carta o ficha explicativa, Blog/Web para historia extendida y PDF/HTML para memoria final o dossier.",
         "Publicaciones conserva historial del borrador: generado, editado, multimedia cambiada, diseno cambiado, aprobacion y exportaciones.",
       ],
     },
@@ -7322,6 +7369,32 @@ function translatePublicationGuideText(text) {
     "Para transformar la experiencia en una secuencia corta de escenas.": "For turning the experience into a short scene sequence.",
     "Instagram, TikTok, reels, presentación rápida, video corto o narración por pasos.": "Instagram, TikTok, reels, quick presentation, short video, or step-by-step narration.",
     "Funciona mejor con video, imagen y audio breve. Documentos o ZIP no se muestran: se convierten en texto de apoyo si tienen interpretación.": "Works best with video, image, and short audio. Documents or ZIP files are not displayed; they become support text when interpreted.",
+    "Para convertir una experiencia en láminas breves, visuales y fáciles de recorrer.": "For turning an experience into short, visual, easy-to-scan slides.",
+    "Instagram, Facebook, LinkedIn o una secuencia explicativa con varias imágenes, datos o momentos.": "Instagram, Facebook, LinkedIn, or an explanatory sequence with several images, data points, or moments.",
+    "Usa imágenes como láminas principales. Audio, video y documentos se transforman en textos cortos, citas o notas de apoyo.": "Uses images as main slides. Audio, video, and documents become short text, quotes, or support notes.",
+    "Para escribir una comunicación más personal, extensa y cuidada.": "For writing a more personal, longer, careful communication.",
+    "Email a familia, amigos, equipo de trabajo, mentor, médico o una persona específica.": "Email to family, friends, work team, mentor, doctor, or a specific person.",
+    "Prioriza texto editado y enlaces a medios. Las imágenes se pueden incluir como apoyo; audio, video y documentos se listan como anexos.": "Prioritizes edited text and media links. Images can support the story; audio, video, and documents are listed as attachments.",
+    "Para reunir experiencia, evidencia, multimedia e interpretación en un documento más completo.": "For gathering experience, evidence, media, and interpretation in a fuller document.",
+    "Viajes de varios días, proyecto, aprendizaje, seguimiento de salud, investigación personal o entrega formal.": "Multi-day trips, project, learning, health follow-up, personal research, or formal delivery.",
+    "Acepta todos los medios. Imágenes se incrustan; audio, video, documentos y ZIP quedan como referencias con resumen y acción de revisión.": "Accepts all media. Images are embedded; audio, video, documents, and ZIP files remain as references with summary and review action.",
+    "Para compartir información de salud en lenguaje claro, con cuidado y sin diagnóstico automático.": "For sharing health information in plain language, carefully and without automatic diagnosis.",
+    "Resumen para médico, seguimiento personal, biometría, resultados de examen o síntomas narrados.": "Brief for a doctor, personal tracking, biometrics, exam results, or narrated symptoms.",
+    "Prioriza documentos interpretados, biometría y notas. Imágenes se incluyen solo si ayudan; audio y video se resumen como relato del usuario.": "Prioritizes interpreted documents, biometrics, and notes. Images are included only if useful; audio and video are summarized as the user's account.",
+    "Portada": "Cover",
+    "3-7 láminas": "3-7 slides",
+    "Dato o momento por lámina": "One data point or moment per slide",
+    "Cierre / llamada a la acción": "Close / call to action",
+    "Saludo": "Greeting",
+    "Relato o explicación": "Story or explanation",
+    "Anexos relevantes": "Relevant attachments",
+    "Capítulos": "Chapters",
+    "Recomendaciones": "Recommendations",
+    "Anexos": "Attachments",
+    "Motivo": "Reason",
+    "Datos observados": "Observed data",
+    "Preguntas para el profesional": "Questions for the professional",
+    "Próximo paso": "Next step",
     "Gancho breve": "Short hook",
     "Momento principal": "Main moment",
     "Detalle humano": "Human detail",
@@ -18308,6 +18381,8 @@ function getPublicationChannelStatus(channel) {
         email: "Ready: the app opens an email draft with subject and text. You review and send.",
         facebook: "Not automatic yet: the app prepares and copies the content. You paste it into Facebook.",
         instagram: "Not automatic yet: the app prepares and copies the content. You paste it into Instagram.",
+        linkedin: "Not automatic yet: the app prepares and copies the content. You paste it into LinkedIn.",
+        blog: "Ready as export: the app prepares HTML/Markdown/PDF so you can publish it in a blog or website.",
         file: "Ready: the app downloads the publication as PDF or HTML.",
       }
     : {
@@ -18315,12 +18390,16 @@ function getPublicationChannelStatus(channel) {
         email: "Listo: la app abre un correo con asunto y texto. Tú revisas y envías.",
         facebook: "Aún no es automático: la app prepara y copia el contenido. Tú lo pegas en Facebook.",
         instagram: "Aún no es automático: la app prepara y copia el contenido. Tú lo pegas en Instagram.",
+        linkedin: "Aún no es automático: la app prepara y copia el contenido. Tú lo pegas en LinkedIn.",
+        blog: "Listo como exportación: la app prepara HTML/Markdown/PDF para publicarlo en un blog o sitio web.",
         file: "Listo: la app descarga la publicación como PDF o HTML.",
       };
   if (channel === "WhatsApp") return { level: "assisted", detail: labels.whatsapp };
   if (channel === "Email") return { level: "assisted", detail: labels.email };
   if (channel === "Facebook") return { level: "future", detail: labels.facebook };
   if (channel === "Instagram") return { level: "future", detail: labels.instagram };
+  if (channel === "LinkedIn") return { level: "future", detail: labels.linkedin };
+  if (channel === "Blog/Web") return { level: "export", detail: labels.blog };
   return { level: "export", detail: labels.file };
 }
 
@@ -18345,6 +18424,11 @@ async function preparePublicationChannelLaunch() {
     opened = Boolean(window.open("https://www.facebook.com/", "_blank", "noopener,noreferrer"));
   } else if (channel === "Instagram") {
     opened = Boolean(window.open("https://www.instagram.com/", "_blank", "noopener,noreferrer"));
+  } else if (channel === "LinkedIn") {
+    opened = Boolean(window.open("https://www.linkedin.com/feed/", "_blank", "noopener,noreferrer"));
+  } else if (channel === "Blog/Web") {
+    exportCurrentPublicationHtml();
+    return;
   } else {
     exportCurrentPublicationHtml();
     return;
@@ -18673,14 +18757,16 @@ function getPublicationWordLimit(channel) {
     WhatsApp: 180,
     Instagram: 160,
     Facebook: 220,
+    LinkedIn: 300,
     Email: 420,
     "PDF/HTML": 650,
+    "Blog/Web": 900,
   };
   return limits[channel] || 280;
 }
 
 function channelBenefitsFromMedia(channel) {
-  return ["Instagram", "Facebook", "PDF/HTML"].includes(channel);
+  return ["Instagram", "Facebook", "LinkedIn", "PDF/HTML", "Blog/Web"].includes(channel);
 }
 
 function scorePublicationChannelFit(draft, words, includedMedia) {
@@ -18970,6 +19056,12 @@ function applyPublicationTemplateStructure(draft, template = {}) {
     business: ["Resumen ejecutivo", "Hallazgos principales", "Evidencia", "Proximas acciones"],
     visual: ["Mensaje principal", "Imagen o activo protagonista", "Texto breve para publicar", "Cierre"],
     editorial: ["Apertura narrativa", "Contexto", "Momentos y evidencia", "Lectura final"],
+    carousel: ["Lamina 1: portada", "Laminas 2-4: momentos visuales", "Lamina 5: aprendizaje o dato", "Lamina final: cierre"],
+    carouselBusiness: ["Problema o contexto", "Evidencia principal", "Hallazgo", "Recomendacion", "Cierre profesional"],
+    letter: ["Saludo", "Contexto humano", "Relato principal", "Anexos o medios", "Cierre personal"],
+    dossier: ["Portada", "Resumen ejecutivo", "Capitulos de la experiencia", "Evidencia multimedia", "Recomendaciones", "Anexos"],
+    health: ["Motivo de la consulta", "Datos observados", "Documentos o biometria", "Preguntas para revisar", "Proximo paso"],
+    blog: ["Titulo editorial", "Entrada", "Desarrollo con evidencia", "Galeria o anexos", "Cierre"],
   };
   const sections = guides[template.tone] || guides.editorial;
   if (sections.some((section) => body.includes(section))) return body;
@@ -19384,6 +19476,10 @@ function displayPublicationType(type) {
     "Álbum experiencial": "Experience album",
     "Resumen ejecutivo": "Executive summary",
     "Guion de story/reel": "Story/reel script",
+    "Carrusel visual": "Visual carousel",
+    "Carta / email largo": "Letter / long email",
+    "Dossier PDF": "PDF dossier",
+    "Ficha de salud": "Health brief",
   };
   return map[type] || type;
 }
@@ -19399,6 +19495,10 @@ function displayPublicationStyle(style) {
     "Revista Premium": "Premium magazine",
     "Bitácora Viva": "Living log",
     Educativo: "Educational",
+    "Editorial visual": "Visual editorial",
+    "Clínico claro": "Clear clinical",
+    Corporativo: "Corporate",
+    "Social cálido": "Warm social",
   };
   return map[style] || style;
 }
@@ -23234,7 +23334,7 @@ function renderAdminOperationalFocusPanel() {
     labels.biometricAssets = "Biometr\u00eda desde Activos";
     labels.biometricAssetsDetail = "CSV/JSON de Apple Health o wearables entra por Activos como contexto transversal y luego informa energ\u00eda o recuperaci\u00f3n por fecha/hora.";
     labels.reportPdf = "Reportes, publicaciones y hallazgos limpios";
-    labels.reportPdfDetail = "Reportes usa PDF ejecutivo, alcance por persona y exportaciones técnicas plegadas. Publicaciones explica uso de formatos, texto editado, acciones multimedia y manejo de medios que no son imagen. Hallazgos se organiza en 8 ejes humanos y se puede descargar.";
+    labels.reportPdfDetail = "Reportes usa PDF ejecutivo, alcance por persona y exportaciones técnicas plegadas. Publicaciones suma matriz por canal: carrusel, carta/email, dossier, ficha de salud, blog/web, LinkedIn y PDF/HTML, con medios seleccionables y acciones claras para audio, video, documentos y ZIP. Hallazgos se organiza en 8 ejes humanos y se puede descargar.";
   }
   const cards = [
     [labels.flow, labels.flowDetail],

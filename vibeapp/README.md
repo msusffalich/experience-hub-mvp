@@ -4,6 +4,13 @@ Vibeapp is the future native companion for Vibe PWA. It focuses on real device c
 
 This folder is a starter skeleton. Flutter SDK is available locally at `C:\Users\msusf\Documents\Codex\flutter-sdk`; `flutter analyze`, `flutter test`, and `flutter build windows` have passed. Android builds still require Android Studio / Android SDK configuration.
 
+## Current skeleton
+
+- Quick text capture with visible sync state.
+- Local queue panel for captures and pending device actions.
+- Native action placeholders for audio, photo, video, calendar, biometrics, and location.
+- User-facing states kept simple: ready, syncing, synced, or needs attention.
+
 ## First milestone
 
 1. Supabase sign-in.

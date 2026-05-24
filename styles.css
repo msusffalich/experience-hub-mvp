@@ -6617,6 +6617,40 @@ button.asset-processing-summary-card {
   background: rgba(242, 184, 75, 0.18);
 }
 
+.template-carousel i,
+.template-carouselBusiness i {
+  grid-template-columns: repeat(4, 1fr);
+  background: rgba(46, 110, 166, 0.1);
+}
+
+.template-carousel b,
+.template-carouselBusiness b {
+  width: 100%;
+  min-height: 42px;
+  border-radius: 6px;
+}
+
+.template-letter i {
+  background: linear-gradient(180deg, rgba(242, 184, 75, 0.18), rgba(255, 255, 255, 0.8));
+}
+
+.template-dossier i,
+.template-blog i {
+  grid-template-columns: 0.7fr 1.3fr;
+  background: rgba(23, 32, 27, 0.08);
+}
+
+.template-health i {
+  grid-template-columns: 0.55fr 1.45fr;
+  background: rgba(46, 110, 166, 0.12);
+}
+
+.template-health b:nth-child(1) {
+  width: 100%;
+  min-height: 54px;
+  border-radius: 999px;
+}
+
 .publication-editor textarea {
   min-height: 104px;
   resize: vertical;
@@ -6736,6 +6770,32 @@ button.asset-processing-summary-card {
 .publication-template-learning-dossier .publication-cover {
   background:
     linear-gradient(135deg, rgba(122, 92, 200, 0.22), rgba(46, 110, 166, 0.12)),
+    var(--surface-strong);
+}
+
+.publication-template-instagram-carousel .publication-cover,
+.publication-template-linkedin-carousel .publication-cover {
+  background:
+    linear-gradient(135deg, rgba(46, 110, 166, 0.2), rgba(122, 92, 200, 0.16)),
+    var(--surface-strong);
+}
+
+.publication-template-personal-letter .publication-cover {
+  background:
+    linear-gradient(135deg, rgba(242, 184, 75, 0.26), rgba(13, 124, 102, 0.1)),
+    var(--surface-strong);
+}
+
+.publication-template-formal-dossier .publication-cover,
+.publication-template-blog-story .publication-cover {
+  background:
+    linear-gradient(135deg, rgba(23, 32, 27, 0.16), rgba(46, 110, 166, 0.12)),
+    var(--surface-strong);
+}
+
+.publication-template-health-share .publication-cover {
+  background:
+    linear-gradient(135deg, rgba(46, 110, 166, 0.2), rgba(13, 124, 102, 0.12)),
     var(--surface-strong);
 }
 

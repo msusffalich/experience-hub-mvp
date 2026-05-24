@@ -18,7 +18,8 @@ void main() {
     expect(find.text('Captura rápida'), findsOneWidget);
     expect(find.text('Guardar captura'), findsOneWidget);
 
-    await tester.enterText(find.byType(EditableText), 'V, toma nota de prueba.');
+    await tester.enterText(
+        find.byType(EditableText), 'V, toma nota de prueba.');
     await tester.tap(find.text('Guardar captura'));
     await tester.pump();
 
