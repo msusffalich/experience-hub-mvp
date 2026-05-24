@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260524-scope-filters-native-session-429";
+const CACHE_NAME = "experience-hub-pwa-20260524-user-groups-onboarding-430";
 const APP_SHELL = [
   "/",
   "/index.html",

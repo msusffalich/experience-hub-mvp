@@ -1,4 +1,4 @@
-const APP_VERSION = "20260524-scope-filters-native-session-429";
+const APP_VERSION = "20260524-user-groups-onboarding-430";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2213,15 +2213,15 @@ const manualContent = {
         "El acta precarga la decisión sugerida y un responsable probable para evitar bloqueos de cierre; después de guardar muestra confirmación dentro del mismo panel.",
         "Para el piloto actual, el Acta de cierre queda marcada como completada por decisión del usuario. Ya no bloquea el avance operativo del MVP.",
         "Cada guardado de decisión queda en un historial breve del acta, útil para revisar cambios de criterio durante el piloto.",
-        "Participantes piloto permite registrar nombre, correo opcional, segmento y estado de cada invitado; el objetivo rápido de 3 personas se refleja en Salud y Preparación del piloto.",
-        "El login identifica al dueño de la cuenta y de los datos. El Participante piloto no es otro usuario del sistema: es un subgrupo interno dentro de esa cuenta para separar experiencias, agenda, reportes, hallazgos y publicaciones.",
-        "Captura incluye un selector de Participante piloto. El participante se registra una sola vez en Administración y luego se vincula a cada experiencia sin volver a escribirlo en las notas.",
-        "Captura puede actualizar Agenda/Calendario solo si activas la casilla correspondiente al guardar. La app crea o actualiza un evento vinculado con fecha, duración, ubicación y participante piloto.",
-        "Agenda permite asignar cada evento a un Participante piloto y filtrar el calendario por persona. Si un evento se deja como general, aparece solo en la vista general; si se asigna a una persona, aparece en su Panel y en su Agenda filtrada.",
-        "El alcance por participante es transversal: Diario, Hallazgos, Reportes y acciones predictivas heredan el participante activo cuando crean eventos o experiencias derivadas. Así se evita que una acción individual aparezca como si fuera de todos.",
-        "El calendario visual, la lista de Agenda, las exportaciones .ics, la conversión de eventos a experiencias y el Panel respetan el participante vinculado al evento.",
-        "Librería, Reportes, Hallazgos y Publicaciones muestran o filtran por Participante piloto para separar la evidencia de cada persona durante la prueba.",
-        "El Panel también permite seleccionar Participante piloto. Métricas, Agenda, distribución por categoría y señales recientes se recalculan para esa persona.",
+        "Grupos/personas permite registrar un nombre y una nota opcional para separar experiencias dentro de la misma cuenta. Puede ser una persona, familia, viaje, cliente, equipo, proyecto o tema.",
+        "El login identifica al dueño de la cuenta y de los datos. El grupo/persona no es otro usuario del sistema: es un subgrupo interno dentro de esa cuenta para separar experiencias, agenda, reportes, hallazgos y publicaciones.",
+        "Captura incluye un selector de Grupo/persona. El usuario puede crear sus propios grupos desde Panel o Captura sin entrar a Administración; cada grupo puede representar una persona, familia, viaje, proyecto, cliente o contexto privado de la cuenta.",
+        "Captura puede actualizar Agenda/Calendario solo si activas la casilla correspondiente al guardar. La app crea o actualiza un evento vinculado con fecha, duración, ubicación y grupo/persona.",
+        "Agenda permite asignar cada evento a un grupo/persona y filtrar el calendario por ese subgrupo. Si un evento se deja como general, aparece solo en la vista general; si se asigna, aparece en su Panel y en su Agenda filtrada.",
+        "El alcance por grupo/persona es transversal: Diario, Hallazgos, Reportes y acciones predictivas heredan el grupo activo cuando crean eventos o experiencias derivadas. Así se evita que una acción individual aparezca como si fuera de todos.",
+        "El calendario visual, la lista de Agenda, las exportaciones .ics, la conversión de eventos a experiencias y el Panel respetan el grupo/persona vinculado al evento.",
+        "Librería, Reportes, Hallazgos y Publicaciones muestran o filtran por grupo/persona para separar evidencia sin duplicar cuentas.",
+        "El Panel permite crear y seleccionar grupo/persona. Métricas, Agenda, distribución por categoría y señales recientes se recalculan para ese subgrupo.",
         "El Panel muestra arriba el día, la hora local, la zona horaria y el próximo evento vinculado para ubicar la lectura del piloto en el momento actual.",
         "El Panel se simplifica para uso diario: acciones principales, métricas, Agenda, señales recientes, Diario y análisis contextual. Los estados técnicos, colas, preparación del piloto, adjuntos pendientes y diagnósticos viven en Administración.",
         "La regla de producto es simple por fuera y sofisticada por dentro: las páginas de usuario muestran el flujo principal, mientras los análisis, verificaciones y controles avanzados se ejecutan en segundo plano o se revisan en Administración.",
@@ -2229,7 +2229,7 @@ const manualContent = {
         "En Activos, el usuario ve primero la galería y los filtros útiles. Inventarios, CSV, plantillas, importación de metadatos y plan de procesamiento quedan en Administración para evitar ruido durante la revisión normal.",
         "En Agenda, el usuario crea y consulta eventos sin ver controles técnicos de calendario. Importar, exportar .ics y bloquear días quedan en opciones avanzadas.",
         "En Publicaciones, el flujo visible es generar, editar y exportar. La preparación editorial, el historial, la guía de salida y el paquete quedan plegados para no competir con el documento final.",
-        "Cada participante piloto incluye un checklist de onboarding: acceso confirmado, manual revisado y primera prueba completada. Preparación del piloto avisa si quedan personas sin completar esos pasos.",
+        "Administración conserva la vista técnica de grupos/personas, onboarding y auditoría. El flujo normal del usuario no depende de Administración para crear o seleccionar un grupo.",
         "Registro de feedback piloto permite guardar observaciones por módulo, severidad y estado, resolverlas y exportarlas como CSV. Se encuentra en Administración y también se puede abrir desde el botón Registrar feedback del Panel.",
         "El feedback alto o bloqueante que siga abierto afecta la Preparación del piloto y aparece en Salud del sistema como atención.",
         "Vaciar datos locales está en Administración y sirve para limpiar este navegador antes de iniciar tu carga real. Limpia experiencias, Agenda, días bloqueados, Publicaciones, biometría importada, metadatos, perfil local, Diario, rutinas y cola sin conexión. No borra automáticamente registros remotos ya guardados en Supabase ni cierra tu sesión.",
@@ -2435,7 +2435,7 @@ const manualContent = {
         "El Paquete de aceptación del reporte confirma si hay datos suficientes, narrativa, gráficas y exportaciones probadas en JSON, CSV, HTML imprimible y PDF o respaldo.",
         "El Paquete de aceptación del reporte incluye botones propios para registrar revisión humana, exportar JSON, CSV, HTML imprimible, PDF/respaldo y descargar un paquete JSON de aceptación.",
         "El PDF del reporte es ejecutivo: resume lo importante, limita evidencia repetida y deja el detalle completo para JSON o CSV.",
-        "El selector Persona de este reporte filtra el analisis por participante. Si eliges una persona, el reporte, PDF y exportaciones usan ese mismo alcance.",
+        "El selector Grupo/persona de este reporte filtra el analisis por subgrupo de la cuenta. Si eliges uno, el reporte, PDF y exportaciones usan ese mismo alcance.",
         "En Reportes y Publicaciones, las acciones principales quedan visibles. Las opciones tecnicas como JSON, CSV, HTML, Markdown, copias y paquetes quedan plegadas para no confundir al usuario.",
         "La columna Energía muestra el valor 1-10 capturado en cada experiencia. La métrica Energía media muestra el promedio del conjunto filtrado.",
         "La columna Adjuntos muestra cuántos archivos multimedia tiene cada experiencia.",
@@ -2451,7 +2451,7 @@ const manualContent = {
         "Correlaciones humanas del plan maestro cruza trabajo, socialización, recuperación, aprendizaje y contexto externo con energía/saturación para producir señales iniciales. No son diagnósticos; son hipótesis accionables para observar patrones.",
         "Confiabilidad del reporte usa la calidad de captura del conjunto filtrado para advertir si las conclusiones deben leerse con cautela.",
         "Desglose por categoría compara cada categoría por número de experiencias, horas, energía media, saturación y adjuntos multimedia.",
-        "Puedes filtrar el reporte por periodo, categoría, persona y objetivo antes de exportar.",
+        "Puedes filtrar el reporte por periodo, categoría, grupo/persona y objetivo antes de exportar.",
         "Puedes exportar el reporte como JSON enriquecido con análisis, CSV, HTML imprimible o PDF generado por el servidor local. El HTML imprimible y el PDF incluyen resumen, lectura integrada, proyección inicial, KPIs, desglose por categoría, rutas y evidencia multimodal disponible.",
         "Respaldo de datos descarga una copia completa del estado local: experiencias, Agenda, días bloqueados, publicaciones, metadatos de activos, perfil, Diario, rutinas, privacidad, controles piloto y cola sin conexión.",
         "Restaurar respaldo permite cargar un archivo JSON previamente exportado. Si el respaldo está cifrado, escribe primero la Clave local.",
@@ -2461,10 +2461,10 @@ const manualContent = {
       title: "Publicaciones Inteligentes",
       items: [
         "Publicaciones no es otro reporte tecnico. Su objetivo es convertir experiencias seleccionadas en una pieza para compartir: memoria de viaje, resumen de un concierto, album familiar, aprendizaje, actualizacion social o documento para enviar a otra persona.",
-        "El flujo correcto es: elegir participante y fuente, escoger tipo/estilo/canal, generar borrador, revisar texto y multimedia, aprobar y descargar PDF editado ReportLab.",
+        "El flujo correcto es: elegir grupo/persona y fuente, escoger tipo/estilo/canal, generar borrador, revisar texto y multimedia, aprobar y descargar PDF editado ReportLab.",
         "El PDF es la salida principal para usuario final. HTML, Markdown, copiar texto y paquete JSON quedan como opciones tecnicas o de edicion, plegadas para no competir con el flujo principal.",
         "La app propone multimedia ya asociada a las experiencias fuente. Puedes incluir o excluir imagenes, videos, audios y documentos sin borrar los activos originales.",
-        "Reportes, Hallazgos y Publicaciones comparten el mismo alcance base: participante, categoría, fecha desde y fecha hasta. Así puedes trabajar con un grupo de experiencias o un segmento de fechas sin limitarte a todo el historial o a una sola experiencia.",
+        "Reportes, Hallazgos y Publicaciones comparten el mismo alcance base: grupo/persona, categoría, fecha desde y fecha hasta. Así puedes trabajar con un grupo de experiencias o un segmento de fechas sin limitarte a todo el historial o a una sola experiencia.",
         "El documento final contiene titulo, resumen, cuerpo, momentos seleccionados, multimedia incluida, estado de privacidad y preparacion por canal.",
         "WhatsApp y Email son salidas asistidas: la app prepara/copiar el contenido y abre el canal cuando el navegador lo permite; el usuario revisa y envia.",
         "Facebook e Instagram aun no tienen publicacion automatica por API. La app prepara el contenido y abre la red para pegado manual hasta tener conectores aprobados.",
@@ -2805,16 +2805,16 @@ const manualContent = {
         "The record preloads the suggested decision and a likely owner to avoid closure dead ends; after saving, confirmation appears inside the same panel.",
         "For the current pilot, the Closure Record is marked as completed by user decision. It no longer blocks MVP progress.",
         "Each saved decision is kept in a short record history, useful for reviewing decision changes during the pilot.",
-        "Pilot participants lets you record name, optional email, segment, and status for each invitee; the 3-user target is reflected in Health and Pilot Readiness.",
-        "Capture includes a Pilot participant selector. The participant is registered once in Admin and then linked to each experience without rewriting it in notes.",
-        "Capture updates Agenda/Calendar only when you enable that checkbox while saving. The app creates or updates a linked event with date, duration, location, and pilot participant.",
-        "Agenda lets you assign each event to a Pilot participant and filter the calendar by person. A general event appears only in the general view; an assigned event appears in that person's Dashboard and filtered Agenda.",
-        "Participant scope is cross-functional: Daily, Insights, Reports, and predictive actions inherit the active participant when they create derived events or experiences. This prevents an individual action from appearing as if it belonged to everyone.",
-        "The visual calendar, Agenda list, .ics exports, event-to-experience conversion, and Dashboard respect the participant linked to the event.",
-        "Library, Reports, Insights, and Publications show or filter by Pilot participant to separate each person's evidence during the test.",
-        "Dashboard also lets you select a Pilot participant. Metrics, Agenda, category distribution, recent signals, and capture quality are recalculated for that person.",
+        "Groups/people lets you record a name and optional note to separate experiences inside the same account. A group can be a person, family, trip, client, team, project, or topic.",
+        "Capture includes a Group/person selector. Users can create their own groups from Dashboard or Capture without opening Admin; each group can represent a person, family, trip, project, client, or private account context.",
+        "Capture updates Agenda/Calendar only when you enable that checkbox while saving. The app creates or updates a linked event with date, duration, location, and group/person.",
+        "Agenda lets you assign each event to a group/person and filter the calendar by that subgroup. A general event appears only in the general view; an assigned event appears in that subgroup's Dashboard and filtered Agenda.",
+        "Group/person scope is cross-functional: Daily, Insights, Reports, and predictive actions inherit the active group when they create derived events or experiences. This prevents an individual action from appearing as if it belonged to everyone.",
+        "The visual calendar, Agenda list, .ics exports, event-to-experience conversion, and Dashboard respect the group/person linked to the event.",
+        "Library, Reports, Insights, and Publications show or filter by group/person to separate evidence without duplicating accounts.",
+        "Dashboard lets you create and select a group/person. Metrics, Agenda, category distribution, recent signals, and capture quality are recalculated for that subgroup.",
         "Dashboard shows the current day, local time, timezone, and next linked event at the top so the pilot reading is anchored in the current moment.",
-        "Each pilot participant includes an onboarding checklist: access confirmed, manual reviewed, and first test completed. Pilot Readiness warns when people still need to complete those steps.",
+        "Admin keeps the technical view for groups/people, onboarding, and audit. The normal user flow does not require Admin to create or select a group.",
         "Pilot feedback log stores observations by module, severity, and status, lets you resolve them, and exports them as CSV. It lives in Admin and can also be opened from the Register feedback button on the Dashboard.",
         "Open high or blocker feedback affects Pilot Readiness and appears in System Health as attention.",
         "Clear local data lives in Admin and clears this browser before starting real capture. It clears experiences, Agenda, blocked days, Publications, imported biometrics, metadata, local profile, Daily, routines, and the offline queue. It does not automatically delete remote records already saved in Supabase or sign you out.",
@@ -3014,7 +3014,7 @@ const manualContent = {
         "The Report Acceptance Pack confirms whether there is enough data, narrative, charts, and tested exports in JSON, CSV, printable HTML, and PDF or fallback.",
         "The Report Acceptance Pack includes its own buttons to register human review, export JSON, CSV, printable HTML, PDF/fallback, and download a JSON acceptance package.",
         "The report PDF is executive: it summarizes what matters, limits repeated evidence, and leaves full technical detail to JSON or CSV.",
-        "The Person in this report selector filters the analysis by participant. If you choose one person, the report, PDF, and exports use that same scope.",
+        "The Group/person in this report selector filters the analysis by account subgroup. If you choose one, the report, PDF, and exports use that same scope.",
         "In Reports and Publications, the main actions stay visible. Technical options such as JSON, CSV, HTML, Markdown, copies, and packages stay folded to avoid confusing the user.",
         "The Energy column shows the 1-10 value captured in each experience. Average energy shows the mean for the filtered set.",
         "The Attachments column shows how many media files each experience has.",
@@ -3030,7 +3030,7 @@ const manualContent = {
         "Blueprint Human Correlations cross work, socialization, recovery, learning, and external context with energy/saturation to produce initial signals. They are not diagnoses; they are actionable hypotheses for observing patterns.",
         "Report reliability uses capture quality for the filtered set to warn when conclusions should be interpreted carefully.",
         "Category breakdown compares each category by number of experiences, hours, average energy, saturation, and media attachments.",
-        "Filter the report by period, category, person, and objective before exporting.",
+        "Filter the report by period, category, group/person, and objective before exporting.",
         "Export reports as enriched JSON with analysis, CSV, printable HTML, or a backend-generated editorial PDF. Printable HTML and PDF include a cover, executive summary, KPI cards, category bars, map routes, multimodal evidence, and images when available.",
         "Data backup downloads a full local state copy: experiences, Agenda, blocked days, publications, asset metadata, profile, Daily, routines, privacy, pilot controls, and offline queue.",
         "Restore backup lets you load a previously exported JSON file. If the backup is encrypted, enter the Local key first.",
@@ -3040,7 +3040,7 @@ const manualContent = {
       title: "Intelligent Publications",
       items: [
         "Publications is not another technical report. Its purpose is to turn selected experiences into something shareable: a travel memory, concert summary, family album, learning recap, social update, or document for another person.",
-        "The intended flow is: choose participant and source, choose type/style/channel, generate draft, review text and media, approve, and download the edited ReportLab PDF.",
+        "The intended flow is: choose group/person and source, choose type/style/channel, generate draft, review text and media, approve, and download the edited ReportLab PDF.",
         "PDF is the main final-user output. HTML, Markdown, copied text, and JSON package are technical or editing options, folded away from the primary flow.",
         "The app suggests media already linked to the source experiences. You can include or exclude images, videos, audio, and documents without deleting the original assets.",
         "The final document contains title, summary, body, selected moments, included media, privacy state, and channel preparation.",
@@ -4146,6 +4146,72 @@ function savePilotParticipants() {
   } catch {
     // Ignore local participant persistence restrictions.
   }
+}
+
+function findPilotGroupByName(name = "") {
+  const normalized = String(name || "").trim().toLowerCase();
+  if (!normalized) return null;
+  return state.pilotParticipants.find((item) => String(item.name || "").trim().toLowerCase() === normalized) || null;
+}
+
+function createOrSelectPilotGroup({ name = "", role = "", email = "", status = "" } = {}) {
+  const cleanName = String(name || "").trim();
+  if (!cleanName) return { ok: false, reason: "missing_name" };
+  const existing = findPilotGroupByName(cleanName);
+  if (existing) return { ok: true, participant: existing, existed: true };
+  const participant = {
+    id: createId(),
+    createdAt: new Date().toISOString(),
+    name: cleanName,
+    email: String(email || "").trim(),
+    role: String(role || "").trim(),
+    status: status || (state.language === "en" ? "active" : "activo"),
+    accessOk: true,
+    manualOk: false,
+    testOk: false,
+  };
+  state.pilotParticipants.unshift(participant);
+  savePilotParticipants();
+  return { ok: true, participant, existed: false };
+}
+
+function selectPilotGroupAcrossMainFlows(participantId = "") {
+  const next = participantId === "all" ? "all" : normalizePilotParticipantId(participantId);
+  if (!next) return;
+  state.dashboardFilters.pilotParticipantId = next;
+  state.libraryFilters.pilotParticipantId = next;
+  setAnalyticalParticipantScope(next, "group-create");
+  const captureSelect = document.getElementById("pilotParticipantInput");
+  if (captureSelect) captureSelect.value = next === "all" ? "" : next;
+}
+
+function refreshPilotGroupSurfaces({ selectedId = "", renderAdminPanel = false } = {}) {
+  updatePilotParticipantControls();
+  updateDashboardParticipantControl();
+  if (selectedId) selectPilotGroupAcrossMainFlows(selectedId);
+  renderDashboardGroupOnboarding();
+  renderDashboardScopedPanels();
+  renderLibrary();
+  renderAgenda();
+  renderReport();
+  renderInsights();
+  renderPublications();
+  if (renderAdminPanel) renderAdmin();
+}
+
+function getPilotGroupMessage(result) {
+  if (!result?.ok) {
+    return state.language === "en" ? "Write a group or person name first." : "Escribe primero un nombre de grupo o persona.";
+  }
+  const name = result.participant?.name || "";
+  if (result.existed) {
+    return state.language === "en"
+      ? `${name} already existed and is now selected.`
+      : `${name} ya existia y quedo seleccionado.`;
+  }
+  return state.language === "en"
+    ? `${name} was created and selected for this account.`
+    : `${name} fue creado y seleccionado para esta cuenta.`;
 }
 
 function savePilotTestPlan() {
@@ -5907,7 +5973,7 @@ function applyLanguage() {
   document.getElementById("agendaAdvancedTitle").textContent = state.language === "en" ? "Advanced calendar options" : "Opciones avanzadas de calendario";
   document.getElementById("agendaAdvancedHelp").textContent = state.language === "en" ? "Import, export, and blocked days" : "Importar, exportar y bloquear días";
   document.getElementById("agendaFormStatus").textContent = t("labels.agendaLocalStatus");
-  document.getElementById("agendaPilotParticipantLabel").textContent = state.language === "en" ? "Linked pilot participant" : "Participante piloto vinculado";
+  document.getElementById("agendaPilotParticipantLabel").textContent = state.language === "en" ? "Linked group/person" : "Grupo/persona vinculado";
   document.getElementById("agendaSaveButton").textContent = state.language === "en" ? "Save event" : "Guardar evento";
   document.getElementById("agendaClearButton").textContent = t("buttons.clear");
   document.getElementById("exportAgendaIcsButton").textContent = t("buttons.exportAgendaIcs");
@@ -5921,9 +5987,9 @@ function applyLanguage() {
   document.getElementById("reportExportHelp").textContent = state.language === "en" ? "JSON, CSV, HTML, and acceptance evidence" : "JSON, CSV, HTML y evidencia de aceptación";
   document.getElementById("publicationMoreTitle").textContent = state.language === "en" ? "Technical options" : "Opciones técnicas";
   document.getElementById("publicationMoreHelp").textContent = state.language === "en" ? "HTML, Markdown, copies, and editorial package" : "HTML, Markdown, copias y paquete editorial";
-  document.getElementById("reportParticipantLabel").textContent = state.language === "en" ? "Person in this report" : "Persona de este reporte";
-  document.getElementById("insightsParticipantLabel").textContent = state.language === "en" ? "Participant / user" : "Participante / usuario";
-  document.getElementById("publicationParticipantLabel").textContent = state.language === "en" ? "Source participant / user" : "Participante / usuario fuente";
+  document.getElementById("reportParticipantLabel").textContent = state.language === "en" ? "Group/person in this report" : "Grupo/persona de este reporte";
+  document.getElementById("insightsParticipantLabel").textContent = state.language === "en" ? "Group / person" : "Grupo / persona";
+  document.getElementById("publicationParticipantLabel").textContent = state.language === "en" ? "Source group / person" : "Grupo / persona fuente";
   document.getElementById("generatePublicationButton").textContent = state.language === "en" ? "Generate draft" : "Generar borrador";
   document.getElementById("previewPublicationHtmlButton").textContent = t("buttons.previewPublication");
   document.getElementById("copyPublicationTextButton").textContent = t("buttons.copyPublicationText");
@@ -6240,8 +6306,12 @@ function setupFilters() {
     renderTimeline();
   });
   document.getElementById("dashboardPilotParticipantFilter").addEventListener("change", (event) => {
-    state.dashboardFilters.pilotParticipantId = event.target.value;
+    selectPilotGroupAcrossMainFlows(event.target.value || "all");
     renderDashboardScopedPanels();
+    renderLibrary();
+    renderReport();
+    renderInsights();
+    renderPublications();
   });
   document.getElementById("insightsPilotParticipantFilter").addEventListener("change", (event) => {
     setAnalyticalParticipantScope(event.target.value, "insights");
@@ -6717,6 +6787,9 @@ function setupActions() {
   document.getElementById("adminCommandCenter").addEventListener("click", handleParallelBacklogClick);
   document.getElementById("publishPlanPanel").addEventListener("click", handleParallelBacklogClick);
   document.getElementById("multiDevicePersistencePanel").addEventListener("click", handleParallelBacklogClick);
+  document.getElementById("dashboardGroupForm")?.addEventListener("submit", handleDashboardGroupSubmit);
+  document.getElementById("dashboardGroupList")?.addEventListener("click", handleDashboardGroupListClick);
+  document.getElementById("captureQuickGroupAddButton")?.addEventListener("click", handleCaptureQuickGroupAdd);
   document.getElementById("coreMvpGatePanel").addEventListener("click", handleCoreMvpGateClick);
   document.getElementById("quickQaPanel").addEventListener("click", handleQuickQaClick);
   document.getElementById("mvpFlowPanel").addEventListener("click", handleParallelBacklogClick);
@@ -6752,6 +6825,53 @@ function setupActions() {
     }
     syncOfflineQueue({ silent: true }).then(renderAll).catch(() => renderPersistenceGateBanner());
   }, 30 * 1000);
+}
+
+function handleDashboardGroupSubmit(event) {
+  event.preventDefault();
+  const form = event.target.closest("form");
+  if (!form) return;
+  const data = new FormData(form);
+  const result = createOrSelectPilotGroup({
+    name: data.get("name"),
+    role: data.get("role"),
+  });
+  const message = document.getElementById("dashboardGroupMessage");
+  if (message) message.textContent = getPilotGroupMessage(result);
+  if (!result.ok) return;
+  form.reset();
+  refreshPilotGroupSurfaces({ selectedId: result.participant.id, renderAdminPanel: true });
+  notify(getPilotGroupMessage(result), result.existed ? "info" : "success");
+}
+
+function handleDashboardGroupListClick(event) {
+  const button = event.target.closest("[data-dashboard-group-select]");
+  if (!button) return;
+  const participantId = button.dataset.dashboardGroupSelect || "";
+  if (!normalizePilotParticipantId(participantId)) return;
+  refreshPilotGroupSurfaces({ selectedId: participantId });
+  notify(
+    state.language === "en"
+      ? `${getPilotParticipantName(participantId)} is now the active group/person.`
+      : `${getPilotParticipantName(participantId)} queda como grupo/persona activo.`,
+    "success",
+  );
+}
+
+function handleCaptureQuickGroupAdd() {
+  const nameInput = document.getElementById("captureGroupNameInput");
+  const roleInput = document.getElementById("captureGroupRoleInput");
+  const result = createOrSelectPilotGroup({
+    name: nameInput?.value,
+    role: roleInput?.value,
+  });
+  const message = document.getElementById("captureGroupMessage");
+  if (message) message.textContent = getPilotGroupMessage(result);
+  if (!result.ok) return;
+  if (nameInput) nameInput.value = "";
+  if (roleInput) roleInput.value = "";
+  refreshPilotGroupSurfaces({ selectedId: result.participant.id, renderAdminPanel: true });
+  notify(getPilotGroupMessage(result), result.existed ? "info" : "success");
 }
 
 function handleOfflineQueueAction(event) {
@@ -7651,6 +7771,7 @@ function getPublicationExperiences() {
 
 function renderDashboardScopedPanels() {
   updateDashboardParticipantControl();
+  renderDashboardGroupOnboarding();
   renderMetrics();
   renderDashboardAttachmentStatus();
   renderDashboardAgenda();
@@ -7659,11 +7780,45 @@ function renderDashboardScopedPanels() {
   renderDataQuality();
 }
 
+function renderDashboardGroupOnboarding() {
+  const list = document.getElementById("dashboardGroupList");
+  const status = document.getElementById("dashboardGroupStatus");
+  if (!list) return;
+  const groups = state.pilotParticipants
+    .filter((item) => item && item.id && item.name)
+    .slice()
+    .sort((a, b) => (a.isPrimaryUser ? -1 : b.isPrimaryUser ? 1 : new Date(b.createdAt || 0) - new Date(a.createdAt || 0)))
+    .slice(0, 8);
+  const activeId = state.dashboardFilters?.pilotParticipantId || "all";
+  if (status) {
+    status.textContent = state.language === "en"
+      ? `${groups.length} groups/people available`
+      : `${groups.length} grupos/personas disponibles`;
+  }
+  list.innerHTML = groups.length
+    ? groups
+        .map((item) => {
+          const selected = item.id === activeId;
+          const detail = [item.role, item.isPrimaryUser ? (state.language === "en" ? "Main account" : "Cuenta principal") : ""].filter(Boolean).join(" · ");
+          return `
+            <article class="${selected ? "is-selected" : ""}">
+              <div>
+                <strong>${escapeHtml(item.name)}</strong>
+                <p>${escapeHtml(detail || (state.language === "en" ? "Private account group" : "Grupo privado de la cuenta"))}</p>
+              </div>
+              <button class="ghost-button" type="button" data-dashboard-group-select="${escapeHtml(item.id)}">${escapeHtml(selected ? (state.language === "en" ? "In use" : "En uso") : (state.language === "en" ? "Use" : "Usar"))}</button>
+            </article>
+          `;
+        })
+        .join("")
+    : `<p class="card-meta">${escapeHtml(state.language === "en" ? "Create your first group/person to organize experiences." : "Crea tu primer grupo/persona para ordenar experiencias.")}</p>`;
+}
+
 function updateDashboardParticipantControl() {
   const select = document.getElementById("dashboardPilotParticipantFilter");
   if (!select) return;
   const current = state.dashboardFilters?.pilotParticipantId || select.value || "all";
-  const allLabel = state.language === "en" ? "All participants" : "Todos los participantes";
+  const allLabel = state.language === "en" ? "All groups/people" : "Todos los grupos/personas";
   const options = state.pilotParticipants
     .map((item) => ({ value: item.id, label: item.name || item.role || item.id }))
     .filter((item) => item.value && item.label);
@@ -7690,8 +7845,8 @@ function updatePilotParticipantControls() {
       set value(next) {
         state.reportFilters.pilotParticipantId = next;
       },
-      allEs: "Todos los participantes",
-      allEn: "All pilot participants",
+      allEs: "Todos los grupos/personas",
+      allEn: "All groups/people",
       statusId: "",
     },
     {
@@ -7702,8 +7857,8 @@ function updatePilotParticipantControls() {
       set value(next) {
         state.insightsFilters.pilotParticipantId = next;
       },
-      allEs: "Todos los participantes",
-      allEn: "All participants",
+      allEs: "Todos los grupos/personas",
+      allEn: "All groups/people",
       statusId: "insightsScopeStatus",
     },
     {
@@ -7714,8 +7869,8 @@ function updatePilotParticipantControls() {
       set value(next) {
         state.publicationFilters.pilotParticipantId = next;
       },
-      allEs: "Todos los participantes",
-      allEn: "All participants",
+      allEs: "Todos los grupos/personas",
+      allEn: "All groups/people",
       statusId: "publicationScopeStatus",
     },
     {
@@ -7726,8 +7881,8 @@ function updatePilotParticipantControls() {
       set value(next) {
         state.agendaFilters.pilotParticipantId = next;
       },
-      allEs: "Todos los participantes",
-      allEn: "All participants",
+      allEs: "Todos los grupos/personas",
+      allEn: "All groups/people",
       statusId: "",
     },
   ];
@@ -7736,14 +7891,14 @@ function updatePilotParticipantControls() {
     .filter((item) => item.value && item.label);
   if (captureSelect) {
     const current = captureSelect.value || "";
-    const emptyLabel = state.language === "en" ? "Unassigned / main user" : "Sin asignar / usuario principal";
+    const emptyLabel = state.language === "en" ? "No group / main user" : "Sin grupo / usuario principal";
     captureSelect.innerHTML = [`<option value="">${escapeHtml(emptyLabel)}</option>`, ...participantOptions.map((item) => `<option value="${escapeHtml(item.value)}">${escapeHtml(item.label)}</option>`)].join("");
     captureSelect.value = participantOptions.some((item) => item.value === current) ? current : "";
   }
   const agendaParticipantInput = document.getElementById("agendaPilotParticipantInput");
   if (agendaParticipantInput) {
     const current = agendaParticipantInput.value || "";
-    const emptyLabel = state.language === "en" ? "General event / unassigned" : "Evento general / sin asignar";
+    const emptyLabel = state.language === "en" ? "General event / no group" : "Evento general / sin grupo";
     agendaParticipantInput.innerHTML = [`<option value="">${escapeHtml(emptyLabel)}</option>`, ...participantOptions.map((item) => `<option value="${escapeHtml(item.value)}">${escapeHtml(item.label)}</option>`)].join("");
     agendaParticipantInput.value = participantOptions.some((item) => item.value === current) ? current : "";
   }
@@ -7812,7 +7967,7 @@ function syncExperienceToAgenda(experience = {}) {
     type: "Experiencia",
     description: [
       experience.objective ? `${state.language === "en" ? "Objective" : "Objetivo"}: ${experience.objective}` : "",
-      participant ? `${state.language === "en" ? "Pilot participant" : "Participante piloto"}: ${participant}` : "",
+      participant ? `${state.language === "en" ? "Group/person" : "Grupo/persona"}: ${participant}` : "",
       experience.notes || "",
     ].filter(Boolean).join("\n\n"),
     startAt: start.toISOString(),
@@ -12017,7 +12172,7 @@ function updateLibraryFilterOptions() {
   const participantSelect = document.getElementById("libraryPilotParticipantFilter");
   if (participantSelect) {
     const current = state.libraryFilters.pilotParticipantId || participantSelect.value || "all";
-    const allLabel = state.language === "en" ? "All pilot participants" : "Todos los participantes";
+    const allLabel = state.language === "en" ? "All groups/people" : "Todos los grupos/personas";
     const options = state.pilotParticipants
       .map((item) => ({ value: item.id, label: item.name || item.role || item.id }))
       .filter((item) => item.value && item.label);
@@ -16038,7 +16193,7 @@ function renderReportScopeSummary(experiences) {
   if (state.language !== "en") {
     labels.all = "todas las experiencias guardadas. Los filtros estan apagados, asi que sirve como linea base completa.";
     labels.period = `rango rapido: ${state.reportFilters.period === "all" ? "todo el historial" : `ultimos ${state.reportFilters.period} dias`}.`;
-    labels.filters = "filtros activos por categoria, participante, texto de persona, objetivo o evento interno.";
+    labels.filters = "filtros activos por categoria, grupo/persona, texto de persona, objetivo o evento interno.";
     labels.single = "una experiencia especifica.";
   }
   const scopeLabel = labels[state.reportFilters.scope] || labels.all;
@@ -20358,7 +20513,7 @@ function buildInsightsExportPayload() {
   return {
     generatedAt: new Date().toISOString(),
     appVersion: APP_VERSION,
-    participant: participantId === "all" ? (state.language === "en" ? "All participants" : "Todos los participantes") : getPilotParticipantName(participantId),
+    participant: participantId === "all" ? (state.language === "en" ? "All groups/people" : "Todos los grupos/personas") : getPilotParticipantName(participantId),
     filters: { ...state.insightsFilters },
     experiences: experiences.length,
     axes: buildInsightThematicAxes(experiences),
@@ -23501,7 +23656,7 @@ function renderAdminOperationalFocusPanel() {
         biometricAssets: "Biometric files in Assets",
         biometricAssetsDetail: "CSV/JSON from Apple Health or wearables enters through Assets as cross-experience context, then informs energy and recovery by date/time.",
         scopeFilters: "Unified analytical scope",
-        scopeFiltersDetail: "Reports, Findings, and Publications now share participant, category, from-date, and to-date filters so the user can analyze a coherent group of experiences.",
+        scopeFiltersDetail: "Reports, Findings, and Publications now share group/person, category, from-date, and to-date filters so the user can analyze a coherent group of experiences.",
         reportPdf: "Cleaner reports, publications, and findings",
         reportPdfDetail: "Reports now use an executive PDF, participant scope, and folded technical exports. Publications explain format fit, edited text, media actions, and non-image handling. Findings are organized by 8 human themes and can be downloaded.",
         nativeSync: "Vibeapp real queue",
@@ -23538,7 +23693,7 @@ function renderAdminOperationalFocusPanel() {
     labels.biometricAssets = "Biometr\u00eda desde Activos";
     labels.biometricAssetsDetail = "CSV/JSON de Apple Health o wearables entra por Activos como contexto transversal y luego informa energ\u00eda o recuperaci\u00f3n por fecha/hora.";
     labels.scopeFilters = "Alcance anal\u00edtico uniforme";
-    labels.scopeFiltersDetail = "Reportes, Hallazgos y Publicaciones comparten filtros de participante, categor\u00eda, fecha desde y fecha hasta para analizar grupos coherentes de experiencias.";
+    labels.scopeFiltersDetail = "Reportes, Hallazgos y Publicaciones comparten filtros de grupo/persona, categor\u00eda, fecha desde y fecha hasta para analizar grupos coherentes de experiencias.";
     labels.reportPdf = "Reportes, publicaciones y hallazgos limpios";
     labels.reportPdfDetail = "Reportes usa PDF ejecutivo, alcance por persona y exportaciones técnicas plegadas. Publicaciones suma matriz por canal: carrusel, carta/email, dossier, ficha de salud, blog/web, LinkedIn y PDF/HTML, con medios seleccionables y acciones claras para audio, video, documentos y ZIP. Hallazgos se organiza en 8 ejes humanos y se puede descargar.";
     labels.nativeSync = "Vibeapp con cola real";
@@ -24223,19 +24378,19 @@ function renderAdmin() {
           : "Este navegador no tiene Web Speech; los ejemplos clicables siguen disponibles",
     ],
     [
-      state.language === "en" ? "Pilot participants" : "Participantes piloto",
+      state.language === "en" ? "Groups / people" : "Grupos / personas",
       participantSummary.total <= PILOT_TARGET_USERS && participantSummary.needsOnboarding === 0 ? okStatus : attentionStatus,
       state.language === "en"
         ? `${participantSummary.total}/${PILOT_TARGET_USERS} registered · ${participantSummary.active} active · ${participantSummary.onboarded} onboarded`
         : `${participantSummary.total}/${PILOT_TARGET_USERS} registrados · ${participantSummary.active} activos · ${participantSummary.onboarded} con onboarding`,
-      { view: "admin", focus: "pilotParticipantsPanel", label: state.language === "en" ? "Open cohort" : "Ver grupo" },
+      { view: "admin", focus: "pilotParticipantsPanel", label: state.language === "en" ? "Open technical view" : "Ver vista tecnica" },
     ],
     [
-      state.language === "en" ? "Participant scope across flows" : "Alcance por participante en flujos",
+      state.language === "en" ? "Group/person scope across flows" : "Alcance por grupo/persona en flujos",
       okStatus,
       state.language === "en"
-        ? "Capture, Dashboard, Agenda, calendar, Insights, Reports, Publications, Daily actions, and predictive actions share participant scope."
-        : "Captura, Panel, Agenda, calendario, Hallazgos, Reportes, Publicaciones, acciones de Diario y acciones predictivas comparten alcance por participante.",
+        ? "Capture, Dashboard, Agenda, calendar, Insights, Reports, Publications, Daily actions, and predictive actions share group/person scope."
+        : "Captura, Panel, Agenda, calendario, Hallazgos, Reportes, Publicaciones, acciones de Diario y acciones predictivas comparten alcance por grupo/persona.",
       { view: "agenda", label: state.language === "en" ? "Open Agenda" : "Abrir Agenda" },
     ],
     [
@@ -25802,16 +25957,16 @@ function buildPilotInviteMarkdown(kit = buildPilotInviteKit()) {
 function getPilotParticipantLabels() {
   return state.language === "en"
     ? {
-        title: "Pilot participants",
-        subtitle: `Track the fast ${PILOT_TARGET_USERS}-user pilot cohort.`,
+        title: "Groups / people",
+        subtitle: "Private subgroups inside the same account.",
         name: "Name",
         email: "Email (optional)",
         emailHelp: "Not required for the local pilot.",
-        role: "Role or segment",
+        role: "Note or segment",
         status: "Status",
-        add: "Add participant",
+        add: "Add group/person",
         export: "Export CSV",
-        empty: "No pilot participants registered yet.",
+        empty: "No groups/people registered yet.",
         statuses: ["invited", "active", "paused", "completed"],
         onboarding: "Onboarding",
         accessOk: "Access",
@@ -25819,16 +25974,16 @@ function getPilotParticipantLabels() {
         testOk: "First test",
       }
     : {
-        title: "Participantes piloto",
-        subtitle: `Controla el grupo rápido de ${PILOT_TARGET_USERS} usuarios piloto.`,
+        title: "Grupos / personas",
+        subtitle: "Subgrupos privados dentro de la misma cuenta.",
         name: "Nombre",
         email: "Correo opcional",
         emailHelp: "No es necesario para el piloto local.",
-        role: "Rol o segmento",
+        role: "Nota o segmento",
         status: "Estado",
-        add: "Agregar participante",
+        add: "Agregar grupo/persona",
         export: "Exportar CSV",
-        empty: "Aún no hay participantes piloto registrados.",
+        empty: "Aún no hay grupos/personas registrados.",
         statuses: ["invitado", "activo", "pausado", "completado"],
         onboarding: "Onboarding",
         accessOk: "Acceso",
@@ -25917,18 +26072,19 @@ function handlePilotParticipantSubmit(event) {
   const form = event.target.closest("form");
   if (!form) return;
   const data = new FormData(form);
-  state.pilotParticipants.unshift({
-    id: createId(),
-    createdAt: new Date().toISOString(),
-    name: String(data.get("name") || "").trim(),
-    email: String(data.get("email") || "").trim(),
-    role: String(data.get("role") || "").trim(),
-    status: String(data.get("status") || "").trim(),
-    accessOk: false,
-    manualOk: false,
-    testOk: false,
+  const result = createOrSelectPilotGroup({
+    name: data.get("name"),
+    email: data.get("email"),
+    role: data.get("role"),
+    status: data.get("status"),
   });
-  savePilotParticipants();
+  if (!result.ok) return;
+  if (!result.existed) {
+    result.participant.accessOk = false;
+    result.participant.manualOk = false;
+    result.participant.testOk = false;
+    savePilotParticipants();
+  }
   renderAdmin();
 }
 

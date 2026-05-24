@@ -9,10 +9,10 @@
     <meta name="apple-mobile-web-app-title" content="Vibe" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>Vibe</title>
-    <link rel="manifest" href="manifest.webmanifest?v=20260524-scope-filters-native-session-429" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260524-user-groups-onboarding-430" />
     <link rel="icon" href="icons/vibe-icon-192.png" type="image/png" />
     <link rel="apple-touch-icon" href="icons/vibe-apple-touch.png" />
-    <link rel="stylesheet" href="styles.css?v=20260524-scope-filters-native-session-429" />
+    <link rel="stylesheet" href="styles.css?v=20260524-user-groups-onboarding-430" />
   </head>
   <body>
     <noscript>
@@ -147,13 +147,35 @@
           <div id="dashboardTimeContext" class="dashboard-time-context" aria-live="polite"></div>
           <div class="dashboard-scope-bar">
             <label>
-              Participante / usuario
+              Grupo / persona
               <select id="dashboardPilotParticipantFilter">
-                <option value="all">Todos los participantes</option>
+                <option value="all">Todos los grupos/personas</option>
               </select>
             </label>
             <span id="dashboardScopeStatus">Vista general</span>
           </div>
+          <section class="panel dashboard-group-onboarding-panel">
+            <div class="panel-heading">
+              <h2>Mis grupos/personas</h2>
+              <span id="dashboardGroupStatus">Onboarding simple</span>
+            </div>
+            <p class="section-note">Crea subgrupos privados de tu cuenta para separar experiencias por persona, familia, viaje, proyecto o contexto. Administración queda solo para control operativo.</p>
+            <div class="group-onboarding-layout">
+              <div id="dashboardGroupList" class="dashboard-group-list"></div>
+              <form id="dashboardGroupForm" class="group-quick-form">
+                <label>
+                  Nombre del grupo/persona
+                  <input id="dashboardGroupNameInput" name="name" type="text" placeholder="Miguel, Familia, Viaje Praga, Equipo..." />
+                </label>
+                <label>
+                  Nota opcional
+                  <input id="dashboardGroupRoleInput" name="role" type="text" placeholder="Uso, relación o contexto" />
+                </label>
+                <button class="primary-button" type="submit">Crear y usar</button>
+                <p id="dashboardGroupMessage" class="card-meta" aria-live="polite"></p>
+              </form>
+            </div>
+          </section>
           <section class="panel dashboard-primary-panel">
             <div class="panel-heading">
               <h2>Acciones principales</h2>
@@ -262,9 +284,24 @@
                   <select id="categoryInput" name="category" required></select>
                 </label>
                 <label>
-                  Participante piloto
+                  Grupo / persona
                   <select id="pilotParticipantInput" name="pilotParticipantId"></select>
                 </label>
+                <details class="participant-quick-create">
+                  <summary>Crear grupo/persona sin salir de Captura</summary>
+                  <div class="group-quick-form">
+                    <label>
+                      Nombre
+                      <input id="captureGroupNameInput" type="text" placeholder="Familia, Viaje, Cliente, Equipo..." />
+                    </label>
+                    <label>
+                      Nota opcional
+                      <input id="captureGroupRoleInput" type="text" placeholder="Contexto o relación" />
+                    </label>
+                    <button id="captureQuickGroupAddButton" class="ghost-button" type="button">Crear y seleccionar</button>
+                    <p id="captureGroupMessage" class="card-meta" aria-live="polite"></p>
+                  </div>
+                </details>
                 <label class="inline-check">
                   <input id="syncAgendaInput" name="syncAgenda" type="checkbox" />
                   Actualizar Agenda/Calendario con esta experiencia
@@ -359,7 +396,7 @@
                 <option value="agenda">Agenda</option>
               </select>
               <select id="libraryPilotParticipantFilter">
-                <option value="all">Todos los participantes</option>
+                <option value="all">Todos los grupos/personas</option>
               </select>
             </div>
             <div id="libraryGrid" class="library-grid"></div>
@@ -437,8 +474,8 @@
                   <option value="all">Todo</option>
                 </select>
                 <select id="agendaTypeFilter"></select>
-                <select id="agendaPilotParticipantFilter" aria-label="Filtrar agenda por participante">
-                  <option value="all">Todos los participantes</option>
+                <select id="agendaPilotParticipantFilter" aria-label="Filtrar agenda por grupo o persona">
+                  <option value="all">Todos los grupos/personas</option>
                 </select>
               </div>
               <div id="agendaCalendar" class="agenda-calendar"></div>
@@ -502,7 +539,7 @@
                   <input id="agendaParticipantsInput" type="text" placeholder="Personas o equipos involucrados" />
                 </label>
                 <label>
-                  <span id="agendaPilotParticipantLabel">Participante piloto vinculado</span>
+                  <span id="agendaPilotParticipantLabel">Grupo/persona vinculado</span>
                   <select id="agendaPilotParticipantInput">
                     <option value="">Evento general / sin asignar</option>
                   </select>
@@ -624,9 +661,9 @@
                     </select>
                   </label>
                   <label class="person-scope-control">
-                    <span id="reportParticipantLabel">Participante / usuario del reporte</span>
-                    <select id="reportPilotParticipantFilter" aria-label="Participante piloto del reporte">
-                      <option value="all">Todos los participantes</option>
+                    <span id="reportParticipantLabel">Grupo / persona del reporte</span>
+                    <select id="reportPilotParticipantFilter" aria-label="Grupo o persona del reporte">
+                      <option value="all">Todos los grupos/personas</option>
                     </select>
                   </label>
                   <label>
@@ -708,9 +745,9 @@
               </div>
               <div class="module-scope-bar">
                 <label>
-                  <span id="insightsParticipantLabel">Participante / usuario</span>
+                  <span id="insightsParticipantLabel">Grupo / persona</span>
                   <select id="insightsPilotParticipantFilter">
-                    <option value="all">Todos los participantes</option>
+                    <option value="all">Todos los grupos/personas</option>
                   </select>
                 </label>
                 <label>
@@ -756,9 +793,9 @@
               </div>
               <div class="module-scope-bar">
                 <label>
-                  <span id="publicationParticipantLabel">Participante / usuario fuente</span>
+                  <span id="publicationParticipantLabel">Grupo / persona fuente</span>
                   <select id="publicationPilotParticipantFilter">
-                    <option value="all">Todos los participantes</option>
+                    <option value="all">Todos los grupos/personas</option>
                   </select>
                 </label>
                 <label>
@@ -883,7 +920,7 @@
             <div class="manual-version-card">
               <div>
                 <span id="manualVersionEyebrow">Versión vigente</span>
-                <strong id="manualVersionValue">20260524-scope-filters-native-session-429</strong>
+                <strong id="manualVersionValue">20260524-user-groups-onboarding-430</strong>
                 <p id="manualVersionSummary">Guía práctica organizada por temas para entender el flujo de la app sin leer todo de corrido.</p>
               </div>
               <div class="manual-guide-grid" aria-label="Estructura del manual">
@@ -1103,7 +1140,7 @@
       </main>
     </div>
 
-    <script src="app.js?v=20260524-scope-filters-native-session-429"></script>
+    <script src="app.js?v=20260524-user-groups-onboarding-430"></script>
 </body>
 </html>
 
