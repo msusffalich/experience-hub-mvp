@@ -2214,6 +2214,7 @@ const manualContent = {
         "Para el piloto actual, el Acta de cierre queda marcada como completada por decisión del usuario. Ya no bloquea el avance operativo del MVP.",
         "Cada guardado de decisión queda en un historial breve del acta, útil para revisar cambios de criterio durante el piloto.",
         "Participantes piloto permite registrar nombre, correo opcional, segmento y estado de cada invitado; el objetivo rápido de 3 personas se refleja en Salud y Preparación del piloto.",
+        "El login identifica al dueño de la cuenta y de los datos. El Participante piloto no es otro usuario del sistema: es un subgrupo interno dentro de esa cuenta para separar experiencias, agenda, reportes, hallazgos y publicaciones.",
         "Captura incluye un selector de Participante piloto. El participante se registra una sola vez en Administración y luego se vincula a cada experiencia sin volver a escribirlo en las notas.",
         "Captura puede actualizar Agenda/Calendario solo si activas la casilla correspondiente al guardar. La app crea o actualiza un evento vinculado con fecha, duración, ubicación y participante piloto.",
         "Agenda permite asignar cada evento a un Participante piloto y filtrar el calendario por persona. Si un evento se deja como general, aparece solo en la vista general; si se asigna a una persona, aparece en su Panel y en su Agenda filtrada.",
