@@ -11,6 +11,8 @@ from reportlab.lib.enums import TA_CENTER, TA_LEFT
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import (
     BaseDocTemplate,
     Frame,
@@ -39,6 +41,21 @@ NAVY_CARD = colors.HexColor("#1a2d47")
 NAVY_LINE = colors.HexColor("#1f3554")
 LOGO_PATH = Path(__file__).resolve().parents[1] / "icons" / "vibe-logo-pdf.png"
 ICON_PATH = Path(__file__).resolve().parents[1] / "icons" / "vibe-icon-192.png"
+
+
+def register_pdf_fonts():
+    regular_candidates = [Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"), Path("C:/Windows/Fonts/arial.ttf")]
+    bold_candidates = [Path("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"), Path("C:/Windows/Fonts/arialbd.ttf")]
+    regular = next((path for path in regular_candidates if path.exists()), None)
+    bold = next((path for path in bold_candidates if path.exists()), None)
+    if regular and bold:
+        pdfmetrics.registerFont(TTFont("VibeSans", str(regular)))
+        pdfmetrics.registerFont(TTFont("VibeSansBold", str(bold)))
+        return "VibeSans", "VibeSansBold"
+    return "Helvetica", "Helvetica-Bold"
+
+
+FONT_REGULAR, FONT_BOLD = register_pdf_fonts()
 
 
 def clean(value):
@@ -83,15 +100,17 @@ def num(value, default=0):
 
 def style_sheet():
     base = getSampleStyleSheet()
-    base.add(ParagraphStyle("CoverTitle", parent=base["Title"], fontName="Helvetica-Bold", fontSize=24, leading=29, textColor=colors.white, alignment=TA_LEFT, spaceAfter=10))
-    base.add(ParagraphStyle("CoverSubtitle", parent=base["Normal"], fontSize=12, leading=17, textColor=colors.HexColor("#eaf3f4")))
-    base.add(ParagraphStyle("H1x", parent=base["Heading1"], fontName="Helvetica-Bold", fontSize=20, leading=24, textColor=BRAND, spaceBefore=12, spaceAfter=10))
-    base.add(ParagraphStyle("H2x", parent=base["Heading2"], fontName="Helvetica-Bold", fontSize=13, leading=16, textColor=BRAND, spaceBefore=4, spaceAfter=6))
-    base.add(ParagraphStyle("Bodyx", parent=base["BodyText"], fontSize=9.2, leading=13.2, textColor=colors.HexColor("#2d3742"), wordWrap="CJK"))
-    base.add(ParagraphStyle("Muted", parent=base["BodyText"], fontSize=8.3, leading=11.5, textColor=MUTED, wordWrap="CJK"))
-    base.add(ParagraphStyle("Small", parent=base["BodyText"], fontSize=7.2, leading=9.4, textColor=MUTED, wordWrap="CJK"))
-    base.add(ParagraphStyle("Metric", parent=base["BodyText"], fontName="Helvetica-Bold", fontSize=18, leading=22, textColor=BRAND, alignment=TA_CENTER))
-    base.add(ParagraphStyle("MetricLabel", parent=base["BodyText"], fontSize=7.5, leading=9, textColor=MUTED, alignment=TA_CENTER))
+    base.add(ParagraphStyle("CoverTitle", parent=base["Title"], fontName=FONT_BOLD, fontSize=24, leading=29, textColor=colors.white, alignment=TA_LEFT, spaceAfter=10))
+    base.add(ParagraphStyle("CoverSubtitle", parent=base["Normal"], fontName=FONT_REGULAR, fontSize=12, leading=17, textColor=colors.HexColor("#eaf3f4")))
+    base.add(ParagraphStyle("H1x", parent=base["Heading1"], fontName=FONT_BOLD, fontSize=20, leading=24, textColor=BRAND, spaceBefore=12, spaceAfter=10))
+    base.add(ParagraphStyle("H2x", parent=base["Heading2"], fontName=FONT_BOLD, fontSize=13, leading=16, textColor=BRAND, spaceBefore=4, spaceAfter=6))
+    base.add(ParagraphStyle("Bodyx", parent=base["BodyText"], fontName=FONT_REGULAR, fontSize=9.2, leading=13.2, textColor=colors.HexColor("#2d3742"), wordWrap="CJK"))
+    base.add(ParagraphStyle("Muted", parent=base["BodyText"], fontName=FONT_REGULAR, fontSize=8.3, leading=11.5, textColor=MUTED, wordWrap="CJK"))
+    base.add(ParagraphStyle("Small", parent=base["BodyText"], fontName=FONT_REGULAR, fontSize=7.2, leading=9.4, textColor=MUTED, wordWrap="CJK"))
+    base.add(ParagraphStyle("Metric", parent=base["BodyText"], fontName=FONT_BOLD, fontSize=18, leading=22, textColor=BRAND, alignment=TA_CENTER))
+    base.add(ParagraphStyle("MetricLabel", parent=base["BodyText"], fontName=FONT_REGULAR, fontSize=7.5, leading=9, textColor=MUTED, alignment=TA_CENTER))
+    base.add(ParagraphStyle("MetricWhite", parent=base["BodyText"], fontName=FONT_BOLD, fontSize=18, leading=22, textColor=colors.white, alignment=TA_CENTER))
+    base.add(ParagraphStyle("MetricLabelWhite", parent=base["BodyText"], fontName=FONT_REGULAR, fontSize=7.5, leading=9, textColor=colors.HexColor("#dbe7f3"), alignment=TA_CENTER))
     return base
 
 
@@ -121,16 +140,25 @@ def icon_flowable(size=0.78 * inch):
     return image
 
 
+def logo_flowable(width=1.3 * inch):
+    if not LOGO_PATH.exists():
+        return para("Vibe", "CoverSubtitle")
+    image = Image(str(LOGO_PATH))
+    image.drawWidth = width
+    image.drawHeight = width * 0.545
+    return image
+
+
 def draw_page(canvas, doc):
     canvas.saveState()
     canvas.setFillColor(colors.HexColor("#f8fafb"))
     canvas.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, fill=1, stroke=0)
     canvas.setFillColor(BRAND)
-    canvas.setFont("Helvetica-Bold", 8)
+    canvas.setFont(FONT_BOLD, 8)
     canvas.drawString(MARGIN, 0.32 * inch, "Vibe - Human Experience Intelligence Platform")
     canvas.setFillColor(MUTED)
-    canvas.setFont("Helvetica", 8)
-    canvas.drawRightString(PAGE_WIDTH - MARGIN, 0.32 * inch, f"Pagina {doc.page}")
+    canvas.setFont(FONT_REGULAR, 8)
+    canvas.drawRightString(PAGE_WIDTH - MARGIN, 0.32 * inch, f"Página {doc.page}")
     canvas.restoreState()
 
 
@@ -141,7 +169,7 @@ def cover(report):
     title_block = Table(
         [[
             [para("Reporte ejecutivo de experiencias", "CoverTitle"), para("Lectura humana, evidencia multimodal y recomendaciones accionables.", "CoverSubtitle")],
-            icon_flowable(),
+            logo_flowable(1.25 * inch),
         ]],
         colWidths=[PAGE_WIDTH - 2 * MARGIN - 1.18 * inch, 0.84 * inch],
     )
@@ -220,7 +248,7 @@ class VisualTile(Flowable):
         c.setStrokeColor(LINE)
         c.roundRect(0, 0, w, h, 10, fill=1, stroke=1)
         c.setFillColor(BRAND)
-        c.setFont("Helvetica-Bold", 8.5)
+        c.setFont(FONT_BOLD, 8.5)
         c.drawString(10, h - 18, self.title[:48])
         if self.kind == "donut":
             self._draw_donut(c, w, h)
@@ -231,7 +259,7 @@ class VisualTile(Flowable):
         elif self.kind == "radar":
             self._draw_radar(c, w, h)
         c.setFillColor(MUTED)
-        c.setFont("Helvetica", 7)
+        c.setFont(FONT_REGULAR, 7)
         c.drawString(10, 9, polish(self.note)[:70])
         c.restoreState()
 
@@ -249,9 +277,9 @@ class VisualTile(Flowable):
         c.setFillColor(colors.white)
         c.circle(cx, cy, r * 0.56, fill=1, stroke=0)
         c.setFillColor(BRAND)
-        c.setFont("Helvetica-Bold", 13)
+        c.setFont(FONT_BOLD, 13)
         c.drawCentredString(cx, cy - 4, f"{int(round(values[0] / total * 100))}%")
-        c.setFont("Helvetica", 6.8)
+        c.setFont(FONT_REGULAR, 6.8)
         c.setFillColor(MUTED)
         legend_x = 0.58 * w
         legend_y = h - 38
@@ -290,10 +318,10 @@ class VisualTile(Flowable):
         x, y = points[-1]
         c.circle(x, y, 3, fill=1, stroke=0)
         c.setFillColor(MUTED)
-        c.setFont("Helvetica", 6.5)
+        c.setFont(FONT_REGULAR, 6.5)
         c.drawString(left, bottom - 10, "Inicio")
         c.drawRightString(left + chart_w, bottom - 10, "Reciente")
-        c.drawString(left - 6, bottom + chart_h + 3, "Energia")
+        c.drawString(left - 6, bottom + chart_h + 3, "Energía")
 
     def _draw_waffle(self, c, w, h):
         value = max(0, min(100, num(self.values[0] if self.values else 0)))
@@ -308,7 +336,7 @@ class VisualTile(Flowable):
             c.setFillColor(ACCENT if index < active else colors.HexColor("#e6edf4"))
             c.roundRect(left + col * (size + gap), top - row * (size + gap), size, size, 1.5, fill=1, stroke=0)
         c.setFillColor(BRAND)
-        c.setFont("Helvetica-Bold", 14)
+        c.setFont(FONT_BOLD, 14)
         c.drawCentredString(w / 2, 30, f"{int(round(value))}%")
 
     def _draw_radar(self, c, w, h):
@@ -340,7 +368,7 @@ class VisualTile(Flowable):
         labels = [short(label, 18) for label in (self.labels or [])[:count]]
         while len(labels) < count:
             labels.append(f"Eje {len(labels) + 1}")
-        c.setFont("Helvetica", 6.2)
+        c.setFont(FONT_REGULAR, 6.2)
         c.setFillColor(MUTED)
         for index, label in enumerate(labels[:count]):
             angle = -math.pi / 2 + 2 * math.pi * index / count
@@ -372,7 +400,7 @@ def metric_grid(items, dark=False):
 
 
 def executive_kpi_strip(items):
-    cells = [[para(str(value), "Metric"), para(label, "MetricLabel")] for label, value in items]
+    cells = [[para(str(value), "MetricWhite"), para(label, "MetricLabelWhite")] for label, value in items]
     count = max(1, len(cells))
     table = Table([cells], colWidths=[(PAGE_WIDTH - 2 * MARGIN) / count] * count)
     table.setStyle(TableStyle([
@@ -608,7 +636,7 @@ def build_story(report):
 
 
 def main():
-    payload = json.load(sys.stdin)
+    payload = json.loads(sys.stdin.buffer.read().decode("utf-8"))
     buffer = io.BytesIO()
     frame = Frame(MARGIN, MARGIN + 0.22 * inch, PAGE_WIDTH - 2 * MARGIN, PAGE_HEIGHT - 2 * MARGIN - 0.25 * inch, showBoundary=0)
     doc = BaseDocTemplate(buffer, pagesize=letter, leftMargin=MARGIN, rightMargin=MARGIN, topMargin=MARGIN, bottomMargin=MARGIN)

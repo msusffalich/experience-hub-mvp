@@ -11,6 +11,8 @@ from reportlab.lib.enums import TA_CENTER, TA_LEFT
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import BaseDocTemplate, Frame, Flowable, PageBreak, PageTemplate, Paragraph, Spacer, Table, TableStyle
 
 
@@ -26,6 +28,21 @@ SOFT = colors.HexColor("#f4f8fb")
 LINE = colors.HexColor("#d8e0e8")
 LOGO_PATH = Path(__file__).resolve().parents[1] / "icons" / "vibe-logo-pdf.png"
 AXIS_COLORS = [ACCENT, GOLD, BLUE, PURPLE, colors.HexColor("#22c55e"), colors.HexColor("#f472b6"), colors.HexColor("#06b6d4"), colors.HexColor("#fb923c")]
+
+
+def register_pdf_fonts():
+    regular_candidates = [Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"), Path("C:/Windows/Fonts/arial.ttf")]
+    bold_candidates = [Path("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"), Path("C:/Windows/Fonts/arialbd.ttf")]
+    regular = next((path for path in regular_candidates if path.exists()), None)
+    bold = next((path for path in bold_candidates if path.exists()), None)
+    if regular and bold:
+        pdfmetrics.registerFont(TTFont("VibeSans", str(regular)))
+        pdfmetrics.registerFont(TTFont("VibeSansBold", str(bold)))
+        return "VibeSans", "VibeSansBold"
+    return "Helvetica", "Helvetica-Bold"
+
+
+FONT_REGULAR, FONT_BOLD = register_pdf_fonts()
 
 
 def clean(value):
@@ -69,14 +86,14 @@ def num(value, default=0):
 
 def styles():
     base = getSampleStyleSheet()
-    base.add(ParagraphStyle("CoverTitle", parent=base["Title"], fontName="Helvetica-Bold", fontSize=32, leading=36, textColor=colors.white, alignment=TA_LEFT))
-    base.add(ParagraphStyle("CoverSub", parent=base["Normal"], fontSize=12, leading=16, textColor=colors.HexColor("#eaf3f4")))
-    base.add(ParagraphStyle("H1x", parent=base["Heading1"], fontName="Helvetica-Bold", fontSize=19, leading=23, textColor=BRAND, spaceBefore=12, spaceAfter=8))
-    base.add(ParagraphStyle("H2x", parent=base["Heading2"], fontName="Helvetica-Bold", fontSize=12.5, leading=15, textColor=BRAND, spaceAfter=5))
-    base.add(ParagraphStyle("Bodyx", parent=base["BodyText"], fontSize=9, leading=12.6, textColor=colors.HexColor("#2d3742"), wordWrap="CJK"))
-    base.add(ParagraphStyle("Small", parent=base["BodyText"], fontSize=7.1, leading=9.2, textColor=MUTED, wordWrap="CJK"))
-    base.add(ParagraphStyle("Metric", parent=base["BodyText"], fontName="Helvetica-Bold", fontSize=18, leading=22, alignment=TA_CENTER, textColor=BRAND))
-    base.add(ParagraphStyle("MetricLabel", parent=base["BodyText"], fontSize=7.2, leading=9, alignment=TA_CENTER, textColor=MUTED))
+    base.add(ParagraphStyle("CoverTitle", parent=base["Title"], fontName=FONT_BOLD, fontSize=32, leading=36, textColor=colors.white, alignment=TA_LEFT))
+    base.add(ParagraphStyle("CoverSub", parent=base["Normal"], fontName=FONT_REGULAR, fontSize=12, leading=16, textColor=colors.HexColor("#eaf3f4")))
+    base.add(ParagraphStyle("H1x", parent=base["Heading1"], fontName=FONT_BOLD, fontSize=19, leading=23, textColor=BRAND, spaceBefore=12, spaceAfter=8))
+    base.add(ParagraphStyle("H2x", parent=base["Heading2"], fontName=FONT_BOLD, fontSize=12.5, leading=15, textColor=BRAND, spaceAfter=5))
+    base.add(ParagraphStyle("Bodyx", parent=base["BodyText"], fontName=FONT_REGULAR, fontSize=9, leading=12.6, textColor=colors.HexColor("#2d3742"), wordWrap="CJK"))
+    base.add(ParagraphStyle("Small", parent=base["BodyText"], fontName=FONT_REGULAR, fontSize=7.1, leading=9.2, textColor=MUTED, wordWrap="CJK"))
+    base.add(ParagraphStyle("Metric", parent=base["BodyText"], fontName=FONT_BOLD, fontSize=18, leading=22, alignment=TA_CENTER, textColor=BRAND))
+    base.add(ParagraphStyle("MetricLabel", parent=base["BodyText"], fontName=FONT_REGULAR, fontSize=7.2, leading=9, alignment=TA_CENTER, textColor=MUTED))
     return base
 
 
@@ -97,11 +114,11 @@ def draw_page(canvas, doc):
     canvas.setFillColor(colors.HexColor("#f8fafb"))
     canvas.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, fill=1, stroke=0)
     canvas.setFillColor(BRAND)
-    canvas.setFont("Helvetica-Bold", 8)
+    canvas.setFont(FONT_BOLD, 8)
     canvas.drawString(MARGIN, 0.32 * inch, "Vibe - Hallazgos de experiencias")
     canvas.setFillColor(MUTED)
-    canvas.setFont("Helvetica", 8)
-    canvas.drawRightString(PAGE_WIDTH - MARGIN, 0.32 * inch, f"Pagina {doc.page}")
+    canvas.setFont(FONT_REGULAR, 8)
+    canvas.drawRightString(PAGE_WIDTH - MARGIN, 0.32 * inch, f"Página {doc.page}")
     canvas.restoreState()
 
 
@@ -122,9 +139,9 @@ class CoverBlock(Flowable):
         c.roundRect(0, 0, self.width, self.height, 18, fill=1, stroke=0)
         draw_logo(c, self.width - 1.9 * inch, self.height - 1.05 * inch, 1.35 * inch)
         c.setFillColor(colors.white)
-        c.setFont("Helvetica-Bold", 30)
+        c.setFont(FONT_BOLD, 30)
         c.drawString(0.38 * inch, self.height - 1.42 * inch, "Hallazgos de experiencias")
-        c.setFont("Helvetica", 12)
+        c.setFont(FONT_REGULAR, 12)
         c.drawString(0.4 * inch, self.height - 1.76 * inch, "Diagnóstico visual, ejes humanos y recomendaciones accionables.")
         metrics = [
             ("Experiencias", self.payload.get("experiences", 0)),
@@ -138,12 +155,12 @@ class CoverBlock(Flowable):
             c.setFillColor(colors.Color(1, 1, 1, alpha=0.13))
             c.roundRect(x, y, 1.08 * inch, 0.76 * inch, 9, fill=1, stroke=0)
             c.setFillColor(colors.white)
-            c.setFont("Helvetica-Bold", 13)
+            c.setFont(FONT_BOLD, 13)
             c.drawCentredString(x + 0.54 * inch, y + 0.39 * inch, str(value)[:14])
-            c.setFont("Helvetica", 6.8)
+            c.setFont(FONT_REGULAR, 6.8)
             c.drawCentredString(x + 0.54 * inch, y + 0.16 * inch, label.upper())
         c.setFillColor(colors.HexColor("#eaf3f4"))
-        c.setFont("Helvetica", 9)
+        c.setFont(FONT_REGULAR, 9)
         c.drawString(0.4 * inch, 0.55 * inch, f"Generado: {clean(self.payload.get('generatedAt') or datetime.now(timezone.utc).isoformat())}")
         c.restoreState()
 
@@ -194,7 +211,7 @@ class AxisRadar(Flowable):
         c.setStrokeColor(ACCENT)
         c.drawPath(path, fill=1, stroke=1)
         c.setFillColor(MUTED)
-        c.setFont("Helvetica", 6.4)
+        c.setFont(FONT_REGULAR, 6.4)
         axis_labels = [short(axis.get("title"), 14) for axis in self.axes]
         while len(axis_labels) < count:
             axis_labels.append("-")
@@ -209,13 +226,13 @@ class AxisRadar(Flowable):
             else:
                 c.drawCentredString(lx, ly, label)
         x0 = 2.35 * inch
-        c.setFont("Helvetica-Bold", 10)
+        c.setFont(FONT_BOLD, 10)
         c.setFillColor(BRAND)
         c.drawString(x0, h - 0.34 * inch, "Radar de ejes humanos")
-        c.setFont("Helvetica-Bold", 7.4)
+        c.setFont(FONT_BOLD, 7.4)
         c.setFillColor(MUTED)
         c.drawString(x0, h - 0.50 * inch, "Leyenda: nombre del eje + experiencias vinculadas")
-        c.setFont("Helvetica", 7.8)
+        c.setFont(FONT_REGULAR, 7.8)
         c.setFillColor(MUTED)
         for index, axis in enumerate(self.axes[:6]):
             y = h - 0.78 * inch - index * 0.23 * inch
@@ -257,26 +274,20 @@ def axis_legend_panel(axes):
 
 def axis_cards(axes):
     rows = []
-    width = (PAGE_WIDTH - 2 * MARGIN - 10) / 2
-    cards = []
+    width = PAGE_WIDTH - 2 * MARGIN
     for index, axis in enumerate(axes[:8]):
         color = AXIS_COLORS[index % len(AXIS_COLORS)]
         body = (
             f"Estado: {axis.get('status', '-')}. Energia media: {axis.get('avgEnergy', 0)}/10. "
             f"Evidencia: {len(axis.get('items') or [])} experiencias y {axis.get('assets', 0)} activos. "
-            f"Siguiente paso: {human_action(axis.get('action', ''), 110)}"
+            f"Siguiente paso: {human_action(axis.get('action', ''), 180)}"
         )
-        cards.append(text_axis_card(axis.get("title") or "Eje", body, color, width))
-    for index in range(0, len(cards), 2):
-        row = cards[index:index + 2]
-        while len(row) < 2:
-            row.append("")
-        rows.append(row)
-    table = Table(rows, colWidths=[width, width])
+        rows.append([text_axis_card(axis.get("title") or "Eje", body, color, width)])
+    table = Table(rows, colWidths=[width])
     table.setStyle(TableStyle([
         ("VALIGN", (0, 0), (-1, -1), "TOP"),
         ("LEFTPADDING", (0, 0), (-1, -1), 0),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 0),
         ("TOPPADDING", (0, 0), (-1, -1), 4),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
     ]))
@@ -284,7 +295,7 @@ def axis_cards(axes):
 
 
 def text_axis_card(title, body, accent, width):
-    table = Table([[para(title, "H2x")], [para(short(body, 230), "Bodyx")]], colWidths=[width])
+    table = Table([[para(title, "H2x")], [para(short(body, 520), "Bodyx")]], colWidths=[width])
     table.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, -1), colors.white),
         ("BOX", (0, 0), (-1, -1), 0.6, LINE),
@@ -316,7 +327,7 @@ class Waffle(Flowable):
         c.setStrokeColor(LINE)
         c.roundRect(0, 0, self.width, self.height, 10, fill=1, stroke=1)
         c.setFillColor(BRAND)
-        c.setFont("Helvetica-Bold", 8.5)
+        c.setFont(FONT_BOLD, 8.5)
         c.drawString(10, self.height - 17, clean(self.title)[:40])
         active = int(round(self.value / 4))
         size, gap = 6.5, 2.8
@@ -326,10 +337,10 @@ class Waffle(Flowable):
             c.setFillColor(ACCENT if index < active else colors.HexColor("#e6edf4"))
             c.roundRect(left + col * (size + gap), top - row * (size + gap), size, size, 1.2, fill=1, stroke=0)
         c.setFillColor(BRAND)
-        c.setFont("Helvetica-Bold", 16)
+        c.setFont(FONT_BOLD, 16)
         c.drawRightString(self.width - 12, self.height - 47, f"{int(round(self.value))}%")
         c.setFillColor(MUTED)
-        c.setFont("Helvetica", 7)
+        c.setFont(FONT_REGULAR, 7)
         c.drawString(10, 9, clean(self.note)[:52])
         c.restoreState()
 
@@ -436,7 +447,7 @@ def build_story(payload):
 
 
 def main():
-    payload = json.load(sys.stdin)
+    payload = json.loads(sys.stdin.buffer.read().decode("utf-8"))
     buffer = io.BytesIO()
     frame = Frame(MARGIN, MARGIN + 0.22 * inch, PAGE_WIDTH - 2 * MARGIN, PAGE_HEIGHT - 2 * MARGIN - 0.25 * inch, showBoundary=0)
     doc = BaseDocTemplate(buffer, pagesize=letter, leftMargin=MARGIN, rightMargin=MARGIN, topMargin=MARGIN, bottomMargin=MARGIN)

@@ -13,6 +13,8 @@ from reportlab.lib.enums import TA_CENTER, TA_LEFT
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import BaseDocTemplate, Flowable, Frame, Image, KeepTogether, PageBreak, PageTemplate, Paragraph, Spacer, Table, TableStyle
 
 
@@ -29,6 +31,27 @@ CREAM = colors.HexColor("#f5efe4")
 RUST = colors.HexColor("#c0603a")
 LOGO_PATH = Path(__file__).resolve().parents[1] / "icons" / "vibe-logo-pdf.png"
 ImageFile.LOAD_TRUNCATED_IMAGES = True
+
+
+def register_pdf_fonts():
+    regular_candidates = [
+        Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"),
+        Path("C:/Windows/Fonts/arial.ttf"),
+    ]
+    bold_candidates = [
+        Path("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"),
+        Path("C:/Windows/Fonts/arialbd.ttf"),
+    ]
+    regular = next((path for path in regular_candidates if path.exists()), None)
+    bold = next((path for path in bold_candidates if path.exists()), None)
+    if regular and bold:
+        pdfmetrics.registerFont(TTFont("VibeSans", str(regular)))
+        pdfmetrics.registerFont(TTFont("VibeSansBold", str(bold)))
+        return "VibeSans", "VibeSansBold"
+    return "Helvetica", "Helvetica-Bold"
+
+
+FONT_REGULAR, FONT_BOLD = register_pdf_fonts()
 
 
 def clean_html(value):
@@ -48,14 +71,14 @@ def clean_html(value):
 def polish(value):
     text = clean_html(value)
     replacements = {
-        "Publicacion": "Publicacion",
-        "publicacion": "publicacion",
-        "Aprobacion": "Aprobacion",
-        "energia": "energia",
-        "revision": "revision",
-        "tecnica": "tecnica",
-        "auditoria": "auditoria",
-        "version": "version",
+        "Publicacion": "Publicación",
+        "publicacion": "publicación",
+        "Aprobacion": "Aprobación",
+        "energia": "energía",
+        "revision": "revisión",
+        "tecnica": "técnica",
+        "auditoria": "auditoría",
+        "version": "versión",
     }
     for src, dst in replacements.items():
         text = text.replace(src, dst)
@@ -84,13 +107,13 @@ def editorial_body(text, limit=900):
 
 def styles():
     base = getSampleStyleSheet()
-    base.add(ParagraphStyle("Titlex", parent=base["Title"], fontName="Helvetica-Bold", fontSize=29, leading=34, textColor=colors.white, alignment=TA_LEFT))
-    base.add(ParagraphStyle("Subx", parent=base["BodyText"], fontSize=12, leading=17, textColor=colors.HexColor("#eef4ff")))
-    base.add(ParagraphStyle("H1x", parent=base["Heading1"], fontName="Helvetica-Bold", fontSize=19, leading=23, textColor=BRAND))
-    base.add(ParagraphStyle("H2x", parent=base["Heading2"], fontName="Helvetica-Bold", fontSize=13, leading=16, textColor=BRAND))
-    base.add(ParagraphStyle("Bodyx", parent=base["BodyText"], fontSize=9.1, leading=12.8, textColor=colors.HexColor("#26313d"), wordWrap="CJK"))
-    base.add(ParagraphStyle("Muted", parent=base["BodyText"], fontSize=8, leading=10.6, textColor=MUTED, wordWrap="CJK"))
-    base.add(ParagraphStyle("Center", parent=base["BodyText"], fontSize=8.8, leading=11.8, textColor=MUTED, alignment=TA_CENTER, wordWrap="CJK"))
+    base.add(ParagraphStyle("Titlex", parent=base["Title"], fontName=FONT_BOLD, fontSize=29, leading=34, textColor=colors.white, alignment=TA_LEFT))
+    base.add(ParagraphStyle("Subx", parent=base["BodyText"], fontName=FONT_REGULAR, fontSize=12, leading=17, textColor=colors.HexColor("#eef4ff")))
+    base.add(ParagraphStyle("H1x", parent=base["Heading1"], fontName=FONT_BOLD, fontSize=19, leading=23, textColor=BRAND))
+    base.add(ParagraphStyle("H2x", parent=base["Heading2"], fontName=FONT_BOLD, fontSize=13, leading=16, textColor=BRAND))
+    base.add(ParagraphStyle("Bodyx", parent=base["BodyText"], fontName=FONT_REGULAR, fontSize=9.1, leading=12.8, textColor=colors.HexColor("#26313d"), wordWrap="CJK"))
+    base.add(ParagraphStyle("Muted", parent=base["BodyText"], fontName=FONT_REGULAR, fontSize=8, leading=10.6, textColor=MUTED, wordWrap="CJK"))
+    base.add(ParagraphStyle("Center", parent=base["BodyText"], fontName=FONT_REGULAR, fontSize=8.8, leading=11.8, textColor=MUTED, alignment=TA_CENTER, wordWrap="CJK"))
     return base
 
 
@@ -121,11 +144,11 @@ def page(canvas, doc):
     canvas.setFillColor(colors.HexColor("#fbfcfe"))
     canvas.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, fill=1, stroke=0)
     canvas.setFillColor(BRAND)
-    canvas.setFont("Helvetica-Bold", 8)
+    canvas.setFont(FONT_BOLD, 8)
     canvas.drawString(MARGIN, 0.32 * inch, "Vibe - Documento editado ReportLab")
     canvas.setFillColor(MUTED)
-    canvas.setFont("Helvetica", 8)
-    canvas.drawRightString(PAGE_WIDTH - MARGIN, 0.32 * inch, f"Pagina {doc.page}")
+    canvas.setFont(FONT_REGULAR, 8)
+    canvas.drawRightString(PAGE_WIDTH - MARGIN, 0.32 * inch, f"Página {doc.page}")
     canvas.restoreState()
 
 
@@ -198,10 +221,10 @@ class PublicationDashboard(Flowable):
             c.setFillColor(color)
             c.roundRect(x + 8, h - 18, card_w - 16, 6, 3, fill=1, stroke=0)
             c.setFillColor(colors.white)
-            c.setFont("Helvetica-Bold", 15)
+            c.setFont(FONT_BOLD, 15)
             c.drawCentredString(x + card_w / 2, h / 2 + 4, str(value))
             c.setFillColor(colors.HexColor("#b0a090"))
-            c.setFont("Helvetica", 7.5)
+            c.setFont(FONT_REGULAR, 7.5)
             c.drawCentredString(x + card_w / 2, 18, label)
 
 
@@ -241,7 +264,7 @@ class MemoryTimeline(Flowable):
         w, h = self.width, self.height
         if not self.highlights:
             c.setFillColor(MUTED)
-            c.setFont("Helvetica", 9)
+            c.setFont(FONT_REGULAR, 9)
             c.drawString(0, h / 2, "Sin momentos seleccionados.")
             return
         y = h - 22
@@ -254,11 +277,11 @@ class MemoryTimeline(Flowable):
             c.setFillColor(BLUE if index % 2 == 0 else colors.HexColor("#0d7c66"))
             c.circle(x, y, 8, fill=1, stroke=0)
             c.setFillColor(BRAND)
-            c.setFont("Helvetica-Bold", 7.4)
+            c.setFont(FONT_BOLD, 7.4)
             title = short(item.get("title") or "Momento", 28)
             c.drawCentredString(x, y - 22, title)
             c.setFillColor(MUTED)
-            c.setFont("Helvetica", 6.8)
+            c.setFont(FONT_REGULAR, 6.8)
             meta = short(item.get("category") or item.get("location") or "", 24)
             c.drawCentredString(x, y - 34, meta)
 
@@ -278,7 +301,7 @@ class MediaMosaic(Flowable):
         w, h = self.width, self.height
         if not self.media:
             c.setFillColor(MUTED)
-            c.setFont("Helvetica", 9)
+            c.setFont(FONT_REGULAR, 9)
             c.drawString(0, h / 2, "Sin multimedia seleccionada.")
             return
         cols = 4
@@ -303,10 +326,10 @@ class MediaMosaic(Flowable):
             c.setFillColor(color)
             c.roundRect(x + 7, y + tile_h - 18, tile_w - 14, 6, 3, fill=1, stroke=0)
             c.setFillColor(BRAND)
-            c.setFont("Helvetica-Bold", 8)
+            c.setFont(FONT_BOLD, 8)
             c.drawString(x + 8, y + tile_h - 34, kind)
             c.setFillColor(MUTED)
-            c.setFont("Helvetica", 6.8)
+            c.setFont(FONT_REGULAR, 6.8)
             c.drawString(x + 8, y + 11, f"Activo {index + 1}")
 
 
@@ -352,15 +375,15 @@ def story_paragraphs(body):
     skip_labels = {
         "Momentos seleccionados:",
         "Selected moments:",
-        "Direccion editorial",
+        "Dirección editorial",
         "Editorial direction",
-        "Interpretacion clara",
+        "Interpretación clara",
         "Readable interpretation",
         "Contexto",
         "Context",
-        "Evidencia e interpretacion multimedia",
+        "Evidencia e interpretación multimedia",
         "Evidence and media interpretation",
-        "Plan de diseno y publicacion",
+        "Plan de diseño y publicación",
         "Design and publication plan",
     }
     for part in parts:
@@ -463,29 +486,22 @@ def media_gallery(media):
         else:
             non_images.insert(0, item)
     if not rendered:
-        flow.append(text_card("Imagenes", "No fue posible incrustar imagenes en el PDF. Revisa que el activo tenga URL firmada o data URL disponible al exportar.", colors.HexColor("#f2b84b")))
+        flow.append(text_card("Imágenes", "No fue posible incrustar imágenes en el PDF. Revisa que el activo tenga URL firmada o data URL disponible al exportar.", colors.HexColor("#f2b84b")))
         flow.append(Spacer(1, 8))
     if non_images:
-        rows = [[para("Tipo", "H2x"), para("Activo", "H2x"), para("Uso editorial", "H2x")]]
+        flow.append(Spacer(1, 4))
         for item in non_images[:8]:
-            rows.append([
-                para(human_kind(item), "Bodyx"),
-                para(short(item.get("name") or "Activo", 55), "Bodyx"),
-                para(short(item.get("manualNote") or item.get("analyticalText") or item.get("translatedText") or item.get("experienceTitle") or "Disponible para revisar.", 180), "Bodyx"),
-            ])
-        table = Table(rows, colWidths=[0.9 * inch, 1.55 * inch, PAGE_WIDTH - 2 * MARGIN - 2.45 * inch], repeatRows=1)
-        table.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#eef4ff")),
-            ("GRID", (0, 0), (-1, -1), 0.3, LINE),
-            ("VALIGN", (0, 0), (-1, -1), "TOP"),
-            ("LEFTPADDING", (0, 0), (-1, -1), 7),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 7),
-            ("TOPPADDING", (0, 0), (-1, -1), 6),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
-        ]))
-        flow.append(table)
+            body = item.get("manualNote") or item.get("analyticalText") or item.get("translatedText") or item.get("experienceTitle") or "Disponible para revisar."
+            flow.append(KeepTogether([
+                text_card(
+                    f"{human_kind(item)}: {short(item.get('name') or 'Activo', 64)}",
+                    f"Uso editorial: {short(body, 260)}",
+                    colors.HexColor("#0d7c66"),
+                ),
+                Spacer(1, 7),
+            ]))
     if not media:
-        flow.append(text_card("Multimedia", "No hay multimedia seleccionada para esta publicacion.", colors.HexColor("#f2b84b")))
+        flow.append(text_card("Multimedia", "No hay multimedia seleccionada para esta publicación.", colors.HexColor("#f2b84b")))
     return flow
 
 
@@ -541,7 +557,7 @@ def moment_rows(highlights):
             item.get("category") or "-",
             short(item.get("note") or item.get("location") or "Registrado para memoria.", 190),
         ])
-    return rows or [["-", "Sin momentos", "-", "Genera una publicacion desde experiencias con notas o multimedia."]]
+    return rows or [["-", "Sin momentos", "-", "Genera una publicación desde experiencias con notas o multimedia."]]
 
 
 def media_rows(media):
@@ -553,7 +569,7 @@ def media_rows(media):
             item.get("experienceTitle") or "-",
             evidence_plain_language(item),
         ])
-    return rows or [["-", "Sin multimedia", "-", "No se selecciono multimedia para esta publicacion."]]
+    return rows or [["-", "Sin multimedia", "-", "No se seleccionó multimedia para esta publicación."]]
 
 
 def selected_media(media):
@@ -593,7 +609,7 @@ def editorial_plan_rows(draft, media, all_media):
     return [
         ["Tipo de pieza", publication_type, "Define si el resultado debe sentirse como album, resumen ejecutivo, historia breve o memoria documental."],
         ["Canal", channel, "Ajusta extension, portada y llamado a la accion segun donde se compartira."],
-        ["Tono", style, "Mantiene coherencia entre texto, imagenes y nivel de detalle."],
+        ["Tono", style, "Mantiene coherencia entre texto, imágenes y nivel de detalle."],
         ["Multimedia", media_selection_label(all_media, media), "El usuario decide si incluye todo, algunos activos o ninguno antes de aprobar."],
         ["Portada", cover_direction(draft, media), "La primera pantalla debe explicar el tema sin obligar a leer todo el documento."],
     ]
@@ -618,17 +634,57 @@ def channel_rows(channel):
     }.get(channel or "", "Exportacion manual revisada por el usuario.")
     return [
         ["Canal elegido", channel or "-", status],
-        ["Privacidad", "Revision humana", "La limpieza automatica ayuda, pero nombres, rostros y datos sensibles se revisan antes de compartir."],
+        ["Privacidad", "Revisión humana", "La limpieza automática ayuda, pero nombres, rostros y datos sensibles se revisan antes de compartir."],
         ["Salida principal", "PDF ReportLab", "Documento editado, estable e imprimible. HTML/Markdown/JSON quedan como apoyo tecnico."],
     ]
+
+
+def decision_cards(rows):
+    flow = []
+    for label, value, criterion in rows:
+        flow.append(KeepTogether([
+            text_card(
+                f"{label}: {value}",
+                criterion,
+                GOLD if label in ("Tipo de pieza", "Portada") else colors.HexColor("#0d7c66"),
+            ),
+            Spacer(1, 7),
+        ]))
+    return flow
+
+
+def evidence_cards(media):
+    selected = [item for item in (media or []) if item.get("included", True) is not False][:10]
+    if not selected:
+        return [text_card("Evidencia multimedia", "No se seleccionó multimedia para esta publicación.", GOLD)]
+    flow = []
+    for item in selected:
+        title = f"{human_kind(item)} - {short(item.get('name') or 'Activo', 72)}"
+        context = item.get("experienceTitle") or "Sin experiencia vinculada"
+        body = f"{context}. {evidence_plain_language(item)}"
+        flow.append(KeepTogether([
+            text_card(title, short(body, 380), colors.HexColor("#7a5cc8")),
+            Spacer(1, 7),
+        ]))
+    return flow
+
+
+def channel_cards(rows):
+    flow = []
+    for label, value, meaning in rows:
+        flow.append(KeepTogether([
+            text_card(f"{label}: {value}", meaning, colors.HexColor("#f2b84b")),
+            Spacer(1, 7),
+        ]))
+    return flow
 
 
 def build(payload):
     html = payload.get("html") or ""
     draft = payload.get("draft") or {}
-    title = draft.get("title") or payload.get("title") or "Publicacion inteligente"
+    title = draft.get("title") or payload.get("title") or "Publicación inteligente"
     text = clean_html(html)
-    summary = draft.get("summary") or sentence_summary(text, max_sentences=2, limit=360) or "Contenido preparado para revision humana."
+    summary = draft.get("summary") or sentence_summary(text, max_sentences=2, limit=360) or "Contenido preparado para revisión humana."
     body = draft.get("body") or editorial_body(text, limit=940)
     stats = draft.get("stats") or {}
     highlights = draft.get("highlights") or []
@@ -643,18 +699,14 @@ def build(payload):
         PublicationDashboard(stats, len(media), len(highlights)),
         Spacer(1, 12),
         editorial_cards([
-            ("Proposito de la pieza", f"{purpose}\nPersonas: {people}\nLugares: {locations}", GOLD),
+            ("Propósito de la pieza", f"{purpose}\nPersonas: {people}\nLugares: {locations}", GOLD),
             ("Resumen editorial", summary, RUST),
             ("Portada sugerida", cover_direction(draft, media), colors.HexColor("#7a5cc8")),
-            ("Seleccion multimedia", media_selection_label(all_media, media), colors.HexColor("#0d7c66")),
+            ("Selección multimedia", media_selection_label(all_media, media), colors.HexColor("#0d7c66")),
         ]),
         Spacer(1, 12),
-        section_heading("Direccion editorial", "Decisiones previas a publicar: formato, canal, portada, multimedia y tono."),
-        simple_table(
-            ["Decision", "Seleccion", "Criterio editorial"],
-            editorial_plan_rows(draft, media, all_media),
-            [1.25 * inch, 1.65 * inch, PAGE_WIDTH - 2 * MARGIN - 2.9 * inch],
-        ),
+        section_heading("Dirección editorial", "Decisiones previas a publicar: formato, canal, portada, multimedia y tono."),
+        *decision_cards(editorial_plan_rows(draft, media, all_media)),
         Spacer(1, 12),
         section_heading("Historia", "Texto limpio para compartir. El detalle tecnico queda fuera de esta pieza."),
     ]
@@ -678,26 +730,18 @@ def build(payload):
         flow.append(text_card("Momentos", "No hay momentos destacados en el borrador.", colors.HexColor("#f2b84b")))
     flow.extend([
         Spacer(1, 12),
-        section_heading("Interpretacion de evidencia", "Lectura humana de documentos, imagenes, audio y video antes de compartir."),
-        simple_table(
-            ["Tipo", "Activo", "Resumen claro"],
-            media_rows(media),
-            [0.8 * inch, 1.45 * inch, PAGE_WIDTH - 2 * MARGIN - 2.25 * inch],
-        ),
+        section_heading("Interpretación de evidencia", "Lectura humana de documentos, imágenes, audio y video antes de compartir."),
+        *evidence_cards(media),
         Spacer(1, 12),
-        section_heading("Multimedia incluida", "Las imagenes disponibles se incrustan; audio, video y documentos se listan como evidencia para revisar."),
+        section_heading("Multimedia incluida", "Las imágenes disponibles se incrustan; audio, video y documentos se listan como evidencia para revisar."),
         *media_gallery(media),
         Spacer(1, 12),
         section_heading("Salida y canal"),
-        simple_table(
-            ["Tema", "Estado", "Que significa"],
-            channel_rows(draft.get("channel")),
-            [1.1 * inch, 1.35 * inch, PAGE_WIDTH - 2 * MARGIN - 2.45 * inch],
-        ),
+        *channel_cards(channel_rows(draft.get("channel"))),
         Spacer(1, 12),
         text_card(
             "Cierre",
-            "Este PDF es la version editada para revision humana. No publica automaticamente en redes. Si el contenido se aprueba, puede compartirse por copia manual, enlace o por una API de canal cuando este configurada.",
+            "Este PDF es la versión editada para revisión humana. No publica automáticamente en redes. Si el contenido se aprueba, puede compartirse por copia manual, enlace o por una API de canal cuando esté configurada.",
             colors.HexColor("#f2b84b"),
         ),
     ])
@@ -705,7 +749,7 @@ def build(payload):
 
 
 def main():
-    payload = json.load(sys.stdin)
+    payload = json.loads(sys.stdin.buffer.read().decode("utf-8"))
     buffer = io.BytesIO()
     frame = Frame(MARGIN, MARGIN + 0.22 * inch, PAGE_WIDTH - 2 * MARGIN, PAGE_HEIGHT - 2 * MARGIN - 0.25 * inch, showBoundary=0)
     doc = BaseDocTemplate(buffer, pagesize=letter)
