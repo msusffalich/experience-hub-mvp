@@ -72,8 +72,8 @@ def styles():
     base.add(ParagraphStyle("CoverSub", parent=base["Normal"], fontSize=12, leading=16, textColor=colors.HexColor("#eaf3f4")))
     base.add(ParagraphStyle("H1x", parent=base["Heading1"], fontName="Helvetica-Bold", fontSize=19, leading=23, textColor=BRAND, spaceBefore=12, spaceAfter=8))
     base.add(ParagraphStyle("H2x", parent=base["Heading2"], fontName="Helvetica-Bold", fontSize=12.5, leading=15, textColor=BRAND, spaceAfter=5))
-    base.add(ParagraphStyle("Bodyx", parent=base["BodyText"], fontSize=9.3, leading=13, textColor=colors.HexColor("#2d3742")))
-    base.add(ParagraphStyle("Small", parent=base["BodyText"], fontSize=7.7, leading=10, textColor=MUTED))
+    base.add(ParagraphStyle("Bodyx", parent=base["BodyText"], fontSize=9, leading=12.6, textColor=colors.HexColor("#2d3742"), wordWrap="CJK"))
+    base.add(ParagraphStyle("Small", parent=base["BodyText"], fontSize=7.1, leading=9.2, textColor=MUTED, wordWrap="CJK"))
     base.add(ParagraphStyle("Metric", parent=base["BodyText"], fontName="Helvetica-Bold", fontSize=18, leading=22, alignment=TA_CENTER, textColor=BRAND))
     base.add(ParagraphStyle("MetricLabel", parent=base["BodyText"], fontSize=7.2, leading=9, alignment=TA_CENTER, textColor=MUTED))
     return base
@@ -237,7 +237,7 @@ def axis_legend_panel(axes):
             para(axis.get("title", ""), "Small"),
             para(f"{axis.get('status', '-')}. Energia {axis.get('avgEnergy', 0)}/10.", "Small"),
             para(f"{len(axis.get('items') or [])} experiencias · {axis.get('assets', 0)} activos", "Small"),
-            para(human_action(axis.get("action", ""), 120), "Small"),
+            para(human_action(axis.get("action", ""), 95), "Small"),
         ])
     table = Table(rows, colWidths=[1.35 * inch, 1.35 * inch, 1.2 * inch, 1.77 * inch])
     table.setStyle(TableStyle([
@@ -340,7 +340,7 @@ def axis_table(axes):
             para(axis.get("title", ""), "Small"),
             para(str(len(axis.get("items") or [])), "Small"),
             para(f"{axis.get('avgEnergy', 0)}/10", "Small"),
-            para(human_action(axis.get("action", ""), 115), "Small"),
+            para(human_action(axis.get("action", ""), 95), "Small"),
         ])
     table = Table(rows, colWidths=[1.35 * inch, 0.75 * inch, 0.62 * inch, 2.95 * inch])
     table.setStyle(TableStyle([

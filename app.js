@@ -1,4 +1,4 @@
-const APP_VERSION = "20260524-output-polish-419";
+const APP_VERSION = "20260524-publication-editor-420";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -80,6 +80,10 @@ const publicationTemplates = [
   { id: "magazine-story", type: "Reporte narrativo", style: "Revista Premium", channel: "PDF/HTML", tone: "editorial" },
   { id: "memory-album", type: "Álbum experiencial", style: "Bitácora Viva", channel: "PDF/HTML", tone: "album" },
   { id: "story-script", type: "Guion de story/reel", style: "Turístico", channel: "Instagram", tone: "sequence" },
+  { id: "medical-brief", type: "Resumen ejecutivo", style: "Científico", channel: "PDF/HTML", tone: "clinical" },
+  { id: "travel-magazine", type: "Álbum experiencial", style: "Turístico", channel: "PDF/HTML", tone: "travel" },
+  { id: "learning-dossier", type: "Reporte narrativo", style: "Educativo", channel: "Email", tone: "learning" },
+  { id: "family-memory", type: "Álbum experiencial", style: "Familiar", channel: "WhatsApp", tone: "family" },
 ];
 const DEMO_BATCH = "experience-hub-demo-v4-multimodal-evidence";
 const DEMO_AGENDA_BATCH = "experience-hub-demo-agenda-v1";
@@ -17815,6 +17819,8 @@ function generatePublicationDraft() {
     return;
   }
   const draft = buildPublicationDraft({ experiences, type, style, channel, privacy });
+  const template = publicationTemplates.find((item) => item.id === draft.templateId) || publicationTemplates.find((item) => item.id === resolvePublicationTemplateId(type, style, channel));
+  draft.body = applyPublicationTemplateStructure(draft, template);
   state.currentPublicationDraft = draft;
   state.publicationDrafts.unshift(draft);
   state.publicationDrafts = state.publicationDrafts.slice(0, 12);
@@ -18134,8 +18140,8 @@ function renderPublicationPreview(draft) {
           ${draft.privacy ? `<span class="pill">${escapeHtml(t("labels.publicationPrivacyApplied"))}</span>` : ""}
         </div>
         ${renderPublicationApproval(draft)}
-        ${renderPublicationTemplateGallery(draft)}
         ${renderPublicationEditor(draft)}
+        ${renderPublicationTemplateGallery(draft)}
         ${renderPublicationMedia(draft.media || [])}
         ${renderPublicationFinalDocument(draft)}
         <div class="publication-stats">
@@ -18359,22 +18365,22 @@ function renderPublicationEditor(draft) {
     <section class="publication-editor">
       <div class="publication-section-heading">
         <div>
-          <h3>${escapeHtml(t("labels.publicationEditor"))}</h3>
-          <p class="card-meta">${escapeHtml(state.language === "en" ? "Edit the generated text before exporting." : "Edita el texto generado antes de exportar.")}</p>
+          <h3>${escapeHtml(state.language === "en" ? "1. Edit final text" : "1. Editar texto final")}</h3>
+          <p class="card-meta">${escapeHtml(state.language === "en" ? "These fields are live: change title, summary, or body and the final document updates below before PDF export." : "Estos campos son editables: cambia titulo, resumen o cuerpo y el documento final se actualiza abajo antes de exportar el PDF.")}</p>
         </div>
-        <span>${escapeHtml(t("labels.publicationSaved"))}</span>
+        <span>${escapeHtml(state.language === "en" ? "Editable" : "Editable")}</span>
       </div>
       <label>
         ${escapeHtml(t("labels.publicationTitleField"))}
-        <input data-publication-field="title" type="text" value="${escapeHtml(draft.title)}" />
+        <input class="publication-edit-control" data-publication-field="title" type="text" value="${escapeHtml(draft.title)}" />
       </label>
       <label>
         ${escapeHtml(t("labels.publicationSummaryField"))}
-        <textarea data-publication-field="summary" rows="3">${escapeHtml(draft.summary)}</textarea>
+        <textarea class="publication-edit-control" data-publication-field="summary" rows="4">${escapeHtml(draft.summary)}</textarea>
       </label>
       <label>
         ${escapeHtml(t("labels.publicationBodyField"))}
-        <textarea data-publication-field="body" rows="9">${escapeHtml(draft.body)}</textarea>
+        <textarea class="publication-edit-control" data-publication-field="body" rows="12">${escapeHtml(draft.body)}</textarea>
       </label>
     </section>
   `;
@@ -18835,9 +18841,36 @@ function handlePublicationTemplateClick(event) {
   document.getElementById("publicationTypeInput").value = template.type;
   document.getElementById("publicationStyleInput").value = template.style;
   document.getElementById("publicationChannelInput").value = template.channel;
+  draft.body = applyPublicationTemplateStructure(draft, template);
   savePublicationDrafts();
   document.getElementById("publicationStatus").textContent = t("labels.publicationTemplateSelected");
   renderPublications();
+}
+
+function applyPublicationTemplateStructure(draft, template = {}) {
+  const body = String(draft?.body || "").trim();
+  const title = draft?.title || "Publicacion";
+  const mediaCount = (draft?.media || []).filter((item) => item.included !== false).length;
+  const guides = {
+    clinical: ["Resumen claro para compartir", "Datos observados y documentos revisados", "Preguntas o puntos por confirmar", "Nota de cuidado"],
+    travel: ["Portada del viaje", "Ruta y momentos memorables", "Galeria comentada", "Recomendaciones para recordar o compartir"],
+    learning: ["Tema aprendido", "Evidencia y ejemplos", "Ideas que vale la pena repetir", "Siguiente practica sugerida"],
+    family: ["Recuerdo principal", "Personas y momentos", "Fotos, audios o videos seleccionados", "Cierre emocional"],
+    sequence: ["Gancho inicial", "Escenas sugeridas", "Texto en pantalla", "Cierre breve"],
+    album: ["Portada de memoria", "Galeria seleccionada", "Momentos y personas", "Recuerdo final"],
+    business: ["Resumen ejecutivo", "Hallazgos principales", "Evidencia", "Proximas acciones"],
+    visual: ["Mensaje principal", "Imagen o activo protagonista", "Texto breve para publicar", "Cierre"],
+    editorial: ["Apertura narrativa", "Contexto", "Momentos y evidencia", "Lectura final"],
+  };
+  const sections = guides[template.tone] || guides.editorial;
+  if (sections.some((section) => body.includes(section))) return body;
+  const firstBlock = body || (state.language === "en" ? "Edit this block with the final publication text." : "Edita este bloque con el texto final de la publicacion.");
+  return `${title}
+
+${sections.map((section, index) => `${index + 1}. ${section}
+${index === 0 ? firstBlock : (state.language === "en" ? "Edit this block before exporting." : "Edita este bloque antes de exportar.")}`).join("\n\n")}
+
+${state.language === "en" ? "Selected media" : "Multimedia seleccionada"}: ${mediaCount} activo(s).`;
 }
 
 function handlePublicationApprovalClick(event) {

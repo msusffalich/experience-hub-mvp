@@ -83,9 +83,9 @@ def styles():
     base.add(ParagraphStyle("Subx", parent=base["BodyText"], fontSize=12, leading=17, textColor=colors.HexColor("#eef4ff")))
     base.add(ParagraphStyle("H1x", parent=base["Heading1"], fontName="Helvetica-Bold", fontSize=19, leading=23, textColor=BRAND))
     base.add(ParagraphStyle("H2x", parent=base["Heading2"], fontName="Helvetica-Bold", fontSize=13, leading=16, textColor=BRAND))
-    base.add(ParagraphStyle("Bodyx", parent=base["BodyText"], fontSize=9.5, leading=13.5, textColor=colors.HexColor("#26313d")))
-    base.add(ParagraphStyle("Muted", parent=base["BodyText"], fontSize=8.2, leading=11, textColor=MUTED))
-    base.add(ParagraphStyle("Center", parent=base["BodyText"], fontSize=9, leading=12, textColor=MUTED, alignment=TA_CENTER))
+    base.add(ParagraphStyle("Bodyx", parent=base["BodyText"], fontSize=9.1, leading=12.8, textColor=colors.HexColor("#26313d"), wordWrap="CJK"))
+    base.add(ParagraphStyle("Muted", parent=base["BodyText"], fontSize=8, leading=10.6, textColor=MUTED, wordWrap="CJK"))
+    base.add(ParagraphStyle("Center", parent=base["BodyText"], fontSize=8.8, leading=11.8, textColor=MUTED, alignment=TA_CENTER, wordWrap="CJK"))
     return base
 
 

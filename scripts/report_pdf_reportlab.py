@@ -84,9 +84,9 @@ def style_sheet():
     base.add(ParagraphStyle("CoverSubtitle", parent=base["Normal"], fontSize=12, leading=17, textColor=colors.HexColor("#eaf3f4")))
     base.add(ParagraphStyle("H1x", parent=base["Heading1"], fontName="Helvetica-Bold", fontSize=20, leading=24, textColor=BRAND, spaceBefore=12, spaceAfter=10))
     base.add(ParagraphStyle("H2x", parent=base["Heading2"], fontName="Helvetica-Bold", fontSize=13, leading=16, textColor=BRAND, spaceBefore=4, spaceAfter=6))
-    base.add(ParagraphStyle("Bodyx", parent=base["BodyText"], fontSize=9.5, leading=13.5, textColor=colors.HexColor("#2d3742")))
-    base.add(ParagraphStyle("Muted", parent=base["BodyText"], fontSize=8.5, leading=12, textColor=MUTED))
-    base.add(ParagraphStyle("Small", parent=base["BodyText"], fontSize=7.5, leading=10, textColor=MUTED))
+    base.add(ParagraphStyle("Bodyx", parent=base["BodyText"], fontSize=9.2, leading=13.2, textColor=colors.HexColor("#2d3742"), wordWrap="CJK"))
+    base.add(ParagraphStyle("Muted", parent=base["BodyText"], fontSize=8.3, leading=11.5, textColor=MUTED, wordWrap="CJK"))
+    base.add(ParagraphStyle("Small", parent=base["BodyText"], fontSize=7.2, leading=9.4, textColor=MUTED, wordWrap="CJK"))
     base.add(ParagraphStyle("Metric", parent=base["BodyText"], fontName="Helvetica-Bold", fontSize=18, leading=22, textColor=BRAND, alignment=TA_CENTER))
     base.add(ParagraphStyle("MetricLabel", parent=base["BodyText"], fontSize=7.5, leading=9, textColor=MUTED, alignment=TA_CENTER))
     return base
