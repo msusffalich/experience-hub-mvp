@@ -495,6 +495,167 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
     }
   }
 
+  Future<void> _importExternalSession() async {
+    final titleController = TextEditingController();
+    final notesController = TextEditingController();
+    var selectedSource = ExternalSessionSource.metaGlasses;
+
+    final draft = await showModalBottomSheet<ExternalSessionImportDraft>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) => SafeArea(
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: 16,
+              right: 16,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+              top: 8,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Importar sesion externa',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Usa este flujo para traer material de Meta/Oakley, Oura, Apple Health, Samsung Health, Health Connect o una carpeta del telefono. Vibeapp lo agrupa como una experiencia y lo envia a Vibe.',
+                  ),
+                  const SizedBox(height: 14),
+                  DropdownButtonFormField<ExternalSessionSource>(
+                    initialValue: selectedSource,
+                    decoration: const InputDecoration(
+                      labelText: 'Origen',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: ExternalSessionSource.values
+                        .map(
+                          (source) => DropdownMenuItem(
+                            value: source,
+                            child: Text(source.label),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setSheetState(() => selectedSource = value);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: titleController,
+                    decoration: const InputDecoration(
+                      labelText: 'Titulo de la experiencia',
+                      hintText: 'Ejemplo: Paseo con lentes Meta',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: notesController,
+                    minLines: 3,
+                    maxLines: 5,
+                    decoration: const InputDecoration(
+                      labelText: 'Contexto',
+                      hintText:
+                          'Lugar, personas, intencion o detalle que ayude a interpretar los archivos.',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).pop(ExternalSessionImportDraft(
+                          source: selectedSource,
+                          title: titleController.text.trim().isEmpty
+                              ? selectedSource.defaultTitle
+                              : titleController.text.trim(),
+                          notes: notesController.text.trim(),
+                        ));
+                      },
+                      icon: const Icon(Icons.folder_open_outlined),
+                      label: const Text('Elegir archivos'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    titleController.dispose();
+    notesController.dispose();
+    if (draft == null) return;
+
+    try {
+      final picked = await FilePicker.pickFiles(
+        allowMultiple: true,
+        type: FileType.custom,
+        allowedExtensions: const [
+          'jpg',
+          'jpeg',
+          'png',
+          'webp',
+          'gif',
+          'heic',
+          'heif',
+          'mp4',
+          'mov',
+          'm4v',
+          'webm',
+          'hevc',
+          'mp3',
+          'm4a',
+          'wav',
+          'aac',
+          'ogg',
+          'pdf',
+          'doc',
+          'docx',
+          'txt',
+          'md',
+          'csv',
+          'json',
+          'zip',
+        ],
+        withData: false,
+      );
+      final files = picked?.files
+              .where((file) => (file.path ?? '').isNotEmpty)
+              .toList() ??
+          const <PlatformFile>[];
+      if (files.isEmpty) return;
+      final item = CaptureQueueItem.externalSession(draft, files);
+      setState(() {
+        _queue.insert(0, item);
+        _syncState = SyncState.syncing;
+      });
+      await _syncPendingQueue(showSnackBar: true);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _syncState = SyncState.needsAttention);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'No se pudo importar la sesion: ${shorten(error.toString())}'),
+        ),
+      );
+    }
+  }
+
   Future<void> _openPhotoCaptureSheet() async {
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
@@ -839,6 +1000,8 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
             const SizedBox(height: 16),
             const NativeFlowSummary(),
             const SizedBox(height: 16),
+            ExternalSessionImportCard(onImport: _importExternalSession),
+            const SizedBox(height: 16),
             SyncSettingsCard(
               apiUrlController: _apiUrlController,
               emailController: _emailController,
@@ -888,6 +1051,43 @@ class NativeFlowSummary extends StatelessWidget {
             const SizedBox(height: 8),
             const Text(
               'La app nativa captura permisos reales del dispositivo, guarda en cola local y sincroniza con Supabase a través del backend de Vibe.',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class ExternalSessionImportCard extends StatelessWidget {
+  const ExternalSessionImportCard({required this.onImport, super.key});
+
+  final Future<void> Function() onImport;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Sesiones externas',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Para Meta/Oakley, Oura, Apple Health, Samsung Health o carpetas del telefono: importa varios archivos, Vibeapp los agrupa en una experiencia y conserva origen, tipo, fecha y metadatos para procesarlos en Vibe.',
+            ),
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: onImport,
+              icon: const Icon(Icons.upload_file_outlined),
+              label: const Text('Importar sesion externa'),
             ),
           ],
         ),
@@ -1426,6 +1626,62 @@ class SyncResult {
   final Map<String, dynamic>? payload;
 }
 
+enum ExternalSessionSource {
+  metaGlasses(
+    'Meta / Oakley / Ray-Ban',
+    'Sesion Meta importada',
+    'meta_glasses_import',
+  ),
+  oura(
+    'Oura Ring',
+    'Contexto biometrico Oura',
+    'oura_import',
+  ),
+  appleHealth(
+    'Apple Health',
+    'Contexto Apple Health',
+    'apple_health_import',
+  ),
+  samsungHealth(
+    'Samsung Health / Galaxy Watch',
+    'Contexto Samsung Health',
+    'samsung_health_import',
+  ),
+  healthConnect(
+    'Health Connect',
+    'Contexto Health Connect',
+    'health_connect_import',
+  ),
+  phoneGallery(
+    'Galeria del telefono',
+    'Sesion desde galeria',
+    'phone_gallery_import',
+  ),
+  other(
+    'Otro origen',
+    'Sesion externa',
+    'external_import',
+  );
+
+  const ExternalSessionSource(this.label, this.defaultTitle, this.contract);
+
+  final String label;
+  final String defaultTitle;
+  final String contract;
+}
+
+class ExternalSessionImportDraft {
+  const ExternalSessionImportDraft({
+    required this.source,
+    required this.title,
+    required this.notes,
+  });
+
+  final ExternalSessionSource source;
+  final String title;
+  final String notes;
+}
+
 class NativeCaptureAction {
   const NativeCaptureAction(this.icon, this.label, this.detail);
 
@@ -1793,6 +2049,8 @@ class NativeAttachmentDraft {
     if (sourceType == 'biometric') return 'Biometría';
     if (sourceType == 'video') return 'Video';
     if (sourceType == 'audio') return 'Audio';
+    if (sourceType == 'document') return 'Documento';
+    if (sourceType == 'zip') return 'ZIP';
     return 'Foto';
   }
 
@@ -1872,6 +2130,7 @@ class CaptureQueueItem {
     this.locationDraft,
     this.biometricSummary,
     this.closedAt,
+    this.externalSessionSource,
   });
 
   factory CaptureQueueItem.text(String text) {
@@ -1941,6 +2200,74 @@ class CaptureQueueItem {
     );
   }
 
+  factory CaptureQueueItem.externalSession(
+    ExternalSessionImportDraft draft,
+    List<PlatformFile> files,
+  ) {
+    final now = DateTime.now().toUtc();
+    final id = 'native-external-${now.microsecondsSinceEpoch}';
+    final intro = draft.notes.isEmpty
+        ? 'Sesion importada desde ${draft.source.label}.'
+        : draft.notes;
+    final events = <ExperienceEventDraft>[
+      ExperienceEventDraft(
+        id: '$id-event-1',
+        title: 'Sesion externa importada',
+        description:
+            '$intro Origen: ${draft.source.label}. Archivos: ${files.length}.',
+        order: 1,
+        timestamp: now,
+      ),
+    ];
+    final attachments = <NativeAttachmentDraft>[];
+    for (final file in files) {
+      final path = file.path ?? '';
+      if (path.isEmpty) continue;
+      final order = events.length + 1;
+      final sourceType = classifyExternalFileSource(file.name);
+      final eventTitle = externalFileEventTitle(sourceType, order);
+      final eventId = '$id-event-$order';
+      events.add(ExperienceEventDraft(
+        id: eventId,
+        title: eventTitle,
+        description:
+            'Archivo ${file.name} importado desde ${draft.source.label} y vinculado a esta sesion.',
+        order: order,
+        timestamp: now,
+      ));
+      attachments.add(NativeAttachmentDraft.fromFilePath(
+        path,
+        sourceType: sourceType,
+        eventId: eventId,
+        eventTitle: eventTitle,
+        eventOrder: order,
+        previewText:
+            'Archivo importado desde ${draft.source.label}: ${file.name}.',
+        analysisText:
+            'Activo externo listo para OCR, transcripcion, extraccion de metadatos o transporte segun su tipo.',
+        metadataExtras: {
+          'payloadType': sourceType,
+          'externalSource': draft.source.label,
+          'externalSourceContract': draft.source.contract,
+          'importedAsSession': true,
+          'originalFileName': file.name,
+        },
+      ));
+    }
+    return CaptureQueueItem(
+      id: id,
+      title: draft.title,
+      detail:
+          '$intro\nOrigen: ${draft.source.label}\nArchivos importados: ${attachments.length}',
+      sourceType: 'external-session',
+      createdAt: now,
+      status: CaptureSyncStatus.queued,
+      events: events,
+      attachments: attachments,
+      externalSessionSource: draft.source.label,
+    );
+  }
+
   factory CaptureQueueItem.fromSession(ActiveExperienceSession session) {
     final details = session.events
         .map((event) => '${event.order}. ${event.title}: ${event.description}')
@@ -1985,10 +2312,12 @@ class CaptureQueueItem {
   final LocationDraft? locationDraft;
   final BiometricImportSummary? biometricSummary;
   final DateTime? closedAt;
+  final String? externalSessionSource;
 
   bool get canSync =>
       sourceType == 'text' ||
       sourceType == 'experience-session' ||
+      sourceType == 'external-session' ||
       agendaEvent != null ||
       locationDraft != null ||
       biometricSummary != null ||
@@ -2004,6 +2333,9 @@ class CaptureQueueItem {
     final iso = createdAt.toIso8601String();
     final locationLabel = locationDraft?.displayLocation ?? 'Captura móvil';
     final isBiometric = biometricSummary != null || sourceType == 'biometric';
+    final isSession =
+        sourceType == 'experience-session' || sourceType == 'external-session';
+    final isExternalSession = sourceType == 'external-session';
     final eventList = events.isEmpty
         ? [
             ExperienceEventDraft(
@@ -2025,7 +2357,7 @@ class CaptureQueueItem {
         .clamp(0, 1440);
     return {
       'id': id,
-      'title': sourceType == 'experience-session'
+      'title': isSession
           ? title
           : detail.length > 48
               ? '${detail.substring(0, 48)}...'
@@ -2035,15 +2367,21 @@ class CaptureQueueItem {
       'duration': duration,
       'mood': 'Calmo',
       'energy': 5,
-      'location': isBiometric ? 'Contexto transversal' : locationLabel,
+      'location': isExternalSession
+          ? 'Importacion externa'
+          : isBiometric
+              ? 'Contexto transversal'
+              : locationLabel,
       'people': 'Usuario',
       'objective': sourceType == 'experience-session'
           ? 'Experiencia con eventos desde Vibeapp'
-          : isBiometric
-              ? 'Biometría transversal desde Vibeapp'
-              : locationDraft == null
-                  ? 'Captura rápida desde Vibeapp'
-                  : 'Ubicación capturada desde Vibeapp',
+          : isExternalSession
+              ? 'Sesion externa importada desde Vibeapp'
+              : isBiometric
+                  ? 'Biometría transversal desde Vibeapp'
+                  : locationDraft == null
+                      ? 'Captura rápida desde Vibeapp'
+                      : 'Ubicación capturada desde Vibeapp',
       'notes': detail,
       'locale': 'es',
       'metadata': {
@@ -2052,16 +2390,20 @@ class CaptureQueueItem {
         'sourceEventId': id,
         'capturedAt': iso,
         'closedAt': closedAt?.toIso8601String(),
+        if (externalSessionSource != null)
+          'externalSessionSource': externalSessionSource,
         if (locationDraft != null) ...locationDraft!.toMetadata(),
         if (biometricSummary != null)
           'biometricImport': biometricSummary!.toJson(),
         'syncContract': sourceType == 'experience-session'
             ? 'vibeapp-session-v1'
-            : isBiometric
-                ? 'vibeapp-biometric-file-v1'
-                : locationDraft == null
-                    ? 'vibeapp-text-v1'
-                    : 'vibeapp-location-v1',
+            : isExternalSession
+                ? 'vibeapp-external-session-v1'
+                : isBiometric
+                    ? 'vibeapp-biometric-file-v1'
+                    : locationDraft == null
+                        ? 'vibeapp-text-v1'
+                        : 'vibeapp-location-v1',
       },
       'events': eventList.map((event) => event.toJson()).toList(),
       'attachments': uploadedAttachments ??
@@ -2276,11 +2618,51 @@ String inferMimeType(String name, String sourceType) {
   if (lower.endsWith('.ogg')) return 'audio/ogg';
   if (lower.endsWith('.csv')) return 'text/csv';
   if (lower.endsWith('.json')) return 'application/json';
+  if (lower.endsWith('.pdf')) return 'application/pdf';
+  if (lower.endsWith('.doc')) return 'application/msword';
+  if (lower.endsWith('.docx')) {
+    return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  }
+  if (lower.endsWith('.txt')) return 'text/plain';
+  if (lower.endsWith('.md')) return 'text/markdown';
+  if (lower.endsWith('.zip')) return 'application/zip';
   if (sourceType == 'image') return 'image/jpeg';
   if (sourceType == 'video') return 'video/mp4';
   if (sourceType == 'audio') return 'audio/mp4';
   if (sourceType == 'biometric') return 'text/csv';
+  if (sourceType == 'document') return 'application/pdf';
+  if (sourceType == 'zip') return 'application/zip';
   return 'application/octet-stream';
+}
+
+String classifyExternalFileSource(String name) {
+  final lower = name.toLowerCase();
+  if (RegExp(r'\.(jpg|jpeg|png|webp|gif|heic|heif)$').hasMatch(lower)) {
+    return 'image';
+  }
+  if (RegExp(r'\.(mp4|mov|m4v|webm|hevc)$').hasMatch(lower)) {
+    return 'video';
+  }
+  if (RegExp(r'\.(mp3|m4a|wav|aac|ogg)$').hasMatch(lower)) {
+    return 'audio';
+  }
+  if (RegExp(r'\.(csv|json)$').hasMatch(lower)) {
+    return 'biometric';
+  }
+  if (lower.endsWith('.zip')) return 'zip';
+  return 'document';
+}
+
+String externalFileEventTitle(String sourceType, int order) {
+  final label = switch (sourceType) {
+    'image' => 'Imagen',
+    'video' => 'Video',
+    'audio' => 'Audio',
+    'biometric' => 'Datos biometricos',
+    'zip' => 'Paquete ZIP',
+    _ => 'Documento',
+  };
+  return '$label $order';
 }
 
 String formatClock(DateTime value) {

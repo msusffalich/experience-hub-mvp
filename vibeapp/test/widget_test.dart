@@ -25,8 +25,18 @@ void main() {
 
     expect(find.text('Revisar'), findsOneWidget);
 
-    await tester.drag(find.byType(ListView).first, const Offset(0, -900));
-    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Importar sesion externa'),
+      500,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('Sesiones externas'), findsOneWidget);
+    expect(find.text('Importar sesion externa'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Audio'),
+      500,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('Audio'), findsOneWidget);
     expect(find.text('Foto'), findsOneWidget);
     expect(find.text('Video'), findsOneWidget);

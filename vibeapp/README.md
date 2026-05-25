@@ -14,6 +14,7 @@ This folder is a starter skeleton. Flutter SDK is available locally at `C:\Users
 - Native agenda event creation through `/api/agenda`, with optional link to the active experience as an internal event.
 - Native location capture with permission, GPS coordinates, accuracy, and experience/event sync.
 - Native biometric CSV/JSON file import with private upload, summary metadata, and PWA hydration as cross-experience context.
+- External session import for Meta/Oakley/Ray-Ban, Oura, Apple Health, Samsung Health/Galaxy Watch, Health Connect, phone gallery, or other sources. Multiple files are grouped into one experience with internal events and normalized metadata.
 - Development sync settings: Vibe API endpoint + Supabase Auth email/password.
 - Text notes can sign in through the PWA public Supabase config, then attempt `POST /api/experiences` through the Vibe backend. If an experience is active, every note or native action becomes an internal event under the same experience ID.
 - Photo, video, audio, agenda, location, and biometric file actions now use real backend contracts. Direct wearable APIs remain future connectors.
@@ -52,6 +53,13 @@ This folder is a starter skeleton. Flutter SDK is available locally at `C:\Users
 1. Import CSV/JSON biometric exports from Apple Health or other wearables.
 2. Detect record count, basic metrics, date range, and a short analytical summary.
 3. Upload the file to private Storage and save metadata so the PWA can use it as cross-experience biometric context.
+
+## Sixth milestone
+
+1. Import an external session from Meta/Oakley/Ray-Ban, Oura, Apple Health, Samsung Health/Galaxy Watch, Health Connect, phone gallery, or another source.
+2. Select several assets at once: images, videos, audio, documents, CSV/JSON, or ZIP.
+3. Create one Vibe experience with internal events and linked assets, using the Clio-style pattern: native import, private Storage, normalized metadata, backend processing.
+4. For Meta glasses, use the realistic flow: glasses capture -> Meta AI/phone gallery import -> Vibeapp external session import.
 
 ## Native capture contract
 
