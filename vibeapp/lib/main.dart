@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
@@ -377,6 +378,67 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
     unawaited(_syncPendingQueue(showSnackBar: true));
   }
 
+  Future<void> _captureLocation() async {
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (!mounted) return;
+        setState(() => _syncState = SyncState.needsAttention);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                'Activa ubicación en el dispositivo para capturar el lugar.'),
+          ),
+        );
+        return;
+      }
+
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        if (!mounted) return;
+        setState(() => _syncState = SyncState.needsAttention);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Autoriza ubicación para guardar el lugar real.'),
+          ),
+        );
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 20),
+        ),
+      );
+      final location = LocationDraft.fromPosition(position);
+      final session = _activeSession;
+      setState(() {
+        if (session == null) {
+          _queue.insert(0, CaptureQueueItem.location(location));
+        } else {
+          session.addLocationEvent(location);
+          _upsertSessionQueueItem(session);
+        }
+        _syncState = SyncState.syncing;
+      });
+      await _syncPendingQueue(showSnackBar: true);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _syncState = SyncState.needsAttention);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'No se pudo capturar ubicación: ${shorten(error.toString())}'),
+        ),
+      );
+    }
+  }
+
   Future<void> _openPhotoCaptureSheet() async {
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
@@ -736,6 +798,7 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
               onPhoto: _openPhotoCaptureSheet,
               onVideo: _openVideoCaptureSheet,
               onAgenda: _openAgendaSheet,
+              onLocation: _captureLocation,
               isRecordingAudio: _isRecordingAudio,
             ),
             const SizedBox(height: 16),
@@ -948,6 +1011,7 @@ class CaptureActionGrid extends StatelessWidget {
     required this.onPhoto,
     required this.onVideo,
     required this.onAgenda,
+    required this.onLocation,
     required this.isRecordingAudio,
     super.key,
   });
@@ -957,6 +1021,7 @@ class CaptureActionGrid extends StatelessWidget {
   final Future<void> Function() onPhoto;
   final Future<void> Function() onVideo;
   final Future<void> Function() onAgenda;
+  final Future<void> Function() onLocation;
   final bool isRecordingAudio;
 
   @override
@@ -999,7 +1064,9 @@ class CaptureActionGrid extends StatelessWidget {
                         ? onAudio
                         : action.label == 'Agenda'
                             ? onAgenda
-                            : () => onAction(action),
+                            : action.label == 'Lugar'
+                                ? onLocation
+                                : () => onAction(action),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -1348,6 +1415,62 @@ class AgendaEventDraft {
   }
 }
 
+class LocationDraft {
+  LocationDraft({
+    required this.latitude,
+    required this.longitude,
+    required this.accuracy,
+    this.altitude = 0,
+    this.speed = 0,
+    this.heading = 0,
+    DateTime? capturedAt,
+  })  : id = 'native-location-${DateTime.now().microsecondsSinceEpoch}',
+        capturedAt = capturedAt ?? DateTime.now().toUtc();
+
+  factory LocationDraft.fromPosition(Position position) {
+    return LocationDraft(
+      latitude: position.latitude,
+      longitude: position.longitude,
+      accuracy: position.accuracy,
+      altitude: position.altitude,
+      speed: position.speed,
+      heading: position.heading,
+      capturedAt: position.timestamp.toUtc(),
+    );
+  }
+
+  final String id;
+  final double latitude;
+  final double longitude;
+  final double accuracy;
+  final double altitude;
+  final double speed;
+  final double heading;
+  final DateTime capturedAt;
+
+  String get displayLocation =>
+      '${latitude.toStringAsFixed(6)}, ${longitude.toStringAsFixed(6)}';
+
+  String get detail =>
+      'Coordenadas $displayLocation · precisión aproximada ${accuracy.toStringAsFixed(0)} m';
+
+  Map<String, dynamic> toMetadata() {
+    return {
+      'source': 'vibeapp-native',
+      'sourceDevice': Platform.operatingSystem,
+      'payloadType': 'location',
+      'locationId': id,
+      'latitude': latitude,
+      'longitude': longitude,
+      'accuracyMeters': accuracy,
+      'altitude': altitude,
+      'speed': speed,
+      'heading': heading,
+      'capturedAt': capturedAt.toIso8601String(),
+    };
+  }
+}
+
 class NativeAttachmentDraft {
   const NativeAttachmentDraft({
     required this.id,
@@ -1500,6 +1623,7 @@ class CaptureQueueItem {
     this.events = const [],
     this.attachments = const [],
     this.agendaEvent,
+    this.locationDraft,
     this.closedAt,
   });
 
@@ -1539,6 +1663,18 @@ class CaptureQueueItem {
       createdAt: event.createdAt,
       status: CaptureSyncStatus.queued,
       agendaEvent: event,
+    );
+  }
+
+  factory CaptureQueueItem.location(LocationDraft location) {
+    return CaptureQueueItem(
+      id: location.id,
+      title: 'Lugar',
+      detail: location.detail,
+      sourceType: 'location',
+      createdAt: location.capturedAt,
+      status: CaptureSyncStatus.queued,
+      locationDraft: location,
     );
   }
 
@@ -1583,12 +1719,14 @@ class CaptureQueueItem {
   final List<ExperienceEventDraft> events;
   final List<NativeAttachmentDraft> attachments;
   final AgendaEventDraft? agendaEvent;
+  final LocationDraft? locationDraft;
   final DateTime? closedAt;
 
   bool get canSync =>
       sourceType == 'text' ||
       sourceType == 'experience-session' ||
       agendaEvent != null ||
+      locationDraft != null ||
       attachments.isNotEmpty;
 
   String get subtitle {
@@ -1599,11 +1737,12 @@ class CaptureQueueItem {
   Map<String, dynamic> toExperiencePayload(
       [List<Map<String, dynamic>>? uploadedAttachments]) {
     final iso = createdAt.toIso8601String();
+    final locationLabel = locationDraft?.displayLocation ?? 'Captura móvil';
     final eventList = events.isEmpty
         ? [
             ExperienceEventDraft(
               id: '$id-event-1',
-              title: 'Nota rápida',
+              title: locationDraft == null ? 'Nota rápida' : 'Lugar capturado',
               description: detail,
               order: 1,
               timestamp: createdAt,
@@ -1626,11 +1765,13 @@ class CaptureQueueItem {
       'duration': duration,
       'mood': 'Calmo',
       'energy': 5,
-      'location': 'Captura móvil',
+      'location': locationLabel,
       'people': 'Usuario',
       'objective': sourceType == 'experience-session'
           ? 'Experiencia con eventos desde Vibeapp'
-          : 'Captura rápida desde Vibeapp',
+          : locationDraft == null
+              ? 'Captura rápida desde Vibeapp'
+              : 'Ubicación capturada desde Vibeapp',
       'notes': detail,
       'locale': 'es',
       'metadata': {
@@ -1639,9 +1780,12 @@ class CaptureQueueItem {
         'sourceEventId': id,
         'capturedAt': iso,
         'closedAt': closedAt?.toIso8601String(),
+        if (locationDraft != null) ...locationDraft!.toMetadata(),
         'syncContract': sourceType == 'experience-session'
             ? 'vibeapp-session-v1'
-            : 'vibeapp-text-v1',
+            : locationDraft == null
+                ? 'vibeapp-text-v1'
+                : 'vibeapp-location-v1',
       },
       'events': eventList.map((event) => event.toJson()).toList(),
       'attachments': uploadedAttachments ??
@@ -1706,6 +1850,16 @@ class ActiveExperienceSession {
           '${agenda.description.isEmpty ? 'Evento creado desde Vibeapp.' : agenda.description} Lugar: ${agenda.location.isEmpty ? 'Sin ubicación' : agenda.location}.',
       order: events.length + 1,
       timestamp: agenda.startAt,
+    ));
+  }
+
+  void addLocationEvent(LocationDraft location) {
+    events.add(ExperienceEventDraft(
+      id: '$id-event-${events.length + 1}',
+      title: 'Lugar capturado',
+      description: location.detail,
+      order: events.length + 1,
+      timestamp: location.capturedAt,
     ));
   }
 

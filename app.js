@@ -1,4 +1,4 @@
-const APP_VERSION = "20260524-user-groups-onboarding-430";
+const APP_VERSION = "20260525-vibeapp-location-431";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2112,9 +2112,9 @@ const manualContent = {
         "La sección Dispositivos ahora documenta un contrato único de integración. Cualquier fuente nueva debe entregar sourceId, sourceType, capturedAt, participantId, payloadType y payload antes de alimentar experiencias, activos, Agenda o contexto.",
         "Vibeapp nativa se planifica como complemento de la PWA: la PWA queda para análisis, reportes, hallazgos, publicaciones y administración; Vibeapp cubre captura real con cámara, audio, video, ubicación, sensores, biometría, notificaciones y sincronización transparente con Supabase.",
         "El blueprint inicial de Vibeapp está documentado en docs/vibeapp-native-blueprint.md. Ese documento define contrato de sincronización, pantallas iniciales, flujo offline, permisos, privacidad y los primeros incrementos Flutter.",
-        "El esqueleto Flutter de Vibeapp ya muestra cola local y acciones nativas separadas para texto, audio, foto, video, agenda, biometría y lugar. En esta fase todavía no toma control real de cámara o sensores; prepara el contrato visual y técnico para conectar plugins nativos y Supabase sin mezclarlo con la PWA.",
-        "Vibeapp ya incluye un primer contrato de sincronización: guarda notas en cola local, permite entrar con el mismo usuario Supabase de la PWA y luego intenta crear una experiencia mediante POST /api/experiences. El usuario ya no necesita copiar tokens manualmente en este esqueleto.",
-        "Vibeapp suma modo Experiencia activa: puedes iniciar una experiencia larga, agregar varias notas o acciones como eventos internos y cerrar el registro sin crear experiencias sueltas. La sincronización usa el mismo identificador de experiencia para que la PWA lea una línea de eventos coherente.",
+        "Vibeapp ya tiene captura nativa real para texto, foto, video, audio, agenda y lugar. Foto, video y audio suben a Storage privado mediante /api/media; Agenda sincroniza con /api/agenda; Lugar guarda coordenadas, precisión y fecha/hora como metadatos estructurados.",
+        "Vibeapp incluye contrato de sincronización: guarda en cola local, permite entrar con el mismo usuario Supabase de la PWA y crea experiencias mediante POST /api/experiences. El usuario ya no necesita copiar tokens manualmente.",
+        "Vibeapp suma modo Experiencia activa: puedes iniciar una experiencia larga, agregar notas, medios, eventos de agenda o ubicación como eventos internos y cerrar el registro sin crear experiencias sueltas. La sincronización usa el mismo identificador de experiencia para que la PWA lea una línea de eventos coherente.",
         "El contrato de dispositivos se puede exportar como Markdown o JSON para compartirlo con desarrolladores, integraciones API/MCP o proveedores de wearables.",
         "Activos multimodales incluye Procesar ahora y Procesar visibles. Los documentos de texto se extraen localmente; los PDFs escaneados usan OCR del backend cuando OCR_PROVIDER=openai y OPENAI_API_KEY están configurados; los audios usan transcripción del backend si está configurada; las imágenes usan OCR automático del backend.",
         "Siguiendo el patrón del blueprint de CLIO, los activos sincronizados se leen desde el backend usando URLs firmadas temporales de Supabase. Otro dispositivo puede procesar documentos, imágenes y audios sin depender del archivo local original.",
@@ -23660,7 +23660,7 @@ function renderAdminOperationalFocusPanel() {
         reportPdf: "Cleaner reports, publications, and findings",
         reportPdfDetail: "Reports now use an executive PDF, participant scope, and folded technical exports. Publications explain format fit, edited text, media actions, and non-image handling. Findings are organized by 8 human themes and can be downloaded.",
         nativeSync: "Vibeapp real queue",
-        nativeSyncDetail: "The Flutter skeleton now queues notes, supports active multi-event sessions, reads public config from /api/config, signs in with Supabase Auth, and can attempt POST /api/experiences. Camera, audio, biometrics, and location remain separated for native plugins.",
+        nativeSyncDetail: "Vibeapp now has real native contracts for text, photo, video, audio, agenda, and location. Media uploads through /api/media, agenda events sync through /api/agenda, and location saves coordinates plus accuracy as structured metadata. Biometrics remains the next native connector.",
       }
     : {
         title: "Administración operativa",
@@ -23697,7 +23697,7 @@ function renderAdminOperationalFocusPanel() {
     labels.reportPdf = "Reportes, publicaciones y hallazgos limpios";
     labels.reportPdfDetail = "Reportes usa PDF ejecutivo, alcance por persona y exportaciones técnicas plegadas. Publicaciones suma matriz por canal: carrusel, carta/email, dossier, ficha de salud, blog/web, LinkedIn y PDF/HTML, con medios seleccionables y acciones claras para audio, video, documentos y ZIP. Hallazgos se organiza en 8 ejes humanos y se puede descargar.";
     labels.nativeSync = "Vibeapp con cola real";
-    labels.nativeSyncDetail = "El esqueleto Flutter ahora guarda notas en cola, permite experiencias activas con varios eventos internos, obtiene configuración pública desde /api/config, permite entrar con Supabase Auth y puede intentar POST /api/experiences. Cámara, audio, biometría y lugar quedan separados para plugins nativos.";
+    labels.nativeSyncDetail = "Vibeapp ya tiene contratos nativos reales para texto, foto, video, audio, agenda y lugar. Los medios suben por /api/media, los eventos de Agenda sincronizan por /api/agenda y la ubicación guarda coordenadas más precisión como metadatos estructurados. Biometría queda como siguiente conector nativo.";
   }
   const cards = [
     [labels.flow, labels.flowDetail],

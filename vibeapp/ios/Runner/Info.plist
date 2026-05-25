@@ -32,6 +32,8 @@
 	<string>Vibe usa el microfono cuando grabas videos o audios desde la app nativa.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Vibe usa tu biblioteca solo cuando eliges una imagen o video para una experiencia.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Vibe usa tu ubicacion solo cuando eliges guardar el lugar de una experiencia.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

@@ -12,10 +12,11 @@ This folder is a starter skeleton. Flutter SDK is available locally at `C:\Users
 - Native photo and video flow with camera/gallery picker, local queue, `/api/media` upload, and experience attachment sync.
 - Native audio recording with start/stop, private upload, and experience attachment sync.
 - Native agenda event creation through `/api/agenda`, with optional link to the active experience as an internal event.
-- Native action placeholders for biometrics and location.
+- Native location capture with permission, GPS coordinates, accuracy, and experience/event sync.
+- Native action placeholder for biometrics.
 - Development sync settings: Vibe API endpoint + Supabase Auth email/password.
 - Text notes can sign in through the PWA public Supabase config, then attempt `POST /api/experiences` through the Vibe backend. If an experience is active, every note or native action becomes an internal event under the same experience ID.
-- Photo, video, audio, and agenda actions now use real backend contracts. The remaining device actions stay queued as clear event placeholders until plugins are connected.
+- Photo, video, audio, agenda, and location actions now use real backend contracts. Biometrics stays queued as a clear event placeholder until a wearable/file connector is connected.
 - User-facing states kept simple: ready, syncing, synced, or needs attention.
 
 ## First milestone
@@ -39,6 +40,12 @@ This folder is a starter skeleton. Flutter SDK is available locally at `C:\Users
 1. Create agenda events from the native app without opening the PWA.
 2. Sync those events through `/api/agenda` so they appear in the PWA Agenda and Dashboard.
 3. If an experience is open, also add a matching internal event to the same experience.
+
+## Fourth milestone
+
+1. Capture the device location with explicit user permission.
+2. Save latitude, longitude, accuracy, and timestamp as structured metadata.
+3. Sync it as a standalone location experience or as an internal event in the active experience.
 
 ## Native capture contract
 
