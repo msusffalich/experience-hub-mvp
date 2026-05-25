@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 void main() {
   runApp(const VibeApp());
@@ -33,6 +34,7 @@ class QuickCaptureScreen extends StatefulWidget {
 }
 
 class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
+  final ImagePicker _imagePicker = ImagePicker();
   final TextEditingController _noteController = TextEditingController();
   final TextEditingController _apiUrlController = TextEditingController(
       text: 'https://experience-hub-web-production.up.railway.app');
@@ -142,7 +144,7 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
         item.error = '';
         _syncState = SyncState.syncing;
       });
-      final result = await client.upsertTextExperience(item);
+      final result = await client.upsertExperience(item);
       if (!mounted) return;
       setState(() {
         if (result.ok) {
@@ -188,6 +190,157 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
           content: Text(
               '${action.label}: contrato definido; falta conectar plugin nativo.')),
     );
+  }
+
+  Future<void> _openPhotoCaptureSheet() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Agregar foto',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Puedes tomar una foto nueva o elegir una imagen existente. Vibeapp la sube a Storage privado y la vincula a la experiencia.',
+              ),
+              const SizedBox(height: 12),
+              ListTile(
+                leading: const Icon(Icons.photo_camera_outlined),
+                title: const Text('Tomar foto'),
+                onTap: () => Navigator.of(context).pop(ImageSource.camera),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library_outlined),
+                title: const Text('Elegir imagen'),
+                onTap: () => Navigator.of(context).pop(ImageSource.gallery),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (source == null) return;
+    await _capturePhoto(source);
+  }
+
+  Future<void> _openVideoCaptureSheet() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Agregar video',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Puedes grabar un video nuevo o elegir uno existente. Vibeapp lo sube a Storage privado y lo vincula a la experiencia.',
+              ),
+              const SizedBox(height: 12),
+              ListTile(
+                leading: const Icon(Icons.videocam_outlined),
+                title: const Text('Grabar video'),
+                onTap: () => Navigator.of(context).pop(ImageSource.camera),
+              ),
+              ListTile(
+                leading: const Icon(Icons.video_library_outlined),
+                title: const Text('Elegir video'),
+                onTap: () => Navigator.of(context).pop(ImageSource.gallery),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (source == null) return;
+    await _captureVideo(source);
+  }
+
+  Future<void> _capturePhoto(ImageSource source) async {
+    try {
+      final picked = await _imagePicker.pickImage(
+        source: source,
+        imageQuality: 92,
+        maxWidth: 2400,
+      );
+      if (picked == null) return;
+      final attachment = await NativeAttachmentDraft.fromXFile(
+        picked,
+        sourceType: 'image',
+      );
+      final session = _activeSession;
+      setState(() {
+        if (session == null) {
+          _queue.insert(0, CaptureQueueItem.media(attachment));
+        } else {
+          session.addAttachmentEvent(attachment);
+          _upsertSessionQueueItem(session);
+        }
+        _syncState = SyncState.syncing;
+      });
+      await _syncPendingQueue(showSnackBar: true);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _syncState = SyncState.needsAttention);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text(
+                'No se pudo agregar la foto: ${shorten(error.toString())}')),
+      );
+    }
+  }
+
+  Future<void> _captureVideo(ImageSource source) async {
+    try {
+      final picked = await _imagePicker.pickVideo(
+        source: source,
+        maxDuration: const Duration(minutes: 5),
+      );
+      if (picked == null) return;
+      final attachment = await NativeAttachmentDraft.fromXFile(
+        picked,
+        sourceType: 'video',
+      );
+      final session = _activeSession;
+      setState(() {
+        if (session == null) {
+          _queue.insert(0, CaptureQueueItem.media(attachment));
+        } else {
+          session.addAttachmentEvent(attachment);
+          _upsertSessionQueueItem(session);
+        }
+        _syncState = SyncState.syncing;
+      });
+      await _syncPendingQueue(showSnackBar: true);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _syncState = SyncState.needsAttention);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text(
+                'No se pudo agregar el video: ${shorten(error.toString())}')),
+      );
+    }
   }
 
   void _startExperienceSession() {
@@ -299,7 +452,11 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
               onRetry: _syncPendingQueue,
             ),
             const SizedBox(height: 16),
-            CaptureActionGrid(onAction: _registerNativeAction),
+            CaptureActionGrid(
+              onAction: _registerNativeAction,
+              onPhoto: _openPhotoCaptureSheet,
+              onVideo: _openVideoCaptureSheet,
+            ),
             const SizedBox(height: 16),
             CaptureQueuePanel(queue: _queue),
           ],
@@ -504,9 +661,16 @@ class SyncSettingsCard extends StatelessWidget {
 }
 
 class CaptureActionGrid extends StatelessWidget {
-  const CaptureActionGrid({required this.onAction, super.key});
+  const CaptureActionGrid({
+    required this.onAction,
+    required this.onPhoto,
+    required this.onVideo,
+    super.key,
+  });
 
   final ValueChanged<NativeCaptureAction> onAction;
+  final Future<void> Function() onPhoto;
+  final Future<void> Function() onVideo;
 
   @override
   Widget build(BuildContext context) {
@@ -535,7 +699,11 @@ class CaptureActionGrid extends StatelessWidget {
       children: [
         for (final action in actions)
           OutlinedButton(
-            onPressed: () => onAction(action),
+            onPressed: action.label == 'Foto'
+                ? onPhoto
+                : action.label == 'Video'
+                    ? onVideo
+                    : () => onAction(action),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -604,15 +772,22 @@ class ExperienceSyncClient {
 
   final SyncSettings settings;
 
-  Future<SyncResult> upsertTextExperience(CaptureQueueItem item) async {
+  Future<SyncResult> upsertExperience(CaptureQueueItem item) async {
     try {
+      final attachments = <Map<String, dynamic>>[];
+      for (final attachment in item.attachments) {
+        final uploaded = await uploadMediaAttachment(attachment);
+        if (!uploaded.ok) return uploaded;
+        attachments
+            .add(uploaded.payload ?? attachment.toExperienceAttachment());
+      }
       final uri = Uri.parse(settings.apiBaseUrl).resolve('/api/experiences');
       final request =
           await HttpClient().postUrl(uri).timeout(const Duration(seconds: 10));
       request.headers.contentType = ContentType.json;
       request.headers.set(
           HttpHeaders.authorizationHeader, 'Bearer ${settings.accessToken}');
-      request.write(jsonEncode(item.toExperiencePayload()));
+      request.write(jsonEncode(item.toExperiencePayload(attachments)));
       final response =
           await request.close().timeout(const Duration(seconds: 20));
       final responseText = await response.transform(utf8.decoder).join();
@@ -628,6 +803,54 @@ class ExperienceSyncClient {
       return SyncResult.failure('Sin conexión con la API.');
     } on FormatException {
       return SyncResult.failure('Respuesta inválida del servidor.');
+    } catch (error) {
+      return SyncResult.failure(shorten(error.toString()));
+    }
+  }
+
+  Future<SyncResult> uploadMediaAttachment(
+      NativeAttachmentDraft attachment) async {
+    try {
+      final file = File(attachment.filePath);
+      final bytes = await file.readAsBytes();
+      final boundary = '----vibeapp-${DateTime.now().microsecondsSinceEpoch}';
+      final uri = Uri.parse(settings.apiBaseUrl).resolve('/api/media');
+      final request =
+          await HttpClient().postUrl(uri).timeout(const Duration(seconds: 10));
+      request.headers.contentType = ContentType(
+        'multipart',
+        'form-data',
+        parameters: {'boundary': boundary},
+      );
+      request.headers.set(
+          HttpHeaders.authorizationHeader, 'Bearer ${settings.accessToken}');
+      final metadata = jsonEncode(attachment.toMediaMetadata(bytes.length));
+      request.add(utf8.encode('--$boundary\r\n'));
+      request.add(
+          utf8.encode('Content-Disposition: form-data; name="metadata"\r\n'));
+      request.add(utf8.encode('Content-Type: application/json\r\n\r\n'));
+      request.add(utf8.encode(metadata));
+      request.add(utf8.encode('\r\n--$boundary\r\n'));
+      request.add(utf8.encode(
+          'Content-Disposition: form-data; name="file"; filename="${attachment.name}"\r\n'));
+      request.add(utf8.encode('Content-Type: ${attachment.mimeType}\r\n\r\n'));
+      request.add(bytes);
+      request.add(utf8.encode('\r\n--$boundary--\r\n'));
+      final response =
+          await request.close().timeout(const Duration(seconds: 45));
+      final responseText = await response.transform(utf8.decoder).join();
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        return SyncResult.failure(
+            'Media HTTP ${response.statusCode}: ${shorten(responseText)}');
+      }
+      final decoded = jsonDecode(responseText) as Map<String, dynamic>;
+      return SyncResult.mediaSuccess(
+          attachment.toExperienceAttachment(decoded));
+    } on TimeoutException {
+      return SyncResult.failure(
+          'Tiempo de espera agotado al subir el archivo.');
+    } on SocketException {
+      return SyncResult.failure('Sin conexion para subir el archivo.');
     } catch (error) {
       return SyncResult.failure(shorten(error.toString()));
     }
@@ -721,16 +944,24 @@ class AuthResult {
 }
 
 class SyncResult {
-  const SyncResult._({required this.ok, required this.message, this.remoteId});
+  const SyncResult._({
+    required this.ok,
+    required this.message,
+    this.remoteId,
+    this.payload,
+  });
 
   factory SyncResult.success(String remoteId) =>
       SyncResult._(ok: true, message: 'Sincronizado', remoteId: remoteId);
+  factory SyncResult.mediaSuccess(Map<String, dynamic> payload) =>
+      SyncResult._(ok: true, message: 'Media sincronizada', payload: payload);
   factory SyncResult.failure(String message) =>
       SyncResult._(ok: false, message: message);
 
   final bool ok;
   final String message;
   final String? remoteId;
+  final Map<String, dynamic>? payload;
 }
 
 class NativeCaptureAction {
@@ -739,6 +970,145 @@ class NativeCaptureAction {
   final IconData icon;
   final String label;
   final String detail;
+}
+
+class NativeAttachmentDraft {
+  const NativeAttachmentDraft({
+    required this.id,
+    required this.filePath,
+    required this.name,
+    required this.mimeType,
+    required this.size,
+    required this.sourceType,
+    required this.createdAt,
+    this.eventId = '',
+    this.eventTitle = '',
+    this.eventOrder = 0,
+  });
+
+  factory NativeAttachmentDraft.fromFilePath(
+    String filePath, {
+    required String sourceType,
+    String eventId = '',
+    String eventTitle = '',
+    int eventOrder = 0,
+  }) {
+    final file = File(filePath);
+    final name = file.uri.pathSegments.isNotEmpty
+        ? file.uri.pathSegments.last
+        : 'vibeapp-image.jpg';
+    final size = file.existsSync() ? file.lengthSync() : 0;
+    final now = DateTime.now().toUtc();
+    return NativeAttachmentDraft(
+      id: 'native-asset-${now.microsecondsSinceEpoch}',
+      filePath: filePath,
+      name: name,
+      mimeType: inferMimeType(name, sourceType),
+      size: size,
+      sourceType: sourceType,
+      createdAt: now,
+      eventId: eventId,
+      eventTitle: eventTitle,
+      eventOrder: eventOrder,
+    );
+  }
+
+  static Future<NativeAttachmentDraft> fromXFile(
+    XFile file, {
+    required String sourceType,
+    String eventId = '',
+    String eventTitle = '',
+    int eventOrder = 0,
+  }) async {
+    final now = DateTime.now().toUtc();
+    final name = file.name.isNotEmpty ? file.name : 'vibeapp-image.jpg';
+    final size = await file.length();
+    return NativeAttachmentDraft(
+      id: 'native-asset-${now.microsecondsSinceEpoch}',
+      filePath: file.path,
+      name: name,
+      mimeType: file.mimeType ?? inferMimeType(name, sourceType),
+      size: size,
+      sourceType: sourceType,
+      createdAt: now,
+      eventId: eventId,
+      eventTitle: eventTitle,
+      eventOrder: eventOrder,
+    );
+  }
+
+  final String id;
+  final String filePath;
+  final String name;
+  final String mimeType;
+  final int size;
+  final String sourceType;
+  final DateTime createdAt;
+  final String eventId;
+  final String eventTitle;
+  final int eventOrder;
+
+  String get kind => sourceType == 'image' ? 'image' : sourceType;
+
+  String get displayLabel {
+    if (sourceType == 'video') return 'Video';
+    if (sourceType == 'audio') return 'Audio';
+    return 'Foto';
+  }
+
+  Map<String, dynamic> toMediaMetadata(int byteLength) {
+    return {
+      'id': id,
+      'name': name,
+      'type': mimeType,
+      'size': byteLength,
+      'kind': kind,
+      'sourceType': 'vibeapp-native-$sourceType',
+      'sourceDevice': Platform.operatingSystem,
+      'sourceId': id,
+      'createdAt': createdAt.toIso8601String(),
+      'metadata': {
+        'source': 'vibeapp-native',
+        'capturedAt': createdAt.toIso8601String(),
+        'eventId': eventId,
+        'eventTitle': eventTitle,
+        'eventOrder': eventOrder,
+      },
+    };
+  }
+
+  Map<String, dynamic> toExperienceAttachment([Map<String, dynamic>? remote]) {
+    return {
+      'id': id,
+      'name': remote?['name'] ?? name,
+      'type': remote?['type'] ?? mimeType,
+      'originalType': remote?['originalType'] ?? mimeType,
+      'size': remote?['size'] ?? size,
+      'kind': remote?['kind'] ?? kind,
+      'storage': remote?['storage'] ?? 'local-native',
+      'path': remote?['path'] ?? '',
+      'url': remote?['url'] ?? '',
+      'sourceType': 'vibeapp-native-$sourceType',
+      'sourceDevice': Platform.operatingSystem,
+      'sourceId': id,
+      'eventId': eventId,
+      'eventTitle': eventTitle,
+      'eventOrder': eventOrder,
+      'previewText': '$displayLabel capturado desde Vibeapp.',
+      'analysisText':
+          '$displayLabel capturado desde la app nativa y sincronizado con Storage privado.',
+      'metadata': {
+        ...(remote?['metadata'] is Map<String, dynamic>
+            ? remote!['metadata'] as Map<String, dynamic>
+            : <String, dynamic>{}),
+        'source': 'vibeapp-native',
+        'capturedAt': createdAt.toIso8601String(),
+        'linkedEventId': eventId,
+        'linkedEventTitle': eventTitle,
+        'eventOrder': eventOrder,
+      },
+    };
+  }
 }
 
 class CaptureQueueItem {
@@ -752,6 +1122,7 @@ class CaptureQueueItem {
     this.error = '',
     this.remoteId,
     this.events = const [],
+    this.attachments = const [],
     this.closedAt,
   });
 
@@ -767,6 +1138,20 @@ class CaptureQueueItem {
     );
   }
 
+  factory CaptureQueueItem.media(NativeAttachmentDraft attachment) {
+    final now = DateTime.now().toUtc();
+    final label = attachment.displayLabel;
+    return CaptureQueueItem(
+      id: 'native-media-${now.microsecondsSinceEpoch}',
+      title: label,
+      detail: '$label capturado desde Vibeapp: ${attachment.name}',
+      sourceType: attachment.sourceType,
+      createdAt: now,
+      status: CaptureSyncStatus.queued,
+      attachments: [attachment],
+    );
+  }
+
   factory CaptureQueueItem.fromSession(ActiveExperienceSession session) {
     final details = session.events
         .map((event) => '${event.order}. ${event.title}: ${event.description}')
@@ -779,6 +1164,7 @@ class CaptureQueueItem {
       createdAt: session.startedAt,
       status: CaptureSyncStatus.queued,
       events: List<ExperienceEventDraft>.from(session.events),
+      attachments: List<NativeAttachmentDraft>.from(session.attachments),
       closedAt: session.closedAt,
     );
   }
@@ -805,17 +1191,21 @@ class CaptureQueueItem {
   String error;
   String? remoteId;
   final List<ExperienceEventDraft> events;
+  final List<NativeAttachmentDraft> attachments;
   final DateTime? closedAt;
 
   bool get canSync =>
-      sourceType == 'text' || sourceType == 'experience-session';
+      sourceType == 'text' ||
+      sourceType == 'experience-session' ||
+      attachments.isNotEmpty;
 
   String get subtitle {
     final reason = error.isEmpty ? detail : '$detail\n$error';
     return reason;
   }
 
-  Map<String, dynamic> toExperiencePayload() {
+  Map<String, dynamic> toExperiencePayload(
+      [List<Map<String, dynamic>>? uploadedAttachments]) {
     final iso = createdAt.toIso8601String();
     final eventList = events.isEmpty
         ? [
@@ -862,7 +1252,8 @@ class CaptureQueueItem {
             : 'vibeapp-text-v1',
       },
       'events': eventList.map((event) => event.toJson()).toList(),
-      'attachments': [],
+      'attachments': uploadedAttachments ??
+          attachments.map((item) => item.toExperienceAttachment()).toList(),
     };
   }
 }
@@ -874,7 +1265,9 @@ class ActiveExperienceSession {
     required this.startedAt,
     this.closedAt,
     List<ExperienceEventDraft>? events,
-  }) : events = events ?? [];
+    List<NativeAttachmentDraft>? attachments,
+  })  : events = events ?? [],
+        attachments = attachments ?? [];
 
   factory ActiveExperienceSession.start(String title) {
     final now = DateTime.now().toUtc();
@@ -890,6 +1283,7 @@ class ActiveExperienceSession {
   final DateTime startedAt;
   DateTime? closedAt;
   final List<ExperienceEventDraft> events;
+  final List<NativeAttachmentDraft> attachments;
 
   void addTextEvent(String text) {
     events.add(ExperienceEventDraft(
@@ -909,6 +1303,27 @@ class ActiveExperienceSession {
           '${action.detail} Estado: falta conectar el plugin nativo antes de capturar el archivo real.',
       order: events.length + 1,
       timestamp: DateTime.now().toUtc(),
+    ));
+  }
+
+  void addAttachmentEvent(NativeAttachmentDraft attachment) {
+    final order = events.length + 1;
+    final label = attachment.displayLabel;
+    final event = ExperienceEventDraft(
+      id: '$id-event-$order',
+      title: '$label $order',
+      description:
+          '$label capturado desde Vibeapp y vinculado a esta experiencia.',
+      order: order,
+      timestamp: DateTime.now().toUtc(),
+    );
+    events.add(event);
+    attachments.add(NativeAttachmentDraft.fromFilePath(
+      attachment.filePath,
+      sourceType: attachment.sourceType,
+      eventId: event.id,
+      eventTitle: event.title,
+      eventOrder: event.order,
     ));
   }
 
@@ -997,6 +1412,23 @@ enum CaptureSyncStatus {
 String shorten(String value, [int max = 180]) {
   if (value.length <= max) return value;
   return '${value.substring(0, max)}...';
+}
+
+String inferMimeType(String name, String sourceType) {
+  final lower = name.toLowerCase();
+  if (lower.endsWith('.png')) return 'image/png';
+  if (lower.endsWith('.webp')) return 'image/webp';
+  if (lower.endsWith('.gif')) return 'image/gif';
+  if (lower.endsWith('.heic')) return 'image/heic';
+  if (lower.endsWith('.heif')) return 'image/heif';
+  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
+  if (lower.endsWith('.mov')) return 'video/quicktime';
+  if (lower.endsWith('.webm')) return 'video/webm';
+  if (lower.endsWith('.m4v')) return 'video/x-m4v';
+  if (lower.endsWith('.mp4')) return 'video/mp4';
+  if (sourceType == 'image') return 'image/jpeg';
+  if (sourceType == 'video') return 'video/mp4';
+  return 'application/octet-stream';
 }
 
 String formatClock(DateTime value) {

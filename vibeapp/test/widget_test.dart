@@ -18,12 +18,16 @@ void main() {
     expect(find.text('Captura rápida'), findsOneWidget);
     expect(find.text('Guardar captura'), findsOneWidget);
     expect(find.text('Experiencia activa'), findsOneWidget);
-
     await tester.enterText(
         find.widgetWithText(TextField, 'Nota'), 'V, toma nota de prueba.');
     await tester.tap(find.text('Guardar captura'));
     await tester.pumpAndSettle();
 
     expect(find.text('Revisar'), findsOneWidget);
+
+    await tester.drag(find.byType(ListView).first, const Offset(0, -900));
+    await tester.pumpAndSettle();
+    expect(find.text('Foto'), findsOneWidget);
+    expect(find.text('Video'), findsOneWidget);
   });
 }
