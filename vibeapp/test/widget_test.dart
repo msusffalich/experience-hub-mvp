@@ -27,6 +27,7 @@ void main() {
 
     await tester.drag(find.byType(ListView).first, const Offset(0, -900));
     await tester.pumpAndSettle();
+    expect(find.text('Audio'), findsOneWidget);
     expect(find.text('Foto'), findsOneWidget);
     expect(find.text('Video'), findsOneWidget);
   });

@@ -10,10 +10,11 @@ This folder is a starter skeleton. Flutter SDK is available locally at `C:\Users
 - Active experience mode: one long experience can collect several internal events before closing.
 - Local queue panel for captures and pending device actions.
 - Native photo and video flow with camera/gallery picker, local queue, `/api/media` upload, and experience attachment sync.
-- Native action placeholders for audio, calendar, biometrics, and location.
+- Native audio recording with start/stop, private upload, and experience attachment sync.
+- Native action placeholders for calendar, biometrics, and location.
 - Development sync settings: Vibe API endpoint + Supabase Auth email/password.
 - Text notes can sign in through the PWA public Supabase config, then attempt `POST /api/experiences` through the Vibe backend. If an experience is active, every note or native action becomes an internal event under the same experience ID.
-- Photo and video actions now use the native picker. The remaining media/device actions stay queued as clear event placeholders until plugins are connected.
+- Photo, video, and audio actions now use native plugins. The remaining device actions stay queued as clear event placeholders until plugins are connected.
 - User-facing states kept simple: ready, syncing, synced, or needs attention.
 
 ## First milestone
@@ -27,7 +28,7 @@ This folder is a starter skeleton. Flutter SDK is available locally at `C:\Users
 
 ## Second milestone
 
-1. Capture or choose a photo/video with the native picker.
+1. Capture or choose a photo/video with the native picker, or record audio from the device microphone.
 2. Upload to private Supabase Storage through `/api/media`.
 3. Save the experience with the returned attachment reference so the backend registers it in `assets`.
 4. Confirm it appears in PWA Library, Assets, Reports, Findings, and Publications.

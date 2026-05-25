@@ -4,6 +4,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:record/record.dart';
 
 void main() {
   runApp(const VibeApp());
@@ -35,6 +37,7 @@ class QuickCaptureScreen extends StatefulWidget {
 
 class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
   final ImagePicker _imagePicker = ImagePicker();
+  final AudioRecorder _audioRecorder = AudioRecorder();
   final TextEditingController _noteController = TextEditingController();
   final TextEditingController _apiUrlController = TextEditingController(
       text: 'https://experience-hub-web-production.up.railway.app');
@@ -46,6 +49,8 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
   String _accessToken = '';
   String _signedInEmail = '';
   ActiveExperienceSession? _activeSession;
+  bool _isRecordingAudio = false;
+  String _audioRecordingPath = '';
 
   @override
   void dispose() {
@@ -54,6 +59,7 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     _sessionTitleController.dispose();
+    unawaited(_audioRecorder.dispose());
     super.dispose();
   }
 
@@ -343,6 +349,99 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
     }
   }
 
+  Future<void> _toggleAudioRecording() async {
+    if (_isRecordingAudio) {
+      await _stopAudioRecording();
+    } else {
+      await _startAudioRecording();
+    }
+  }
+
+  Future<void> _startAudioRecording() async {
+    try {
+      if (!await _audioRecorder.hasPermission()) {
+        if (!mounted) return;
+        setState(() => _syncState = SyncState.needsAttention);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Autoriza el microfono para grabar audio.'),
+          ),
+        );
+        return;
+      }
+      final dir = await getTemporaryDirectory();
+      final path =
+          '${dir.path}${Platform.pathSeparator}vibeapp-audio-${DateTime.now().millisecondsSinceEpoch}.m4a';
+      const config = RecordConfig(
+        encoder: AudioEncoder.aacLc,
+        numChannels: 1,
+        sampleRate: 44100,
+        bitRate: 128000,
+      );
+      await _audioRecorder.start(config, path: path);
+      if (!mounted) return;
+      setState(() {
+        _isRecordingAudio = true;
+        _audioRecordingPath = path;
+        _syncState = SyncState.ready;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Grabando audio. Pulsa Audio para detener.')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _syncState = SyncState.needsAttention);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content:
+              Text('No se pudo iniciar audio: ${shorten(error.toString())}'),
+        ),
+      );
+    }
+  }
+
+  Future<void> _stopAudioRecording() async {
+    try {
+      final path = await _audioRecorder.stop();
+      final resolvedPath =
+          (path == null || path.isEmpty) ? _audioRecordingPath : path;
+      if (!mounted) return;
+      setState(() {
+        _isRecordingAudio = false;
+        _audioRecordingPath = '';
+      });
+      if (resolvedPath.isEmpty) return;
+      final attachment = NativeAttachmentDraft.fromFilePath(
+        resolvedPath,
+        sourceType: 'audio',
+      );
+      final session = _activeSession;
+      setState(() {
+        if (session == null) {
+          _queue.insert(0, CaptureQueueItem.media(attachment));
+        } else {
+          session.addAttachmentEvent(attachment);
+          _upsertSessionQueueItem(session);
+        }
+        _syncState = SyncState.syncing;
+      });
+      await _syncPendingQueue(showSnackBar: true);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _isRecordingAudio = false;
+        _syncState = SyncState.needsAttention;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content:
+              Text('No se pudo guardar el audio: ${shorten(error.toString())}'),
+        ),
+      );
+    }
+  }
+
   void _startExperienceSession() {
     final title = _sessionTitleController.text.trim().isEmpty
         ? 'Experiencia desde Vibeapp'
@@ -454,8 +553,10 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
             const SizedBox(height: 16),
             CaptureActionGrid(
               onAction: _registerNativeAction,
+              onAudio: _toggleAudioRecording,
               onPhoto: _openPhotoCaptureSheet,
               onVideo: _openVideoCaptureSheet,
+              isRecordingAudio: _isRecordingAudio,
             ),
             const SizedBox(height: 16),
             CaptureQueuePanel(queue: _queue),
@@ -663,20 +764,29 @@ class SyncSettingsCard extends StatelessWidget {
 class CaptureActionGrid extends StatelessWidget {
   const CaptureActionGrid({
     required this.onAction,
+    required this.onAudio,
     required this.onPhoto,
     required this.onVideo,
+    required this.isRecordingAudio,
     super.key,
   });
 
   final ValueChanged<NativeCaptureAction> onAction;
+  final Future<void> Function() onAudio;
   final Future<void> Function() onPhoto;
   final Future<void> Function() onVideo;
+  final bool isRecordingAudio;
 
   @override
   Widget build(BuildContext context) {
     final actions = [
-      const NativeCaptureAction(Icons.mic_none, 'Audio',
-          'Grabar, transcribir y vincular a una experiencia abierta.'),
+      NativeCaptureAction(
+        isRecordingAudio ? Icons.stop_circle_outlined : Icons.mic_none,
+        'Audio',
+        isRecordingAudio
+            ? 'Grabando. Pulsa para detener, subir y vincular.'
+            : 'Grabar audio y vincularlo a una experiencia abierta.',
+      ),
       const NativeCaptureAction(Icons.photo_camera_outlined, 'Foto',
           'Tomar foto con cámara nativa y subir a Storage privado.'),
       const NativeCaptureAction(Icons.videocam_outlined, 'Video',
@@ -703,7 +813,9 @@ class CaptureActionGrid extends StatelessWidget {
                 ? onPhoto
                 : action.label == 'Video'
                     ? onVideo
-                    : () => onAction(action),
+                    : action.label == 'Audio'
+                        ? onAudio
+                        : () => onAction(action),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -1426,8 +1538,14 @@ String inferMimeType(String name, String sourceType) {
   if (lower.endsWith('.webm')) return 'video/webm';
   if (lower.endsWith('.m4v')) return 'video/x-m4v';
   if (lower.endsWith('.mp4')) return 'video/mp4';
+  if (lower.endsWith('.m4a')) return 'audio/mp4';
+  if (lower.endsWith('.aac')) return 'audio/aac';
+  if (lower.endsWith('.mp3')) return 'audio/mpeg';
+  if (lower.endsWith('.wav')) return 'audio/wav';
+  if (lower.endsWith('.ogg')) return 'audio/ogg';
   if (sourceType == 'image') return 'image/jpeg';
   if (sourceType == 'video') return 'video/mp4';
+  if (sourceType == 'audio') return 'audio/mp4';
   return 'application/octet-stream';
 }
 
