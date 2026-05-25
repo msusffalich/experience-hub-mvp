@@ -13,10 +13,10 @@ This folder is a starter skeleton. Flutter SDK is available locally at `C:\Users
 - Native audio recording with start/stop, private upload, and experience attachment sync.
 - Native agenda event creation through `/api/agenda`, with optional link to the active experience as an internal event.
 - Native location capture with permission, GPS coordinates, accuracy, and experience/event sync.
-- Native action placeholder for biometrics.
+- Native biometric CSV/JSON file import with private upload, summary metadata, and PWA hydration as cross-experience context.
 - Development sync settings: Vibe API endpoint + Supabase Auth email/password.
 - Text notes can sign in through the PWA public Supabase config, then attempt `POST /api/experiences` through the Vibe backend. If an experience is active, every note or native action becomes an internal event under the same experience ID.
-- Photo, video, audio, agenda, and location actions now use real backend contracts. Biometrics stays queued as a clear event placeholder until a wearable/file connector is connected.
+- Photo, video, audio, agenda, location, and biometric file actions now use real backend contracts. Direct wearable APIs remain future connectors.
 - User-facing states kept simple: ready, syncing, synced, or needs attention.
 
 ## First milestone
@@ -46,6 +46,12 @@ This folder is a starter skeleton. Flutter SDK is available locally at `C:\Users
 1. Capture the device location with explicit user permission.
 2. Save latitude, longitude, accuracy, and timestamp as structured metadata.
 3. Sync it as a standalone location experience or as an internal event in the active experience.
+
+## Fifth milestone
+
+1. Import CSV/JSON biometric exports from Apple Health or other wearables.
+2. Detect record count, basic metrics, date range, and a short analytical summary.
+3. Upload the file to private Storage and save metadata so the PWA can use it as cross-experience biometric context.
 
 ## Native capture contract
 

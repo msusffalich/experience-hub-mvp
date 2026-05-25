@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
@@ -439,6 +440,61 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
     }
   }
 
+  Future<void> _importBiometricFile() async {
+    try {
+      final picked = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: const ['csv', 'json'],
+        withData: false,
+      );
+      final filePath = picked?.files.single.path;
+      if (filePath == null || filePath.isEmpty) return;
+      final file = File(filePath);
+      final rawText =
+          utf8.decode(await file.readAsBytes(), allowMalformed: true);
+      final summary = BiometricImportSummary.fromRawText(
+        rawText,
+        fileName: picked!.files.single.name,
+        size: picked.files.single.size,
+      );
+      final attachment = NativeAttachmentDraft.fromFilePath(
+        filePath,
+        sourceType: 'biometric',
+        previewText: summary.summaryText,
+        analysisText: summary.analysisText,
+        metadataExtras: {
+          'payloadType': 'biometric',
+          'extractedText':
+              rawText.length > 12000 ? rawText.substring(0, 12000) : rawText,
+          'extractionMethod': 'vibeapp-biometric-file-import',
+          'extractionStatus': 'automatic',
+          'biometricImport': summary.toJson(),
+        },
+      );
+      final session = _activeSession;
+      setState(() {
+        if (session == null) {
+          _queue.insert(0, CaptureQueueItem.biometric(attachment, summary));
+        } else {
+          session.addBiometricEvent(summary);
+          _upsertSessionQueueItem(session);
+          _queue.insert(0, CaptureQueueItem.biometric(attachment, summary));
+        }
+        _syncState = SyncState.syncing;
+      });
+      await _syncPendingQueue(showSnackBar: true);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _syncState = SyncState.needsAttention);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'No se pudo importar biometría: ${shorten(error.toString())}'),
+        ),
+      );
+    }
+  }
+
   Future<void> _openPhotoCaptureSheet() async {
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
@@ -799,6 +855,7 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
               onVideo: _openVideoCaptureSheet,
               onAgenda: _openAgendaSheet,
               onLocation: _captureLocation,
+              onBiometrics: _importBiometricFile,
               isRecordingAudio: _isRecordingAudio,
             ),
             const SizedBox(height: 16),
@@ -1012,6 +1069,7 @@ class CaptureActionGrid extends StatelessWidget {
     required this.onVideo,
     required this.onAgenda,
     required this.onLocation,
+    required this.onBiometrics,
     required this.isRecordingAudio,
     super.key,
   });
@@ -1022,6 +1080,7 @@ class CaptureActionGrid extends StatelessWidget {
   final Future<void> Function() onVideo;
   final Future<void> Function() onAgenda;
   final Future<void> Function() onLocation;
+  final Future<void> Function() onBiometrics;
   final bool isRecordingAudio;
 
   @override
@@ -1066,7 +1125,9 @@ class CaptureActionGrid extends StatelessWidget {
                             ? onAgenda
                             : action.label == 'Lugar'
                                 ? onLocation
-                                : () => onAction(action),
+                                : action.label == 'Biometría'
+                                    ? onBiometrics
+                                    : () => onAction(action),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -1471,6 +1532,173 @@ class LocationDraft {
   }
 }
 
+class BiometricImportSummary {
+  const BiometricImportSummary({
+    required this.name,
+    required this.size,
+    required this.recordCount,
+    required this.metricNames,
+    required this.startAt,
+    required this.endAt,
+    required this.summaryText,
+    required this.analysisText,
+  });
+
+  factory BiometricImportSummary.fromRawText(
+    String rawText, {
+    required String fileName,
+    required int size,
+  }) {
+    final normalized = rawText.replaceFirst('\uFEFF', '').trim();
+    final rows = fileName.toLowerCase().endsWith('.json')
+        ? _countJsonRows(normalized)
+        : _parseCsvRows(normalized);
+    final recordCount = rows.length;
+    final metricNames = _detectBiometricMetrics(rows, normalized);
+    final dates = rows.map(_extractDateValue).whereType<DateTime>().toList()
+      ..sort();
+    final startAt = dates.isEmpty ? '' : dates.first.toUtc().toIso8601String();
+    final endAt = dates.isEmpty ? '' : dates.last.toUtc().toIso8601String();
+    final metricText = metricNames.isEmpty
+        ? 'sin señales identificadas'
+        : metricNames.join(', ');
+    final rangeText = startAt.isEmpty
+        ? 'sin rango de fechas detectado'
+        : '${formatDateLabel(DateTime.parse(startAt))} - ${formatDateLabel(DateTime.parse(endAt))}';
+    final summary =
+        'Importación biométrica desde Vibeapp. $recordCount registros. Señales: $metricText. Rango: $rangeText.';
+    return BiometricImportSummary(
+      name: fileName,
+      size: size,
+      recordCount: recordCount,
+      metricNames: metricNames,
+      startAt: startAt,
+      endAt: endAt,
+      summaryText: summary,
+      analysisText:
+          '$summary Contexto transversal para cruzar por fecha/hora con energía, recuperación, sueño, actividad o estrés.',
+    );
+  }
+
+  final String name;
+  final int size;
+  final int recordCount;
+  final List<String> metricNames;
+  final String startAt;
+  final String endAt;
+  final String summaryText;
+  final String analysisText;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'size': size,
+      'recordCount': recordCount,
+      'metricNames': metricNames,
+      'startAt': startAt,
+      'endAt': endAt,
+      'summaryText': summaryText,
+      'analysisText': analysisText,
+      'sourceDevice': 'Vibeapp biometric file',
+      'importedAt': DateTime.now().toUtc().toIso8601String(),
+    };
+  }
+
+  static List<Map<String, String>> _parseCsvRows(String text) {
+    final lines = text
+        .split(RegExp(r'\r?\n'))
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .toList();
+    if (lines.isEmpty) return const [];
+    final headers = _splitCsvLine(lines.first);
+    return lines.skip(1).take(20000).map((line) {
+      final values = _splitCsvLine(line);
+      return {
+        for (var i = 0; i < headers.length; i++)
+          headers[i].trim(): i < values.length ? values[i].trim() : '',
+      };
+    }).toList();
+  }
+
+  static List<Map<String, String>> _countJsonRows(String text) {
+    try {
+      final decoded = jsonDecode(text);
+      final items = decoded is List
+          ? decoded
+          : decoded is Map && decoded['data'] is List
+              ? decoded['data'] as List
+              : decoded is Map && decoded['records'] is List
+                  ? decoded['records'] as List
+                  : decoded is Map && decoded['items'] is List
+                      ? decoded['items'] as List
+                      : const [];
+      return items.take(20000).map((item) {
+        if (item is Map) {
+          return item.map((key, value) => MapEntry('$key', '$value'));
+        }
+        return {'value': '$item'};
+      }).toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  static List<String> _splitCsvLine(String line) {
+    final values = <String>[];
+    final buffer = StringBuffer();
+    var quoted = false;
+    for (var i = 0; i < line.length; i++) {
+      final char = line[i];
+      if (char == '"') {
+        quoted = !quoted;
+      } else if (char == ',' && !quoted) {
+        values.add(buffer.toString());
+        buffer.clear();
+      } else {
+        buffer.write(char);
+      }
+    }
+    values.add(buffer.toString());
+    return values;
+  }
+
+  static List<String> _detectBiometricMetrics(
+    List<Map<String, String>> rows,
+    String rawText,
+  ) {
+    final haystack = [
+      rawText.substring(0, rawText.length > 4000 ? 4000 : rawText.length),
+      ...rows.take(20).map((row) => row.values.join(' ')),
+    ].join(' ').toLowerCase();
+    final candidates = <String, RegExp>{
+      'sueño': RegExp(r'sleep|sue[nñ]o'),
+      'pasos': RegExp(r'step|paso'),
+      'frecuencia cardiaca': RegExp(r'heart|cardio|pulse|frecuencia'),
+      'energía activa': RegExp(r'active energy|calor|kcal|energia|energía'),
+      'distancia': RegExp(r'distance|distancia'),
+      'entrenamiento': RegExp(r'workout|exercise|actividad|entreno'),
+      'oxígeno': RegExp(r'oxygen|spo2|respir'),
+    };
+    return candidates.entries
+        .where((entry) => entry.value.hasMatch(haystack))
+        .map((entry) => entry.key)
+        .toList();
+  }
+
+  static DateTime? _extractDateValue(Map<String, String> row) {
+    for (final entry in row.entries) {
+      final key = entry.key.toLowerCase();
+      if (!RegExp(r'date|time|fecha|inicio|start|end').hasMatch(key)) {
+        continue;
+      }
+      final parsed = DateTime.tryParse(entry.value);
+      if (parsed != null) return parsed;
+    }
+    return null;
+  }
+}
+
 class NativeAttachmentDraft {
   const NativeAttachmentDraft({
     required this.id,
@@ -1480,6 +1708,9 @@ class NativeAttachmentDraft {
     required this.size,
     required this.sourceType,
     required this.createdAt,
+    this.previewText = '',
+    this.analysisText = '',
+    this.metadataExtras = const {},
     this.eventId = '',
     this.eventTitle = '',
     this.eventOrder = 0,
@@ -1491,6 +1722,9 @@ class NativeAttachmentDraft {
     String eventId = '',
     String eventTitle = '',
     int eventOrder = 0,
+    String previewText = '',
+    String analysisText = '',
+    Map<String, dynamic> metadataExtras = const {},
   }) {
     final file = File(filePath);
     final name = file.uri.pathSegments.isNotEmpty
@@ -1506,6 +1740,9 @@ class NativeAttachmentDraft {
       size: size,
       sourceType: sourceType,
       createdAt: now,
+      previewText: previewText,
+      analysisText: analysisText,
+      metadataExtras: metadataExtras,
       eventId: eventId,
       eventTitle: eventTitle,
       eventOrder: eventOrder,
@@ -1543,6 +1780,9 @@ class NativeAttachmentDraft {
   final int size;
   final String sourceType;
   final DateTime createdAt;
+  final String previewText;
+  final String analysisText;
+  final Map<String, dynamic> metadataExtras;
   final String eventId;
   final String eventTitle;
   final int eventOrder;
@@ -1550,6 +1790,7 @@ class NativeAttachmentDraft {
   String get kind => sourceType == 'image' ? 'image' : sourceType;
 
   String get displayLabel {
+    if (sourceType == 'biometric') return 'Biometría';
     if (sourceType == 'video') return 'Video';
     if (sourceType == 'audio') return 'Audio';
     return 'Foto';
@@ -1572,6 +1813,7 @@ class NativeAttachmentDraft {
         'eventId': eventId,
         'eventTitle': eventTitle,
         'eventOrder': eventOrder,
+        ...metadataExtras,
       },
     };
   }
@@ -1593,9 +1835,12 @@ class NativeAttachmentDraft {
       'eventId': eventId,
       'eventTitle': eventTitle,
       'eventOrder': eventOrder,
-      'previewText': '$displayLabel capturado desde Vibeapp.',
-      'analysisText':
-          '$displayLabel capturado desde la app nativa y sincronizado con Storage privado.',
+      'previewText': previewText.isEmpty
+          ? '$displayLabel capturado desde Vibeapp.'
+          : previewText,
+      'analysisText': analysisText.isEmpty
+          ? '$displayLabel capturado desde la app nativa y sincronizado con Storage privado.'
+          : analysisText,
       'metadata': {
         ...(remote?['metadata'] is Map<String, dynamic>
             ? remote!['metadata'] as Map<String, dynamic>
@@ -1605,6 +1850,7 @@ class NativeAttachmentDraft {
         'linkedEventId': eventId,
         'linkedEventTitle': eventTitle,
         'eventOrder': eventOrder,
+        ...metadataExtras,
       },
     };
   }
@@ -1624,6 +1870,7 @@ class CaptureQueueItem {
     this.attachments = const [],
     this.agendaEvent,
     this.locationDraft,
+    this.biometricSummary,
     this.closedAt,
   });
 
@@ -1678,6 +1925,22 @@ class CaptureQueueItem {
     );
   }
 
+  factory CaptureQueueItem.biometric(
+    NativeAttachmentDraft attachment,
+    BiometricImportSummary summary,
+  ) {
+    return CaptureQueueItem(
+      id: 'native-biometric-${DateTime.now().microsecondsSinceEpoch}',
+      title: 'Biometría',
+      detail: summary.summaryText,
+      sourceType: 'biometric',
+      createdAt: DateTime.now().toUtc(),
+      status: CaptureSyncStatus.queued,
+      attachments: [attachment],
+      biometricSummary: summary,
+    );
+  }
+
   factory CaptureQueueItem.fromSession(ActiveExperienceSession session) {
     final details = session.events
         .map((event) => '${event.order}. ${event.title}: ${event.description}')
@@ -1720,6 +1983,7 @@ class CaptureQueueItem {
   final List<NativeAttachmentDraft> attachments;
   final AgendaEventDraft? agendaEvent;
   final LocationDraft? locationDraft;
+  final BiometricImportSummary? biometricSummary;
   final DateTime? closedAt;
 
   bool get canSync =>
@@ -1727,6 +1991,7 @@ class CaptureQueueItem {
       sourceType == 'experience-session' ||
       agendaEvent != null ||
       locationDraft != null ||
+      biometricSummary != null ||
       attachments.isNotEmpty;
 
   String get subtitle {
@@ -1738,11 +2003,16 @@ class CaptureQueueItem {
       [List<Map<String, dynamic>>? uploadedAttachments]) {
     final iso = createdAt.toIso8601String();
     final locationLabel = locationDraft?.displayLocation ?? 'Captura móvil';
+    final isBiometric = biometricSummary != null || sourceType == 'biometric';
     final eventList = events.isEmpty
         ? [
             ExperienceEventDraft(
               id: '$id-event-1',
-              title: locationDraft == null ? 'Nota rápida' : 'Lugar capturado',
+              title: isBiometric
+                  ? 'Biometría importada'
+                  : locationDraft == null
+                      ? 'Nota rápida'
+                      : 'Lugar capturado',
               description: detail,
               order: 1,
               timestamp: createdAt,
@@ -1760,18 +2030,20 @@ class CaptureQueueItem {
           : detail.length > 48
               ? '${detail.substring(0, 48)}...'
               : detail,
-      'category': 'Dato del usuario',
+      'category': isBiometric ? 'Salud' : 'Dato del usuario',
       'timestamp': iso,
       'duration': duration,
       'mood': 'Calmo',
       'energy': 5,
-      'location': locationLabel,
+      'location': isBiometric ? 'Contexto transversal' : locationLabel,
       'people': 'Usuario',
       'objective': sourceType == 'experience-session'
           ? 'Experiencia con eventos desde Vibeapp'
-          : locationDraft == null
-              ? 'Captura rápida desde Vibeapp'
-              : 'Ubicación capturada desde Vibeapp',
+          : isBiometric
+              ? 'Biometría transversal desde Vibeapp'
+              : locationDraft == null
+                  ? 'Captura rápida desde Vibeapp'
+                  : 'Ubicación capturada desde Vibeapp',
       'notes': detail,
       'locale': 'es',
       'metadata': {
@@ -1781,11 +2053,15 @@ class CaptureQueueItem {
         'capturedAt': iso,
         'closedAt': closedAt?.toIso8601String(),
         if (locationDraft != null) ...locationDraft!.toMetadata(),
+        if (biometricSummary != null)
+          'biometricImport': biometricSummary!.toJson(),
         'syncContract': sourceType == 'experience-session'
             ? 'vibeapp-session-v1'
-            : locationDraft == null
-                ? 'vibeapp-text-v1'
-                : 'vibeapp-location-v1',
+            : isBiometric
+                ? 'vibeapp-biometric-file-v1'
+                : locationDraft == null
+                    ? 'vibeapp-text-v1'
+                    : 'vibeapp-location-v1',
       },
       'events': eventList.map((event) => event.toJson()).toList(),
       'attachments': uploadedAttachments ??
@@ -1860,6 +2136,16 @@ class ActiveExperienceSession {
       description: location.detail,
       order: events.length + 1,
       timestamp: location.capturedAt,
+    ));
+  }
+
+  void addBiometricEvent(BiometricImportSummary summary) {
+    events.add(ExperienceEventDraft(
+      id: '$id-event-${events.length + 1}',
+      title: 'Biometría importada',
+      description: summary.summaryText,
+      order: events.length + 1,
+      timestamp: DateTime.now().toUtc(),
     ));
   }
 
@@ -1988,9 +2274,12 @@ String inferMimeType(String name, String sourceType) {
   if (lower.endsWith('.mp3')) return 'audio/mpeg';
   if (lower.endsWith('.wav')) return 'audio/wav';
   if (lower.endsWith('.ogg')) return 'audio/ogg';
+  if (lower.endsWith('.csv')) return 'text/csv';
+  if (lower.endsWith('.json')) return 'application/json';
   if (sourceType == 'image') return 'image/jpeg';
   if (sourceType == 'video') return 'video/mp4';
   if (sourceType == 'audio') return 'audio/mp4';
+  if (sourceType == 'biometric') return 'text/csv';
   return 'application/octet-stream';
 }
 

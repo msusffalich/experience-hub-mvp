@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260525-vibeapp-location-431";
+const CACHE_NAME = "experience-hub-pwa-20260525-vibeapp-biometrics-432";
 const APP_SHELL = [
   "/",
   "/index.html",

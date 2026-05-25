@@ -30,5 +30,8 @@ void main() {
     expect(find.text('Audio'), findsOneWidget);
     expect(find.text('Foto'), findsOneWidget);
     expect(find.text('Video'), findsOneWidget);
+    expect(find.text('Agenda'), findsOneWidget);
+    expect(find.text('Biometría'), findsOneWidget);
+    expect(find.text('Lugar'), findsOneWidget);
   });
 }
