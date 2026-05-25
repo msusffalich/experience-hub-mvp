@@ -11,10 +11,11 @@ This folder is a starter skeleton. Flutter SDK is available locally at `C:\Users
 - Local queue panel for captures and pending device actions.
 - Native photo and video flow with camera/gallery picker, local queue, `/api/media` upload, and experience attachment sync.
 - Native audio recording with start/stop, private upload, and experience attachment sync.
-- Native action placeholders for calendar, biometrics, and location.
+- Native agenda event creation through `/api/agenda`, with optional link to the active experience as an internal event.
+- Native action placeholders for biometrics and location.
 - Development sync settings: Vibe API endpoint + Supabase Auth email/password.
 - Text notes can sign in through the PWA public Supabase config, then attempt `POST /api/experiences` through the Vibe backend. If an experience is active, every note or native action becomes an internal event under the same experience ID.
-- Photo, video, and audio actions now use native plugins. The remaining device actions stay queued as clear event placeholders until plugins are connected.
+- Photo, video, audio, and agenda actions now use real backend contracts. The remaining device actions stay queued as clear event placeholders until plugins are connected.
 - User-facing states kept simple: ready, syncing, synced, or needs attention.
 
 ## First milestone
@@ -32,6 +33,12 @@ This folder is a starter skeleton. Flutter SDK is available locally at `C:\Users
 2. Upload to private Supabase Storage through `/api/media`.
 3. Save the experience with the returned attachment reference so the backend registers it in `assets`.
 4. Confirm it appears in PWA Library, Assets, Reports, Findings, and Publications.
+
+## Third milestone
+
+1. Create agenda events from the native app without opening the PWA.
+2. Sync those events through `/api/agenda` so they appear in the PWA Agenda and Dashboard.
+3. If an experience is open, also add a matching internal event to the same experience.
 
 ## Native capture contract
 

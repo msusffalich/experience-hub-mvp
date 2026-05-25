@@ -150,7 +150,7 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
         item.error = '';
         _syncState = SyncState.syncing;
       });
-      final result = await client.upsertExperience(item);
+      final result = await client.syncItem(item);
       if (!mounted) return;
       setState(() {
         if (result.ok) {
@@ -196,6 +196,185 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
           content: Text(
               '${action.label}: contrato definido; falta conectar plugin nativo.')),
     );
+  }
+
+  Future<void> _openAgendaSheet() async {
+    final titleController = TextEditingController();
+    final locationController = TextEditingController();
+    final notesController = TextEditingController();
+    var selectedDate = DateTime.now();
+    var selectedTime = TimeOfDay.now();
+    var durationMinutes = 60;
+
+    final draft = await showModalBottomSheet<AgendaEventDraft>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) => SafeArea(
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: 16,
+              right: 16,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+              top: 8,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Crear evento de agenda',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'El evento se guarda en Vibe para verlo desde la PWA y otros dispositivos.',
+                  ),
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: titleController,
+                    decoration: const InputDecoration(
+                      labelText: 'Título',
+                      hintText: 'Cena, reunión, visita, recordatorio...',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          final date = await showDatePicker(
+                            context: context,
+                            initialDate: selectedDate,
+                            firstDate: DateTime.now()
+                                .subtract(const Duration(days: 365)),
+                            lastDate: DateTime.now()
+                                .add(const Duration(days: 365 * 3)),
+                          );
+                          if (date != null) {
+                            setSheetState(() => selectedDate = date);
+                          }
+                        },
+                        icon: const Icon(Icons.calendar_month_outlined),
+                        label: Text(formatDateLabel(selectedDate)),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          final time = await showTimePicker(
+                            context: context,
+                            initialTime: selectedTime,
+                          );
+                          if (time != null) {
+                            setSheetState(() => selectedTime = time);
+                          }
+                        },
+                        icon: const Icon(Icons.schedule_outlined),
+                        label: Text(selectedTime.format(context)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<int>(
+                    initialValue: durationMinutes,
+                    decoration: const InputDecoration(
+                      labelText: 'Duración',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: 15, child: Text('15 minutos')),
+                      DropdownMenuItem(value: 30, child: Text('30 minutos')),
+                      DropdownMenuItem(value: 60, child: Text('1 hora')),
+                      DropdownMenuItem(value: 120, child: Text('2 horas')),
+                      DropdownMenuItem(value: 180, child: Text('3 horas')),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) {
+                        setSheetState(() => durationMinutes = value);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: locationController,
+                    decoration: const InputDecoration(
+                      labelText: 'Lugar',
+                      hintText: 'Opcional',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: notesController,
+                    minLines: 2,
+                    maxLines: 4,
+                    decoration: const InputDecoration(
+                      labelText: 'Notas',
+                      hintText: 'Detalles útiles para recordar o preparar.',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: () {
+                        final title = titleController.text.trim();
+                        if (title.isEmpty) return;
+                        final start = DateTime(
+                          selectedDate.year,
+                          selectedDate.month,
+                          selectedDate.day,
+                          selectedTime.hour,
+                          selectedTime.minute,
+                        );
+                        Navigator.of(context).pop(AgendaEventDraft(
+                          title: title,
+                          description: notesController.text.trim(),
+                          location: locationController.text.trim(),
+                          startAt: start.toUtc(),
+                          endAt: start
+                              .add(Duration(minutes: durationMinutes))
+                              .toUtc(),
+                        ));
+                      },
+                      icon: const Icon(Icons.event_available_outlined),
+                      label: const Text('Guardar evento'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    titleController.dispose();
+    locationController.dispose();
+    notesController.dispose();
+    if (draft == null) return;
+    _queueAgendaEvent(draft);
+  }
+
+  void _queueAgendaEvent(AgendaEventDraft draft) {
+    setState(() {
+      final session = _activeSession;
+      _queue.insert(0, CaptureQueueItem.agenda(draft));
+      if (session != null) {
+        session.addAgendaEvent(draft);
+        _upsertSessionQueueItem(session);
+      }
+      _syncState = SyncState.syncing;
+    });
+    unawaited(_syncPendingQueue(showSnackBar: true));
   }
 
   Future<void> _openPhotoCaptureSheet() async {
@@ -556,6 +735,7 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
               onAudio: _toggleAudioRecording,
               onPhoto: _openPhotoCaptureSheet,
               onVideo: _openVideoCaptureSheet,
+              onAgenda: _openAgendaSheet,
               isRecordingAudio: _isRecordingAudio,
             ),
             const SizedBox(height: 16),
@@ -767,6 +947,7 @@ class CaptureActionGrid extends StatelessWidget {
     required this.onAudio,
     required this.onPhoto,
     required this.onVideo,
+    required this.onAgenda,
     required this.isRecordingAudio,
     super.key,
   });
@@ -775,6 +956,7 @@ class CaptureActionGrid extends StatelessWidget {
   final Future<void> Function() onAudio;
   final Future<void> Function() onPhoto;
   final Future<void> Function() onVideo;
+  final Future<void> Function() onAgenda;
   final bool isRecordingAudio;
 
   @override
@@ -815,7 +997,9 @@ class CaptureActionGrid extends StatelessWidget {
                     ? onVideo
                     : action.label == 'Audio'
                         ? onAudio
-                        : () => onAction(action),
+                        : action.label == 'Agenda'
+                            ? onAgenda
+                            : () => onAction(action),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -884,6 +1068,14 @@ class ExperienceSyncClient {
 
   final SyncSettings settings;
 
+  Future<SyncResult> syncItem(CaptureQueueItem item) {
+    final agendaEvent = item.agendaEvent;
+    if (agendaEvent != null) {
+      return upsertAgendaEvent(agendaEvent);
+    }
+    return upsertExperience(item);
+  }
+
   Future<SyncResult> upsertExperience(CaptureQueueItem item) async {
     try {
       final attachments = <Map<String, dynamic>>[];
@@ -915,6 +1107,36 @@ class ExperienceSyncClient {
       return SyncResult.failure('Sin conexión con la API.');
     } on FormatException {
       return SyncResult.failure('Respuesta inválida del servidor.');
+    } catch (error) {
+      return SyncResult.failure(shorten(error.toString()));
+    }
+  }
+
+  Future<SyncResult> upsertAgendaEvent(AgendaEventDraft event) async {
+    try {
+      final uri = Uri.parse(settings.apiBaseUrl).resolve('/api/agenda');
+      final request =
+          await HttpClient().postUrl(uri).timeout(const Duration(seconds: 10));
+      request.headers.contentType = ContentType.json;
+      request.headers.set(
+          HttpHeaders.authorizationHeader, 'Bearer ${settings.accessToken}');
+      request.write(jsonEncode(event.toJson()));
+      final response =
+          await request.close().timeout(const Duration(seconds: 20));
+      final responseText = await response.transform(utf8.decoder).join();
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        return SyncResult.failure(
+            'Agenda HTTP ${response.statusCode}: ${shorten(responseText)}');
+      }
+      final decoded = jsonDecode(responseText) as Map<String, dynamic>;
+      return SyncResult.success((decoded['id'] ?? event.id).toString());
+    } on TimeoutException {
+      return SyncResult.failure(
+          'Tiempo de espera agotado al guardar el evento.');
+    } on SocketException {
+      return SyncResult.failure('Sin conexion para guardar el evento.');
+    } on FormatException {
+      return SyncResult.failure('Respuesta invalida al guardar el evento.');
     } catch (error) {
       return SyncResult.failure(shorten(error.toString()));
     }
@@ -1084,6 +1306,48 @@ class NativeCaptureAction {
   final String detail;
 }
 
+class AgendaEventDraft {
+  AgendaEventDraft({
+    required this.title,
+    required this.startAt,
+    required this.endAt,
+    this.description = '',
+    this.location = '',
+  })  : id = 'native-agenda-${DateTime.now().microsecondsSinceEpoch}',
+        createdAt = DateTime.now().toUtc();
+
+  final String id;
+  final String title;
+  final String description;
+  final String location;
+  final DateTime startAt;
+  final DateTime endAt;
+  final DateTime createdAt;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'type': 'Personal',
+      'description': description,
+      'startAt': startAt.toIso8601String(),
+      'endAt': endAt.toIso8601String(),
+      'location': location.isEmpty ? 'Sin ubicación' : location,
+      'participants': 'Usuario',
+      'priority': 'normal',
+      'status': 'Planificado',
+      'sourceType': 'vibeapp-native-agenda',
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': DateTime.now().toUtc().toIso8601String(),
+      'metadata': {
+        'source': 'vibeapp-native',
+        'sourceDevice': Platform.operatingSystem,
+        'payloadType': 'calendar',
+      },
+    };
+  }
+}
+
 class NativeAttachmentDraft {
   const NativeAttachmentDraft({
     required this.id,
@@ -1235,6 +1499,7 @@ class CaptureQueueItem {
     this.remoteId,
     this.events = const [],
     this.attachments = const [],
+    this.agendaEvent,
     this.closedAt,
   });
 
@@ -1261,6 +1526,19 @@ class CaptureQueueItem {
       createdAt: now,
       status: CaptureSyncStatus.queued,
       attachments: [attachment],
+    );
+  }
+
+  factory CaptureQueueItem.agenda(AgendaEventDraft event) {
+    return CaptureQueueItem(
+      id: event.id,
+      title: 'Agenda',
+      detail:
+          '${event.title} · ${formatDateLabel(event.startAt.toLocal())} ${formatClock(event.startAt)}',
+      sourceType: 'agenda',
+      createdAt: event.createdAt,
+      status: CaptureSyncStatus.queued,
+      agendaEvent: event,
     );
   }
 
@@ -1304,11 +1582,13 @@ class CaptureQueueItem {
   String? remoteId;
   final List<ExperienceEventDraft> events;
   final List<NativeAttachmentDraft> attachments;
+  final AgendaEventDraft? agendaEvent;
   final DateTime? closedAt;
 
   bool get canSync =>
       sourceType == 'text' ||
       sourceType == 'experience-session' ||
+      agendaEvent != null ||
       attachments.isNotEmpty;
 
   String get subtitle {
@@ -1415,6 +1695,17 @@ class ActiveExperienceSession {
           '${action.detail} Estado: falta conectar el plugin nativo antes de capturar el archivo real.',
       order: events.length + 1,
       timestamp: DateTime.now().toUtc(),
+    ));
+  }
+
+  void addAgendaEvent(AgendaEventDraft agenda) {
+    events.add(ExperienceEventDraft(
+      id: '$id-event-${events.length + 1}',
+      title: 'Agenda: ${agenda.title}',
+      description:
+          '${agenda.description.isEmpty ? 'Evento creado desde Vibeapp.' : agenda.description} Lugar: ${agenda.location.isEmpty ? 'Sin ubicación' : agenda.location}.',
+      order: events.length + 1,
+      timestamp: agenda.startAt,
     ));
   }
 
@@ -1554,4 +1845,11 @@ String formatClock(DateTime value) {
   final hour = local.hour.toString().padLeft(2, '0');
   final minute = local.minute.toString().padLeft(2, '0');
   return '$hour:$minute';
+}
+
+String formatDateLabel(DateTime value) {
+  final local = value.toLocal();
+  final day = local.day.toString().padLeft(2, '0');
+  final month = local.month.toString().padLeft(2, '0');
+  return '$day/$month/${local.year}';
 }
