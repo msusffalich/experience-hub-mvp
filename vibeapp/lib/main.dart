@@ -1024,6 +1024,21 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
     }
   }
 
+  Future<void> _clearSyncedQueueItems() async {
+    setState(() {
+      _queue.removeWhere((item) => item.status == CaptureSyncStatus.synced);
+      _syncState = _queue.any(
+              (item) => item.canSync && item.status != CaptureSyncStatus.synced)
+          ? SyncState.needsAttention
+          : SyncState.ready;
+    });
+    await _saveQueue();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Capturas sincronizadas limpiadas.')),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1101,7 +1116,10 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
               isRecordingAudio: _isRecordingAudio,
             ),
             const SizedBox(height: 16),
-            CaptureQueuePanel(queue: _queue),
+            CaptureQueuePanel(
+              queue: _queue,
+              onClearSynced: _clearSyncedQueueItems,
+            ),
           ],
         ),
       ),
@@ -1480,31 +1498,75 @@ class CaptureActionGrid extends StatelessWidget {
 }
 
 class CaptureQueuePanel extends StatelessWidget {
-  const CaptureQueuePanel({required this.queue, super.key});
+  const CaptureQueuePanel({
+    required this.queue,
+    required this.onClearSynced,
+    super.key,
+  });
 
   final List<CaptureQueueItem> queue;
+  final Future<void> Function() onClearSynced;
 
   @override
   Widget build(BuildContext context) {
+    final synced =
+        queue.where((item) => item.status == CaptureSyncStatus.synced).length;
+    final needsAttention = queue
+        .where((item) =>
+            item.status == CaptureSyncStatus.failed ||
+            item.status == CaptureSyncStatus.needsSession)
+        .length;
+    final waitingRetry = queue
+        .where((item) =>
+            item.canSync &&
+            item.status != CaptureSyncStatus.synced &&
+            !item.canAttemptSyncNow)
+        .length;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Cola local',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w700),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Cola local',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                ),
+                if (synced > 0)
+                  TextButton.icon(
+                    onPressed: onClearSynced,
+                    icon: const Icon(Icons.cleaning_services_outlined),
+                    label: const Text('Limpiar listos'),
+                  ),
+              ],
             ),
             const SizedBox(height: 8),
             if (queue.isEmpty)
               const Text(
                   'Sin capturas pendientes. Cuando guardes una nota o acciones un medio, aparecerá aquí antes de sincronizar.')
-            else
+            else ...[
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  Chip(label: Text('${queue.length} total')),
+                  Chip(label: Text('$synced listas')),
+                  if (needsAttention > 0)
+                    Chip(label: Text('$needsAttention por revisar')),
+                  if (waitingRetry > 0)
+                    Chip(label: Text('$waitingRetry esperando reintento')),
+                ],
+              ),
+              const SizedBox(height: 8),
               for (final item in queue.take(8)) QueueItemTile(item: item),
+            ],
           ],
         ),
       ),

@@ -1,4 +1,4 @@
-const APP_VERSION = "20260526-publication-channel-retry-440";
+const APP_VERSION = "20260526-publication-presets-queue-441";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -6751,6 +6751,7 @@ function setupActions() {
   document.getElementById("publicationTypeInput").addEventListener("change", updatePublicationTypeHelp);
   document.getElementById("publicationStyleInput").addEventListener("change", updatePublicationTypeHelp);
   document.getElementById("publicationChannelInput").addEventListener("change", updatePublicationTypeHelp);
+  document.getElementById("publicationTypeHelp").addEventListener("click", handlePublicationPresetClick);
   document.getElementById("previewPublicationHtmlButton").addEventListener("click", previewCurrentPublicationHtml);
   document.getElementById("launchPublicationChannelButton").addEventListener("click", preparePublicationChannelLaunch);
   document.getElementById("copyPublicationTextButton").addEventListener("click", copyCurrentPublicationText);
@@ -7582,8 +7583,39 @@ function updatePublicationTypeHelp() {
     <p><b>${escapeHtml(mediaLabel)}:</b> ${escapeHtml(mediaPolicy || "")}</p>
     <p><b>${escapeHtml(channelLabel)}:</b> ${(guide.channels || []).map((item) => `<span class="publication-guide-chip">${escapeHtml(item)}</span>`).join(" ")}</p>
     ${renderPublicationTypeChannelFit(type, channel)}
+    ${renderPublicationPresetSuggestions(type, channel)}
     <ul>${structure.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
     ${renderPublicationChannelMatrix({ channel: "" })}
+  `;
+}
+
+function renderPublicationPresetSuggestions(type, channel) {
+  const direct = publicationTemplates.filter((template) => template.channel === channel);
+  const related = publicationTemplates.filter((template) => template.type === type && template.channel !== channel);
+  const suggestions = [...direct, ...related]
+    .filter((template, index, list) => list.findIndex((item) => item.id === template.id) === index)
+    .slice(0, 4);
+  if (!suggestions.length) return "";
+  const title = state.language === "en" ? "Suggested formats before generating" : "Formatos sugeridos antes de generar";
+  const help = state.language === "en"
+    ? "Choose one to align type, style, and channel before creating the draft."
+    : "Elige uno para alinear tipo, estilo y canal antes de crear el borrador.";
+  return `
+    <div class="publication-preset-panel">
+      <div>
+        <strong>${escapeHtml(title)}</strong>
+        <p>${escapeHtml(help)}</p>
+      </div>
+      <div class="publication-preset-list">
+        ${suggestions.map((template) => `
+          <button type="button" data-publication-preset="${escapeHtml(template.id)}">
+            <span>${escapeHtml(displayPublicationType(template.type))}</span>
+            <b>${escapeHtml(displayPublicationStyle(template.style))}</b>
+            <small>${escapeHtml(template.channel)}</small>
+          </button>
+        `).join("")}
+      </div>
+    </div>
   `;
 }
 
@@ -7621,6 +7653,20 @@ function renderPublicationTypeChannelFit(type, channel) {
       <p>${escapeHtml(detail)}</p>
     </div>
   `;
+}
+
+function handlePublicationPresetClick(event) {
+  const button = event.target.closest("[data-publication-preset]");
+  if (!button) return;
+  const template = publicationTemplates.find((item) => item.id === button.dataset.publicationPreset);
+  if (!template) return;
+  document.getElementById("publicationTypeInput").value = template.type;
+  document.getElementById("publicationStyleInput").value = template.style;
+  document.getElementById("publicationChannelInput").value = template.channel;
+  updatePublicationTypeHelp();
+  document.getElementById("publicationStatus").textContent = state.language === "en"
+    ? "Suggested publication format applied."
+    : "Formato sugerido aplicado.";
 }
 
 function translatePublicationGuideText(text) {
@@ -24576,7 +24622,7 @@ function renderAdminOperationalFocusPanel() {
         reportPdf: "Cleaner reports, publications, and findings",
         reportPdfDetail: "Reports now use an executive PDF, participant scope, and folded technical exports. Publications explain format fit, edited text, media actions, and non-image handling. Findings are organized by 8 human themes and can be downloaded.",
         nativeSync: "Vibeapp real queue",
-        nativeSyncDetail: "Vibeapp now has real native contracts for text, photo, video, audio, agenda, location, and biometric CSV/JSON files. The native queue validates each payload, persists locally across app restarts, tracks attempts, schedules retries, and then syncs media through /api/media, agenda through /api/agenda, and experiences through /api/experiences.",
+        nativeSyncDetail: "Vibeapp now has real native contracts for text, photo, video, audio, agenda, location, and biometric CSV/JSON files. The native queue validates each payload, persists locally across app restarts, tracks attempts, schedules retries, lets synced items be cleared locally without deleting remote data, and then syncs media through /api/media, agenda through /api/agenda, and experiences through /api/experiences.",
       }
     : {
         title: "Administración operativa",
@@ -24613,7 +24659,7 @@ function renderAdminOperationalFocusPanel() {
     labels.reportPdf = "Reportes, publicaciones y hallazgos limpios";
     labels.reportPdfDetail = "Reportes usa PDF ejecutivo, alcance por persona y exportaciones técnicas plegadas. Publicaciones suma matriz por canal: carrusel, carta/email, dossier, ficha de salud, blog/web, LinkedIn y PDF/HTML, con medios seleccionables y acciones claras para audio, video, documentos y ZIP. Hallazgos se organiza en 8 ejes humanos y se puede descargar.";
     labels.nativeSync = "Vibeapp con cola real";
-    labels.nativeSyncDetail = "Vibeapp ya tiene contratos nativos reales para texto, foto, video, audio, agenda, lugar, biometr\u00eda CSV/JSON e importaci\u00f3n de sesiones externas. La cola nativa valida cada payload, lo conserva localmente aunque cierres la app, registra intentos, agenda reintentos y luego sincroniza medios por /api/media, agenda por /api/agenda y experiencias por /api/experiences.";
+    labels.nativeSyncDetail = "Vibeapp ya tiene contratos nativos reales para texto, foto, video, audio, agenda, lugar, biometr\u00eda CSV/JSON e importaci\u00f3n de sesiones externas. La cola nativa valida cada payload, lo conserva localmente aunque cierres la app, registra intentos, agenda reintentos, permite limpiar elementos ya sincronizados sin borrar datos remotos y luego sincroniza medios por /api/media, agenda por /api/agenda y experiencias por /api/experiences.";
   }
   const cards = [
     [labels.flow, labels.flowDetail],

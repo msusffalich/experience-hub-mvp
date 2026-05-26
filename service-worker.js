@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260526-publication-channel-retry-440";
+const CACHE_NAME = "experience-hub-pwa-20260526-publication-presets-queue-441";
 const APP_SHELL = [
   "/",
   "/index.html",

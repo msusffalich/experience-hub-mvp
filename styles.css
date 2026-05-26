@@ -6390,6 +6390,58 @@ button.asset-processing-summary-card {
   line-height: 1.45;
 }
 
+.publication-preset-panel {
+  display: grid;
+  gap: 10px;
+  margin: 10px 0;
+  padding: 12px;
+  border: 1px solid rgba(13, 124, 102, 0.18);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.publication-preset-panel strong,
+.publication-preset-panel p {
+  margin: 0;
+}
+
+.publication-preset-panel p {
+  color: var(--muted);
+}
+
+.publication-preset-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr));
+  gap: 8px;
+}
+
+.publication-preset-list button {
+  display: grid;
+  gap: 4px;
+  min-height: 84px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  text-align: left;
+}
+
+.publication-preset-list button:hover {
+  border-color: rgba(13, 124, 102, 0.44);
+  background: rgba(13, 124, 102, 0.08);
+}
+
+.publication-preset-list span,
+.publication-preset-list small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.publication-preset-list b {
+  color: var(--accent-dark);
+}
+
 .publication-cover {
   display: grid;
   gap: 8px;
