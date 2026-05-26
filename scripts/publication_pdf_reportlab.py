@@ -715,6 +715,235 @@ def channel_cards(rows):
     return flow
 
 
+def media_for_page(media, page):
+    ids = set(page.get("mediaIds") or [])
+    if not ids:
+        return []
+    return [item for item in media if item.get("id") in ids]
+
+
+def page_layout_note(page):
+    layout = page.get("layoutTemplate") or "editorial"
+    page_type = page.get("pageType") or "story"
+    labels = {
+        "cover": "Portada: explica el tema en pocos segundos.",
+        "summary": "Resumen: sintetiza lo importante antes del detalle.",
+        "story": "Historia: convierte datos en una lectura humana.",
+        "timeline": "Momentos: ordena la secuencia de la experiencia.",
+        "media": "Multimedia: muestra imagenes y resume otros activos.",
+        "evidence": "Evidencia: traduce documentos, audio, video o imagenes a lenguaje claro.",
+        "channel": "Canal: indica como se comparte y que queda pendiente.",
+        "closing": "Cierre: deja una accion o recuerdo final.",
+        "slides": "Laminas: ordena una idea por pantalla.",
+        "captions": "Textos: prepara copys breves para pegar.",
+        "people_places": "Personas y lugares: conserva contexto humano.",
+        "memory": "Memoria: resume lo que vale la pena recordar.",
+        "scenes": "Escenas: sugiere una secuencia para video o story.",
+        "voiceover": "Voz: prepara narracion o texto en pantalla.",
+        "letter": "Carta: organiza un mensaje personal.",
+        "annex": "Anexos: lista medios y documentos de apoyo.",
+        "chapters": "Capitulos: arma una estructura larga.",
+        "actions": "Acciones: convierte lectura en pasos concretos.",
+        "findings": "Hallazgos: sintetiza lo que importa.",
+        "questions": "Preguntas: prepara dudas para revisar.",
+    }
+    return f"{labels.get(page_type, 'Pagina editorial.')} Maqueta: {layout}."
+
+
+def render_publication_page(page, media):
+    title = page.get("title") or "Pagina"
+    subtitle = page.get("subtitle") or page_layout_note(page)
+    body = page.get("body") or "Sin texto editorial."
+    accent_map = {
+        "cover": GOLD,
+        "summary": RUST,
+        "story": BLUE,
+        "timeline": colors.HexColor("#7a5cc8"),
+        "media": colors.HexColor("#0d7c66"),
+        "evidence": colors.HexColor("#7a5cc8"),
+        "channel": colors.HexColor("#f2b84b"),
+        "closing": GOLD,
+        "slides": colors.HexColor("#7a5cc8"),
+        "captions": colors.HexColor("#0d7c66"),
+        "people_places": colors.HexColor("#0d7c66"),
+        "memory": GOLD,
+        "scenes": colors.HexColor("#7a5cc8"),
+        "voiceover": BLUE,
+        "letter": GOLD,
+        "annex": colors.HexColor("#0d7c66"),
+        "chapters": BLUE,
+        "actions": colors.HexColor("#f2b84b"),
+        "findings": RUST,
+        "questions": colors.HexColor("#7a5cc8"),
+    }
+    page_media = media_for_page(media, page)
+    page_type = page.get("pageType")
+    accent = accent_map.get(page_type, BLUE)
+    flow = [
+        section_heading(f"Pagina {page.get('pageNumber') or ''}: {title}", subtitle),
+        text_card("Funcion editorial", page_layout_note(page), accent),
+        Spacer(1, 8),
+    ]
+    if page_type == "cover":
+        if page_media:
+            flow.extend(media_gallery(page_media[:1]))
+            flow.append(Spacer(1, 8))
+        flow.append(cover_statement_card(title, body, accent))
+        return flow
+    if page_type in ("slides", "scenes"):
+        flow.append(sequence_cards(body, accent, label="Lamina" if page_type == "slides" else "Escena"))
+        return flow
+    if page_type in ("captions", "voiceover"):
+        flow.extend(quote_cards(body, accent))
+        return flow
+    if page_type in ("timeline", "chapters"):
+        flow.append(sequence_cards(body, accent, label="Paso" if page_type == "chapters" else "Momento"))
+        return flow
+    if page_type in ("questions", "actions", "findings"):
+        flow.append(checklist_cards(body, accent))
+        return flow
+    if page_type == "letter":
+        flow.append(letter_block(title, body))
+        return flow
+    if page_media:
+        flow.extend(media_gallery(page_media))
+        flow.append(Spacer(1, 8))
+    if page_type == "media":
+        flow.append(paragraph_block("Lectura de los activos", body, max_parts=8, part_limit=360))
+    elif page_type == "evidence":
+        flow.append(evidence_summary_grid(body, accent))
+    else:
+        flow.append(paragraph_block("Contenido editado", body, max_parts=6, part_limit=520))
+    return flow
+
+
+def split_editorial_lines(body, limit=9):
+    raw_lines = []
+    for part in str(body or "").split("\n"):
+        item = clean_html(part).strip()
+        if not item:
+            continue
+        item = re.sub(r"^\s*(?:[-*]|\d+[.)]|Lamina\s+\d+:|Escena\s+\d+:|Paso\s+\d+:|Momento\s+\d+:)\s*", "", item, flags=re.I)
+        if item:
+            raw_lines.append(item)
+    if len(raw_lines) <= 1:
+        raw_lines = [part.strip() for part in re.split(r"(?<=[.!?])\s+", clean_html(body)) if part.strip()]
+    return raw_lines[:limit] or ["Sin contenido editorial."]
+
+
+def sequence_cards(body, accent, label="Item"):
+    rows = []
+    card_width = (PAGE_WIDTH - 2 * MARGIN - 10) / 2
+    lines = split_editorial_lines(body, limit=8)
+    for index in range(0, len(lines), 2):
+        row = []
+        for offset, text in enumerate(lines[index:index + 2]):
+            number = index + offset + 1
+            row.append(text_card(f"{label} {number}", short(text, 260), accent, width=card_width))
+        while len(row) < 2:
+            row.append("")
+        rows.append(row)
+    table = Table(rows, colWidths=[card_width, card_width])
+    table.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 0),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+        ("TOPPADDING", (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
+    ]))
+    return table
+
+
+def quote_cards(body, accent):
+    lines = split_editorial_lines(body, limit=5)
+    flow = []
+    for index, text in enumerate(lines, 1):
+        flow.append(KeepTogether([
+            text_card(f"Texto {index}", f'"{short(text, 330)}"', accent),
+            Spacer(1, 8),
+        ]))
+    return flow
+
+
+def checklist_cards(body, accent):
+    lines = split_editorial_lines(body, limit=7)
+    rows = []
+    for index, text in enumerate(lines, 1):
+        rows.append([para(str(index), "H2x"), para(short(text, 260), "Bodyx")])
+    table = Table(rows, colWidths=[0.34 * inch, PAGE_WIDTH - 2 * MARGIN - 0.34 * inch])
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#eef4ff")),
+        ("TEXTCOLOR", (0, 0), (0, -1), accent),
+        ("BOX", (0, 0), (-1, -1), 0.6, LINE),
+        ("GRID", (0, 0), (-1, -1), 0.25, LINE),
+        ("LEFTPADDING", (0, 0), (-1, -1), 8),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+        ("TOPPADDING", (0, 0), (-1, -1), 8),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+    ]))
+    return table
+
+
+def evidence_summary_grid(body, accent):
+    return sequence_cards(body, accent, label="Evidencia")
+
+
+def cover_statement_card(title, body, accent):
+    table = Table(
+        [[para(title, "H1x")], [para(short(body, 620), "Bodyx")]],
+        colWidths=[PAGE_WIDTH - 2 * MARGIN],
+    )
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#fbf6ed")),
+        ("LINEBEFORE", (0, 0), (0, -1), 7, accent),
+        ("BOX", (0, 0), (-1, -1), 0.6, LINE),
+        ("LEFTPADDING", (0, 0), (-1, -1), 16),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 16),
+        ("TOPPADDING", (0, 0), (-1, -1), 16),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 16),
+    ]))
+    return table
+
+
+def letter_block(title, body):
+    return paragraph_block(title, body, max_parts=8, part_limit=560)
+
+
+def build_paged_publication(title, summary, draft, stats, highlights, all_media, media, purpose, people, locations):
+    pages = draft.get("pages") or []
+    flow = [
+        hero(title, "Publicacion paginada con portada, narrativa, multimedia y cierre."),
+        Spacer(1, 16),
+        PublicationDashboard(stats, len(media), len(highlights)),
+        Spacer(1, 12),
+        editorial_cards([
+            ("Proposito de la pieza", f"{purpose}\nPersonas: {people}\nLugares: {locations}", GOLD),
+            ("Resumen editorial", summary, RUST),
+            ("Estructura", f"{len(pages)} paginas editables. El PDF usa el texto revisado en la app.", BLUE),
+            ("Seleccion multimedia", media_selection_label(all_media, media), colors.HexColor("#0d7c66")),
+        ]),
+        PageBreak(),
+    ]
+    visible_pages = pages[:12]
+    for index, page_item in enumerate(visible_pages):
+        flow.extend(render_publication_page(page_item, media))
+        if index < len(visible_pages) - 1:
+            flow.append(PageBreak())
+    flow.extend([
+        PageBreak(),
+        section_heading("Salida y canal", "Preparacion final para compartir sin publicar automaticamente."),
+        *channel_cards(channel_rows(draft.get("channel"))),
+        Spacer(1, 12),
+        text_card(
+            "Cierre",
+            "Este PDF es la version editada para revision humana. No publica automaticamente en redes. Si el contenido se aprueba, puede compartirse por copia manual, enlace o por una API de canal cuando este configurada.",
+            colors.HexColor("#f2b84b"),
+        ),
+    ])
+    return flow
+
+
 def build(payload):
     html = payload.get("html") or ""
     draft = payload.get("draft") or {}
@@ -729,6 +958,8 @@ def build(payload):
     purpose = draft.get("purpose") or "Pieza preparada para compartir una memoria viva, no un reporte técnico."
     people = ", ".join(draft.get("people") or []) or "Sin personas indicadas"
     locations = ", ".join(draft.get("locations") or []) or "Sin ubicacion indicada"
+    if draft.get("pages"):
+        return build_paged_publication(title, summary, draft, stats, highlights, all_media, media, purpose, people, locations)
     flow = [
         hero(title, "Memoria editorial para revisar, aprobar y compartir."),
         Spacer(1, 16),

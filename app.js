@@ -1,4 +1,4 @@
-const APP_VERSION = "20260525-external-session-433";
+const APP_VERSION = "20260525-publication-visual-pdf-436";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -18312,6 +18312,22 @@ function buildPublicationDraft({ experiences, type, style, channel, privacy }) {
   const rawBody = buildPublicationBody({ title, type, style, channel, experiences, analysis, mediaCount, category, avgEnergy, highlights, media });
   const people = topValues(experiences.flatMap((item) => splitPeople(item.people)), 4);
   const locations = topValues(experiences.map((item) => item.location).filter(Boolean), 4);
+  const pages = buildPublicationPages({
+    title,
+    type,
+    style,
+    channel,
+    experiences,
+    analysis,
+    category,
+    avgEnergy,
+    highlights,
+    media,
+    people,
+    locations,
+    summary: rawSummary,
+    body: rawBody,
+  });
   return {
     id: createId(),
     createdAt: new Date().toISOString(),
@@ -18327,6 +18343,7 @@ function buildPublicationDraft({ experiences, type, style, channel, privacy }) {
     privacy,
     summary: privacy ? redactSensitiveText(rawSummary) : rawSummary,
     body: privacy ? redactSensitiveText(rawBody) : rawBody,
+    pages: privacy ? pages.map(redactPublicationPage) : pages,
     highlights: privacy ? highlights.map((item) => ({ ...item, note: redactSensitiveText(item.note), location: redactSensitiveText(item.location) })) : highlights,
     media,
     people: privacy ? people.map(redactSensitiveText) : people,
@@ -18346,6 +18363,303 @@ function buildPublicationDraft({ experiences, type, style, channel, privacy }) {
       },
     ],
   };
+}
+
+function redactPublicationPage(page) {
+  return {
+    ...page,
+    title: redactSensitiveText(page.title),
+    subtitle: redactSensitiveText(page.subtitle),
+    body: redactSensitiveText(page.body),
+  };
+}
+
+function buildPublicationPages({ title, type, style, channel, experiences, analysis, category, avgEnergy, highlights, media, people, locations, summary, body }) {
+  const dateRange = formatPublicationDateRange(experiences);
+  const selectedMedia = (media || []).filter((item) => item.included !== false);
+  const firstImage = selectedMedia.find((item) => String(item.type || "").startsWith("image/"));
+  const mediaIds = selectedMedia.map((item) => item.id);
+  const guide = getPublicationTypeGuide(type);
+  const typeLabel = displayPublicationType(type);
+  const styleLabel = displayPublicationStyle(style);
+  const peopleText = people.length ? people.join(", ") : (state.language === "en" ? "not specified" : "sin personas indicadas");
+  const locationText = locations.length ? locations.join(", ") : (state.language === "en" ? "no location specified" : "sin ubicacion indicada");
+  const momentLines = highlights
+    .map((item, index) => `${index + 1}. ${item.title} - ${item.category}. ${item.note || item.location || (state.language === "en" ? "Experience recorded." : "Experiencia registrada.")}`)
+    .join("\n");
+  const mediaLines = selectedMedia.length
+    ? selectedMedia.slice(0, 8).map((item, index) => `${index + 1}. ${getPublicationMediaKindLabel(item)} - ${item.name}: ${shortPublicationText([item.translatedText, item.analyticalText, item.manualNote, item.originalText, item.experienceTitle].filter(Boolean).join(" "), 240) || getPublicationMediaActionLabel(item)}`).join("\n")
+    : (state.language === "en" ? "No media selected for this version." : "No hay multimedia seleccionada para esta version.");
+  const channelBody = state.language === "en"
+    ? `Recommended channel: ${channel}. Use this version as ${typeLabel.toLowerCase()} with a ${styleLabel.toLowerCase()} tone. ${translatePublicationGuideText(guide.mediaPolicy || "")}`
+    : `Canal recomendado: ${channel}. Usa esta version como ${typeLabel.toLowerCase()} con tono ${styleLabel.toLowerCase()}. ${guide.mediaPolicy || ""}`;
+  const basePageSpecs = [
+    {
+      pageType: "cover",
+      layoutTemplate: firstImage ? "cover-visual" : "cover-typographic",
+      title,
+      subtitle: `${typeLabel} - ${styleLabel} - ${channel}`,
+      body: state.language === "en"
+        ? `A publication prepared from ${experiences.length} experience(s), ${dateRange}. Main focus: ${category}.`
+        : `Publicacion preparada a partir de ${experiences.length} experiencia(s), ${dateRange}. Foco principal: ${category}.`,
+      mediaIds: firstImage ? [firstImage.id] : [],
+    },
+    {
+      pageType: "summary",
+      layoutTemplate: "executive-summary",
+      title: state.language === "en" ? "Editorial summary" : "Resumen editorial",
+      subtitle: state.language === "en" ? "What this piece should communicate" : "Lo que esta pieza debe comunicar",
+      body: `${summary}\n\n${state.language === "en" ? "People" : "Personas"}: ${peopleText}\n${state.language === "en" ? "Places" : "Lugares"}: ${locationText}\n${state.language === "en" ? "Average energy" : "Energia media"}: ${avgEnergy}/10`,
+      mediaIds: [],
+    },
+    {
+      pageType: "story",
+      layoutTemplate: type === "Carrusel visual" ? "slide-sequence" : "narrative",
+      title: state.language === "en" ? "Story" : "Historia",
+      subtitle: state.language === "en" ? "Edited narrative for the reader" : "Narrativa editada para el lector",
+      body: buildPublicationPageStory(body, analysis),
+      mediaIds: [],
+    },
+    {
+      pageType: "timeline",
+      layoutTemplate: "moments",
+      title: state.language === "en" ? "Key moments" : "Momentos clave",
+      subtitle: state.language === "en" ? "Sequence selected from the source experiences" : "Secuencia seleccionada desde las experiencias fuente",
+      body: momentLines || (state.language === "en" ? "No key moments were selected." : "No hay momentos clave seleccionados."),
+      mediaIds: [],
+    },
+    {
+      pageType: "media",
+      layoutTemplate: selectedMedia.some((item) => String(item.type || "").startsWith("image/")) ? "gallery" : "evidence-list",
+      title: state.language === "en" ? "Selected media" : "Multimedia seleccionada",
+      subtitle: state.language === "en" ? "Images are shown; audio, video and documents are summarized" : "Las imagenes se muestran; audio, video y documentos se resumen",
+      body: mediaLines,
+      mediaIds,
+    },
+    {
+      pageType: "evidence",
+      layoutTemplate: "plain-language-evidence",
+      title: state.language === "en" ? "Plain-language evidence" : "Evidencia en lenguaje claro",
+      subtitle: state.language === "en" ? "Interpretation before sharing" : "Interpretacion antes de compartir",
+      body: buildPublicationInterpretationSummary(selectedMedia),
+      mediaIds: [],
+    },
+    {
+      pageType: "channel",
+      layoutTemplate: "channel-plan",
+      title: state.language === "en" ? "Publication plan" : "Plan de publicacion",
+      subtitle: state.language === "en" ? "How to use this output" : "Como usar esta salida",
+      body: channelBody,
+      mediaIds: [],
+    },
+    {
+      pageType: "closing",
+      layoutTemplate: "closing",
+      title: state.language === "en" ? "Closing note" : "Cierre",
+      subtitle: state.language === "en" ? "Human review before publishing" : "Revision humana antes de publicar",
+      body: state.language === "en"
+        ? `${analysis.action}\n\nFinal check: review privacy, names, faces, sensitive information and media rights before sharing.`
+        : `${analysis.action}\n\nChequeo final: revisa privacidad, nombres, rostros, informacion sensible y derechos de medios antes de compartir.`,
+      mediaIds: [],
+    },
+  ];
+  const pageSpecs = applyPublicationPageProfile(basePageSpecs, {
+    type,
+    channel,
+    title,
+    summary,
+    body,
+    analysis,
+    highlights,
+    selectedMedia,
+    mediaIds,
+    peopleText,
+    locationText,
+    momentLines,
+    mediaLines,
+    channelBody,
+  });
+  return pageSpecs.map((page, index) => ({
+    id: createId(),
+    pageNumber: index + 1,
+    ...page,
+  }));
+}
+
+function applyPublicationPageProfile(basePages, context) {
+  const lowerType = String(context.type || "").toLowerCase();
+  const cover = basePages[0];
+  const summary = basePages.find((page) => page.pageType === "summary");
+  const story = basePages.find((page) => page.pageType === "story");
+  const timeline = basePages.find((page) => page.pageType === "timeline");
+  const media = basePages.find((page) => page.pageType === "media");
+  const evidence = basePages.find((page) => page.pageType === "evidence");
+  const channel = basePages.find((page) => page.pageType === "channel");
+  const closing = basePages.find((page) => page.pageType === "closing");
+  const isAlbum = lowerType.includes("album") || lowerType.includes("lbum");
+  const isCarousel = lowerType.includes("carrusel");
+  const isStoryScript = lowerType.includes("guion") || lowerType.includes("reel");
+  const isLetter = lowerType.includes("carta") || lowerType.includes("email");
+  const isDossier = lowerType.includes("dossier");
+  const isHealth = lowerType.includes("salud") || lowerType.includes("health");
+  const isExecutive = lowerType.includes("resumen");
+  const isQuick = lowerType.includes("social") || lowerType.includes("rapida") || lowerType.includes("pida");
+  const make = (pageType, layoutTemplate, title, subtitle, body, mediaIds = []) => ({
+    pageType,
+    layoutTemplate,
+    title,
+    subtitle,
+    body,
+    mediaIds,
+  });
+  if (isQuick) {
+    return [
+      { ...cover, layoutTemplate: "social-cover" },
+      make("story", "short-message", state.language === "en" ? "Post text" : "Texto para publicar", state.language === "en" ? "Short, direct and ready to copy" : "Breve, directo y listo para copiar", `${context.summary}\n\n${context.analysis.action}`),
+      make("media", "hero-media", state.language === "en" ? "Main media" : "Multimedia principal", state.language === "en" ? "Use one strong image/video when available" : "Usa una imagen/video fuerte si esta disponible", context.mediaLines, context.selectedMedia.slice(0, 3).map((item) => item.id)),
+      channel,
+      closing,
+    ];
+  }
+  if (isCarousel) {
+    return [
+      { ...cover, layoutTemplate: "carousel-cover" },
+      make("slides", "carousel-sequence", state.language === "en" ? "Carousel sequence" : "Secuencia del carrusel", state.language === "en" ? "One idea per slide" : "Una idea por lamina", buildPublicationCarouselSlides(context)),
+      make("media", "visual-grid", state.language === "en" ? "Visual assets" : "Activos visuales", state.language === "en" ? "Images first; other media become notes" : "Imagenes primero; otros medios quedan como notas", context.mediaLines, context.mediaIds),
+      make("captions", "caption-bank", state.language === "en" ? "Caption bank" : "Textos para copiar", state.language === "en" ? "Short texts for social channels" : "Textos breves para canales sociales", buildPublicationCaptionBank(context)),
+      channel,
+    ];
+  }
+  if (isAlbum) {
+    return [
+      { ...cover, layoutTemplate: "memory-cover" },
+      { ...media, layoutTemplate: "memory-gallery", title: state.language === "en" ? "Living gallery" : "Galeria viva" },
+      timeline,
+      make("people_places", "memory-context", state.language === "en" ? "People and places" : "Personas y lugares", state.language === "en" ? "Context that makes the memory reusable" : "Contexto que hace reutilizable el recuerdo", `${state.language === "en" ? "People" : "Personas"}: ${context.peopleText}\n${state.language === "en" ? "Places" : "Lugares"}: ${context.locationText}`),
+      make("memory", "emotional-closing", state.language === "en" ? "Memory to keep" : "Recuerdo para conservar", state.language === "en" ? "Human reading, not just a log" : "Lectura humana, no solo bitacora", buildPublicationPageStory(context.body, context.analysis)),
+      closing,
+    ];
+  }
+  if (isStoryScript) {
+    return [
+      { ...cover, layoutTemplate: "reel-cover" },
+      make("scenes", "scene-board", state.language === "en" ? "Scene board" : "Guion de escenas", state.language === "en" ? "Suggested sequence for video/story" : "Secuencia sugerida para video/story", buildPublicationSceneBoard(context)),
+      { ...media, layoutTemplate: "shot-list", title: state.language === "en" ? "Shots and source media" : "Tomas y medios fuente" },
+      make("voiceover", "voice-script", state.language === "en" ? "Voice or text overlay" : "Voz o texto en pantalla", state.language === "en" ? "Copy-ready script" : "Guion listo para copiar", buildPublicationCaptionBank(context)),
+      channel,
+    ];
+  }
+  if (isLetter) {
+    return [
+      make("letter", "letter-cover", context.title, state.language === "en" ? "Personal message" : "Mensaje personal", state.language === "en" ? "Suggested greeting: edit recipient and tone before sending." : "Saludo sugerido: edita destinatario y tono antes de enviar."),
+      make("letter", "letter-body", state.language === "en" ? "Main message" : "Mensaje principal", state.language === "en" ? "Editable letter body" : "Cuerpo editable de la carta", `${context.summary}\n\n${buildPublicationPageStory(context.body, context.analysis)}`),
+      make("annex", "annex-list", state.language === "en" ? "Relevant annexes" : "Anexos relevantes", state.language === "en" ? "Media or files to mention" : "Medios o archivos para mencionar", context.mediaLines, context.mediaIds),
+      closing,
+    ];
+  }
+  if (isDossier) {
+    return [
+      { ...cover, layoutTemplate: "dossier-cover" },
+      summary,
+      make("chapters", "chapter-plan", state.language === "en" ? "Chapters" : "Capitulos", state.language === "en" ? "Readable structure for a longer document" : "Estructura legible para un documento largo", buildPublicationDossierChapters(context)),
+      timeline,
+      evidence,
+      media,
+      make("actions", "recommendations", state.language === "en" ? "Recommendations" : "Recomendaciones", state.language === "en" ? "What to do with this material" : "Que hacer con este material", context.analysis.action),
+      channel,
+      closing,
+    ];
+  }
+  if (isHealth) {
+    return [
+      { ...cover, layoutTemplate: "health-cover" },
+      make("summary", "health-purpose", state.language === "en" ? "Reason for sharing" : "Motivo para compartir", state.language === "en" ? "Plain-language context, not a diagnosis" : "Contexto en lenguaje claro, no diagnostico", context.summary),
+      make("evidence", "health-evidence", state.language === "en" ? "Observed data" : "Datos observados", state.language === "en" ? "Documents, biometrics or user notes" : "Documentos, biometria o notas del usuario", context.mediaLines || context.body, context.mediaIds),
+      make("questions", "clinical-questions", state.language === "en" ? "Questions to review" : "Preguntas para revisar", state.language === "en" ? "For a professional or for the next check" : "Para un profesional o para el proximo control", buildPublicationHealthQuestions(context)),
+      closing,
+    ];
+  }
+  if (isExecutive) {
+    return [
+      { ...cover, layoutTemplate: "executive-cover" },
+      summary,
+      make("findings", "finding-cards", state.language === "en" ? "Main findings" : "Hallazgos principales", state.language === "en" ? "What matters most" : "Lo mas importante", `${context.analysis.focus}\n\n${context.momentLines}`),
+      evidence,
+      make("actions", "next-actions", state.language === "en" ? "Next actions" : "Proximas acciones", state.language === "en" ? "Decision-ready output" : "Salida lista para decidir", context.analysis.action),
+      channel,
+    ];
+  }
+  return basePages;
+}
+
+function buildPublicationCarouselSlides(context) {
+  const moments = (context.highlights || []).slice(0, 5).map((item, index) => `Lamina ${index + 2}: ${item.title}. ${item.note || item.location || item.category}`);
+  return [
+    `Lamina 1: ${context.title}`,
+    ...moments,
+    `Lamina final: ${context.analysis.action}`,
+  ].join("\n");
+}
+
+function buildPublicationCaptionBank(context) {
+  return [
+    `${context.summary}`,
+    `${context.analysis.focus}`,
+    `${context.analysis.action}`,
+  ].map((item, index) => `${index + 1}. ${shortPublicationText(item, 180)}`).join("\n");
+}
+
+function buildPublicationSceneBoard(context) {
+  const lines = (context.highlights || []).slice(0, 6).map((item, index) => `Escena ${index + 1}: ${item.title}. Visual sugerido: ${item.location || item.category}. Texto: ${shortPublicationText(item.note || context.analysis.focus, 140)}`);
+  return lines.join("\n") || context.summary;
+}
+
+function buildPublicationDossierChapters(context) {
+  return [
+    `1. Contexto: ${context.summary}`,
+    `2. Historia: ${shortPublicationText(buildPublicationPageStory(context.body, context.analysis), 260)}`,
+    `3. Momentos: ${shortPublicationText(context.momentLines, 260)}`,
+    `4. Evidencia: ${shortPublicationText(context.mediaLines, 260)}`,
+    `5. Acciones: ${context.analysis.action}`,
+  ].join("\n\n");
+}
+
+function buildPublicationHealthQuestions(context) {
+  return [
+    "1. Que dato observado conviene confirmar?",
+    "2. Que sintoma, energia o patron se repite?",
+    "3. Que documento o medicion debe revisar un profesional?",
+    `4. Siguiente paso sugerido: ${context.analysis.action}`,
+  ].join("\n");
+}
+
+function buildPublicationPageStory(body, analysis) {
+  const paragraphs = String(body || "")
+    .split(/\n+/)
+    .map((part) => part.trim())
+    .filter((part) => part && !part.startsWith("- ") && !/^(Direccion editorial|Interpretacion clara|Contexto|Momentos seleccionados|Evidencia|Plan de diseno|Editorial direction|Readable interpretation|Context|Selected moments|Evidence|Design)/i.test(part));
+  const narrative = paragraphs.slice(0, 3).join("\n\n");
+  return narrative || analysis.focus || (state.language === "en" ? "Edit this story page before exporting." : "Edita esta pagina de historia antes de exportar.");
+}
+
+function normalizePublicationPages(draft) {
+  if (Array.isArray(draft?.pages) && draft.pages.length) {
+    return draft.pages.map((page, index) => ({
+      id: page.id || createId(),
+      pageNumber: page.pageNumber || index + 1,
+      pageType: page.pageType || "story",
+      layoutTemplate: page.layoutTemplate || "narrative",
+      title: page.title || (state.language === "en" ? `Page ${index + 1}` : `Pagina ${index + 1}`),
+      subtitle: page.subtitle || "",
+      body: page.body || "",
+      mediaIds: Array.isArray(page.mediaIds) ? page.mediaIds : [],
+    }));
+  }
+  const body = draft?.body || "";
+  return [
+    { id: createId(), pageNumber: 1, pageType: "cover", layoutTemplate: "cover-typographic", title: draft?.title || "Publicacion", subtitle: `${displayPublicationType(draft?.type || "")} - ${draft?.channel || ""}`, body: draft?.summary || "", mediaIds: [] },
+    { id: createId(), pageNumber: 2, pageType: "story", layoutTemplate: "narrative", title: state.language === "en" ? "Story" : "Historia", subtitle: "", body, mediaIds: [] },
+  ];
 }
 
 function splitPeople(value) {
@@ -18609,6 +18923,7 @@ function renderPublicationPreview(draft) {
         ${renderPublicationEditor(draft)}
         ${renderPublicationTemplateGallery(draft)}
         ${renderPublicationMedia(draft.media || [])}
+        ${renderPublicationPageEditor(draft)}
         ${renderPublicationFinalDocument(draft)}
         <div class="publication-stats">
           <article><span>${t("metrics.experiences")}</span><strong>${draft.stats.experiences}</strong></article>
@@ -18950,8 +19265,101 @@ function renderPublicationEditor(draft) {
   `;
 }
 
+function renderPublicationPageEditor(draft) {
+  const pages = normalizePublicationPages(draft);
+  draft.pages = pages;
+  return `
+    <section class="publication-page-editor">
+      <div class="publication-section-heading">
+        <div>
+          <h3>${escapeHtml(state.language === "en" ? "2. Edit publication pages" : "2. Editar paginas de la publicacion")}</h3>
+          <p class="card-meta">${escapeHtml(state.language === "en" ? "Each page has a purpose, layout and editable text. This is the structure used by the ReportLab PDF." : "Cada pagina tiene proposito, maqueta y texto editable. Esta es la estructura que usa el PDF ReportLab.")}</p>
+        </div>
+        <span>${pages.length} ${escapeHtml(state.language === "en" ? "pages" : "paginas")}</span>
+      </div>
+      <div class="publication-page-grid">
+        ${pages.map((page, index) => renderPublicationPageEditorCard(page, index)).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function renderPublicationPageEditorCard(page, index) {
+  return `
+    <article class="publication-page-card page-${escapeHtml(page.pageType)}">
+      <header>
+        <span>${escapeHtml(state.language === "en" ? `Page ${page.pageNumber}` : `Pagina ${page.pageNumber}`)}</span>
+        <strong>${escapeHtml(getPublicationPageTypeLabel(page.pageType))}</strong>
+        <small>${escapeHtml(page.layoutTemplate)}</small>
+      </header>
+      <label>
+        ${escapeHtml(state.language === "en" ? "Page title" : "Titulo de pagina")}
+        <input class="publication-edit-control" data-publication-page-index="${index}" data-publication-page-field="title" type="text" value="${escapeHtml(page.title)}" />
+      </label>
+      <label>
+        ${escapeHtml(state.language === "en" ? "Subtitle" : "Subtitulo")}
+        <input class="publication-edit-control" data-publication-page-index="${index}" data-publication-page-field="subtitle" type="text" value="${escapeHtml(page.subtitle)}" />
+      </label>
+      <label>
+        ${escapeHtml(state.language === "en" ? "Page text" : "Texto de pagina")}
+        <textarea class="publication-edit-control" data-publication-page-index="${index}" data-publication-page-field="body" rows="5">${escapeHtml(page.body)}</textarea>
+      </label>
+    </article>
+  `;
+}
+
+function getPublicationPageTypeLabel(type) {
+  const labels = state.language === "en"
+    ? {
+        cover: "Cover",
+        summary: "Summary",
+        story: "Story",
+        timeline: "Timeline",
+        media: "Media",
+        evidence: "Evidence",
+        channel: "Channel",
+        closing: "Closing",
+        slides: "Slides",
+        captions: "Captions",
+        people_places: "People and places",
+        memory: "Memory",
+        scenes: "Scenes",
+        voiceover: "Voiceover",
+        letter: "Letter",
+        annex: "Annexes",
+        chapters: "Chapters",
+        actions: "Actions",
+        findings: "Findings",
+        questions: "Questions",
+      }
+    : {
+        cover: "Portada",
+        summary: "Resumen",
+        story: "Historia",
+        timeline: "Momentos",
+        media: "Multimedia",
+        evidence: "Evidencia",
+        channel: "Canal",
+        closing: "Cierre",
+        slides: "Laminas",
+        captions: "Textos",
+        people_places: "Personas y lugares",
+        memory: "Memoria",
+        scenes: "Escenas",
+        voiceover: "Voz",
+        letter: "Carta",
+        annex: "Anexos",
+        chapters: "Capitulos",
+        actions: "Acciones",
+        findings: "Hallazgos",
+        questions: "Preguntas",
+      };
+  return labels[type] || type;
+}
+
 function renderPublicationFinalDocument(draft) {
   const media = getApprovedPublicationMedia(draft);
+  const pages = normalizePublicationPages(draft);
   return `
     <section class="publication-final-document">
       <div class="publication-section-heading">
@@ -18959,17 +19367,31 @@ function renderPublicationFinalDocument(draft) {
           <h3>${escapeHtml(t("labels.publicationFinalDocument"))}</h3>
           <p class="card-meta">${escapeHtml(t("labels.publicationFinalDocumentHelp"))}</p>
         </div>
-        <span>${media.length} ${escapeHtml(t("metrics.media"))}</span>
+        <span>${pages.length} ${escapeHtml(state.language === "en" ? "pages" : "paginas")} · ${media.length} ${escapeHtml(t("metrics.media"))}</span>
       </div>
       <article>
-        <h2 data-publication-final="title">${escapeHtml(draft.title)}</h2>
-        <p data-publication-final="summary">${escapeHtml(draft.summary)}</p>
-        ${media.length ? `<div class="publication-final-media">${media.map(renderPublicationFinalMediaItem).join("")}</div>` : ""}
-        <pre data-publication-final="body">${escapeHtml(draft.body)}</pre>
+        ${pages.map((page) => renderPublicationFinalPage(page, media)).join("")}
       </article>
     </section>
   `;
 }
+
+function renderPublicationFinalPage(page, media) {
+  const pageMedia = (media || []).filter((item) => (page.mediaIds || []).includes(item.id));
+  return `
+    <section class="publication-final-page publication-final-page-${escapeHtml(page.pageType)}">
+      <div class="publication-final-page-meta">
+        <span>${escapeHtml(state.language === "en" ? `Page ${page.pageNumber}` : `Pagina ${page.pageNumber}`)}</span>
+        <strong>${escapeHtml(getPublicationPageTypeLabel(page.pageType))}</strong>
+      </div>
+      <h2>${escapeHtml(page.title)}</h2>
+      ${page.subtitle ? `<p class="publication-page-subtitle">${escapeHtml(page.subtitle)}</p>` : ""}
+      ${pageMedia.length ? `<div class="publication-final-media">${pageMedia.map(renderPublicationFinalMediaItem).join("")}</div>` : ""}
+      <pre>${escapeHtml(page.body)}</pre>
+    </section>
+  `;
+}
+
 
 function renderPublicationFinalMediaItem(item) {
   const caption = renderPublicationMediaCaption(item);
@@ -19415,6 +19837,27 @@ function handlePublicationMediaSelection(event) {
 }
 
 function handlePublicationDraftEdit(event) {
+  const pageField = event.target.closest("[data-publication-page-field]");
+  if (pageField) {
+    const draft = state.currentPublicationDraft || state.publicationDrafts[0];
+    if (!draft) return;
+    const index = Number(pageField.dataset.publicationPageIndex);
+    const key = pageField.dataset.publicationPageField;
+    if (!Number.isInteger(index) || !["title", "subtitle", "body"].includes(key)) return;
+    const pages = normalizePublicationPages(draft);
+    if (!pages[index]) return;
+    pages[index] = { ...pages[index], [key]: pageField.value };
+    draft.pages = pages;
+    draft.approvalStatus = "review";
+    draft.approvedAt = "";
+    addPublicationHistory(draft, "edited", state.language === "en" ? `Page ${index + 1}` : `Pagina ${index + 1}`, { coalesceMs: 15000 });
+    state.currentPublicationDraft = draft;
+    state.publicationDrafts = state.publicationDrafts.map((item) => (item.id === draft.id ? draft : item));
+    savePublicationDrafts();
+    document.getElementById("publicationStatus").textContent = t("labels.publicationSaved");
+    renderPublicationDraftListOnly();
+    return;
+  }
   const field = event.target.closest("[data-publication-field]");
   if (!field) return;
   const draft = state.currentPublicationDraft || state.publicationDrafts[0];
@@ -19666,6 +20109,7 @@ async function copyTextToClipboard(text) {
 
 function buildPublicationHtml(draft) {
   const approvedMedia = getApprovedPublicationMedia(draft).filter((item) => item.url || item.dataUrl);
+  const pages = normalizePublicationPages(draft);
   const templateId = getPublicationTemplateId(draft);
   const exportClass = `template-${templateId}`;
   const approvalText = displayPublicationApprovalStatus(draft.approvalStatus);
@@ -19683,6 +20127,25 @@ function buildPublicationHtml(draft) {
         )
         .join("")}</div></section>`
     : "";
+  const pageHtml = pages
+    .map((page) => {
+      const pageMedia = approvedMedia.filter((item) => (page.mediaIds || []).includes(item.id));
+      const pageMediaHtml = pageMedia.length
+        ? `<div class="media">${pageMedia
+            .map((item) =>
+              item.type.startsWith("image/")
+                ? `<figure><img src="${escapeHtml(item.url || item.dataUrl)}" alt="${escapeHtml(item.name)}" /><figcaption>${escapeHtml(buildPublicationExportCaption(item))}</figcaption></figure>`
+                : item.type.startsWith("video/")
+                  ? `<figure><video src="${escapeHtml(item.url || item.dataUrl)}" controls></video><figcaption>${escapeHtml(buildPublicationExportCaption(item))}</figcaption></figure>`
+                  : item.type.startsWith("audio/")
+                    ? `<figure><audio src="${escapeHtml(item.url || item.dataUrl)}" controls></audio><figcaption>${escapeHtml(buildPublicationExportCaption(item))}</figcaption></figure>`
+                    : `<p><strong>${escapeHtml(getPublicationMediaKindLabel(item))}:</strong> ${escapeHtml(buildPublicationExportCaption(item))}<br /><a href="${escapeHtml(item.url || item.dataUrl)}" download="${escapeHtml(item.name || "vibe-media")}" target="_blank" rel="noopener noreferrer">${escapeHtml(getPublicationMediaActionLabel(item))}</a></p>`,
+            )
+            .join("")}</div>`
+        : "";
+      return `<section class="publication-export-page page-${escapeHtml(page.pageType)}"><p class="meta">${escapeHtml(state.language === "en" ? `Page ${page.pageNumber}` : `Pagina ${page.pageNumber}`)} - ${escapeHtml(getPublicationPageTypeLabel(page.pageType))}</p><h2>${escapeHtml(page.title)}</h2>${page.subtitle ? `<p class="approval">${escapeHtml(page.subtitle)}</p>` : ""}${pageMediaHtml}<pre>${escapeHtml(page.body)}</pre></section>`;
+    })
+    .join("");
   return `<!doctype html>
 <html lang="${state.language}">
 <head><meta charset="utf-8" /><title>${escapeHtml(draft.title)}</title>
@@ -19694,6 +20157,7 @@ article{max-width:860px;margin:auto}
 .meta,.approval{color:#627069}
 .approval{padding:10px 12px;border:1px solid #dce3de;border-radius:8px;background:#f7fafc;break-inside:avoid;page-break-inside:avoid}
 .cover{padding:24px;border:1px solid #dce3de;border-radius:8px;background:#eef3ef;break-inside:avoid;page-break-inside:avoid}
+.publication-export-page{padding:24px;border:1px solid #dce3de;border-radius:8px;background:#fff;break-inside:avoid;page-break-inside:avoid}
 section{margin-top:18px}
 pre{white-space:pre-wrap;font-family:inherit;border:1px solid #dce3de;border-radius:8px;padding:16px;break-inside:auto}
 .media{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
@@ -19708,7 +20172,7 @@ figcaption{color:#627069;font-size:12px;margin-top:4px;overflow-wrap:anywhere}
 .template-story-script pre{border-left:5px solid #c87913}.template-story-script .cover{background:#fff7ed}
 @media print{.cover,.media figure{break-inside:avoid;page-break-inside:avoid}h1,h2,h3{break-after:avoid;page-break-after:avoid}p,pre{orphans:3;widows:3}}
 </style></head>
-<body class="${escapeHtml(exportClass)}"><article><section class="cover"><p class="meta">${escapeHtml(displayPublicationType(draft.type))} · ${escapeHtml(displayPublicationStyle(draft.style))} · ${escapeHtml(draft.channel)}</p><h1>${escapeHtml(draft.title)}</h1></section><p class="approval"><strong>${escapeHtml(t("labels.publicationApprovalTitle"))}:</strong> ${escapeHtml(approvalText)}${escapeHtml(approvedDate)}</p><p>${escapeHtml(draft.summary)}</p>${mediaHtml}<pre>${escapeHtml(draft.body)}</pre><p class="meta">${escapeHtml(t("labels.publicationPrivacyNote"))}</p></article></body></html>`;
+<body class="${escapeHtml(exportClass)}"><article><section class="cover"><p class="meta">${escapeHtml(displayPublicationType(draft.type))} · ${escapeHtml(displayPublicationStyle(draft.style))} · ${escapeHtml(draft.channel)}</p><h1>${escapeHtml(draft.title)}</h1></section><p class="approval"><strong>${escapeHtml(t("labels.publicationApprovalTitle"))}:</strong> ${escapeHtml(approvalText)}${escapeHtml(approvedDate)}</p><p>${escapeHtml(draft.summary)}</p>${pageHtml || mediaHtml}<p class="meta">${escapeHtml(t("labels.publicationPrivacyNote"))}</p></article></body></html>`;
 }
 
 function exportCurrentPublicationMarkdown() {
@@ -19743,6 +20207,7 @@ function exportCurrentPublicationPackage() {
     title: draft.title,
     summary: draft.summary,
     body: draft.body,
+    pages: normalizePublicationPages(draft),
     html: buildPublicationHtml(draft),
     markdown: buildPublicationMarkdown(draft),
     media: media.map((item) => ({
@@ -19771,6 +20236,7 @@ function exportCurrentPublicationPackage() {
 }
 
 function buildPublicationMarkdown(draft) {
+  const pages = normalizePublicationPages(draft);
   const labels = state.language === "en"
     ? {
         type: "Type",
@@ -19801,7 +20267,9 @@ ${draft.summary}
 
 ${formatPublicationMediaMarkdown(getApprovedPublicationMedia(draft))}
 
-${draft.body}
+${pages.map((page) => `## ${page.pageNumber}. ${page.title}
+
+${page.subtitle ? `${page.subtitle}\n\n` : ""}${page.body}`).join("\n\n")}
 
 > ${t("labels.publicationPrivacyNote")}
 `;
