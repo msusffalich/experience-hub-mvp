@@ -12,6 +12,7 @@ const files = {
   pythonInstall: readFileSync("scripts/install-python-deps.mjs", "utf8"),
   reportlabVerify: readFileSync("scripts/verify-reportlab.mjs", "utf8"),
   outputPdfVerify: readFileSync("scripts/verify-output-pdfs.mjs", "utf8"),
+  pwaVerify: readFileSync("scripts/verify-pwa-release.mjs", "utf8"),
   reportPdf: readFileSync("scripts/report_pdf_reportlab.py", "utf8"),
   insightsPdf: readFileSync("scripts/insights_pdf_reportlab.py", "utf8"),
   publicationPdf: readFileSync("scripts/publication_pdf_reportlab.py", "utf8"),
@@ -236,6 +237,8 @@ assert(files.pythonInstall.includes("RAILWAY_PROJECT_ID") && files.pythonInstall
 assert(files.reportlabVerify.includes("import reportlab") && files.reportlabVerify.includes("PYTHONPATH"), "ReportLab verifier must import ReportLab with the bundled .python path.");
 assert(files.packageJson.includes("\"verify:outputs\"") && files.packageJson.includes("verify-output-pdfs"), "package.json must expose full PDF output verification.");
 assert(files.outputPdfVerify.includes("report_pdf_reportlab.py") && files.outputPdfVerify.includes("publication_pdf_reportlab.py") && files.outputPdfVerify.includes("manual_pdf_reportlab.py"), "Output PDF verifier must render report, publication, and manual PDFs.");
+assert(files.packageJson.includes("\"verify:pwa\"") && files.packageJson.includes("\"verify:release\""), "package.json must expose PWA and release verification scripts.");
+assert(files.pwaVerify.includes("manifest.webmanifest") && files.pwaVerify.includes("service-worker.js") && files.pwaVerify.includes("VIBE_RELEASE_URL"), "PWA verifier must check manifest, service worker, and optional production URL.");
 assert(files.server.includes("PYTHONPATH") && files.server.includes(".python"), "Server must expose bundled Python packages to ReportLab scripts.");
 assert(!files.index.includes('data-daily-flow="horoscope"'), "Daily should not expose horoscope until the module is reliable.");
 assert(files.app.includes("function experienceMatchesPilotParticipant"), "Participant filtering must support legacy records by participant name.");
