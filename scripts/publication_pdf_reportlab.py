@@ -715,6 +715,36 @@ def channel_cards(rows):
     return flow
 
 
+def distribution_kit(draft, media, all_media):
+    kit = draft.get("distributionKit") or {}
+    channel = draft.get("channel") or "PDF/HTML"
+    subject = kit.get("subject") or short(draft.get("title") or "Publicacion Vibe", 90)
+    short_copy = kit.get("shortCopy") or short(draft.get("summary") or draft.get("body") or "", 260)
+    long_copy = kit.get("longCopy") or short(draft.get("body") or draft.get("summary") or "", 520)
+    caption = kit.get("caption") or f"{short(subject, 80)} - {media_selection_label(all_media, media)}"
+    format_name = kit.get("format") or channel
+    action = kit.get("action") or "Revisar y compartir manualmente"
+    media_instruction = kit.get("mediaInstruction") or media_selection_label(all_media, media)
+    checklist = kit.get("checklist") or [
+        "Revisar privacidad y nombres.",
+        "Confirmar medios seleccionados.",
+        "Usar PDF como registro final.",
+    ]
+    return [
+        section_heading("Kit de salida por canal", f"{channel}: {format_name}. Accion: {action}."),
+        editorial_cards([
+            ("Asunto o titulo", subject, GOLD),
+            ("Texto corto", short_copy, colors.HexColor("#0d7c66")),
+            ("Texto ampliado", long_copy, BLUE),
+            ("Leyenda o gancho", caption, colors.HexColor("#7a5cc8")),
+        ]),
+        Spacer(1, 10),
+        text_card("Manejo multimedia", media_instruction, colors.HexColor("#0d7c66")),
+        Spacer(1, 8),
+        checklist_cards("\n".join(checklist), colors.HexColor("#f2b84b")),
+    ]
+
+
 def media_for_page(media, page):
     ids = set(page.get("mediaIds") or [])
     if not ids:
@@ -931,6 +961,8 @@ def build_paged_publication(title, summary, draft, stats, highlights, all_media,
         if index < len(visible_pages) - 1:
             flow.append(PageBreak())
     flow.extend([
+        PageBreak(),
+        *distribution_kit(draft, media, all_media),
         PageBreak(),
         section_heading("Salida y canal", "Preparacion final para compartir sin publicar automaticamente."),
         *channel_cards(channel_rows(draft.get("channel"))),

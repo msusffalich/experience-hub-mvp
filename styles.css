@@ -6963,6 +6963,88 @@ button.asset-processing-summary-card {
   background: rgba(13, 124, 102, 0.12);
 }
 
+.publication-distribution-kit {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid rgba(13, 124, 102, 0.24);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(13, 124, 102, 0.08), rgba(46, 110, 166, 0.08)),
+    var(--surface);
+}
+
+.publication-channel-brief,
+.publication-copy-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+  gap: 10px;
+  min-width: 0;
+}
+
+.publication-channel-brief article,
+.publication-copy-block {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.84);
+}
+
+.publication-channel-brief span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.publication-channel-brief strong {
+  color: var(--ink);
+  font-size: 15px;
+}
+
+.publication-channel-brief p,
+.publication-copy-block p {
+  margin: 0;
+  color: var(--text);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.publication-copy-block > div {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.publication-copy-block .ghost-button {
+  padding: 5px 8px;
+  font-size: 12px;
+}
+
+.publication-checklist-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.publication-checklist-strip span {
+  max-width: 100%;
+  padding: 6px 9px;
+  border: 1px solid rgba(13, 124, 102, 0.22);
+  border-radius: 999px;
+  background: rgba(239, 248, 244, 0.9);
+  color: var(--accent-dark);
+  font-size: 12px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
 .publication-template-magazine-story .publication-final-document h2 {
   font-size: 32px;
 }

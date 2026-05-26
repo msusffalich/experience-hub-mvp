@@ -1,4 +1,4 @@
-const APP_VERSION = "20260525-publication-visual-pdf-436";
+const APP_VERSION = "20260525-publication-channel-kit-437";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2380,9 +2380,10 @@ const manualContent = {
         "La agenda usa estados del blueprint: planificado, confirmado, reprogramado, cancelado, completado, pendiente de seguimiento y convertido en experiencia.",
         "Los eventos de Agenda se guardan localmente y se sincronizan con el backend para verse en otros dispositivos con la misma sesión. Si la tabla agenda_events aún no existe en Supabase, el servidor usa un respaldo central temporal hasta aplicar database/agenda-events.sql.",
         "Al convertir un evento, la app crea una experiencia vinculada con duración, ubicación, participantes y notas de origen para mantener la continuidad Agenda -> Evento -> Experiencia -> Memoria viva.",
-        "Publicaciones Inteligentes genera borradores locales desde el reporte filtrado o las últimas experiencias. Permite elegir tipo, estilo narrativo, canal, incluir o excluir multimedia sugerida, aplicar limpieza de privacidad y exportar como PDF ReportLab, HTML, Markdown o paquete editorial JSON.",
+        "Publicaciones Inteligentes genera borradores locales desde el reporte filtrado o las últimas experiencias. Permite elegir tipo, estilo narrativo, canal, incluir o excluir multimedia sugerida, aplicar limpieza de privacidad, revisar un kit de salida por canal y exportar como PDF ReportLab, HTML, Markdown o paquete editorial JSON.",
         "Los tipos de publicación no son iguales: publicación social rápida sirve para mensajes breves, reporte narrativo para contar un periodo, álbum experiencial para memorias visuales, resumen ejecutivo para enviar evidencia clara y guion de story/reel para una secuencia corta.",
         "Los nuevos formatos amplían el uso por canal: carrusel visual para Instagram, Facebook o LinkedIn; carta/email largo para compartir una memoria personal; dossier PDF para un documento más formal; ficha de salud para explicar información médica o biométrica en lenguaje claro; y blog/web para publicar una historia más extensa.",
+        "El kit de salida por canal separa asunto, texto corto, texto ampliado, leyenda/gancho, manejo multimedia y checklist. Sirve para saber qué copiar, qué revisar y qué acción hacer según WhatsApp, Instagram, Facebook, LinkedIn, Email, Blog/Web o PDF.",
         "Aprobación humana marca si el borrador está en revisión o aprobado. Cualquier edición, cambio de diseño o curaduría multimedia lo devuelve a revisión.",
         "Historial del borrador registra generación, ediciones, cambios de multimedia, diseño, aprobación y exportaciones recientes.",
         "Multimedia sugerida significa archivos ya adjuntos a las experiencias fuente. La app los propone para la publicación; incluirlos o excluirlos no modifica ni borra la experiencia original.",
@@ -6759,6 +6760,7 @@ function setupActions() {
   document.getElementById("publicationPreview").addEventListener("change", handlePublicationMediaSelection);
   document.getElementById("publicationPreview").addEventListener("input", handlePublicationDraftEdit);
   document.getElementById("publicationPreview").addEventListener("click", handlePublicationMediaBulkAction);
+  document.getElementById("publicationPreview").addEventListener("click", handlePublicationDistributionCopy);
   document.getElementById("publicationPreview").addEventListener("click", handlePublicationTemplateClick);
   document.getElementById("publicationPreview").addEventListener("click", handlePublicationApprovalClick);
   document.getElementById("contextPrimaryButton").addEventListener("click", applyPrimaryContextLocation);
@@ -18924,6 +18926,7 @@ function renderPublicationPreview(draft) {
         ${renderPublicationTemplateGallery(draft)}
         ${renderPublicationMedia(draft.media || [])}
         ${renderPublicationPageEditor(draft)}
+        ${renderPublicationDistributionKit(draft)}
         ${renderPublicationFinalDocument(draft)}
         <div class="publication-stats">
           <article><span>${t("metrics.experiences")}</span><strong>${draft.stats.experiences}</strong></article>
@@ -19098,6 +19101,203 @@ function renderPublicationChannelMatrix(draft) {
       </div>
     </div>
   `;
+}
+
+function renderPublicationDistributionKit(draft) {
+  const kit = buildPublicationDistributionKit(draft);
+  return `
+    <section class="publication-distribution-kit">
+      <div class="publication-section-heading">
+        <div>
+          <h3>${escapeHtml(state.language === "en" ? "3. Channel distribution kit" : "3. Kit de salida por canal")}</h3>
+          <p class="card-meta">${escapeHtml(kit.brief)}</p>
+        </div>
+        <span>${escapeHtml(draft.channel || "Canal")}</span>
+      </div>
+      <div class="publication-channel-brief">
+        <article>
+          <span>${escapeHtml(state.language === "en" ? "Recommended format" : "Formato recomendado")}</span>
+          <strong>${escapeHtml(kit.format)}</strong>
+          <p>${escapeHtml(kit.reason)}</p>
+        </article>
+        <article>
+          <span>${escapeHtml(state.language === "en" ? "Media handling" : "Manejo multimedia")}</span>
+          <strong>${escapeHtml(kit.mediaMode)}</strong>
+          <p>${escapeHtml(kit.mediaInstruction)}</p>
+        </article>
+        <article>
+          <span>${escapeHtml(state.language === "en" ? "User action" : "Accion del usuario")}</span>
+          <strong>${escapeHtml(kit.action)}</strong>
+          <p>${escapeHtml(kit.actionDetail)}</p>
+        </article>
+      </div>
+      <div class="publication-copy-grid">
+        ${renderPublicationCopyBlock("subject", state.language === "en" ? "Subject / title" : "Asunto / titulo", kit.subject)}
+        ${renderPublicationCopyBlock("short", state.language === "en" ? "Short copy" : "Texto corto", kit.shortCopy)}
+        ${renderPublicationCopyBlock("long", state.language === "en" ? "Long copy" : "Texto ampliado", kit.longCopy)}
+        ${renderPublicationCopyBlock("caption", state.language === "en" ? "Caption / hook" : "Leyenda / gancho", kit.caption)}
+      </div>
+      <div class="publication-checklist-strip">
+        ${kit.checklist.map((item) => `<span>${escapeHtml(item)}</span>`).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function renderPublicationCopyBlock(key, label, value) {
+  return `
+    <article class="publication-copy-block">
+      <div>
+        <strong>${escapeHtml(label)}</strong>
+        <button class="ghost-button" type="button" data-publication-copy-kit="${escapeHtml(key)}">
+          ${escapeHtml(state.language === "en" ? "Copy" : "Copiar")}
+        </button>
+      </div>
+      <p>${escapeHtml(value)}</p>
+    </article>
+  `;
+}
+
+function buildPublicationDistributionKit(draft) {
+  const channel = draft?.channel || "PDF/HTML";
+  const profile = getPublicationChannelProfile(channel);
+  const includedMedia = getApprovedPublicationMedia(draft || {});
+  const visualCount = includedMedia.filter((item) => String(item.type || "").startsWith("image/") || String(item.type || "").startsWith("video/")).length;
+  const supportCount = includedMedia.length - visualCount;
+  const summary = shortPublicationText(draft?.summary || draft?.body || draft?.title || "", 260);
+  const action = shortPublicationText((normalizePublicationPages(draft || {}).find?.((page) => page.pageType === "actions" || page.pageType === "closing")?.body) || draft?.purpose || "", 220);
+  const subject = buildPublicationSubject(draft, profile);
+  const shortCopy = buildPublicationChannelCopy(draft, profile, "short", summary, action);
+  const longCopy = buildPublicationChannelCopy(draft, profile, "long", summary, action);
+  const caption = buildPublicationChannelCopy(draft, profile, "caption", summary, action);
+  const mediaInstruction = includedMedia.length
+    ? state.language === "en"
+      ? `${includedMedia.length} selected asset(s): ${visualCount} visual and ${supportCount} support file(s). Use only the assets that reinforce the story.`
+      : `${includedMedia.length} activo(s) seleccionados: ${visualCount} visuales y ${supportCount} de apoyo. Usa solo los activos que refuerzan la historia.`
+    : state.language === "en"
+      ? "No media selected. Publish as text or return to Multimedia selection."
+      : "No hay multimedia seleccionada. Publica como texto o vuelve a la seleccion multimedia.";
+  return {
+    ...profile,
+    subject,
+    shortCopy,
+    longCopy,
+    caption,
+    mediaInstruction,
+    checklist: buildPublicationChannelChecklist(draft, profile, includedMedia),
+  };
+}
+
+function getPublicationChannelProfile(channel) {
+  const profiles = {
+    WhatsApp: {
+      format: state.language === "en" ? "Short message or personal recap" : "Mensaje breve o resumen personal",
+      brief: state.language === "en" ? "Best for quick sharing with context and one clear next step." : "Ideal para compartir rapido con contexto y una accion clara.",
+      reason: state.language === "en" ? "People read it on mobile and expect direct language." : "La gente lo lee en movil y espera lenguaje directo.",
+      mediaMode: state.language === "en" ? "Few media assets" : "Pocos medios",
+      action: state.language === "en" ? "Copy or open WhatsApp" : "Copiar o abrir WhatsApp",
+      actionDetail: state.language === "en" ? "The app prepares the text; you review and send." : "La app prepara el texto; tu revisas y envias.",
+    },
+    Instagram: {
+      format: state.language === "en" ? "Carousel, story or reel script" : "Carrusel, historia o guion de reel",
+      brief: state.language === "en" ? "Best for visual memory with a strong opening." : "Ideal para memoria visual con una apertura fuerte.",
+      reason: state.language === "en" ? "Images and short captions carry the message." : "Las imagenes y textos cortos sostienen el mensaje.",
+      mediaMode: state.language === "en" ? "Visual first" : "Visual primero",
+      action: state.language === "en" ? "Copy and paste" : "Copiar y pegar",
+      actionDetail: state.language === "en" ? "Direct posting needs a future connector/API." : "La publicacion directa requiere un conector/API futuro.",
+    },
+    Facebook: {
+      format: state.language === "en" ? "Album, story or family update" : "Album, historia o actualizacion familiar",
+      brief: state.language === "en" ? "Best for a warmer narrative with selected media." : "Ideal para una narrativa mas calida con medios seleccionados.",
+      reason: state.language === "en" ? "It tolerates more context than short social posts." : "Permite mas contexto que una publicacion social corta.",
+      mediaMode: state.language === "en" ? "Images plus context" : "Imagenes con contexto",
+      action: state.language === "en" ? "Copy and paste" : "Copiar y pegar",
+      actionDetail: state.language === "en" ? "The app prepares content; Facebook posting remains manual." : "La app prepara contenido; publicar en Facebook sigue siendo manual.",
+    },
+    LinkedIn: {
+      format: state.language === "en" ? "Professional insight or learning carousel" : "Hallazgo profesional o carrusel de aprendizaje",
+      brief: state.language === "en" ? "Best for lessons, decisions, projects and work evidence." : "Ideal para aprendizajes, decisiones, proyectos y evidencia laboral.",
+      reason: state.language === "en" ? "It needs a clear point of view and useful evidence." : "Necesita un punto de vista claro y evidencia util.",
+      mediaMode: state.language === "en" ? "Evidence and charts" : "Evidencia y graficos",
+      action: state.language === "en" ? "Copy and paste" : "Copiar y pegar",
+      actionDetail: state.language === "en" ? "Review tone before posting publicly." : "Revisa el tono antes de publicar en publico.",
+    },
+    Email: {
+      format: state.language === "en" ? "Letter, executive note or health brief" : "Carta, nota ejecutiva o ficha de salud",
+      brief: state.language === "en" ? "Best for sending a complete message to one person or group." : "Ideal para enviar un mensaje completo a una persona o grupo.",
+      reason: state.language === "en" ? "Email supports longer text and annexes." : "El email soporta texto mas largo y anexos.",
+      mediaMode: state.language === "en" ? "Annexes and links" : "Anexos y enlaces",
+      action: state.language === "en" ? "Open email draft" : "Abrir borrador de email",
+      actionDetail: state.language === "en" ? "Subject and body are prepared; attachments are reviewed separately." : "Asunto y cuerpo quedan preparados; adjuntos se revisan aparte.",
+    },
+    "Blog/Web": {
+      format: state.language === "en" ? "Article, dossier or visual memory" : "Articulo, dossier o memoria visual",
+      brief: state.language === "en" ? "Best for a polished piece that can live on a page." : "Ideal para una pieza pulida que pueda vivir en una pagina.",
+      reason: state.language === "en" ? "Web output can combine narrative, media and references." : "La salida web combina narrativa, medios y referencias.",
+      mediaMode: state.language === "en" ? "Complete media set" : "Conjunto multimedia completo",
+      action: state.language === "en" ? "Export HTML/PDF" : "Exportar HTML/PDF",
+      actionDetail: state.language === "en" ? "Use PDF for fixed reading and HTML for web layout." : "Usa PDF para lectura fija y HTML para maqueta web.",
+    },
+  };
+  return profiles[channel] || {
+    format: state.language === "en" ? "Edited PDF or HTML" : "PDF o HTML editado",
+    brief: state.language === "en" ? "Best for final review, printing or sharing as file." : "Ideal para revision final, impresion o envio como archivo.",
+    reason: state.language === "en" ? "The document keeps structure and media references." : "El documento conserva estructura y referencias multimedia.",
+    mediaMode: state.language === "en" ? "Selected media" : "Medios seleccionados",
+    action: state.language === "en" ? "Export file" : "Exportar archivo",
+    actionDetail: state.language === "en" ? "Download PDF as the main output." : "Descarga PDF como salida principal.",
+  };
+}
+
+function buildPublicationSubject(draft, profile) {
+  const title = shortPublicationText(draft?.title || (state.language === "en" ? "Vibe publication" : "Publicacion Vibe"), 72);
+  if (draft?.channel === "Email") return `${title} - ${profile.format}`;
+  if (draft?.channel === "LinkedIn") return `${title}: ${state.language === "en" ? "what I learned" : "lo que aprendi"}`;
+  return title;
+}
+
+function buildPublicationChannelCopy(draft, profile, mode, summary, action) {
+  const title = draft?.title || (state.language === "en" ? "Vibe publication" : "Publicacion Vibe");
+  const mediaCount = getApprovedPublicationMedia(draft || {}).length;
+  if (mode === "short") {
+    return state.language === "en"
+      ? `${title}. ${summary} ${action ? `Next: ${action}` : ""}`.trim()
+      : `${title}. ${summary} ${action ? `Siguiente: ${action}` : ""}`.trim();
+  }
+  if (mode === "caption") {
+    const mediaLine = mediaCount
+      ? state.language === "en" ? `${mediaCount} selected media asset(s).` : `${mediaCount} activo(s) multimedia seleccionados.`
+      : state.language === "en" ? "Text-only version." : "Version solo texto.";
+    return state.language === "en"
+      ? `${shortPublicationText(title, 84)} - ${profile.format}. ${mediaLine}`
+      : `${shortPublicationText(title, 84)} - ${profile.format}. ${mediaLine}`;
+  }
+  return state.language === "en"
+    ? `${title}\n\n${summary}\n\nWhy it matters: ${draft?.purpose || profile.reason}\n\nSuggested close: ${action || profile.actionDetail}`
+    : `${title}\n\n${summary}\n\nPor que importa: ${draft?.purpose || profile.reason}\n\nCierre sugerido: ${action || profile.actionDetail}`;
+}
+
+function buildPublicationChannelChecklist(draft, profile, media) {
+  const items = state.language === "en"
+    ? [
+        "Read title and first paragraph aloud.",
+        "Confirm names, faces, locations and sensitive data.",
+        "Keep only media that improves the story.",
+        "Use PDF for final record; use channel copy for posting.",
+      ]
+    : [
+        "Lee titulo y primer parrafo en voz alta.",
+        "Confirma nombres, rostros, ubicaciones y datos sensibles.",
+        "Deja solo medios que mejoran la historia.",
+        "Usa PDF como registro final; usa el texto de canal para publicar.",
+      ];
+  if (!media.length) {
+    items.push(state.language === "en" ? "Decide if this should remain text-only." : "Decide si debe quedar solo como texto.");
+  }
+  if (profile.action.includes("API") || profile.actionDetail.includes("API")) {
+    items.push(state.language === "en" ? "Direct API publishing is future work." : "La publicacion directa por API queda para una fase futura.");
+  }
+  return items;
 }
 
 function getPublicationFormatHelpText() {
@@ -19794,6 +19994,28 @@ function renderPublicationMediaCaption(item) {
   `;
 }
 
+async function handlePublicationDistributionCopy(event) {
+  const button = event.target.closest("[data-publication-copy-kit]");
+  if (!button) return;
+  const draft = state.currentPublicationDraft || state.publicationDrafts[0];
+  if (!draft) return;
+  const key = button.dataset.publicationCopyKit;
+  const kit = buildPublicationDistributionKit(draft);
+  const value = {
+    subject: kit.subject,
+    short: kit.shortCopy,
+    long: kit.longCopy,
+    caption: kit.caption,
+  }[key];
+  if (!value) return;
+  const copied = await copyTextToClipboard(value);
+  addPublicationHistory(draft, "exported", state.language === "en" ? `Copied ${key}` : `Copiado ${key}`);
+  persistPublicationDraft(draft);
+  document.getElementById("publicationStatus").textContent = copied
+    ? (state.language === "en" ? "Text copied for the selected channel." : "Texto copiado para el canal seleccionado.")
+    : (state.language === "en" ? "Could not copy automatically. Select the text manually." : "No se pudo copiar automaticamente. Selecciona el texto manualmente.");
+}
+
 function handlePublicationMediaBulkAction(event) {
   const button = event.target.closest("[data-publication-media-bulk]");
   if (!button) return;
@@ -20114,6 +20336,7 @@ function buildPublicationHtml(draft) {
   const exportClass = `template-${templateId}`;
   const approvalText = displayPublicationApprovalStatus(draft.approvalStatus);
   const approvedDate = draft.approvedAt ? ` · ${formatDate(draft.approvedAt)}` : "";
+  const kit = buildPublicationDistributionKit(draft);
   const mediaHtml = approvedMedia.length
     ? `<section><h2>${escapeHtml(t("labels.publicationMedia"))}</h2><div class="media">${approvedMedia
         .map((item) =>
@@ -20172,7 +20395,7 @@ figcaption{color:#627069;font-size:12px;margin-top:4px;overflow-wrap:anywhere}
 .template-story-script pre{border-left:5px solid #c87913}.template-story-script .cover{background:#fff7ed}
 @media print{.cover,.media figure{break-inside:avoid;page-break-inside:avoid}h1,h2,h3{break-after:avoid;page-break-after:avoid}p,pre{orphans:3;widows:3}}
 </style></head>
-<body class="${escapeHtml(exportClass)}"><article><section class="cover"><p class="meta">${escapeHtml(displayPublicationType(draft.type))} · ${escapeHtml(displayPublicationStyle(draft.style))} · ${escapeHtml(draft.channel)}</p><h1>${escapeHtml(draft.title)}</h1></section><p class="approval"><strong>${escapeHtml(t("labels.publicationApprovalTitle"))}:</strong> ${escapeHtml(approvalText)}${escapeHtml(approvedDate)}</p><p>${escapeHtml(draft.summary)}</p>${pageHtml || mediaHtml}<p class="meta">${escapeHtml(t("labels.publicationPrivacyNote"))}</p></article></body></html>`;
+<body class="${escapeHtml(exportClass)}"><article><section class="cover"><p class="meta">${escapeHtml(displayPublicationType(draft.type))} · ${escapeHtml(displayPublicationStyle(draft.style))} · ${escapeHtml(draft.channel)}</p><h1>${escapeHtml(draft.title)}</h1></section><p class="approval"><strong>${escapeHtml(t("labels.publicationApprovalTitle"))}:</strong> ${escapeHtml(approvalText)}${escapeHtml(approvedDate)}</p><p>${escapeHtml(draft.summary)}</p><section class="publication-export-page"><p class="meta">${escapeHtml(state.language === "en" ? "Channel distribution kit" : "Kit de salida por canal")}</p><h2>${escapeHtml(kit.format)}</h2><p>${escapeHtml(kit.brief)}</p><pre>${escapeHtml(`${kit.subject}\n\n${kit.shortCopy}\n\n${kit.longCopy}`)}</pre></section>${pageHtml || mediaHtml}<p class="meta">${escapeHtml(t("labels.publicationPrivacyNote"))}</p></article></body></html>`;
 }
 
 function exportCurrentPublicationMarkdown() {
@@ -20208,6 +20431,7 @@ function exportCurrentPublicationPackage() {
     summary: draft.summary,
     body: draft.body,
     pages: normalizePublicationPages(draft),
+    distributionKit: buildPublicationDistributionKit(draft),
     html: buildPublicationHtml(draft),
     markdown: buildPublicationMarkdown(draft),
     media: media.map((item) => ({
@@ -20237,6 +20461,7 @@ function exportCurrentPublicationPackage() {
 
 function buildPublicationMarkdown(draft) {
   const pages = normalizePublicationPages(draft);
+  const kit = buildPublicationDistributionKit(draft);
   const labels = state.language === "en"
     ? {
         type: "Type",
@@ -20264,6 +20489,21 @@ function buildPublicationMarkdown(draft) {
 - ${t("labels.publicationApprovalTitle")}: ${displayPublicationApprovalStatus(draft.approvalStatus)}${draft.approvedAt ? ` · ${formatDate(draft.approvedAt)}` : ""}
 
 ${draft.summary}
+
+## ${state.language === "en" ? "Channel distribution kit" : "Kit de salida por canal"}
+
+- ${state.language === "en" ? "Format" : "Formato"}: ${kit.format}
+- ${state.language === "en" ? "Action" : "Accion"}: ${kit.action}
+- ${state.language === "en" ? "Media" : "Multimedia"}: ${kit.mediaInstruction}
+
+### ${state.language === "en" ? "Subject / title" : "Asunto / titulo"}
+${kit.subject}
+
+### ${state.language === "en" ? "Short copy" : "Texto corto"}
+${kit.shortCopy}
+
+### ${state.language === "en" ? "Long copy" : "Texto ampliado"}
+${kit.longCopy}
 
 ${formatPublicationMediaMarkdown(getApprovedPublicationMedia(draft))}
 
@@ -27924,7 +28164,7 @@ function buildParallelBacklog() {
       agendaDetail: "Primer MVP activo: calendario visual diario/semanal, eventos locales, estados, conflictos, días bloqueados, importación/exportación .ics y conversión de evento en experiencia.",
       agendaAction: "Abrir Agenda",
       publicationTitle: "Publicaciones Inteligentes",
-      publicationDetail: "MVP activo: aprobación humana, diseños visuales, editor de borradores, documento final, curaduría multimedia, preparación editorial, cierre prepublicación, preparación asistida por canal, paquete editorial y exportación HTML/Markdown/PDF.",
+      publicationDetail: "MVP activo: aprobación humana, diseños visuales, editor de borradores, documento final, curaduría multimedia, kit de salida por canal, cierre prepublicación, paquete editorial y exportación HTML/Markdown/PDF.",
       publicationAction: "Abrir Publicaciones",
     },
     en: {
@@ -27978,7 +28218,7 @@ function buildParallelBacklog() {
       agendaDetail: "First MVP active: visual day/week calendar, local events, states, conflicts, blocked days, .ics import/export, and event-to-experience conversion.",
       agendaAction: "Open Agenda",
       publicationTitle: "Intelligent Publications",
-      publicationDetail: "Active MVP: human approval, visual designs, draft editor, final document, media curation, editorial readiness, pre-publication closure, assisted channel preparation, editorial package, and HTML/Markdown/PDF export.",
+      publicationDetail: "Active MVP: human approval, visual designs, draft editor, final document, media curation, channel distribution kit, pre-publication closure, editorial package, and HTML/Markdown/PDF export.",
       publicationAction: "Open Publications",
     },
   }[state.language] || {};
