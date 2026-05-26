@@ -9,15 +9,17 @@ This folder is a starter skeleton. Flutter SDK is available locally at `C:\Users
 Safe native packaging baseline now in place:
 
 - Android applies both the Android application plugin and Kotlin Android plugin, which is required because the launcher activity is Kotlin.
+- Android uses the pilot package id `io.vibeapp.mobile`, replacing the default Flutter `com.example.vibeapp` placeholder.
 - Android debug packaging is verified. The current debug APK is generated at `build/app/outputs/flutter-apk/app-debug.apk` after setting `JAVA_HOME`, `ANDROID_HOME`, and `ANDROID_SDK_ROOT`.
+- Android bundle packaging is verified for the Play Console path. The current smoke bundle is generated at `build/app/outputs/bundle/release/app-release.aab`; it is not store-ready until real upload signing material is provided.
 - Android declares camera and microphone as optional hardware features. The app can request runtime permissions for capture without excluding pilot devices that lack one of those sensors.
 - Android release builds can use a real upload key when `android/key.properties` exists with `storeFile`, `storePassword`, `keyAlias`, and `keyPassword`. Without those local credentials, release keeps Flutter's debug-key fallback for smoke tests only.
 - iOS has user-facing usage strings for camera, microphone, photo library, and when-in-use location.
 
 Pilot blockers that still need product/account decisions:
 
-- Replace the placeholder package identifiers `com.example.vibeapp` and `com.example.vibeapp.RunnerTests` before store/TestFlight or Play pilot distribution.
 - Add real Android upload signing material locally; do not commit keystores or passwords.
+- Confirm the final production package id before Play Console registration. Changing it after store publication is painful, so treat `io.vibeapp.mobile` as the pilot candidate until product ownership is final.
 - Migrate the Android Gradle/Kotlin stack to Flutter's built-in Kotlin path once all plugins support it. For now, AGP 8.13.1 is pinned because it builds reliably with `file_picker`, `image_picker_android`, `package_info_plus`, and `record_android`.
 - Set the iOS development team, provisioning profile, and final bundle identifier in Xcode once the Apple developer account is selected.
 - Replace default Flutter launcher icons and launch images before external testers receive the app.

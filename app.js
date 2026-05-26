@@ -1,4 +1,4 @@
-const APP_VERSION = "20260526-android-sdk-ready-448";
+const APP_VERSION = "20260526-android-package-id-449";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2118,6 +2118,7 @@ const manualContent = {
         "Vibeapp suma Importar sesión externa: permite traer varios archivos de Meta/Oakley/Ray-Ban, Oura, Apple Health, Samsung Health/Galaxy Watch, Health Connect, galería del teléfono u otro origen, agruparlos en una sola experiencia y conservar metadatos normalizados para procesamiento posterior.",
         "Vibeapp valida cada captura antes de sincronizar: revisa título, texto, eventos, existencia de archivos, tamaño, MIME, vínculo evento-activo y expectativas por origen. Si algo no cuadra, queda en cola con un mensaje entendible antes de tocar el backend.",
         "Vibeapp ahora incluye Compuerta piloto móvil: verifica el backend productivo, confirma sesión, revisa cola local y muestra capacidades listas antes de iniciar una prueba real en teléfono. Android ya declara permisos de red, cámara, audio, ubicación, multimedia y notificaciones para evitar bloqueos básicos de plataforma.",
+        "Vibeapp ya tiene ruta Android verificable: SDK/JDK instalados, paquete piloto io.vibeapp.mobile, APK debug generado y App Bundle release smoke generado. Antes de distribuir por Play Console falta crear la firma release/upload key real y conservarla fuera del repositorio.",
         "Vibeapp incorpora un router local de comandos: una captura escrita o transcrita puede crear nota, iniciar/cerrar experiencia o generar un evento de agenda antes de sincronizar. La pantalla muestra qué entendió Vibe y cambia el botón principal a Guardar nota, Crear agenda, Iniciar experiencia o Cerrar experiencia antes de ejecutar.",
         "El contrato de dispositivos se puede exportar como Markdown o JSON para compartirlo con desarrolladores, integraciones API/MCP o proveedores de wearables.",
         "Activos multimodales incluye Procesar ahora y Procesar visibles. Los documentos de texto se extraen localmente; los PDFs escaneados usan OCR del backend cuando OCR_PROVIDER=openai y OPENAI_API_KEY están configurados; los audios usan transcripción del backend si está configurada; las imágenes usan OCR automático del backend.",
@@ -8024,12 +8025,12 @@ function buildGlobalProgressSnapshot() {
         multimodal: "Multimedia and OCR/analysis",
         multimodalDetail: `${assetAnalysis.withText}/${assetAnalysis.total} assets with analytical text; workflow ${assetWorkflow.score}%.`,
         native: "Vibeapp native",
-        nativeDetail: "Flutter skeleton has auth, command preview/routing, mobile pilot gate, queue, auto-retry, media, agenda, location, biometrics, and a verified Android debug APK; release signing and store packaging remain pending.",
+        nativeDetail: "Flutter skeleton has auth, command preview/routing, mobile pilot gate, queue, auto-retry, media, agenda, location, biometrics, Android package id io.vibeapp.mobile, and a verified debug APK; release signing remains pending.",
         connectors: "Device and service connectors",
         connectorsDetail: "Routes documented for Meta/Oakley, Oura, Apple Health, Samsung Health, Health Connect; direct connectors remain future work.",
         full: "Full product ambition",
         fullDetail: `Estimated full product ${total.full}%; advanced agents, predictive AI, and direct APIs are later phases.`,
-        nextDetail: "Close Android release signing and package identity, then harden publication design/output and device-import flows.",
+        nextDetail: "Close Android release signing, then harden publication design/output and device-import flows.",
       }
     : {
         title: "Estado global de avance",
@@ -8059,12 +8060,12 @@ function buildGlobalProgressSnapshot() {
         multimodal: "Multimedia y OCR/análisis",
         multimodalDetail: `${assetAnalysis.withText}/${assetAnalysis.total} activos con texto analítico; flujo ${assetWorkflow.score}%.`,
         native: "Vibeapp nativa",
-        nativeDetail: "El esqueleto Flutter tiene auth, vista previa de comandos, compuerta piloto móvil, cola, autoreintento, medios, agenda, lugar, biometría y APK Android debug verificado; falta firma release y distribución piloto.",
+        nativeDetail: "El esqueleto Flutter tiene auth, vista previa de comandos, compuerta piloto móvil, cola, autoreintento, medios, agenda, lugar, biometría, paquete Android io.vibeapp.mobile y APK debug verificado; falta firma release.",
         connectors: "Conectores de dispositivos y servicios",
         connectorsDetail: "Rutas documentadas para Meta/Oakley, Oura, Apple Health, Samsung Health y Health Connect; conectores directos quedan futuros.",
         full: "Ambición de producto completo",
         fullDetail: `Producto completo estimado ${total.full}%; agentes avanzados, IA predictiva y APIs directas quedan en fases posteriores.`,
-        nextDetail: "Cerrar firma release e identidad del paquete Android, luego fortalecer diseño/salidas de publicaciones y flujos de importación por dispositivo.",
+        nextDetail: "Cerrar firma release Android, luego fortalecer diseño/salidas de publicaciones y flujos de importación por dispositivo.",
       };
   const tracks = [
     { key: "pwa", title: labels.pwa, score: total.mvp, detail: labels.pwaDetail, view: "dashboard" },
@@ -8089,7 +8090,7 @@ function buildGlobalProgressSnapshot() {
         multimodalTitle: "Asset evidence and OCR review",
         multimodalNext: "Open pending assets, add or accept analytical text, and clear the human review queue.",
         nativeTitle: "Native mobile delivery path",
-        nativeNext: "Create release signing material, replace placeholder package IDs, and prepare the first installable pilot package.",
+        nativeNext: "Create release signing material and prepare the first installable pilot package.",
         connectorsTitle: "Device/service import contract",
         connectorsNext: "Convert the API/MCP contract into the first integration issue with sample payloads and acceptance tests.",
       }
@@ -8106,7 +8107,7 @@ function buildGlobalProgressSnapshot() {
         multimodalTitle: "Evidencia de activos y revisión OCR",
         multimodalNext: "Abrir activos pendientes, agregar o aceptar texto analítico y limpiar la cola de revisión humana.",
         nativeTitle: "Ruta de entrega móvil nativa",
-        nativeNext: "Crear firma release, reemplazar IDs de paquete temporales y preparar el primer paquete instalable de piloto.",
+        nativeNext: "Crear firma release y preparar el primer paquete instalable de piloto.",
         connectorsTitle: "Contrato de importación dispositivo/servicio",
         connectorsNext: "Convertir el contrato API/MCP en el primer issue de integración con payloads y pruebas de aceptación.",
       };
