@@ -1,4 +1,4 @@
-const APP_VERSION = "20260526-pilot-release-command-455";
+const APP_VERSION = "20260526-vibeapp-pilot-package-456";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2122,6 +2122,7 @@ const manualContent = {
         "Vibeapp ahora incluye Compuerta piloto móvil: verifica el backend productivo, confirma sesión, revisa cola local y muestra capacidades listas antes de iniciar una prueba real en teléfono. Android ya declara permisos de red, cámara, audio, ubicación, multimedia y notificaciones para evitar bloqueos básicos de plataforma.",
         "Vibeapp ya tiene ruta Android verificable: SDK/JDK instalados, paquete piloto io.vibeapp.mobile, APK debug generado, APK release firmado y App Bundle release firmado. Antes de Play Console queda decidir custodia formal de la upload key.",
         "La compuerta local npm run verify:pilot ejecuta en una sola orden los controles PWA, PDFs ReportLab, Android firmado y Flutter analyze/test. npm run verify:android queda como chequeo específico de firma APK/AAB.",
+        "La orden npm run package:vibeapp genera un paquete local en dist/vibeapp-pilot con APK, AAB, checksums, manifiesto y README de instalación. El paquete no incluye claves ni passwords.",
         "Vibeapp incorpora un router local de comandos: una captura escrita o transcrita puede crear nota, iniciar/cerrar experiencia o generar un evento de agenda antes de sincronizar. La pantalla muestra qué entendió Vibe y cambia el botón principal a Guardar nota, Crear agenda, Iniciar experiencia o Cerrar experiencia antes de ejecutar.",
         "El contrato de dispositivos se puede exportar como Markdown o JSON para compartirlo con desarrolladores, integraciones API/MCP o proveedores de wearables.",
         "Activos multimodales incluye Procesar ahora y Procesar visibles. Los documentos de texto se extraen localmente; los PDFs escaneados usan OCR del backend cuando OCR_PROVIDER=openai y OPENAI_API_KEY están configurados; los audios usan transcripción del backend si está configurada; las imágenes usan OCR automático del backend.",
@@ -8030,12 +8031,12 @@ function buildGlobalProgressSnapshot() {
         multimodal: "Multimedia and OCR/analysis",
         multimodalDetail: `${assetAnalysis.withText}/${assetAnalysis.total} assets with analytical text; workflow ${assetWorkflow.score}%.`,
         native: "Vibeapp native",
-        nativeDetail: "Flutter skeleton has auth, command preview/routing, mobile pilot gate, queue, auto-retry, media, agenda, location, biometrics, Android package id io.vibeapp.mobile, verified debug APK, signed release APK/AAB, Android signing gate, and unified pilot verification.",
+        nativeDetail: "Flutter skeleton has auth, command preview/routing, mobile pilot gate, queue, auto-retry, media, agenda, location, biometrics, Android package id io.vibeapp.mobile, verified debug APK, signed release APK/AAB, Android signing gate, unified pilot verification, and a packaged Android pilot kit.",
         connectors: "Device and service connectors",
         connectorsDetail: "Routes documented for Meta/Oakley, Oura, Apple Health, Samsung Health, Health Connect; direct connectors remain future work.",
         full: "Full product ambition",
         fullDetail: `Estimated full product ${total.full}%; advanced agents, predictive AI, and direct APIs are later phases.`,
-        nextDetail: "Run npm run verify:pilot, pilot-install Vibeapp on a physical Android device, then harden publication design/output and device-import flows.",
+        nextDetail: "Run npm run verify:pilot and npm run package:vibeapp, pilot-install Vibeapp on a physical Android device, then harden publication design/output and device-import flows.",
       }
     : {
         title: "Estado global de avance",
@@ -8065,12 +8066,12 @@ function buildGlobalProgressSnapshot() {
         multimodal: "Multimedia y OCR/análisis",
         multimodalDetail: `${assetAnalysis.withText}/${assetAnalysis.total} activos con texto analítico; flujo ${assetWorkflow.score}%.`,
         native: "Vibeapp nativa",
-        nativeDetail: "El esqueleto Flutter tiene auth, vista previa de comandos, compuerta piloto móvil, cola, autoreintento, medios, agenda, lugar, biometría, paquete Android io.vibeapp.mobile, APK debug verificado, APK/AAB release firmados, compuerta local Android y verificación piloto unificada.",
+        nativeDetail: "El esqueleto Flutter tiene auth, vista previa de comandos, compuerta piloto móvil, cola, autoreintento, medios, agenda, lugar, biometría, paquete Android io.vibeapp.mobile, APK debug verificado, APK/AAB release firmados, compuerta local Android, verificación piloto unificada y paquete Android entregable.",
         connectors: "Conectores de dispositivos y servicios",
         connectorsDetail: "Rutas documentadas para Meta/Oakley, Oura, Apple Health, Samsung Health y Health Connect; conectores directos quedan futuros.",
         full: "Ambición de producto completo",
         fullDetail: `Producto completo estimado ${total.full}%; agentes avanzados, IA predictiva y APIs directas quedan en fases posteriores.`,
-        nextDetail: "Ejecutar npm run verify:pilot, instalar Vibeapp en un Android físico de piloto, luego fortalecer diseño/salidas de publicaciones y flujos de importación por dispositivo.",
+        nextDetail: "Ejecutar npm run verify:pilot y npm run package:vibeapp, instalar Vibeapp en un Android físico de piloto, luego fortalecer diseño/salidas de publicaciones y flujos de importación por dispositivo.",
       };
   const tracks = [
     { key: "pwa", title: labels.pwa, score: total.mvp, detail: labels.pwaDetail, view: "dashboard" },

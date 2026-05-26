@@ -15,6 +15,7 @@
     "verify:flutter": "node scripts/verify-flutter-mobile.mjs",
     "verify:release": "npm run check && npm run verify:outputs && npm run verify:pwa",
     "verify:pilot": "npm run verify:release && npm run verify:android && npm run verify:flutter",
+    "package:vibeapp": "node scripts/package-vibeapp-pilot.mjs",
     "start": "node server.js",
     "dev": "node server.js",
     "check": "node --check app.js && node --check server.js && node scripts/smoke-check.mjs",

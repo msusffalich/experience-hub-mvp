@@ -53,6 +53,22 @@ $env:VIBE_REBUILD_ANDROID='1'
 npm run verify:flutter
 ```
 
+Paquete entregable para piloto Android:
+
+```powershell
+npm run package:vibeapp
+```
+
+Genera `dist/vibeapp-pilot` con:
+
+- `vibeapp-pilot-release.apk` para instalacion directa.
+- `vibeapp-pilot-release.aab` para pista interna de Play Console.
+- `manifest.json` con version PWA, version Vibeapp, backend, artefactos y flujo piloto.
+- `checksums.sha256` para validar integridad.
+- `README.md` con instrucciones de instalacion y seguridad.
+
+El paquete no incluye claves, `key.properties`, keystores ni passwords.
+
 Ejecutar desde `vibeapp`:
 
 ```powershell
