@@ -62,6 +62,7 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
   @override
   void initState() {
     super.initState();
+    _noteController.addListener(_handleNoteChanged);
     unawaited(_loadPersistedQueue());
     _retryTimer = Timer.periodic(
       const Duration(seconds: 30),
@@ -71,6 +72,7 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
 
   @override
   void dispose() {
+    _noteController.removeListener(_handleNoteChanged);
     _noteController.dispose();
     _apiUrlController.dispose();
     _emailController.dispose();
@@ -79,6 +81,10 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
     _retryTimer?.cancel();
     unawaited(_audioRecorder.dispose());
     super.dispose();
+  }
+
+  void _handleNoteChanged() {
+    if (mounted) setState(() {});
   }
 
   Future<File> _queueStorageFile() async {
@@ -1151,6 +1157,9 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final commandPreview = _noteController.text.trim().isEmpty
+        ? null
+        : NativeQuickCommand.parse(_noteController.text);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Vibeapp'),
@@ -1188,11 +1197,17 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
                 border: OutlineInputBorder(),
               ),
             ),
+            if (commandPreview != null) ...[
+              const SizedBox(height: 12),
+              NativeCommandPreviewCard(command: commandPreview),
+            ],
             const SizedBox(height: 16),
             FilledButton.icon(
               onPressed: _saveDraft,
               icon: const Icon(Icons.cloud_upload_outlined),
-              label: const Text('Guardar captura'),
+              label: Text(commandPreview == null
+                  ? 'Guardar captura'
+                  : commandPreview.primaryActionLabel),
             ),
             const SizedBox(height: 24),
             ExperienceSessionCard(
@@ -1408,6 +1423,50 @@ class NativePilotReadinessCard extends StatelessWidget {
                 label: Text(checkingBackend
                     ? 'Verificando Vibe...'
                     : 'Verificar backend Vibe'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class NativeCommandPreviewCard extends StatelessWidget {
+  const NativeCommandPreviewCard({required this.command, super.key});
+
+  final NativeQuickCommand command;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.secondaryContainer.withAlpha(92),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(command.previewIcon,
+                color: Theme.of(context).colorScheme.primary),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    command.previewTitle,
+                    style: Theme.of(context)
+                        .textTheme
+                        .labelLarge
+                        ?.copyWith(fontWeight: FontWeight.w800),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(command.previewDetail),
+                ],
               ),
             ),
           ],
@@ -2351,6 +2410,57 @@ class NativeQuickCommand {
   final NativeQuickCommandType type;
   final String cleanedText;
   final AgendaEventDraft? agenda;
+
+  String get primaryActionLabel {
+    return switch (type) {
+      NativeQuickCommandType.agenda => 'Crear agenda',
+      NativeQuickCommandType.startExperience => 'Iniciar experiencia',
+      NativeQuickCommandType.closeExperience => 'Cerrar experiencia',
+      NativeQuickCommandType.note => 'Guardar nota',
+    };
+  }
+
+  IconData get previewIcon {
+    return switch (type) {
+      NativeQuickCommandType.agenda => Icons.event_available_outlined,
+      NativeQuickCommandType.startExperience => Icons.play_circle_outline,
+      NativeQuickCommandType.closeExperience => Icons.stop_circle_outlined,
+      NativeQuickCommandType.note => Icons.sticky_note_2_outlined,
+    };
+  }
+
+  String get previewTitle {
+    return switch (type) {
+      NativeQuickCommandType.agenda => 'Vibe entendió: crear agenda',
+      NativeQuickCommandType.startExperience =>
+        'Vibe entendió: iniciar experiencia',
+      NativeQuickCommandType.closeExperience =>
+        'Vibe entendió: cerrar experiencia',
+      NativeQuickCommandType.note => 'Vibe entendió: guardar nota',
+    };
+  }
+
+  String get previewDetail {
+    if (type == NativeQuickCommandType.agenda && agenda != null) {
+      final localStart = agenda!.startAt.toLocal();
+      final time =
+          '${localStart.hour.toString().padLeft(2, '0')}:${localStart.minute.toString().padLeft(2, '0')}';
+      final place =
+          agenda!.location.isEmpty ? 'sin lugar definido' : agenda!.location;
+      return '${agenda!.title} · ${formatDateLabel(localStart)} $time · $place.';
+    }
+    if (type == NativeQuickCommandType.startExperience) {
+      return cleanedText.isEmpty
+          ? 'Se abrirá una experiencia activa.'
+          : 'Se abrirá una experiencia activa: $cleanedText.';
+    }
+    if (type == NativeQuickCommandType.closeExperience) {
+      return 'Se cerrará la experiencia activa y se intentará sincronizar.';
+    }
+    return cleanedText.isEmpty
+        ? 'Se guardará como nota rápida.'
+        : 'Se guardará como nota: $cleanedText.';
+  }
 }
 
 class ExternalSessionImportDraft {

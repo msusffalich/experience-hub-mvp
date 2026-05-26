@@ -39,7 +39,10 @@ void main() {
       find.widgetWithText(TextField, 'Nota'),
       'V, toma nota de prueba.',
     );
-    await tester.tap(find.text('Guardar captura'));
+    await tester.pump();
+    expect(find.text('Vibe entendió: guardar nota'), findsOneWidget);
+    expect(find.text('Guardar nota'), findsOneWidget);
+    await tester.tap(find.text('Guardar nota'));
     await tester.pumpAndSettle();
 
     expect(find.text('Revisar'), findsOneWidget);

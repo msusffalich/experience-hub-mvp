@@ -2118,7 +2118,7 @@ const manualContent = {
         "Vibeapp suma Importar sesión externa: permite traer varios archivos de Meta/Oakley/Ray-Ban, Oura, Apple Health, Samsung Health/Galaxy Watch, Health Connect, galería del teléfono u otro origen, agruparlos en una sola experiencia y conservar metadatos normalizados para procesamiento posterior.",
         "Vibeapp valida cada captura antes de sincronizar: revisa título, texto, eventos, existencia de archivos, tamaño, MIME, vínculo evento-activo y expectativas por origen. Si algo no cuadra, queda en cola con un mensaje entendible antes de tocar el backend.",
         "Vibeapp ahora incluye Compuerta piloto móvil: verifica el backend productivo, confirma sesión, revisa cola local y muestra capacidades listas antes de iniciar una prueba real en teléfono. Android ya declara permisos de red, cámara, audio, ubicación, multimedia y notificaciones para evitar bloqueos básicos de plataforma.",
-        "Vibeapp incorpora un router local de comandos: una captura escrita o transcrita puede crear nota, iniciar/cerrar experiencia o generar un evento de agenda antes de sincronizar. Esto prepara el flujo de voz sin depender todavía de un wake word nativo en segundo plano.",
+        "Vibeapp incorpora un router local de comandos: una captura escrita o transcrita puede crear nota, iniciar/cerrar experiencia o generar un evento de agenda antes de sincronizar. La pantalla muestra qué entendió Vibe y cambia el botón principal a Guardar nota, Crear agenda, Iniciar experiencia o Cerrar experiencia antes de ejecutar.",
         "El contrato de dispositivos se puede exportar como Markdown o JSON para compartirlo con desarrolladores, integraciones API/MCP o proveedores de wearables.",
         "Activos multimodales incluye Procesar ahora y Procesar visibles. Los documentos de texto se extraen localmente; los PDFs escaneados usan OCR del backend cuando OCR_PROVIDER=openai y OPENAI_API_KEY están configurados; los audios usan transcripción del backend si está configurada; las imágenes usan OCR automático del backend.",
         "Siguiendo el patrón del blueprint de CLIO, los activos sincronizados se leen desde el backend usando URLs firmadas temporales de Supabase. Otro dispositivo puede procesar documentos, imágenes y audios sin depender del archivo local original.",
@@ -7963,6 +7963,7 @@ function buildGlobalProgressSnapshot() {
   const nativeSignals = [
     true, // Flutter skeleton and Windows build path.
     true, // Supabase Auth sign-in contract.
+    true, // Local command preview and routing for note/agenda/session commands.
     true, // Queue persistence and automatic retry.
     true, // Text/photo/video/audio capture contracts.
     true, // Agenda/location/biometric import contracts.
@@ -8009,7 +8010,7 @@ function buildGlobalProgressSnapshot() {
         multimodal: "Multimedia and OCR/analysis",
         multimodalDetail: `${assetAnalysis.withText}/${assetAnalysis.total} assets with analytical text; workflow ${assetWorkflow.score}%.`,
         native: "Vibeapp native",
-        nativeDetail: "Flutter skeleton has auth, command routing, mobile pilot gate, queue, auto-retry, media, agenda, location, biometrics; mobile packaging remains pending.",
+        nativeDetail: "Flutter skeleton has auth, command preview/routing, mobile pilot gate, queue, auto-retry, media, agenda, location, biometrics; mobile packaging remains pending.",
         connectors: "Device and service connectors",
         connectorsDetail: "Routes documented for Meta/Oakley, Oura, Apple Health, Samsung Health, Health Connect; direct connectors remain future work.",
         full: "Full product ambition",
@@ -8034,7 +8035,7 @@ function buildGlobalProgressSnapshot() {
         multimodal: "Multimedia y OCR/análisis",
         multimodalDetail: `${assetAnalysis.withText}/${assetAnalysis.total} activos con texto analítico; flujo ${assetWorkflow.score}%.`,
         native: "Vibeapp nativa",
-        nativeDetail: "El esqueleto Flutter tiene auth, comandos, compuerta piloto móvil, cola, autoreintento, medios, agenda, lugar y biometría; falta empaquetado móvil.",
+        nativeDetail: "El esqueleto Flutter tiene auth, vista previa de comandos, compuerta piloto móvil, cola, autoreintento, medios, agenda, lugar y biometría; falta empaquetado móvil.",
         connectors: "Conectores de dispositivos y servicios",
         connectorsDetail: "Rutas documentadas para Meta/Oakley, Oura, Apple Health, Samsung Health y Health Connect; conectores directos quedan futuros.",
         full: "Ambición de producto completo",
