@@ -47,17 +47,23 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _sessionTitleController = TextEditingController();
   final List<CaptureQueueItem> _queue = [];
+  Timer? _retryTimer;
   SyncState _syncState = SyncState.ready;
   String _accessToken = '';
   String _signedInEmail = '';
   ActiveExperienceSession? _activeSession;
   bool _isRecordingAudio = false;
   String _audioRecordingPath = '';
+  bool _autoRetryRunning = false;
 
   @override
   void initState() {
     super.initState();
     unawaited(_loadPersistedQueue());
+    _retryTimer = Timer.periodic(
+      const Duration(seconds: 30),
+      (_) => unawaited(_autoRetryDueQueue()),
+    );
   }
 
   @override
@@ -67,6 +73,7 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     _sessionTitleController.dispose();
+    _retryTimer?.cancel();
     unawaited(_audioRecorder.dispose());
     super.dispose();
   }
@@ -252,6 +259,22 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
           ),
         ),
       );
+    }
+  }
+
+  Future<void> _autoRetryDueQueue() async {
+    if (!mounted || _autoRetryRunning || _accessToken.isEmpty) return;
+    if (_syncState == SyncState.syncing) return;
+    final due = _queue.any((item) =>
+        item.canSync &&
+        item.status != CaptureSyncStatus.synced &&
+        item.canAttemptSyncNow);
+    if (!due) return;
+    _autoRetryRunning = true;
+    try {
+      await _syncPendingQueue();
+    } finally {
+      _autoRetryRunning = false;
     }
   }
 
@@ -1350,7 +1373,7 @@ class SyncSettingsCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             const Text(
-                'Primer contrato real: entra con el mismo usuario de Vibe PWA y reintenta la cola sin copiar tokens manualmente.'),
+                'Primer contrato real: entra con el mismo usuario de Vibe PWA. La cola se reintenta sola cada 30 segundos cuando hay sesión activa; el botón queda para forzar el reintento.'),
             const SizedBox(height: 12),
             TextField(
               controller: apiUrlController,

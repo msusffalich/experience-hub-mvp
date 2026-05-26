@@ -19,6 +19,7 @@ This folder is a starter skeleton. Flutter SDK is available locally at `C:\Users
 - Local queue persistence: pending, failed, and synced queue items are saved to a device JSON cache so captures survive closing and reopening the app.
 - Retry policy: failed sync attempts keep attempt count, last attempt time, and next retry time; manual retry can override the wait.
 - Queue cleanup: synced native captures can be cleared from the local queue without touching remote Supabase data.
+- Automatic retry loop: when the user is signed in, Vibeapp checks the local queue every 30 seconds and syncs eligible pending items without requiring manual action.
 - Source-specific import guidance: Meta/Oakley, Oura, Apple Health, Samsung Health, Health Connect, gallery, and other imports show recommended file types and realistic workflow before file selection.
 - Development sync settings: Vibe API endpoint + Supabase Auth email/password.
 - Text notes can sign in through the PWA public Supabase config, then attempt `POST /api/experiences` through the Vibe backend. If an experience is active, every note or native action becomes an internal event under the same experience ID.
@@ -92,6 +93,12 @@ This folder is a starter skeleton. Flutter SDK is available locally at `C:\Users
 2. Clear already synced items locally without deleting remote records.
 3. Keep failed or pending items visible until they sync or the user resolves them.
 
+## Eleventh milestone
+
+1. Retry eligible queued captures automatically every 30 seconds when a Supabase session is active.
+2. Keep manual retry available for urgent sync without disabling the safer retry policy.
+3. Preserve the local queue as a safety net while Supabase remains the shared source of truth.
+
 ## Native capture contract
 
 Every native action should emit the same normalized payload:
@@ -114,6 +121,7 @@ Every native action should emit the same normalized payload:
 - `queuePersistence`: local JSON cache for queued items, remote IDs, errors, and sync state
 - `retryPolicy`: attempt count, last attempt, next retry, and manual retry override
 - `queueMaintenance`: clear-synced local action that does not delete remote data
+- `autoRetry`: background queue check for eligible items while the native session is active
 
 The PWA remains the review, reporting, publication, and admin surface. Vibeapp native is the low-friction capture and device-permission layer.
 

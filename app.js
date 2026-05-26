@@ -1,4 +1,4 @@
-const APP_VERSION = "20260526-publication-presets-queue-441";
+const APP_VERSION = "20260526-publication-composition-autoretry-442";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2381,7 +2381,7 @@ const manualContent = {
         "La agenda usa estados del blueprint: planificado, confirmado, reprogramado, cancelado, completado, pendiente de seguimiento y convertido en experiencia.",
         "Los eventos de Agenda se guardan localmente y se sincronizan con el backend para verse en otros dispositivos con la misma sesión. Si la tabla agenda_events aún no existe en Supabase, el servidor usa un respaldo central temporal hasta aplicar database/agenda-events.sql.",
         "Al convertir un evento, la app crea una experiencia vinculada con duración, ubicación, participantes y notas de origen para mantener la continuidad Agenda -> Evento -> Experiencia -> Memoria viva.",
-        "Publicaciones Inteligentes genera borradores locales desde el reporte filtrado o las últimas experiencias. Permite elegir tipo, estilo narrativo, canal, incluir o excluir multimedia sugerida, aplicar limpieza de privacidad, revisar un kit de salida por canal y exportar como PDF ReportLab, HTML, Markdown o paquete editorial JSON.",
+        "Publicaciones Inteligentes genera borradores locales desde el reporte filtrado o las últimas experiencias. Permite elegir tipo, estilo narrativo, canal, aplicar una receta de composición antes de generar, incluir o excluir multimedia sugerida, aplicar limpieza de privacidad, revisar un kit de salida por canal y exportar como PDF ReportLab, HTML, Markdown o paquete editorial JSON.",
         "Los tipos de publicación no son iguales: publicación social rápida sirve para mensajes breves, reporte narrativo para contar un periodo, álbum experiencial para memorias visuales, resumen ejecutivo para enviar evidencia clara y guion de story/reel para una secuencia corta.",
         "Los nuevos formatos amplían el uso por canal: carrusel visual para Instagram, Facebook o LinkedIn; carta/email largo para compartir una memoria personal; dossier PDF para un documento más formal; ficha de salud para explicar información médica o biométrica en lenguaje claro; y blog/web para publicar una historia más extensa.",
         "El kit de salida por canal separa asunto, texto corto, texto ampliado, leyenda/gancho, manejo multimedia y checklist. Sirve para saber qué copiar, qué revisar y qué acción hacer según WhatsApp, Instagram, Facebook, LinkedIn, Email, Blog/Web o PDF.",
@@ -2966,7 +2966,7 @@ const manualContent = {
         "Agenda uses the blueprint states: planned, confirmed, rescheduled, canceled, completed, pending follow-up, and converted into experience.",
         "Agenda events are saved locally and synchronized with the backend so they appear on other devices using the same session. If the agenda_events table does not exist in Supabase yet, the server uses a temporary central fallback until database/agenda-events.sql is applied.",
         "When converting an event, the app creates a linked experience with duration, location, participants, and source notes to preserve the Agenda -> Event -> Experience -> Living memory flow.",
-        "Intelligent Publications generates local drafts from the filtered report or latest experiences. You can choose publication type, narrative style, channel, include or exclude suggested media, apply privacy cleanup, copy the final text/HTML, and export as HTML, Markdown, or an editorial JSON package.",
+        "Intelligent Publications generates local drafts from the filtered report or latest experiences. You can choose publication type, narrative style, channel, review a composition recipe before generating, include or exclude suggested media, apply privacy cleanup, copy the final text/HTML, and export as PDF, HTML, Markdown, or an editorial JSON package.",
         "Human approval marks whether the draft is in review or approved. Any edit, design change, or media curation returns it to review.",
         "Draft history records generation, edits, media changes, design changes, approval, and recent exports.",
         "Suggested media means files already attached to the source experiences. The app proposes them for the publication; including or excluding them does not modify or delete the original experience.",
@@ -7568,6 +7568,7 @@ function updatePublicationTypeHelp() {
   if (!box || !select) return;
   const type = select.value || publicationTypes[0];
   const channel = document.getElementById("publicationChannelInput")?.value || "PDF/HTML";
+  const style = document.getElementById("publicationStyleInput")?.value || "Profesional";
   const guide = getPublicationTypeGuide(type);
   const title = state.language === "en" ? displayPublicationType(type) : type;
   const purpose = state.language === "en" ? translatePublicationGuideText(guide.purpose) : guide.purpose;
@@ -7583,6 +7584,7 @@ function updatePublicationTypeHelp() {
     <p><b>${escapeHtml(mediaLabel)}:</b> ${escapeHtml(mediaPolicy || "")}</p>
     <p><b>${escapeHtml(channelLabel)}:</b> ${(guide.channels || []).map((item) => `<span class="publication-guide-chip">${escapeHtml(item)}</span>`).join(" ")}</p>
     ${renderPublicationTypeChannelFit(type, channel)}
+    ${renderPublicationCompositionPlan(type, channel, style)}
     ${renderPublicationPresetSuggestions(type, channel)}
     <ul>${structure.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
     ${renderPublicationChannelMatrix({ channel: "" })}
@@ -7613,6 +7615,72 @@ function renderPublicationPresetSuggestions(type, channel) {
             <b>${escapeHtml(displayPublicationStyle(template.style))}</b>
             <small>${escapeHtml(template.channel)}</small>
           </button>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function getPublicationCompositionProfile(type, channel, style) {
+  const visualTypes = new Set(["Álbum experiencial", "Carrusel visual", "Guion de story/reel"]);
+  const formalTypes = new Set(["Resumen ejecutivo", "Dossier PDF", "Ficha de salud"]);
+  const isVisual = visualTypes.has(type);
+  const isFormal = formalTypes.has(type);
+  const layout = isVisual
+    ? "Portada visual, bloques cortos y galería curada"
+    : isFormal
+      ? "Portada sobria, resumen, evidencia y cierre accionable"
+      : "Portada editorial, relato por secciones y momentos clave";
+  const media = isVisual
+    ? "Imágenes y video primero; audio/documentos como notas de apoyo"
+    : isFormal
+      ? "Documentos, datos y texto interpretado primero; multimedia solo si aporta evidencia"
+      : "Mezcla de narrativa, imágenes destacadas y anexos resumidos";
+  const text = channel === "WhatsApp" || channel === "Instagram"
+    ? "Texto breve, directo y fácil de revisar antes de compartir"
+    : channel === "Email" || channel === "LinkedIn"
+      ? "Texto medio, con contexto y conclusión clara"
+      : "Texto completo, con secciones editadas y lectura final";
+  const action = channel === "WhatsApp" || channel === "Email"
+    ? "Preparar mensaje revisable; el usuario decide enviar"
+    : channel === "PDF/HTML"
+      ? "Generar documento maestro en PDF editado"
+      : "Preparar pieza para copiar, adaptar o publicar manualmente";
+  return { layout, media, text, action, style };
+}
+
+function renderPublicationCompositionPlan(type, channel, style) {
+  const profile = getPublicationCompositionProfile(type, channel, style);
+  const title = state.language === "en" ? "Composition recipe" : "Receta de composición";
+  const help = state.language === "en"
+    ? "This is the structure the draft will follow before export."
+    : "Esta es la estructura que seguirá el borrador antes de exportar.";
+  const items = state.language === "en"
+    ? [
+        ["Layout", translatePublicationGuideText(profile.layout)],
+        ["Media", translatePublicationGuideText(profile.media)],
+        ["Text depth", translatePublicationGuideText(profile.text)],
+        ["Final action", translatePublicationGuideText(profile.action)],
+      ]
+    : [
+        ["Diseño", profile.layout],
+        ["Multimedia", profile.media],
+        ["Texto", profile.text],
+        ["Salida", profile.action],
+      ];
+  return `
+    <div class="publication-composition-panel">
+      <div class="publication-composition-heading">
+        <strong>${escapeHtml(title)}</strong>
+        <span>${escapeHtml(displayPublicationStyle(style))} · ${escapeHtml(channel)}</span>
+      </div>
+      <p>${escapeHtml(help)}</p>
+      <div class="publication-composition-grid">
+        ${items.map(([label, detail]) => `
+          <article>
+            <b>${escapeHtml(label)}</b>
+            <span>${escapeHtml(detail)}</span>
+          </article>
         `).join("")}
       </div>
     </div>
@@ -7688,6 +7756,18 @@ function translatePublicationGuideText(text) {
     "Funciona mejor con video, imagen y audio breve. Documentos o ZIP no se muestran: se convierten en texto de apoyo si tienen interpretación.": "Works best with video, image, and short audio. Documents or ZIP files are not displayed; they become support text when interpreted.",
     "Para convertir una experiencia en láminas breves, visuales y fáciles de recorrer.": "For turning an experience into short, visual, easy-to-scan slides.",
     "Instagram, Facebook, LinkedIn o una secuencia explicativa con varias imágenes, datos o momentos.": "Instagram, Facebook, LinkedIn, or an explanatory sequence with several images, data points, or moments.",
+    "Portada visual, bloques cortos y galería curada": "Visual cover, short blocks, and curated gallery",
+    "Portada sobria, resumen, evidencia y cierre accionable": "Clean cover, summary, evidence, and actionable close",
+    "Portada editorial, relato por secciones y momentos clave": "Editorial cover, sectioned story, and key moments",
+    "Imágenes y video primero; audio/documentos como notas de apoyo": "Images and video first; audio/documents as support notes",
+    "Documentos, datos y texto interpretado primero; multimedia solo si aporta evidencia": "Documents, data, and interpreted text first; media only when it adds evidence",
+    "Mezcla de narrativa, imágenes destacadas y anexos resumidos": "Mix of narrative, featured images, and summarized annexes",
+    "Texto breve, directo y fácil de revisar antes de compartir": "Short, direct text that is easy to review before sharing",
+    "Texto medio, con contexto y conclusión clara": "Medium-length text with context and a clear conclusion",
+    "Texto completo, con secciones editadas y lectura final": "Full text with edited sections and final reading",
+    "Preparar mensaje revisable; el usuario decide enviar": "Prepare a reviewable message; the user decides whether to send",
+    "Generar documento maestro en PDF editado": "Generate the master document as an edited PDF",
+    "Preparar pieza para copiar, adaptar o publicar manualmente": "Prepare a piece to copy, adapt, or publish manually",
     "Usa imágenes como láminas principales. Audio, video y documentos se transforman en textos cortos, citas o notas de apoyo.": "Uses images as main slides. Audio, video, and documents become short text, quotes, or support notes.",
     "Para escribir una comunicación más personal, extensa y cuidada.": "For writing a more personal, longer, careful communication.",
     "Email a familia, amigos, equipo de trabajo, mentor, médico o una persona específica.": "Email to family, friends, work team, mentor, doctor, or a specific person.",
@@ -24622,7 +24702,7 @@ function renderAdminOperationalFocusPanel() {
         reportPdf: "Cleaner reports, publications, and findings",
         reportPdfDetail: "Reports now use an executive PDF, participant scope, and folded technical exports. Publications explain format fit, edited text, media actions, and non-image handling. Findings are organized by 8 human themes and can be downloaded.",
         nativeSync: "Vibeapp real queue",
-        nativeSyncDetail: "Vibeapp now has real native contracts for text, photo, video, audio, agenda, location, and biometric CSV/JSON files. The native queue validates each payload, persists locally across app restarts, tracks attempts, schedules retries, lets synced items be cleared locally without deleting remote data, and then syncs media through /api/media, agenda through /api/agenda, and experiences through /api/experiences.",
+        nativeSyncDetail: "Vibeapp now has real native contracts for text, photo, video, audio, agenda, location, and biometric CSV/JSON files. The native queue validates each payload, persists locally across app restarts, tracks attempts, retries eligible items automatically every 30 seconds when a session is active, lets synced items be cleared locally without deleting remote data, and then syncs media through /api/media, agenda through /api/agenda, and experiences through /api/experiences.",
       }
     : {
         title: "Administración operativa",
@@ -24659,7 +24739,7 @@ function renderAdminOperationalFocusPanel() {
     labels.reportPdf = "Reportes, publicaciones y hallazgos limpios";
     labels.reportPdfDetail = "Reportes usa PDF ejecutivo, alcance por persona y exportaciones técnicas plegadas. Publicaciones suma matriz por canal: carrusel, carta/email, dossier, ficha de salud, blog/web, LinkedIn y PDF/HTML, con medios seleccionables y acciones claras para audio, video, documentos y ZIP. Hallazgos se organiza en 8 ejes humanos y se puede descargar.";
     labels.nativeSync = "Vibeapp con cola real";
-    labels.nativeSyncDetail = "Vibeapp ya tiene contratos nativos reales para texto, foto, video, audio, agenda, lugar, biometr\u00eda CSV/JSON e importaci\u00f3n de sesiones externas. La cola nativa valida cada payload, lo conserva localmente aunque cierres la app, registra intentos, agenda reintentos, permite limpiar elementos ya sincronizados sin borrar datos remotos y luego sincroniza medios por /api/media, agenda por /api/agenda y experiencias por /api/experiences.";
+    labels.nativeSyncDetail = "Vibeapp ya tiene contratos nativos reales para texto, foto, video, audio, agenda, lugar, biometr\u00eda CSV/JSON e importaci\u00f3n de sesiones externas. La cola nativa valida cada payload, lo conserva localmente aunque cierres la app, registra intentos, reintenta autom\u00e1ticamente cada 30 segundos cuando hay sesi\u00f3n activa, permite limpiar elementos ya sincronizados sin borrar datos remotos y luego sincroniza medios por /api/media, agenda por /api/agenda y experiencias por /api/experiences.";
   }
   const cards = [
     [labels.flow, labels.flowDetail],
