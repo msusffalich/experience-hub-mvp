@@ -573,9 +573,8 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
         if (session == null) {
           _queue.insert(0, CaptureQueueItem.biometric(attachment, summary));
         } else {
-          session.addBiometricEvent(summary);
+          session.addBiometricAttachment(attachment, summary);
           _upsertSessionQueueItem(session);
-          _queue.insert(0, CaptureQueueItem.biometric(attachment, summary));
         }
         _syncState = SyncState.syncing;
       });
@@ -3164,6 +3163,31 @@ class ActiveExperienceSession {
       description: summary.summaryText,
       order: events.length + 1,
       timestamp: DateTime.now().toUtc(),
+    ));
+  }
+
+  void addBiometricAttachment(
+    NativeAttachmentDraft attachment,
+    BiometricImportSummary summary,
+  ) {
+    final order = events.length + 1;
+    final event = ExperienceEventDraft(
+      id: '$id-event-$order',
+      title: 'Biometría importada',
+      description: summary.summaryText,
+      order: order,
+      timestamp: DateTime.now().toUtc(),
+    );
+    events.add(event);
+    attachments.add(NativeAttachmentDraft.fromFilePath(
+      attachment.filePath,
+      sourceType: attachment.sourceType,
+      eventId: event.id,
+      eventTitle: event.title,
+      eventOrder: event.order,
+      previewText: attachment.previewText,
+      analysisText: attachment.analysisText,
+      metadataExtras: attachment.metadataExtras,
     ));
   }
 

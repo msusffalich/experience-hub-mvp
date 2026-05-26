@@ -14,6 +14,7 @@ This folder is a starter skeleton. Flutter SDK is available locally at `C:\Users
 - Native agenda event creation through `/api/agenda`, with optional link to the active experience as an internal event.
 - Native location capture with permission, GPS coordinates, accuracy, and experience/event sync.
 - Native biometric CSV/JSON file import with private upload, summary metadata, and PWA hydration as cross-experience context.
+- When an active experience is open, biometric imports attach to that same experience instead of creating a duplicate standalone capture.
 - External session import for Meta/Oakley/Ray-Ban, Oura, Apple Health, Samsung Health/Galaxy Watch, Health Connect, phone gallery, or other sources. Multiple files are grouped into one experience with internal events and normalized metadata.
 - Local payload validation before sync: Vibeapp now checks title, text, events, file existence, empty files, MIME type, linked events, and source-specific expectations before sending a capture to Vibe.
 - Local queue persistence: pending, failed, and synced queue items are saved to a device JSON cache so captures survive closing and reopening the app.
@@ -98,6 +99,12 @@ This folder is a starter skeleton. Flutter SDK is available locally at `C:\Users
 1. Retry eligible queued captures automatically every 30 seconds when a Supabase session is active.
 2. Keep manual retry available for urgent sync without disabling the safer retry policy.
 3. Preserve the local queue as a safety net while Supabase remains the shared source of truth.
+
+## Twelfth milestone
+
+1. Attach biometric CSV/JSON files to the active experience when one is open.
+2. Preserve biometric summary, analytical text, metadata, event ID, and source file in the same session payload.
+3. Avoid duplicate standalone biometric captures when the user is working inside one active experience.
 
 ## Native capture contract
 

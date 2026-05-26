@@ -6494,6 +6494,51 @@ button.asset-processing-summary-card {
   line-height: 1.35;
 }
 
+.publication-recommendation-panel {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 14px;
+  border: 1px solid rgba(13, 124, 102, 0.18);
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(239, 253, 248, 0.94), rgba(255, 255, 255, 0.92));
+}
+
+.publication-recommendation-panel strong,
+.publication-recommendation-panel p {
+  margin: 0;
+}
+
+.publication-recommendation-panel p {
+  color: var(--muted);
+}
+
+.publication-recommendation-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(170px, 100%), 1fr));
+  gap: 8px;
+}
+
+.publication-recommendation-grid article {
+  display: grid;
+  gap: 2px;
+  min-height: 80px;
+  padding: 10px;
+  border: 1px solid rgba(13, 124, 102, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.publication-recommendation-grid span,
+.publication-recommendation-grid small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.publication-recommendation-grid b {
+  color: var(--accent-dark);
+}
+
 .publication-cover {
   display: grid;
   gap: 8px;

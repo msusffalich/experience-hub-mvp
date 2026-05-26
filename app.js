@@ -1,4 +1,4 @@
-const APP_VERSION = "20260526-publication-composition-autoretry-442";
+const APP_VERSION = "20260526-publication-recommend-native-biometric-443";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2381,7 +2381,7 @@ const manualContent = {
         "La agenda usa estados del blueprint: planificado, confirmado, reprogramado, cancelado, completado, pendiente de seguimiento y convertido en experiencia.",
         "Los eventos de Agenda se guardan localmente y se sincronizan con el backend para verse en otros dispositivos con la misma sesión. Si la tabla agenda_events aún no existe en Supabase, el servidor usa un respaldo central temporal hasta aplicar database/agenda-events.sql.",
         "Al convertir un evento, la app crea una experiencia vinculada con duración, ubicación, participantes y notas de origen para mantener la continuidad Agenda -> Evento -> Experiencia -> Memoria viva.",
-        "Publicaciones Inteligentes genera borradores locales desde el reporte filtrado o las últimas experiencias. Permite elegir tipo, estilo narrativo, canal, aplicar una receta de composición antes de generar, incluir o excluir multimedia sugerida, aplicar limpieza de privacidad, revisar un kit de salida por canal y exportar como PDF ReportLab, HTML, Markdown o paquete editorial JSON.",
+        "Publicaciones Inteligentes genera borradores locales desde el reporte filtrado o las últimas experiencias. Recomienda automáticamente tipo, estilo y canal según alcance, multimedia y señales del contenido; permite aplicar una receta de composición antes de generar, incluir o excluir multimedia sugerida, aplicar limpieza de privacidad, revisar un kit de salida por canal y exportar como PDF ReportLab, HTML, Markdown o paquete editorial JSON.",
         "Los tipos de publicación no son iguales: publicación social rápida sirve para mensajes breves, reporte narrativo para contar un periodo, álbum experiencial para memorias visuales, resumen ejecutivo para enviar evidencia clara y guion de story/reel para una secuencia corta.",
         "Los nuevos formatos amplían el uso por canal: carrusel visual para Instagram, Facebook o LinkedIn; carta/email largo para compartir una memoria personal; dossier PDF para un documento más formal; ficha de salud para explicar información médica o biométrica en lenguaje claro; y blog/web para publicar una historia más extensa.",
         "El kit de salida por canal separa asunto, texto corto, texto ampliado, leyenda/gancho, manejo multimedia y checklist. Sirve para saber qué copiar, qué revisar y qué acción hacer según WhatsApp, Instagram, Facebook, LinkedIn, Email, Blog/Web o PDF.",
@@ -2966,7 +2966,7 @@ const manualContent = {
         "Agenda uses the blueprint states: planned, confirmed, rescheduled, canceled, completed, pending follow-up, and converted into experience.",
         "Agenda events are saved locally and synchronized with the backend so they appear on other devices using the same session. If the agenda_events table does not exist in Supabase yet, the server uses a temporary central fallback until database/agenda-events.sql is applied.",
         "When converting an event, the app creates a linked experience with duration, location, participants, and source notes to preserve the Agenda -> Event -> Experience -> Living memory flow.",
-        "Intelligent Publications generates local drafts from the filtered report or latest experiences. You can choose publication type, narrative style, channel, review a composition recipe before generating, include or exclude suggested media, apply privacy cleanup, copy the final text/HTML, and export as PDF, HTML, Markdown, or an editorial JSON package.",
+        "Intelligent Publications generates local drafts from the filtered report or latest experiences. It recommends type, style, and channel from scope, media, and content signals; you can review a composition recipe before generating, include or exclude suggested media, apply privacy cleanup, copy the final text/HTML, and export as PDF, HTML, Markdown, or an editorial JSON package.",
         "Human approval marks whether the draft is in review or approved. Any edit, design change, or media curation returns it to review.",
         "Draft history records generation, edits, media changes, design changes, approval, and recent exports.",
         "Suggested media means files already attached to the source experiences. The app proposes them for the publication; including or excluding them does not modify or delete the original experience.",
@@ -6767,6 +6767,7 @@ function setupActions() {
   document.getElementById("publicationPreview").addEventListener("click", handlePublicationDistributionCopy);
   document.getElementById("publicationPreview").addEventListener("click", handlePublicationTemplateClick);
   document.getElementById("publicationPreview").addEventListener("click", handlePublicationApprovalClick);
+  document.getElementById("publicationPreview").addEventListener("click", handlePublicationRecommendationClick);
   document.getElementById("contextPrimaryButton").addEventListener("click", applyPrimaryContextLocation);
   document.getElementById("contextLocationInput").addEventListener("change", handleContextLocationChange);
   document.getElementById("contextLocationInput").addEventListener("blur", handleContextLocationChange);
@@ -7938,6 +7939,69 @@ function getInsightsExperiences() {
 
 function getPublicationExperiences() {
   return getExperiencesByAnalyticalFilters(state.publicationFilters || {});
+}
+
+function analyzePublicationScopeRecommendation() {
+  const experiences = getPublicationExperiences();
+  const media = collectPublicationMedia(experiences);
+  const categories = topValues(experiences.map((item) => item.category).filter(Boolean), 3);
+  const hasHealth = experiences.some((item) => item.category === "Salud") || media.some((item) => /health|salud|biometric|biometr/i.test(`${item.name || ""} ${item.analyticalText || ""}`));
+  const imageCount = media.filter((item) => String(item.type || "").startsWith("image/")).length;
+  const videoCount = media.filter((item) => String(item.type || "").startsWith("video/")).length;
+  const documentCount = media.filter((item) => /pdf|document|text|csv|json|word|officedocument/i.test(String(item.type || ""))).length;
+  const audioCount = media.filter((item) => String(item.type || "").startsWith("audio/")).length;
+  const topCategory = categories[0] || "";
+  let type = "Reporte narrativo";
+  let style = "Revista Premium";
+  let channel = "PDF/HTML";
+  let reason = state.language === "en"
+    ? "Good default for turning several experiences into a readable memory."
+    : "Buen punto de partida para convertir varias experiencias en una memoria legible.";
+  if (hasHealth || topCategory === "Salud") {
+    type = "Ficha de salud";
+    style = "Clínico claro";
+    channel = "PDF/HTML";
+    reason = state.language === "en"
+      ? "Health or biometric evidence benefits from clear language, evidence, and careful privacy."
+      : "La evidencia de salud o biometría necesita lenguaje claro, evidencia y privacidad cuidadosa.";
+  } else if (imageCount + videoCount >= 4) {
+    type = "Álbum experiencial";
+    style = topCategory === "Viajes / Paseos" ? "Turístico" : "Bitácora Viva";
+    channel = "PDF/HTML";
+    reason = state.language === "en"
+      ? "The selected scope has enough visual material for a memory-style publication."
+      : "El alcance seleccionado tiene suficiente material visual para una publicación tipo memoria.";
+  } else if (documentCount >= 2 || experiences.length >= 8) {
+    type = "Dossier PDF";
+    style = "Revista Premium";
+    channel = "PDF/HTML";
+    reason = state.language === "en"
+      ? "Several records or documents need a structured document, not a short post."
+      : "Varios registros o documentos necesitan un documento estructurado, no una publicación breve.";
+  } else if (experiences.length <= 2 && imageCount + videoCount >= 1) {
+    type = "Publicación social rápida";
+    style = "Social cálido";
+    channel = "WhatsApp";
+    reason = state.language === "en"
+      ? "A small scope with media is better as a short, reviewable message."
+      : "Un alcance corto con multimedia funciona mejor como mensaje breve y revisable.";
+  } else if (audioCount > 0 && imageCount + videoCount < 2) {
+    type = "Carta / email largo";
+    style = "Social cálido";
+    channel = "Email";
+    reason = state.language === "en"
+      ? "Audio-heavy material usually works better as edited narration or a message."
+      : "El material con mucho audio suele funcionar mejor como narración editada o mensaje.";
+  }
+  return {
+    experiences,
+    media,
+    type,
+    style,
+    channel,
+    reason,
+    stats: { imageCount, videoCount, audioCount, documentCount },
+  };
 }
 
 function renderDashboardScopedPanels() {
@@ -19067,10 +19131,63 @@ function renderPublications() {
   const draft = state.currentPublicationDraft || state.publicationDrafts[0] || null;
   syncAnalyticalScopeInputs();
   document.getElementById("publicationCount").textContent = `${state.publicationDrafts.length} ${t("labels.items")}`;
-  document.getElementById("publicationPreview").innerHTML = draft ? renderPublicationPreview(draft) : `<p class="card-meta">${t("labels.publicationEmpty")}</p>`;
+  document.getElementById("publicationPreview").innerHTML = `${renderPublicationScopeRecommendation()}${draft ? renderPublicationPreview(draft) : `<p class="card-meta">${t("labels.publicationEmpty")}</p>`}`;
   document.getElementById("publicationDraftList").innerHTML = state.publicationDrafts.length
     ? state.publicationDrafts.map(renderPublicationDraftItem).join("")
     : `<p class="card-meta">${t("labels.publicationHistoryEmpty")}</p>`;
+}
+
+function renderPublicationScopeRecommendation() {
+  const recommendation = analyzePublicationScopeRecommendation();
+  const title = state.language === "en" ? "Recommended publication setup" : "Configuración recomendada";
+  const empty = state.language === "en"
+    ? "Select a date range, group, category, or experience set to receive a useful recommendation."
+    : "Selecciona rango de fechas, grupo, categoría o conjunto de experiencias para recibir una recomendación útil.";
+  if (!recommendation.experiences.length) {
+    return `
+      <section class="publication-recommendation-panel">
+        <div>
+          <strong>${escapeHtml(title)}</strong>
+          <p>${escapeHtml(empty)}</p>
+        </div>
+      </section>
+    `;
+  }
+  const mediaLabel = state.language === "en"
+    ? `${recommendation.media.length} media item(s): ${recommendation.stats.imageCount} images, ${recommendation.stats.videoCount} videos, ${recommendation.stats.audioCount} audio, ${recommendation.stats.documentCount} documents`
+    : `${recommendation.media.length} activo(s): ${recommendation.stats.imageCount} imágenes, ${recommendation.stats.videoCount} videos, ${recommendation.stats.audioCount} audios, ${recommendation.stats.documentCount} documentos`;
+  return `
+    <section class="publication-recommendation-panel">
+      <div>
+        <strong>${escapeHtml(title)}</strong>
+        <p>${escapeHtml(recommendation.reason)}</p>
+      </div>
+      <div class="publication-recommendation-grid">
+        <article><span>${escapeHtml(state.language === "en" ? "Scope" : "Alcance")}</span><b>${recommendation.experiences.length}</b><small>${escapeHtml(state.language === "en" ? "experiences" : "experiencias")}</small></article>
+        <article><span>${escapeHtml(state.language === "en" ? "Media" : "Multimedia")}</span><b>${recommendation.media.length}</b><small>${escapeHtml(mediaLabel)}</small></article>
+        <article><span>${escapeHtml(state.language === "en" ? "Format" : "Formato")}</span><b>${escapeHtml(displayPublicationType(recommendation.type))}</b><small>${escapeHtml(displayPublicationStyle(recommendation.style))} · ${escapeHtml(recommendation.channel)}</small></article>
+      </div>
+      <button class="ghost-button" type="button"
+        data-publication-recommend-type="${escapeHtml(recommendation.type)}"
+        data-publication-recommend-style="${escapeHtml(recommendation.style)}"
+        data-publication-recommend-channel="${escapeHtml(recommendation.channel)}">
+        ${escapeHtml(state.language === "en" ? "Apply recommendation" : "Aplicar recomendación")}
+      </button>
+    </section>
+  `;
+}
+
+function handlePublicationRecommendationClick(event) {
+  const button = event.target.closest("[data-publication-recommend-type]");
+  if (!button) return;
+  document.getElementById("publicationTypeInput").value = button.dataset.publicationRecommendType || "Reporte narrativo";
+  document.getElementById("publicationStyleInput").value = button.dataset.publicationRecommendStyle || "Revista Premium";
+  document.getElementById("publicationChannelInput").value = button.dataset.publicationRecommendChannel || "PDF/HTML";
+  updatePublicationTypeHelp();
+  renderPublications();
+  document.getElementById("publicationStatus").textContent = state.language === "en"
+    ? "Recommended setup applied. Generate the draft when ready."
+    : "Configuración recomendada aplicada. Genera el borrador cuando esté listo.";
 }
 
 function renderPublicationPreview(draft) {
@@ -24700,9 +24817,9 @@ function renderAdminOperationalFocusPanel() {
         scopeFilters: "Unified analytical scope",
         scopeFiltersDetail: "Reports, Findings, and Publications now share group/person, category, from-date, and to-date filters so the user can analyze a coherent group of experiences.",
         reportPdf: "Cleaner reports, publications, and findings",
-        reportPdfDetail: "Reports now use an executive PDF, participant scope, and folded technical exports. Publications explain format fit, edited text, media actions, and non-image handling. Findings are organized by 8 human themes and can be downloaded.",
+        reportPdfDetail: "Reports now use an executive PDF, participant scope, and folded technical exports. Publications recommend type/style/channel from the selected scope, explain format fit, edited text, media actions, and non-image handling. Findings are organized by 8 human themes and can be downloaded.",
         nativeSync: "Vibeapp real queue",
-        nativeSyncDetail: "Vibeapp now has real native contracts for text, photo, video, audio, agenda, location, and biometric CSV/JSON files. The native queue validates each payload, persists locally across app restarts, tracks attempts, retries eligible items automatically every 30 seconds when a session is active, lets synced items be cleared locally without deleting remote data, and then syncs media through /api/media, agenda through /api/agenda, and experiences through /api/experiences.",
+        nativeSyncDetail: "Vibeapp now has real native contracts for text, photo, video, audio, agenda, location, and biometric CSV/JSON files. The native queue validates each payload, persists locally across app restarts, tracks attempts, retries eligible items automatically every 30 seconds when a session is active, links biometric files to the active experience instead of creating duplicates, lets synced items be cleared locally without deleting remote data, and then syncs media through /api/media, agenda through /api/agenda, and experiences through /api/experiences.",
       }
     : {
         title: "Administración operativa",
@@ -24737,9 +24854,9 @@ function renderAdminOperationalFocusPanel() {
     labels.scopeFilters = "Alcance anal\u00edtico uniforme";
     labels.scopeFiltersDetail = "Reportes, Hallazgos y Publicaciones comparten filtros de grupo/persona, categor\u00eda, fecha desde y fecha hasta para analizar grupos coherentes de experiencias.";
     labels.reportPdf = "Reportes, publicaciones y hallazgos limpios";
-    labels.reportPdfDetail = "Reportes usa PDF ejecutivo, alcance por persona y exportaciones técnicas plegadas. Publicaciones suma matriz por canal: carrusel, carta/email, dossier, ficha de salud, blog/web, LinkedIn y PDF/HTML, con medios seleccionables y acciones claras para audio, video, documentos y ZIP. Hallazgos se organiza en 8 ejes humanos y se puede descargar.";
+    labels.reportPdfDetail = "Reportes usa PDF ejecutivo, alcance por persona y exportaciones técnicas plegadas. Publicaciones recomienda tipo/estilo/canal desde el alcance seleccionado y suma matriz por canal: carrusel, carta/email, dossier, ficha de salud, blog/web, LinkedIn y PDF/HTML, con medios seleccionables y acciones claras para audio, video, documentos y ZIP. Hallazgos se organiza en 8 ejes humanos y se puede descargar.";
     labels.nativeSync = "Vibeapp con cola real";
-    labels.nativeSyncDetail = "Vibeapp ya tiene contratos nativos reales para texto, foto, video, audio, agenda, lugar, biometr\u00eda CSV/JSON e importaci\u00f3n de sesiones externas. La cola nativa valida cada payload, lo conserva localmente aunque cierres la app, registra intentos, reintenta autom\u00e1ticamente cada 30 segundos cuando hay sesi\u00f3n activa, permite limpiar elementos ya sincronizados sin borrar datos remotos y luego sincroniza medios por /api/media, agenda por /api/agenda y experiencias por /api/experiences.";
+    labels.nativeSyncDetail = "Vibeapp ya tiene contratos nativos reales para texto, foto, video, audio, agenda, lugar, biometr\u00eda CSV/JSON e importaci\u00f3n de sesiones externas. La cola nativa valida cada payload, lo conserva localmente aunque cierres la app, registra intentos, reintenta autom\u00e1ticamente cada 30 segundos cuando hay sesi\u00f3n activa, vincula biometr\u00eda a la experiencia abierta sin crear duplicados, permite limpiar elementos ya sincronizados sin borrar datos remotos y luego sincroniza medios por /api/media, agenda por /api/agenda y experiencias por /api/experiences.";
   }
   const cards = [
     [labels.flow, labels.flowDetail],
