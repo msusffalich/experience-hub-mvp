@@ -6539,6 +6539,130 @@ button.asset-processing-summary-card {
   color: var(--accent-dark);
 }
 
+.global-progress-panel {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid rgba(12, 42, 88, 0.14);
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(248, 251, 255, 0.96), rgba(237, 248, 244, 0.86));
+  box-shadow: var(--shadow-soft);
+}
+
+.global-progress-heading,
+.global-progress-next {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.global-progress-heading h2,
+.global-progress-heading p,
+.global-progress-next p {
+  margin: 0;
+}
+
+.global-progress-heading p,
+.global-progress-next p {
+  color: var(--muted);
+}
+
+.global-progress-score {
+  display: grid;
+  min-width: 130px;
+  padding: 10px 12px;
+  border: 1px solid rgba(12, 42, 88, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.82);
+  text-align: right;
+}
+
+.global-progress-score span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.global-progress-score strong {
+  color: var(--accent-dark);
+  font-size: 28px;
+}
+
+.global-progress-next {
+  padding: 12px;
+  border: 1px solid rgba(13, 124, 102, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.global-progress-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+  gap: 10px;
+}
+
+.global-progress-grid.is-compact {
+  grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr));
+}
+
+.global-progress-grid article {
+  display: grid;
+  gap: 8px;
+  min-height: 150px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.84);
+}
+
+.global-progress-grid article.is-ready {
+  border-color: rgba(13, 124, 102, 0.24);
+}
+
+.global-progress-grid article.is-pending {
+  border-color: rgba(188, 92, 37, 0.28);
+}
+
+.global-progress-grid header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.global-progress-grid header span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.global-progress-grid header b {
+  color: var(--accent-dark);
+}
+
+.global-progress-grid strong {
+  color: var(--ink);
+}
+
+.global-progress-grid p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.global-progress-bar {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(12, 42, 88, 0.08);
+}
+
+.global-progress-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+}
+
 .publication-cover {
   display: grid;
   gap: 8px;

@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260526-publication-recommend-native-biometric-443";
+const CACHE_NAME = "experience-hub-pwa-20260526-global-progress-native-444";
 const APP_SHELL = [
   "/",
   "/index.html",

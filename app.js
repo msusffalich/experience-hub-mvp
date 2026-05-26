@@ -1,4 +1,4 @@
-const APP_VERSION = "20260526-publication-recommend-native-biometric-443";
+const APP_VERSION = "20260526-global-progress-native-444";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2385,6 +2385,7 @@ const manualContent = {
         "Los tipos de publicación no son iguales: publicación social rápida sirve para mensajes breves, reporte narrativo para contar un periodo, álbum experiencial para memorias visuales, resumen ejecutivo para enviar evidencia clara y guion de story/reel para una secuencia corta.",
         "Los nuevos formatos amplían el uso por canal: carrusel visual para Instagram, Facebook o LinkedIn; carta/email largo para compartir una memoria personal; dossier PDF para un documento más formal; ficha de salud para explicar información médica o biométrica en lenguaje claro; y blog/web para publicar una historia más extensa.",
         "El kit de salida por canal separa asunto, texto corto, texto ampliado, leyenda/gancho, manejo multimedia y checklist. Sirve para saber qué copiar, qué revisar y qué acción hacer según WhatsApp, Instagram, Facebook, LinkedIn, Email, Blog/Web o PDF.",
+        "Panel y Administración muestran Estado global de avance: PWA operativa, producción/Supabase, reportes/publicaciones, multimedia, Vibeapp nativa, conectores y producto completo. Es una vista honesta para separar lo listo de lo que sigue en desarrollo.",
         "Aprobación humana marca si el borrador está en revisión o aprobado. Cualquier edición, cambio de diseño o curaduría multimedia lo devuelve a revisión.",
         "Historial del borrador registra generación, ediciones, cambios de multimedia, diseño, aprobación y exportaciones recientes.",
         "Multimedia sugerida significa archivos ya adjuntos a las experiencias fuente. La app los propone para la publicación; incluirlos o excluirlos no modifica ni borra la experiencia original.",
@@ -2982,6 +2983,7 @@ const manualContent = {
         "If a draft is exported while still in review, the file includes that approval mark so it is not confused with a final version.",
         "The Draft editor lets you edit title, summary, and body. The Final document shows exactly what will be exported, combining the edited text with the included media.",
         "Publication designs shows visual layouts. Selecting one updates type, style, channel, and the final document appearance.",
+        "Dashboard and Admin show Global Progress: operating PWA, production/Supabase, reports/publications, multimedia, Vibeapp native, connectors, and full product. It is an honest view to separate what is ready from what is still under development.",
         "Editorial readiness evaluates clarity, privacy, media use, and channel fit. Its suggestions help decide whether the draft is ready for final review or needs edits.",
         "Pre-publication closure shows an operational checklist before export: human approval, text and length, privacy, media, and channel fit.",
         "Privacy cleanup hides detected emails, phone numbers, and links. The user must still review names, faces, locations, and sensitive data before publishing.",
@@ -7941,6 +7943,158 @@ function getPublicationExperiences() {
   return getExperiencesByAnalyticalFilters(state.publicationFilters || {});
 }
 
+function buildGlobalProgressSnapshot() {
+  const readiness = calculateDevelopmentReadiness();
+  const total = calculateTotalProductProgress(readiness);
+  const supabaseGate = buildSupabasePilotGate();
+  const multiDevice = summarizeReadiness(buildMultiDevicePersistenceChecks().map((check) => check.ok));
+  const assetAnalysis = calculateAssetAnalysisReadiness();
+  const assetWorkflow = calculateAssetWorkflowReadiness();
+  const publicationSignals = [
+    Boolean(getPublicationExperiences().length || state.experiences.length),
+    Boolean(publicationTemplates.length >= 8),
+    Boolean(state.currentPublicationDraft || state.publicationDrafts.length),
+    true, // ReportLab export path exists in the current app.
+    true, // Recommendation and composition recipe are active.
+  ];
+  const publicationReadiness = summarizeReadiness(publicationSignals);
+  const nativeSignals = [
+    true, // Flutter skeleton and Windows build path.
+    true, // Supabase Auth sign-in contract.
+    true, // Queue persistence and automatic retry.
+    true, // Text/photo/video/audio capture contracts.
+    true, // Agenda/location/biometric import contracts.
+    false, // Android/iOS build and store packaging still pending.
+    false, // Push/background capture still pending.
+    false, // Direct wearable APIs still pending.
+  ];
+  const nativeReadiness = summarizeReadiness(nativeSignals);
+  const connectorSignals = [
+    true, // API/MCP contract documented.
+    true, // Meta/Oura/Samsung/Apple practical routes documented.
+    false, // Direct native connectors not built yet.
+    false, // Store-distributed native app not published.
+    false, // Direct social publishing APIs not connected.
+  ];
+  const connectorReadiness = summarizeReadiness(connectorSignals);
+  const productionScore = Math.round((supabaseGate.score * 0.55) + (multiDevice.score * 0.45));
+  const multimodalScore = Math.round((assetAnalysis.score * 0.55) + (assetWorkflow.score * 0.45));
+  const overall = Math.round(
+    total.mvp * 0.24 +
+      productionScore * 0.2 +
+      publicationReadiness.score * 0.16 +
+      multimodalScore * 0.14 +
+      nativeReadiness.score * 0.14 +
+      connectorReadiness.score * 0.07 +
+      total.full * 0.05,
+  );
+  const labels = state.language === "en"
+    ? {
+        title: "Global Progress",
+        subtitle: "Honest product state across PWA, Supabase, outputs, native app, and future connectors.",
+        overall: "Overall delivery",
+        next: "Next operating block",
+        updated: "Updated",
+        open: "Open",
+        ready: "Ready",
+        review: "Review",
+        pwa: "PWA operating product",
+        pwaDetail: `Local MVP ${total.mvp}%; functional ${readiness.functional.score}%, technical ${readiness.technical.score}%.`,
+        production: "Production and Supabase",
+        productionDetail: `Supabase gate ${supabaseGate.score}%; multi-device controls ${multiDevice.score}%.`,
+        outputs: "Reports, findings, publications",
+        outputsDetail: "ReportLab PDFs, unified filters, publication recommendation, and editorial flow are active.",
+        multimodal: "Multimedia and OCR/analysis",
+        multimodalDetail: `${assetAnalysis.withText}/${assetAnalysis.total} assets with analytical text; workflow ${assetWorkflow.score}%.`,
+        native: "Vibeapp native",
+        nativeDetail: "Flutter skeleton has auth, queue, auto-retry, media, agenda, location, biometrics; mobile packaging remains pending.",
+        connectors: "Device and service connectors",
+        connectorsDetail: "Routes documented for Meta/Oakley, Oura, Apple Health, Samsung Health, Health Connect; direct connectors remain future work.",
+        full: "Full product ambition",
+        fullDetail: `Estimated full product ${total.full}%; advanced agents, predictive AI, and direct APIs are later phases.`,
+        nextDetail: "Close native mobile build path, then harden publication design/output and device-import flows.",
+      }
+    : {
+        title: "Estado global de avance",
+        subtitle: "Estado honesto del producto entre PWA, Supabase, salidas, app nativa y conectores futuros.",
+        overall: "Entrega global",
+        next: "Siguiente bloque operativo",
+        updated: "Actualizado",
+        open: "Abrir",
+        ready: "Listo",
+        review: "Revisar",
+        pwa: "Producto PWA operativo",
+        pwaDetail: `MVP local ${total.mvp}%; funcional ${readiness.functional.score}%, técnico ${readiness.technical.score}%.`,
+        production: "Producción y Supabase",
+        productionDetail: `Compuerta Supabase ${supabaseGate.score}%; controles multidispositivo ${multiDevice.score}%.`,
+        outputs: "Reportes, hallazgos y publicaciones",
+        outputsDetail: "PDFs ReportLab, filtros uniformes, recomendación de publicación y flujo editorial activos.",
+        multimodal: "Multimedia y OCR/análisis",
+        multimodalDetail: `${assetAnalysis.withText}/${assetAnalysis.total} activos con texto analítico; flujo ${assetWorkflow.score}%.`,
+        native: "Vibeapp nativa",
+        nativeDetail: "El esqueleto Flutter tiene auth, cola, autoreintento, medios, agenda, lugar y biometría; falta empaquetado móvil.",
+        connectors: "Conectores de dispositivos y servicios",
+        connectorsDetail: "Rutas documentadas para Meta/Oakley, Oura, Apple Health, Samsung Health y Health Connect; conectores directos quedan futuros.",
+        full: "Ambición de producto completo",
+        fullDetail: `Producto completo estimado ${total.full}%; agentes avanzados, IA predictiva y APIs directas quedan en fases posteriores.`,
+        nextDetail: "Cerrar ruta de build móvil nativo, luego fortalecer diseño/salidas de publicaciones y flujos de importación por dispositivo.",
+      };
+  const tracks = [
+    { key: "pwa", title: labels.pwa, score: total.mvp, detail: labels.pwaDetail, view: "dashboard" },
+    { key: "production", title: labels.production, score: productionScore, detail: labels.productionDetail, view: "admin", focus: "multiDevicePersistencePanel" },
+    { key: "outputs", title: labels.outputs, score: publicationReadiness.score, detail: labels.outputsDetail, view: "publications" },
+    { key: "multimodal", title: labels.multimodal, score: multimodalScore, detail: labels.multimodalDetail, view: "assetLibrary" },
+    { key: "native", title: labels.native, score: nativeReadiness.score, detail: labels.nativeDetail, view: "admin", focus: "adminOperationalFocusPanel" },
+    { key: "connectors", title: labels.connectors, score: connectorReadiness.score, detail: labels.connectorsDetail, view: "admin", focus: "externalIntegrationPanel" },
+    { key: "full", title: labels.full, score: total.full, detail: labels.fullDetail, view: "admin", focus: "publishPlanPanel" },
+  ];
+  return { labels, overall, tracks };
+}
+
+function renderGlobalProgressPanel(containerId = "dashboardGlobalProgressPanel", { compact = false } = {}) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const snapshot = buildGlobalProgressSnapshot();
+  const nextTrack = snapshot.tracks.find((item) => item.score < 75) || snapshot.tracks.find((item) => item.key === "native") || snapshot.tracks[0];
+  container.innerHTML = `
+    <div class="global-progress-heading">
+      <div>
+        <h2>${escapeHtml(snapshot.labels.title)}</h2>
+        <p>${escapeHtml(snapshot.labels.subtitle)}</p>
+      </div>
+      <div class="global-progress-score">
+        <span>${escapeHtml(snapshot.labels.overall)}</span>
+        <strong>${escapeHtml(`${snapshot.overall}%`)}</strong>
+      </div>
+    </div>
+    <div class="global-progress-next">
+      <div>
+        <strong>${escapeHtml(snapshot.labels.next)}</strong>
+        <p>${escapeHtml(snapshot.labels.nextDetail)}</p>
+      </div>
+      <button class="ghost-button" type="button" data-backlog-view="${escapeHtml(nextTrack.view || "admin")}" data-backlog-focus="${escapeHtml(nextTrack.focus || "")}">${escapeHtml(snapshot.labels.open)} ${escapeHtml(nextTrack.title)}</button>
+    </div>
+    <div class="global-progress-grid ${compact ? "is-compact" : ""}">
+      ${snapshot.tracks
+        .map(
+          (track) => `
+            <article class="${track.score >= 85 ? "is-ready" : track.score >= 60 ? "is-review" : "is-pending"}">
+              <header>
+                <span>${escapeHtml(track.score >= 85 ? snapshot.labels.ready : snapshot.labels.review)}</span>
+                <b>${escapeHtml(`${track.score}%`)}</b>
+              </header>
+              <strong>${escapeHtml(track.title)}</strong>
+              <div class="global-progress-bar"><i style="width:${Math.max(4, Math.min(100, track.score))}%"></i></div>
+              <p>${escapeHtml(track.detail)}</p>
+            </article>
+          `,
+        )
+        .join("")}
+    </div>
+    <p class="card-meta">${escapeHtml(snapshot.labels.updated)}: ${escapeHtml(formatDate(new Date().toISOString()))} · ${escapeHtml(APP_VERSION)}</p>
+  `;
+}
+
 function analyzePublicationScopeRecommendation() {
   const experiences = getPublicationExperiences();
   const media = collectPublicationMedia(experiences);
@@ -8007,6 +8161,7 @@ function analyzePublicationScopeRecommendation() {
 function renderDashboardScopedPanels() {
   updateDashboardParticipantControl();
   renderDashboardGroupOnboarding();
+  renderGlobalProgressPanel("dashboardGlobalProgressPanel", { compact: true });
   renderMetrics();
   renderDashboardAttachmentStatus();
   renderDashboardAgenda();
@@ -8494,6 +8649,7 @@ function refreshLiveCaptureDependentViews() {
   updateDashboardParticipantControl();
   updatePilotParticipantControls();
   renderDashboardTimeContext();
+  renderGlobalProgressPanel("dashboardGlobalProgressPanel", { compact: true });
   renderMetrics();
   renderDashboardAttachmentStatus();
   renderDashboardAgenda();
@@ -9241,6 +9397,7 @@ function applyInitialViewFromUrl() {
 function renderAll() {
   updateDashboardParticipantControl();
   renderDashboardTimeContext();
+  renderGlobalProgressPanel("dashboardGlobalProgressPanel", { compact: true });
   renderMetrics();
   updatePilotParticipantControls();
   renderDashboardAttachmentStatus();
@@ -25692,6 +25849,7 @@ function renderAdmin() {
   ];
   document.getElementById("embeddingStatus").textContent =
     state.embeddingStatus || (state.language === "en" ? "Vector search ready for Supabase" : "Búsqueda vectorial lista para Supabase");
+  renderGlobalProgressPanel("adminGlobalProgressPanel");
   renderAdminOperationalFocusPanel();
   renderAdminCommandCenter();
   renderPublishPlanPanel();
