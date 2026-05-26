@@ -4,6 +4,29 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vibeapp/main.dart';
 
 void main() {
+  test('Native quick commands parse note, agenda, and experience actions', () {
+    final note = NativeQuickCommand.parse(
+        'Hola V, toma nota que el parque está hermoso');
+    expect(note.type, NativeQuickCommandType.note);
+    expect(note.cleanedText, 'el parque está hermoso');
+
+    final agenda = NativeQuickCommand.parse(
+      'V, agenda cena con Ana hoy a las 8 pm en Casa',
+    );
+    expect(agenda.type, NativeQuickCommandType.agenda);
+    expect(agenda.agenda?.title.toLowerCase(), contains('cena'));
+    expect(agenda.agenda?.location, 'Casa');
+
+    final start = NativeQuickCommand.parse(
+      'V, inicia experiencia paseo por Praga',
+    );
+    expect(start.type, NativeQuickCommandType.startExperience);
+    expect(start.cleanedText, 'Paseo por Praga');
+
+    final close = NativeQuickCommand.parse('V, cerrar experiencia');
+    expect(close.type, NativeQuickCommandType.closeExperience);
+  });
+
   testWidgets('Vibeapp quick capture smoke test', (WidgetTester tester) async {
     await tester.pumpWidget(const VibeApp());
 

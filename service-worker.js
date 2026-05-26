@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260526-native-pilot-gate-445";
+const CACHE_NAME = "experience-hub-pwa-20260526-native-command-router-446";
 const APP_SHELL = [
   "/",
   "/index.html",

@@ -208,12 +208,50 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
   Future<void> _saveDraft() async {
     final text = _noteController.text.trim();
     if (text.isEmpty) return;
+    final command = NativeQuickCommand.parse(text);
+
+    if (command.type == NativeQuickCommandType.closeExperience) {
+      _noteController.clear();
+      await _closeExperienceSession();
+      return;
+    }
+
+    if (command.type == NativeQuickCommandType.startExperience) {
+      final title = command.cleanedText.isEmpty
+          ? 'Experiencia desde Vibeapp'
+          : command.cleanedText;
+      setState(() {
+        if (_activeSession == null) {
+          _activeSession = ActiveExperienceSession.start(title);
+        } else {
+          _activeSession!.addTextEvent('Nuevo tramo: $title');
+          _upsertSessionQueueItem(_activeSession!);
+        }
+        _noteController.clear();
+        _syncState = SyncState.ready;
+      });
+      await _saveQueue();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Experiencia activa: $title')),
+      );
+      return;
+    }
+
+    if (command.type == NativeQuickCommandType.agenda &&
+        command.agenda != null) {
+      _noteController.clear();
+      _queueAgendaEvent(command.agenda!);
+      return;
+    }
+
+    final noteText = command.cleanedText.isEmpty ? text : command.cleanedText;
     final session = _activeSession;
     setState(() {
       if (session == null) {
-        _queue.insert(0, CaptureQueueItem.text(text));
+        _queue.insert(0, CaptureQueueItem.text(noteText));
       } else {
-        session.addTextEvent(text);
+        session.addTextEvent(noteText);
         _upsertSessionQueueItem(session);
       }
       _noteController.clear();
@@ -2258,6 +2296,63 @@ class ExternalSessionSourceGuideData {
   final List<String> accepted;
 }
 
+enum NativeQuickCommandType {
+  note,
+  agenda,
+  startExperience,
+  closeExperience,
+}
+
+class NativeQuickCommand {
+  const NativeQuickCommand({
+    required this.type,
+    required this.cleanedText,
+    this.agenda,
+  });
+
+  factory NativeQuickCommand.parse(String rawText) {
+    final command = stripNativeWakePhrase(rawText);
+    final lower = command.toLowerCase();
+
+    if (RegExp(
+      r'\b(cierra|cerrar|termina|terminar|finaliza|finalizar|stop|close|end)\b.*\b(experiencia|experience)\b',
+    ).hasMatch(lower)) {
+      return const NativeQuickCommand(
+        type: NativeQuickCommandType.closeExperience,
+        cleanedText: '',
+      );
+    }
+
+    if (RegExp(
+      r'\b(empieza|inicia|iniciar|abre|nueva|graba|start|begin|new|create)\b.*\b(experiencia|experience)\b',
+    ).hasMatch(lower)) {
+      return NativeQuickCommand(
+        type: NativeQuickCommandType.startExperience,
+        cleanedText: cleanNativeExperienceTitle(command),
+      );
+    }
+
+    if (RegExp(
+      r'\b(agenda|calendario|recordarme|recuérdame|recuerdame|schedule|calendar|remind)\b',
+    ).hasMatch(lower)) {
+      return NativeQuickCommand(
+        type: NativeQuickCommandType.agenda,
+        cleanedText: command,
+        agenda: buildNativeAgendaFromCommand(command),
+      );
+    }
+
+    return NativeQuickCommand(
+      type: NativeQuickCommandType.note,
+      cleanedText: cleanNativeNoteText(command),
+    );
+  }
+
+  final NativeQuickCommandType type;
+  final String cleanedText;
+  final AgendaEventDraft? agenda;
+}
+
 class ExternalSessionImportDraft {
   const ExternalSessionImportDraft({
     required this.source,
@@ -3656,6 +3751,127 @@ String externalFileEventTitle(String sourceType, int order) {
     _ => 'Documento',
   };
   return '$label $order';
+}
+
+String stripNativeWakePhrase(String text) {
+  return text
+      .trim()
+      .replaceFirst(
+        RegExp(r'^(hola|hello|hi|hey|oye)\s+(v|ve|vee)\b[,\s:;-]*',
+            caseSensitive: false),
+        '',
+      )
+      .replaceFirst(
+        RegExp(r'^(v|ve|vee)\b[,\s:;-]*', caseSensitive: false),
+        '',
+      )
+      .trim();
+}
+
+String cleanNativeNoteText(String text) {
+  final cleaned = text
+      .replaceFirst(
+        RegExp(
+          r'^(toma nota|tomar nota|anota|nota que|guarda esto|guardar esto|take note|note that|save this)\s*(que|:)?\s*',
+          caseSensitive: false,
+        ),
+        '',
+      )
+      .trim();
+  return cleaned.isEmpty ? text.trim() : cleaned;
+}
+
+String cleanNativeExperienceTitle(String text) {
+  final cleaned = text
+      .replaceFirst(
+        RegExp(
+          r'^(empieza|inicia|iniciar|abre|crear|crea|graba|start|begin|create|new)\s*(una|un|nueva|nuevo)?\s*(experiencia|experience)?\s*(que|sobre|:)?\s*',
+          caseSensitive: false,
+        ),
+        '',
+      )
+      .trim();
+  return cleaned.isEmpty ? 'Experiencia desde Vibeapp' : sentenceCase(cleaned);
+}
+
+AgendaEventDraft buildNativeAgendaFromCommand(String command) {
+  final now = DateTime.now();
+  final startAt = parseNativeCommandDateTime(command, now);
+  final title = buildNativeAgendaTitle(command);
+  return AgendaEventDraft(
+    title: title,
+    description: 'Creado desde comando rápido: ${command.trim()}',
+    location: extractNativeAgendaLocation(command),
+    startAt: startAt.toUtc(),
+    endAt: startAt.add(const Duration(hours: 1)).toUtc(),
+  );
+}
+
+DateTime parseNativeCommandDateTime(String command, DateTime now) {
+  final lower = command.toLowerCase();
+  var date = DateTime(now.year, now.month, now.day);
+  if (lower.contains('mañana') || lower.contains('manana')) {
+    date = date.add(const Duration(days: 1));
+  }
+
+  final match = RegExp(
+    r'(?:a\s+las|at)?\s*(\d{1,2})(?::(\d{2}))?\s*(a\.?m\.?|p\.?m\.?|am|pm)?',
+    caseSensitive: false,
+  ).firstMatch(lower);
+  if (match == null) {
+    return now.add(const Duration(hours: 1));
+  }
+
+  var hour = int.tryParse(match.group(1) ?? '') ?? now.hour;
+  final minute = int.tryParse(match.group(2) ?? '') ?? 0;
+  final meridiem = (match.group(3) ?? '').replaceAll('.', '').toLowerCase();
+  if (meridiem == 'pm' && hour < 12) hour += 12;
+  if (meridiem == 'am' && hour == 12) hour = 0;
+  if (meridiem.isEmpty && hour < 7 && lower.contains('tarde')) hour += 12;
+  final parsed = DateTime(date.year, date.month, date.day, hour, minute);
+  return parsed.isBefore(now) ? parsed.add(const Duration(days: 1)) : parsed;
+}
+
+String buildNativeAgendaTitle(String command) {
+  var title = command
+      .replaceAll(
+        RegExp(
+          r'\b(pon en mi agenda|agrega a mi agenda|agenda|calendario|recordarme|recuérdame|recuerdame|schedule|calendar|remind me|remind)\b',
+          caseSensitive: false,
+        ),
+        '',
+      )
+      .replaceAll(
+        RegExp(
+          r'\b(hoy|mañana|manana|today|tomorrow|a las|at|am|pm|a\.m\.|p\.m\.)\b',
+          caseSensitive: false,
+        ),
+        '',
+      )
+      .replaceAll(RegExp(r'\d{1,2}(:\d{2})?'), '')
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .trim();
+  title = title.replaceFirst(
+    RegExp(r'^(que|tengo|tener|un|una)\s+', caseSensitive: false),
+    '',
+  );
+  return title.isEmpty ? 'Recordatorio desde Vibeapp' : sentenceCase(title);
+}
+
+String extractNativeAgendaLocation(String command) {
+  final match = RegExp(
+    r'\b(?:en|at)\s+(.+?)(?:\s+(?:con|hoy|mañana|manana|today|tomorrow|a las|at)\b|$)',
+    caseSensitive: false,
+  ).firstMatch(command);
+  final value = match?.group(1)?.trim() ?? '';
+  if (value.length < 3 || RegExp(r'^\d').hasMatch(value)) return '';
+  return sentenceCase(value);
+}
+
+String sentenceCase(String value) {
+  final trimmed = value.trim();
+  if (trimmed.isEmpty) return '';
+  return '${trimmed[0].toUpperCase()}${trimmed.substring(1)}';
 }
 
 String formatClock(DateTime value) {

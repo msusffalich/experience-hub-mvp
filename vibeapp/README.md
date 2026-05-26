@@ -24,6 +24,7 @@ This folder is a starter skeleton. Flutter SDK is available locally at `C:\Users
 - Source-specific import guidance: Meta/Oakley, Oura, Apple Health, Samsung Health, Health Connect, gallery, and other imports show recommended file types and realistic workflow before file selection.
 - Mobile pilot gate: the main screen can verify the production Vibe backend, show session status, summarize local queue risk, and confirm capture capabilities before a real phone/tablet test.
 - Android permission baseline includes network state, internet, camera, microphone, location, image/video/audio library access, legacy storage read, and notifications so mobile builds do not fail on basic platform permissions.
+- Local command router: text typed in quick capture can interpret practical V commands before sync. Examples: take note, start experience, close experience, or create an agenda reminder. The same parser can later consume native speech-to-text transcripts.
 - Development sync settings: Vibe API endpoint + Supabase Auth email/password.
 - Text notes can sign in through the PWA public Supabase config, then attempt `POST /api/experiences` through the Vibe backend. If an experience is active, every note or native action becomes an internal event under the same experience ID.
 - Photo, video, audio, agenda, location, and biometric file actions now use real backend contracts. Direct wearable APIs remain future connectors.
