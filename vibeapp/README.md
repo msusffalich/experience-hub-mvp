@@ -15,6 +15,8 @@ This folder is a starter skeleton. Flutter SDK is available locally at `C:\Users
 - Native location capture with permission, GPS coordinates, accuracy, and experience/event sync.
 - Native biometric CSV/JSON file import with private upload, summary metadata, and PWA hydration as cross-experience context.
 - External session import for Meta/Oakley/Ray-Ban, Oura, Apple Health, Samsung Health/Galaxy Watch, Health Connect, phone gallery, or other sources. Multiple files are grouped into one experience with internal events and normalized metadata.
+- Local payload validation before sync: Vibeapp now checks title, text, events, file existence, empty files, MIME type, linked events, and source-specific expectations before sending a capture to Vibe.
+- Source-specific import guidance: Meta/Oakley, Oura, Apple Health, Samsung Health, Health Connect, gallery, and other imports show recommended file types and realistic workflow before file selection.
 - Development sync settings: Vibe API endpoint + Supabase Auth email/password.
 - Text notes can sign in through the PWA public Supabase config, then attempt `POST /api/experiences` through the Vibe backend. If an experience is active, every note or native action becomes an internal event under the same experience ID.
 - Photo, video, audio, agenda, location, and biometric file actions now use real backend contracts. Direct wearable APIs remain future connectors.
@@ -61,6 +63,14 @@ This folder is a starter skeleton. Flutter SDK is available locally at `C:\Users
 3. Create one Vibe experience with internal events and linked assets, using the Clio-style pattern: native import, private Storage, normalized metadata, backend processing.
 4. For Meta glasses, use the realistic flow: glasses capture -> Meta AI/phone gallery import -> Vibeapp external session import.
 
+## Seventh milestone
+
+1. Validate every queued payload before sync.
+2. Show a clear queue badge: ready, ready with warnings, or review before sending.
+3. Prevent invalid payloads from being sent to the backend.
+4. Explain source-specific import rules before the user chooses files.
+5. Keep warnings local and understandable: missing file, empty file, unknown MIME type, no linked event, or source/file mismatch.
+
 ## Native capture contract
 
 Every native action should emit the same normalized payload:
@@ -78,6 +88,8 @@ Every native action should emit the same normalized payload:
 - `mimeType`
 - `checksum`
 - `syncStatus`: local, uploading, synced, failed, needsReview
+- `validationStatus`: ready, warning, or blocked before network sync
+- `validationMessages`: local user-readable checks before upload
 
 The PWA remains the review, reporting, publication, and admin surface. Vibeapp native is the low-friction capture and device-permission layer.
 

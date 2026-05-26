@@ -147,6 +147,16 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
     final client = ExperienceSyncClient(settings);
     var failures = 0;
     for (final item in pending) {
+      final validation = item.validateForSync();
+      if (!validation.canSync) {
+        failures += 1;
+        setState(() {
+          item.status = CaptureSyncStatus.failed;
+          item.error = validation.primaryMessage;
+          _syncState = SyncState.needsAttention;
+        });
+        continue;
+      }
       setState(() {
         item.status = CaptureSyncStatus.uploading;
         item.error = '';
@@ -550,6 +560,8 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
                       }
                     },
                   ),
+                  const SizedBox(height: 10),
+                  ExternalSessionSourceGuide(source: selectedSource),
                   const SizedBox(height: 12),
                   TextField(
                     controller: titleController,
@@ -1096,6 +1108,55 @@ class ExternalSessionImportCard extends StatelessWidget {
   }
 }
 
+class ExternalSessionSourceGuide extends StatelessWidget {
+  const ExternalSessionSourceGuide({required this.source, super.key});
+
+  final ExternalSessionSource source;
+
+  @override
+  Widget build(BuildContext context) {
+    final guide = source.guide;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outlineVariant,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              guide.title,
+              style: Theme.of(context)
+                  .textTheme
+                  .labelLarge
+                  ?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 6),
+            Text(guide.detail),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final item in guide.accepted)
+                  Chip(
+                    label: Text(item),
+                    visualDensity: VisualDensity.compact,
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class ExperienceSessionCard extends StatelessWidget {
   const ExperienceSessionCard({
     required this.titleController,
@@ -1376,17 +1437,76 @@ class CaptureQueuePanel extends StatelessWidget {
               const Text(
                   'Sin capturas pendientes. Cuando guardes una nota o acciones un medio, aparecerá aquí antes de sincronizar.')
             else
-              for (final item in queue.take(8))
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: Icon(item.status.icon),
-                  title: Text(item.title),
-                  subtitle: Text(item.subtitle),
-                  trailing: Text(item.status.label),
-                ),
+              for (final item in queue.take(8)) QueueItemTile(item: item),
           ],
         ),
       ),
+    );
+  }
+}
+
+class QueueItemTile extends StatelessWidget {
+  const QueueItemTile({required this.item, super.key});
+
+  final CaptureQueueItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final validation = item.validateForSync();
+    final color = validation.canSync
+        ? validation.hasWarnings
+            ? Colors.orange
+            : Colors.green
+        : Colors.red;
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(item.status.icon),
+      title: Text(item.title),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(item.subtitle),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              Chip(
+                visualDensity: VisualDensity.compact,
+                avatar: Icon(
+                  validation.canSync
+                      ? validation.hasWarnings
+                          ? Icons.warning_amber_outlined
+                          : Icons.verified_outlined
+                      : Icons.error_outline,
+                  size: 16,
+                  color: color,
+                ),
+                label: Text(validation.label),
+              ),
+              if (item.attachments.isNotEmpty)
+                Chip(
+                  visualDensity: VisualDensity.compact,
+                  label: Text('${item.attachments.length} archivo(s)'),
+                ),
+              if (item.events.isNotEmpty)
+                Chip(
+                  visualDensity: VisualDensity.compact,
+                  label: Text('${item.events.length} evento(s)'),
+                ),
+            ],
+          ),
+          if (validation.messages.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              validation.messages.take(2).join(' '),
+              style:
+                  Theme.of(context).textTheme.bodySmall?.copyWith(color: color),
+            ),
+          ],
+        ],
+      ),
+      trailing: Text(item.status.label),
     );
   }
 }
@@ -1668,6 +1788,72 @@ enum ExternalSessionSource {
   final String label;
   final String defaultTitle;
   final String contract;
+
+  ExternalSessionSourceGuideData get guide {
+    switch (this) {
+      case ExternalSessionSource.metaGlasses:
+        return const ExternalSessionSourceGuideData(
+          title: 'Flujo recomendado Meta/Oakley',
+          detail:
+              'Importa primero desde Meta AI a Fotos/Galeria. Luego trae JPG/HEIC, MP4/HEVC o el JSON/HTML de datos como una sola experiencia.',
+          accepted: ['JPG/HEIC', 'MP4/HEVC', 'JSON/HTML', 'ZIP transporte'],
+        );
+      case ExternalSessionSource.oura:
+        return const ExternalSessionSourceGuideData(
+          title: 'Flujo recomendado Oura',
+          detail:
+              'Usa CSV o JSON de Oura/Oura Teams. Vibeapp lo guarda como contexto biometrico transversal, no como foto o audio.',
+          accepted: ['CSV', 'JSON', 'PDF referencia'],
+        );
+      case ExternalSessionSource.appleHealth:
+        return const ExternalSessionSourceGuideData(
+          title: 'Flujo recomendado Apple Health',
+          detail:
+              'Usa CSV o JSON exportado. La PWA cruza fecha/hora con experiencias para energia, sueno, actividad y recuperacion.',
+          accepted: ['CSV', 'JSON', 'ZIP transporte'],
+        );
+      case ExternalSessionSource.samsungHealth:
+        return const ExternalSessionSourceGuideData(
+          title: 'Flujo recomendado Samsung Health',
+          detail:
+              'Usa exportaciones CSV/JSON de Samsung Health o Galaxy Watch. Si viene como ZIP, se transporta y se procesa despues.',
+          accepted: ['CSV', 'JSON', 'ZIP transporte'],
+        );
+      case ExternalSessionSource.healthConnect:
+        return const ExternalSessionSourceGuideData(
+          title: 'Flujo recomendado Health Connect',
+          detail:
+              'Usa exportaciones estructuradas del telefono Android. Se priorizan fechas, pasos, frecuencia cardiaca, sueno y actividad.',
+          accepted: ['CSV', 'JSON'],
+        );
+      case ExternalSessionSource.phoneGallery:
+        return const ExternalSessionSourceGuideData(
+          title: 'Flujo recomendado Galeria',
+          detail:
+              'Selecciona fotos, videos y audios de una misma salida o momento. Vibeapp los agrupa como eventos internos.',
+          accepted: ['Imagenes', 'Videos', 'Audio', 'Documentos'],
+        );
+      case ExternalSessionSource.other:
+        return const ExternalSessionSourceGuideData(
+          title: 'Otro origen',
+          detail:
+              'Importa archivos normales y agrega contexto humano. Vibeapp conserva metadatos para que la PWA los revise.',
+          accepted: ['Imagen', 'Video', 'Audio', 'Documento', 'ZIP'],
+        );
+    }
+  }
+}
+
+class ExternalSessionSourceGuideData {
+  const ExternalSessionSourceGuideData({
+    required this.title,
+    required this.detail,
+    required this.accepted,
+  });
+
+  final String title;
+  final String detail;
+  final List<String> accepted;
 }
 
 class ExternalSessionImportDraft {
@@ -2114,6 +2300,31 @@ class NativeAttachmentDraft {
   }
 }
 
+class NativePayloadValidation {
+  const NativePayloadValidation({
+    this.errors = const [],
+    this.warnings = const [],
+  });
+
+  final List<String> errors;
+  final List<String> warnings;
+
+  bool get canSync => errors.isEmpty;
+  bool get hasWarnings => warnings.isNotEmpty;
+  List<String> get messages => [...errors, ...warnings];
+  String get label {
+    if (errors.isNotEmpty) return 'Revisar antes de enviar';
+    if (warnings.isNotEmpty) return 'Listo con advertencias';
+    return 'Listo para sincronizar';
+  }
+
+  String get primaryMessage {
+    if (errors.isNotEmpty) return errors.first;
+    if (warnings.isNotEmpty) return warnings.first;
+    return 'Listo para sincronizar.';
+  }
+}
+
 class CaptureQueueItem {
   CaptureQueueItem({
     required this.id,
@@ -2322,6 +2533,76 @@ class CaptureQueueItem {
       locationDraft != null ||
       biometricSummary != null ||
       attachments.isNotEmpty;
+
+  NativePayloadValidation validateForSync() {
+    final errors = <String>[];
+    final warnings = <String>[];
+    if (!canSync) {
+      errors.add('Esta accion aun no tiene contrato de sincronizacion.');
+    }
+    if (title.trim().isEmpty) {
+      errors.add('Falta titulo.');
+    }
+    if (sourceType == 'text' && detail.trim().isEmpty) {
+      errors.add('Falta texto de la captura.');
+    }
+    if (sourceType == 'experience-session' &&
+        events.isEmpty &&
+        attachments.isEmpty) {
+      warnings.add('La experiencia no tiene eventos ni activos.');
+    }
+    if (sourceType == 'external-session' && attachments.isEmpty) {
+      errors.add('La sesion externa no tiene archivos validos.');
+    }
+    if (events.isNotEmpty) {
+      final orders = <int>{};
+      for (final event in events) {
+        if (event.title.trim().isEmpty) errors.add('Hay un evento sin titulo.');
+        if (event.description.trim().isEmpty) {
+          warnings.add('Hay un evento sin descripcion.');
+        }
+        if (!orders.add(event.order)) {
+          warnings.add('Hay eventos con orden repetido.');
+        }
+      }
+    }
+    for (final attachment in attachments) {
+      final file = File(attachment.filePath);
+      if (attachment.filePath.trim().isEmpty || !file.existsSync()) {
+        errors.add('No se encuentra el archivo ${attachment.name}.');
+        continue;
+      }
+      if (attachment.size <= 0 && file.lengthSync() <= 0) {
+        errors.add('El archivo ${attachment.name} esta vacio.');
+      }
+      if (attachment.mimeType == 'application/octet-stream') {
+        warnings.add('Tipo MIME no reconocido para ${attachment.name}.');
+      }
+      if ((sourceType == 'experience-session' ||
+              sourceType == 'external-session') &&
+          attachment.eventId.isEmpty) {
+        warnings.add('${attachment.name} no tiene evento vinculado.');
+      }
+    }
+    if (sourceType == 'external-session') {
+      final hasVisual = attachments.any(
+          (item) => item.sourceType == 'image' || item.sourceType == 'video');
+      final hasBiometric =
+          attachments.any((item) => item.sourceType == 'biometric');
+      final source = externalSessionSource ?? '';
+      if (source.contains('Meta') && !hasVisual) {
+        warnings.add('Meta/Oakley normalmente deberia traer fotos o videos.');
+      }
+      if ((source.contains('Oura') ||
+              source.contains('Apple') ||
+              source.contains('Samsung') ||
+              source.contains('Health Connect')) &&
+          !hasBiometric) {
+        warnings.add('Este origen funciona mejor con CSV o JSON biometrico.');
+      }
+    }
+    return NativePayloadValidation(errors: errors, warnings: warnings);
+  }
 
   String get subtitle {
     final reason = error.isEmpty ? detail : '$detail\n$error';
