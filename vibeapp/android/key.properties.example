@@ -1,0 +1,4 @@
+storeFile=C:/Users/msusf/Documents/Codex/secure/vibeapp-upload-keystore.p12
+storePassword=REPLACE_WITH_LOCAL_STORE_PASSWORD
+keyAlias=vibeapp-upload
+keyPassword=REPLACE_WITH_LOCAL_KEY_PASSWORD
