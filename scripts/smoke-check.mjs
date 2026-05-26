@@ -247,7 +247,7 @@ assert(files.packageJson.includes("\"verify:flutter\"") && files.packageJson.inc
 assert(files.flutterVerify.includes("flutter analyze") || files.flutterVerify.includes('["analyze"]'), "Flutter verifier must run flutter analyze.");
 assert(files.flutterVerify.includes("flutter test") || files.flutterVerify.includes('["test"]'), "Flutter verifier must run flutter test.");
 assert(files.flutterVerify.includes("io.vibeapp.mobile") && files.flutterVerify.includes("VIBE_REBUILD_ANDROID"), "Flutter verifier must validate the Android package contract and optional rebuild path.");
-assert(files.packageJson.includes("\"package:vibeapp\"") && files.vibeappPackage.includes("checksums.sha256") && files.vibeappPackage.includes("manifest.json"), "package.json must expose a Vibeapp pilot package command with checksums and manifest.");
+assert(files.packageJson.includes("\"package:vibeapp\"") && files.vibeappPackage.includes("checksums.sha256") && files.vibeappPackage.includes("manifest.json") && files.vibeappPackage.includes("Compress-Archive"), "package.json must expose a Vibeapp pilot package command with checksums, manifest, and transfer ZIP.");
 assert(files.vibeappPackage.includes("verify:android") && files.vibeappPackage.includes("vibeapp-pilot-release.apk") && files.vibeappPackage.includes("vibeapp-pilot-release.aab"), "Vibeapp package script must verify Android and include APK/AAB.");
 assert(files.server.includes("PYTHONPATH") && files.server.includes(".python"), "Server must expose bundled Python packages to ReportLab scripts.");
 assert(!files.index.includes('data-daily-flow="horoscope"'), "Daily should not expose horoscope until the module is reliable.");

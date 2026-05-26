@@ -9,6 +9,9 @@ const pubspec = readFileSync(path.join(root, "vibeapp", "pubspec.yaml"), "utf8")
 const vibeappVersion = pubspec.match(/^version:\s*(.+)$/m)?.[1]?.trim() || "0.0.0+0";
 const packageId = "io.vibeapp.mobile";
 const outDir = path.join(root, "dist", "vibeapp-pilot");
+const zipName = `vibeapp-pilot-${pwaVersion}.zip`;
+const zipPath = path.join(root, "dist", zipName);
+const zipChecksumPath = `${zipPath}.sha256`;
 const artifacts = [
   {
     kind: "apk",
@@ -92,6 +95,11 @@ const manifest = {
     signingKeyIncluded: false,
     note: "El paquete incluye APK/AAB firmados, pero nunca incluye key.properties, keystores ni passwords.",
   },
+  delivery: {
+    folder: "dist/vibeapp-pilot",
+    zip: `dist/${zipName}`,
+    zipChecksum: `dist/${zipName}.sha256`,
+  },
   artifacts: packagedArtifacts,
   pilotFlow: [
     "Instalar el APK en un Android fisico o subir el AAB a Play Console interna.",
@@ -120,6 +128,12 @@ Backend: https://experience-hub-web-production.up.railway.app
 
 ${packagedArtifacts.map((artifact) => `- ${artifact.file}: ${artifact.label} (${artifact.sizeLabel}).\n  - Uso: ${artifact.use}\n  - SHA-256: \`${artifact.sha256}\``).join("\n")}
 
+## Delivery files
+
+- Folder: \`dist/vibeapp-pilot\`
+- Transfer ZIP: \`dist/${zipName}\`
+- ZIP checksum: \`dist/${zipName}.sha256\`
+
 ## Pilot install path
 
 1. For a fast device test, copy \`vibeapp-pilot-release.apk\` to the Android phone and install it.
@@ -133,6 +147,32 @@ ${packagedArtifacts.map((artifact) => `- ${artifact.file}: ${artifact.label} (${
 This folder intentionally does not include signing keys, \`key.properties\`, keystores or passwords. Keep those outside Git and outside pilot delivery packages.
 `,
 );
+
+rmSync(zipPath, { force: true });
+rmSync(zipChecksumPath, { force: true });
+console.log("Creating transfer ZIP...");
+const zipResult = process.platform === "win32"
+  ? spawnSync("powershell.exe", [
+    "-NoProfile",
+    "-Command",
+    `Compress-Archive -Path '${outDir.replaceAll("'", "''")}\\*' -DestinationPath '${zipPath.replaceAll("'", "''")}' -Force`,
+  ], {
+    cwd: root,
+    encoding: "utf8",
+    windowsHide: true,
+  })
+  : spawnSync("zip", ["-qr", zipPath, "."], {
+    cwd: outDir,
+    encoding: "utf8",
+    windowsHide: true,
+  });
+if (zipResult.stdout) process.stdout.write(zipResult.stdout);
+if (zipResult.stderr) process.stderr.write(zipResult.stderr);
+if (zipResult.status !== 0 || !existsSync(zipPath)) {
+  throw new Error(`Could not create transfer ZIP: exit ${zipResult.status}`);
+}
+const zipHash = sha256(zipPath);
+writeFileSync(zipChecksumPath, `${zipHash}  ${zipName}\n`);
 
 console.log(`Vibeapp pilot package ready: ${path.relative(root, outDir)}`);
 for (const artifact of packagedArtifacts) {

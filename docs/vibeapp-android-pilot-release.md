@@ -66,6 +66,8 @@ Genera `dist/vibeapp-pilot` con:
 - `manifest.json` con version PWA, version Vibeapp, backend, artefactos y flujo piloto.
 - `checksums.sha256` para validar integridad.
 - `README.md` con instrucciones de instalacion y seguridad.
+- `dist/vibeapp-pilot-<version>.zip` para mover todo el paquete como un solo archivo.
+- `dist/vibeapp-pilot-<version>.zip.sha256` para validar el ZIP entregado.
 
 El paquete no incluye claves, `key.properties`, keystores ni passwords.
 
