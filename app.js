@@ -1,4 +1,4 @@
-const APP_VERSION = "20260526-route-to-90-447";
+const APP_VERSION = "20260526-android-sdk-ready-448";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -7971,7 +7971,7 @@ function buildGlobalProgressSnapshot() {
     true, // Queue persistence and automatic retry.
     true, // Text/photo/video/audio capture contracts.
     true, // Agenda/location/biometric import contracts.
-    false, // Android/iOS build and store packaging still pending.
+    true, // Android debug build and SDK toolchain verified.
     false, // Push/background capture still pending.
     false, // Direct wearable APIs still pending.
   ];
@@ -8024,12 +8024,12 @@ function buildGlobalProgressSnapshot() {
         multimodal: "Multimedia and OCR/analysis",
         multimodalDetail: `${assetAnalysis.withText}/${assetAnalysis.total} assets with analytical text; workflow ${assetWorkflow.score}%.`,
         native: "Vibeapp native",
-        nativeDetail: "Flutter skeleton has auth, command preview/routing, mobile pilot gate, queue, auto-retry, media, agenda, location, biometrics; mobile packaging remains pending.",
+        nativeDetail: "Flutter skeleton has auth, command preview/routing, mobile pilot gate, queue, auto-retry, media, agenda, location, biometrics, and a verified Android debug APK; release signing and store packaging remain pending.",
         connectors: "Device and service connectors",
         connectorsDetail: "Routes documented for Meta/Oakley, Oura, Apple Health, Samsung Health, Health Connect; direct connectors remain future work.",
         full: "Full product ambition",
         fullDetail: `Estimated full product ${total.full}%; advanced agents, predictive AI, and direct APIs are later phases.`,
-        nextDetail: "Close native mobile build path, then harden publication design/output and device-import flows.",
+        nextDetail: "Close Android release signing and package identity, then harden publication design/output and device-import flows.",
       }
     : {
         title: "Estado global de avance",
@@ -8059,12 +8059,12 @@ function buildGlobalProgressSnapshot() {
         multimodal: "Multimedia y OCR/análisis",
         multimodalDetail: `${assetAnalysis.withText}/${assetAnalysis.total} activos con texto analítico; flujo ${assetWorkflow.score}%.`,
         native: "Vibeapp nativa",
-        nativeDetail: "El esqueleto Flutter tiene auth, vista previa de comandos, compuerta piloto móvil, cola, autoreintento, medios, agenda, lugar y biometría; falta empaquetado móvil.",
+        nativeDetail: "El esqueleto Flutter tiene auth, vista previa de comandos, compuerta piloto móvil, cola, autoreintento, medios, agenda, lugar, biometría y APK Android debug verificado; falta firma release y distribución piloto.",
         connectors: "Conectores de dispositivos y servicios",
         connectorsDetail: "Rutas documentadas para Meta/Oakley, Oura, Apple Health, Samsung Health y Health Connect; conectores directos quedan futuros.",
         full: "Ambición de producto completo",
         fullDetail: `Producto completo estimado ${total.full}%; agentes avanzados, IA predictiva y APIs directas quedan en fases posteriores.`,
-        nextDetail: "Cerrar ruta de build móvil nativo, luego fortalecer diseño/salidas de publicaciones y flujos de importación por dispositivo.",
+        nextDetail: "Cerrar firma release e identidad del paquete Android, luego fortalecer diseño/salidas de publicaciones y flujos de importación por dispositivo.",
       };
   const tracks = [
     { key: "pwa", title: labels.pwa, score: total.mvp, detail: labels.pwaDetail, view: "dashboard" },
@@ -8089,7 +8089,7 @@ function buildGlobalProgressSnapshot() {
         multimodalTitle: "Asset evidence and OCR review",
         multimodalNext: "Open pending assets, add or accept analytical text, and clear the human review queue.",
         nativeTitle: "Native mobile delivery path",
-        nativeNext: "Keep the documented mobile contract visible and close packaging/build evidence before counting it as delivery.",
+        nativeNext: "Create release signing material, replace placeholder package IDs, and prepare the first installable pilot package.",
         connectorsTitle: "Device/service import contract",
         connectorsNext: "Convert the API/MCP contract into the first integration issue with sample payloads and acceptance tests.",
       }
@@ -8106,7 +8106,7 @@ function buildGlobalProgressSnapshot() {
         multimodalTitle: "Evidencia de activos y revisión OCR",
         multimodalNext: "Abrir activos pendientes, agregar o aceptar texto analítico y limpiar la cola de revisión humana.",
         nativeTitle: "Ruta de entrega móvil nativa",
-        nativeNext: "Mantener visible el contrato móvil y cerrar evidencia de empaquetado/build antes de contarlo como entrega.",
+        nativeNext: "Crear firma release, reemplazar IDs de paquete temporales y preparar el primer paquete instalable de piloto.",
         connectorsTitle: "Contrato de importación dispositivo/servicio",
         connectorsNext: "Convertir el contrato API/MCP en el primer issue de integración con payloads y pruebas de aceptación.",
       };

@@ -2,13 +2,14 @@
 
 Vibeapp is the future native companion for Vibe PWA. It focuses on real device capture: camera, video, audio, location, biometrics, notifications, offline queue, and transparent Supabase sync.
 
-This folder is a starter skeleton. Flutter SDK is available locally at `C:\Users\msusf\Documents\Codex\flutter-sdk`; `flutter analyze`, `flutter test`, and `flutter build windows` have passed. Android builds still require Android Studio / Android SDK configuration.
+This folder is a starter skeleton. Flutter SDK is available locally at `C:\Users\msusf\Documents\Codex\flutter-sdk`; `flutter analyze`, `flutter test`, `flutter build windows`, and `flutter build apk --debug` have passed. Android SDK, command-line tools, JDK 21, NDK, CMake, platform-tools, and Android licenses are installed locally under `C:\Users\msusf\Documents\Codex`.
 
 ## Mobile packaging readiness
 
 Safe native packaging baseline now in place:
 
 - Android applies both the Android application plugin and Kotlin Android plugin, which is required because the launcher activity is Kotlin.
+- Android debug packaging is verified. The current debug APK is generated at `build/app/outputs/flutter-apk/app-debug.apk` after setting `JAVA_HOME`, `ANDROID_HOME`, and `ANDROID_SDK_ROOT`.
 - Android declares camera and microphone as optional hardware features. The app can request runtime permissions for capture without excluding pilot devices that lack one of those sensors.
 - Android release builds can use a real upload key when `android/key.properties` exists with `storeFile`, `storePassword`, `keyAlias`, and `keyPassword`. Without those local credentials, release keeps Flutter's debug-key fallback for smoke tests only.
 - iOS has user-facing usage strings for camera, microphone, photo library, and when-in-use location.
@@ -17,6 +18,7 @@ Pilot blockers that still need product/account decisions:
 
 - Replace the placeholder package identifiers `com.example.vibeapp` and `com.example.vibeapp.RunnerTests` before store/TestFlight or Play pilot distribution.
 - Add real Android upload signing material locally; do not commit keystores or passwords.
+- Migrate the Android Gradle/Kotlin stack to Flutter's built-in Kotlin path once all plugins support it. For now, AGP 8.13.1 is pinned because it builds reliably with `file_picker`, `image_picker_android`, `package_info_plus`, and `record_android`.
 - Set the iOS development team, provisioning profile, and final bundle identifier in Xcode once the Apple developer account is selected.
 - Replace default Flutter launcher icons and launch images before external testers receive the app.
 

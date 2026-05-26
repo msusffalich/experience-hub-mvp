@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260526-route-to-90-447";
+const CACHE_NAME = "experience-hub-pwa-20260526-android-sdk-ready-448";
 const APP_SHELL = [
   "/",
   "/index.html",
