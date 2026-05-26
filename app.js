@@ -1,4 +1,4 @@
-const APP_VERSION = "20260526-android-release-apk-451";
+const APP_VERSION = "20260526-output-pdf-verify-452";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2050,6 +2050,7 @@ const manualContent = {
         "Hallazgos es la salida principal de lectura humana: organiza las experiencias en 8 ejes de análisis y luego muestra hallazgos priorizados con evidencia, confianza y próxima acción.",
         "Hallazgos permite descargar la lectura como PDF ReportLab, HTML imprimible o Markdown para revisar, compartir o archivar fuera de la app.",
         "Todos los PDFs operativos de Reportes, Hallazgos y Publicaciones usan ReportLab como motor principal para producir documentos editados, con portada, tarjetas, indicadores, visuales mixtos y evidencia curada. HTML queda como vista o respaldo.",
+        "La verificación técnica ahora genera PDFs reales de Reporte, Hallazgos, Publicaciones y Manual con payloads de prueba antes de aceptar una versión. No basta con que ReportLab importe; cada salida debe devolver un PDF válido.",
         "En Railway, ReportLab requiere Python y dependencias instaladas en el build. El proyecto incluye railpack.json y requirements.txt para que producción no caiga al PDF simple anterior.",
         "El resumen del Panel lista los pendientes principales del piloto para convertir la recomendación en acciones concretas.",
         "Administración permite exportar un paquete piloto completo con preparación, invitación, pruebas, participantes, feedback y acta de cierre.",
@@ -2659,6 +2660,7 @@ const manualContent = {
         "Insights is the main human-reading output: it organizes experiences into 8 analysis themes and then shows prioritized findings with evidence, confidence, and next action.",
         "Insights can be downloaded as a ReportLab PDF, printable HTML, or Markdown for review, sharing, or archiving outside the app.",
         "Report, Findings, and Publication PDFs use ReportLab as the main engine to produce edited documents with cover pages, cards, mixed visuals, indicators, and curated evidence. HTML remains as preview or fallback.",
+        "Technical verification now renders real Report, Findings, Publication, and Manual PDFs from sample payloads before accepting a version. Importing ReportLab is not enough; each output must return a valid PDF.",
         "On Railway, ReportLab requires Python and build-time dependencies. The project includes railpack.json and requirements.txt so production does not fall back to the previous simple PDF.",
         "The Dashboard summary lists the main pilot pending items so the recommendation becomes concrete action.",
         "Admin can export a complete pilot package with readiness, invitation, tests, participants, feedback, and closure record.",
@@ -8021,7 +8023,7 @@ function buildGlobalProgressSnapshot() {
         production: "Production and Supabase",
         productionDetail: `Supabase gate ${supabaseGate.score}%; multi-device controls ${multiDevice.score}%.`,
         outputs: "Reports, findings, publications",
-        outputsDetail: "ReportLab PDFs, unified filters, publication recommendation, and editorial flow are active.",
+        outputsDetail: "ReportLab PDFs, full output verification, unified filters, publication recommendation, and editorial flow are active.",
         multimodal: "Multimedia and OCR/analysis",
         multimodalDetail: `${assetAnalysis.withText}/${assetAnalysis.total} assets with analytical text; workflow ${assetWorkflow.score}%.`,
         native: "Vibeapp native",
@@ -8056,7 +8058,7 @@ function buildGlobalProgressSnapshot() {
         production: "Producción y Supabase",
         productionDetail: `Compuerta Supabase ${supabaseGate.score}%; controles multidispositivo ${multiDevice.score}%.`,
         outputs: "Reportes, hallazgos y publicaciones",
-        outputsDetail: "PDFs ReportLab, filtros uniformes, recomendación de publicación y flujo editorial activos.",
+        outputsDetail: "PDFs ReportLab, verificación completa de salidas, filtros uniformes, recomendación de publicación y flujo editorial activos.",
         multimodal: "Multimedia y OCR/análisis",
         multimodalDetail: `${assetAnalysis.withText}/${assetAnalysis.total} activos con texto analítico; flujo ${assetWorkflow.score}%.`,
         native: "Vibeapp nativa",
