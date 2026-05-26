@@ -32,6 +32,7 @@ vibeapp/.flutter-localappdata/
 dist/
 build/
 .cache/
+.tool-home/
 .railway/
 tmp/
 **/*.p12

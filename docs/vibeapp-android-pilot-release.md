@@ -24,6 +24,14 @@ La clave local permite probar el flujo completo de release. Antes de Play Consol
 
 ## Comandos de verificacion
 
+Compuerta completa de piloto desde la raiz del repo:
+
+```powershell
+npm run verify:pilot
+```
+
+Esta orden ejecuta la validacion PWA, los PDFs ReportLab, la firma Android y Flutter `analyze`/`test`. Es el comando recomendado antes de publicar o entregar un paquete piloto.
+
 Verificacion automatica desde la raiz del repo:
 
 ```powershell
@@ -31,6 +39,19 @@ npm run verify:android
 ```
 
 Esa compuerta valida que existan APK/AAB release, que el APK este firmado, que `key.properties` siga ignorado por Git y que no haya secretos de firma trackeados.
+
+Chequeo Flutter aislado desde la raiz del repo:
+
+```powershell
+npm run verify:flutter
+```
+
+Ese chequeo valida contrato Android, permisos, dependencias nativas, `flutter analyze` y `flutter test`. Si se quiere reconstruir APK/AAB dentro de la compuerta Flutter, usar:
+
+```powershell
+$env:VIBE_REBUILD_ANDROID='1'
+npm run verify:flutter
+```
 
 Ejecutar desde `vibeapp`:
 

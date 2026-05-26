@@ -14,6 +14,7 @@ const files = {
   outputPdfVerify: readFileSync("scripts/verify-output-pdfs.mjs", "utf8"),
   pwaVerify: readFileSync("scripts/verify-pwa-release.mjs", "utf8"),
   androidVerify: readFileSync("scripts/verify-android-release.mjs", "utf8"),
+  flutterVerify: readFileSync("scripts/verify-flutter-mobile.mjs", "utf8"),
   reportPdf: readFileSync("scripts/report_pdf_reportlab.py", "utf8"),
   insightsPdf: readFileSync("scripts/insights_pdf_reportlab.py", "utf8"),
   publicationPdf: readFileSync("scripts/publication_pdf_reportlab.py", "utf8"),
@@ -241,6 +242,10 @@ assert(files.outputPdfVerify.includes("report_pdf_reportlab.py") && files.output
 assert(files.packageJson.includes("\"verify:pwa\"") && files.packageJson.includes("\"verify:release\""), "package.json must expose PWA and release verification scripts.");
 assert(files.pwaVerify.includes("manifest.webmanifest") && files.pwaVerify.includes("service-worker.js") && files.pwaVerify.includes("VIBE_RELEASE_URL"), "PWA verifier must check manifest, service worker, and optional production URL.");
 assert(files.packageJson.includes("\"verify:android\"") && files.androidVerify.includes("apksigner") && files.androidVerify.includes("key.properties"), "package.json must expose Android signing verification.");
+assert(files.packageJson.includes("\"verify:flutter\"") && files.packageJson.includes("\"verify:pilot\""), "package.json must expose Flutter and unified pilot verification scripts.");
+assert(files.flutterVerify.includes("flutter analyze") || files.flutterVerify.includes('["analyze"]'), "Flutter verifier must run flutter analyze.");
+assert(files.flutterVerify.includes("flutter test") || files.flutterVerify.includes('["test"]'), "Flutter verifier must run flutter test.");
+assert(files.flutterVerify.includes("io.vibeapp.mobile") && files.flutterVerify.includes("VIBE_REBUILD_ANDROID"), "Flutter verifier must validate the Android package contract and optional rebuild path.");
 assert(files.server.includes("PYTHONPATH") && files.server.includes(".python"), "Server must expose bundled Python packages to ReportLab scripts.");
 assert(!files.index.includes('data-daily-flow="horoscope"'), "Daily should not expose horoscope until the module is reliable.");
 assert(files.app.includes("function experienceMatchesPilotParticipant"), "Participant filtering must support legacy records by participant name.");
