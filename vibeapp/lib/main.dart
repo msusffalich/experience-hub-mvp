@@ -165,7 +165,10 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
     await _syncPendingQueue(showSnackBar: true);
   }
 
-  Future<void> _syncPendingQueue({bool showSnackBar = false}) async {
+  Future<void> _syncPendingQueue({
+    bool showSnackBar = false,
+    bool force = false,
+  }) async {
     final settings = SyncSettings(
       apiBaseUrl: _apiUrlController.text.trim(),
       accessToken: _accessToken,
@@ -173,10 +176,16 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
     final pending = _queue
         .where(
             (item) => item.canSync && item.status != CaptureSyncStatus.synced)
+        .where((item) => force || item.canAttemptSyncNow)
         .toList();
 
     if (pending.isEmpty) {
-      setState(() => _syncState = SyncState.ready);
+      final waitingRetry = _queue.any((item) =>
+          item.canSync &&
+          item.status != CaptureSyncStatus.synced &&
+          !item.canAttemptSyncNow);
+      setState(() => _syncState =
+          waitingRetry ? SyncState.needsAttention : SyncState.ready);
       await _saveQueue();
       return;
     }
@@ -207,27 +216,23 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
       if (!validation.canSync) {
         failures += 1;
         setState(() {
-          item.status = CaptureSyncStatus.failed;
-          item.error = validation.primaryMessage;
+          item.markFailed(validation.primaryMessage, retryable: false);
           _syncState = SyncState.needsAttention;
         });
         continue;
       }
       setState(() {
-        item.status = CaptureSyncStatus.uploading;
-        item.error = '';
+        item.markAttemptStarted();
         _syncState = SyncState.syncing;
       });
       final result = await client.syncItem(item);
       if (!mounted) return;
       setState(() {
         if (result.ok) {
-          item.status = CaptureSyncStatus.synced;
-          item.remoteId = result.remoteId;
+          item.markSynced(result.remoteId ?? item.id);
         } else {
           failures += 1;
-          item.status = CaptureSyncStatus.failed;
-          item.error = result.message;
+          item.markFailed(result.message);
         }
       });
     }
@@ -1003,6 +1008,9 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
     if (index >= 0) {
       final previous = _queue[index];
       item.remoteId = previous.remoteId;
+      item.attemptCount = previous.attemptCount;
+      item.lastAttemptAt = previous.lastAttemptAt;
+      item.nextRetryAt = previous.nextRetryAt;
       item.status = previous.status == CaptureSyncStatus.synced
           ? CaptureSyncStatus.queued
           : previous.status;
@@ -1305,7 +1313,7 @@ class SyncSettingsCard extends StatelessWidget {
   final TextEditingController passwordController;
   final String signedInEmail;
   final Future<void> Function() onSignIn;
-  final Future<void> Function({bool showSnackBar}) onRetry;
+  final Future<void> Function({bool showSnackBar, bool force}) onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -1368,7 +1376,7 @@ class SyncSettingsCard extends StatelessWidget {
                   label: const Text('Entrar'),
                 ),
                 OutlinedButton.icon(
-                  onPressed: () => onRetry(showSnackBar: true),
+                  onPressed: () => onRetry(showSnackBar: true, force: true),
                   icon: const Icon(Icons.sync_outlined),
                   label: const Text('Reintentar cola'),
                 ),
@@ -1563,9 +1571,30 @@ class QueueItemTile extends StatelessWidget {
                   Theme.of(context).textTheme.bodySmall?.copyWith(color: color),
             ),
           ],
+          if (item.retryDescription.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              item.retryDescription,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: Colors.blueGrey),
+            ),
+          ],
         ],
       ),
-      trailing: Text(item.status.label),
+      trailing: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text(item.status.label),
+          if (item.attemptCount > 0)
+            Text(
+              '${item.attemptCount} intento(s)',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+        ],
+      ),
     );
   }
 }
@@ -2506,6 +2535,9 @@ class CaptureQueueItem {
     this.biometricSummary,
     this.closedAt,
     this.externalSessionSource,
+    this.attemptCount = 0,
+    this.lastAttemptAt,
+    this.nextRetryAt,
   });
 
   factory CaptureQueueItem.text(String text) {
@@ -2712,6 +2744,9 @@ class CaptureQueueItem {
           stringFromJson(json['externalSessionSource']).isEmpty
               ? null
               : stringFromJson(json['externalSessionSource']),
+      attemptCount: intFromJson(json['attemptCount']),
+      lastAttemptAt: parseNativeDate(json['lastAttemptAt']),
+      nextRetryAt: parseNativeDate(json['nextRetryAt']),
     );
   }
 
@@ -2730,6 +2765,9 @@ class CaptureQueueItem {
   final BiometricImportSummary? biometricSummary;
   final DateTime? closedAt;
   final String? externalSessionSource;
+  int attemptCount;
+  DateTime? lastAttemptAt;
+  DateTime? nextRetryAt;
 
   bool get canSync =>
       sourceType == 'text' ||
@@ -2739,6 +2777,48 @@ class CaptureQueueItem {
       locationDraft != null ||
       biometricSummary != null ||
       attachments.isNotEmpty;
+
+  bool get canAttemptSyncNow {
+    if (status == CaptureSyncStatus.needsNativePlugin) return false;
+    final retryAt = nextRetryAt;
+    return retryAt == null || !DateTime.now().toUtc().isBefore(retryAt);
+  }
+
+  String get retryDescription {
+    final retryAt = nextRetryAt;
+    if (retryAt == null || status == CaptureSyncStatus.synced) return '';
+    final seconds = retryAt.difference(DateTime.now().toUtc()).inSeconds;
+    if (seconds <= 0) return 'Listo para reintentar.';
+    if (seconds < 60) return 'Reintento automatico en ${seconds}s.';
+    return 'Reintento automatico en ${(seconds / 60).ceil()} min.';
+  }
+
+  void markAttemptStarted() {
+    attemptCount += 1;
+    lastAttemptAt = DateTime.now().toUtc();
+    nextRetryAt = null;
+    status = CaptureSyncStatus.uploading;
+    error = '';
+  }
+
+  void markSynced(String remoteIdValue) {
+    status = CaptureSyncStatus.synced;
+    remoteId = remoteIdValue;
+    error = '';
+    nextRetryAt = null;
+  }
+
+  void markFailed(String message, {bool retryable = true}) {
+    status = CaptureSyncStatus.failed;
+    error = message;
+    if (!retryable) {
+      nextRetryAt = null;
+      return;
+    }
+    const waits = [15, 45, 120, 300, 900];
+    final waitSeconds = waits[attemptCount.clamp(1, waits.length) - 1];
+    nextRetryAt = DateTime.now().toUtc().add(Duration(seconds: waitSeconds));
+  }
 
   NativePayloadValidation validateForSync() {
     final errors = <String>[];
@@ -2916,6 +2996,9 @@ class CaptureQueueItem {
       'biometricSummary': biometricSummary?.toJson(),
       'closedAt': closedAt?.toIso8601String(),
       'externalSessionSource': externalSessionSource,
+      'attemptCount': attemptCount,
+      'lastAttemptAt': lastAttemptAt?.toIso8601String(),
+      'nextRetryAt': nextRetryAt?.toIso8601String(),
     };
   }
 }

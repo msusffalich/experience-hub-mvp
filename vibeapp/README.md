@@ -17,6 +17,7 @@ This folder is a starter skeleton. Flutter SDK is available locally at `C:\Users
 - External session import for Meta/Oakley/Ray-Ban, Oura, Apple Health, Samsung Health/Galaxy Watch, Health Connect, phone gallery, or other sources. Multiple files are grouped into one experience with internal events and normalized metadata.
 - Local payload validation before sync: Vibeapp now checks title, text, events, file existence, empty files, MIME type, linked events, and source-specific expectations before sending a capture to Vibe.
 - Local queue persistence: pending, failed, and synced queue items are saved to a device JSON cache so captures survive closing and reopening the app.
+- Retry policy: failed sync attempts keep attempt count, last attempt time, and next retry time; manual retry can override the wait.
 - Source-specific import guidance: Meta/Oakley, Oura, Apple Health, Samsung Health, Health Connect, gallery, and other imports show recommended file types and realistic workflow before file selection.
 - Development sync settings: Vibe API endpoint + Supabase Auth email/password.
 - Text notes can sign in through the PWA public Supabase config, then attempt `POST /api/experiences` through the Vibe backend. If an experience is active, every note or native action becomes an internal event under the same experience ID.
@@ -78,6 +79,12 @@ This folder is a starter skeleton. Flutter SDK is available locally at `C:\Users
 2. Restore captures at startup with status, error, remote ID, events, attachments, agenda data, location data, and biometric summaries.
 3. Keep Supabase as the shared source of truth after sync; the local queue is only the native safety net.
 
+## Ninth milestone
+
+1. Track sync attempts, last attempt time, and next retry time per queued item.
+2. Apply progressive wait times after transient failures.
+3. Let the user force a retry from the sync card without losing the safer automatic retry schedule.
+
 ## Native capture contract
 
 Every native action should emit the same normalized payload:
@@ -98,6 +105,7 @@ Every native action should emit the same normalized payload:
 - `validationStatus`: ready, warning, or blocked before network sync
 - `validationMessages`: local user-readable checks before upload
 - `queuePersistence`: local JSON cache for queued items, remote IDs, errors, and sync state
+- `retryPolicy`: attempt count, last attempt, next retry, and manual retry override
 
 The PWA remains the review, reporting, publication, and admin surface. Vibeapp native is the low-friction capture and device-permission layer.
 

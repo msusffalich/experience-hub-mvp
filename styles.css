@@ -6356,6 +6356,40 @@ button.asset-processing-summary-card {
   font-weight: 800;
 }
 
+.publication-fit-panel {
+  display: grid;
+  gap: 4px;
+  margin: 10px 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(46, 110, 166, 0.22);
+  background: rgba(46, 110, 166, 0.07);
+}
+
+.publication-fit-panel.is-ok {
+  border-color: rgba(13, 124, 102, 0.28);
+  background: rgba(13, 124, 102, 0.08);
+}
+
+.publication-fit-panel.is-review {
+  border-color: rgba(200, 121, 19, 0.32);
+  background: rgba(200, 121, 19, 0.08);
+}
+
+.publication-fit-panel strong,
+.publication-fit-panel p {
+  margin: 0;
+}
+
+.publication-fit-panel strong {
+  color: var(--ink);
+}
+
+.publication-fit-panel p {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
 .publication-cover {
   display: grid;
   gap: 8px;

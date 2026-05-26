@@ -1,4 +1,4 @@
-const APP_VERSION = "20260526-publication-native-persistence-439";
+const APP_VERSION = "20260526-publication-channel-retry-440";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -6749,6 +6749,8 @@ function setupActions() {
   document.getElementById("downloadPdfButton")?.addEventListener("click", downloadPdfReport);
   document.getElementById("generatePublicationButton").addEventListener("click", generatePublicationDraft);
   document.getElementById("publicationTypeInput").addEventListener("change", updatePublicationTypeHelp);
+  document.getElementById("publicationStyleInput").addEventListener("change", updatePublicationTypeHelp);
+  document.getElementById("publicationChannelInput").addEventListener("change", updatePublicationTypeHelp);
   document.getElementById("previewPublicationHtmlButton").addEventListener("click", previewCurrentPublicationHtml);
   document.getElementById("launchPublicationChannelButton").addEventListener("click", preparePublicationChannelLaunch);
   document.getElementById("copyPublicationTextButton").addEventListener("click", copyCurrentPublicationText);
@@ -7564,6 +7566,7 @@ function updatePublicationTypeHelp() {
   const select = document.getElementById("publicationTypeInput");
   if (!box || !select) return;
   const type = select.value || publicationTypes[0];
+  const channel = document.getElementById("publicationChannelInput")?.value || "PDF/HTML";
   const guide = getPublicationTypeGuide(type);
   const title = state.language === "en" ? displayPublicationType(type) : type;
   const purpose = state.language === "en" ? translatePublicationGuideText(guide.purpose) : guide.purpose;
@@ -7578,8 +7581,45 @@ function updatePublicationTypeHelp() {
     <p><b>${escapeHtml(state.language === "en" ? "Best for" : "Sirve para")}:</b> ${escapeHtml(bestFor)}</p>
     <p><b>${escapeHtml(mediaLabel)}:</b> ${escapeHtml(mediaPolicy || "")}</p>
     <p><b>${escapeHtml(channelLabel)}:</b> ${(guide.channels || []).map((item) => `<span class="publication-guide-chip">${escapeHtml(item)}</span>`).join(" ")}</p>
+    ${renderPublicationTypeChannelFit(type, channel)}
     <ul>${structure.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
     ${renderPublicationChannelMatrix({ channel: "" })}
+  `;
+}
+
+function renderPublicationTypeChannelFit(type, channel) {
+  const guide = getPublicationTypeGuide(type);
+  const recommended = guide.channels || [];
+  const exact = recommended.includes(channel);
+  const indirect = channel === "PDF/HTML" || channel === "Blog/Web";
+  const status = exact || indirect ? "ok" : "review";
+  const label = state.language === "en"
+    ? exact
+      ? "Strong fit"
+      : indirect
+        ? "Good as master document"
+        : "Review channel fit"
+    : exact
+      ? "Buen encaje"
+      : indirect
+        ? "Buen documento maestro"
+        : "Revisar encaje del canal";
+  const detail = state.language === "en"
+    ? exact
+      ? `${displayPublicationType(type)} is naturally suited for ${channel}.`
+      : indirect
+        ? `${displayPublicationType(type)} can be exported as the master piece, then adapted to a posting channel.`
+        : `${displayPublicationType(type)} can still work, but ${channel} usually performs better with: ${recommended.join(", ")}.`
+    : exact
+      ? `${displayPublicationType(type)} esta naturalmente alineado con ${channel}.`
+      : indirect
+        ? `${displayPublicationType(type)} puede salir como pieza maestra y luego adaptarse a un canal de publicacion.`
+        : `${displayPublicationType(type)} puede funcionar, pero ${channel} suele ir mejor con: ${recommended.join(", ")}.`;
+  return `
+    <div class="publication-fit-panel is-${status}">
+      <strong>${escapeHtml(label)}</strong>
+      <p>${escapeHtml(detail)}</p>
+    </div>
   `;
 }
 
@@ -24536,7 +24576,7 @@ function renderAdminOperationalFocusPanel() {
         reportPdf: "Cleaner reports, publications, and findings",
         reportPdfDetail: "Reports now use an executive PDF, participant scope, and folded technical exports. Publications explain format fit, edited text, media actions, and non-image handling. Findings are organized by 8 human themes and can be downloaded.",
         nativeSync: "Vibeapp real queue",
-        nativeSyncDetail: "Vibeapp now has real native contracts for text, photo, video, audio, agenda, location, and biometric CSV/JSON files. The native queue validates each payload, persists locally across app restarts, and then syncs media through /api/media, agenda through /api/agenda, and experiences through /api/experiences.",
+        nativeSyncDetail: "Vibeapp now has real native contracts for text, photo, video, audio, agenda, location, and biometric CSV/JSON files. The native queue validates each payload, persists locally across app restarts, tracks attempts, schedules retries, and then syncs media through /api/media, agenda through /api/agenda, and experiences through /api/experiences.",
       }
     : {
         title: "Administración operativa",
@@ -24573,7 +24613,7 @@ function renderAdminOperationalFocusPanel() {
     labels.reportPdf = "Reportes, publicaciones y hallazgos limpios";
     labels.reportPdfDetail = "Reportes usa PDF ejecutivo, alcance por persona y exportaciones técnicas plegadas. Publicaciones suma matriz por canal: carrusel, carta/email, dossier, ficha de salud, blog/web, LinkedIn y PDF/HTML, con medios seleccionables y acciones claras para audio, video, documentos y ZIP. Hallazgos se organiza en 8 ejes humanos y se puede descargar.";
     labels.nativeSync = "Vibeapp con cola real";
-    labels.nativeSyncDetail = "Vibeapp ya tiene contratos nativos reales para texto, foto, video, audio, agenda, lugar, biometr\u00eda CSV/JSON e importaci\u00f3n de sesiones externas. La cola nativa valida cada payload, lo conserva localmente aunque cierres la app y luego sincroniza medios por /api/media, agenda por /api/agenda y experiencias por /api/experiences.";
+    labels.nativeSyncDetail = "Vibeapp ya tiene contratos nativos reales para texto, foto, video, audio, agenda, lugar, biometr\u00eda CSV/JSON e importaci\u00f3n de sesiones externas. La cola nativa valida cada payload, lo conserva localmente aunque cierres la app, registra intentos, agenda reintentos y luego sincroniza medios por /api/media, agenda por /api/agenda y experiencias por /api/experiences.";
   }
   const cards = [
     [labels.flow, labels.flowDetail],
