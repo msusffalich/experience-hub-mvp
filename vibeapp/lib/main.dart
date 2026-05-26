@@ -55,6 +55,9 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
   bool _isRecordingAudio = false;
   String _audioRecordingPath = '';
   bool _autoRetryRunning = false;
+  bool _isCheckingBackend = false;
+  bool _backendHealthOk = false;
+  String _backendHealthMessage = 'Verifica el backend antes del piloto móvil.';
 
   @override
   void initState() {
@@ -152,6 +155,53 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(result.message)),
       );
+    }
+  }
+
+  Future<void> _verifyBackendHealth() async {
+    final baseUrl = _apiUrlController.text.trim();
+    if (baseUrl.isEmpty) {
+      setState(() {
+        _backendHealthOk = false;
+        _backendHealthMessage = 'Define la URL de Vibe antes de verificar.';
+      });
+      return;
+    }
+    setState(() => _isCheckingBackend = true);
+    try {
+      final uri = Uri.parse(baseUrl).resolve('/api/health');
+      final request =
+          await HttpClient().getUrl(uri).timeout(const Duration(seconds: 8));
+      final response =
+          await request.close().timeout(const Duration(seconds: 12));
+      final body = await response.transform(utf8.decoder).join();
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw StateError('HTTP ${response.statusCode}: ${shorten(body)}');
+      }
+      final decoded = jsonDecode(body);
+      final data = decoded is Map<String, dynamic> ? decoded : {};
+      final persistence = stringFromJson(data['persistence']);
+      final storage = stringFromJson(data['mediaStorage']);
+      final mode = stringFromJson(data['deploymentMode']);
+      final supabaseReady = data['supabaseConfigured'] == true;
+      if (!mounted) return;
+      setState(() {
+        _backendHealthOk = supabaseReady && persistence.contains('supabase');
+        _backendHealthMessage = _backendHealthOk
+            ? 'Backend listo: $mode · $persistence · $storage.'
+            : 'Backend responde, pero falta confirmar Supabase/Storage.';
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _backendHealthOk = false;
+        _backendHealthMessage =
+            'No se pudo verificar Vibe: ${shorten(error.toString())}';
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _isCheckingBackend = false);
+      }
     }
   }
 
@@ -1114,6 +1164,15 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
               onClose: _closeExperienceSession,
             ),
             const SizedBox(height: 16),
+            NativePilotReadinessCard(
+              backendOk: _backendHealthOk,
+              backendMessage: _backendHealthMessage,
+              checkingBackend: _isCheckingBackend,
+              signedInEmail: _signedInEmail,
+              queue: _queue,
+              onVerifyBackend: _verifyBackendHealth,
+            ),
+            const SizedBox(height: 16),
             const NativeFlowSummary(),
             const SizedBox(height: 16),
             ExternalSessionImportCard(onImport: _importExternalSession),
@@ -1173,6 +1232,177 @@ class NativeFlowSummary extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class NativePilotReadinessCard extends StatelessWidget {
+  const NativePilotReadinessCard({
+    required this.backendOk,
+    required this.backendMessage,
+    required this.checkingBackend,
+    required this.signedInEmail,
+    required this.queue,
+    required this.onVerifyBackend,
+    super.key,
+  });
+
+  final bool backendOk;
+  final String backendMessage;
+  final bool checkingBackend;
+  final String signedInEmail;
+  final List<CaptureQueueItem> queue;
+  final Future<void> Function() onVerifyBackend;
+
+  @override
+  Widget build(BuildContext context) {
+    final pending = queue
+        .where(
+            (item) => item.canSync && item.status != CaptureSyncStatus.synced)
+        .length;
+    final blocked = queue
+        .where((item) =>
+            item.status == CaptureSyncStatus.failed ||
+            item.status == CaptureSyncStatus.needsSession)
+        .length;
+    final readyCount = [
+      backendOk,
+      signedInEmail.isNotEmpty,
+      pending == 0,
+      true,
+      true,
+      true,
+    ].where((item) => item).length;
+    final score = (readyCount / 6 * 100).round();
+    final color = score >= 85
+        ? Colors.green
+        : score >= 60
+            ? Colors.orange
+            : Colors.red;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Compuerta piloto móvil',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w800),
+                  ),
+                ),
+                Chip(
+                  avatar: Icon(
+                    score >= 85
+                        ? Icons.verified_outlined
+                        : Icons.warning_amber_outlined,
+                    color: color,
+                    size: 18,
+                  ),
+                  label: Text('$score%'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Usa esta tarjeta antes de probar en teléfono: confirma backend, sesión, cola y capacidades nativas sin exponer Supabase al usuario final.',
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                ReadinessChip(
+                  ok: backendOk,
+                  label: 'Backend',
+                  detail: backendMessage,
+                ),
+                ReadinessChip(
+                  ok: signedInEmail.isNotEmpty,
+                  label: 'Sesión',
+                  detail: signedInEmail.isEmpty
+                      ? 'Falta entrar con usuario Vibe.'
+                      : signedInEmail,
+                ),
+                ReadinessChip(
+                  ok: pending == 0,
+                  label: 'Cola',
+                  detail: pending == 0
+                      ? 'Sin pendientes.'
+                      : '$pending pendiente(s), $blocked requieren revisión.',
+                ),
+                const ReadinessChip(
+                  ok: true,
+                  label: 'Medios',
+                  detail:
+                      'Foto, video, audio y archivos usan permisos nativos.',
+                ),
+                const ReadinessChip(
+                  ok: true,
+                  label: 'Contexto',
+                  detail: 'Agenda, lugar, biometría e importaciones externas.',
+                ),
+                const ReadinessChip(
+                  ok: true,
+                  label: 'Seguridad',
+                  detail: 'Cola local, reintento y Storage privado.',
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: checkingBackend ? null : onVerifyBackend,
+                icon: checkingBackend
+                    ? const SizedBox.square(
+                        dimension: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.health_and_safety_outlined),
+                label: Text(checkingBackend
+                    ? 'Verificando Vibe...'
+                    : 'Verificar backend Vibe'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class ReadinessChip extends StatelessWidget {
+  const ReadinessChip({
+    required this.ok,
+    required this.label,
+    required this.detail,
+    super.key,
+  });
+
+  final bool ok;
+  final String label;
+  final String detail;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = ok ? Colors.green : Colors.orange;
+    return Tooltip(
+      message: detail,
+      child: Chip(
+        avatar: Icon(
+          ok ? Icons.check_circle_outline : Icons.info_outline,
+          color: color,
+          size: 18,
+        ),
+        label: Text(label),
       ),
     );
   }
