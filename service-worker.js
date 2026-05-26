@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260526-android-signed-aab-450";
+const CACHE_NAME = "experience-hub-pwa-20260526-android-release-apk-451";
 const APP_SHELL = [
   "/",
   "/index.html",

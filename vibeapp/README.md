@@ -11,6 +11,7 @@ Safe native packaging baseline now in place:
 - Android applies both the Android application plugin and Kotlin Android plugin, which is required because the launcher activity is Kotlin.
 - Android uses the pilot package id `io.vibeapp.mobile`, replacing the default Flutter `com.example.vibeapp` placeholder.
 - Android debug packaging is verified. The current debug APK is generated at `build/app/outputs/flutter-apk/app-debug.apk` after setting `JAVA_HOME`, `ANDROID_HOME`, and `ANDROID_SDK_ROOT`.
+- Android release APK packaging is verified for direct pilot installation. The current signed APK is generated at `build/app/outputs/flutter-apk/app-release.apk`.
 - Android bundle packaging is verified for the Play Console path. The current release bundle is generated at `build/app/outputs/bundle/release/app-release.aab` and signed with the local pilot upload key outside the repository.
 - Android declares camera and microphone as optional hardware features. The app can request runtime permissions for capture without excluding pilot devices that lack one of those sensors.
 - Android release builds use a real upload key when `android/key.properties` exists with `storeFile`, `storePassword`, `keyAlias`, and `keyPassword`. The local pilot key lives under `C:\Users\msusf\Documents\Codex\secure`; do not commit the key or passwords.
