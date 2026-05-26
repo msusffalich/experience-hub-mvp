@@ -1,4 +1,4 @@
-const APP_VERSION = "20260526-native-command-router-446";
+const APP_VERSION = "20260526-route-to-90-447";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2388,6 +2388,7 @@ const manualContent = {
         "Los nuevos formatos amplían el uso por canal: carrusel visual para Instagram, Facebook o LinkedIn; carta/email largo para compartir una memoria personal; dossier PDF para un documento más formal; ficha de salud para explicar información médica o biométrica en lenguaje claro; y blog/web para publicar una historia más extensa.",
         "El kit de salida por canal separa asunto, texto corto, texto ampliado, leyenda/gancho, manejo multimedia y checklist. Sirve para saber qué copiar, qué revisar y qué acción hacer según WhatsApp, Instagram, Facebook, LinkedIn, Email, Blog/Web o PDF.",
         "Panel y Administración muestran Estado global de avance: PWA operativa, producción/Supabase, reportes/publicaciones, multimedia, Vibeapp nativa, conectores y producto completo. Es una vista honesta para separar lo listo de lo que sigue en desarrollo.",
+        "Ruta al 90% convierte ese avance honesto en frentes concretos con dueño, estado, brecha real a 90 y siguiente acción ejecutable.",
         "Aprobación humana marca si el borrador está en revisión o aprobado. Cualquier edición, cambio de diseño o curaduría multimedia lo devuelve a revisión.",
         "Historial del borrador registra generación, ediciones, cambios de multimedia, diseño, aprobación y exportaciones recientes.",
         "Multimedia sugerida significa archivos ya adjuntos a las experiencias fuente. La app los propone para la publicación; incluirlos o excluirlos no modifica ni borra la experiencia original.",
@@ -2986,6 +2987,7 @@ const manualContent = {
         "The Draft editor lets you edit title, summary, and body. The Final document shows exactly what will be exported, combining the edited text with the included media.",
         "Publication designs shows visual layouts. Selecting one updates type, style, channel, and the final document appearance.",
         "Dashboard and Admin show Global Progress: operating PWA, production/Supabase, reports/publications, multimedia, Vibeapp native, connectors, and full product. It is an honest view to separate what is ready from what is still under development.",
+        "The Route to 90% block turns that honest progress into concrete closure fronts with owner, state, real gap to 90, and the next action to execute.",
         "Editorial readiness evaluates clarity, privacy, media use, and channel fit. Its suggestions help decide whether the draft is ready for final review or needs edits.",
         "Pre-publication closure shows an operational checklist before export: human approval, text and length, privacy, media, and channel fit.",
         "Privacy cleanup hides detected emails, phone numbers, and links. The user must still review names, faces, locations, and sensitive data before publishing.",
@@ -6797,6 +6799,8 @@ function setupActions() {
   document.getElementById("mvpReturnBanner").addEventListener("click", handleCoreMvpReturnBannerClick);
   document.getElementById("persistenceGateBanner").addEventListener("click", handlePersistenceGateClick);
   document.getElementById("systemHealth").addEventListener("click", handleParallelBacklogClick);
+  document.getElementById("dashboardGlobalProgressPanel")?.addEventListener("click", handleParallelBacklogClick);
+  document.getElementById("adminGlobalProgressPanel")?.addEventListener("click", handleParallelBacklogClick);
   document.getElementById("adminCommandCenter").addEventListener("click", handleParallelBacklogClick);
   document.getElementById("publishPlanPanel").addEventListener("click", handleParallelBacklogClick);
   document.getElementById("multiDevicePersistencePanel").addEventListener("click", handleParallelBacklogClick);
@@ -7997,6 +8001,16 @@ function buildGlobalProgressSnapshot() {
         subtitle: "Honest product state across PWA, Supabase, outputs, native app, and future connectors.",
         overall: "Overall delivery",
         next: "Next operating block",
+        routeTitle: "Route to 90%",
+        routeSubtitle: `Global delivery is at ${overall}%. These fronts show the real gap to 90 without changing the progress model.`,
+        routeOwner: "Owner",
+        routeState: "State",
+        routeGap: "Gap to 90",
+        routeOverallGap: "Overall gap to 90",
+        routeAction: "Next action",
+        routeClosed: "Closed for 90",
+        routeClosing: "In closure",
+        routePending: "Pending",
         updated: "Updated",
         open: "Open",
         ready: "Ready",
@@ -8022,6 +8036,16 @@ function buildGlobalProgressSnapshot() {
         subtitle: "Estado honesto del producto entre PWA, Supabase, salidas, app nativa y conectores futuros.",
         overall: "Entrega global",
         next: "Siguiente bloque operativo",
+        routeTitle: "Ruta al 90%",
+        routeSubtitle: `La entrega global está en ${overall}%. Estos frentes muestran la brecha real hasta 90 sin cambiar el modelo de avance.`,
+        routeOwner: "Dueño",
+        routeState: "Estado",
+        routeGap: "Brecha a 90",
+        routeOverallGap: "Brecha global a 90",
+        routeAction: "Siguiente acción",
+        routeClosed: "Cerrado para 90",
+        routeClosing: "En cierre",
+        routePending: "Pendiente",
         updated: "Actualizado",
         open: "Abrir",
         ready: "Listo",
@@ -8051,14 +8075,107 @@ function buildGlobalProgressSnapshot() {
     { key: "connectors", title: labels.connectors, score: connectorReadiness.score, detail: labels.connectorsDetail, view: "admin", focus: "externalIntegrationPanel" },
     { key: "full", title: labels.full, score: total.full, detail: labels.fullDetail, view: "admin", focus: "publishPlanPanel" },
   ];
-  return { labels, overall, tracks };
+  const routeLabels = state.language === "en"
+    ? {
+        ownerOps: "Technical ops",
+        ownerContent: "Content/product",
+        ownerAssets: "Multimodal QA",
+        ownerNative: "Mobile owner",
+        ownerIntegration: "Integration owner",
+        productionTitle: "Supabase and multi-device proof",
+        productionNext: "Run Supabase diagnostics, then confirm one save, backup, and restore path from another device.",
+        outputsTitle: "Reports and publications closure",
+        outputsNext: "Generate one reviewed publication from real records and export the edited PDF/HTML package.",
+        multimodalTitle: "Asset evidence and OCR review",
+        multimodalNext: "Open pending assets, add or accept analytical text, and clear the human review queue.",
+        nativeTitle: "Native mobile delivery path",
+        nativeNext: "Keep the documented mobile contract visible and close packaging/build evidence before counting it as delivery.",
+        connectorsTitle: "Device/service import contract",
+        connectorsNext: "Convert the API/MCP contract into the first integration issue with sample payloads and acceptance tests.",
+      }
+    : {
+        ownerOps: "Operación técnica",
+        ownerContent: "Producto/contenido",
+        ownerAssets: "QA multimodal",
+        ownerNative: "Dueño móvil",
+        ownerIntegration: "Dueño integraciones",
+        productionTitle: "Prueba Supabase y multidispositivo",
+        productionNext: "Ejecutar diagnóstico Supabase y confirmar guardado, respaldo y restauración desde otro dispositivo.",
+        outputsTitle: "Cierre de reportes y publicaciones",
+        outputsNext: "Generar una publicación revisada con datos reales y exportar el paquete PDF/HTML editado.",
+        multimodalTitle: "Evidencia de activos y revisión OCR",
+        multimodalNext: "Abrir activos pendientes, agregar o aceptar texto analítico y limpiar la cola de revisión humana.",
+        nativeTitle: "Ruta de entrega móvil nativa",
+        nativeNext: "Mantener visible el contrato móvil y cerrar evidencia de empaquetado/build antes de contarlo como entrega.",
+        connectorsTitle: "Contrato de importación dispositivo/servicio",
+        connectorsNext: "Convertir el contrato API/MCP en el primer issue de integración con payloads y pruebas de aceptación.",
+      };
+  const routeTo90 = [
+    {
+      key: "production",
+      title: routeLabels.productionTitle,
+      owner: routeLabels.ownerOps,
+      score: productionScore,
+      detail: labels.productionDetail,
+      next: routeLabels.productionNext,
+      view: "admin",
+      focus: "supabasePilotGatePanel",
+      run: "runSupabaseDiagnostics",
+    },
+    {
+      key: "outputs",
+      title: routeLabels.outputsTitle,
+      owner: routeLabels.ownerContent,
+      score: publicationReadiness.score,
+      detail: labels.outputsDetail,
+      next: routeLabels.outputsNext,
+      view: "publications",
+    },
+    {
+      key: "multimodal",
+      title: routeLabels.multimodalTitle,
+      owner: routeLabels.ownerAssets,
+      score: multimodalScore,
+      detail: labels.multimodalDetail,
+      next: routeLabels.multimodalNext,
+      view: "assetLibrary",
+      focus: "assetProcessingActionPlan",
+      run: "showPendingAssetText",
+    },
+    {
+      key: "native",
+      title: routeLabels.nativeTitle,
+      owner: routeLabels.ownerNative,
+      score: nativeReadiness.score,
+      detail: labels.nativeDetail,
+      next: routeLabels.nativeNext,
+      view: "admin",
+      focus: "adminOperationalFocusPanel",
+    },
+    {
+      key: "connectors",
+      title: routeLabels.connectorsTitle,
+      owner: routeLabels.ownerIntegration,
+      score: connectorReadiness.score,
+      detail: labels.connectorsDetail,
+      next: routeLabels.connectorsNext,
+      view: "admin",
+      focus: "externalIntegrationPanel",
+    },
+  ].map((item) => ({
+    ...item,
+    gap: Math.max(0, 90 - item.score),
+    status: item.score >= 90 ? labels.routeClosed : item.score >= 75 ? labels.routeClosing : labels.routePending,
+  }));
+  return { labels, overall, tracks, routeTo90 };
 }
 
 function renderGlobalProgressPanel(containerId = "dashboardGlobalProgressPanel", { compact = false } = {}) {
   const container = document.getElementById(containerId);
   if (!container) return;
   const snapshot = buildGlobalProgressSnapshot();
-  const nextTrack = snapshot.tracks.find((item) => item.score < 75) || snapshot.tracks.find((item) => item.key === "native") || snapshot.tracks[0];
+  const nextRoute = snapshot.routeTo90.find((item) => item.gap > 0) || snapshot.routeTo90[0];
+  const nextTrack = snapshot.tracks.find((item) => item.key === nextRoute?.key) || snapshot.tracks.find((item) => item.score < 75) || snapshot.tracks[0];
   container.innerHTML = `
     <div class="global-progress-heading">
       <div>
@@ -8077,6 +8194,47 @@ function renderGlobalProgressPanel(containerId = "dashboardGlobalProgressPanel",
       </div>
       <button class="ghost-button" type="button" data-backlog-view="${escapeHtml(nextTrack.view || "admin")}" data-backlog-focus="${escapeHtml(nextTrack.focus || "")}">${escapeHtml(snapshot.labels.open)} ${escapeHtml(nextTrack.title)}</button>
     </div>
+    <section class="route-90-panel" aria-label="${escapeHtml(snapshot.labels.routeTitle)}">
+      <div class="route-90-heading">
+        <div>
+          <h3>${escapeHtml(snapshot.labels.routeTitle)}</h3>
+          <p>${escapeHtml(snapshot.labels.routeSubtitle)}</p>
+        </div>
+        <span>${escapeHtml(`${snapshot.labels.routeOverallGap}: ${Math.max(0, 90 - snapshot.overall)}%`)}</span>
+      </div>
+      <div class="route-90-grid">
+        ${snapshot.routeTo90
+          .map(
+            (item) => `
+              <article class="${item.gap ? "is-open" : "is-closed"}">
+                <header>
+                  <div>
+                    <span>${escapeHtml(snapshot.labels.routeOwner)}: ${escapeHtml(item.owner)}</span>
+                    <strong>${escapeHtml(item.title)}</strong>
+                  </div>
+                  <b>${escapeHtml(`${item.score}%`)}</b>
+                </header>
+                <dl>
+                  <div>
+                    <dt>${escapeHtml(snapshot.labels.routeState)}</dt>
+                    <dd>${escapeHtml(item.status)}</dd>
+                  </div>
+                  <div>
+                    <dt>${escapeHtml(snapshot.labels.routeGap)}</dt>
+                    <dd>${escapeHtml(`${item.gap}%`)}</dd>
+                  </div>
+                </dl>
+                <p>${escapeHtml(item.detail)}</p>
+                <small><strong>${escapeHtml(snapshot.labels.routeAction)}:</strong> ${escapeHtml(item.next)}</small>
+                <button class="ghost-button" type="button" data-backlog-view="${escapeHtml(item.view || "admin")}" data-backlog-focus="${escapeHtml(item.focus || "")}" data-backlog-run="${escapeHtml(item.run || "")}">
+                  ${escapeHtml(snapshot.labels.open)}
+                </button>
+              </article>
+            `,
+          )
+          .join("")}
+      </div>
+    </section>
     <div class="global-progress-grid ${compact ? "is-compact" : ""}">
       ${snapshot.tracks
         .map(

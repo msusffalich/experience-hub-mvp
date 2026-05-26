@@ -4,6 +4,22 @@ Vibeapp is the future native companion for Vibe PWA. It focuses on real device c
 
 This folder is a starter skeleton. Flutter SDK is available locally at `C:\Users\msusf\Documents\Codex\flutter-sdk`; `flutter analyze`, `flutter test`, and `flutter build windows` have passed. Android builds still require Android Studio / Android SDK configuration.
 
+## Mobile packaging readiness
+
+Safe native packaging baseline now in place:
+
+- Android applies both the Android application plugin and Kotlin Android plugin, which is required because the launcher activity is Kotlin.
+- Android declares camera and microphone as optional hardware features. The app can request runtime permissions for capture without excluding pilot devices that lack one of those sensors.
+- Android release builds can use a real upload key when `android/key.properties` exists with `storeFile`, `storePassword`, `keyAlias`, and `keyPassword`. Without those local credentials, release keeps Flutter's debug-key fallback for smoke tests only.
+- iOS has user-facing usage strings for camera, microphone, photo library, and when-in-use location.
+
+Pilot blockers that still need product/account decisions:
+
+- Replace the placeholder package identifiers `com.example.vibeapp` and `com.example.vibeapp.RunnerTests` before store/TestFlight or Play pilot distribution.
+- Add real Android upload signing material locally; do not commit keystores or passwords.
+- Set the iOS development team, provisioning profile, and final bundle identifier in Xcode once the Apple developer account is selected.
+- Replace default Flutter launcher icons and launch images before external testers receive the app.
+
 ## Current skeleton
 
 - Quick text capture with visible sync state.
