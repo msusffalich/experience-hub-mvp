@@ -6975,6 +6975,7 @@ button.asset-processing-summary-card {
 }
 
 .publication-channel-brief,
+.publication-channel-recommendation,
 .publication-copy-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
@@ -6983,6 +6984,7 @@ button.asset-processing-summary-card {
 }
 
 .publication-channel-brief article,
+.publication-channel-recommendation article,
 .publication-copy-block {
   display: grid;
   gap: 6px;
@@ -6993,24 +6995,48 @@ button.asset-processing-summary-card {
   background: rgba(255, 255, 255, 0.84);
 }
 
-.publication-channel-brief span {
+.publication-channel-brief span,
+.publication-channel-recommendation span {
   color: var(--muted);
   font-size: 11px;
   font-weight: 900;
   text-transform: uppercase;
 }
 
-.publication-channel-brief strong {
+.publication-channel-brief strong,
+.publication-channel-recommendation strong {
   color: var(--ink);
   font-size: 15px;
 }
 
 .publication-channel-brief p,
+.publication-channel-recommendation p,
 .publication-copy-block p {
   margin: 0;
   color: var(--text);
   line-height: 1.45;
   overflow-wrap: anywhere;
+}
+
+.publication-channel-recommendation {
+  padding: 10px;
+  border: 1px dashed rgba(46, 110, 166, 0.28);
+  border-radius: 8px;
+  background: rgba(46, 110, 166, 0.06);
+}
+
+.publication-recommendation-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.publication-recommendation-chips b {
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: rgba(13, 124, 102, 0.12);
+  color: var(--accent-dark);
+  font-size: 12px;
 }
 
 .publication-copy-block > div {

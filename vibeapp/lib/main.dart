@@ -55,6 +55,12 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
   String _audioRecordingPath = '';
 
   @override
+  void initState() {
+    super.initState();
+    unawaited(_loadPersistedQueue());
+  }
+
+  @override
   void dispose() {
     _noteController.dispose();
     _apiUrlController.dispose();
@@ -63,6 +69,54 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
     _sessionTitleController.dispose();
     unawaited(_audioRecorder.dispose());
     super.dispose();
+  }
+
+  Future<File> _queueStorageFile() async {
+    final directory = await getApplicationDocumentsDirectory();
+    return File(
+        '${directory.path}${Platform.pathSeparator}vibeapp-capture-queue.json');
+  }
+
+  Future<void> _loadPersistedQueue() async {
+    try {
+      final file = await _queueStorageFile();
+      if (!await file.exists()) return;
+      final decoded = jsonDecode(await file.readAsString());
+      if (decoded is! Map || decoded['queue'] is! List) return;
+      final restored = (decoded['queue'] as List)
+          .whereType<Map>()
+          .map((item) =>
+              CaptureQueueItem.fromJson(Map<String, dynamic>.from(item)))
+          .whereType<CaptureQueueItem>()
+          .toList();
+      if (!mounted || restored.isEmpty) return;
+      setState(() {
+        _queue
+          ..clear()
+          ..addAll(restored);
+        _syncState = restored.any((item) =>
+                item.canSync && item.status != CaptureSyncStatus.synced)
+            ? SyncState.needsAttention
+            : SyncState.ready;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _syncState = SyncState.needsAttention);
+    }
+  }
+
+  Future<void> _saveQueue() async {
+    try {
+      final file = await _queueStorageFile();
+      await file.writeAsString(jsonEncode({
+        'version': 1,
+        'savedAt': DateTime.now().toUtc().toIso8601String(),
+        'queue': _queue.map((item) => item.toJson()).toList(),
+      }));
+    } catch (_) {
+      // Queue persistence is a local safety net; remote sync continues even
+      // when the device cannot update this cache file.
+    }
   }
 
   Future<void> _signIn() async {
@@ -123,6 +177,7 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
 
     if (pending.isEmpty) {
       setState(() => _syncState = SyncState.ready);
+      await _saveQueue();
       return;
     }
 
@@ -141,6 +196,7 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
                   'Captura guardada localmente. Falta token de sesión para sincronizar.')),
         );
       }
+      await _saveQueue();
       return;
     }
 
@@ -179,6 +235,8 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
     if (!mounted) return;
     setState(() => _syncState =
         failures == 0 ? SyncState.synced : SyncState.needsAttention);
+    await _saveQueue();
+    if (!mounted) return;
     if (showSnackBar) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -203,6 +261,7 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
         _upsertSessionQueueItem(session);
       }
     });
+    unawaited(_saveQueue());
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
           content: Text(
@@ -1883,8 +1942,26 @@ class AgendaEventDraft {
     required this.endAt,
     this.description = '',
     this.location = '',
-  })  : id = 'native-agenda-${DateTime.now().microsecondsSinceEpoch}',
-        createdAt = DateTime.now().toUtc();
+    String? id,
+    DateTime? createdAt,
+  })  : id = id ?? 'native-agenda-${DateTime.now().microsecondsSinceEpoch}',
+        createdAt = createdAt ?? DateTime.now().toUtc();
+
+  factory AgendaEventDraft.fromJson(Map<String, dynamic> json) {
+    final startAt = parseNativeDate(json['startAt']) ?? DateTime.now().toUtc();
+    return AgendaEventDraft(
+      id: stringFromJson(json['id']),
+      title: stringFromJson(json['title']).isEmpty
+          ? 'Evento'
+          : stringFromJson(json['title']),
+      description: stringFromJson(json['description']),
+      location: stringFromJson(json['location']),
+      startAt: startAt,
+      endAt: parseNativeDate(json['endAt']) ??
+          startAt.add(const Duration(hours: 1)),
+      createdAt: parseNativeDate(json['createdAt']),
+    );
+  }
 
   final String id;
   final String title;
@@ -1926,8 +2003,9 @@ class LocationDraft {
     this.altitude = 0,
     this.speed = 0,
     this.heading = 0,
+    String? id,
     DateTime? capturedAt,
-  })  : id = 'native-location-${DateTime.now().microsecondsSinceEpoch}',
+  })  : id = id ?? 'native-location-${DateTime.now().microsecondsSinceEpoch}',
         capturedAt = capturedAt ?? DateTime.now().toUtc();
 
   factory LocationDraft.fromPosition(Position position) {
@@ -1939,6 +2017,19 @@ class LocationDraft {
       speed: position.speed,
       heading: position.heading,
       capturedAt: position.timestamp.toUtc(),
+    );
+  }
+
+  factory LocationDraft.fromJson(Map<String, dynamic> json) {
+    return LocationDraft(
+      id: stringFromJson(json['id']),
+      latitude: doubleFromJson(json['latitude']),
+      longitude: doubleFromJson(json['longitude']),
+      accuracy: doubleFromJson(json['accuracy']),
+      altitude: doubleFromJson(json['altitude']),
+      speed: doubleFromJson(json['speed']),
+      heading: doubleFromJson(json['heading']),
+      capturedAt: parseNativeDate(json['capturedAt']),
     );
   }
 
@@ -1966,6 +2057,19 @@ class LocationDraft {
       'latitude': latitude,
       'longitude': longitude,
       'accuracyMeters': accuracy,
+      'altitude': altitude,
+      'speed': speed,
+      'heading': heading,
+      'capturedAt': capturedAt.toIso8601String(),
+    };
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'latitude': latitude,
+      'longitude': longitude,
+      'accuracy': accuracy,
       'altitude': altitude,
       'speed': speed,
       'heading': heading,
@@ -2019,6 +2123,21 @@ class BiometricImportSummary {
       summaryText: summary,
       analysisText:
           '$summary Contexto transversal para cruzar por fecha/hora con energía, recuperación, sueño, actividad o estrés.',
+    );
+  }
+
+  factory BiometricImportSummary.fromJson(Map<String, dynamic> json) {
+    return BiometricImportSummary(
+      name: stringFromJson(json['name']).isEmpty
+          ? 'biometria.csv'
+          : stringFromJson(json['name']),
+      size: intFromJson(json['size']),
+      recordCount: intFromJson(json['recordCount']),
+      metricNames: listOfStringsFromJson(json['metricNames']),
+      startAt: stringFromJson(json['startAt']),
+      endAt: stringFromJson(json['endAt']),
+      summaryText: stringFromJson(json['summaryText']),
+      analysisText: stringFromJson(json['analysisText']),
     );
   }
 
@@ -2215,6 +2334,33 @@ class NativeAttachmentDraft {
     );
   }
 
+  factory NativeAttachmentDraft.fromJson(Map<String, dynamic> json) {
+    return NativeAttachmentDraft(
+      id: stringFromJson(json['id']).isEmpty
+          ? 'native-asset-${DateTime.now().microsecondsSinceEpoch}'
+          : stringFromJson(json['id']),
+      filePath: stringFromJson(json['filePath']),
+      name: stringFromJson(json['name']).isEmpty
+          ? 'vibeapp-asset'
+          : stringFromJson(json['name']),
+      mimeType: stringFromJson(json['mimeType']).isEmpty
+          ? inferMimeType(
+              stringFromJson(json['name']), stringFromJson(json['sourceType']))
+          : stringFromJson(json['mimeType']),
+      size: intFromJson(json['size']),
+      sourceType: stringFromJson(json['sourceType']).isEmpty
+          ? 'document'
+          : stringFromJson(json['sourceType']),
+      createdAt: parseNativeDate(json['createdAt']) ?? DateTime.now().toUtc(),
+      previewText: stringFromJson(json['previewText']),
+      analysisText: stringFromJson(json['analysisText']),
+      metadataExtras: mapFromJson(json['metadataExtras']),
+      eventId: stringFromJson(json['eventId']),
+      eventTitle: stringFromJson(json['eventTitle']),
+      eventOrder: intFromJson(json['eventOrder']),
+    );
+  }
+
   final String id;
   final String filePath;
   final String name;
@@ -2296,6 +2442,24 @@ class NativeAttachmentDraft {
         'eventOrder': eventOrder,
         ...metadataExtras,
       },
+    };
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'filePath': filePath,
+      'name': name,
+      'mimeType': mimeType,
+      'size': size,
+      'sourceType': sourceType,
+      'createdAt': createdAt.toIso8601String(),
+      'previewText': previewText,
+      'analysisText': analysisText,
+      'metadataExtras': metadataExtras,
+      'eventId': eventId,
+      'eventTitle': eventTitle,
+      'eventOrder': eventOrder,
     };
   }
 }
@@ -2509,6 +2673,48 @@ class CaptureQueueItem {
     );
   }
 
+  factory CaptureQueueItem.fromJson(Map<String, dynamic> json) {
+    return CaptureQueueItem(
+      id: stringFromJson(json['id']).isEmpty
+          ? 'native-${DateTime.now().microsecondsSinceEpoch}'
+          : stringFromJson(json['id']),
+      title: stringFromJson(json['title']).isEmpty
+          ? 'Captura'
+          : stringFromJson(json['title']),
+      detail: stringFromJson(json['detail']),
+      sourceType: stringFromJson(json['sourceType']).isEmpty
+          ? 'text'
+          : stringFromJson(json['sourceType']),
+      createdAt: parseNativeDate(json['createdAt']) ?? DateTime.now().toUtc(),
+      status: captureStatusFromJson(json['status']),
+      error: stringFromJson(json['error']),
+      remoteId: stringFromJson(json['remoteId']).isEmpty
+          ? null
+          : stringFromJson(json['remoteId']),
+      events: listOfMapsFromJson(json['events'])
+          .map(ExperienceEventDraft.fromJson)
+          .toList(),
+      attachments: listOfMapsFromJson(json['attachments'])
+          .map(NativeAttachmentDraft.fromJson)
+          .toList(),
+      agendaEvent: json['agendaEvent'] is Map
+          ? AgendaEventDraft.fromJson(mapFromJson(json['agendaEvent']))
+          : null,
+      locationDraft: json['locationDraft'] is Map
+          ? LocationDraft.fromJson(mapFromJson(json['locationDraft']))
+          : null,
+      biometricSummary: json['biometricSummary'] is Map
+          ? BiometricImportSummary.fromJson(
+              mapFromJson(json['biometricSummary']))
+          : null,
+      closedAt: parseNativeDate(json['closedAt']),
+      externalSessionSource:
+          stringFromJson(json['externalSessionSource']).isEmpty
+              ? null
+              : stringFromJson(json['externalSessionSource']),
+    );
+  }
+
   final String id;
   final String title;
   final String detail;
@@ -2691,6 +2897,27 @@ class CaptureQueueItem {
           attachments.map((item) => item.toExperienceAttachment()).toList(),
     };
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'detail': detail,
+      'sourceType': sourceType,
+      'createdAt': createdAt.toIso8601String(),
+      'status': status.name,
+      'error': error,
+      'remoteId': remoteId,
+      'events': events.map((event) => event.toJson()).toList(),
+      'attachments':
+          attachments.map((attachment) => attachment.toJson()).toList(),
+      'agendaEvent': agendaEvent?.toJson(),
+      'locationDraft': locationDraft?.toJson(),
+      'biometricSummary': biometricSummary?.toJson(),
+      'closedAt': closedAt?.toIso8601String(),
+      'externalSessionSource': externalSessionSource,
+    };
+  }
 }
 
 class ActiveExperienceSession {
@@ -2807,6 +3034,20 @@ class ExperienceEventDraft {
     required this.timestamp,
   });
 
+  factory ExperienceEventDraft.fromJson(Map<String, dynamic> json) {
+    return ExperienceEventDraft(
+      id: stringFromJson(json['id']).isEmpty
+          ? 'native-event-${DateTime.now().microsecondsSinceEpoch}'
+          : stringFromJson(json['id']),
+      title: stringFromJson(json['title']).isEmpty
+          ? 'Evento'
+          : stringFromJson(json['title']),
+      description: stringFromJson(json['description']),
+      order: intFromJson(json['order']),
+      timestamp: parseNativeDate(json['timestamp']) ?? DateTime.now().toUtc(),
+    );
+  }
+
   final String id;
   final String title;
   final String description;
@@ -2873,6 +3114,55 @@ enum CaptureSyncStatus {
 
   final String label;
   final IconData icon;
+}
+
+CaptureSyncStatus captureStatusFromJson(Object? value) {
+  final name = stringFromJson(value);
+  return CaptureSyncStatus.values.firstWhere(
+    (status) => status.name == name,
+    orElse: () => CaptureSyncStatus.queued,
+  );
+}
+
+DateTime? parseNativeDate(Object? value) {
+  if (value == null) return null;
+  return DateTime.tryParse(value.toString())?.toUtc();
+}
+
+String stringFromJson(Object? value) {
+  if (value == null) return '';
+  return value.toString();
+}
+
+int intFromJson(Object? value) {
+  if (value is int) return value;
+  if (value is num) return value.round();
+  return int.tryParse(value?.toString() ?? '') ?? 0;
+}
+
+double doubleFromJson(Object? value) {
+  if (value is double) return value;
+  if (value is num) return value.toDouble();
+  return double.tryParse(value?.toString() ?? '') ?? 0;
+}
+
+List<String> listOfStringsFromJson(Object? value) {
+  if (value is! List) return const [];
+  return value.map((item) => item.toString()).toList();
+}
+
+Map<String, dynamic> mapFromJson(Object? value) {
+  if (value is Map<String, dynamic>) return value;
+  if (value is Map) return Map<String, dynamic>.from(value);
+  return <String, dynamic>{};
+}
+
+List<Map<String, dynamic>> listOfMapsFromJson(Object? value) {
+  if (value is! List) return const [];
+  return value
+      .whereType<Map>()
+      .map((item) => Map<String, dynamic>.from(item))
+      .toList();
 }
 
 String shorten(String value, [int max = 180]) {

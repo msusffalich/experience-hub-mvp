@@ -1,4 +1,4 @@
-const APP_VERSION = "20260525-vibeapp-validation-438";
+const APP_VERSION = "20260526-publication-native-persistence-439";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -19132,6 +19132,7 @@ function renderPublicationDistributionKit(draft) {
           <p>${escapeHtml(kit.actionDetail)}</p>
         </article>
       </div>
+      ${renderPublicationChannelRecommendation(draft, kit)}
       <div class="publication-copy-grid">
         ${renderPublicationCopyBlock("subject", state.language === "en" ? "Subject / title" : "Asunto / titulo", kit.subject)}
         ${renderPublicationCopyBlock("short", state.language === "en" ? "Short copy" : "Texto corto", kit.shortCopy)}
@@ -19143,6 +19144,101 @@ function renderPublicationDistributionKit(draft) {
       </div>
     </section>
   `;
+}
+
+function renderPublicationChannelRecommendation(draft, kit) {
+  const recommendations = getPublicationChannelTypeRecommendation(draft?.channel);
+  const selectedType = displayPublicationType(draft?.type || "");
+  const selectedStyle = displayPublicationStyle(draft?.style || "");
+  const master = draft?.channel === "PDF/HTML" || draft?.channel === "Blog/Web"
+    ? (state.language === "en" ? "Use the edited PDF/HTML as the final piece." : "Usa el PDF/HTML editado como pieza final.")
+    : (state.language === "en" ? "Use the edited PDF as the master record and the channel copy as the post." : "Usa el PDF editado como registro maestro y el texto de canal como publicacion.");
+  return `
+    <div class="publication-channel-recommendation">
+      <article>
+        <span>${escapeHtml(state.language === "en" ? "Selected shape" : "Forma seleccionada")}</span>
+        <strong>${escapeHtml(selectedType)} · ${escapeHtml(selectedStyle)}</strong>
+        <p>${escapeHtml(master)}</p>
+      </article>
+      <article>
+        <span>${escapeHtml(state.language === "en" ? "Best fits this channel" : "Mejor encaje para este canal")}</span>
+        <div class="publication-recommendation-chips">
+          ${recommendations.types.map((item) => `<b>${escapeHtml(item)}</b>`).join("")}
+        </div>
+        <p>${escapeHtml(recommendations.note)}</p>
+      </article>
+      <article>
+        <span>${escapeHtml(state.language === "en" ? "Before sharing" : "Antes de compartir")}</span>
+        <strong>${escapeHtml(kit.action)}</strong>
+        <p>${escapeHtml(state.language === "en" ? "Review text, privacy, media rights, and whether every selected asset adds value." : "Revisa texto, privacidad, derechos de medios y si cada activo seleccionado aporta valor.")}</p>
+      </article>
+    </div>
+  `;
+}
+
+function getPublicationChannelTypeRecommendation(channel) {
+  const profiles = state.language === "en"
+    ? {
+        WhatsApp: {
+          types: ["Quick social post", "Personal letter", "Experience album"],
+          note: "Keep it conversational. Use one strong media item or a link to the PDF when the story is long.",
+        },
+        Instagram: {
+          types: ["Visual carousel", "Story/reel script", "Experience album"],
+          note: "Lead with images or video. Long documents and audio work better as captions or linked references.",
+        },
+        Facebook: {
+          types: ["Experience album", "Narrative report", "Quick social post"],
+          note: "Good for warm context, selected photos, and a short memory that invites conversation.",
+        },
+        LinkedIn: {
+          types: ["Executive summary", "Visual carousel", "Learning dossier"],
+          note: "Use a clear point of view, evidence, and a practical lesson. Avoid diary-style writing.",
+        },
+        Email: {
+          types: ["Personal letter", "Health brief", "Executive summary"],
+          note: "Best when the reader needs context, attachments, and a concrete next step.",
+        },
+        "Blog/Web": {
+          types: ["Dossier PDF", "Narrative report", "Experience album"],
+          note: "Use a richer structure with sections, media, captions, and links.",
+        },
+        "PDF/HTML": {
+          types: ["Dossier PDF", "Narrative report", "Health brief"],
+          note: "Best for a polished document, printing, review, or sending as a file.",
+        },
+      }
+    : {
+        WhatsApp: {
+          types: ["Publicacion social rapida", "Carta / email largo", "Album experiencial"],
+          note: "Mantenlo conversacional. Usa un medio fuerte o un enlace al PDF cuando la historia sea larga.",
+        },
+        Instagram: {
+          types: ["Carrusel visual", "Guion de story/reel", "Album experiencial"],
+          note: "Empieza con imagen o video. Documentos largos y audios funcionan mejor como leyenda o referencia.",
+        },
+        Facebook: {
+          types: ["Album experiencial", "Reporte narrativo", "Publicacion social rapida"],
+          note: "Sirve para contexto calido, fotos seleccionadas y una memoria breve que invite a conversar.",
+        },
+        LinkedIn: {
+          types: ["Resumen ejecutivo", "Carrusel visual", "Dossier de aprendizaje"],
+          note: "Usa punto de vista claro, evidencia y una leccion practica. Evita que parezca bitacora.",
+        },
+        Email: {
+          types: ["Carta / email largo", "Ficha de salud", "Resumen ejecutivo"],
+          note: "Ideal cuando el lector necesita contexto, anexos y un siguiente paso concreto.",
+        },
+        "Blog/Web": {
+          types: ["Dossier PDF", "Reporte narrativo", "Album experiencial"],
+          note: "Usa una estructura mas rica, con secciones, medios, leyendas y enlaces.",
+        },
+        "PDF/HTML": {
+          types: ["Dossier PDF", "Reporte narrativo", "Ficha de salud"],
+          note: "Ideal para un documento pulido, imprimir, revisar o enviar como archivo.",
+        },
+      };
+  return profiles[channel] || profiles["PDF/HTML"];
 }
 
 function renderPublicationCopyBlock(key, label, value) {
@@ -19238,6 +19334,14 @@ function getPublicationChannelProfile(channel) {
       mediaMode: state.language === "en" ? "Complete media set" : "Conjunto multimedia completo",
       action: state.language === "en" ? "Export HTML/PDF" : "Exportar HTML/PDF",
       actionDetail: state.language === "en" ? "Use PDF for fixed reading and HTML for web layout." : "Usa PDF para lectura fija y HTML para maqueta web.",
+    },
+    "PDF/HTML": {
+      format: state.language === "en" ? "Edited PDF, dossier, or printable memory" : "PDF editado, dossier o memoria imprimible",
+      brief: state.language === "en" ? "Best for the polished final artifact with selected media and clear sections." : "Ideal para el artefacto final pulido, con medios seleccionados y secciones claras.",
+      reason: state.language === "en" ? "It preserves layout, evidence, captions, and the human review trail." : "Conserva diseno, evidencia, leyendas y trazabilidad de revision humana.",
+      mediaMode: state.language === "en" ? "Selected media with captions" : "Medios seleccionados con leyendas",
+      action: state.language === "en" ? "Download edited PDF" : "Descargar PDF editado",
+      actionDetail: state.language === "en" ? "Use this as the master version before posting elsewhere." : "Usa esta version como maestro antes de publicar en otros canales.",
     },
   };
   return profiles[channel] || {
@@ -24432,7 +24536,7 @@ function renderAdminOperationalFocusPanel() {
         reportPdf: "Cleaner reports, publications, and findings",
         reportPdfDetail: "Reports now use an executive PDF, participant scope, and folded technical exports. Publications explain format fit, edited text, media actions, and non-image handling. Findings are organized by 8 human themes and can be downloaded.",
         nativeSync: "Vibeapp real queue",
-        nativeSyncDetail: "Vibeapp now has real native contracts for text, photo, video, audio, agenda, location, and biometric CSV/JSON files. Media and biometrics upload through /api/media, agenda events sync through /api/agenda, and location saves coordinates plus accuracy as structured metadata.",
+        nativeSyncDetail: "Vibeapp now has real native contracts for text, photo, video, audio, agenda, location, and biometric CSV/JSON files. The native queue validates each payload, persists locally across app restarts, and then syncs media through /api/media, agenda through /api/agenda, and experiences through /api/experiences.",
       }
     : {
         title: "Administración operativa",
@@ -24469,7 +24573,7 @@ function renderAdminOperationalFocusPanel() {
     labels.reportPdf = "Reportes, publicaciones y hallazgos limpios";
     labels.reportPdfDetail = "Reportes usa PDF ejecutivo, alcance por persona y exportaciones técnicas plegadas. Publicaciones suma matriz por canal: carrusel, carta/email, dossier, ficha de salud, blog/web, LinkedIn y PDF/HTML, con medios seleccionables y acciones claras para audio, video, documentos y ZIP. Hallazgos se organiza en 8 ejes humanos y se puede descargar.";
     labels.nativeSync = "Vibeapp con cola real";
-    labels.nativeSyncDetail = "Vibeapp ya tiene contratos nativos reales para texto, foto, video, audio, agenda, lugar, biometr\u00eda CSV/JSON e importaci\u00f3n de sesiones externas. Meta/Oakley, Oura, Apple Health, Samsung Health/Galaxy Watch, Health Connect o la galer\u00eda del tel\u00e9fono entran como una experiencia con activos y eventos normalizados. La cola valida cada payload antes de enviarlo para reducir errores de sincronizaci\u00f3n.";
+    labels.nativeSyncDetail = "Vibeapp ya tiene contratos nativos reales para texto, foto, video, audio, agenda, lugar, biometr\u00eda CSV/JSON e importaci\u00f3n de sesiones externas. La cola nativa valida cada payload, lo conserva localmente aunque cierres la app y luego sincroniza medios por /api/media, agenda por /api/agenda y experiencias por /api/experiences.";
   }
   const cards = [
     [labels.flow, labels.flowDetail],
