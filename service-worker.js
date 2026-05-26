@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260526-pwa-release-gate-453";
+const CACHE_NAME = "experience-hub-pwa-20260526-android-release-gate-454";
 const APP_SHELL = [
   "/",
   "/index.html",

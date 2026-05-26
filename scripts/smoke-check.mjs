@@ -13,6 +13,7 @@ const files = {
   reportlabVerify: readFileSync("scripts/verify-reportlab.mjs", "utf8"),
   outputPdfVerify: readFileSync("scripts/verify-output-pdfs.mjs", "utf8"),
   pwaVerify: readFileSync("scripts/verify-pwa-release.mjs", "utf8"),
+  androidVerify: readFileSync("scripts/verify-android-release.mjs", "utf8"),
   reportPdf: readFileSync("scripts/report_pdf_reportlab.py", "utf8"),
   insightsPdf: readFileSync("scripts/insights_pdf_reportlab.py", "utf8"),
   publicationPdf: readFileSync("scripts/publication_pdf_reportlab.py", "utf8"),
@@ -239,6 +240,7 @@ assert(files.packageJson.includes("\"verify:outputs\"") && files.packageJson.inc
 assert(files.outputPdfVerify.includes("report_pdf_reportlab.py") && files.outputPdfVerify.includes("publication_pdf_reportlab.py") && files.outputPdfVerify.includes("manual_pdf_reportlab.py"), "Output PDF verifier must render report, publication, and manual PDFs.");
 assert(files.packageJson.includes("\"verify:pwa\"") && files.packageJson.includes("\"verify:release\""), "package.json must expose PWA and release verification scripts.");
 assert(files.pwaVerify.includes("manifest.webmanifest") && files.pwaVerify.includes("service-worker.js") && files.pwaVerify.includes("VIBE_RELEASE_URL"), "PWA verifier must check manifest, service worker, and optional production URL.");
+assert(files.packageJson.includes("\"verify:android\"") && files.androidVerify.includes("apksigner") && files.androidVerify.includes("key.properties"), "package.json must expose Android signing verification.");
 assert(files.server.includes("PYTHONPATH") && files.server.includes(".python"), "Server must expose bundled Python packages to ReportLab scripts.");
 assert(!files.index.includes('data-daily-flow="horoscope"'), "Daily should not expose horoscope until the module is reliable.");
 assert(files.app.includes("function experienceMatchesPilotParticipant"), "Participant filtering must support legacy records by participant name.");

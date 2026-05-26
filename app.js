@@ -1,4 +1,4 @@
-const APP_VERSION = "20260526-pwa-release-gate-453";
+const APP_VERSION = "20260526-android-release-gate-454";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2121,6 +2121,7 @@ const manualContent = {
         "Vibeapp valida cada captura antes de sincronizar: revisa título, texto, eventos, existencia de archivos, tamaño, MIME, vínculo evento-activo y expectativas por origen. Si algo no cuadra, queda en cola con un mensaje entendible antes de tocar el backend.",
         "Vibeapp ahora incluye Compuerta piloto móvil: verifica el backend productivo, confirma sesión, revisa cola local y muestra capacidades listas antes de iniciar una prueba real en teléfono. Android ya declara permisos de red, cámara, audio, ubicación, multimedia y notificaciones para evitar bloqueos básicos de plataforma.",
         "Vibeapp ya tiene ruta Android verificable: SDK/JDK instalados, paquete piloto io.vibeapp.mobile, APK debug generado y App Bundle release smoke generado. Antes de distribuir por Play Console falta crear la firma release/upload key real y conservarla fuera del repositorio.",
+        "La compuerta local npm run verify:android valida APK/AAB release, firma del APK con apksigner y que key.properties/keystores sigan fuera de Git.",
         "Vibeapp incorpora un router local de comandos: una captura escrita o transcrita puede crear nota, iniciar/cerrar experiencia o generar un evento de agenda antes de sincronizar. La pantalla muestra qué entendió Vibe y cambia el botón principal a Guardar nota, Crear agenda, Iniciar experiencia o Cerrar experiencia antes de ejecutar.",
         "El contrato de dispositivos se puede exportar como Markdown o JSON para compartirlo con desarrolladores, integraciones API/MCP o proveedores de wearables.",
         "Activos multimodales incluye Procesar ahora y Procesar visibles. Los documentos de texto se extraen localmente; los PDFs escaneados usan OCR del backend cuando OCR_PROVIDER=openai y OPENAI_API_KEY están configurados; los audios usan transcripción del backend si está configurada; las imágenes usan OCR automático del backend.",
@@ -8029,7 +8030,7 @@ function buildGlobalProgressSnapshot() {
         multimodal: "Multimedia and OCR/analysis",
         multimodalDetail: `${assetAnalysis.withText}/${assetAnalysis.total} assets with analytical text; workflow ${assetWorkflow.score}%.`,
         native: "Vibeapp native",
-        nativeDetail: "Flutter skeleton has auth, command preview/routing, mobile pilot gate, queue, auto-retry, media, agenda, location, biometrics, Android package id io.vibeapp.mobile, verified debug APK, signed release APK, and signed release AAB.",
+        nativeDetail: "Flutter skeleton has auth, command preview/routing, mobile pilot gate, queue, auto-retry, media, agenda, location, biometrics, Android package id io.vibeapp.mobile, verified debug APK, signed release APK/AAB, and local Android signing gate.",
         connectors: "Device and service connectors",
         connectorsDetail: "Routes documented for Meta/Oakley, Oura, Apple Health, Samsung Health, Health Connect; direct connectors remain future work.",
         full: "Full product ambition",
@@ -8064,7 +8065,7 @@ function buildGlobalProgressSnapshot() {
         multimodal: "Multimedia y OCR/análisis",
         multimodalDetail: `${assetAnalysis.withText}/${assetAnalysis.total} activos con texto analítico; flujo ${assetWorkflow.score}%.`,
         native: "Vibeapp nativa",
-        nativeDetail: "El esqueleto Flutter tiene auth, vista previa de comandos, compuerta piloto móvil, cola, autoreintento, medios, agenda, lugar, biometría, paquete Android io.vibeapp.mobile, APK debug verificado, APK release firmado y AAB release firmado.",
+        nativeDetail: "El esqueleto Flutter tiene auth, vista previa de comandos, compuerta piloto móvil, cola, autoreintento, medios, agenda, lugar, biometría, paquete Android io.vibeapp.mobile, APK debug verificado, APK/AAB release firmados y compuerta local Android.",
         connectors: "Conectores de dispositivos y servicios",
         connectorsDetail: "Rutas documentadas para Meta/Oakley, Oura, Apple Health, Samsung Health y Health Connect; conectores directos quedan futuros.",
         full: "Ambición de producto completo",

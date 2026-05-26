@@ -24,6 +24,14 @@ La clave local permite probar el flujo completo de release. Antes de Play Consol
 
 ## Comandos de verificacion
 
+Verificacion automatica desde la raiz del repo:
+
+```powershell
+npm run verify:android
+```
+
+Esa compuerta valida que existan APK/AAB release, que el APK este firmado, que `key.properties` siga ignorado por Git y que no haya secretos de firma trackeados.
+
 Ejecutar desde `vibeapp`:
 
 ```powershell
