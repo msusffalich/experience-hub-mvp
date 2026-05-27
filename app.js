@@ -1,4 +1,4 @@
-const APP_VERSION = "20260527-integration-validate-469";
+const APP_VERSION = "20260527-dashboard-panel-recovery-470";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2403,6 +2403,7 @@ const manualContent = {
         "Los nuevos formatos amplían el uso por canal: carrusel visual para Instagram, Facebook o LinkedIn; carta/email largo para compartir una memoria personal; dossier PDF para un documento más formal; ficha de salud para explicar información médica o biométrica en lenguaje claro; y blog/web para publicar una historia más extensa.",
         "El kit de salida por canal separa asunto, texto corto, texto ampliado, leyenda/gancho, manejo multimedia y checklist. Sirve para saber qué copiar, qué revisar y qué acción hacer según WhatsApp, Instagram, Facebook, LinkedIn, Email, Blog/Web o PDF.",
         "Panel muestra un resumen fijo de datos actuales: experiencias, activos, grupos, modo de persistencia y sincronización pendiente. Si la data previa no aparece, ese bloque permite distinguir rápido entre filtro, sesión, nube o cola pendiente.",
+        "Panel recupera automáticamente los bloques de Datos actuales y Estado global de avance aunque el navegador conserve una estructura HTML vieja. La información crítica ya no depende de que el contenedor venga precargado en la página.",
         "Panel y Administración muestran Estado global de avance: PWA operativa, producción/Supabase, reportes/publicaciones, multimedia, Vibeapp nativa, conectores y producto completo. Es una vista honesta para separar lo listo de lo que sigue en desarrollo.",
         "Ruta al 90% convierte ese avance honesto en frentes concretos con dueño, estado, brecha real a 90 y siguiente acción ejecutable.",
         "Aprobación humana marca si el borrador está en revisión o aprobado. Cualquier edición, cambio de diseño o curaduría multimedia lo devuelve a revisión.",
@@ -3009,6 +3010,7 @@ const manualContent = {
         "The Draft editor lets you edit title, summary, and body. The Final document shows exactly what will be exported, combining the edited text with the included media.",
         "Publication designs shows visual layouts. Selecting one updates type, style, channel, and the final document appearance.",
         "Dashboard shows a fixed current-data summary: experiences, assets, groups, persistence mode, and pending sync. If previous data is not visible, that block quickly separates filter, session, cloud, or queue causes.",
+        "Dashboard automatically restores the Current data and Global Progress blocks even when the browser keeps an older HTML structure. Critical status no longer depends on a preloaded container in the page.",
         "Dashboard and Admin show Global Progress: operating PWA, production/Supabase, reports/publications, multimedia, Vibeapp native, connectors, and full product. It is an honest view to separate what is ready from what is still under development.",
         "The Route to 90% block turns that honest progress into concrete closure fronts with owner, state, real gap to 90, and the next action to execute.",
         "Editorial readiness evaluates clarity, privacy, media use, and channel fit. Its suggestions help decide whether the draft is ready for final review or needs edits.",
@@ -6823,8 +6825,6 @@ function setupActions() {
   document.getElementById("mvpReturnBanner").addEventListener("click", handleCoreMvpReturnBannerClick);
   document.getElementById("persistenceGateBanner").addEventListener("click", handlePersistenceGateClick);
   document.getElementById("systemHealth").addEventListener("click", handleParallelBacklogClick);
-  document.getElementById("dashboardGlobalProgressPanel")?.addEventListener("click", handleParallelBacklogClick);
-  document.getElementById("adminGlobalProgressPanel")?.addEventListener("click", handleParallelBacklogClick);
   document.getElementById("adminCommandCenter").addEventListener("click", handleParallelBacklogClick);
   document.getElementById("publishPlanPanel").addEventListener("click", handleParallelBacklogClick);
   document.getElementById("multiDevicePersistencePanel").addEventListener("click", handleParallelBacklogClick);
@@ -8194,10 +8194,41 @@ function buildGlobalProgressSnapshot() {
   return { labels, overall, tracks, routeTo90 };
 }
 
+function ensureDashboardTopPanel(id, className, afterId = "") {
+  let container = document.getElementById(id);
+  const dashboard = document.getElementById("dashboardView");
+  if (!dashboard) return container;
+  if (!container) {
+    container = document.createElement("section");
+    container.id = id;
+    container.className = className;
+  }
+  const afterElement = afterId ? document.getElementById(afterId) : null;
+  const scopeBar = dashboard.querySelector(".dashboard-scope-bar");
+  const anchor = afterElement || scopeBar || dashboard.querySelector(".dashboard-time-context");
+  if (anchor && anchor.nextElementSibling !== container) {
+    anchor.insertAdjacentElement("afterend", container);
+  } else if (!container.parentElement) {
+    dashboard.prepend(container);
+  }
+  return container;
+}
+
+function resolveGlobalProgressContainer(containerId) {
+  if (containerId === "dashboardGlobalProgressPanel") {
+    return ensureDashboardTopPanel(containerId, "global-progress-panel", "dashboardDataStatusPanel");
+  }
+  return document.getElementById(containerId);
+}
+
 function renderGlobalProgressPanel(containerId = "dashboardGlobalProgressPanel", { compact = false } = {}) {
-  const container = document.getElementById(containerId);
+  const container = resolveGlobalProgressContainer(containerId);
   if (!container) return;
   container.classList.toggle("is-compact", Boolean(compact));
+  if (!container.dataset.progressClickReady) {
+    container.addEventListener("click", handleParallelBacklogClick);
+    container.dataset.progressClickReady = "true";
+  }
   const snapshot = buildGlobalProgressSnapshot();
   const nextRoute = snapshot.routeTo90.find((item) => item.gap > 0) || snapshot.routeTo90[0];
   const nextTrack = snapshot.tracks.find((item) => item.key === nextRoute?.key) || snapshot.tracks.find((item) => item.score < 75) || snapshot.tracks[0];
@@ -8282,7 +8313,7 @@ function renderGlobalProgressPanel(containerId = "dashboardGlobalProgressPanel",
 }
 
 function renderDashboardDataStatusPanel() {
-  const container = document.getElementById("dashboardDataStatusPanel");
+  const container = ensureDashboardTopPanel("dashboardDataStatusPanel", "dashboard-data-status-panel");
   if (!container) return;
   const scopedExperiences = getDashboardExperiences();
   const allAssets = collectMultimodalAssets();

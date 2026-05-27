@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260527-integration-validate-469";
+const CACHE_NAME = "experience-hub-pwa-20260527-dashboard-panel-recovery-470";
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -37,11 +37,19 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     fetch(request)
       .then((response) => {
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => {});
+        if (response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => {});
+        }
         return response;
       })
-      .catch(() => caches.match(request).then((cached) => cached || caches.match("/index.html")))
+      .catch(() => caches.match(request).then((cached) => {
+        if (cached) return cached;
+        if (request.mode === "navigate" || request.destination === "document") {
+          return caches.match("/index.html");
+        }
+        return new Response("", { status: 504, statusText: "Offline asset unavailable" });
+      }))
   );
 });
 
