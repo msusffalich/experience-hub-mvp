@@ -2174,11 +2174,13 @@ class ExperienceSyncClient {
           ? await NativeHttpTransport().postJson(
               uri,
               accessToken: settings.accessToken,
+              idempotencyKey: item.idempotencyKey,
               payload: payload,
             )
           : await customTransport.postJson(
               uri,
               accessToken: settings.accessToken,
+              idempotencyKey: item.idempotencyKey,
               payload: payload,
             );
       if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -2206,11 +2208,13 @@ class ExperienceSyncClient {
           ? await NativeHttpTransport().postJson(
               uri,
               accessToken: settings.accessToken,
+              idempotencyKey: event.idempotencyKey,
               payload: event.toJson(),
             )
           : await customTransport.postJson(
               uri,
               accessToken: settings.accessToken,
+              idempotencyKey: event.idempotencyKey,
               payload: event.toJson(),
             );
       if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -2244,6 +2248,7 @@ class ExperienceSyncClient {
           ? await NativeHttpTransport().postMultipart(
               uri,
               accessToken: settings.accessToken,
+              idempotencyKey: attachment.idempotencyKey,
               attachment: attachment,
               bytes: bytes,
               boundary: boundary,
@@ -2252,6 +2257,7 @@ class ExperienceSyncClient {
           : await customTransport.postMultipart(
               uri,
               accessToken: settings.accessToken,
+              idempotencyKey: attachment.idempotencyKey,
               attachment: attachment,
               bytes: bytes,
               boundary: boundary,
@@ -2279,12 +2285,14 @@ abstract class NativeSyncTransport {
   Future<NativeSyncResponse> postJson(
     Uri uri, {
     required String accessToken,
+    required String idempotencyKey,
     required Object payload,
   });
 
   Future<NativeSyncResponse> postMultipart(
     Uri uri, {
     required String accessToken,
+    required String idempotencyKey,
     required NativeAttachmentDraft attachment,
     required List<int> bytes,
     required String boundary,
@@ -2304,12 +2312,15 @@ class NativeHttpTransport implements NativeSyncTransport {
   Future<NativeSyncResponse> postJson(
     Uri uri, {
     required String accessToken,
+    required String idempotencyKey,
     required Object payload,
   }) async {
     final request =
         await HttpClient().postUrl(uri).timeout(const Duration(seconds: 10));
     request.headers.contentType = ContentType.json;
     request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $accessToken');
+    request.headers.set('Idempotency-Key', idempotencyKey);
+    request.headers.set('X-Vibe-Source-Id', idempotencyKey);
     request.write(jsonEncode(payload));
     final response = await request.close().timeout(const Duration(seconds: 20));
     final responseText = await response.transform(utf8.decoder).join();
@@ -2323,6 +2334,7 @@ class NativeHttpTransport implements NativeSyncTransport {
   Future<NativeSyncResponse> postMultipart(
     Uri uri, {
     required String accessToken,
+    required String idempotencyKey,
     required NativeAttachmentDraft attachment,
     required List<int> bytes,
     required String boundary,
@@ -2336,6 +2348,8 @@ class NativeHttpTransport implements NativeSyncTransport {
       parameters: {'boundary': boundary},
     );
     request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $accessToken');
+    request.headers.set('Idempotency-Key', idempotencyKey);
+    request.headers.set('X-Vibe-Source-Id', idempotencyKey);
     request.add(utf8.encode('--$boundary\r\n'));
     request.add(
         utf8.encode('Content-Disposition: form-data; name="metadata"\r\n'));
@@ -2926,6 +2940,8 @@ class AgendaEventDraft {
   final DateTime endAt;
   final DateTime createdAt;
 
+  String get idempotencyKey => 'vibeapp-agenda:$id';
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -2944,6 +2960,7 @@ class AgendaEventDraft {
       'metadata': {
         'source': 'vibeapp-native',
         'sourceDevice': Platform.operatingSystem,
+        'idempotencyKey': idempotencyKey,
         'payloadType': 'calendar',
       },
     };
@@ -3341,6 +3358,14 @@ class NativeAttachmentDraft {
     return 'Foto';
   }
 
+  String get idempotencyKey => 'vibeapp-asset:$id';
+
+  String get storageObjectHint {
+    final safeName =
+        name.replaceAll(RegExp(r'[^A-Za-z0-9._-]+'), '-').replaceAll('--', '-');
+    return '$id-$safeName';
+  }
+
   Map<String, dynamic> toMediaMetadata(int byteLength) {
     return {
       'id': id,
@@ -3351,10 +3376,13 @@ class NativeAttachmentDraft {
       'sourceType': 'vibeapp-native-$sourceType',
       'sourceDevice': Platform.operatingSystem,
       'sourceId': id,
+      'idempotencyKey': idempotencyKey,
       'createdAt': createdAt.toIso8601String(),
       'metadata': {
         'source': 'vibeapp-native',
         'capturedAt': createdAt.toIso8601String(),
+        'idempotencyKey': idempotencyKey,
+        'storageObjectHint': storageObjectHint,
         'eventId': eventId,
         'eventTitle': eventTitle,
         'eventOrder': eventOrder,
@@ -3392,6 +3420,8 @@ class NativeAttachmentDraft {
             : <String, dynamic>{}),
         'source': 'vibeapp-native',
         'capturedAt': createdAt.toIso8601String(),
+        'idempotencyKey': idempotencyKey,
+        'storageObjectHint': storageObjectHint,
         'linkedEventId': eventId,
         'linkedEventTitle': eventTitle,
         'eventOrder': eventOrder,
@@ -3694,6 +3724,8 @@ class CaptureQueueItem {
   DateTime? lastAttemptAt;
   DateTime? nextRetryAt;
 
+  String get idempotencyKey => 'vibeapp-capture:$sourceType:$id';
+
   bool get canSync =>
       sourceType == 'text' ||
       sourceType == 'experience-session' ||
@@ -3884,6 +3916,7 @@ class CaptureQueueItem {
         'sourceType': 'vibeapp-native',
         'sourceDevice': Platform.operatingSystem,
         'sourceEventId': id,
+        'idempotencyKey': idempotencyKey,
         'capturedAt': iso,
         'closedAt': closedAt?.toIso8601String(),
         if (externalSessionSource != null)

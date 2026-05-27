@@ -218,15 +218,21 @@ void main() {
         transport.requests.firstWhere((item) => item['path'] == '/api/media');
     expect(mediaRequest['method'], 'multipart');
     expect(mediaRequest['authorization'], 'Bearer test-token');
+    expect(mediaRequest['idempotencyKey'], startsWith('vibeapp-asset:'));
     expect(mediaRequest['metadata'],
         contains('"sourceType":"vibeapp-native-document"'));
+    expect(mediaRequest['metadata'], contains('"storageObjectHint"'));
     expect(mediaRequest['fileName'], 'nota.txt');
 
     final experienceRequest = transport.requests
         .firstWhere((item) => item['path'] == '/api/experiences');
     final experienceBody = experienceRequest['payload'] as Map<String, dynamic>;
     expect(experienceRequest['authorization'], 'Bearer test-token');
+    expect(experienceRequest['idempotencyKey'],
+        startsWith('vibeapp-capture:experience-session:'));
     expect(experienceBody['metadata']['syncContract'], 'vibeapp-session-v1');
+    expect(experienceBody['metadata']['idempotencyKey'],
+        experienceRequest['idempotencyKey']);
     expect((experienceBody['events'] as List).length, 2);
     expect(
       (experienceBody['attachments'] as List).single['storage'],
@@ -237,6 +243,10 @@ void main() {
         transport.requests.firstWhere((item) => item['path'] == '/api/agenda');
     final agendaBody = agendaRequest['payload'] as Map<String, dynamic>;
     expect(agendaRequest['authorization'], 'Bearer test-token');
+    expect(agendaRequest['idempotencyKey'],
+        startsWith('vibeapp-agenda:native-agenda-'));
+    expect(agendaBody['metadata']['idempotencyKey'],
+        agendaRequest['idempotencyKey']);
     expect(agendaBody['title'], 'Cena de prueba');
     expect(agendaBody['sourceType'], 'vibeapp-native-agenda');
   });
@@ -496,12 +506,14 @@ class FakeNativeSyncTransport implements NativeSyncTransport {
   Future<NativeSyncResponse> postJson(
     Uri uri, {
     required String accessToken,
+    required String idempotencyKey,
     required Object payload,
   }) async {
     requests.add({
       'method': 'json',
       'path': uri.path,
       'authorization': 'Bearer $accessToken',
+      'idempotencyKey': idempotencyKey,
       'payload': payload,
     });
     if (uri.path == '/api/experiences') {
@@ -523,6 +535,7 @@ class FakeNativeSyncTransport implements NativeSyncTransport {
   Future<NativeSyncResponse> postMultipart(
     Uri uri, {
     required String accessToken,
+    required String idempotencyKey,
     required NativeAttachmentDraft attachment,
     required List<int> bytes,
     required String boundary,
@@ -532,6 +545,7 @@ class FakeNativeSyncTransport implements NativeSyncTransport {
       'method': 'multipart',
       'path': uri.path,
       'authorization': 'Bearer $accessToken',
+      'idempotencyKey': idempotencyKey,
       'fileName': attachment.name,
       'mimeType': attachment.mimeType,
       'bytes': bytes.length,

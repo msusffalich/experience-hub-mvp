@@ -1537,7 +1537,13 @@ async function saveMediaBuffer(media, bytes, user = { id: LOCAL_USER_ID }) {
     };
   }
 
-  const objectPath = `${user.id}/${Date.now()}-${sanitizeFileName(normalized.name)}`;
+  const storageObjectHint = normalized.metadata?.storageObjectHint || "";
+  const stableObjectName = storageObjectHint
+    ? sanitizeFileName(storageObjectHint)
+    : normalized.sourceId
+      ? sanitizeFileName(`${normalized.sourceId}-${normalized.name}`)
+      : `${Date.now()}-${sanitizeFileName(normalized.name)}`;
+  const objectPath = `${user.id}/${stableObjectName}`;
   const attemptBase = {
     assetId: normalized.id,
     experienceId: normalized.experienceId || normalized.metadata?.linkedExperienceId || "",
@@ -1552,6 +1558,8 @@ async function saveMediaBuffer(media, bytes, user = { id: LOCAL_USER_ID }) {
       kind: normalized.kind || inferServerMediaKind(normalized),
       sourceType: normalized.sourceType || "",
       sourceId: normalized.sourceId || "",
+      idempotencyKey: normalized.metadata?.idempotencyKey || normalized.sourceId || "",
+      storageObjectHint: storageObjectHint || "",
     },
   };
 

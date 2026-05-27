@@ -62,6 +62,7 @@ Cada evento o activo debe enviar:
    - Resumen observable: listo para enviar, subiendo, esperando reintento, requiere accion, archivos pendientes y eventos pendientes.
    - Mensaje humano si algo falla, sin pedir al usuario que interprete logs.
    - Checklist de piloto movil: backend, sesion, cola, nota rapida, multimedia, contexto, fuentes externas y lectura en PWA.
+   - Llaves de idempotencia para que reintentos de experiencia, agenda o media no creen duplicados.
 
 4. **Permisos y privacidad**
    - Camara, microfono, ubicacion, fotos, notificaciones y salud.
@@ -91,6 +92,7 @@ Cada evento o activo debe enviar:
 - Subida de archivos en segundo plano con reintentos.
 - Resumen de cola calculado desde estados reales, no desde un mensaje global: pendientes, reintentos, fallos definitivos, sesion requerida, plugin nativo pendiente, archivos y eventos.
 - Checklist de preparacion calculado desde datos reales para decidir si una prueba en telefono/tablet puede iniciar.
+- Idempotencia por registro: `vibeapp-capture`, `vibeapp-agenda` y `vibeapp-asset` via headers y metadatos.
 - IDs locales estables para evitar duplicados.
 - Storage privado con URLs firmadas, igual que la PWA.
 - Procesamiento pesado en backend, no en el telefono.
