@@ -175,6 +175,65 @@ void main() {
     expect(agendaBody['sourceType'], 'vibeapp-native-agenda');
   });
 
+  test('Native sync client reports media and agenda failures clearly',
+      () async {
+    final tempDir = Directory.systemTemp.createTempSync('vibeapp-sync-fail-');
+    addTearDown(() {
+      if (tempDir.existsSync()) tempDir.deleteSync(recursive: true);
+    });
+
+    const settings = SyncSettings(
+      apiBaseUrl: 'https://vibe.test',
+      accessToken: 'test-token',
+    );
+    final attachmentFile =
+        File('${tempDir.path}${Platform.pathSeparator}audio.webm')
+          ..writeAsBytesSync([1, 2, 3, 4, 5]);
+    final session = ActiveExperienceSession.start('Falla controlada');
+    session.addTextEvent('Evento antes de adjuntar audio.');
+    session.addAttachmentEvent(NativeAttachmentDraft.fromFilePath(
+      attachmentFile.path,
+      sourceType: 'audio',
+    ));
+
+    final mediaFailureTransport = FakeNativeSyncTransport(
+      mediaStatusCode: 500,
+      mediaBody: '{"error":"storage_down"}',
+    );
+    final mediaFailure = await ExperienceSyncClient(
+      settings,
+      transport: mediaFailureTransport,
+    ).syncItem(CaptureQueueItem.fromSession(session));
+
+    expect(mediaFailure.ok, isFalse);
+    expect(mediaFailure.message, contains('Media HTTP 500'));
+    expect(mediaFailure.message, contains('storage_down'));
+    expect(
+      mediaFailureTransport.requests
+          .where((item) => item['path'] == '/api/experiences'),
+      isEmpty,
+    );
+
+    final agendaFailureTransport = FakeNativeSyncTransport(
+      agendaStatusCode: 503,
+      agendaBody: '{"error":"agenda_unavailable"}',
+    );
+    final agendaFailure = await ExperienceSyncClient(
+      settings,
+      transport: agendaFailureTransport,
+    ).syncItem(CaptureQueueItem.agenda(
+      AgendaEventDraft(
+        title: 'Cita no sincronizada',
+        startAt: DateTime.utc(2026, 5, 27, 18),
+        endAt: DateTime.utc(2026, 5, 27, 19),
+      ),
+    ));
+
+    expect(agendaFailure.ok, isFalse);
+    expect(agendaFailure.message, contains('Agenda HTTP 503'));
+    expect(agendaFailure.message, contains('agenda_unavailable'));
+  });
+
   testWidgets('Vibeapp quick capture smoke test', (WidgetTester tester) async {
     await tester.pumpWidget(const VibeApp());
 
@@ -225,7 +284,22 @@ void main() {
 }
 
 class FakeNativeSyncTransport implements NativeSyncTransport {
+  FakeNativeSyncTransport({
+    this.mediaStatusCode = 200,
+    this.mediaBody = '',
+    this.experienceStatusCode = 200,
+    this.experienceBody = '{"id":"remote-exp-1"}',
+    this.agendaStatusCode = 200,
+    this.agendaBody = '{"id":"remote-agenda-1"}',
+  });
+
   final requests = <Map<String, dynamic>>[];
+  final int mediaStatusCode;
+  final String mediaBody;
+  final int experienceStatusCode;
+  final String experienceBody;
+  final int agendaStatusCode;
+  final String agendaBody;
 
   @override
   Future<NativeSyncResponse> postJson(
@@ -240,15 +314,15 @@ class FakeNativeSyncTransport implements NativeSyncTransport {
       'payload': payload,
     });
     if (uri.path == '/api/experiences') {
-      return const NativeSyncResponse(
-        statusCode: 200,
-        body: '{"id":"remote-exp-1"}',
+      return NativeSyncResponse(
+        statusCode: experienceStatusCode,
+        body: experienceBody,
       );
     }
     if (uri.path == '/api/agenda') {
-      return const NativeSyncResponse(
-        statusCode: 200,
-        body: '{"id":"remote-agenda-1"}',
+      return NativeSyncResponse(
+        statusCode: agendaStatusCode,
+        body: agendaBody,
       );
     }
     return const NativeSyncResponse(statusCode: 404, body: '{"error":"no"}');
@@ -274,8 +348,8 @@ class FakeNativeSyncTransport implements NativeSyncTransport {
       'metadata': metadata,
     });
     return NativeSyncResponse(
-      statusCode: 200,
-      body: jsonEncode({
+      statusCode: mediaStatusCode,
+      body: mediaBody.isNotEmpty ? mediaBody : jsonEncode({
         'id': 'remote-media-1',
         'name': attachment.name,
         'type': attachment.mimeType,
