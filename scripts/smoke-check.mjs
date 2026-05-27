@@ -16,6 +16,7 @@ const files = {
   androidVerify: readFileSync("scripts/verify-android-release.mjs", "utf8"),
   flutterVerify: readFileSync("scripts/verify-flutter-mobile.mjs", "utf8"),
   vibeappPackage: readFileSync("scripts/package-vibeapp-pilot.mjs", "utf8"),
+  vibeappMain: readFileSync("vibeapp/lib/main.dart", "utf8"),
   vibeappTest: readFileSync("vibeapp/test/widget_test.dart", "utf8"),
   reportPdf: readFileSync("scripts/report_pdf_reportlab.py", "utf8"),
   insightsPdf: readFileSync("scripts/insights_pdf_reportlab.py", "utf8"),
@@ -252,6 +253,7 @@ assert(files.vibeappTest.includes("Native payloads preserve event, media, locati
 assert(files.vibeappTest.includes("Native sync client sends media, experience, and agenda requests"), "Flutter tests must validate the Vibeapp sync client against a local HTTP server.");
 assert(files.vibeappTest.includes("Native sync client reports media and agenda failures clearly"), "Flutter tests must validate clear Vibeapp sync failure handling.");
 assert(files.vibeappTest.includes("Native queue validates files and retry state before sync"), "Flutter tests must validate queue retries, terminal failures, and local file validation.");
+assert(files.vibeappMain.includes("class CaptureQueueSummary") && files.vibeappTest.includes("Native queue summary explains ready, retry, blocked, and synced items"), "Vibeapp must expose a tested observable queue summary.");
 assert(files.vibeappTest.includes("External session import profiles Meta and biometric sources correctly"), "Flutter tests must validate source-specific external import profiles.");
 assert(files.app.includes("getExternalAssetProfile") && files.app.includes("externalPayloadType") && files.app.includes("Perfil de dispositivo/origen"), "PWA must surface Vibeapp external import profiles in assets and reports.");
 assert(files.app.includes("applyRecommendedPublicationMediaSelection") && files.app.includes("publicationRoleLabel") && files.app.includes("data-publication-media-bulk=\"recommended\""), "Publications must support recommended media curation with editorial asset roles.");

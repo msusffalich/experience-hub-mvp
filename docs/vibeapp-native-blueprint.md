@@ -59,7 +59,8 @@ Cada evento o activo debe enviar:
 3. **Cola y sincronizacion**
    - Lista simple de pendientes.
    - Reintento automatico.
-   - Mensaje humano si algo falla.
+   - Resumen observable: listo para enviar, subiendo, esperando reintento, requiere accion, archivos pendientes y eventos pendientes.
+   - Mensaje humano si algo falla, sin pedir al usuario que interprete logs.
 
 4. **Permisos y privacidad**
    - Camara, microfono, ubicacion, fotos, notificaciones y salud.
@@ -87,6 +88,7 @@ Cada evento o activo debe enviar:
 - Supabase Flutter para Auth, Postgres y Storage.
 - Base local: Drift, Isar o SQLite cifrado para cola offline.
 - Subida de archivos en segundo plano con reintentos.
+- Resumen de cola calculado desde estados reales, no desde un mensaje global: pendientes, reintentos, fallos definitivos, sesion requerida, plugin nativo pendiente, archivos y eventos.
 - IDs locales estables para evitar duplicados.
 - Storage privado con URLs firmadas, igual que la PWA.
 - Procesamiento pesado en backend, no en el telefono.
@@ -131,5 +133,6 @@ Vibeapp solo debe considerarse lista para piloto cuando:
 - La captura funciona sin que el usuario piense en Supabase.
 - Los activos aparecen en otro dispositivo sin accion manual.
 - La cola offline se recupera sola.
+- La cola muestra el estado real de cada captura y separa reintentos automaticos de problemas que requieren accion humana.
 - Los errores son comprensibles.
 - La PWA puede generar reportes, hallazgos y publicaciones con datos creados desde Vibeapp.

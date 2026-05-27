@@ -353,6 +353,49 @@ void main() {
     expect(terminalFailure.canAttemptSyncNow, isTrue);
   });
 
+  test('Native queue summary explains ready, retry, blocked, and synced items',
+      () {
+    final tempDir = Directory.systemTemp.createTempSync('vibeapp-queue-summary-');
+    addTearDown(() {
+      if (tempDir.existsSync()) tempDir.deleteSync(recursive: true);
+    });
+
+    final now = DateTime.utc(2026, 5, 27, 12);
+    final synced = CaptureQueueItem.text('Ya enviado')
+      ..markSynced('remote-ok');
+    final ready = CaptureQueueItem.text('Listo para enviar');
+    final waiting = CaptureQueueItem.text('Fallo temporal');
+    waiting.markAttemptStarted();
+    waiting.markFailed('Red no disponible');
+    waiting.nextRetryAt = now.add(const Duration(minutes: 5));
+
+    final terminal = CaptureQueueItem.text('Fallo definitivo');
+    terminal.markFailed('Archivo invalido', retryable: false);
+
+    final missingFile =
+        File('${tempDir.path}${Platform.pathSeparator}missing.jpg')
+          ..writeAsBytesSync([1, 2, 3]);
+    final missingItem = CaptureQueueItem.media(
+      NativeAttachmentDraft.fromFilePath(missingFile.path, sourceType: 'image'),
+    );
+    missingFile.deleteSync();
+
+    final summary = CaptureQueueSummary.fromItems(
+      [synced, ready, waiting, terminal, missingItem],
+      now: now,
+    );
+
+    expect(summary.total, 5);
+    expect(summary.synced, 1);
+    expect(summary.readyToSync, 1);
+    expect(summary.waitingRetry, 2);
+    expect(summary.terminalFailures, 1);
+    expect(summary.validationBlocked, 1);
+    expect(summary.needsUserAction, 2);
+    expect(summary.isClear, isFalse);
+    expect(summary.operatorMessage, contains('requieren accion'));
+  });
+
   testWidgets('Vibeapp quick capture smoke test', (WidgetTester tester) async {
     await tester.pumpWidget(const VibeApp());
 

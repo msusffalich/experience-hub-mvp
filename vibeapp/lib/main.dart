@@ -1310,19 +1310,11 @@ class NativePilotReadinessCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final pending = queue
-        .where(
-            (item) => item.canSync && item.status != CaptureSyncStatus.synced)
-        .length;
-    final blocked = queue
-        .where((item) =>
-            item.status == CaptureSyncStatus.failed ||
-            item.status == CaptureSyncStatus.needsSession)
-        .length;
+    final queueSummary = CaptureQueueSummary.fromItems(queue);
     final readyCount = [
       backendOk,
       signedInEmail.isNotEmpty,
-      pending == 0,
+      queueSummary.isClear,
       true,
       true,
       true,
@@ -1385,11 +1377,9 @@ class NativePilotReadinessCard extends StatelessWidget {
                       : signedInEmail,
                 ),
                 ReadinessChip(
-                  ok: pending == 0,
+                  ok: queueSummary.isClear,
                   label: 'Cola',
-                  detail: pending == 0
-                      ? 'Sin pendientes.'
-                      : '$pending pendiente(s), $blocked requieren revisión.',
+                  detail: queueSummary.operatorMessage,
                 ),
                 const ReadinessChip(
                   ok: true,
@@ -1858,19 +1848,7 @@ class CaptureQueuePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final synced =
-        queue.where((item) => item.status == CaptureSyncStatus.synced).length;
-    final needsAttention = queue
-        .where((item) =>
-            item.status == CaptureSyncStatus.failed ||
-            item.status == CaptureSyncStatus.needsSession)
-        .length;
-    final waitingRetry = queue
-        .where((item) =>
-            item.canSync &&
-            item.status != CaptureSyncStatus.synced &&
-            !item.canAttemptSyncNow)
-        .length;
+    final summary = CaptureQueueSummary.fromItems(queue);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -1888,7 +1866,7 @@ class CaptureQueuePanel extends StatelessWidget {
                         ?.copyWith(fontWeight: FontWeight.w700),
                   ),
                 ),
-                if (synced > 0)
+                if (summary.synced > 0)
                   TextButton.icon(
                     onPressed: onClearSynced,
                     icon: const Icon(Icons.cleaning_services_outlined),
@@ -1901,16 +1879,30 @@ class CaptureQueuePanel extends StatelessWidget {
               const Text(
                   'Sin capturas pendientes. Cuando guardes una nota o acciones un medio, aparecerá aquí antes de sincronizar.')
             else ...[
+              Text(summary.operatorMessage),
+              const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  Chip(label: Text('${queue.length} total')),
-                  Chip(label: Text('$synced listas')),
-                  if (needsAttention > 0)
-                    Chip(label: Text('$needsAttention por revisar')),
-                  if (waitingRetry > 0)
-                    Chip(label: Text('$waitingRetry esperando reintento')),
+                  Chip(label: Text('${summary.total} total')),
+                  Chip(label: Text('${summary.synced} listas')),
+                  if (summary.readyToSync > 0)
+                    Chip(label: Text('${summary.readyToSync} por enviar')),
+                  if (summary.uploading > 0)
+                    Chip(label: Text('${summary.uploading} subiendo')),
+                  if (summary.waitingRetry > 0)
+                    Chip(label: Text('${summary.waitingRetry} en reintento')),
+                  if (summary.needsUserAction > 0)
+                    Chip(label: Text('${summary.needsUserAction} por revisar')),
+                  if (summary.attachmentsPending > 0)
+                    Chip(
+                        label: Text(
+                            '${summary.attachmentsPending} archivo(s) pendientes')),
+                  if (summary.eventsPending > 0)
+                    Chip(
+                        label: Text(
+                            '${summary.eventsPending} evento(s) pendientes')),
                 ],
               ),
               const SizedBox(height: 8),
@@ -3570,9 +3562,13 @@ class CaptureQueueItem {
       attachments.isNotEmpty;
 
   bool get canAttemptSyncNow {
+    return canAttemptSyncAt(DateTime.now().toUtc());
+  }
+
+  bool canAttemptSyncAt(DateTime now) {
     if (status == CaptureSyncStatus.needsNativePlugin) return false;
     final retryAt = nextRetryAt;
-    return retryAt == null || !DateTime.now().toUtc().isBefore(retryAt);
+    return retryAt == null || !now.toUtc().isBefore(retryAt);
   }
 
   String get retryDescription {
@@ -3794,6 +3790,142 @@ class CaptureQueueItem {
       'lastAttemptAt': lastAttemptAt?.toIso8601String(),
       'nextRetryAt': nextRetryAt?.toIso8601String(),
     };
+  }
+}
+
+class CaptureQueueSummary {
+  const CaptureQueueSummary({
+    required this.total,
+    required this.synced,
+    required this.uploading,
+    required this.readyToSync,
+    required this.waitingRetry,
+    required this.retryableFailures,
+    required this.terminalFailures,
+    required this.needsSession,
+    required this.needsNativePlugin,
+    required this.validationBlocked,
+    required this.attachmentsPending,
+    required this.eventsPending,
+  });
+
+  factory CaptureQueueSummary.fromItems(
+    Iterable<CaptureQueueItem> items, {
+    DateTime? now,
+  }) {
+    final referenceTime = (now ?? DateTime.now()).toUtc();
+    var total = 0;
+    var synced = 0;
+    var uploading = 0;
+    var readyToSync = 0;
+    var waitingRetry = 0;
+    var retryableFailures = 0;
+    var terminalFailures = 0;
+    var needsSession = 0;
+    var needsNativePlugin = 0;
+    var validationBlocked = 0;
+    var attachmentsPending = 0;
+    var eventsPending = 0;
+
+    for (final item in items) {
+      total += 1;
+      if (item.status == CaptureSyncStatus.synced) {
+        synced += 1;
+        continue;
+      }
+      attachmentsPending += item.attachments.length;
+      eventsPending += item.events.length;
+      final validation = item.validateForSync();
+      if (!validation.canSync) {
+        validationBlocked += 1;
+      }
+      switch (item.status) {
+        case CaptureSyncStatus.synced:
+          break;
+        case CaptureSyncStatus.uploading:
+          uploading += 1;
+          break;
+        case CaptureSyncStatus.needsSession:
+          needsSession += 1;
+          break;
+        case CaptureSyncStatus.needsNativePlugin:
+          needsNativePlugin += 1;
+          break;
+        case CaptureSyncStatus.failed:
+          if (item.nextRetryAt == null) {
+            terminalFailures += 1;
+          } else if (item.canAttemptSyncAt(referenceTime)) {
+            retryableFailures += 1;
+            if (validation.canSync) readyToSync += 1;
+          } else {
+            waitingRetry += 1;
+          }
+          break;
+        case CaptureSyncStatus.queued:
+          if (item.canAttemptSyncAt(referenceTime) && validation.canSync) {
+            readyToSync += 1;
+          } else {
+            waitingRetry += 1;
+          }
+          break;
+      }
+    }
+
+    return CaptureQueueSummary(
+      total: total,
+      synced: synced,
+      uploading: uploading,
+      readyToSync: readyToSync,
+      waitingRetry: waitingRetry,
+      retryableFailures: retryableFailures,
+      terminalFailures: terminalFailures,
+      needsSession: needsSession,
+      needsNativePlugin: needsNativePlugin,
+      validationBlocked: validationBlocked,
+      attachmentsPending: attachmentsPending,
+      eventsPending: eventsPending,
+    );
+  }
+
+  final int total;
+  final int synced;
+  final int uploading;
+  final int readyToSync;
+  final int waitingRetry;
+  final int retryableFailures;
+  final int terminalFailures;
+  final int needsSession;
+  final int needsNativePlugin;
+  final int validationBlocked;
+  final int attachmentsPending;
+  final int eventsPending;
+
+  int get pending => total - synced;
+  int get needsUserAction =>
+      terminalFailures + needsSession + needsNativePlugin + validationBlocked;
+  bool get isClear => pending == 0;
+  bool get isHealthy => needsUserAction == 0 && waitingRetry == 0;
+
+  String get operatorMessage {
+    if (total == 0) {
+      return 'Sin capturas en cola. La proxima captura se sincronizara automaticamente al tener sesion y conexion.';
+    }
+    if (isClear) {
+      return 'Todo lo capturado ya esta sincronizado con Vibe.';
+    }
+    if (needsUserAction > 0) {
+      return '$needsUserAction elemento(s) requieren accion: sesion, archivo valido o plugin nativo.';
+    }
+    if (uploading > 0) {
+      return '$uploading elemento(s) se estan subiendo ahora.';
+    }
+    if (readyToSync > 0) {
+      return '$readyToSync elemento(s) listos para sincronizar. Vibeapp los enviara automaticamente.';
+    }
+    if (waitingRetry > 0) {
+      return '$waitingRetry elemento(s) esperando reintento automatico.';
+    }
+    return '$pending elemento(s) pendientes de sincronizacion.';
   }
 }
 
