@@ -1,4 +1,4 @@
-const APP_VERSION = "20260526-vibeapp-pilot-zip-457";
+const APP_VERSION = "20260527-vibeapp-contract-tests-458";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2119,6 +2119,7 @@ const manualContent = {
         "Vibeapp suma modo Experiencia activa: puedes iniciar una experiencia larga, agregar notas, medios, eventos de agenda, ubicación o contexto biométrico como eventos internos y cerrar el registro sin crear experiencias sueltas. La sincronización usa el mismo identificador de experiencia para que la PWA lea una línea de eventos coherente.",
         "Vibeapp suma Importar sesión externa: permite traer varios archivos de Meta/Oakley/Ray-Ban, Oura, Apple Health, Samsung Health/Galaxy Watch, Health Connect, galería del teléfono u otro origen, agruparlos en una sola experiencia y conservar metadatos normalizados para procesamiento posterior.",
         "Vibeapp valida cada captura antes de sincronizar: revisa título, texto, eventos, existencia de archivos, tamaño, MIME, vínculo evento-activo y expectativas por origen. Si algo no cuadra, queda en cola con un mensaje entendible antes de tocar el backend.",
+        "La prueba Flutter de contrato valida sin teléfono físico que Vibeapp genere payloads correctos para experiencias activas, vínculos evento-activo, ubicación y biometría antes de sincronizar con la PWA.",
         "Vibeapp ahora incluye Compuerta piloto móvil: verifica el backend productivo, confirma sesión, revisa cola local y muestra capacidades listas antes de iniciar una prueba real en teléfono. Android ya declara permisos de red, cámara, audio, ubicación, multimedia y notificaciones para evitar bloqueos básicos de plataforma.",
         "Vibeapp ya tiene ruta Android verificable: SDK/JDK instalados, paquete piloto io.vibeapp.mobile, APK debug generado, APK release firmado y App Bundle release firmado. Antes de Play Console queda decidir custodia formal de la upload key.",
         "La compuerta local npm run verify:pilot ejecuta en una sola orden los controles PWA, PDFs ReportLab, Android firmado y Flutter analyze/test. npm run verify:android queda como chequeo específico de firma APK/AAB.",
@@ -8031,7 +8032,7 @@ function buildGlobalProgressSnapshot() {
         multimodal: "Multimedia and OCR/analysis",
         multimodalDetail: `${assetAnalysis.withText}/${assetAnalysis.total} assets with analytical text; workflow ${assetWorkflow.score}%.`,
         native: "Vibeapp native",
-        nativeDetail: "Flutter skeleton has auth, command preview/routing, mobile pilot gate, queue, auto-retry, media, agenda, location, biometrics, Android package id io.vibeapp.mobile, verified debug APK, signed release APK/AAB, Android signing gate, unified pilot verification, and a ZIP-ready Android pilot kit.",
+        nativeDetail: "Flutter skeleton has auth, command preview/routing, contract tests for event-media payloads, mobile pilot gate, queue, auto-retry, media, agenda, location, biometrics, Android package id io.vibeapp.mobile, verified debug APK, signed release APK/AAB, Android signing gate, unified pilot verification, and a ZIP-ready Android pilot kit.",
         connectors: "Device and service connectors",
         connectorsDetail: "Routes documented for Meta/Oakley, Oura, Apple Health, Samsung Health, Health Connect; direct connectors remain future work.",
         full: "Full product ambition",
@@ -8066,7 +8067,7 @@ function buildGlobalProgressSnapshot() {
         multimodal: "Multimedia y OCR/análisis",
         multimodalDetail: `${assetAnalysis.withText}/${assetAnalysis.total} activos con texto analítico; flujo ${assetWorkflow.score}%.`,
         native: "Vibeapp nativa",
-        nativeDetail: "El esqueleto Flutter tiene auth, vista previa de comandos, compuerta piloto móvil, cola, autoreintento, medios, agenda, lugar, biometría, paquete Android io.vibeapp.mobile, APK debug verificado, APK/AAB release firmados, compuerta local Android, verificación piloto unificada y paquete Android entregable en ZIP.",
+        nativeDetail: "El esqueleto Flutter tiene auth, vista previa de comandos, pruebas de contrato para payloads evento-activo, compuerta piloto móvil, cola, autoreintento, medios, agenda, lugar, biometría, paquete Android io.vibeapp.mobile, APK debug verificado, APK/AAB release firmados, compuerta local Android, verificación piloto unificada y paquete Android entregable en ZIP.",
         connectors: "Conectores de dispositivos y servicios",
         connectorsDetail: "Rutas documentadas para Meta/Oakley, Oura, Apple Health, Samsung Health y Health Connect; conectores directos quedan futuros.",
         full: "Ambición de producto completo",
