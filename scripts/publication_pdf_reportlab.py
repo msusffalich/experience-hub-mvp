@@ -599,8 +599,9 @@ def moment_rows(highlights):
 def media_rows(media):
     rows = []
     for item in [item for item in (media or []) if item.get("included", True) is not False][:8]:
+        role = item.get("publicationRoleLabel") or "Rol editorial por revisar"
         rows.append([
-            human_kind(item),
+            f"{human_kind(item)} / {role}",
             item.get("name") or "Activo",
             item.get("experienceTitle") or "-",
             evidence_plain_language(item),
@@ -625,9 +626,13 @@ def media_selection_label(all_media, media):
 def evidence_plain_language(item):
     text = item.get("translatedText") or item.get("analyticalText") or item.get("manualNote") or item.get("originalText") or ""
     name = item.get("name") or ""
+    role = item.get("publicationRoleLabel") or ""
+    role_detail = item.get("publicationRoleDetail") or ""
     health = re.search(r"salud|medic|doctor|examen|laboratorio|diagnost|glucosa|colesterol|presion|sangre|health|medical|lab", f"{text} {name}", re.I)
     if health:
         prefix = "Resumen claro de salud: explicar hallazgos sin diagnosticar, separando dato observado y posible siguiente paso."
+    elif item.get("externalTransportOnly") or str(item.get("publicationRole") or "") == "transport":
+        prefix = "Solo transporte: conservar para trazabilidad o descarga; no interpretar automaticamente."
     elif str(item.get("type") or "").startswith("image/"):
         prefix = "Lectura visual: usar como portada, galeria o evidencia contextual."
     elif str(item.get("type") or "").startswith(("audio/", "video/")):
@@ -635,7 +640,8 @@ def evidence_plain_language(item):
     else:
         prefix = "Documento de soporte: convertir el contenido en lenguaje claro. Se abre o descarga desde app/HTML."
     detail = short(text, 170)
-    return f"{prefix} {detail}" if detail else prefix
+    role_line = f"Rol editorial: {role}. {role_detail}" if role else ""
+    return " ".join(part for part in [role_line, prefix, detail] if part)
 
 
 def editorial_plan_rows(draft, media, all_media):

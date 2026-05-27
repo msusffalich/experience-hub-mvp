@@ -7665,6 +7665,14 @@ button.asset-processing-summary-card {
   -webkit-line-clamp: 3;
 }
 
+.publication-media-caption .publication-media-role {
+  padding: 6px;
+  border: 1px solid rgba(13, 124, 102, 0.16);
+  border-radius: 6px;
+  background: rgba(239, 248, 244, 0.74);
+  color: var(--accent-dark);
+}
+
 .publication-final-document h2 {
   margin: 0;
   font-size: 24px;

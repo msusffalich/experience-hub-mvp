@@ -1,4 +1,4 @@
-const APP_VERSION = "20260527-pwa-external-asset-profiles-463";
+const APP_VERSION = "20260527-publication-media-curation-464";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2403,6 +2403,7 @@ const manualContent = {
         "Aprobación humana marca si el borrador está en revisión o aprobado. Cualquier edición, cambio de diseño o curaduría multimedia lo devuelve a revisión.",
         "Historial del borrador registra generación, ediciones, cambios de multimedia, diseño, aprobación y exportaciones recientes.",
         "Multimedia sugerida significa archivos ya adjuntos a las experiencias fuente. La app los propone para la publicación; incluirlos o excluirlos no modifica ni borra la experiencia original.",
+        "La seleccion recomendada de multimedia asigna rol editorial a cada activo antes de exportar: portada, galeria, evidencia, anexo, voz, video, contexto biometrico o solo transporte, segun tipo de pieza y canal.",
         "Cuando un activo tiene etiquetas, nota o texto analítico, Publicaciones lo usa como contexto editorial en la multimedia sugerida y como evidencia editable dentro del borrador.",
         "Las imágenes pueden incrustarse visualmente en el PDF. Audio, video, documentos y ZIP no se fuerzan como imágenes: se muestran con controles o acciones de abrir/descargar en la app y en HTML, y en el PDF se resumen como evidencia o referencia.",
         "Si el texto de una publicación se ve breve, no significa que ese sea el límite del sistema: el borrador depende de la riqueza de las experiencias, notas, transcripciones, OCR, documentos interpretados y edición manual del usuario.",
@@ -2482,6 +2483,7 @@ const manualContent = {
         "El flujo correcto es: elegir grupo/persona y fuente, escoger tipo/estilo/canal, generar borrador, revisar texto y multimedia, aprobar y descargar PDF editado ReportLab.",
         "El PDF es la salida principal para usuario final. HTML, Markdown, copiar texto y paquete JSON quedan como opciones tecnicas o de edicion, plegadas para no competir con el flujo principal.",
         "La app propone multimedia ya asociada a las experiencias fuente. Puedes incluir o excluir imagenes, videos, audios y documentos sin borrar los activos originales.",
+        "El boton Recomendado aplica una curaduria inicial: asigna rol editorial a cada activo y decide si conviene incluirlo para portada, galeria, evidencia, anexo, voz, video, contexto biometrico o solo transporte.",
         "Reportes, Hallazgos y Publicaciones comparten el mismo alcance base: grupo/persona, categoría, fecha desde y fecha hasta. Así puedes trabajar con un grupo de experiencias o un segmento de fechas sin limitarte a todo el historial o a una sola experiencia.",
         "El documento final contiene titulo, resumen, cuerpo, momentos seleccionados, multimedia incluida, estado de privacidad y preparacion por canal.",
         "WhatsApp y Email son salidas asistidas: la app prepara/copiar el contenido y abre el canal cuando el navegador lo permite; el usuario revisa y envia.",
@@ -2987,6 +2989,7 @@ const manualContent = {
         "Human approval marks whether the draft is in review or approved. Any edit, design change, or media curation returns it to review.",
         "Draft history records generation, edits, media changes, design changes, approval, and recent exports.",
         "Suggested media means files already attached to the source experiences. The app proposes them for the publication; including or excluding them does not modify or delete the original experience.",
+        "Publications assigns an editorial role to each selected asset before export: cover, gallery, evidence, annex, voice, video, biometric context, or transport-only. You can include all, include none, or apply the recommended selection for the chosen type and channel.",
         "When an asset has tags, a note, or analytical text, Publications uses it as editorial context in suggested media and as editable evidence inside the draft.",
         "Media titles show the file name and source experience so the user understands where each asset comes from without breaking the visual layout.",
         "Printable output and exported HTML use page margins, page-break rules, and card protection to reduce panels or media being cut across pages.",
@@ -3065,6 +3068,7 @@ const manualContent = {
         "The intended flow is: choose group/person and source, choose type/style/channel, generate draft, review text and media, approve, and download the edited ReportLab PDF.",
         "PDF is the main final-user output. HTML, Markdown, copied text, and JSON package are technical or editing options, folded away from the primary flow.",
         "The app suggests media already linked to the source experiences. You can include or exclude images, videos, audio, and documents without deleting the original assets.",
+        "Recommended media selection assigns editorial roles before export: cover, gallery, evidence, annex, voice, video, biometric context, or transport-only, according to publication type and channel.",
         "The final document contains title, summary, body, selected moments, included media, privacy state, and channel preparation.",
         "WhatsApp and Email are assisted outputs: the app prepares or copies content and opens the channel when the browser allows it; the user reviews and sends.",
         "Facebook and Instagram do not have automatic API publishing yet. The app prepares the content and opens the network for manual paste until approved connectors exist.",
@@ -18984,8 +18988,8 @@ function generatePublicationDraft() {
 function buildPublicationDraft({ experiences, type, style, channel, privacy }) {
   const analysis = buildExperienceAnalysis(experiences);
   const title = buildPublicationTitle(type, experiences);
-  const mediaCount = experiences.reduce((sum, item) => sum + (item.attachments?.length || 0), 0);
-  const media = collectPublicationMedia(experiences);
+  const media = applyRecommendedPublicationMediaSelection(collectPublicationMedia(experiences), { type, channel });
+  const mediaCount = media.filter((item) => item.included !== false).length;
   const category = displayCategory(getTopCategory(experiences));
   const avgEnergy = experiences.length ? Number(average(experiences.map((item) => Number(item.energy || 0))).toFixed(1)) : 0;
   const highlights = experiences.slice(0, 5).map((item) => ({
@@ -19040,6 +19044,7 @@ function buildPublicationDraft({ experiences, type, style, channel, privacy }) {
     stats: {
       experiences: experiences.length,
       media: mediaCount,
+      mediaAvailable: media.length,
       category,
       averageEnergy: avgEnergy,
     },
@@ -19350,6 +19355,128 @@ function normalizePublicationPages(draft) {
   ];
 }
 
+function refreshPublicationMediaRoles(media = [], draft = {}) {
+  return media.map((item, index) => {
+    const role = getPublicationMediaRole(item, draft, index);
+    return {
+      ...item,
+      publicationRole: role.role,
+      publicationRoleLabel: role.label,
+      publicationRoleDetail: role.detail,
+      publicationRoleScore: role.score,
+    };
+  });
+}
+
+function applyRecommendedPublicationMediaSelection(media = [], draft = {}) {
+  return media.map((item, index) => {
+    const role = getPublicationMediaRole(item, draft, index);
+    return {
+      ...item,
+      publicationRole: role.role,
+      publicationRoleLabel: role.label,
+      publicationRoleDetail: role.detail,
+      publicationRoleScore: role.score,
+      included: role.include,
+    };
+  });
+}
+
+function getPublicationMediaRole(item = {}, draft = {}, index = 0) {
+  const type = String(draft.type || "").toLowerCase();
+  const channel = String(draft.channel || "").toLowerCase();
+  const mime = String(item.type || "").toLowerCase();
+  const name = String(item.name || "").toLowerCase();
+  const payload = String(item.externalPayloadType || "").toLowerCase();
+  const intent = String(item.externalProcessingIntent || "").toLowerCase();
+  const isImage = mime.startsWith("image/");
+  const isVideo = mime.startsWith("video/");
+  const isAudio = mime.startsWith("audio/");
+  const isArchive = isArchiveLikePublicationMedia(item) || item.externalTransportOnly;
+  const isBiometric = item.kind === "biometric" || payload.includes("biometric") || intent.includes("biometric") || /health|oura|samsung|apple health|biometr/.test(`${name} ${payload} ${intent}`);
+  const isDocument = !isImage && !isVideo && !isAudio && !isArchive;
+  const isAlbum = type.includes("album") || type.includes("lbum");
+  const isCarousel = type.includes("carrusel");
+  const isStory = type.includes("guion") || type.includes("reel");
+  const isHealth = type.includes("salud") || type.includes("health") || isBiometric;
+  const isDossier = type.includes("dossier");
+  const isExecutive = type.includes("resumen");
+  const isQuick = type.includes("social") || type.includes("rapida") || type.includes("pida");
+  const visualChannel = ["instagram", "facebook", "linkedin", "pdf/html", "blog/web"].some((value) => channel.includes(value));
+  let role = "support";
+  let score = 55;
+  let include = true;
+  if (isArchive) {
+    role = "transport";
+    score = isDossier || channel.includes("pdf") || channel.includes("email") ? 58 : 28;
+    include = isDossier || channel.includes("pdf") || channel.includes("email") || channel.includes("blog");
+  } else if (isBiometric) {
+    role = "biometric-evidence";
+    score = isHealth || isExecutive || isDossier ? 92 : 68;
+    include = isHealth || isExecutive || isDossier || channel.includes("pdf") || channel.includes("email");
+  } else if (isImage) {
+    role = index === 0 ? "cover" : "gallery";
+    score = isAlbum || isCarousel || isQuick || visualChannel ? 92 - Math.min(index * 4, 22) : 70;
+    include = !channel.includes("email") || index < 4 || isDossier;
+  } else if (isVideo) {
+    role = isStory ? "scene" : "video-memory";
+    score = isStory || isAlbum || isQuick ? 86 - Math.min(index * 4, 20) : 64;
+    include = isStory || isAlbum || isDossier || channel.includes("pdf") || channel.includes("blog") || index < 2;
+  } else if (isAudio) {
+    role = "voice-memory";
+    score = isStory || isAlbum || isHealth || isDossier ? 78 : 58;
+    include = isStory || isAlbum || isHealth || isDossier || channel.includes("pdf") || channel.includes("email");
+  } else if (isDocument) {
+    role = isHealth ? "plain-evidence" : "annex";
+    score = isHealth || isExecutive || isDossier || channel.includes("email") ? 88 : 54;
+    include = isHealth || isExecutive || isDossier || channel.includes("pdf") || channel.includes("email") || channel.includes("blog");
+  }
+  if ((isQuick || isCarousel) && !isImage && !isVideo) include = false;
+  if (isCarousel && index > 7) include = false;
+  const labels = state.language === "en"
+    ? {
+        cover: "Cover candidate",
+        gallery: "Gallery asset",
+        scene: "Scene / reel clip",
+        "video-memory": "Video memory",
+        "voice-memory": "Voice note",
+        "plain-evidence": "Plain-language evidence",
+        "biometric-evidence": "Biometric context",
+        annex: "Annex / support",
+        transport: "Transport only",
+        support: "Support asset",
+      }
+    : {
+        cover: "Candidata a portada",
+        gallery: "Activo de galeria",
+        scene: "Escena / clip",
+        "video-memory": "Memoria en video",
+        "voice-memory": "Nota de voz",
+        "plain-evidence": "Evidencia en lenguaje claro",
+        "biometric-evidence": "Contexto biometrico",
+        annex: "Anexo / apoyo",
+        transport: "Solo transporte",
+        support: "Activo de apoyo",
+      };
+  const detail = state.language === "en"
+    ? `${labels[role] || labels.support}. Recommendation score ${score}/100 for ${displayPublicationType(draft.type || "Reporte narrativo")} on ${draft.channel || "PDF/HTML"}.`
+    : `${labels[role] || labels.support}. Puntaje recomendado ${score}/100 para ${displayPublicationType(draft.type || "Reporte narrativo")} en ${draft.channel || "PDF/HTML"}.`;
+  return { role, label: labels[role] || labels.support, detail, score: Math.max(0, Math.min(100, score)), include };
+}
+
+function syncPublicationPagesWithMedia(draft = {}) {
+  const pages = normalizePublicationPages(draft);
+  const media = getApprovedPublicationMedia(draft);
+  const mediaIds = media.map((item) => item.id);
+  const firstVisual = media.find((item) => String(item.type || "").startsWith("image/") || String(item.type || "").startsWith("video/"));
+  return pages.map((page) => {
+    if (page.pageType === "cover") return { ...page, mediaIds: firstVisual ? [firstVisual.id] : [] };
+    if (["media", "evidence", "annex"].includes(page.pageType)) return { ...page, mediaIds };
+    if (["slides", "scenes"].includes(page.pageType)) return { ...page, mediaIds: media.filter((item) => String(item.type || "").startsWith("image/") || String(item.type || "").startsWith("video/")).map((item) => item.id).slice(0, 8) };
+    return page;
+  });
+}
+
 function splitPeople(value) {
   return String(value || "")
     .split(/[,;|]/)
@@ -19389,6 +19516,12 @@ function collectPublicationMedia(experiences) {
       analyticalText: asset.analysisText || "",
       translatedText: asset.translatedText || "",
       originalText: asset.extractedText || "",
+      externalSource: asset.externalSource || "",
+      externalPayloadType: asset.externalPayloadType || "",
+      externalProcessingIntent: asset.externalProcessingIntent || "",
+      externalTreatment: asset.externalTreatment || "",
+      externalTransportOnly: Boolean(asset.externalTransportOnly),
+      externalAutoInterpret: asset.externalAutoInterpret !== false,
       included: true,
       needsSync: !asset.url && !asset.dataUrl,
     }))
@@ -20728,6 +20861,7 @@ function renderPublicationMedia(media) {
           <p class="card-meta">${escapeHtml(selectionLabel)}. ${escapeHtml(t("labels.publicationMediaHelp"))}</p>
         </div>
         <div class="pill-row publication-media-actions">
+          <button class="secondary-button" type="button" data-publication-media-bulk="recommended">${escapeHtml(state.language === "en" ? "Recommended" : "Recomendado")}</button>
           <button class="secondary-button" type="button" data-publication-media-bulk="all">${escapeHtml(state.language === "en" ? "Include all" : "Incluir todo")}</button>
           <button class="secondary-button" type="button" data-publication-media-bulk="none">${escapeHtml(state.language === "en" ? "No media" : "Sin multimedia")}</button>
         </div>
@@ -20819,6 +20953,8 @@ function renderPublicationMediaSyncNotice(item) {
 function renderPublicationMediaCaption(item) {
   const context = [item.translatedText, item.analyticalText, item.manualNote, item.originalText].filter(Boolean).join(" ");
   const tags = (item.tags || []).slice(0, 4);
+  const roleLabel = item.publicationRoleLabel || getPublicationMediaRole(item, state.currentPublicationDraft || {}, 0).label;
+  const roleDetail = item.publicationRoleDetail || "";
   const mediaRole = String(item.type || "").startsWith("image/")
     ? (state.language === "en" ? "Visual asset: can be shown in the PDF." : "Activo visual: puede mostrarse en el PDF.")
     : (state.language === "en" ? "Support asset: summarized here; open/download from the app or HTML." : "Activo de apoyo: se resume aquí; se abre o descarga desde la app o HTML.");
@@ -20827,6 +20963,7 @@ function renderPublicationMediaCaption(item) {
       <strong title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</strong>
       <span title="${escapeHtml(item.experienceTitle)}">${escapeHtml(item.experienceTitle)}</span>
       <span class="publication-provenance ${item.isDemo ? "is-demo" : "is-user"}">${escapeHtml(item.provenance || "")}</span>
+      <small class="publication-media-role"><b>${escapeHtml(state.language === "en" ? "Editorial role" : "Rol editorial")}:</b> ${escapeHtml(roleLabel)}${roleDetail ? ` - ${escapeHtml(roleDetail)}` : ""}</small>
       <small><b>${escapeHtml(state.language === "en" ? "Use" : "Uso")}:</b> ${escapeHtml(mediaRole)}</small>
       ${
         context || tags.length
@@ -20864,15 +21001,21 @@ function handlePublicationMediaBulkAction(event) {
   if (!button) return;
   const draft = state.currentPublicationDraft || state.publicationDrafts[0];
   if (!draft) return;
-  const include = button.dataset.publicationMediaBulk === "all";
-  draft.media = (draft.media || []).map((item) => ({ ...item, included: include }));
+  const mode = button.dataset.publicationMediaBulk;
+  const include = mode === "all";
+  draft.media = mode === "recommended"
+    ? applyRecommendedPublicationMediaSelection(draft.media || [], draft)
+    : refreshPublicationMediaRoles(draft.media || [], draft).map((item) => ({ ...item, included: include }));
+  draft.pages = syncPublicationPagesWithMedia(draft);
   draft.stats = { ...(draft.stats || {}), media: draft.media.filter((item) => item.included !== false).length };
   draft.approvalStatus = "review";
   draft.approvedAt = "";
   addPublicationHistory(
     draft,
     "media",
-    include
+    mode === "recommended"
+      ? (state.language === "en" ? "Recommended media selection applied" : "Seleccion recomendada de multimedia aplicada")
+      : include
       ? (state.language === "en" ? "All media included" : "Toda la multimedia incluida")
       : (state.language === "en" ? "Publication without media" : "Publicacion sin multimedia"),
   );
@@ -20880,7 +21023,9 @@ function handlePublicationMediaBulkAction(event) {
   state.publicationDrafts = state.publicationDrafts.map((item) => (item.id === draft.id ? draft : item));
   savePublicationDrafts();
   renderPublications();
-  document.getElementById("publicationStatus").textContent = include
+  document.getElementById("publicationStatus").textContent = mode === "recommended"
+    ? (state.language === "en" ? "Recommended media selection applied for this type and channel." : "Seleccion recomendada aplicada para este tipo y canal.")
+    : include
     ? (state.language === "en" ? "All media will be included in the publication." : "Toda la multimedia quedo incluida en la publicacion.")
     : (state.language === "en" ? "The publication will be generated without media." : "La publicacion se generara sin multimedia.");
 }
@@ -20891,7 +21036,9 @@ function handlePublicationMediaSelection(event) {
   const draft = state.currentPublicationDraft || state.publicationDrafts[0];
   if (!draft) return;
   const mediaId = input.dataset.publicationMediaId;
-  draft.media = (draft.media || []).map((item) => (item.id === mediaId ? { ...item, included: input.checked } : item));
+  draft.media = refreshPublicationMediaRoles(draft.media || [], draft).map((item) => (item.id === mediaId ? { ...item, included: input.checked } : item));
+  draft.pages = syncPublicationPagesWithMedia(draft);
+  draft.stats = { ...(draft.stats || {}), media: draft.media.filter((item) => item.included !== false).length };
   draft.approvalStatus = "review";
   draft.approvedAt = "";
   addPublicationHistory(draft, "media", input.checked ? t("labels.publicationMediaIncluded") : t("labels.publicationMediaExcluded"));
@@ -20962,6 +21109,9 @@ function handlePublicationTemplateClick(event) {
   document.getElementById("publicationStyleInput").value = template.style;
   document.getElementById("publicationChannelInput").value = template.channel;
   draft.body = applyPublicationTemplateStructure(draft, template);
+  draft.media = refreshPublicationMediaRoles(draft.media || [], draft);
+  draft.pages = syncPublicationPagesWithMedia(draft);
+  draft.stats = { ...(draft.stats || {}), media: draft.media.filter((item) => item.included !== false).length };
   savePublicationDrafts();
   document.getElementById("publicationStatus").textContent = t("labels.publicationTemplateSelected");
   renderPublications();
@@ -21390,7 +21540,8 @@ function formatPublicationMediaMarkdown(media) {
 
 function buildPublicationExportCaption(item) {
   const context = [item.translatedText, item.analyticalText, item.manualNote, item.originalText, ...(item.tags || []).slice(0, 3)].filter(Boolean).join(" · ");
-  return `${item.name} · ${item.experienceTitle}${item.provenance ? ` · ${item.provenance}` : ""}${context ? ` · ${context}` : ""}`;
+  const role = item.publicationRoleLabel ? ` · ${item.publicationRoleLabel}` : "";
+  return `${item.name}${role} · ${item.experienceTitle}${item.provenance ? ` · ${item.provenance}` : ""}${context ? ` · ${context}` : ""}`;
 }
 
 function getApprovedPublicationMedia(draft) {
@@ -25272,7 +25423,7 @@ function renderAdminOperationalFocusPanel() {
         scopeFilters: "Unified analytical scope",
         scopeFiltersDetail: "Reports, Findings, and Publications now share group/person, category, from-date, and to-date filters so the user can analyze a coherent group of experiences.",
         reportPdf: "Cleaner reports, publications, and findings",
-        reportPdfDetail: "Reports now use an executive PDF, participant scope, and folded technical exports. Publications recommend type/style/channel from the selected scope, explain format fit, edited text, media actions, and non-image handling. Findings are organized by 8 human themes and can be downloaded.",
+        reportPdfDetail: "Reports now use an executive PDF, participant scope, and folded technical exports. Publications recommend type/style/channel from the selected scope, explain format fit, edited text, media actions, and apply recommended editorial roles for images, audio, video, documents, biometrics, and ZIP files. Findings are organized by 8 human themes and can be downloaded.",
         nativeSync: "Vibeapp real queue",
         nativeSyncDetail: "Vibeapp now has real native contracts for text, photo, video, audio, agenda, location, and biometric CSV/JSON files. The native queue validates each payload, persists locally across app restarts, tracks attempts, retries eligible items automatically every 30 seconds when a session is active, links biometric files to the active experience instead of creating duplicates, lets synced items be cleared locally without deleting remote data, and then syncs media through /api/media, agenda through /api/agenda, and experiences through /api/experiences.",
       }
@@ -25309,7 +25460,7 @@ function renderAdminOperationalFocusPanel() {
     labels.scopeFilters = "Alcance anal\u00edtico uniforme";
     labels.scopeFiltersDetail = "Reportes, Hallazgos y Publicaciones comparten filtros de grupo/persona, categor\u00eda, fecha desde y fecha hasta para analizar grupos coherentes de experiencias.";
     labels.reportPdf = "Reportes, publicaciones y hallazgos limpios";
-    labels.reportPdfDetail = "Reportes usa PDF ejecutivo, alcance por persona y exportaciones técnicas plegadas. Publicaciones recomienda tipo/estilo/canal desde el alcance seleccionado y suma matriz por canal: carrusel, carta/email, dossier, ficha de salud, blog/web, LinkedIn y PDF/HTML, con medios seleccionables y acciones claras para audio, video, documentos y ZIP. Hallazgos se organiza en 8 ejes humanos y se puede descargar.";
+    labels.reportPdfDetail = "Reportes usa PDF ejecutivo, alcance por persona y exportaciones técnicas plegadas. Publicaciones recomienda tipo/estilo/canal desde el alcance seleccionado y suma matriz por canal: carrusel, carta/email, dossier, ficha de salud, blog/web, LinkedIn y PDF/HTML, con curaduria recomendada por rol editorial para imagenes, audio, video, documentos, biometria y ZIP. Hallazgos se organiza en 8 ejes humanos y se puede descargar.";
     labels.nativeSync = "Vibeapp con cola real";
     labels.nativeSyncDetail = "Vibeapp ya tiene contratos nativos reales para texto, foto, video, audio, agenda, lugar, biometr\u00eda CSV/JSON e importaci\u00f3n de sesiones externas. La cola nativa valida cada payload, lo conserva localmente aunque cierres la app, registra intentos, reintenta autom\u00e1ticamente cada 30 segundos cuando hay sesi\u00f3n activa, vincula biometr\u00eda a la experiencia abierta sin crear duplicados, permite limpiar elementos ya sincronizados sin borrar datos remotos y luego sincroniza medios por /api/media, agenda por /api/agenda y experiencias por /api/experiences.";
   }
