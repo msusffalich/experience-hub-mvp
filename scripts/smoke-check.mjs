@@ -142,6 +142,8 @@ assert(files.storageFormatsSql.includes("allowed_mime_types = NULL"), "Storage f
 assert(files.server.includes("storage-accept-all-supported-media.sql"), "Supabase diagnostics do not point to the Storage MIME migration.");
 assert(files.app.includes("invalid_mime_type para PDF") && files.app.includes("invalid_mime_type for PDF"), "Manual does not explain PDF MIME bucket remediation.");
 assert(files.index.includes("dashboard-primary-panel") && files.index.includes("Nueva experiencia"), "Dashboard does not expose primary daily actions.");
+assert(files.index.includes("dashboardDataStatusPanel") && files.app.includes("function renderDashboardDataStatusPanel"), "Dashboard does not expose the current data/status guard.");
+assert(files.app.includes("clearAppShellCaches") && files.app.includes("caches.keys"), "Refresh app does not clear stale app-shell caches.");
 assert(!files.index.includes("dashboardAttachmentPanel") && !files.index.includes("dashboardPilotBox"), "Dashboard still exposes technical/pilot monitoring panels.");
 assert(files.index.includes("capture-layout-clean") && !files.index.includes("captureCoachBox") && !files.index.includes("templateList"), "Capture still exposes parallel coach/template panels.");
 assert(files.index.includes("captureEventPreview") && files.app.includes("function renderCaptureEventPreview"), "Capture does not show the live internal event preview.");

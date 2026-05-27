@@ -1,4 +1,4 @@
-const APP_VERSION = "20260527-vibeapp-idempotent-sync-467";
+const APP_VERSION = "20260527-progress-data-guard-468";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2401,6 +2401,7 @@ const manualContent = {
         "Los tipos de publicación no son iguales: publicación social rápida sirve para mensajes breves, reporte narrativo para contar un periodo, álbum experiencial para memorias visuales, resumen ejecutivo para enviar evidencia clara y guion de story/reel para una secuencia corta.",
         "Los nuevos formatos amplían el uso por canal: carrusel visual para Instagram, Facebook o LinkedIn; carta/email largo para compartir una memoria personal; dossier PDF para un documento más formal; ficha de salud para explicar información médica o biométrica en lenguaje claro; y blog/web para publicar una historia más extensa.",
         "El kit de salida por canal separa asunto, texto corto, texto ampliado, leyenda/gancho, manejo multimedia y checklist. Sirve para saber qué copiar, qué revisar y qué acción hacer según WhatsApp, Instagram, Facebook, LinkedIn, Email, Blog/Web o PDF.",
+        "Panel muestra un resumen fijo de datos actuales: experiencias, activos, grupos, modo de persistencia y sincronización pendiente. Si la data previa no aparece, ese bloque permite distinguir rápido entre filtro, sesión, nube o cola pendiente.",
         "Panel y Administración muestran Estado global de avance: PWA operativa, producción/Supabase, reportes/publicaciones, multimedia, Vibeapp nativa, conectores y producto completo. Es una vista honesta para separar lo listo de lo que sigue en desarrollo.",
         "Ruta al 90% convierte ese avance honesto en frentes concretos con dueño, estado, brecha real a 90 y siguiente acción ejecutable.",
         "Aprobación humana marca si el borrador está en revisión o aprobado. Cualquier edición, cambio de diseño o curaduría multimedia lo devuelve a revisión.",
@@ -3005,6 +3006,7 @@ const manualContent = {
         "If a draft is exported while still in review, the file includes that approval mark so it is not confused with a final version.",
         "The Draft editor lets you edit title, summary, and body. The Final document shows exactly what will be exported, combining the edited text with the included media.",
         "Publication designs shows visual layouts. Selecting one updates type, style, channel, and the final document appearance.",
+        "Dashboard shows a fixed current-data summary: experiences, assets, groups, persistence mode, and pending sync. If previous data is not visible, that block quickly separates filter, session, cloud, or queue causes.",
         "Dashboard and Admin show Global Progress: operating PWA, production/Supabase, reports/publications, multimedia, Vibeapp native, connectors, and full product. It is an honest view to separate what is ready from what is still under development.",
         "The Route to 90% block turns that honest progress into concrete closure fronts with owner, state, real gap to 90, and the next action to execute.",
         "Editorial readiness evaluates clarity, privacy, media use, and channel fit. Its suggestions help decide whether the draft is ready for final review or needs edits.",
@@ -8193,6 +8195,7 @@ function buildGlobalProgressSnapshot() {
 function renderGlobalProgressPanel(containerId = "dashboardGlobalProgressPanel", { compact = false } = {}) {
   const container = document.getElementById(containerId);
   if (!container) return;
+  container.classList.toggle("is-compact", Boolean(compact));
   const snapshot = buildGlobalProgressSnapshot();
   const nextRoute = snapshot.routeTo90.find((item) => item.gap > 0) || snapshot.routeTo90[0];
   const nextTrack = snapshot.tracks.find((item) => item.key === nextRoute?.key) || snapshot.tracks.find((item) => item.score < 75) || snapshot.tracks[0];
@@ -8276,6 +8279,52 @@ function renderGlobalProgressPanel(containerId = "dashboardGlobalProgressPanel",
   `;
 }
 
+function renderDashboardDataStatusPanel() {
+  const container = document.getElementById("dashboardDataStatusPanel");
+  if (!container) return;
+  const scopedExperiences = getDashboardExperiences();
+  const allAssets = collectMultimodalAssets();
+  const scopedIds = new Set(scopedExperiences.map((item) => item.id).filter(Boolean));
+  const scopedAssets = allAssets.filter((asset) => !asset.experienceId || scopedIds.has(asset.experienceId));
+  const pendingQueue = Array.isArray(state.offlineQueue) ? state.offlineQueue.length : 0;
+  const pendingAssets = scopedAssets.filter((asset) => buildAssetStorageStatus(asset).needsSync).length;
+  const isRemote = state.persistence === "supabase" || state.apiStatus?.mode === "supabase" || state.config?.persistence === "supabase";
+  const hasSession = Boolean(state.session?.access_token);
+  const statusText = isRemote && hasSession
+    ? state.language === "en" ? "Cloud data active" : "Datos en la nube activos"
+    : hasSession
+      ? state.language === "en" ? "Session active, checking cloud" : "Sesión activa, revisando nube"
+      : state.language === "en" ? "Sign in to see shared data" : "Inicia sesión para ver datos compartidos";
+  const syncText = pendingQueue || pendingAssets
+    ? state.language === "en"
+      ? `${pendingQueue + pendingAssets} item(s) need sync`
+      : `${pendingQueue + pendingAssets} elemento(s) requieren sincronización`
+    : state.language === "en" ? "No pending sync" : "Sin pendientes de sincronización";
+  const modeText = isRemote
+    ? state.language === "en" ? "Supabase" : "Supabase"
+    : state.language === "en" ? "Local fallback" : "Respaldo local";
+  const scopeText = state.dashboardFilters?.pilotParticipantId && state.dashboardFilters.pilotParticipantId !== "all"
+    ? getPilotParticipantName(state.dashboardFilters.pilotParticipantId)
+    : state.language === "en" ? "All groups" : "Todos los grupos";
+  container.innerHTML = `
+    <article class="${isRemote && hasSession ? "is-ok" : "is-review"}">
+      <div>
+        <span>${escapeHtml(state.language === "en" ? "Current data" : "Datos actuales")}</span>
+        <strong>${escapeHtml(statusText)}</strong>
+        <p>${escapeHtml(state.language === "en" ? "This panel confirms that previous data is loaded, filtered, or waiting for session/sync." : "Este panel confirma si la data previa está cargada, filtrada o esperando sesión/sincronización.")}</p>
+      </div>
+      <dl>
+        <div><dt>${escapeHtml(state.language === "en" ? "Scope" : "Vista")}</dt><dd>${escapeHtml(scopeText || "-")}</dd></div>
+        <div><dt>${escapeHtml(state.language === "en" ? "Experiences" : "Experiencias")}</dt><dd>${escapeHtml(String(scopedExperiences.length))}</dd></div>
+        <div><dt>${escapeHtml(state.language === "en" ? "Assets" : "Activos")}</dt><dd>${escapeHtml(String(scopedAssets.length))}</dd></div>
+        <div><dt>${escapeHtml(state.language === "en" ? "Groups" : "Grupos")}</dt><dd>${escapeHtml(String(state.pilotParticipants.length || 0))}</dd></div>
+        <div><dt>${escapeHtml(state.language === "en" ? "Mode" : "Modo")}</dt><dd>${escapeHtml(modeText)}</dd></div>
+        <div><dt>${escapeHtml(state.language === "en" ? "Sync" : "Sync")}</dt><dd>${escapeHtml(syncText)}</dd></div>
+      </dl>
+    </article>
+  `;
+}
+
 function analyzePublicationScopeRecommendation() {
   const experiences = getPublicationExperiences();
   const media = collectPublicationMedia(experiences);
@@ -8341,6 +8390,7 @@ function analyzePublicationScopeRecommendation() {
 
 function renderDashboardScopedPanels() {
   updateDashboardParticipantControl();
+  renderDashboardDataStatusPanel();
   renderDashboardGroupOnboarding();
   renderGlobalProgressPanel("dashboardGlobalProgressPanel", { compact: true });
   renderMetrics();
@@ -12055,7 +12105,22 @@ function hasVoiceWakePhrase(command = "") {
     || /^(v|ve|vee)\b/.test(String(command || ""));
 }
 
-function reloadCurrentAppVersion() {
+async function clearAppShellCaches() {
+  try {
+    if ("serviceWorker" in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map((registration) => registration.unregister().catch(() => {})));
+    }
+    if ("caches" in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.filter((key) => /^experience-hub-pwa-/i.test(key)).map((key) => caches.delete(key)));
+    }
+  } catch (error) {
+    console.warn("App shell cache refresh skipped", error);
+  }
+}
+
+async function reloadCurrentAppVersion() {
   notify(t("labels.appReloading"));
   const currentView = document.querySelector(".nav-item.active")?.dataset.view || "dashboard";
   const nextUrl = new URL(window.location.href);
@@ -12064,6 +12129,7 @@ function reloadCurrentAppVersion() {
   nextUrl.searchParams.set("v", APP_VERSION);
   nextUrl.searchParams.set("view", currentView);
   nextUrl.hash = "";
+  await clearAppShellCaches();
   window.location.replace(nextUrl.toString());
 }
 
