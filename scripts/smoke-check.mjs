@@ -252,6 +252,7 @@ assert(files.vibeappTest.includes("Native payloads preserve event, media, locati
 assert(files.vibeappTest.includes("Native sync client sends media, experience, and agenda requests"), "Flutter tests must validate the Vibeapp sync client against a local HTTP server.");
 assert(files.vibeappTest.includes("Native sync client reports media and agenda failures clearly"), "Flutter tests must validate clear Vibeapp sync failure handling.");
 assert(files.vibeappTest.includes("Native queue validates files and retry state before sync"), "Flutter tests must validate queue retries, terminal failures, and local file validation.");
+assert(files.vibeappTest.includes("External session import profiles Meta and biometric sources correctly"), "Flutter tests must validate source-specific external import profiles.");
 assert(files.packageJson.includes("\"package:vibeapp\"") && files.vibeappPackage.includes("checksums.sha256") && files.vibeappPackage.includes("manifest.json") && files.vibeappPackage.includes("Compress-Archive"), "package.json must expose a Vibeapp pilot package command with checksums, manifest, and transfer ZIP.");
 assert(files.vibeappPackage.includes("verify:android") && files.vibeappPackage.includes("vibeapp-pilot-release.apk") && files.vibeappPackage.includes("vibeapp-pilot-release.aab"), "Vibeapp package script must verify Android and include APK/AAB.");
 assert(files.server.includes("PYTHONPATH") && files.server.includes(".python"), "Server must expose bundled Python packages to ReportLab scripts.");

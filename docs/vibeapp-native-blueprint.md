@@ -77,6 +77,7 @@ Cada evento o activo debe enviar:
    - Seleccion de varios archivos en una sola accion.
    - Agrupacion automatica como una experiencia con eventos internos y activos vinculados.
    - Metadatos normalizados: origen, contrato, tipo de archivo, dispositivo, fecha de importacion y nombre original.
+   - Perfil por fuente: fotos/videos de Meta se tratan como memoria visual; JSON/HTML de Meta se tratan como referencia de cuenta; CSV/JSON de Oura, Apple Health, Samsung Health y Health Connect se tratan como contexto biometrico transversal.
    - Uso recomendado para lentes Meta: capturar/importar primero en Meta AI o Fotos del telefono, luego traer el conjunto a Vibeapp.
 
 ## Recomendaciones tecnicas
@@ -119,7 +120,8 @@ Cada evento o activo debe enviar:
 1. Importar una sesion externa completa desde Meta/Oakley/Ray-Ban, Oura, Apple Health, Samsung Health/Galaxy Watch, Health Connect o galeria del telefono.
 2. Seleccionar multiples archivos: imagenes, videos, audios, documentos, CSV/JSON o ZIP.
 3. Crear una sola experiencia con una linea de eventos y activos vinculados, siguiendo el patron tipo Clio: captura nativa, Storage privado, metadatos normalizados y procesamiento posterior en backend.
-4. Mantener claro que Meta/Oakley no se controla desde la PWA: Vibeapp recibe el resultado importado y lo convierte en memoria, reporte o publicacion.
+4. Clasificar cada archivo por origen e intencion: memoria visual, registro de voz, referencia de cuenta, contexto biometrico, documento o ZIP de transporte.
+5. Mantener claro que Meta/Oakley no se controla desde la PWA: Vibeapp recibe el resultado importado y lo convierte en memoria, reporte o publicacion.
 
 ## Criterio de calidad
 

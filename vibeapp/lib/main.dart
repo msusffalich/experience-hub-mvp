@@ -2427,6 +2427,195 @@ enum ExternalSessionSource {
   }
 }
 
+class ExternalFileImportProfile {
+  const ExternalFileImportProfile({
+    required this.sourceType,
+    required this.payloadType,
+    required this.processingIntent,
+    required this.captureOrigin,
+    required this.treatment,
+    required this.privacyHint,
+    required this.expectedConsumer,
+    this.transportOnly = false,
+    this.autoInterpret = true,
+  });
+
+  final String sourceType;
+  final String payloadType;
+  final String processingIntent;
+  final String captureOrigin;
+  final String treatment;
+  final String privacyHint;
+  final String expectedConsumer;
+  final bool transportOnly;
+  final bool autoInterpret;
+
+  String eventTitle(int order) => externalFileEventTitle(sourceType, order);
+
+  String previewText(ExternalSessionSource source, String fileName) {
+    return 'Archivo importado desde ${source.label}: $fileName. $treatment';
+  }
+
+  String analysisText(ExternalSessionSource source, String fileName) {
+    if (transportOnly) {
+      return 'Paquete de transporte de ${source.label}: $fileName. Se conserva y descarga, pero no se interpreta automaticamente.';
+    }
+    return 'Activo de ${source.label}: $fileName. Uso esperado: $expectedConsumer. Procesamiento: $processingIntent.';
+  }
+
+  Map<String, dynamic> toMetadata(
+    ExternalSessionSource source,
+    String originalFileName,
+  ) {
+    return {
+      'payloadType': payloadType,
+      'externalPayloadType': payloadType,
+      'externalSource': source.label,
+      'externalSourceKey': source.name,
+      'externalSourceContract': source.contract,
+      'externalProcessingIntent': processingIntent,
+      'externalCaptureOrigin': captureOrigin,
+      'externalTreatment': treatment,
+      'externalPrivacyHint': privacyHint,
+      'externalExpectedConsumer': expectedConsumer,
+      'externalTransportOnly': transportOnly,
+      'externalAutoInterpret': autoInterpret,
+      'importedAsSession': true,
+      'originalFileName': originalFileName,
+    };
+  }
+}
+
+ExternalFileImportProfile buildExternalFileImportProfile(
+  ExternalSessionSource source,
+  String fileName,
+) {
+  final genericType = classifyExternalFileSource(fileName);
+  final lower = fileName.toLowerCase();
+  final isStructured = RegExp(r'\.(csv|json)$').hasMatch(lower);
+  final isHtml = RegExp(r'\.(html|htm)$').hasMatch(lower);
+  final isZip = lower.endsWith('.zip');
+
+  if (isZip) {
+    return ExternalFileImportProfile(
+      sourceType: 'zip',
+      payloadType: 'transport_bundle',
+      processingIntent: 'transport_only',
+      captureOrigin: '${source.name}_export',
+      treatment: 'Se guarda para descarga o revision posterior.',
+      privacyHint: 'Puede contener datos sensibles; mantener Storage privado.',
+      expectedConsumer: 'respaldo y auditoria',
+      transportOnly: true,
+      autoInterpret: false,
+    );
+  }
+
+  switch (source) {
+    case ExternalSessionSource.metaGlasses:
+      if (genericType == 'image' || genericType == 'video') {
+        return ExternalFileImportProfile(
+          sourceType: genericType,
+          payloadType: 'social_memory_media',
+          processingIntent: genericType == 'image'
+              ? 'visual_memory_ocr_and_caption'
+              : 'video_key_moments_and_transcription',
+          captureOrigin: 'meta_ai_phone_import',
+          treatment:
+              'Medio capturado con lentes e importado al telefono antes de Vibeapp.',
+          privacyHint: 'Revisar personas visibles antes de publicar.',
+          expectedConsumer: 'memoria, reportes y publicaciones vividas',
+        );
+      }
+      if (genericType == 'audio') {
+        return const ExternalFileImportProfile(
+          sourceType: 'audio',
+          payloadType: 'voice_activity_log',
+          processingIntent: 'voice_log_transcription',
+          captureOrigin: 'meta_ai_download_your_information',
+          treatment:
+              'Audio o registro de voz asociado a Meta AI; requiere revision humana.',
+          privacyHint: 'Puede contener conversaciones o terceros.',
+          expectedConsumer: 'contexto narrativo y evidencia de voz',
+        );
+      }
+      if (isStructured || isHtml) {
+        return const ExternalFileImportProfile(
+          sourceType: 'document',
+          payloadType: 'account_export',
+          processingIntent: 'account_export_reference',
+          captureOrigin: 'meta_ai_download_your_information',
+          treatment:
+              'Exportacion de datos de cuenta; sirve como referencia, no como biometria.',
+          privacyHint: 'Puede incluir actividad de cuenta y datos personales.',
+          expectedConsumer: 'auditoria, trazabilidad y contexto',
+          autoInterpret: false,
+        );
+      }
+      break;
+    case ExternalSessionSource.oura:
+    case ExternalSessionSource.appleHealth:
+    case ExternalSessionSource.samsungHealth:
+    case ExternalSessionSource.healthConnect:
+      if (isStructured) {
+        return ExternalFileImportProfile(
+          sourceType: 'biometric',
+          payloadType: 'biometric_context',
+          processingIntent: 'biometric_time_context',
+          captureOrigin: '${source.name}_structured_export',
+          treatment:
+              'Se cruza por fecha y hora con experiencias; no pertenece a una sola captura.',
+          privacyHint:
+              'Dato de salud sensible; usar solo con permiso del usuario.',
+          expectedConsumer:
+              'energia, recuperacion, sueno, actividad y reportes',
+        );
+      }
+      if (genericType == 'document') {
+        return ExternalFileImportProfile(
+          sourceType: 'document',
+          payloadType: 'biometric_report_document',
+          processingIntent: 'health_report_summary',
+          captureOrigin: '${source.name}_report_export',
+          treatment:
+              'Reporte de referencia; se resume en lenguaje claro cuando el backend lo procese.',
+          privacyHint: 'Dato de salud sensible; evitar publicacion abierta.',
+          expectedConsumer: 'hallazgos personales y conversaciones medicas',
+        );
+      }
+      break;
+    case ExternalSessionSource.phoneGallery:
+      if (genericType == 'image' ||
+          genericType == 'video' ||
+          genericType == 'audio') {
+        return ExternalFileImportProfile(
+          sourceType: genericType,
+          payloadType: 'phone_gallery_memory',
+          processingIntent: '${genericType}_memory_enrichment',
+          captureOrigin: 'phone_gallery',
+          treatment:
+              'Medio seleccionado desde galeria y agrupado como recuerdo de una experiencia.',
+          privacyHint: 'Revisar contenido privado antes de compartir.',
+          expectedConsumer: 'memoria, reportes y publicaciones',
+        );
+      }
+      break;
+    case ExternalSessionSource.other:
+      break;
+  }
+
+  return ExternalFileImportProfile(
+    sourceType: genericType,
+    payloadType: genericType == 'biometric' ? 'structured_data' : genericType,
+    processingIntent: genericType == 'document'
+        ? 'document_text_extraction'
+        : '${genericType}_asset_processing',
+    captureOrigin: '${source.name}_manual_import',
+    treatment: 'Activo normalizado para procesamiento posterior en Vibe.',
+    privacyHint: 'Mantener privado hasta que el usuario revise el contenido.',
+    expectedConsumer: 'biblioteca, activos, reportes y publicaciones',
+  );
+}
+
 class ExternalSessionSourceGuideData {
   const ExternalSessionSourceGuideData({
     required this.title,
@@ -3138,6 +3327,7 @@ class CaptureQueueItem {
     this.biometricSummary,
     this.closedAt,
     this.externalSessionSource,
+    this.externalSessionContract,
     this.attemptCount = 0,
     this.lastAttemptAt,
     this.nextRetryAt,
@@ -3234,14 +3424,14 @@ class CaptureQueueItem {
       final path = file.path ?? '';
       if (path.isEmpty) continue;
       final order = events.length + 1;
-      final sourceType = classifyExternalFileSource(file.name);
-      final eventTitle = externalFileEventTitle(sourceType, order);
+      final profile = buildExternalFileImportProfile(draft.source, file.name);
+      final sourceType = profile.sourceType;
+      final eventTitle = profile.eventTitle(order);
       final eventId = '$id-event-$order';
       events.add(ExperienceEventDraft(
         id: eventId,
         title: eventTitle,
-        description:
-            'Archivo ${file.name} importado desde ${draft.source.label} y vinculado a esta sesion.',
+        description: '${profile.treatment} Archivo: ${file.name}.',
         order: order,
         timestamp: now,
       ));
@@ -3251,17 +3441,9 @@ class CaptureQueueItem {
         eventId: eventId,
         eventTitle: eventTitle,
         eventOrder: order,
-        previewText:
-            'Archivo importado desde ${draft.source.label}: ${file.name}.',
-        analysisText:
-            'Activo externo listo para OCR, transcripcion, extraccion de metadatos o transporte segun su tipo.',
-        metadataExtras: {
-          'payloadType': sourceType,
-          'externalSource': draft.source.label,
-          'externalSourceContract': draft.source.contract,
-          'importedAsSession': true,
-          'originalFileName': file.name,
-        },
+        previewText: profile.previewText(draft.source, file.name),
+        analysisText: profile.analysisText(draft.source, file.name),
+        metadataExtras: profile.toMetadata(draft.source, file.name),
       ));
     }
     return CaptureQueueItem(
@@ -3275,6 +3457,7 @@ class CaptureQueueItem {
       events: events,
       attachments: attachments,
       externalSessionSource: draft.source.label,
+      externalSessionContract: draft.source.contract,
     );
   }
 
@@ -3347,6 +3530,10 @@ class CaptureQueueItem {
           stringFromJson(json['externalSessionSource']).isEmpty
               ? null
               : stringFromJson(json['externalSessionSource']),
+      externalSessionContract:
+          stringFromJson(json['externalSessionContract']).isEmpty
+              ? null
+              : stringFromJson(json['externalSessionContract']),
       attemptCount: intFromJson(json['attemptCount']),
       lastAttemptAt: parseNativeDate(json['lastAttemptAt']),
       nextRetryAt: parseNativeDate(json['nextRetryAt']),
@@ -3368,6 +3555,7 @@ class CaptureQueueItem {
   final BiometricImportSummary? biometricSummary;
   final DateTime? closedAt;
   final String? externalSessionSource;
+  final String? externalSessionContract;
   int attemptCount;
   DateTime? lastAttemptAt;
   DateTime? nextRetryAt;
@@ -3562,6 +3750,8 @@ class CaptureQueueItem {
         'closedAt': closedAt?.toIso8601String(),
         if (externalSessionSource != null)
           'externalSessionSource': externalSessionSource,
+        if (externalSessionContract != null)
+          'externalSessionContract': externalSessionContract,
         if (locationDraft != null) ...locationDraft!.toMetadata(),
         if (biometricSummary != null)
           'biometricImport': biometricSummary!.toJson(),
@@ -3599,6 +3789,7 @@ class CaptureQueueItem {
       'biometricSummary': biometricSummary?.toJson(),
       'closedAt': closedAt?.toIso8601String(),
       'externalSessionSource': externalSessionSource,
+      'externalSessionContract': externalSessionContract,
       'attemptCount': attemptCount,
       'lastAttemptAt': lastAttemptAt?.toIso8601String(),
       'nextRetryAt': nextRetryAt?.toIso8601String(),

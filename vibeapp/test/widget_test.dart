@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -78,7 +79,8 @@ void main() {
       accuracy: 12,
     ));
     final locationPayload = locationItem.toExperiencePayload();
-    expect(locationPayload['objective'], 'Ubicaci\u00f3n capturada desde Vibeapp');
+    expect(
+        locationPayload['objective'], 'Ubicaci\u00f3n capturada desde Vibeapp');
     expect(locationPayload['metadata']['payloadType'], 'location');
     expect(locationPayload['metadata']['accuracyMeters'], 12);
 
@@ -104,6 +106,71 @@ void main() {
       (biometricPayload['attachments'] as List).single['sourceType'],
       'vibeapp-native-biometric',
     );
+  });
+
+  test('External session import profiles Meta and biometric sources correctly',
+      () {
+    final tempDir =
+        Directory.systemTemp.createTempSync('vibeapp-external-profile-');
+    addTearDown(() {
+      if (tempDir.existsSync()) tempDir.deleteSync(recursive: true);
+    });
+
+    PlatformFile makeFile(String name, List<int> bytes) {
+      final file = File('${tempDir.path}${Platform.pathSeparator}$name')
+        ..writeAsBytesSync(bytes);
+      return PlatformFile(name: name, size: bytes.length, path: file.path);
+    }
+
+    final metaItem = CaptureQueueItem.externalSession(
+      const ExternalSessionImportDraft(
+        source: ExternalSessionSource.metaGlasses,
+        title: 'Paseo con lentes Meta',
+        notes: 'Salida corta con lentes.',
+      ),
+      [
+        makeFile('foto.heic', [1, 2, 3]),
+        makeFile('clip.mp4', [4, 5, 6]),
+        makeFile('meta-export.json', [7, 8, 9]),
+      ],
+    );
+    final metaPayload = metaItem.toExperiencePayload();
+    expect(metaPayload['metadata']['externalSessionContract'],
+        'meta_glasses_import');
+    final metaAttachments =
+        metaPayload['attachments'] as List<Map<String, dynamic>>;
+    expect(metaAttachments.length, 3);
+    expect(metaAttachments[0]['sourceType'], 'vibeapp-native-image');
+    expect(metaAttachments[0]['metadata']['externalPayloadType'],
+        'social_memory_media');
+    expect(metaAttachments[1]['sourceType'], 'vibeapp-native-video');
+    expect(metaAttachments[1]['metadata']['externalProcessingIntent'],
+        'video_key_moments_and_transcription');
+    expect(metaAttachments[2]['sourceType'], 'vibeapp-native-document');
+    expect(metaAttachments[2]['metadata']['externalPayloadType'],
+        'account_export');
+    expect(metaAttachments[2]['metadata']['externalAutoInterpret'], isFalse);
+    expect(metaItem.validateForSync().canSync, isTrue);
+
+    final ouraItem = CaptureQueueItem.externalSession(
+      const ExternalSessionImportDraft(
+        source: ExternalSessionSource.oura,
+        title: 'Oura semanal',
+        notes: 'Exportacion de salud.',
+      ),
+      [
+        makeFile('oura-readiness.csv', utf8.encode('date,score\n2026-05-27,82'))
+      ],
+    );
+    final ouraPayload = ouraItem.toExperiencePayload();
+    final ouraAttachment =
+        (ouraPayload['attachments'] as List<Map<String, dynamic>>).single;
+    expect(ouraAttachment['sourceType'], 'vibeapp-native-biometric');
+    expect(
+        ouraAttachment['metadata']['externalPayloadType'], 'biometric_context');
+    expect(ouraAttachment['metadata']['externalProcessingIntent'],
+        'biometric_time_context');
+    expect(ouraItem.validateForSync().canSync, isTrue);
   });
 
   test('Native sync client sends media, experience, and agenda requests',
@@ -147,8 +214,8 @@ void main() {
     expect(agendaResult.ok, isTrue);
     expect(agendaResult.remoteId, 'remote-agenda-1');
 
-    final mediaRequest = transport.requests
-        .firstWhere((item) => item['path'] == '/api/media');
+    final mediaRequest =
+        transport.requests.firstWhere((item) => item['path'] == '/api/media');
     expect(mediaRequest['method'], 'multipart');
     expect(mediaRequest['authorization'], 'Bearer test-token');
     expect(mediaRequest['metadata'],
@@ -157,8 +224,7 @@ void main() {
 
     final experienceRequest = transport.requests
         .firstWhere((item) => item['path'] == '/api/experiences');
-    final experienceBody =
-        experienceRequest['payload'] as Map<String, dynamic>;
+    final experienceBody = experienceRequest['payload'] as Map<String, dynamic>;
     expect(experienceRequest['authorization'], 'Bearer test-token');
     expect(experienceBody['metadata']['syncContract'], 'vibeapp-session-v1');
     expect((experienceBody['events'] as List).length, 2);
@@ -402,18 +468,20 @@ class FakeNativeSyncTransport implements NativeSyncTransport {
     });
     return NativeSyncResponse(
       statusCode: mediaStatusCode,
-      body: mediaBody.isNotEmpty ? mediaBody : jsonEncode({
-        'id': 'remote-media-1',
-        'name': attachment.name,
-        'type': attachment.mimeType,
-        'originalType': attachment.mimeType,
-        'size': bytes.length,
-        'kind': attachment.kind,
-        'storage': 'supabase-storage',
-        'path': 'user/native/${attachment.name}',
-        'url': 'signed://${attachment.name}',
-        'metadata': {'server': 'fake'},
-      }),
+      body: mediaBody.isNotEmpty
+          ? mediaBody
+          : jsonEncode({
+              'id': 'remote-media-1',
+              'name': attachment.name,
+              'type': attachment.mimeType,
+              'originalType': attachment.mimeType,
+              'size': bytes.length,
+              'kind': attachment.kind,
+              'storage': 'supabase-storage',
+              'path': 'user/native/${attachment.name}',
+              'url': 'signed://${attachment.name}',
+              'metadata': {'server': 'fake'},
+            }),
     );
   }
 }
