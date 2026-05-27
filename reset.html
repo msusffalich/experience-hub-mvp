@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Cache-Control" content="no-store" />
+    <title>Actualizar Vibe</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: Arial, sans-serif;
+        background: #f6f8fb;
+        color: #12213d;
+      }
+      body {
+        display: grid;
+        min-height: 100vh;
+        margin: 0;
+        place-items: center;
+        padding: 24px;
+      }
+      main {
+        width: min(560px, 100%);
+        padding: 24px;
+        border: 1px solid #d8e0e8;
+        border-radius: 8px;
+        background: #fff;
+        box-shadow: 0 14px 40px rgba(18, 33, 61, 0.12);
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 28px;
+      }
+      p {
+        margin: 8px 0;
+        color: #5a6678;
+        line-height: 1.5;
+      }
+      strong {
+        color: #0d7c66;
+      }
+      button,
+      a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        margin-top: 14px;
+        padding: 10px 14px;
+        border: 0;
+        border-radius: 8px;
+        background: #0d7c66;
+        color: #fff;
+        font-weight: 800;
+        text-decoration: none;
+      }
+      small {
+        display: block;
+        margin-top: 14px;
+        color: #778295;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Actualizando Vibe</h1>
+      <p id="status">Limpiando la version anterior de la PWA...</p>
+      <p>Esta accion elimina <strong>solo cache y service worker</strong>. No borra tus experiencias, activos, perfil ni sesion.</p>
+      <a id="manualLink" href="/index.html?v=20260527-progress-model-472&view=dashboard">Abrir Vibe actualizado</a>
+      <small>Version destino: 20260527-progress-model-472</small>
+    </main>
+    <script>
+      const TARGET = "/index.html?v=20260527-progress-model-472&view=dashboard";
+      async function resetPwaShell() {
+        const status = document.getElementById("status");
+        try {
+          if ("serviceWorker" in navigator) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(registrations.map((registration) => registration.unregister()));
+          }
+          if ("caches" in window) {
+            const keys = await caches.keys();
+            await Promise.all(keys.filter((key) => /^experience-hub-pwa-/i.test(key)).map((key) => caches.delete(key)));
+          }
+          status.textContent = "Cache anterior limpiado. Abriendo Vibe actualizado...";
+          window.setTimeout(() => window.location.replace(TARGET), 900);
+        } catch (error) {
+          status.textContent = "No se pudo limpiar automaticamente. Usa el boton para abrir la version actualizada.";
+        }
+      }
+      resetPwaShell();
+    </script>
+  </body>
+</html>

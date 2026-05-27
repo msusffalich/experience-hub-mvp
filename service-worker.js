@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260527-dashboard-panel-recovery-470";
+const CACHE_NAME = "experience-hub-pwa-20260527-progress-model-472";
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -34,6 +34,10 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
   const url = new URL(request.url);
   if (url.pathname.startsWith("/api/")) return;
+  if (url.pathname === "/reset.html") {
+    event.respondWith(fetch(request, { cache: "no-store" }).catch(() => new Response("Reset page unavailable", { status: 504 })));
+    return;
+  }
   event.respondWith(
     fetch(request)
       .then((response) => {

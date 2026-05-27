@@ -4,6 +4,7 @@ const files = {
   app: readFileSync("app.js", "utf8"),
   index: readFileSync("index.html", "utf8"),
   serviceWorker: readFileSync("service-worker.js", "utf8"),
+  reset: readFileSync("reset.html", "utf8"),
   manifest: readFileSync("manifest.webmanifest", "utf8"),
   server: readFileSync("server.js", "utf8"),
   packageJson: readFileSync("package.json", "utf8"),
@@ -43,6 +44,10 @@ assert(files.index.includes(`app.js?v=${version}`), "index.html does not load th
 assert(files.index.includes(`styles.css?v=${version}`), "index.html does not load the current styles.css version.");
 assert(files.index.includes(`manifest.webmanifest?v=${version}`), "index.html does not load the current manifest version.");
 assert(files.serviceWorker.includes(`experience-hub-pwa-${version}`), "service-worker.js cache name does not match APP_VERSION.");
+assert(files.reset.includes(version) && files.reset.includes("getRegistrations") && files.reset.includes("caches.keys"), "reset.html must clear PWA caches and redirect to the current version.");
+assert(files.serviceWorker.includes('url.pathname === "/reset.html"') && files.serviceWorker.includes('cache: "no-store"'), "service-worker.js must never cache the reset page.");
+assert(files.app.includes("const fullAmbitionOverall") && files.app.includes("Current delivery") && files.app.includes("Entrega actual"), "Global progress must separate current delivery from full future ambition.");
+assert(files.app.includes("Estado global de avance mide capacidades implementadas") && files.app.includes("Global Progress measures implemented"), "Manual must explain that global progress is capability-based, not browser-data-based.");
 const manifest = JSON.parse(files.manifest);
 assert(manifest.id === "/", "manifest.webmanifest is missing a stable app id.");
 assert(manifest.start_url === "/index.html?view=dashboard", "manifest.webmanifest start_url must be stable and not point to an old app version.");

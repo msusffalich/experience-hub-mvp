@@ -3,6 +3,7 @@ import { readFileSync, statSync } from "node:fs";
 const app = readFileSync("app.js", "utf8");
 const index = readFileSync("index.html", "utf8");
 const serviceWorker = readFileSync("service-worker.js", "utf8");
+const reset = readFileSync("reset.html", "utf8");
 const manifest = JSON.parse(readFileSync("manifest.webmanifest", "utf8"));
 
 const version = app.match(/const APP_VERSION = "([^"]+)";/)?.[1];
@@ -17,6 +18,11 @@ check(index.includes(`app.js?v=${version}`), "index.html does not reference the 
 check(index.includes(`styles.css?v=${version}`), "index.html does not reference the current styles.css version.");
 check(index.includes(`manifest.webmanifest?v=${version}`), "index.html does not reference the current manifest version.");
 check(serviceWorker.includes(version), "service-worker.js cache name does not include the current app version.");
+check(reset.includes(version), "reset.html does not redirect to the current app version.");
+check(reset.includes("getRegistrations") && reset.includes("caches.keys"), "reset.html must clear service workers and app caches.");
+check(serviceWorker.includes('url.pathname === "/reset.html"'), "service worker must bypass caching for reset.html.");
+check(app.includes("const fullAmbitionOverall") && app.includes("Current delivery") && app.includes("Entrega actual"), "global progress must separate current delivery from full future ambition.");
+check(app.includes("Estado global de avance mide capacidades implementadas") && app.includes("Global Progress measures implemented"), "manual must explain that progress is capability-based, not browser-data-based.");
 check(Array.isArray(manifest.icons) && manifest.icons.length >= 2, "manifest must declare at least 192 and 512 icons.");
 check(manifest.display === "standalone", "manifest display must be standalone.");
 check(manifest.start_url?.includes("view=dashboard"), "manifest start_url should open the operational dashboard.");
@@ -64,6 +70,13 @@ if (releaseUrl) {
     check(health.status === "ok", "production health status is not ok.");
     check(Boolean(health.supabaseConfigured), "production health does not report Supabase configured.");
     check(health.mediaStorage === "supabase-storage", "production health does not report Supabase Storage media.");
+  }
+  const resetResponse = await fetch(`${base}/reset.html?verify=${encodeURIComponent(version)}`);
+  check(resetResponse.ok, `production reset.html responded ${resetResponse.status}.`);
+  if (resetResponse.ok) {
+    const resetHtml = await resetResponse.text();
+    check(resetHtml.includes(version), "production reset.html is not serving the current version.");
+    check(resetHtml.includes("getRegistrations") && resetHtml.includes("caches.keys"), "production reset.html does not clear PWA caches.");
   }
 }
 

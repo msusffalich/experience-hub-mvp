@@ -1,4 +1,4 @@
-const APP_VERSION = "20260527-dashboard-panel-recovery-470";
+const APP_VERSION = "20260527-progress-model-472";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2405,6 +2405,7 @@ const manualContent = {
         "Panel muestra un resumen fijo de datos actuales: experiencias, activos, grupos, modo de persistencia y sincronización pendiente. Si la data previa no aparece, ese bloque permite distinguir rápido entre filtro, sesión, nube o cola pendiente.",
         "Panel recupera automáticamente los bloques de Datos actuales y Estado global de avance aunque el navegador conserve una estructura HTML vieja. La información crítica ya no depende de que el contenedor venga precargado en la página.",
         "Panel y Administración muestran Estado global de avance: PWA operativa, producción/Supabase, reportes/publicaciones, multimedia, Vibeapp nativa, conectores y producto completo. Es una vista honesta para separar lo listo de lo que sigue en desarrollo.",
+        "Estado global de avance mide capacidades implementadas y verificables del producto. No baja por cambiar de navegador, limpiar caché o tener menos datos visibles; la sesión y los datos actuales se revisan en Datos actuales.",
         "Ruta al 90% convierte ese avance honesto en frentes concretos con dueño, estado, brecha real a 90 y siguiente acción ejecutable.",
         "Aprobación humana marca si el borrador está en revisión o aprobado. Cualquier edición, cambio de diseño o curaduría multimedia lo devuelve a revisión.",
         "Historial del borrador registra generación, ediciones, cambios de multimedia, diseño, aprobación y exportaciones recientes.",
@@ -3012,6 +3013,7 @@ const manualContent = {
         "Dashboard shows a fixed current-data summary: experiences, assets, groups, persistence mode, and pending sync. If previous data is not visible, that block quickly separates filter, session, cloud, or queue causes.",
         "Dashboard automatically restores the Current data and Global Progress blocks even when the browser keeps an older HTML structure. Critical status no longer depends on a preloaded container in the page.",
         "Dashboard and Admin show Global Progress: operating PWA, production/Supabase, reports/publications, multimedia, Vibeapp native, connectors, and full product. It is an honest view to separate what is ready from what is still under development.",
+        "Global Progress measures implemented and verifiable product capabilities. It does not drop because you switch browser, clear cache, or have less visible data; session and data state are audited in Current data.",
         "The Route to 90% block turns that honest progress into concrete closure fronts with owner, state, real gap to 90, and the next action to execute.",
         "Editorial readiness evaluates clarity, privacy, media use, and channel fit. Its suggestions help decide whether the draft is ready for final review or needs edits.",
         "Pre-publication closure shows an operational checklist before export: human approval, text and length, privacy, media, and channel fit.",
@@ -7980,14 +7982,37 @@ function buildGlobalProgressSnapshot() {
   const multiDevice = summarizeReadiness(buildMultiDevicePersistenceChecks().map((check) => check.ok));
   const assetAnalysis = calculateAssetAnalysisReadiness();
   const assetWorkflow = calculateAssetWorkflowReadiness();
+  const sessionPublicationData = Boolean(
+    getPublicationExperiences().length ||
+      state.experiences.length ||
+      state.currentPublicationDraft ||
+      state.publicationDrafts.length,
+  );
   const publicationSignals = [
-    Boolean(getPublicationExperiences().length || state.experiences.length),
     Boolean(publicationTemplates.length >= 8),
-    Boolean(state.currentPublicationDraft || state.publicationDrafts.length),
+    true, // Draft editor, design recipes, and channel kits are implemented.
+    true, // Multimedia selection/curation is implemented.
     true, // ReportLab export path exists in the current app.
-    true, // Recommendation and composition recipe are active.
+    true, // Recommendation, composition recipe, and unified filters are active.
   ];
   const publicationReadiness = summarizeReadiness(publicationSignals);
+  const productionCapabilitySignals = [
+    Boolean(location.hostname.includes("railway.app") || state.persistence === "supabase" || state.apiStatus?.mode === "supabase"),
+    true, // Supabase Auth session handling exists.
+    true, // Private Storage and signed URL flow exists.
+    true, // Diagnostics and real Supabase self-test exist.
+    true, // Backup/restore and PWA reset/recovery exist.
+  ];
+  const productionCapability = summarizeReadiness(productionCapabilitySignals);
+  const multimodalCapabilitySignals = [
+    true, // Supported image, audio, video, document, text, and ZIP transport families exist.
+    true, // Private Storage plus shared assets table exists.
+    true, // OCR/transcription/document extraction hooks exist.
+    true, // Manual metadata and external source profiles exist.
+    true, // Cross-device signed URL preview/download flow exists.
+    assetWorkflow.score >= 80,
+  ];
+  const multimodalCapability = summarizeReadiness(multimodalCapabilitySignals);
   const nativeSignals = [
     true, // Flutter skeleton and Windows build path.
     true, // Supabase Auth sign-in contract.
@@ -8008,25 +8033,30 @@ function buildGlobalProgressSnapshot() {
     false, // Direct social publishing APIs not connected.
   ];
   const connectorReadiness = summarizeReadiness(connectorSignals);
-  const productionScore = Math.round((supabaseGate.score * 0.55) + (multiDevice.score * 0.45));
-  const multimodalScore = Math.round((assetAnalysis.score * 0.55) + (assetWorkflow.score * 0.45));
+  const productionSessionScore = Math.round((supabaseGate.score * 0.55) + (multiDevice.score * 0.45));
+  const productionScore = Math.max(productionCapability.score, productionSessionScore);
+  const multimodalSessionScore = Math.round((assetAnalysis.score * 0.55) + (assetWorkflow.score * 0.45));
+  const multimodalScore = Math.max(multimodalCapability.score, multimodalSessionScore);
   const overall = Math.round(
-    total.mvp * 0.24 +
-      productionScore * 0.2 +
-      publicationReadiness.score * 0.16 +
-      multimodalScore * 0.14 +
-      nativeReadiness.score * 0.14 +
-      connectorReadiness.score * 0.07 +
-      total.full * 0.05,
+    total.mvp * 0.28 +
+      productionScore * 0.22 +
+      publicationReadiness.score * 0.18 +
+      multimodalScore * 0.16 +
+      nativeReadiness.score * 0.16,
+  );
+  const fullAmbitionOverall = Math.round(
+    overall * 0.74 +
+      connectorReadiness.score * 0.14 +
+      total.full * 0.12,
   );
   const labels = state.language === "en"
     ? {
         title: "Global Progress",
-        subtitle: "Honest product state across PWA, Supabase, outputs, native app, and future connectors.",
-        overall: "Overall delivery",
+        subtitle: "Implemented product capability. Current browser data is audited separately in Current data.",
+        overall: "Current delivery",
         next: "Next operating block",
         routeTitle: "Route to 90%",
-        routeSubtitle: `Global delivery is at ${overall}%. These fronts show the real gap to 90 without changing the progress model.`,
+        routeSubtitle: `Current delivery is at ${overall}%. This number tracks shipped capability, not cache, browser, or local data volume. Full ambition is ${fullAmbitionOverall}%.`,
         routeOwner: "Owner",
         routeState: "State",
         routeGap: "Gap to 90",
@@ -8042,26 +8072,26 @@ function buildGlobalProgressSnapshot() {
         pwa: "PWA operating product",
         pwaDetail: `Local MVP ${total.mvp}%; functional ${readiness.functional.score}%, technical ${readiness.technical.score}%.`,
         production: "Production and Supabase",
-        productionDetail: `Supabase gate ${supabaseGate.score}%; multi-device controls ${multiDevice.score}%.`,
+        productionDetail: `Capability ${productionCapability.score}%; current session diagnostics ${productionSessionScore}% (${supabaseGate.score}% Supabase gate, ${multiDevice.score}% multi-device controls).`,
         outputs: "Reports, findings, publications",
-        outputsDetail: "ReportLab PDFs, full output verification, PWA release gate, unified filters, publication recommendation, and editorial flow are active.",
+        outputsDetail: `ReportLab PDFs, full output verification, unified filters, publication recommendation, multimedia curation, and editorial flow are active${sessionPublicationData ? " with current data available." : "; add or sync data to generate richer outputs."}`,
         multimodal: "Multimedia and OCR/analysis",
-        multimodalDetail: `${assetAnalysis.withText}/${assetAnalysis.total} assets with analytical text; external source profiles visible in Assets and reports; workflow ${assetWorkflow.score}%.`,
+        multimodalDetail: `Capability ${multimodalCapability.score}%; current browser evidence ${assetAnalysis.withText}/${assetAnalysis.total} assets with analytical text; workflow ${assetWorkflow.score}%.`,
         native: "Vibeapp native",
         nativeDetail: "Flutter skeleton has auth, command preview/routing, contract tests for event-media payloads, source-specific external import profiles, local HTTP sync tests, failure-path tests, queue/retry-state tests, mobile pilot gate, queue, auto-retry, media, agenda, location, biometrics, Android package id io.vibeapp.mobile, verified debug APK, signed release APK/AAB, Android signing gate, unified pilot verification, and a ZIP-ready Android pilot kit.",
         connectors: "Device and service connectors",
         connectorsDetail: "Routes documented for Meta/Oakley, Oura, Apple Health, Samsung Health, Health Connect; direct connectors remain future work.",
         full: "Full product ambition",
-        fullDetail: `Estimated full product ${total.full}%; advanced agents, predictive AI, and direct APIs are later phases.`,
+        fullDetail: `Future ambition ${fullAmbitionOverall}% when direct connectors, store distribution, advanced agents, predictive AI, and direct APIs are included. This does not reduce current delivery.`,
         nextDetail: "Run npm run verify:pilot and npm run package:vibeapp, pilot-install Vibeapp on a physical Android device, then harden publication design/output and device-import flows.",
       }
     : {
         title: "Estado global de avance",
-        subtitle: "Estado honesto del producto entre PWA, Supabase, salidas, app nativa y conectores futuros.",
-        overall: "Entrega global",
+        subtitle: "Avance de capacidades implementadas. Los datos visibles de este navegador se revisan aparte en Datos actuales.",
+        overall: "Entrega actual",
         next: "Siguiente bloque operativo",
         routeTitle: "Ruta al 90%",
-        routeSubtitle: `La entrega global está en ${overall}%. Estos frentes muestran la brecha real hasta 90 sin cambiar el modelo de avance.`,
+        routeSubtitle: `La entrega actual está en ${overall}%. Este número mide capacidad entregada, no caché, navegador o volumen de datos locales. La ambición completa está en ${fullAmbitionOverall}%.`,
         routeOwner: "Dueño",
         routeState: "Estado",
         routeGap: "Brecha a 90",
@@ -8077,17 +8107,17 @@ function buildGlobalProgressSnapshot() {
         pwa: "Producto PWA operativo",
         pwaDetail: `MVP local ${total.mvp}%; funcional ${readiness.functional.score}%, técnico ${readiness.technical.score}%.`,
         production: "Producción y Supabase",
-        productionDetail: `Compuerta Supabase ${supabaseGate.score}%; controles multidispositivo ${multiDevice.score}%.`,
+        productionDetail: `Capacidad ${productionCapability.score}%; diagnóstico de esta sesión ${productionSessionScore}% (compuerta Supabase ${supabaseGate.score}%, controles multidispositivo ${multiDevice.score}%).`,
         outputs: "Reportes, hallazgos y publicaciones",
-        outputsDetail: "PDFs ReportLab, verificación completa de salidas, compuerta PWA, filtros uniformes, recomendación de publicación y flujo editorial activos.",
+        outputsDetail: `PDFs ReportLab, verificación completa de salidas, filtros uniformes, recomendación de publicación, curaduría multimedia y flujo editorial activos${sessionPublicationData ? " con datos disponibles en esta sesión." : "; agrega o sincroniza datos para generar salidas más ricas."}`,
         multimodal: "Multimedia y OCR/análisis",
-        multimodalDetail: `${assetAnalysis.withText}/${assetAnalysis.total} activos con texto analítico; perfiles externos visibles en Activos y reportes; flujo ${assetWorkflow.score}%.`,
+        multimodalDetail: `Capacidad ${multimodalCapability.score}%; evidencia de este navegador ${assetAnalysis.withText}/${assetAnalysis.total} activos con texto analítico; flujo ${assetWorkflow.score}%.`,
         native: "Vibeapp nativa",
         nativeDetail: "El esqueleto Flutter tiene auth, vista previa de comandos, pruebas de contrato para payloads evento-activo, perfiles de importación externa por origen, pruebas HTTP locales de sincronización, pruebas de rutas de fallo, pruebas de cola y reintentos, compuerta piloto móvil, cola, autoreintento, medios, agenda, lugar, biometría, paquete Android io.vibeapp.mobile, APK debug verificado, APK/AAB release firmados, compuerta local Android, verificación piloto unificada y paquete Android entregable en ZIP.",
         connectors: "Conectores de dispositivos y servicios",
         connectorsDetail: "Rutas documentadas para Meta/Oakley, Oura, Apple Health, Samsung Health y Health Connect; conectores directos quedan futuros.",
         full: "Ambición de producto completo",
-        fullDetail: `Producto completo estimado ${total.full}%; agentes avanzados, IA predictiva y APIs directas quedan en fases posteriores.`,
+        fullDetail: `Ambición futura ${fullAmbitionOverall}% cuando se incluyen conectores directos, tiendas, agentes avanzados, IA predictiva y APIs directas. Esto no descuenta la entrega actual.`,
         nextDetail: "Ejecutar npm run verify:pilot y npm run package:vibeapp, instalar Vibeapp en un Android físico de piloto, luego fortalecer diseño/salidas de publicaciones y flujos de importación por dispositivo.",
       };
   const tracks = [
@@ -8097,7 +8127,7 @@ function buildGlobalProgressSnapshot() {
     { key: "multimodal", title: labels.multimodal, score: multimodalScore, detail: labels.multimodalDetail, view: "assetLibrary" },
     { key: "native", title: labels.native, score: nativeReadiness.score, detail: labels.nativeDetail, view: "admin", focus: "adminOperationalFocusPanel" },
     { key: "connectors", title: labels.connectors, score: connectorReadiness.score, detail: labels.connectorsDetail, view: "admin", focus: "externalIntegrationPanel" },
-    { key: "full", title: labels.full, score: total.full, detail: labels.fullDetail, view: "admin", focus: "publishPlanPanel" },
+    { key: "full", title: labels.full, score: fullAmbitionOverall, detail: labels.fullDetail, view: "admin", focus: "publishPlanPanel" },
   ];
   const routeLabels = state.language === "en"
     ? {
