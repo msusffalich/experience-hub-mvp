@@ -254,6 +254,7 @@ assert(files.vibeappTest.includes("Native sync client sends media, experience, a
 assert(files.vibeappTest.includes("Native sync client reports media and agenda failures clearly"), "Flutter tests must validate clear Vibeapp sync failure handling.");
 assert(files.vibeappTest.includes("Native queue validates files and retry state before sync"), "Flutter tests must validate queue retries, terminal failures, and local file validation.");
 assert(files.vibeappMain.includes("class CaptureQueueSummary") && files.vibeappTest.includes("Native queue summary explains ready, retry, blocked, and synced items"), "Vibeapp must expose a tested observable queue summary.");
+assert(files.vibeappMain.includes("class NativePilotChecklist") && files.vibeappTest.includes("Native pilot checklist scores backend, session, and queue blockers"), "Vibeapp must expose a tested mobile pilot checklist.");
 assert(files.vibeappTest.includes("External session import profiles Meta and biometric sources correctly"), "Flutter tests must validate source-specific external import profiles.");
 assert(files.app.includes("getExternalAssetProfile") && files.app.includes("externalPayloadType") && files.app.includes("Perfil de dispositivo/origen"), "PWA must surface Vibeapp external import profiles in assets and reports.");
 assert(files.app.includes("applyRecommendedPublicationMediaSelection") && files.app.includes("publicationRoleLabel") && files.app.includes("data-publication-media-bulk=\"recommended\""), "Publications must support recommended media curation with editorial asset roles.");

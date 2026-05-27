@@ -61,6 +61,7 @@ Cada evento o activo debe enviar:
    - Reintento automatico.
    - Resumen observable: listo para enviar, subiendo, esperando reintento, requiere accion, archivos pendientes y eventos pendientes.
    - Mensaje humano si algo falla, sin pedir al usuario que interprete logs.
+   - Checklist de piloto movil: backend, sesion, cola, nota rapida, multimedia, contexto, fuentes externas y lectura en PWA.
 
 4. **Permisos y privacidad**
    - Camara, microfono, ubicacion, fotos, notificaciones y salud.
@@ -89,6 +90,7 @@ Cada evento o activo debe enviar:
 - Base local: Drift, Isar o SQLite cifrado para cola offline.
 - Subida de archivos en segundo plano con reintentos.
 - Resumen de cola calculado desde estados reales, no desde un mensaje global: pendientes, reintentos, fallos definitivos, sesion requerida, plugin nativo pendiente, archivos y eventos.
+- Checklist de preparacion calculado desde datos reales para decidir si una prueba en telefono/tablet puede iniciar.
 - IDs locales estables para evitar duplicados.
 - Storage privado con URLs firmadas, igual que la PWA.
 - Procesamiento pesado en backend, no en el telefono.
@@ -134,5 +136,6 @@ Vibeapp solo debe considerarse lista para piloto cuando:
 - Los activos aparecen en otro dispositivo sin accion manual.
 - La cola offline se recupera sola.
 - La cola muestra el estado real de cada captura y separa reintentos automaticos de problemas que requieren accion humana.
+- El piloto movil solo se inicia cuando el checklist distingue bloqueos reales de capacidades ya verificadas por pruebas.
 - Los errores son comprensibles.
 - La PWA puede generar reportes, hallazgos y publicaciones con datos creados desde Vibeapp.

@@ -396,6 +396,35 @@ void main() {
     expect(summary.operatorMessage, contains('requieren accion'));
   });
 
+  test('Native pilot checklist scores backend, session, and queue blockers',
+      () {
+    final clearQueue = CaptureQueueSummary.fromItems(const []);
+    final ready = NativePilotChecklist.fromState(
+      backendOk: true,
+      signedInEmail: 'miguel@example.com',
+      queueSummary: clearQueue,
+    );
+
+    expect(ready.score, 100);
+    expect(ready.canRunPilot, isTrue);
+    expect(ready.summary, contains('Listo para prueba controlada'));
+
+    final blockedItem = CaptureQueueItem.text('Sin sesion');
+    blockedItem.status = CaptureSyncStatus.needsSession;
+    final blockedQueue = CaptureQueueSummary.fromItems([blockedItem]);
+    final blocked = NativePilotChecklist.fromState(
+      backendOk: false,
+      signedInEmail: '',
+      queueSummary: blockedQueue,
+    );
+
+    expect(blocked.score, lessThan(85));
+    expect(blocked.canRunPilot, isFalse);
+    expect(blocked.blockers.map((item) => item.id),
+        containsAll(['backend', 'session']));
+    expect(blocked.summary, contains('Antes del piloto'));
+  });
+
   testWidgets('Vibeapp quick capture smoke test', (WidgetTester tester) async {
     await tester.pumpWidget(const VibeApp());
 

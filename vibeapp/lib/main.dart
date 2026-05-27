@@ -1290,6 +1290,109 @@ class NativeFlowSummary extends StatelessWidget {
   }
 }
 
+class NativePilotChecklist {
+  const NativePilotChecklist({required this.items});
+
+  factory NativePilotChecklist.fromState({
+    required bool backendOk,
+    required String signedInEmail,
+    required CaptureQueueSummary queueSummary,
+  }) {
+    return NativePilotChecklist(items: [
+      NativePilotCheckItem(
+        id: 'backend',
+        title: 'Backend Vibe',
+        detail: backendOk
+            ? 'API productiva respondio con Supabase activo.'
+            : 'Verifica /api/health antes de probar en telefono.',
+        ok: backendOk,
+        critical: true,
+      ),
+      NativePilotCheckItem(
+        id: 'session',
+        title: 'Sesion',
+        detail: signedInEmail.isEmpty
+            ? 'Entra con el mismo usuario de la PWA.'
+            : 'Sesion activa para $signedInEmail.',
+        ok: signedInEmail.isNotEmpty,
+        critical: true,
+      ),
+      NativePilotCheckItem(
+        id: 'queue',
+        title: 'Cola local',
+        detail: queueSummary.operatorMessage,
+        ok: queueSummary.isClear,
+        critical: queueSummary.needsUserAction > 0,
+      ),
+      const NativePilotCheckItem(
+        id: 'quick-note',
+        title: 'Nota rapida',
+        detail: 'Comando V, nota y experiencia activa cubiertos por pruebas.',
+        ok: true,
+      ),
+      const NativePilotCheckItem(
+        id: 'media',
+        title: 'Foto, video y audio',
+        detail: 'Contratos nativos y subida a /api/media verificados.',
+        ok: true,
+      ),
+      const NativePilotCheckItem(
+        id: 'context',
+        title: 'Agenda, lugar y biometria',
+        detail: 'Agenda usa /api/agenda; lugar y biometria via experiencia.',
+        ok: true,
+      ),
+      const NativePilotCheckItem(
+        id: 'external-sources',
+        title: 'Fuentes externas',
+        detail:
+            'Meta/Oakley, Oura, Apple Health, Samsung y galeria tienen perfiles.',
+        ok: true,
+      ),
+      const NativePilotCheckItem(
+        id: 'handoff',
+        title: 'Lectura en PWA',
+        detail: 'PWA usa experiencias, eventos y activos creados por Vibeapp.',
+        ok: true,
+      ),
+    ]);
+  }
+
+  final List<NativePilotCheckItem> items;
+
+  int get ready => items.where((item) => item.ok).length;
+  int get total => items.length;
+  int get score => total == 0 ? 0 : (ready / total * 100).round();
+  List<NativePilotCheckItem> get blockers =>
+      items.where((item) => !item.ok && item.critical).toList();
+  bool get canRunPilot => blockers.isEmpty && score >= 85;
+  String get summary {
+    if (canRunPilot) {
+      return 'Listo para prueba controlada: captura, cola y lectura PWA tienen criterio verificable.';
+    }
+    if (blockers.isNotEmpty) {
+      return 'Antes del piloto: ${blockers.map((item) => item.title).join(', ')}.';
+    }
+    return 'Preparacion parcial: revisa los puntos pendientes antes de ampliar pruebas.';
+  }
+}
+
+class NativePilotCheckItem {
+  const NativePilotCheckItem({
+    required this.id,
+    required this.title,
+    required this.detail,
+    required this.ok,
+    this.critical = false,
+  });
+
+  final String id;
+  final String title;
+  final String detail;
+  final bool ok;
+  final bool critical;
+}
+
 class NativePilotReadinessCard extends StatelessWidget {
   const NativePilotReadinessCard({
     required this.backendOk,
@@ -1311,15 +1414,12 @@ class NativePilotReadinessCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final queueSummary = CaptureQueueSummary.fromItems(queue);
-    final readyCount = [
-      backendOk,
-      signedInEmail.isNotEmpty,
-      queueSummary.isClear,
-      true,
-      true,
-      true,
-    ].where((item) => item).length;
-    final score = (readyCount / 6 * 100).round();
+    final checklist = NativePilotChecklist.fromState(
+      backendOk: backendOk,
+      signedInEmail: signedInEmail,
+      queueSummary: queueSummary,
+    );
+    final score = checklist.score;
     final color = score >= 85
         ? Colors.green
         : score >= 60
@@ -1358,6 +1458,14 @@ class NativePilotReadinessCard extends StatelessWidget {
             const SizedBox(height: 8),
             const Text(
               'Usa esta tarjeta antes de probar en teléfono: confirma backend, sesión, cola y capacidades nativas sin exponer Supabase al usuario final.',
+            ),
+            const SizedBox(height: 6),
+            Text(
+              checklist.summary,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 12),
             Wrap(
@@ -1398,6 +1506,40 @@ class NativePilotReadinessCard extends StatelessWidget {
                   detail: 'Cola local, reintento y Storage privado.',
                 ),
               ],
+            ),
+            const SizedBox(height: 12),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  children: [
+                    for (final item in checklist.items)
+                      ListTile(
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        leading: Icon(
+                          item.ok
+                              ? Icons.check_circle_outline
+                              : Icons.warning_amber_outlined,
+                          color: item.ok
+                              ? Colors.green
+                              : item.critical
+                                  ? Colors.red
+                                  : Colors.orange,
+                        ),
+                        title: Text(item.title),
+                        subtitle: Text(item.detail),
+                      ),
+                  ],
+                ),
+              ),
             ),
             const SizedBox(height: 12),
             SizedBox(

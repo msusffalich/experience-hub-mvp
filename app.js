@@ -1,4 +1,4 @@
-const APP_VERSION = "20260527-vibeapp-queue-observability-465";
+const APP_VERSION = "20260527-vibeapp-pilot-checklist-466";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2122,6 +2122,7 @@ const manualContent = {
         "La PWA lee esos perfiles externos en Activos, inventario y evidencia de reportes: muestra origen, tipo de carga, intención de procesamiento, privacidad y si el archivo se puede interpretar automáticamente o solo conservar como transporte.",
         "Vibeapp valida cada captura antes de sincronizar: revisa título, texto, eventos, existencia de archivos, tamaño, MIME, vínculo evento-activo y expectativas por origen. Si algo no cuadra, queda en cola con un mensaje entendible antes de tocar el backend.",
         "Vibeapp muestra una cola local observable: separa capturas listas para enviar, subidas en curso, reintentos automáticos, fallos que requieren acción, archivos pendientes y eventos pendientes. El usuario ve el estado real sin interpretar logs ni comandos.",
+        "Vibeapp suma un checklist de piloto móvil con escenarios claros: backend, sesión, cola, nota rápida, multimedia, contexto, fuentes externas y lectura en PWA. El puntaje deja de ser una sensación y pasa a criterios verificables.",
         "La prueba Flutter de contrato valida sin teléfono físico que Vibeapp genere payloads correctos para experiencias activas, vínculos evento-activo, ubicación y biometría antes de sincronizar con la PWA.",
         "La prueba Flutter de sincronización usa un servidor HTTP local para confirmar que Vibeapp envía medios a /api/media, experiencias a /api/experiences y agenda a /api/agenda con autorización y estructura correcta.",
         "Las pruebas Flutter de fallo verifican que si media o agenda responden error, Vibeapp devuelve mensajes claros y no marca como sincronizada una experiencia incompleta.",
@@ -25426,7 +25427,7 @@ function renderAdminOperationalFocusPanel() {
         reportPdf: "Cleaner reports, publications, and findings",
         reportPdfDetail: "Reports now use an executive PDF, participant scope, and folded technical exports. Publications recommend type/style/channel from the selected scope, explain format fit, edited text, media actions, and apply recommended editorial roles for images, audio, video, documents, biometrics, and ZIP files. Findings are organized by 8 human themes and can be downloaded.",
         nativeSync: "Vibeapp real queue",
-        nativeSyncDetail: "Vibeapp now has real native contracts for text, photo, video, audio, agenda, location, and biometric CSV/JSON files. The native queue validates each payload, persists locally across app restarts, tracks attempts, retries eligible items automatically every 30 seconds when a session is active, separates ready, uploading, retrying, blocked, file, and event states, links biometric files to the active experience instead of creating duplicates, lets synced items be cleared locally without deleting remote data, and then syncs media through /api/media, agenda through /api/agenda, and experiences through /api/experiences.",
+        nativeSyncDetail: "Vibeapp now has real native contracts for text, photo, video, audio, agenda, location, and biometric CSV/JSON files. The native queue validates each payload, persists locally across app restarts, tracks attempts, retries eligible items automatically every 30 seconds when a session is active, separates ready, uploading, retrying, blocked, file, and event states, and now exposes a pilot checklist for backend, session, queue, quick note, media, context, external sources, and PWA handoff before phone tests.",
       }
     : {
         title: "Administración operativa",

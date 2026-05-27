@@ -44,6 +44,7 @@ Pilot blockers that still need product/account decisions:
 - Queue cleanup: synced native captures can be cleared from the local queue without touching remote Supabase data.
 - Automatic retry loop: when the user is signed in, Vibeapp checks the local queue every 30 seconds and syncs eligible pending items without requiring manual action.
 - Observable queue summary: Vibeapp separates ready-to-send captures, uploads in progress, automatic retries, user-action blockers, pending files, and pending events so a tester sees the real state without reading logs.
+- Mobile pilot checklist: the main readiness card scores backend, session, queue, quick note, media, context, external sources, and PWA handoff before a phone or tablet test.
 - Source-specific import guidance: Meta/Oakley, Oura, Apple Health, Samsung Health, Health Connect, gallery, and other imports show recommended file types and realistic workflow before file selection.
 - Mobile pilot gate: the main screen can verify the production Vibe backend, show session status, summarize local queue risk, and confirm capture capabilities before a real phone/tablet test.
 - Android permission baseline includes network state, internet, camera, microphone, location, image/video/audio library access, legacy storage read, and notifications so mobile builds do not fail on basic platform permissions.
