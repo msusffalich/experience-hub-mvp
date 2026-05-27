@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -6,6 +7,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vibeapp/main.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   test('Native quick commands parse note, agenda, and experience actions', () {
     final note = NativeQuickCommand.parse(
         'Hola V, toma nota que el parque está hermoso');
@@ -103,6 +106,75 @@ void main() {
     );
   });
 
+  test('Native sync client sends media, experience, and agenda requests',
+      () async {
+    final tempDir = Directory.systemTemp.createTempSync('vibeapp-sync-');
+    addTearDown(() async {
+      if (tempDir.existsSync()) tempDir.deleteSync(recursive: true);
+    });
+
+    final transport = FakeNativeSyncTransport();
+    const settings = SyncSettings(
+      apiBaseUrl: 'https://vibe.test',
+      accessToken: 'test-token',
+    );
+    final client = ExperienceSyncClient(settings, transport: transport);
+    final attachmentFile =
+        File('${tempDir.path}${Platform.pathSeparator}nota.txt')
+          ..writeAsStringSync('Contenido de prueba');
+    final session = ActiveExperienceSession.start('Contrato sync');
+    session.addTextEvent('Evento con documento.');
+    session.addAttachmentEvent(NativeAttachmentDraft.fromFilePath(
+      attachmentFile.path,
+      sourceType: 'document',
+    ));
+    session.close();
+
+    final experienceResult =
+        await client.syncItem(CaptureQueueItem.fromSession(session));
+    expect(experienceResult.ok, isTrue);
+    expect(experienceResult.remoteId, 'remote-exp-1');
+
+    final agendaResult = await client.syncItem(CaptureQueueItem.agenda(
+      AgendaEventDraft(
+        title: 'Cena de prueba',
+        description: 'Validar agenda nativa',
+        location: 'Casa',
+        startAt: DateTime.utc(2026, 5, 27, 20),
+        endAt: DateTime.utc(2026, 5, 27, 21),
+      ),
+    ));
+    expect(agendaResult.ok, isTrue);
+    expect(agendaResult.remoteId, 'remote-agenda-1');
+
+    final mediaRequest = transport.requests
+        .firstWhere((item) => item['path'] == '/api/media');
+    expect(mediaRequest['method'], 'multipart');
+    expect(mediaRequest['authorization'], 'Bearer test-token');
+    expect(mediaRequest['metadata'],
+        contains('"sourceType":"vibeapp-native-document"'));
+    expect(mediaRequest['fileName'], 'nota.txt');
+
+    final experienceRequest = transport.requests
+        .firstWhere((item) => item['path'] == '/api/experiences');
+    final experienceBody =
+        experienceRequest['payload'] as Map<String, dynamic>;
+    expect(experienceRequest['authorization'], 'Bearer test-token');
+    expect(experienceBody['metadata']['syncContract'], 'vibeapp-session-v1');
+    expect((experienceBody['events'] as List).length, 2);
+    expect(
+      (experienceBody['attachments'] as List).single['storage'],
+      'supabase-storage',
+    );
+
+    final agendaRequest =
+        transport.requests.firstWhere((item) => item['path'] == '/api/agenda');
+    final agendaBody = agendaRequest['payload'] as Map<String, dynamic>;
+    expect(agendaRequest['authorization'], 'Bearer test-token');
+    expect(agendaBody['title'], 'Cena de prueba');
+    expect(agendaBody['sourceType'], 'vibeapp-native-agenda');
+  });
+
   testWidgets('Vibeapp quick capture smoke test', (WidgetTester tester) async {
     await tester.pumpWidget(const VibeApp());
 
@@ -150,4 +222,71 @@ void main() {
     expect(find.text('Biometría'), findsOneWidget);
     expect(find.text('Lugar'), findsOneWidget);
   });
+}
+
+class FakeNativeSyncTransport implements NativeSyncTransport {
+  final requests = <Map<String, dynamic>>[];
+
+  @override
+  Future<NativeSyncResponse> postJson(
+    Uri uri, {
+    required String accessToken,
+    required Object payload,
+  }) async {
+    requests.add({
+      'method': 'json',
+      'path': uri.path,
+      'authorization': 'Bearer $accessToken',
+      'payload': payload,
+    });
+    if (uri.path == '/api/experiences') {
+      return const NativeSyncResponse(
+        statusCode: 200,
+        body: '{"id":"remote-exp-1"}',
+      );
+    }
+    if (uri.path == '/api/agenda') {
+      return const NativeSyncResponse(
+        statusCode: 200,
+        body: '{"id":"remote-agenda-1"}',
+      );
+    }
+    return const NativeSyncResponse(statusCode: 404, body: '{"error":"no"}');
+  }
+
+  @override
+  Future<NativeSyncResponse> postMultipart(
+    Uri uri, {
+    required String accessToken,
+    required NativeAttachmentDraft attachment,
+    required List<int> bytes,
+    required String boundary,
+    required String metadata,
+  }) async {
+    requests.add({
+      'method': 'multipart',
+      'path': uri.path,
+      'authorization': 'Bearer $accessToken',
+      'fileName': attachment.name,
+      'mimeType': attachment.mimeType,
+      'bytes': bytes.length,
+      'boundary': boundary,
+      'metadata': metadata,
+    });
+    return NativeSyncResponse(
+      statusCode: 200,
+      body: jsonEncode({
+        'id': 'remote-media-1',
+        'name': attachment.name,
+        'type': attachment.mimeType,
+        'originalType': attachment.mimeType,
+        'size': bytes.length,
+        'kind': attachment.kind,
+        'storage': 'supabase-storage',
+        'path': 'user/native/${attachment.name}',
+        'url': 'signed://${attachment.name}',
+        'metadata': {'server': 'fake'},
+      }),
+    );
+  }
 }

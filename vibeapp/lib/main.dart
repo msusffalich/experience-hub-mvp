@@ -2011,9 +2011,10 @@ class QueueItemTile extends StatelessWidget {
 }
 
 class ExperienceSyncClient {
-  ExperienceSyncClient(this.settings);
+  ExperienceSyncClient(this.settings, {this.transport});
 
   final SyncSettings settings;
+  final NativeSyncTransport? transport;
 
   Future<SyncResult> syncItem(CaptureQueueItem item) {
     final agendaEvent = item.agendaEvent;
@@ -2033,20 +2034,24 @@ class ExperienceSyncClient {
             .add(uploaded.payload ?? attachment.toExperienceAttachment());
       }
       final uri = Uri.parse(settings.apiBaseUrl).resolve('/api/experiences');
-      final request =
-          await HttpClient().postUrl(uri).timeout(const Duration(seconds: 10));
-      request.headers.contentType = ContentType.json;
-      request.headers.set(
-          HttpHeaders.authorizationHeader, 'Bearer ${settings.accessToken}');
-      request.write(jsonEncode(item.toExperiencePayload(attachments)));
-      final response =
-          await request.close().timeout(const Duration(seconds: 20));
-      final responseText = await response.transform(utf8.decoder).join();
+      final payload = item.toExperiencePayload(attachments);
+      final customTransport = transport;
+      final response = customTransport == null
+          ? await NativeHttpTransport().postJson(
+              uri,
+              accessToken: settings.accessToken,
+              payload: payload,
+            )
+          : await customTransport.postJson(
+              uri,
+              accessToken: settings.accessToken,
+              payload: payload,
+            );
       if (response.statusCode < 200 || response.statusCode >= 300) {
         return SyncResult.failure(
-            'HTTP ${response.statusCode}: ${shorten(responseText)}');
+            'HTTP ${response.statusCode}: ${shorten(response.body)}');
       }
-      final decoded = jsonDecode(responseText) as Map<String, dynamic>;
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
       return SyncResult.success((decoded['id'] ?? item.id).toString());
     } on TimeoutException {
       return SyncResult.failure('Tiempo de espera agotado.');
@@ -2062,20 +2067,23 @@ class ExperienceSyncClient {
   Future<SyncResult> upsertAgendaEvent(AgendaEventDraft event) async {
     try {
       final uri = Uri.parse(settings.apiBaseUrl).resolve('/api/agenda');
-      final request =
-          await HttpClient().postUrl(uri).timeout(const Duration(seconds: 10));
-      request.headers.contentType = ContentType.json;
-      request.headers.set(
-          HttpHeaders.authorizationHeader, 'Bearer ${settings.accessToken}');
-      request.write(jsonEncode(event.toJson()));
-      final response =
-          await request.close().timeout(const Duration(seconds: 20));
-      final responseText = await response.transform(utf8.decoder).join();
+      final customTransport = transport;
+      final response = customTransport == null
+          ? await NativeHttpTransport().postJson(
+              uri,
+              accessToken: settings.accessToken,
+              payload: event.toJson(),
+            )
+          : await customTransport.postJson(
+              uri,
+              accessToken: settings.accessToken,
+              payload: event.toJson(),
+            );
       if (response.statusCode < 200 || response.statusCode >= 300) {
         return SyncResult.failure(
-            'Agenda HTTP ${response.statusCode}: ${shorten(responseText)}');
+            'Agenda HTTP ${response.statusCode}: ${shorten(response.body)}');
       }
-      final decoded = jsonDecode(responseText) as Map<String, dynamic>;
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
       return SyncResult.success((decoded['id'] ?? event.id).toString());
     } on TimeoutException {
       return SyncResult.failure(
@@ -2096,35 +2104,30 @@ class ExperienceSyncClient {
       final bytes = await file.readAsBytes();
       final boundary = '----vibeapp-${DateTime.now().microsecondsSinceEpoch}';
       final uri = Uri.parse(settings.apiBaseUrl).resolve('/api/media');
-      final request =
-          await HttpClient().postUrl(uri).timeout(const Duration(seconds: 10));
-      request.headers.contentType = ContentType(
-        'multipart',
-        'form-data',
-        parameters: {'boundary': boundary},
-      );
-      request.headers.set(
-          HttpHeaders.authorizationHeader, 'Bearer ${settings.accessToken}');
       final metadata = jsonEncode(attachment.toMediaMetadata(bytes.length));
-      request.add(utf8.encode('--$boundary\r\n'));
-      request.add(
-          utf8.encode('Content-Disposition: form-data; name="metadata"\r\n'));
-      request.add(utf8.encode('Content-Type: application/json\r\n\r\n'));
-      request.add(utf8.encode(metadata));
-      request.add(utf8.encode('\r\n--$boundary\r\n'));
-      request.add(utf8.encode(
-          'Content-Disposition: form-data; name="file"; filename="${attachment.name}"\r\n'));
-      request.add(utf8.encode('Content-Type: ${attachment.mimeType}\r\n\r\n'));
-      request.add(bytes);
-      request.add(utf8.encode('\r\n--$boundary--\r\n'));
-      final response =
-          await request.close().timeout(const Duration(seconds: 45));
-      final responseText = await response.transform(utf8.decoder).join();
+      final customTransport = transport;
+      final response = customTransport == null
+          ? await NativeHttpTransport().postMultipart(
+              uri,
+              accessToken: settings.accessToken,
+              attachment: attachment,
+              bytes: bytes,
+              boundary: boundary,
+              metadata: metadata,
+            )
+          : await customTransport.postMultipart(
+              uri,
+              accessToken: settings.accessToken,
+              attachment: attachment,
+              bytes: bytes,
+              boundary: boundary,
+              metadata: metadata,
+            );
       if (response.statusCode < 200 || response.statusCode >= 300) {
         return SyncResult.failure(
-            'Media HTTP ${response.statusCode}: ${shorten(responseText)}');
+            'Media HTTP ${response.statusCode}: ${shorten(response.body)}');
       }
-      final decoded = jsonDecode(responseText) as Map<String, dynamic>;
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
       return SyncResult.mediaSuccess(
           attachment.toExperienceAttachment(decoded));
     } on TimeoutException {
@@ -2135,6 +2138,87 @@ class ExperienceSyncClient {
     } catch (error) {
       return SyncResult.failure(shorten(error.toString()));
     }
+  }
+}
+
+abstract class NativeSyncTransport {
+  Future<NativeSyncResponse> postJson(
+    Uri uri, {
+    required String accessToken,
+    required Object payload,
+  });
+
+  Future<NativeSyncResponse> postMultipart(
+    Uri uri, {
+    required String accessToken,
+    required NativeAttachmentDraft attachment,
+    required List<int> bytes,
+    required String boundary,
+    required String metadata,
+  });
+}
+
+class NativeSyncResponse {
+  const NativeSyncResponse({required this.statusCode, required this.body});
+
+  final int statusCode;
+  final String body;
+}
+
+class NativeHttpTransport implements NativeSyncTransport {
+  @override
+  Future<NativeSyncResponse> postJson(
+    Uri uri, {
+    required String accessToken,
+    required Object payload,
+  }) async {
+    final request =
+        await HttpClient().postUrl(uri).timeout(const Duration(seconds: 10));
+    request.headers.contentType = ContentType.json;
+    request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $accessToken');
+    request.write(jsonEncode(payload));
+    final response = await request.close().timeout(const Duration(seconds: 20));
+    final responseText = await response.transform(utf8.decoder).join();
+    return NativeSyncResponse(
+      statusCode: response.statusCode,
+      body: responseText,
+    );
+  }
+
+  @override
+  Future<NativeSyncResponse> postMultipart(
+    Uri uri, {
+    required String accessToken,
+    required NativeAttachmentDraft attachment,
+    required List<int> bytes,
+    required String boundary,
+    required String metadata,
+  }) async {
+    final request =
+        await HttpClient().postUrl(uri).timeout(const Duration(seconds: 10));
+    request.headers.contentType = ContentType(
+      'multipart',
+      'form-data',
+      parameters: {'boundary': boundary},
+    );
+    request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $accessToken');
+    request.add(utf8.encode('--$boundary\r\n'));
+    request.add(
+        utf8.encode('Content-Disposition: form-data; name="metadata"\r\n'));
+    request.add(utf8.encode('Content-Type: application/json\r\n\r\n'));
+    request.add(utf8.encode(metadata));
+    request.add(utf8.encode('\r\n--$boundary\r\n'));
+    request.add(utf8.encode(
+        'Content-Disposition: form-data; name="file"; filename="${attachment.name}"\r\n'));
+    request.add(utf8.encode('Content-Type: ${attachment.mimeType}\r\n\r\n'));
+    request.add(bytes);
+    request.add(utf8.encode('\r\n--$boundary--\r\n'));
+    final response = await request.close().timeout(const Duration(seconds: 45));
+    final responseText = await response.transform(utf8.decoder).join();
+    return NativeSyncResponse(
+      statusCode: response.statusCode,
+      body: responseText,
+    );
   }
 }
 
