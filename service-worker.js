@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260527-progress-data-guard-468";
+const CACHE_NAME = "experience-hub-pwa-20260527-integration-validate-469";
 const APP_SHELL = [
   "/",
   "/index.html",

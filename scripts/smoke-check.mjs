@@ -144,6 +144,8 @@ assert(files.app.includes("invalid_mime_type para PDF") && files.app.includes("i
 assert(files.index.includes("dashboard-primary-panel") && files.index.includes("Nueva experiencia"), "Dashboard does not expose primary daily actions.");
 assert(files.index.includes("dashboardDataStatusPanel") && files.app.includes("function renderDashboardDataStatusPanel"), "Dashboard does not expose the current data/status guard.");
 assert(files.app.includes("clearAppShellCaches") && files.app.includes("caches.keys"), "Refresh app does not clear stale app-shell caches.");
+assert(files.server.includes("/api/integration/contract") && files.server.includes("/api/integration/validate") && files.server.includes("function validateIntegrationSignal"), "Server does not expose integration contract validation.");
+assert(files.app.includes("vibe-signal-contract-v2") && files.app.includes("copy-sample") && files.app.includes("idempotencyKey"), "Device integration panel does not expose a validated sample payload.");
 assert(!files.index.includes("dashboardAttachmentPanel") && !files.index.includes("dashboardPilotBox"), "Dashboard still exposes technical/pilot monitoring panels.");
 assert(files.index.includes("capture-layout-clean") && !files.index.includes("captureCoachBox") && !files.index.includes("templateList"), "Capture still exposes parallel coach/template panels.");
 assert(files.index.includes("captureEventPreview") && files.app.includes("function renderCaptureEventPreview"), "Capture does not show the live internal event preview.");

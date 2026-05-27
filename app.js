@@ -1,4 +1,4 @@
-const APP_VERSION = "20260527-progress-data-guard-468";
+const APP_VERSION = "20260527-integration-validate-469";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2112,6 +2112,7 @@ const manualContent = {
         "La guía docs/deploy-publicacion.md define el orden recomendado: GitHub privado, Supabase productivo, variables seguras, hosting Node, prueba desde varios dispositivos y validación privada.",
         "El proyecto queda preparado para Railway con railway.json, railpack.json, healthcheck /api/health, Node >=20, Python para ReportLab y .gitignore para evitar publicar .env, datos locales, logs o claves.",
         "La sección Dispositivos ahora documenta un contrato único de integración. Cualquier fuente nueva debe entregar sourceId, sourceType, capturedAt, participantId, payloadType y payload antes de alimentar experiencias, activos, Agenda o contexto.",
+        "El backend expone /api/integration/contract y /api/integration/validate para que Vibeapp, Clio o cualquier conector pruebe una señal normalizada antes de crear datos reales. Esto evita ingestas ambiguas y hace que los reintentos usen sourceId e idempotencyKey.",
         "Vibeapp nativa se planifica como complemento de la PWA: la PWA queda para análisis, reportes, hallazgos, publicaciones y administración; Vibeapp cubre captura real con cámara, audio, video, ubicación, sensores, biometría, notificaciones y sincronización transparente con Supabase.",
         "El blueprint inicial de Vibeapp está documentado en docs/vibeapp-native-blueprint.md. Ese documento define contrato de sincronización, pantallas iniciales, flujo offline, permisos, privacidad y los primeros incrementos Flutter.",
         "Vibeapp ya tiene captura nativa real para texto, foto, video, audio, agenda, lugar y archivos biométricos CSV/JSON. Foto, video, audio y biometría suben a Storage privado mediante /api/media; Agenda sincroniza con /api/agenda; Lugar guarda coordenadas, precisión y fecha/hora como metadatos estructurados.",
@@ -2734,6 +2735,7 @@ const manualContent = {
         "The docs/deploy-publicacion.md guide defines the recommended order: private GitHub, production Supabase, secure variables, Node hosting, multi-device test, and private validation.",
         "The project is prepared for Railway with railway.json, railpack.json, healthcheck /api/health, Node >=20, Python for ReportLab, and .gitignore to avoid publishing .env, local data, logs, or keys.",
         "The Devices section now documents a single integration contract. Every new source must provide sourceId, sourceType, capturedAt, participantId, payloadType, and payload before feeding experiences, assets, Agenda, or context.",
+        "The backend exposes /api/integration/contract and /api/integration/validate so Vibeapp, Clio, or any connector can test a normalized signal before creating real data. This avoids ambiguous ingestion and keeps retries tied to sourceId and idempotencyKey.",
         "The device contract can be exported as Markdown or JSON to share with developers, API/MCP integrations, or wearable providers.",
         "Multimodal Assets includes Process now and Process visible. Text documents are extracted locally; scanned PDFs use backend OCR when OCR_PROVIDER=openai and OPENAI_API_KEY are configured; audio uses backend transcription when configured; images use automatic backend OCR.",
         "Following the CLIO blueprint pattern, synced assets are read by the backend through temporary Supabase signed URLs. Another device can process documents, images, and audio without depending on the original local file.",
@@ -25831,6 +25833,25 @@ function renderMultiDevicePersistencePanel() {
 }
 
 function buildDeviceIntegrationContract() {
+  const samplePayload = {
+    sourceId: "vibeapp-sample-001",
+    sourceType: "vibeapp-native",
+    capturedAt: new Date().toISOString(),
+    participantId: resolveActivePilotParticipantId(["dashboard", "capture"]) || PRIMARY_PARTICIPANT_ID,
+    payloadType: "media",
+    privacyLevel: "private",
+    idempotencyKey: "vibeapp-sample:media:001",
+    payload: {
+      name: "sample-photo.jpg",
+      mimeType: "image/jpeg",
+      storageObjectHint: "vibeapp-sample-001-sample-photo.jpg",
+    },
+    deviceMetadata: {
+      app: "Vibeapp",
+      platform: "android",
+      contract: "vibe-signal-contract-v2",
+    },
+  };
   const requiredFields = state.language === "en"
     ? [
         ["sourceId", "Stable identifier for the source or device."],
@@ -25890,7 +25911,9 @@ function buildDeviceIntegrationContract() {
     },
   ];
   return {
+    schemaVersion: "vibe-signal-contract-v2",
     version: APP_VERSION,
+    validationEndpoint: "POST /api/integration/validate",
     owner: state.profile?.name || state.profile?.email || (state.language === "en" ? "Experience Hub owner" : "Responsable de Experience Hub"),
     purpose: state.language === "en"
       ? "Normalize signals from devices, files, apps, and services into experiences, assets, Agenda events, and reports."
@@ -25898,6 +25921,20 @@ function buildDeviceIntegrationContract() {
     requiredFields,
     optionalFields,
     sources,
+    samplePayload,
+    acceptanceChecks: state.language === "en"
+      ? [
+          "Validation returns ok=true before real ingestion.",
+          "The payload has a stable sourceId and idempotencyKey.",
+          "Private media or biometric files use private/sensitive privacy level.",
+          "The target route is explicit: experience, assets, agenda, or context.",
+        ]
+      : [
+          "La validación devuelve ok=true antes de una ingesta real.",
+          "El payload tiene sourceId e idempotencyKey estables.",
+          "Multimedia o biometría privada declara nivel privado/sensible.",
+          "La ruta destino es explícita: experiencia, activos, agenda o contexto.",
+        ],
     rules: state.language === "en"
       ? [
           "No source writes directly into reports; every signal must first become an experience, asset, Agenda event, or context record.",
@@ -25928,6 +25965,9 @@ function renderDeviceIntegrationPanel() {
         exportJson: "Export JSON",
         openAssets: "Open assets",
         openCapture: "Open capture",
+        validation: "API validation",
+        validationDetail: "Connectors can validate a normalized signal before creating real data.",
+        sample: "Copy sample payload",
       }
     : {
         title: "Contrato de integración de dispositivos",
@@ -25938,6 +25978,9 @@ function renderDeviceIntegrationPanel() {
         exportJson: "Exportar JSON",
         openAssets: "Abrir activos",
         openCapture: "Abrir captura",
+        validation: "Validación API",
+        validationDetail: "Los conectores pueden validar una señal normalizada antes de crear datos reales.",
+        sample: "Copiar payload ejemplo",
       };
   container.innerHTML = `
     <section class="device-integration-panel">
@@ -25974,10 +26017,23 @@ function renderDeviceIntegrationPanel() {
             ${contract.rules.map((rule) => `<li>${escapeHtml(rule)}</li>`).join("")}
           </ul>
         </article>
+        <article>
+          <strong>${escapeHtml(labels.validation)}</strong>
+          <p>${escapeHtml(labels.validationDetail)}</p>
+          <dl>
+            <div><dt>schemaVersion</dt><dd>${escapeHtml(contract.schemaVersion)}</dd></div>
+            <div><dt>endpoint</dt><dd>${escapeHtml(contract.validationEndpoint)}</dd></div>
+            <div><dt>sample target</dt><dd>${escapeHtml(contract.samplePayload.payloadType)}</dd></div>
+          </dl>
+          <ul>
+            ${contract.acceptanceChecks.map((check) => `<li>${escapeHtml(check)}</li>`).join("")}
+          </ul>
+        </article>
       </div>
       <div class="device-integration-actions">
         <button class="ghost-button" type="button" data-device-action="export-md">${escapeHtml(labels.exportMd)}</button>
         <button class="ghost-button" type="button" data-device-action="export-json">${escapeHtml(labels.exportJson)}</button>
+        <button class="ghost-button" type="button" data-device-action="copy-sample">${escapeHtml(labels.sample)}</button>
         <button class="ghost-button" type="button" data-backlog-view="admin" data-backlog-focus="assetProcessingActionPlan">${escapeHtml(labels.openAssets)}</button>
         <button class="primary-button" type="button" data-backlog-view="capture">${escapeHtml(labels.openCapture)}</button>
       </div>
@@ -26004,6 +26060,15 @@ function buildDeviceIntegrationMarkdown() {
     `## ${state.language === "en" ? "Optional Fields" : "Campos opcionales"}`,
     ...contract.optionalFields.map(([field, detail]) => `- **${field}:** ${detail}`),
     "",
+    `## ${state.language === "en" ? "Validation" : "Validación"}`,
+    `- **schemaVersion:** ${contract.schemaVersion}`,
+    `- **endpoint:** ${contract.validationEndpoint}`,
+    ...contract.acceptanceChecks.map((check) => `- ${check}`),
+    "",
+    "```json",
+    JSON.stringify(contract.samplePayload, null, 2),
+    "```",
+    "",
     `## ${state.language === "en" ? "Rules" : "Reglas"}`,
     ...contract.rules.map((rule) => `- ${rule}`),
   ];
@@ -26022,6 +26087,14 @@ function handleDeviceIntegrationClick(event) {
   }
   if (action === "export-json") {
     downloadBlob(new Blob([JSON.stringify(buildDeviceIntegrationContract(), null, 2)], { type: "application/json;charset=utf-8" }), "contrato-integracion-dispositivos.json");
+    return;
+  }
+  if (action === "copy-sample") {
+    copyTextToClipboard(JSON.stringify(buildDeviceIntegrationContract().samplePayload, null, 2)).then((copied) => {
+      notify(copied
+        ? state.language === "en" ? "Sample integration payload copied." : "Payload ejemplo de integración copiado."
+        : state.language === "en" ? "Could not copy the sample payload." : "No se pudo copiar el payload ejemplo.");
+    });
   }
 }
 

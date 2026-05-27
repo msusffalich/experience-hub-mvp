@@ -40,6 +40,7 @@ const OPENAI_TRANSCRIPTION_MODEL = process.env.OPENAI_TRANSCRIPTION_MODEL || "gp
 const OCR_PROVIDER = process.env.OCR_PROVIDER || "openai";
 const OPENAI_OCR_MODEL = process.env.OPENAI_OCR_MODEL || "gpt-4o-mini";
 const SIGNAL_METADATA_SCHEMA_VERSION = "clio-inspired-signal-v1";
+const INTEGRATION_CONTRACT_VERSION = "vibe-signal-contract-v2";
 const execFileAsync = promisify(execFile);
 const PYTHON_EXECUTABLE_CANDIDATES = [
   process.env.PYTHON_EXECUTABLE,
@@ -203,6 +204,18 @@ async function handleApi(req, res, url) {
       transcriptionProvider: activeTranscriptionProvider(),
       ocrProvider: activeOcrProvider(),
     });
+    return;
+  }
+
+  if (url.pathname === "/api/integration/contract" && req.method === "GET") {
+    sendJson(res, 200, buildIntegrationContract());
+    return;
+  }
+
+  if (url.pathname === "/api/integration/validate" && req.method === "POST") {
+    const user = await getRequestUser(req);
+    const body = await readJson(req);
+    sendJson(res, 200, validateIntegrationSignal(body, user));
     return;
   }
 
@@ -494,6 +507,91 @@ async function serveStatic(res, pathname) {
     "Cache-Control": "no-store",
   });
   res.end(content);
+}
+
+function buildIntegrationContract() {
+  return {
+    schemaVersion: INTEGRATION_CONTRACT_VERSION,
+    validationEndpoint: "/api/integration/validate",
+    requiredFields: ["sourceId", "sourceType", "capturedAt", "participantId", "payloadType", "payload"],
+    optionalFields: ["location", "deviceMetadata", "confidence", "privacyLevel", "linkedExperienceId", "permissions", "checksum"],
+    allowedSourceTypes: ["mobile", "wearable", "file_import", "api", "calendar", "voice", "manual", "vibeapp-native", "external-session"],
+    allowedPayloadTypes: ["biometric", "location", "media", "image", "audio", "video", "document", "activity", "sleep", "text", "calendar", "context"],
+    targets: {
+      media: "assets",
+      image: "assets",
+      audio: "assets",
+      video: "assets",
+      document: "assets",
+      calendar: "agenda",
+      biometric: "context",
+      activity: "context",
+      sleep: "context",
+      location: "context",
+      text: "experience",
+      context: "context",
+    },
+    rules: [
+      "Validate before ingesting.",
+      "Do not write directly to reports.",
+      "Keep original files private and store derived analysis separately.",
+      "Use stable sourceId or idempotencyKey for retries.",
+    ],
+  };
+}
+
+function validateIntegrationSignal(signal = {}, user = null) {
+  const contract = buildIntegrationContract();
+  const errors = [];
+  const warnings = [];
+  const normalized = {
+    sourceId: String(signal.sourceId || signal.idempotencyKey || "").trim(),
+    sourceType: String(signal.sourceType || signal.metadata?.sourceType || "").trim(),
+    capturedAt: String(signal.capturedAt || signal.timestamp || "").trim(),
+    participantId: String(signal.participantId || signal.pilotParticipantId || "").trim(),
+    payloadType: String(signal.payloadType || signal.type || "").trim().toLowerCase(),
+    payload: signal.payload ?? signal.data ?? null,
+    privacyLevel: String(signal.privacyLevel || signal.metadata?.privacyLevel || "normal").trim().toLowerCase(),
+    linkedExperienceId: String(signal.linkedExperienceId || signal.experienceId || "").trim(),
+  };
+
+  for (const field of contract.requiredFields) {
+    if (field === "payload") {
+      if (normalized.payload === null || normalized.payload === undefined || normalized.payload === "") errors.push(`${field} is required`);
+    } else if (!normalized[field]) {
+      errors.push(`${field} is required`);
+    }
+  }
+
+  const capturedTime = Date.parse(normalized.capturedAt);
+  if (normalized.capturedAt && !Number.isFinite(capturedTime)) {
+    errors.push("capturedAt must be an ISO date/time");
+  }
+  if (normalized.sourceType && !contract.allowedSourceTypes.includes(normalized.sourceType)) {
+    warnings.push(`sourceType '${normalized.sourceType}' is not in the recommended catalog`);
+  }
+  if (normalized.payloadType && !contract.allowedPayloadTypes.includes(normalized.payloadType)) {
+    warnings.push(`payloadType '${normalized.payloadType}' is not in the recommended catalog`);
+  }
+  if (!signal.idempotencyKey && !signal.metadata?.idempotencyKey) {
+    warnings.push("idempotencyKey is recommended for retry-safe ingestion");
+  }
+  if (["biometric", "activity", "sleep", "media", "image", "audio", "video", "document"].includes(normalized.payloadType) && normalized.privacyLevel === "normal") {
+    warnings.push("sensitive or media payloads should declare privacyLevel private or sensitive");
+  }
+
+  const target = contract.targets[normalized.payloadType] || "review";
+  return {
+    ok: errors.length === 0,
+    schemaVersion: contract.schemaVersion,
+    target,
+    traceId: randomUUID(),
+    userId: user?.id || LOCAL_USER_ID,
+    errors,
+    warnings,
+    normalized,
+    acceptedAt: new Date().toISOString(),
+  };
 }
 
 async function ensureStore() {
