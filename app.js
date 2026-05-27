@@ -1,4 +1,4 @@
-const APP_VERSION = "20260527-vibeapp-external-profiles-462";
+const APP_VERSION = "20260527-pwa-external-asset-profiles-463";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2119,6 +2119,7 @@ const manualContent = {
         "Vibeapp suma modo Experiencia activa: puedes iniciar una experiencia larga, agregar notas, medios, eventos de agenda, ubicación o contexto biométrico como eventos internos y cerrar el registro sin crear experiencias sueltas. La sincronización usa el mismo identificador de experiencia para que la PWA lea una línea de eventos coherente.",
         "Vibeapp suma Importar sesión externa: permite traer varios archivos de Meta/Oakley/Ray-Ban, Oura, Apple Health, Samsung Health/Galaxy Watch, Health Connect, galería del teléfono u otro origen, agruparlos en una sola experiencia y conservar metadatos normalizados para procesamiento posterior.",
         "El importador externo de Vibeapp distingue el origen real del archivo: un JSON de Meta queda como referencia de cuenta, una foto o video de lentes queda como memoria visual, y un CSV/JSON de Oura, Apple Health, Samsung Health o Health Connect queda como contexto biométrico transversal.",
+        "La PWA lee esos perfiles externos en Activos, inventario y evidencia de reportes: muestra origen, tipo de carga, intención de procesamiento, privacidad y si el archivo se puede interpretar automáticamente o solo conservar como transporte.",
         "Vibeapp valida cada captura antes de sincronizar: revisa título, texto, eventos, existencia de archivos, tamaño, MIME, vínculo evento-activo y expectativas por origen. Si algo no cuadra, queda en cola con un mensaje entendible antes de tocar el backend.",
         "La prueba Flutter de contrato valida sin teléfono físico que Vibeapp genere payloads correctos para experiencias activas, vínculos evento-activo, ubicación y biometría antes de sincronizar con la PWA.",
         "La prueba Flutter de sincronización usa un servidor HTTP local para confirmar que Vibeapp envía medios a /api/media, experiencias a /api/experiences y agenda a /api/agenda con autorización y estructura correcta.",
@@ -8034,7 +8035,7 @@ function buildGlobalProgressSnapshot() {
         outputs: "Reports, findings, publications",
         outputsDetail: "ReportLab PDFs, full output verification, PWA release gate, unified filters, publication recommendation, and editorial flow are active.",
         multimodal: "Multimedia and OCR/analysis",
-        multimodalDetail: `${assetAnalysis.withText}/${assetAnalysis.total} assets with analytical text; workflow ${assetWorkflow.score}%.`,
+        multimodalDetail: `${assetAnalysis.withText}/${assetAnalysis.total} assets with analytical text; external source profiles visible in Assets and reports; workflow ${assetWorkflow.score}%.`,
         native: "Vibeapp native",
         nativeDetail: "Flutter skeleton has auth, command preview/routing, contract tests for event-media payloads, source-specific external import profiles, local HTTP sync tests, failure-path tests, queue/retry-state tests, mobile pilot gate, queue, auto-retry, media, agenda, location, biometrics, Android package id io.vibeapp.mobile, verified debug APK, signed release APK/AAB, Android signing gate, unified pilot verification, and a ZIP-ready Android pilot kit.",
         connectors: "Device and service connectors",
@@ -8069,7 +8070,7 @@ function buildGlobalProgressSnapshot() {
         outputs: "Reportes, hallazgos y publicaciones",
         outputsDetail: "PDFs ReportLab, verificación completa de salidas, compuerta PWA, filtros uniformes, recomendación de publicación y flujo editorial activos.",
         multimodal: "Multimedia y OCR/análisis",
-        multimodalDetail: `${assetAnalysis.withText}/${assetAnalysis.total} activos con texto analítico; flujo ${assetWorkflow.score}%.`,
+        multimodalDetail: `${assetAnalysis.withText}/${assetAnalysis.total} activos con texto analítico; perfiles externos visibles en Activos y reportes; flujo ${assetWorkflow.score}%.`,
         native: "Vibeapp nativa",
         nativeDetail: "El esqueleto Flutter tiene auth, vista previa de comandos, pruebas de contrato para payloads evento-activo, perfiles de importación externa por origen, pruebas HTTP locales de sincronización, pruebas de rutas de fallo, pruebas de cola y reintentos, compuerta piloto móvil, cola, autoreintento, medios, agenda, lugar, biometría, paquete Android io.vibeapp.mobile, APK debug verificado, APK/AAB release firmados, compuerta local Android, verificación piloto unificada y paquete Android entregable en ZIP.",
         connectors: "Conectores de dispositivos y servicios",
@@ -12837,6 +12838,7 @@ function collectMultimodalAssets() {
       const sourceType = attachment.sourceType || signalMetadata.sourceType || signalMetadata.source || attachment.source || "";
       const linkedEventId = attachment.eventId || signalMetadata.linkedEventId || "";
       const linkedEventTitle = attachment.eventTitle || signalMetadata.linkedEventTitle || "";
+      const externalProfile = getExternalAssetProfile({ ...attachment, metadata: signalMetadata });
       return {
         ...attachment,
         kind,
@@ -12858,6 +12860,16 @@ function collectMultimodalAssets() {
         translationLanguage,
         device: sourceDevice || (attachment.storage === "supabase" ? "Supabase Storage" : "Navegador local"),
         sourceType,
+        externalSource: externalProfile.source,
+        externalPayloadType: externalProfile.payloadType,
+        externalProcessingIntent: externalProfile.intent,
+        externalCaptureOrigin: externalProfile.captureOrigin,
+        externalTreatment: externalProfile.treatment,
+        externalPrivacyHint: externalProfile.privacy,
+        externalExpectedConsumer: externalProfile.consumer,
+        externalTransportOnly: externalProfile.transportOnly,
+        externalAutoInterpret: externalProfile.autoInterpret,
+        externalProfileLabel: externalProfile.label,
         capturedAt: attachment.capturedAt || signalMetadata.capturedAt || attachment.createdAt || experience.timestamp || "",
         uploadedAt: attachment.uploadedAt || signalMetadata.uploadedAt || "",
         processingStatusRaw: attachment.processingStatus || signalMetadata.processingStatus || "",
@@ -12881,6 +12893,7 @@ function collectMultimodalAssets() {
 
 function toBiometricAsset(item = {}) {
   const manual = state.assetMetadata[item.id] || {};
+  const externalProfile = getExternalAssetProfile(item);
   const metricNames = Array.isArray(item.metricNames) ? item.metricNames : [];
   const analysisText = Object.hasOwn(manual, "analysisText") ? manual.analysisText : item.analysisText || "";
   const extractedText = Object.hasOwn(manual, "extractedText") ? manual.extractedText : item.extractedText || "";
@@ -12912,6 +12925,16 @@ function toBiometricAsset(item = {}) {
     translationLanguage: manual.translationLanguage || item.translationLanguage || "",
     device: item.sourceDevice || "Apple Health export",
     sourceType: "biometric_file_import",
+    externalSource: externalProfile.source,
+    externalPayloadType: externalProfile.payloadType,
+    externalProcessingIntent: externalProfile.intent,
+    externalCaptureOrigin: externalProfile.captureOrigin,
+    externalTreatment: externalProfile.treatment,
+    externalPrivacyHint: externalProfile.privacy,
+    externalExpectedConsumer: externalProfile.consumer,
+    externalTransportOnly: externalProfile.transportOnly,
+    externalAutoInterpret: externalProfile.autoInterpret,
+    externalProfileLabel: externalProfile.label,
     capturedAt: item.startAt || item.importedAt || "",
     uploadedAt: item.importedAt || "",
     processingStatusRaw: "processed",
@@ -13003,6 +13026,44 @@ function getAssetKind(attachment) {
 
 function getAssetProvenanceLabel(asset) {
   return asset?.isDemo ? t("labels.provenanceDemo") : t("labels.provenanceUser");
+}
+
+function getExternalAssetProfile(asset = {}) {
+  const metadata = asset.metadata || {};
+  const source = asset.externalSource || metadata.externalSource || "";
+  const payloadType = asset.externalPayloadType || metadata.externalPayloadType || metadata.payloadType || "";
+  const intent = asset.externalProcessingIntent || metadata.externalProcessingIntent || "";
+  const treatment = asset.externalTreatment || metadata.externalTreatment || "";
+  const privacy = asset.externalPrivacyHint || metadata.externalPrivacyHint || "";
+  const consumer = asset.externalExpectedConsumer || metadata.externalExpectedConsumer || "";
+  const transportOnly = Boolean(asset.externalTransportOnly || metadata.externalTransportOnly);
+  const autoInterpret = Object.hasOwn(asset, "externalAutoInterpret")
+    ? Boolean(asset.externalAutoInterpret)
+    : Object.hasOwn(metadata, "externalAutoInterpret")
+      ? Boolean(metadata.externalAutoInterpret)
+      : !transportOnly;
+  const captureOrigin = asset.externalCaptureOrigin || metadata.externalCaptureOrigin || "";
+  const hasProfile = Boolean(source || payloadType || intent || treatment || consumer || transportOnly);
+  return {
+    hasProfile,
+    source,
+    payloadType,
+    intent,
+    treatment,
+    privacy,
+    consumer,
+    transportOnly,
+    autoInterpret,
+    captureOrigin,
+    label: buildExternalAssetProfileLabel({ source, payloadType, transportOnly }),
+  };
+}
+
+function buildExternalAssetProfileLabel(profile = {}) {
+  if (profile.transportOnly) return state.language === "en" ? "Transport only" : "Solo transporte";
+  const payload = String(profile.payloadType || "").replace(/_/g, " ").trim();
+  if (payload) return sentenceCase(payload);
+  return profile.source || "";
 }
 
 function renderAssetLibrary() {
@@ -13543,6 +13604,12 @@ function filterMultimodalAssets() {
         asset.extension,
         asset.device,
         asset.storageLabel,
+        asset.externalSource,
+        asset.externalPayloadType,
+        asset.externalProcessingIntent,
+        asset.externalTreatment,
+        asset.externalExpectedConsumer,
+        asset.externalProfileLabel,
         ...dateTokens,
         ...tags,
       ]
@@ -13861,6 +13928,14 @@ function buildAssetInventoryRows(assets) {
     location: asset.location || "",
     people: asset.people || "",
     storage: asset.storageLabel,
+    externalSource: asset.externalSource || "",
+    externalPayloadType: asset.externalPayloadType || "",
+    externalProcessingIntent: asset.externalProcessingIntent || "",
+    externalTreatment: asset.externalTreatment || "",
+    externalPrivacyHint: asset.externalPrivacyHint || "",
+    externalExpectedConsumer: asset.externalExpectedConsumer || "",
+    externalTransportOnly: Boolean(asset.externalTransportOnly),
+    externalAutoInterpret: asset.externalAutoInterpret !== false,
     processingStatus: buildAssetProcessingStatus(asset).label,
     processingDetail: buildAssetProcessingStatus(asset).detail,
     language: asset.language || "",
@@ -14255,6 +14330,7 @@ function renderAssetCard(asset) {
     : asset.extractionStatus
       ? t("labels.assetExtractionGuided")
       : "";
+  const externalProfile = getExternalAssetProfile(asset);
   return `
     <article class="asset-card">
       ${renderAssetPreview(asset)}
@@ -14266,6 +14342,7 @@ function renderAssetCard(asset) {
           <span class="pill ${storageStatus.needsSync ? "pill-review" : "pill-approved"}">${escapeHtml(storageStatus.label)}</span>
           <span class="pill ${hasAnalysisText ? "pill-approved" : "pill-review"}">${escapeHtml(hasAnalysisText ? t("labels.assetAnalysisWithText") : t("labels.assetAnalysisWithoutText"))}</span>
           <span class="pill ${translatedText ? "pill-approved" : "pill-review"}">${escapeHtml(translatedText ? t("labels.assetTranslationReady") : t("labels.assetTranslationMissing"))}</span>
+          ${externalProfile.hasProfile ? `<span class="pill pill-approved">${escapeHtml(externalProfile.label)}</span>` : ""}
           ${asset.analysisSuggested ? `<span class="pill pill-review">${escapeHtml(t("labels.assetSuggestedAnalysisBadge"))}</span>` : ""}
           <span class="pill ${readiness.ready ? "pill-approved" : "pill-review"}">${escapeHtml(readiness.label)}</span>
           <span class="pill ${processing.ready ? "pill-approved" : "pill-review"}">${escapeHtml(processing.label)}</span>
@@ -14304,6 +14381,21 @@ function renderAssetCard(asset) {
                 <strong>${escapeHtml(t("labels.assetTranslatedText"))}</strong>
                 <small>${escapeHtml(t("labels.assetTranslationLanguage"))}: ${escapeHtml((translationLanguage || "-").toUpperCase())}</small>
                 <pre>${escapeHtml(translatedText.slice(0, 900))}</pre>
+              </section>`
+            : ""
+        }
+        ${
+          externalProfile.hasProfile
+            ? `<section class="asset-readiness-panel asset-external-profile-panel">
+                <strong>${escapeHtml(state.language === "en" ? "Device/source profile" : "Perfil de dispositivo/origen")}: ${escapeHtml(externalProfile.source || externalProfile.label)}</strong>
+                <p>${escapeHtml(externalProfile.treatment || (state.language === "en" ? "Imported with normalized source metadata." : "Importado con metadatos de origen normalizados."))}</p>
+                <div class="pill-row">
+                  ${externalProfile.payloadType ? `<span class="pill">${escapeHtml(externalProfile.payloadType.replace(/_/g, " "))}</span>` : ""}
+                  ${externalProfile.intent ? `<span class="pill">${escapeHtml(externalProfile.intent.replace(/_/g, " "))}</span>` : ""}
+                  ${externalProfile.consumer ? `<span class="pill">${escapeHtml(externalProfile.consumer)}</span>` : ""}
+                  <span class="pill ${externalProfile.autoInterpret ? "pill-approved" : "pill-review"}">${escapeHtml(externalProfile.autoInterpret ? (state.language === "en" ? "Automatic processing allowed" : "Procesamiento automatico permitido") : (state.language === "en" ? "Review before interpreting" : "Revisar antes de interpretar"))}</span>
+                </div>
+                ${externalProfile.privacy ? `<small>${escapeHtml(externalProfile.privacy)}</small>` : ""}
               </section>`
             : ""
         }
@@ -14363,6 +14455,7 @@ function renderAssetCard(asset) {
           <div><dt>${t("labels.assetLanguage")}</dt><dd>${escapeHtml(String(detectedLanguage || asset.language || "-").toUpperCase())}</dd></div>
           <div><dt>${t("labels.assetDevice")}</dt><dd>${escapeHtml(asset.device)}</dd></div>
           <div><dt>${escapeHtml(state.language === "en" ? "Source type" : "Tipo de origen")}</dt><dd>${escapeHtml(asset.sourceType || "-")}</dd></div>
+          <div><dt>${escapeHtml(state.language === "en" ? "External profile" : "Perfil externo")}</dt><dd>${escapeHtml(externalProfile.hasProfile ? `${externalProfile.source || "-"} / ${externalProfile.payloadType || "-"}` : "-")}</dd></div>
           <div><dt>${escapeHtml(state.language === "en" ? "Captured" : "Capturado")}</dt><dd>${escapeHtml(asset.capturedAt ? formatDate(asset.capturedAt) : "-")}</dd></div>
           <div><dt>${escapeHtml(state.language === "en" ? "Trace" : "Trazabilidad")}</dt><dd>${escapeHtml(asset.metadataFingerprint || "-")}</dd></div>
         </dl>
@@ -14986,6 +15079,17 @@ function buildAssetProcessingStatus(asset) {
           : "Este activo ya tiene texto analítico para búsqueda, reportes, memoria y publicaciones.",
     };
   }
+  if (asset.externalAutoInterpret === false) {
+    return {
+      ready: true,
+      code: "external-review",
+      label: state.language === "en" ? "Review before interpreting" : "Revisar antes de interpretar",
+      detail:
+        state.language === "en"
+          ? "This external file is preserved with source metadata, but the user should review it before automatic interpretation."
+          : "Este archivo externo se conserva con metadatos de origen, pero el usuario debe revisarlo antes de interpretarlo automáticamente.",
+    };
+  }
   if (asset.kind === "document" && hasBaseText) {
     return {
       ready: true,
@@ -14995,6 +15099,17 @@ function buildAssetProcessingStatus(asset) {
         state.language === "en"
           ? "The document has a readable text preview. Add or suggest analytical text to use it more deeply in reports."
           : "El documento tiene una vista textual legible. Agrega o sugiere texto analítico para usarlo mejor en reportes.",
+    };
+  }
+  if (asset.externalTransportOnly) {
+    return {
+      ready: true,
+      code: "external-transport",
+      label: state.language === "en" ? "Transport only" : "Solo transporte",
+      detail:
+        state.language === "en"
+          ? "This imported bundle is preserved for traceability or download. It is not interpreted automatically."
+          : "Este paquete importado se conserva para trazabilidad o descarga. No se interpreta automáticamente.",
     };
   }
   if (isArchiveAsset(asset)) {
@@ -15145,6 +15260,10 @@ function buildAssetTags(asset) {
     asset.kind === "document" ? (state.language === "en" ? "Document" : "Documento") : "",
     asset.kind === "audio" ? (state.language === "en" ? "Audio for transcription" : "Audio para transcripción") : "",
     asset.kind === "image" ? (state.language === "en" ? "Visual evidence" : "Evidencia visual") : "",
+    asset.externalSource,
+    asset.externalProfileLabel,
+    asset.externalPayloadType ? asset.externalPayloadType.replace(/_/g, " ") : "",
+    asset.externalTransportOnly ? (state.language === "en" ? "Transport only" : "Solo transporte") : "",
   ];
   return [...new Set(rawTags.map((tag) => String(tag || "").trim()).filter(Boolean))].slice(0, 8);
 }
@@ -16866,13 +16985,17 @@ function buildReportMultimodalEvidence(experiences) {
       detectedLanguage: asset.detectedLanguage || asset.language || "",
       translationLanguage: asset.translationLanguage || state.language,
       source: asset.storageLabel,
+      externalSource: asset.externalSource || "",
+      externalPayloadType: asset.externalPayloadType || "",
+      externalProcessingIntent: asset.externalProcessingIntent || "",
+      externalTreatment: asset.externalTreatment || "",
       previewUrl: asset.kind === "image" ? (asset.url || asset.dataUrl || "") : "",
       downloadUrl: asset.url || "",
       eventId: asset.eventId || asset.metadata?.linkedEventId || "",
       eventTitle: asset.eventTitle || asset.metadata?.linkedEventTitle || "",
       eventOrder: Number(asset.eventOrder || asset.metadata?.linkedEventOrder || 0),
     }))
-    .filter((item) => item.analyticalText || item.translatedText || item.originalText || item.manualNote || item.manualTags.length)
+    .filter((item) => item.analyticalText || item.translatedText || item.originalText || item.manualNote || item.manualTags.length || item.externalTreatment)
     .slice(0, 12);
 }
 
@@ -17113,6 +17236,7 @@ function renderReportEvidenceCard(item) {
         <span class="pill">${escapeHtml(item.kind)}</span>
         <span class="pill">${escapeHtml(item.category)}</span>
         <span class="pill ${item.isDemo ? "pill-review" : "pill-approved"}">${escapeHtml(item.provenance)}</span>
+        ${item.externalPayloadType ? `<span class="pill pill-approved">${escapeHtml(item.externalPayloadType.replace(/_/g, " "))}</span>` : ""}
         <span class="pill">${escapeHtml(eventLabel)}</span>
       </div>
       <h4>${escapeHtml(item.experienceTitle)}</h4>
@@ -17128,6 +17252,7 @@ function renderReportEvidenceCard(item) {
           : ""
       }
       ${item.manualNote ? `<p>${escapeHtml(item.manualNote)}</p>` : ""}
+      ${item.externalTreatment ? `<p><strong>${escapeHtml(state.language === "en" ? "Source profile" : "Perfil de origen")}:</strong> ${escapeHtml([item.externalSource, item.externalTreatment].filter(Boolean).join(" - "))}</p>` : ""}
       <div class="pill-row">${item.tags.slice(0, 6).map((tag) => `<span class="pill">${escapeHtml(tag)}</span>`).join("")}</div>
     </article>
   `;

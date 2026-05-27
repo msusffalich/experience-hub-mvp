@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260527-vibeapp-external-profiles-462";
+const CACHE_NAME = "experience-hub-pwa-20260527-pwa-external-asset-profiles-463";
 const APP_SHELL = [
   "/",
   "/index.html",

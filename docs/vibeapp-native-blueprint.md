@@ -78,6 +78,7 @@ Cada evento o activo debe enviar:
    - Agrupacion automatica como una experiencia con eventos internos y activos vinculados.
    - Metadatos normalizados: origen, contrato, tipo de archivo, dispositivo, fecha de importacion y nombre original.
    - Perfil por fuente: fotos/videos de Meta se tratan como memoria visual; JSON/HTML de Meta se tratan como referencia de cuenta; CSV/JSON de Oura, Apple Health, Samsung Health y Health Connect se tratan como contexto biometrico transversal.
+   - Lectura PWA: Activos, inventario y Reportes muestran perfil externo, intencion de procesamiento, privacidad y si el archivo se interpreta automaticamente o solo se conserva.
    - Uso recomendado para lentes Meta: capturar/importar primero en Meta AI o Fotos del telefono, luego traer el conjunto a Vibeapp.
 
 ## Recomendaciones tecnicas
