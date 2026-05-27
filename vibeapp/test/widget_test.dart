@@ -234,6 +234,59 @@ void main() {
     expect(agendaFailure.message, contains('agenda_unavailable'));
   });
 
+  test('Native queue validates files and retry state before sync', () {
+    final tempDir = Directory.systemTemp.createTempSync('vibeapp-queue-');
+    addTearDown(() {
+      if (tempDir.existsSync()) tempDir.deleteSync(recursive: true);
+    });
+
+    final missingFile =
+        File('${tempDir.path}${Platform.pathSeparator}missing.jpg')
+          ..writeAsBytesSync([1, 2, 3]);
+    final missingAttachment = NativeAttachmentDraft.fromFilePath(
+      missingFile.path,
+      sourceType: 'image',
+    );
+    missingFile.deleteSync();
+
+    final missingItem = CaptureQueueItem.media(missingAttachment);
+    final validation = missingItem.validateForSync();
+    expect(validation.canSync, isFalse);
+    expect(validation.primaryMessage, contains('No se encuentra el archivo'));
+
+    final retryItem = CaptureQueueItem.text('Captura con reintento');
+    expect(retryItem.canAttemptSyncNow, isTrue);
+    retryItem.markAttemptStarted();
+    expect(retryItem.status, CaptureSyncStatus.uploading);
+    expect(retryItem.attemptCount, 1);
+    expect(retryItem.lastAttemptAt, isNotNull);
+
+    retryItem.markFailed('Fallo temporal de red');
+    expect(retryItem.status, CaptureSyncStatus.failed);
+    expect(retryItem.error, 'Fallo temporal de red');
+    expect(retryItem.nextRetryAt, isNotNull);
+    expect(retryItem.canAttemptSyncNow, isFalse);
+    expect(retryItem.retryDescription, contains('Reintento automatico'));
+
+    final restored = CaptureQueueItem.fromJson(retryItem.toJson());
+    expect(restored.status, CaptureSyncStatus.failed);
+    expect(restored.attemptCount, 1);
+    expect(restored.nextRetryAt, isNotNull);
+
+    retryItem.markSynced('remote-text-1');
+    expect(retryItem.status, CaptureSyncStatus.synced);
+    expect(retryItem.remoteId, 'remote-text-1');
+    expect(retryItem.error, isEmpty);
+    expect(retryItem.nextRetryAt, isNull);
+    expect(retryItem.retryDescription, isEmpty);
+
+    final terminalFailure = CaptureQueueItem.text('Archivo invalido');
+    terminalFailure.markFailed('No se encuentra el archivo', retryable: false);
+    expect(terminalFailure.status, CaptureSyncStatus.failed);
+    expect(terminalFailure.nextRetryAt, isNull);
+    expect(terminalFailure.canAttemptSyncNow, isTrue);
+  });
+
   testWidgets('Vibeapp quick capture smoke test', (WidgetTester tester) async {
     await tester.pumpWidget(const VibeApp());
 
