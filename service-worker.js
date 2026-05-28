@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260528-runtime-helper-audit-478";
+const CACHE_NAME = "experience-hub-pwa-20260528-insight-action-plan-479";
 const APP_SHELL = [
   "/icons/vibe-logo.jpg",
   "/icons/vibe-logo.png",

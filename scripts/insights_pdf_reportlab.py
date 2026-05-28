@@ -431,6 +431,7 @@ def axis_table(axes):
 def build_story(payload):
     axes = payload.get("axes") or []
     insights = payload.get("insights") or []
+    action_plan = payload.get("actionPlan") or []
     experiences = payload.get("experiences", 0)
     story = [CoverBlock(payload), PageBreak()]
     story.append(para("Resumen de salida", "H1x"))
@@ -438,6 +439,7 @@ def build_story(payload):
         ("Experiencias", experiences),
         ("Ejes humanos", len(axes)),
         ("Hallazgos", len(insights)),
+        ("Acciones", len(action_plan)),
         ("Participante", short(payload.get("participant") or "General", 16)),
     ]))
     story.append(Spacer(1, 10))
@@ -450,6 +452,17 @@ def build_story(payload):
         Waffle("Cobertura tematica", coverage, "Waffle: proporcion de ejes con evidencia"),
         Waffle("Energia media de ejes", avg_axis_energy * 10, "Waffle: lectura agregada de energia"),
     ]))
+    story.append(para("Plan de acción 7 días", "H1x"))
+    plan_cards = []
+    for index, action in enumerate(action_plan[:6]):
+        meta = f"{clean(action.get('priority') or 'Prioridad media')} - {clean(action.get('horizon') or 'Próximos 7 días')}"
+        body = (
+            f"{clean(action.get('why') or '')} "
+            f"Evidencia: {clean(action.get('evidence') or '')}. "
+            f"Próximo paso: {human_action(action.get('next') or '', 150)}"
+        )
+        plan_cards.append(card(f"{index + 1}. {clean(action.get('title') or 'Acción')}", body, meta))
+    story.append(two_columns(plan_cards) if plan_cards else para("No hay acciones suficientes para este alcance.", "Bodyx"))
     story.append(para("Hallazgos priorizados", "H1x"))
     cards = []
     for index, insight in enumerate(insights[:8]):

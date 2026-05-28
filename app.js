@@ -1,4 +1,4 @@
-const APP_VERSION = "20260528-runtime-helper-audit-478";
+const APP_VERSION = "20260528-insight-action-plan-479";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2048,6 +2048,7 @@ const manualContent = {
         "El Panel muestra un resumen operativo de preparación del piloto con manual, pruebas, participantes y feedback para seguimiento rápido.",
         "El Panel también muestra una siguiente acción recomendada del piloto y permite copiar un resumen breve para seguimiento.",
         "Hallazgos es la salida principal de lectura humana: organiza las experiencias en 8 ejes de análisis y luego muestra hallazgos priorizados con evidencia, confianza y próxima acción.",
+        "Hallazgos ahora incluye un Plan de acción 7 días: convierte calidad de datos, energía, saturación, biometría, eje dominante y hallazgo principal en acciones concretas que se pueden enviar directo a Agenda.",
         "Hallazgos permite descargar la lectura como PDF ReportLab, HTML imprimible o Markdown para revisar, compartir o archivar fuera de la app.",
         "Todos los PDFs operativos de Reportes, Hallazgos y Publicaciones usan ReportLab como motor principal para producir documentos editados, con portada, tarjetas, indicadores, visuales mixtos y evidencia curada. HTML queda como vista o respaldo.",
         "La verificación técnica ahora genera PDFs reales de Reporte, Hallazgos, Publicaciones y Manual con payloads de prueba antes de aceptar una versión. No basta con que ReportLab importe; cada salida debe devolver un PDF válido.",
@@ -2683,6 +2684,7 @@ const manualContent = {
         "Dashboard shows an operational pilot readiness summary with manual, tests, participants, and feedback for quick tracking.",
         "Dashboard also shows a recommended next pilot action and lets you copy a short follow-up summary.",
         "Insights is the main human-reading output: it organizes experiences into 8 analysis themes and then shows prioritized findings with evidence, confidence, and next action.",
+        "Insights now includes a 7-day action plan: data quality, energy, saturation, biometrics, dominant theme, and the strongest finding become concrete actions that can be sent straight to Agenda.",
         "Insights can be downloaded as a ReportLab PDF, printable HTML, or Markdown for review, sharing, or archiving outside the app.",
         "Report, Findings, and Publication PDFs use ReportLab as the main engine to produce edited documents with cover pages, cards, mixed visuals, indicators, and curated evidence. HTML remains as preview or fallback.",
         "Technical verification now renders real Report, Findings, Publication, and Manual PDFs from sample payloads before accepting a version. Importing ReportLab is not enough; each output must return a valid PDF.",
@@ -22284,6 +22286,7 @@ function renderInsights() {
   const sourceExperiences = getInsightsExperiences();
   const insights = buildInsights(sourceExperiences);
   const thematicAxes = buildInsightThematicAxes(sourceExperiences);
+  const actionPlan = buildInsightActionPlan(sourceExperiences, insights, thematicAxes);
   syncAnalyticalScopeInputs();
   const scopeLabel = document.getElementById("insightScopeLabel");
   if (scopeLabel) {
@@ -22301,6 +22304,7 @@ function renderInsights() {
     <section class="insight-axis-grid" aria-label="${escapeHtml(state.language === "en" ? "Analysis themes" : "Ejes de análisis")}">
       ${thematicAxes.map(renderInsightAxisCard).join("")}
     </section>
+    ${renderInsightActionPlan(actionPlan)}
     <section class="insight-priority-section">
       <div class="publication-section-heading">
         <div>
@@ -22393,14 +22397,14 @@ function getInsightThematicDefinitions() {
         { id: "creative", title: "Creativity and purpose", categories: ["Creatividad"], question: "Where do creation, meaning, and personal expression appear?", action: "Reserve a small space to continue what felt meaningful, even if it is only a short note." },
       ]
     : [
-        { id: "health", title: "Salud y bienestar", categories: ["Salud", "Hogar", "Espiritualidad"], question: "Como se comportan energia, recuperacion, habitos y estabilidad emocional?", action: "Elige un pequeno ajuste de descanso, movimiento o recuperacion para esta semana y observa si tu energia responde mejor." },
-        { id: "work", title: "Trabajo y productividad", categories: ["Trabajo"], question: "Donde sube la productividad real o aparece carga?", action: "Revisa un bloque de trabajo reciente y decide que mantener, delegar, pausar o simplificar." },
-        { id: "learning", title: "Aprendizaje y crecimiento", categories: ["Aprendizaje"], question: "Que aprendizajes se repiten y cuales deben volverse rutina?", action: "Toma un aprendizaje repetido y conviertelo en una practica breve, concreta y facil de repetir." },
-        { id: "travel", title: "Viajes / Paseos", categories: ["Viajes / Paseos"], question: "Que lugares, rutas y visitas generan energia o friccion?", action: "Compara que lugar, compania o contexto te dejo mejor recuerdo y usalo para planear la proxima salida." },
-        { id: "social", title: "Relaciones y vida social", categories: ["Social"], question: "Que personas o grupos elevan, drenan o conectan experiencias?", action: "Observa que personas te dejan con mas calma o energia, y cuida esos espacios con intencion." },
-        { id: "leisure", title: "Ocio y entretenimiento", categories: ["Entretenimiento"], question: "El ocio ayuda a recuperar o se vuelve ruido?", action: "Despues del ocio, anota si te recupero o te disperso; ajusta la proxima eleccion desde ahi." },
-        { id: "finance", title: "Finanzas y consumo", categories: ["Compras"], question: "Que compras o decisiones reflejan intencion, estres o valor?", action: "Antes de repetir una compra, revisa si trajo valor real o solo alivio momentaneo." },
-        { id: "creative", title: "Creatividad y proposito", categories: ["Creatividad"], question: "Donde aparecen creacion, sentido y expresion personal?", action: "Reserva un pequeno espacio para continuar lo que te dio sentido, aunque sea en una nota breve." },
+        { id: "health", title: "Salud y bienestar", categories: ["Salud", "Hogar", "Espiritualidad"], question: "¿Cómo se comportan energía, recuperación, hábitos y estabilidad emocional?", action: "Elige un pequeño ajuste de descanso, movimiento o recuperación para esta semana y observa si tu energía responde mejor." },
+        { id: "work", title: "Trabajo y productividad", categories: ["Trabajo"], question: "¿Dónde sube la productividad real o aparece carga?", action: "Revisa un bloque de trabajo reciente y decide qué mantener, delegar, pausar o simplificar." },
+        { id: "learning", title: "Aprendizaje y crecimiento", categories: ["Aprendizaje"], question: "¿Qué aprendizajes se repiten y cuáles deben volverse rutina?", action: "Toma un aprendizaje repetido y conviértelo en una práctica breve, concreta y fácil de repetir." },
+        { id: "travel", title: "Viajes / Paseos", categories: ["Viajes / Paseos"], question: "¿Qué lugares, rutas y visitas generan energía o fricción?", action: "Compara qué lugar, compañía o contexto te dejó mejor recuerdo y úsalo para planear la próxima salida." },
+        { id: "social", title: "Relaciones y vida social", categories: ["Social"], question: "¿Qué personas o grupos elevan, drenan o conectan experiencias?", action: "Observa qué personas te dejan con más calma o energía, y cuida esos espacios con intención." },
+        { id: "leisure", title: "Ocio y entretenimiento", categories: ["Entretenimiento"], question: "¿El ocio ayuda a recuperar o se vuelve ruido?", action: "Después del ocio, anota si te recuperó o te dispersó; ajusta la próxima elección desde ahí." },
+        { id: "finance", title: "Finanzas y consumo", categories: ["Compras"], question: "¿Qué compras o decisiones reflejan intención, estrés o valor?", action: "Antes de repetir una compra, revisa si trajo valor real o solo alivio momentáneo." },
+        { id: "creative", title: "Creatividad y propósito", categories: ["Creatividad"], question: "¿Dónde aparecen creación, sentido y expresión personal?", action: "Reserva un pequeño espacio para continuar lo que te dio sentido, aunque sea en una nota breve." },
       ];
 }
 
@@ -22442,7 +22446,177 @@ function renderInsightAxisCard(axis) {
   `;
 }
 
+function buildInsightActionPlan(experiences = getInsightsExperiences(), insights = buildInsights(experiences), thematicAxes = buildInsightThematicAxes(experiences)) {
+  const list = Array.isArray(experiences) ? experiences : [];
+  const analysis = buildExperienceAnalysis(list);
+  const quality = calculateDataQuality(list);
+  const axes = Array.isArray(thematicAxes) ? thematicAxes : [];
+  const topAxis = axes
+    .filter((axis) => axis.items?.length)
+    .sort((a, b) => (b.score || 0) - (a.score || 0))[0];
+  const biometricMatches = list
+    .map((item) => buildBiometricSignalForTimestamp(item.timestamp, item.duration))
+    .filter((signal) => signal?.matched);
+  const biometricAverage = biometricMatches.length
+    ? Number(average(biometricMatches.map((signal) => Number(signal.energySuggestion || 0))).toFixed(1))
+    : 0;
+  const actions = [];
+  const addAction = (action) => {
+    if (!action?.title || actions.some((item) => item.title === action.title)) return;
+    actions.push({
+      horizon: state.language === "en" ? "Next 7 days" : "Próximos 7 días",
+      priority: localizedPriority("medium"),
+      agendaType: "Personal",
+      durationMinutes: 45,
+      ...action,
+    });
+  };
+
+  if (!list.length) {
+    return [{
+      title: state.language === "en" ? "Create a complete first capture" : "Crear una primera captura completa",
+      horizon: state.language === "en" ? "Today" : "Hoy",
+      priority: localizedPriority("high"),
+      evidence: state.language === "en" ? "There are no experiences in this scope yet." : "Aún no hay experiencias en este alcance.",
+      why: state.language === "en"
+        ? "The system needs at least one well-described experience to produce useful findings."
+        : "El sistema necesita al menos una experiencia bien descrita para generar hallazgos útiles.",
+      next: state.language === "en"
+        ? "Capture one real moment with objective, place, people, energy, and at least one note or asset."
+        : "Registra un momento real con objetivo, lugar, personas, energía y al menos una nota o activo.",
+      agendaType: "Personal",
+    }];
+  }
+
+  if (quality.score < 75) {
+    addAction({
+      title: state.language === "en" ? "Improve the next five captures" : "Mejorar las próximas cinco capturas",
+      priority: localizedPriority("high"),
+      evidence: `${state.language === "en" ? "Data confidence" : "Confiabilidad de datos"}: ${quality.score}%. ${quality.weak.slice(0, 3).join(" · ")}`,
+      why: state.language === "en"
+        ? "The conclusions become more useful when the basic context is complete."
+        : "Las conclusiones se vuelven más útiles cuando el contexto básico está completo.",
+      next: quality.action,
+      agendaType: "Personal",
+    });
+  }
+
+  if (analysis.saturated?.length || analysis.lowEnergy?.length) {
+    addAction({
+      title: state.language === "en" ? "Protect recovery before adding more load" : "Cuidar recuperación antes de sumar carga",
+      priority: localizedPriority("high"),
+      evidence: `${analysis.saturated?.length || 0} ${state.language === "en" ? "saturated experiences" : "experiencias saturadas"} · ${analysis.lowEnergy?.length || 0} ${state.language === "en" ? "low-energy experiences" : "experiencias de baja energía"}`,
+      why: state.language === "en"
+        ? "This is not a warning to stop; it is a signal to create space before the pattern becomes heavier."
+        : "No es una alarma para detenerse; es una señal para crear espacio antes de que el patrón pese más.",
+      next: state.language === "en"
+        ? "Schedule one recovery block and record how your energy changes afterwards."
+        : "Agenda un bloque de recuperación y registra cómo cambia tu energía después.",
+      agendaType: "Bienestar",
+      durationMinutes: 60,
+    });
+  }
+
+  if (biometricMatches.length) {
+    addAction({
+      title: state.language === "en" ? "Compare perceived energy with biometrics" : "Comparar energía percibida con biometría",
+      priority: localizedPriority("medium"),
+      evidence: `${biometricMatches.length} ${state.language === "en" ? "matched records" : "registros vinculados"} · ${state.language === "en" ? "suggested energy" : "energía sugerida"} ${biometricAverage}/10`,
+      why: state.language === "en"
+        ? "Body data can explain why some days feel lighter or heavier than the narrative alone suggests."
+        : "Los datos del cuerpo pueden explicar por que algunos dias se sienten mas livianos o pesados de lo que dice solo la narracion.",
+      next: state.language === "en"
+        ? "In the next three captures, compare perceived energy, sleep or activity, and the final mood."
+        : "En las próximas tres capturas, compara energía percibida, sueño o actividad, y estado final.",
+      agendaType: "Bienestar",
+    });
+  } else if (state.biometricImports?.length) {
+    addAction({
+      title: state.language === "en" ? "Align biometrics with experience times" : "Alinear biometría con horarios de experiencias",
+      priority: localizedPriority("low"),
+      evidence: state.language === "en" ? "Biometric files exist, but no records matched this scope." : "Hay archivos biométricos, pero no coincidieron con este alcance.",
+      why: state.language === "en"
+        ? "The file is useful only when dates and hours can be related to real experiences."
+        : "El archivo solo aporta valor cuando fechas y horas se pueden relacionar con experiencias reales.",
+      next: state.language === "en"
+        ? "Review the dates in the scope or capture one experience close to a biometric record."
+        : "Revisa las fechas del alcance o captura una experiencia cercana a un registro biométrico.",
+      agendaType: "Bienestar",
+    });
+  }
+
+  if (topAxis) {
+    addAction({
+      title: state.language === "en" ? `Go deeper into ${topAxis.title}` : `Profundizar ${topAxis.title}`,
+      priority: topAxis.saturated ? localizedPriority("high") : localizedPriority("medium"),
+      evidence: `${topAxis.items.length} ${state.language === "en" ? "experiences" : "experiencias"} · ${state.language === "en" ? "energy" : "energía"} ${topAxis.avgEnergy}/10 · ${topAxis.status}`,
+      why: state.language === "en"
+        ? "This is where your data is speaking most clearly right now."
+        : "Este es el eje donde tus datos están hablando con más claridad ahora.",
+      next: topAxis.action,
+      agendaType: mapInsightTypeToAgendaType({ title: topAxis.title, description: topAxis.question }),
+    });
+  }
+
+  const strongestInsight = [...(Array.isArray(insights) ? insights : [])].sort((a, b) => (b.confidence || 0) - (a.confidence || 0))[0];
+  if (strongestInsight) {
+    addAction({
+      title: state.language === "en" ? "Turn the strongest finding into a test" : "Convertir el hallazgo principal en una prueba",
+      priority: getInsightPriority(strongestInsight),
+      evidence: `${strongestInsight.confidence || 0}% ${state.language === "en" ? "confidence" : "confianza"} · ${localizeInsightType(strongestInsight.type)}`,
+      why: state.language === "en"
+        ? "A finding becomes valuable when it changes one small decision and you observe the result."
+        : "Un hallazgo gana valor cuando cambia una decisión pequeña y observas el resultado.",
+      next: strongestInsight.action || strongestInsight.description,
+      agendaType: mapInsightTypeToAgendaType(strongestInsight),
+    });
+  }
+
+  return actions.slice(0, 4);
+}
+
+function renderInsightActionPlan(actionPlan = []) {
+  const actions = Array.isArray(actionPlan) ? actionPlan : [];
+  return `
+    <section class="insight-action-plan" aria-label="${escapeHtml(state.language === "en" ? "Seven-day action plan" : "Plan de acción de siete días")}">
+      <div class="publication-section-heading">
+        <div>
+          <span class="report-kicker">${escapeHtml(state.language === "en" ? "Actionable output" : "Salida accionable")}</span>
+          <h3>${escapeHtml(state.language === "en" ? "7-day action plan" : "Plan de acción 7 días")}</h3>
+          <p class="card-meta">${escapeHtml(state.language === "en" ? "Concrete next steps from the current scope, ready to schedule." : "Próximos pasos concretos desde el alcance actual, listos para agendar.")}</p>
+        </div>
+      </div>
+      <div class="insight-plan-grid">
+        ${actions.map((action, index) => `
+          <article class="insight-plan-card">
+            <header>
+              <span>${escapeHtml(action.priority || localizedPriority("medium"))}</span>
+              <strong>${escapeHtml(action.horizon || "")}</strong>
+            </header>
+            <h4>${escapeHtml(action.title)}</h4>
+            <p>${escapeHtml(action.why || "")}</p>
+            <dl>
+              <div><dt>${escapeHtml(state.language === "en" ? "Evidence" : "Evidencia")}</dt><dd>${escapeHtml(action.evidence || "")}</dd></div>
+              <div><dt>${escapeHtml(state.language === "en" ? "Next step" : "Próximo paso")}</dt><dd>${escapeHtml(action.next || "")}</dd></div>
+            </dl>
+            <div class="insight-actions">
+              <button class="ghost-button" type="button" data-insight-plan-index="${index}">${escapeHtml(t("labels.insightScheduleAgenda"))}</button>
+            </div>
+          </article>
+        `).join("")}
+      </div>
+    </section>
+  `;
+}
+
 function handleInsightAction(event) {
+  const planButton = event.target.closest("[data-insight-plan-index]");
+  if (planButton) {
+    const index = Number(planButton.dataset.insightPlanIndex);
+    const action = buildInsightActionPlan(getInsightsExperiences())[index];
+    if (action) createAgendaEventFromInsightPlan(action, index);
+    return;
+  }
   const button = event.target.closest("[data-insight-agenda-index]");
   if (!button) return;
   const index = Number(button.dataset.insightAgendaIndex);
@@ -22487,17 +22661,63 @@ function createAgendaEventFromInsight(insight, index = 0) {
   document.getElementById("agendaFormStatus").textContent = t("labels.insightScheduledAgenda");
 }
 
+function createAgendaEventFromInsightPlan(action, index = 0) {
+  const start = skipBlockedDates(new Date(Date.now() + 24 * 60 * 60 * 1000), state.agendaBlockedDates, "10:00");
+  start.setHours(10 + Math.min(index, 3), 0, 0, 0);
+  const duration = Math.max(20, Number(action.durationMinutes || 45));
+  const end = new Date(start.getTime() + duration * 60 * 1000);
+  const participantFields = buildPilotParticipantFields(getActivePilotParticipantId(["insights", "dashboard"]));
+  const agendaEvent = {
+    id: createId(),
+    title: `${state.language === "en" ? "Plan" : "Plan"}: ${action.title}`,
+    type: action.agendaType || "Personal",
+    description: [
+      action.why,
+      action.evidence ? `${state.language === "en" ? "Evidence" : "Evidencia"}: ${action.evidence}` : "",
+      action.next ? `${state.language === "en" ? "Next step" : "Próximo paso"}: ${action.next}` : "",
+    ].filter(Boolean).join("\n\n"),
+    startAt: start.toISOString(),
+    endAt: end.toISOString(),
+    location: state.language === "en" ? "To be defined" : "Por definir",
+    participants: participantFields.pilotParticipantName || (state.language === "en" ? "Personal follow-up" : "Seguimiento personal"),
+    ...participantFields,
+    priority: String(action.priority || "").toLowerCase().includes("alta") || String(action.priority || "").toLowerCase().includes("high") ? "alta" : "normal",
+    status: "Planificado",
+    reminders: state.language === "en" ? "15 min before" : "15 min antes",
+    createdAt: new Date().toISOString(),
+    source: "insight-action-plan",
+  };
+  state.agendaEvents.unshift(agendaEvent);
+  state.agendaFilters.date = formatLocalDateKey(start);
+  state.agendaFilters.range = "week";
+  state.agendaFilters.pilotParticipantId = agendaEvent.pilotParticipantId || "all";
+  saveAgendaEvents();
+  renderAll();
+  showView("agenda");
+  const dateFilter = document.getElementById("agendaDateFilter");
+  const rangeFilter = document.getElementById("agendaRangeFilter");
+  if (dateFilter) dateFilter.value = state.agendaFilters.date;
+  if (rangeFilter) rangeFilter.value = state.agendaFilters.range;
+  renderAgenda();
+  const status = document.getElementById("agendaFormStatus");
+  if (status) status.textContent = t("labels.insightScheduledAgenda");
+}
+
 function buildInsightsExportPayload() {
   const experiences = getInsightsExperiences();
   const participantId = state.insightsFilters?.pilotParticipantId || "all";
+  const axes = buildInsightThematicAxes(experiences);
+  const insights = buildInsights(experiences);
+  const actionPlan = buildInsightActionPlan(experiences, insights, axes);
   return {
     generatedAt: new Date().toISOString(),
     appVersion: APP_VERSION,
     participant: participantId === "all" ? (state.language === "en" ? "All groups/people" : "Todos los grupos/personas") : getPilotParticipantName(participantId),
     filters: { ...state.insightsFilters },
     experiences: experiences.length,
-    axes: buildInsightThematicAxes(experiences),
-    insights: buildInsights(experiences),
+    axes,
+    insights,
+    actionPlan,
   };
 }
 
@@ -22519,6 +22739,16 @@ function buildInsightsMarkdown() {
       `- ${state.language === "en" ? "Average energy" : "Energía media"}: ${axis.avgEnergy}/10`,
       `- ${state.language === "en" ? "Question" : "Pregunta"}: ${axis.question}`,
       `- ${state.language === "en" ? "Action" : "Acción"}: ${axis.action}`,
+      "",
+    ]),
+    `## ${state.language === "en" ? "7-day action plan" : "Plan de acción 7 días"}`,
+    "",
+    ...payload.actionPlan.flatMap((action, index) => [
+      `### ${index + 1}. ${action.title}`,
+      `- ${state.language === "en" ? "Priority" : "Prioridad"}: ${action.priority}`,
+      `- ${state.language === "en" ? "Evidence" : "Evidencia"}: ${action.evidence}`,
+      `- ${state.language === "en" ? "Why it matters" : "Por que importa"}: ${action.why}`,
+      `- ${state.language === "en" ? "Next step" : "Próximo paso"}: ${action.next}`,
       "",
     ]),
     `## ${state.language === "en" ? "Prioritized findings" : "Hallazgos priorizados"}`,
@@ -22560,6 +22790,10 @@ function buildInsightsHtml() {
   <h2>${escapeHtml(state.language === "en" ? "Human themes" : "Ejes humanos")}</h2>
   <section class="grid">
     ${payload.axes.map((axis) => `<article><span>${escapeHtml(axis.status)}</span><h3>${escapeHtml(axis.title)}</h3><p><strong>${axis.items.length}</strong> ${escapeHtml(state.language === "en" ? "experiences" : "experiencias")} · ${axis.avgEnergy}/10 · ${axis.assets} ${escapeHtml(state.language === "en" ? "assets" : "activos")}</p><p>${escapeHtml(axis.question)}</p><p><strong>${escapeHtml(state.language === "en" ? "Action" : "Acción")}:</strong> ${escapeHtml(axis.action)}</p></article>`).join("")}
+  </section>
+  <h2>${escapeHtml(state.language === "en" ? "7-day action plan" : "Plan de acción 7 días")}</h2>
+  <section class="grid">
+    ${payload.actionPlan.map((action, index) => `<article><span>${index + 1} - ${escapeHtml(action.priority || "")} - ${escapeHtml(action.horizon || "")}</span><h3>${escapeHtml(action.title)}</h3><p>${escapeHtml(action.why || "")}</p><p><strong>${escapeHtml(state.language === "en" ? "Evidence" : "Evidencia")}:</strong> ${escapeHtml(action.evidence || "")}</p><p><strong>${escapeHtml(state.language === "en" ? "Next step" : "Próximo paso")}:</strong> ${escapeHtml(action.next || "")}</p></article>`).join("")}
   </section>
   <h2>${escapeHtml(state.language === "en" ? "Prioritized findings" : "Hallazgos priorizados")}</h2>
   ${payload.insights.map((insight, index) => `<article><span>${index + 1} · ${escapeHtml(localizeInsightType(insight.type))} · ${insight.confidence}%</span><h3>${escapeHtml(insight.title)}</h3><p>${escapeHtml(insight.description)}</p><p><strong>${escapeHtml(state.language === "en" ? "Action" : "Acción")}:</strong> ${escapeHtml(insight.action || "")}</p></article>`).join("")}
@@ -25639,6 +25873,8 @@ function renderAdminOperationalFocusPanel() {
         scopeFiltersDetail: "Reports, Findings, and Publications now share group/person, category, from-date, and to-date filters so the user can analyze a coherent group of experiences.",
         reportPdf: "Cleaner reports, publications, and findings",
         reportPdfDetail: "Reports now use an executive PDF, participant scope, and folded technical exports. Publications recommend type/style/channel from the selected scope, explain format fit, edited text, media actions, and apply recommended editorial roles for images, audio, video, documents, biometrics, and ZIP files. Findings are organized by 8 human themes and can be downloaded.",
+        insightPlan: "Findings action plan",
+        insightPlanDetail: "Findings now turns the current scope into a 7-day plan with evidence, human wording, and Agenda scheduling for each action.",
         nativeSync: "Vibeapp real queue",
         nativeSyncDetail: "Vibeapp now has real native contracts for text, photo, video, audio, agenda, location, and biometric CSV/JSON files. The native queue validates each payload, persists locally across app restarts, tracks attempts, retries eligible items automatically every 30 seconds when a session is active, separates ready, uploading, retrying, blocked, file, and event states, exposes a pilot checklist, and sends stable idempotency keys so retries update the same experience, agenda event, or Storage object instead of creating duplicates.",
         nativeSimulator: "Native sync simulator",
@@ -25684,6 +25920,8 @@ function renderAdminOperationalFocusPanel() {
     labels.scopeFiltersDetail = "Reportes, Hallazgos y Publicaciones comparten filtros de grupo/persona, categor\u00eda, fecha desde y fecha hasta para analizar grupos coherentes de experiencias.";
     labels.reportPdf = "Reportes, publicaciones y hallazgos limpios";
     labels.reportPdfDetail = "Reportes usa PDF ejecutivo, alcance por persona y exportaciones técnicas plegadas. Publicaciones recomienda tipo/estilo/canal desde el alcance seleccionado y suma matriz por canal: carrusel, carta/email, dossier, ficha de salud, blog/web, LinkedIn y PDF/HTML, con curaduria recomendada por rol editorial para imagenes, audio, video, documentos, biometria y ZIP. Hallazgos se organiza en 8 ejes humanos y se puede descargar.";
+    labels.insightPlan = "Plan de acción de Hallazgos";
+    labels.insightPlanDetail = "Hallazgos convierte el alcance actual en un plan de 7 días con evidencia, redacción humana y envío directo de cada acción a Agenda.";
     labels.nativeSync = "Vibeapp con cola real";
     labels.nativeSyncDetail = "Vibeapp ya tiene contratos nativos reales para texto, foto, video, audio, agenda, lugar, biometr\u00eda CSV/JSON e importaci\u00f3n de sesiones externas. La cola nativa valida cada payload, conserva intentos, reintenta autom\u00e1ticamente, separa estados reales, muestra checklist de piloto y usa llaves de idempotencia para que un reintento actualice la misma experiencia, evento de agenda o archivo de Storage sin crear duplicados.";
     labels.nativeSimulator = "Simulador de sincronizaci\u00f3n nativa";
@@ -25709,6 +25947,7 @@ function renderAdminOperationalFocusPanel() {
     [labels.biometricAssets, labels.biometricAssetsDetail],
     [labels.scopeFilters, labels.scopeFiltersDetail],
     [labels.reportPdf, labels.reportPdfDetail],
+    [labels.insightPlan, labels.insightPlanDetail],
     [labels.nativeSync, labels.nativeSyncDetail],
     [labels.nativeSimulator, labels.nativeSimulatorDetail],
     [labels.dashboardGuard, labels.dashboardGuardDetail],

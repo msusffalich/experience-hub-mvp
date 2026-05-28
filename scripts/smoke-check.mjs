@@ -291,6 +291,10 @@ assert(files.app.includes("pilotParticipantFilter.disabled = false"), "Report pa
 assert(files.index.includes("Descargar PDF editado ReportLab"), "Reports must expose edited ReportLab PDF as a primary action.");
 assert(files.index.includes("Descargar PDF de hallazgos"), "Findings must expose PDF as the primary output.");
 assert(files.index.includes('id="exportInsightsHtmlButton"') && files.index.includes('id="exportInsightsHtmlButton" class="ghost-button technical-export" type="button" hidden'), "Findings HTML export must not appear as a primary user action.");
+assert(files.app.includes("function buildInsightActionPlan") && files.app.includes("data-insight-plan-index"), "Findings must produce a schedulable seven-day action plan.");
+assert(files.app.includes("actionPlan = buildInsightActionPlan") && files.app.includes("Plan de acción 7 días"), "Findings exports must include the seven-day action plan.");
+assert(files.insightsPdf.includes("actionPlan") && files.insightsPdf.includes("Plan de acción 7 días"), "Findings ReportLab PDF must render the seven-day action plan.");
+assert(files.app.includes("Plan de acción de Hallazgos") && files.app.includes("7-day action plan"), "Manual/Admin must document the findings action plan.");
 assert(files.index.includes("manualExportPdfButton"), "Manual must expose edited ReportLab PDF export.");
 assert(files.server.includes("/api/manual/pdf"), "Server must expose Manual PDF generation.");
 assert(!files.app.includes("PDF fallback exported as printable HTML"), "Report PDF failure must not silently download HTML fallback.");
