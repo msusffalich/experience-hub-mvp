@@ -16,6 +16,7 @@ const files = {
   pwaVerify: readFileSync("scripts/verify-pwa-release.mjs", "utf8"),
   controlAudit: readFileSync("scripts/audit-control.mjs", "utf8"),
   runtimeAudit: readFileSync("scripts/audit-runtime-helpers.mjs", "utf8"),
+  integrationVerify: readFileSync("scripts/verify-integration-contract.mjs", "utf8"),
   androidVerify: readFileSync("scripts/verify-android-release.mjs", "utf8"),
   flutterVerify: readFileSync("scripts/verify-flutter-mobile.mjs", "utf8"),
   vibeappPackage: readFileSync("scripts/package-vibeapp-pilot.mjs", "utf8"),
@@ -160,6 +161,11 @@ assert(files.app.includes("function ensureDashboardTopPanel") && files.app.inclu
 assert(files.app.includes("clearAppShellCaches") && files.app.includes("caches.keys"), "Refresh app does not clear stale app-shell caches.");
 assert(files.server.includes("/api/integration/contract") && files.server.includes("/api/integration/validate") && files.server.includes("function validateIntegrationSignal"), "Server does not expose integration contract validation.");
 assert(files.app.includes("vibe-signal-contract-v2") && files.app.includes("copy-sample") && files.app.includes("idempotencyKey"), "Device integration panel does not expose a validated sample payload.");
+assert(files.server.includes("/api/integration/samples") && files.server.includes("function buildIntegrationSampleKit") && files.server.includes("function buildIntegrationSampleSignals"), "Server does not expose a reusable integration sample kit.");
+assert(files.app.includes("function buildDeviceIntegrationSamplePayloads") && files.app.includes("data-device-action=\"export-samples\"") && files.app.includes("Kit de integraci\u00f3n") && files.app.includes("Integration kit"), "Device integration panel does not expose the sample kit.");
+assert(files.app.includes("Meta/Oakley") && files.app.includes("Oura") && files.app.includes("Samsung Health") && files.app.includes("Health Connect"), "Device integration kit does not cover the priority device families.");
+assert(files.packageJson.includes("\"verify:integrations\"") && files.packageJson.includes("npm run verify:integrations"), "Pilot verification must include the integration contract verifier.");
+assert(files.integrationVerify.includes("Integration contract verification passed") && files.integrationVerify.includes("/api/integration/samples"), "Integration contract verifier is missing sample-kit checks.");
 assert(!files.index.includes("dashboardAttachmentPanel") && !files.index.includes("dashboardPilotBox"), "Dashboard still exposes technical/pilot monitoring panels.");
 assert(files.index.includes("capture-layout-clean") && !files.index.includes("captureCoachBox") && !files.index.includes("templateList"), "Capture still exposes parallel coach/template panels.");
 assert(files.index.includes("captureEventPreview") && files.app.includes("function renderCaptureEventPreview"), "Capture does not show the live internal event preview.");

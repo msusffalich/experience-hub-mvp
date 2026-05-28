@@ -1,4 +1,4 @@
-const APP_VERSION = "20260528-publication-channel-deliverables-482";
+const APP_VERSION = "20260528-integration-kit-483";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2114,6 +2114,7 @@ const manualContent = {
         "El proyecto queda preparado para Railway con railway.json, railpack.json, healthcheck /api/health, Node >=20, Python para ReportLab y .gitignore para evitar publicar .env, datos locales, logs o claves.",
         "La sección Dispositivos ahora documenta un contrato único de integración. Cualquier fuente nueva debe entregar sourceId, sourceType, capturedAt, participantId, payloadType y payload antes de alimentar experiencias, activos, Agenda o contexto.",
         "El backend expone /api/integration/contract y /api/integration/validate para que Vibeapp, Clio o cualquier conector pruebe una señal normalizada antes de crear datos reales. Esto evita ingestas ambiguas y hace que los reintentos usen sourceId e idempotencyKey.",
+        "El Kit de integración agrega /api/integration/samples y ejemplos descargables para Vibeapp, Meta/Oakley, Oura, Apple Health, Samsung Health, Health Connect y Calendario. Sirve para probar conectores sin datos reales, convertir cada ruta en issue de GitHub y validar aceptación antes de automatizar.",
         "Vibeapp nativa se planifica como complemento de la PWA: la PWA queda para análisis, reportes, hallazgos, publicaciones y administración; Vibeapp cubre captura real con cámara, audio, video, ubicación, sensores, biometría, notificaciones y sincronización transparente con Supabase.",
         "El blueprint inicial de Vibeapp está documentado en docs/vibeapp-native-blueprint.md. Ese documento define contrato de sincronización, pantallas iniciales, flujo offline, permisos, privacidad y los primeros incrementos Flutter.",
         "Vibeapp ya tiene captura nativa real para texto, foto, video, audio, agenda, lugar y archivos biométricos CSV/JSON. Foto, video, audio y biometría suben a Storage privado mediante /api/media; Agenda sincroniza con /api/agenda; Lugar guarda coordenadas, precisión y fecha/hora como metadatos estructurados.",
@@ -2753,6 +2754,7 @@ const manualContent = {
         "The project is prepared for Railway with railway.json, railpack.json, healthcheck /api/health, Node >=20, Python for ReportLab, and .gitignore to avoid publishing .env, local data, logs, or keys.",
         "The Devices section now documents a single integration contract. Every new source must provide sourceId, sourceType, capturedAt, participantId, payloadType, and payload before feeding experiences, assets, Agenda, or context.",
         "The backend exposes /api/integration/contract and /api/integration/validate so Vibeapp, Clio, or any connector can test a normalized signal before creating real data. This avoids ambiguous ingestion and keeps retries tied to sourceId and idempotencyKey.",
+        "The Integration kit adds /api/integration/samples and downloadable examples for Vibeapp, Meta/Oakley, Oura, Apple Health, Samsung Health, Health Connect, and Calendar. It lets connectors be tested without real data, turns each route into a GitHub issue, and validates acceptance before automation.",
         "The device contract can be exported as Markdown or JSON to share with developers, API/MCP integrations, or wearable providers.",
         "npm run simulate:vibeapp validates without a physical phone that Vibeapp can send quick note, agenda, photo, video, audio, biometrics, location, and Meta sessions to the right contract targets: experience, Agenda, assets, or context.",
         "Admin can run the same Vibeapp simulation against /api/vibeapp/simulate from the device integration panel, showing passed signals, targets, and errors without opening the terminal.",
@@ -8177,6 +8179,8 @@ function buildGlobalProgressSnapshot() {
   const connectorSignals = [
     true, // API/MCP contract documented.
     true, // Meta/Oura/Samsung/Apple practical routes documented.
+    true, // Integration sample kit and validation fixtures exist.
+    true, // Vibeapp simulation endpoint validates normalized routes.
     false, // Direct native connectors not built yet.
     false, // Store-distributed native app not published.
     false, // Direct social publishing APIs not connected.
@@ -8229,7 +8233,7 @@ function buildGlobalProgressSnapshot() {
         native: "Vibeapp native",
         nativeDetail: "Flutter skeleton has auth, command preview/routing, contract tests for event-media payloads, source-specific external import profiles, local HTTP sync tests, failure-path tests, queue/retry-state tests, mobile pilot gate, queue, auto-retry, media, agenda, location, biometrics, Android package id io.vibeapp.mobile, verified debug APK, signed release APK/AAB, Android signing gate, unified pilot verification, and a ZIP-ready Android pilot kit.",
         connectors: "Device and service connectors",
-        connectorsDetail: "Routes documented for Meta/Oakley, Oura, Apple Health, Samsung Health, Health Connect; direct connectors remain future work.",
+        connectorsDetail: "Routes documented for Meta/Oakley, Oura, Apple Health, Samsung Health, Health Connect; sample payload kit and validation fixtures are active. Direct connectors remain future work.",
         full: "Full product ambition",
         fullDetail: `Future ambition ${fullAmbitionOverall}% when direct connectors, store distribution, advanced agents, predictive AI, and direct APIs are included. This does not reduce current delivery.`,
         nextDetail: "Run npm run verify:pilot and npm run package:vibeapp, pilot-install Vibeapp on a physical Android device, then harden publication design/output and device-import flows.",
@@ -8264,7 +8268,7 @@ function buildGlobalProgressSnapshot() {
         native: "Vibeapp nativa",
         nativeDetail: "El esqueleto Flutter tiene auth, vista previa de comandos, pruebas de contrato para payloads evento-activo, perfiles de importación externa por origen, pruebas HTTP locales de sincronización, pruebas de rutas de fallo, pruebas de cola y reintentos, compuerta piloto móvil, cola, autoreintento, medios, agenda, lugar, biometría, paquete Android io.vibeapp.mobile, APK debug verificado, APK/AAB release firmados, compuerta local Android, verificación piloto unificada y paquete Android entregable en ZIP.",
         connectors: "Conectores de dispositivos y servicios",
-        connectorsDetail: "Rutas documentadas para Meta/Oakley, Oura, Apple Health, Samsung Health y Health Connect; conectores directos quedan futuros.",
+        connectorsDetail: "Rutas documentadas para Meta/Oakley, Oura, Apple Health, Samsung Health y Health Connect; kit de payloads y pruebas de validación activos. Los conectores directos quedan futuros.",
         full: "Ambición de producto completo",
         fullDetail: `Ambición futura ${fullAmbitionOverall}% cuando se incluyen conectores directos, tiendas, agentes avanzados, IA predictiva y APIs directas. Esto no descuenta la entrega actual.`,
         nextDetail: "Ejecutar npm run verify:pilot y npm run package:vibeapp, instalar Vibeapp en un Android físico de piloto, luego fortalecer diseño/salidas de publicaciones y flujos de importación por dispositivo.",
@@ -26241,6 +26245,8 @@ function renderAdminOperationalFocusPanel() {
         nativeSyncDetail: "Vibeapp now has real native contracts for text, photo, video, audio, agenda, location, and biometric CSV/JSON files. The native queue validates each payload, persists locally across app restarts, tracks attempts, retries eligible items automatically every 30 seconds when a session is active, separates ready, uploading, retrying, blocked, file, and event states, exposes a pilot checklist, and sends stable idempotency keys so retries update the same experience, agenda event, or Storage object instead of creating duplicates.",
         nativeSimulator: "Native sync simulator",
         nativeSimulatorDetail: "npm run simulate:vibeapp validates note, agenda, photo, video, audio, biometrics, location, and Meta imports against the PWA signal contract without needing a physical phone.",
+        integrationKit: "Verifiable integration kit",
+        integrationKitDetail: "Admin exposes reusable sample payloads for Vibeapp, Meta/Oakley, Oura, Apple Health, Samsung Health, Health Connect, and Calendar. These samples can be exported, copied, validated, and used as connector acceptance fixtures.",
         dashboardGuard: "Dashboard state guard",
         dashboardGuardDetail: "Dashboard renders Current data and Global Progress through one shared guard, with visible fallbacks if a calculation fails. The service worker no longer caches the critical app shell.",
         assetLabelFix: "External asset label fix",
@@ -26290,6 +26296,8 @@ function renderAdminOperationalFocusPanel() {
     labels.nativeSyncDetail = "Vibeapp ya tiene contratos nativos reales para texto, foto, video, audio, agenda, lugar, biometr\u00eda CSV/JSON e importaci\u00f3n de sesiones externas. La cola nativa valida cada payload, conserva intentos, reintenta autom\u00e1ticamente, separa estados reales, muestra checklist de piloto y usa llaves de idempotencia para que un reintento actualice la misma experiencia, evento de agenda o archivo de Storage sin crear duplicados.";
     labels.nativeSimulator = "Simulador de sincronizaci\u00f3n nativa";
     labels.nativeSimulatorDetail = "npm run simulate:vibeapp valida nota, agenda, foto, video, audio, biometr\u00eda, ubicaci\u00f3n e importaciones Meta contra el contrato de se\u00f1ales PWA sin necesitar un tel\u00e9fono f\u00edsico.";
+    labels.integrationKit = "Kit de integraci\u00f3n verificable";
+    labels.integrationKitDetail = "Administraci\u00f3n expone payloads reutilizables para Vibeapp, Meta/Oakley, Oura, Apple Health, Samsung Health, Health Connect y Calendario. Estos ejemplos se pueden exportar, copiar, validar y usar como pruebas de aceptaci\u00f3n de conectores.";
     labels.dashboardGuard = "Guardia de estado del Panel";
     labels.dashboardGuardDetail = "Panel renderiza Datos actuales y Estado global de avance desde una guardia com\u00fan, con avisos visibles si un c\u00e1lculo falla. El service worker ya no guarda en cach\u00e9 la estructura cr\u00edtica de la app.";
     labels.assetLabelFix = "Correcci\u00f3n de etiquetas de activos externos";
@@ -26315,6 +26323,7 @@ function renderAdminOperationalFocusPanel() {
     [labels.insightPlan, labels.insightPlanDetail],
     [labels.nativeSync, labels.nativeSyncDetail],
     [labels.nativeSimulator, labels.nativeSimulatorDetail],
+    [labels.integrationKit, labels.integrationKitDetail],
     [labels.dashboardGuard, labels.dashboardGuardDetail],
     [labels.assetLabelFix, labels.assetLabelFixDetail],
     [labels.runtimeAudit, labels.runtimeAuditDetail],
@@ -26600,26 +26609,171 @@ function renderMultiDevicePersistencePanel() {
   `;
 }
 
-function buildDeviceIntegrationContract() {
-  const samplePayload = {
-    sourceId: "vibeapp-sample-001",
-    sourceType: "vibeapp-native",
-    capturedAt: new Date().toISOString(),
-    participantId: resolveActivePilotParticipantId(["dashboard", "capture"]) || PRIMARY_PARTICIPANT_ID,
-    payloadType: "media",
-    privacyLevel: "private",
-    idempotencyKey: "vibeapp-sample:media:001",
-    payload: {
-      name: "sample-photo.jpg",
-      mimeType: "image/jpeg",
-      storageObjectHint: "vibeapp-sample-001-sample-photo.jpg",
+function buildDeviceIntegrationSamplePayloads(now = new Date().toISOString()) {
+  const participantId = resolveActivePilotParticipantId(["dashboard", "capture"]) || PRIMARY_PARTICIPANT_ID;
+  return [
+    {
+      name: "vibeapp-quick-note",
+      label: state.language === "en" ? "Vibeapp quick note" : "Nota rápida Vibeapp",
+      family: "vibeapp-native",
+      expectedTarget: "experience",
+      signal: {
+        sourceId: "vibeapp-note-001",
+        sourceType: "vibeapp-native",
+        capturedAt: now,
+        participantId,
+        payloadType: "text",
+        privacyLevel: "private",
+        idempotencyKey: "vibeapp-capture:text:vibeapp-note-001",
+        payload: { title: "Nota rápida", text: "V toma nota que este parque está hermoso." },
+        deviceMetadata: { app: "Vibeapp", platform: "android", contract: "vibe-signal-contract-v2" },
+      },
     },
-    deviceMetadata: {
-      app: "Vibeapp",
-      platform: "android",
-      contract: "vibe-signal-contract-v2",
+    {
+      name: "vibeapp-photo",
+      label: state.language === "en" ? "Vibeapp photo/video/audio" : "Foto/video/audio Vibeapp",
+      family: "vibeapp-native",
+      expectedTarget: "assets",
+      signal: {
+        sourceId: "vibeapp-photo-001",
+        sourceType: "vibeapp-native",
+        capturedAt: now,
+        participantId,
+        payloadType: "image",
+        privacyLevel: "private",
+        linkedExperienceId: "exp-native-001",
+        idempotencyKey: "vibeapp-asset:vibeapp-photo-001",
+        payload: { fileName: "vibeapp-photo.jpg", mimeType: "image/jpeg", storageObjectHint: "vibeapp-photo-001.jpg" },
+        deviceMetadata: { app: "Vibeapp", platform: "android", contract: "vibe-signal-contract-v2" },
+      },
     },
+    {
+      name: "meta-glasses-media-import",
+      label: state.language === "en" ? "Meta/Oakley media import" : "Importación Meta/Oakley",
+      family: "meta-glasses",
+      expectedTarget: "assets",
+      signal: {
+        sourceId: "meta-oakley-session-001",
+        sourceType: "external-session",
+        capturedAt: now,
+        participantId,
+        payloadType: "media",
+        privacyLevel: "private",
+        linkedExperienceId: "exp-trip-001",
+        idempotencyKey: "meta-oakley:session:001",
+        payload: {
+          provider: "Meta AI glasses",
+          importRoute: "Meta AI app -> phone photo library -> Vibeapp/PWA upload",
+          files: [
+            { fileName: "bridge-photo.heic", mimeType: "image/heic", storageObjectHint: "meta-oakley-001.heic" },
+            { fileName: "bridge-clip.mp4", mimeType: "video/mp4", storageObjectHint: "meta-oakley-001.mp4" },
+          ],
+        },
+        deviceMetadata: { deviceFamily: "Oakley Meta / Ray-Ban Meta", captureMode: "autocapture-or-manual" },
+      },
+    },
+    {
+      name: "oura-biometric-daily",
+      label: state.language === "en" ? "Oura biometric day" : "Biometría Oura diaria",
+      family: "oura",
+      expectedTarget: "context",
+      signal: {
+        sourceId: "oura-daily-2026-05-28",
+        sourceType: "external-session",
+        capturedAt: now,
+        participantId,
+        payloadType: "biometric",
+        privacyLevel: "sensitive",
+        idempotencyKey: "oura:daily:2026-05-28:miguel",
+        payload: { provider: "Oura", importRoute: "CSV export or Oura API JSON", metrics: { readinessScore: 78, sleepScore: 81, hrvMs: 42 } },
+        deviceMetadata: { deviceFamily: "Oura Ring", supportedRoutes: ["csv", "api-json", "apple-health", "health-connect"] },
+      },
+    },
+    {
+      name: "apple-health-file",
+      label: state.language === "en" ? "Apple Health file" : "Archivo Apple Health",
+      family: "apple-health",
+      expectedTarget: "context",
+      signal: {
+        sourceId: "apple-health-workout-001",
+        sourceType: "file_import",
+        capturedAt: now,
+        participantId,
+        payloadType: "activity",
+        privacyLevel: "sensitive",
+        idempotencyKey: "apple-health:activity:001",
+        payload: { provider: "Apple Health", importRoute: "CSV/JSON file now; HealthKit in native iOS later", metrics: { steps: 8420, activeEnergyKcal: 512 } },
+        deviceMetadata: { platform: "ios", nativeFutureApi: "HealthKit" },
+      },
+    },
+    {
+      name: "samsung-health-file",
+      label: state.language === "en" ? "Samsung Health file" : "Archivo Samsung Health",
+      family: "samsung-health",
+      expectedTarget: "context",
+      signal: {
+        sourceId: "samsung-health-sleep-001",
+        sourceType: "file_import",
+        capturedAt: now,
+        participantId,
+        payloadType: "sleep",
+        privacyLevel: "sensitive",
+        idempotencyKey: "samsung-health:sleep:001",
+        payload: { provider: "Samsung Health", importRoute: "Exported file now; Android Health Connect/native bridge later", metrics: { sleepMinutes: 421, deepSleepMinutes: 74 } },
+        deviceMetadata: { platform: "android", nativeFutureApi: "Health Connect" },
+      },
+    },
+    {
+      name: "health-connect-activity",
+      label: state.language === "en" ? "Android Health Connect" : "Android Health Connect",
+      family: "health-connect",
+      expectedTarget: "context",
+      signal: {
+        sourceId: "health-connect-activity-001",
+        sourceType: "external-session",
+        capturedAt: now,
+        participantId,
+        payloadType: "activity",
+        privacyLevel: "sensitive",
+        idempotencyKey: "health-connect:activity:001",
+        payload: { provider: "Android Health Connect", importRoute: "Vibeapp native connector", metrics: { steps: 6200, distanceKm: 4.3, heartRateAvg: 92 } },
+        deviceMetadata: { platform: "android", nativeFutureApi: "Health Connect" },
+      },
+    },
+    {
+      name: "calendar-event",
+      label: state.language === "en" ? "Calendar event" : "Evento de calendario",
+      family: "calendar",
+      expectedTarget: "agenda",
+      signal: {
+        sourceId: "calendar-dinner-001",
+        sourceType: "calendar",
+        capturedAt: now,
+        participantId,
+        payloadType: "calendar",
+        privacyLevel: "private",
+        idempotencyKey: "calendar:event:dinner-001",
+        payload: { title: "Cena", location: "Casa", startAt: "2026-05-28T20:00:00.000-04:00" },
+        deviceMetadata: { route: "agenda" },
+      },
+    },
+  ];
+}
+
+function buildDeviceIntegrationSampleKit() {
+  return {
+    schemaVersion: "vibe-signal-contract-v2",
+    version: APP_VERSION,
+    generatedAt: new Date().toISOString(),
+    validationEndpoint: "POST /api/integration/validate",
+    samplesEndpoint: "GET /api/integration/samples",
+    samples: buildDeviceIntegrationSamplePayloads(),
   };
+}
+
+function buildDeviceIntegrationContract() {
+  const samplePayloads = buildDeviceIntegrationSamplePayloads();
+  const samplePayload = samplePayloads[1]?.signal || samplePayloads[0]?.signal;
   const requiredFields = state.language === "en"
     ? [
         ["sourceId", "Stable identifier for the source or device."],
@@ -26682,6 +26836,7 @@ function buildDeviceIntegrationContract() {
     schemaVersion: "vibe-signal-contract-v2",
     version: APP_VERSION,
     validationEndpoint: "POST /api/integration/validate",
+    samplesEndpoint: "GET /api/integration/samples",
     owner: state.profile?.name || state.profile?.email || (state.language === "en" ? "Experience Hub owner" : "Responsable de Experience Hub"),
     purpose: state.language === "en"
       ? "Normalize signals from devices, files, apps, and services into experiences, assets, Agenda events, and reports."
@@ -26690,6 +26845,7 @@ function buildDeviceIntegrationContract() {
     optionalFields,
     sources,
     samplePayload,
+    samplePayloads,
     acceptanceChecks: state.language === "en"
       ? [
           "Validation returns ok=true before real ingestion.",
@@ -26736,6 +26892,10 @@ function renderDeviceIntegrationPanel() {
         validation: "API validation",
         validationDetail: "Connectors can validate a normalized signal before creating real data.",
         sample: "Copy sample payload",
+        sampleKit: "Integration kit",
+        sampleKitDetail: "Reusable payloads for Vibeapp, Meta/Oakley, Oura, Apple Health, Samsung Health, Health Connect, and Calendar. Use them as connector issues, QA fixtures, or acceptance tests before touching real data.",
+        exportSamples: "Export sample kit",
+        copySamples: "Copy sample kit",
         simulate: "Run Vibeapp simulation",
         simulation: "Vibeapp simulation",
         simulationEmpty: "Run the simulation to validate native notes, agenda, media, biometrics, location, and Meta imports against the production API contract.",
@@ -26753,6 +26913,10 @@ function renderDeviceIntegrationPanel() {
         validation: "Validación API",
         validationDetail: "Los conectores pueden validar una señal normalizada antes de crear datos reales.",
         sample: "Copiar payload ejemplo",
+        sampleKit: "Kit de integración",
+        sampleKitDetail: "Payloads reutilizables para Vibeapp, Meta/Oakley, Oura, Apple Health, Samsung Health, Health Connect y Calendario. Sirven como issues de conectores, pruebas QA o criterios de aceptación antes de tocar datos reales.",
+        exportSamples: "Exportar kit de ejemplos",
+        copySamples: "Copiar kit de ejemplos",
         simulate: "Probar simulación Vibeapp",
         simulation: "Simulación Vibeapp",
         simulationEmpty: "Ejecuta la simulación para validar notas nativas, agenda, medios, biometría, ubicación e importaciones Meta contra el contrato API productivo.",
@@ -26806,12 +26970,23 @@ function renderDeviceIntegrationPanel() {
             ${contract.acceptanceChecks.map((check) => `<li>${escapeHtml(check)}</li>`).join("")}
           </ul>
         </article>
+        <article>
+          <strong>${escapeHtml(labels.sampleKit)}</strong>
+          <p>${escapeHtml(labels.sampleKitDetail)}</p>
+          <dl>
+            <div><dt>endpoint</dt><dd>${escapeHtml(contract.samplesEndpoint)}</dd></div>
+            <div><dt>${escapeHtml(state.language === "en" ? "families" : "familias")}</dt><dd>${escapeHtml(contract.samplePayloads.map((sample) => sample.family).join(", "))}</dd></div>
+            <div><dt>${escapeHtml(state.language === "en" ? "samples" : "ejemplos")}</dt><dd>${escapeHtml(String(contract.samplePayloads.length))}</dd></div>
+          </dl>
+        </article>
       </div>
       <div class="device-integration-actions">
         <button class="primary-button" type="button" data-device-action="run-vibeapp-sim">${escapeHtml(labels.simulate)}</button>
         <button class="ghost-button" type="button" data-device-action="export-md">${escapeHtml(labels.exportMd)}</button>
         <button class="ghost-button" type="button" data-device-action="export-json">${escapeHtml(labels.exportJson)}</button>
         <button class="ghost-button" type="button" data-device-action="copy-sample">${escapeHtml(labels.sample)}</button>
+        <button class="ghost-button" type="button" data-device-action="export-samples">${escapeHtml(labels.exportSamples)}</button>
+        <button class="ghost-button" type="button" data-device-action="copy-samples">${escapeHtml(labels.copySamples)}</button>
         <button class="ghost-button" type="button" data-backlog-view="admin" data-backlog-focus="assetProcessingActionPlan">${escapeHtml(labels.openAssets)}</button>
         <button class="primary-button" type="button" data-backlog-view="capture">${escapeHtml(labels.openCapture)}</button>
       </div>
@@ -26867,10 +27042,14 @@ function buildDeviceIntegrationMarkdown() {
     `## ${state.language === "en" ? "Validation" : "Validación"}`,
     `- **schemaVersion:** ${contract.schemaVersion}`,
     `- **endpoint:** ${contract.validationEndpoint}`,
+    `- **samples:** ${contract.samplesEndpoint}`,
     ...contract.acceptanceChecks.map((check) => `- ${check}`),
     "",
+    `## ${state.language === "en" ? "Sample kit" : "Kit de integración"}`,
+    ...contract.samplePayloads.map((sample) => `- **${sample.label}:** ${sample.family} -> ${sample.expectedTarget}`),
+    "",
     "```json",
-    JSON.stringify(contract.samplePayload, null, 2),
+    JSON.stringify(buildDeviceIntegrationSampleKit(), null, 2),
     "```",
     "",
     `## ${state.language === "en" ? "Rules" : "Reglas"}`,
@@ -26897,11 +27076,23 @@ function handleDeviceIntegrationClick(event) {
     downloadBlob(new Blob([JSON.stringify(buildDeviceIntegrationContract(), null, 2)], { type: "application/json;charset=utf-8" }), "contrato-integracion-dispositivos.json");
     return;
   }
+  if (action === "export-samples") {
+    downloadBlob(new Blob([JSON.stringify(buildDeviceIntegrationSampleKit(), null, 2)], { type: "application/json;charset=utf-8" }), "kit-integracion-vibe.json");
+    return;
+  }
   if (action === "copy-sample") {
     copyTextToClipboard(JSON.stringify(buildDeviceIntegrationContract().samplePayload, null, 2)).then((copied) => {
       notify(copied
         ? state.language === "en" ? "Sample integration payload copied." : "Payload ejemplo de integración copiado."
         : state.language === "en" ? "Could not copy the sample payload." : "No se pudo copiar el payload ejemplo.");
+    });
+    return;
+  }
+  if (action === "copy-samples") {
+    copyTextToClipboard(JSON.stringify(buildDeviceIntegrationSampleKit(), null, 2)).then((copied) => {
+      notify(copied
+        ? state.language === "en" ? "Integration sample kit copied." : "Kit de integración copiado."
+        : state.language === "en" ? "Could not copy the integration kit." : "No se pudo copiar el kit de integración.");
     });
   }
 }

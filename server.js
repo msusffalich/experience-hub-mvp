@@ -212,6 +212,11 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (url.pathname === "/api/integration/samples" && req.method === "GET") {
+    sendJson(res, 200, buildIntegrationSampleKit());
+    return;
+  }
+
   if (url.pathname === "/api/integration/validate" && req.method === "POST") {
     const user = await getRequestUser(req);
     const body = await readJson(req);
@@ -519,6 +524,7 @@ function buildIntegrationContract() {
   return {
     schemaVersion: INTEGRATION_CONTRACT_VERSION,
     validationEndpoint: "/api/integration/validate",
+    samplesEndpoint: "/api/integration/samples",
     requiredFields: ["sourceId", "sourceType", "capturedAt", "participantId", "payloadType", "payload"],
     optionalFields: ["location", "deviceMetadata", "confidence", "privacyLevel", "linkedExperienceId", "permissions", "checksum"],
     allowedSourceTypes: ["mobile", "wearable", "file_import", "api", "calendar", "voice", "manual", "vibeapp-native", "external-session"],
@@ -544,6 +550,178 @@ function buildIntegrationContract() {
       "Use stable sourceId or idempotencyKey for retries.",
     ],
   };
+}
+
+function buildIntegrationSampleKit(now = new Date().toISOString()) {
+  const samples = buildIntegrationSampleSignals(now);
+  return {
+    schemaVersion: INTEGRATION_CONTRACT_VERSION,
+    generatedAt: now,
+    purpose: "Reusable normalized payloads for testing Vibeapp, external devices, wearable files, and service connectors before real ingestion.",
+    validationEndpoint: "/api/integration/validate",
+    rule: "Every connector must validate a payload, keep a stable idempotencyKey, and write to the expected target: experience, assets, agenda, or context.",
+    samples,
+  };
+}
+
+function buildIntegrationSampleSignals(now = new Date().toISOString()) {
+  return [
+    ...buildVibeappSimulationSamples(now).map((sample) => ({
+      ...sample,
+      family: "vibeapp-native",
+      connectorStatus: "ready-for-native-pilot",
+    })),
+    {
+      name: "meta-glasses-media-import",
+      label: "Meta/Oakley glasses media import",
+      family: "meta-glasses",
+      connectorStatus: "manual-import-now-native-bridge-later",
+      expectedTarget: "assets",
+      signal: {
+        sourceId: "meta-oakley-session-001",
+        sourceType: "external-session",
+        capturedAt: now,
+        participantId: "miguel",
+        payloadType: "media",
+        privacyLevel: "private",
+        linkedExperienceId: "exp-trip-001",
+        idempotencyKey: "meta-oakley:session:001",
+        payload: {
+          provider: "Meta AI glasses",
+          importRoute: "Meta AI app -> phone photo library -> Vibeapp/PWA upload",
+          files: [
+            { fileName: "bridge-photo.heic", mimeType: "image/heic", storageObjectHint: "meta-oakley-001.heic" },
+            { fileName: "bridge-clip.mp4", mimeType: "video/mp4", storageObjectHint: "meta-oakley-001.mp4" },
+          ],
+        },
+        deviceMetadata: {
+          deviceFamily: "Oakley Meta / Ray-Ban Meta",
+          captureMode: "autocapture-or-manual",
+          limitations: ["No official CSV media export", "JSON/HTML export is account/activity metadata, not the media transport"],
+        },
+      },
+    },
+    {
+      name: "oura-biometric-daily",
+      label: "Oura biometric day",
+      family: "oura",
+      connectorStatus: "csv-or-api-json-ready",
+      expectedTarget: "context",
+      signal: {
+        sourceId: "oura-daily-2026-05-28",
+        sourceType: "external-session",
+        capturedAt: now,
+        participantId: "miguel",
+        payloadType: "biometric",
+        privacyLevel: "sensitive",
+        idempotencyKey: "oura:daily:2026-05-28:miguel",
+        payload: {
+          provider: "Oura",
+          importRoute: "CSV export or Oura API JSON",
+          metrics: {
+            readinessScore: 78,
+            sleepScore: 81,
+            restingHeartRate: 58,
+            hrvMs: 42,
+            temperatureDeviationC: 0.1,
+          },
+        },
+        deviceMetadata: {
+          deviceFamily: "Oura Ring",
+          supportedRoutes: ["csv", "api-json", "apple-health", "health-connect"],
+        },
+      },
+    },
+    {
+      name: "apple-health-workout",
+      label: "Apple Health file import",
+      family: "apple-health",
+      connectorStatus: "file-import-ready-native-healthkit-later",
+      expectedTarget: "context",
+      signal: {
+        sourceId: "apple-health-workout-001",
+        sourceType: "file_import",
+        capturedAt: now,
+        participantId: "miguel",
+        payloadType: "activity",
+        privacyLevel: "sensitive",
+        idempotencyKey: "apple-health:activity:001",
+        payload: {
+          provider: "Apple Health",
+          importRoute: "CSV/JSON file now; HealthKit in native iOS later",
+          metrics: { steps: 8420, activeEnergyKcal: 512, workoutMinutes: 42 },
+        },
+        deviceMetadata: { platform: "ios", nativeFutureApi: "HealthKit" },
+      },
+    },
+    {
+      name: "samsung-health-sleep",
+      label: "Samsung Health file import",
+      family: "samsung-health",
+      connectorStatus: "file-import-ready-health-connect-later",
+      expectedTarget: "context",
+      signal: {
+        sourceId: "samsung-health-sleep-001",
+        sourceType: "file_import",
+        capturedAt: now,
+        participantId: "miguel",
+        payloadType: "sleep",
+        privacyLevel: "sensitive",
+        idempotencyKey: "samsung-health:sleep:001",
+        payload: {
+          provider: "Samsung Health",
+          importRoute: "Exported file now; Android Health Connect/native bridge later",
+          metrics: { sleepMinutes: 421, deepSleepMinutes: 74, wakeEvents: 3 },
+        },
+        deviceMetadata: { platform: "android", nativeFutureApi: "Health Connect" },
+      },
+    },
+    {
+      name: "health-connect-activity",
+      label: "Android Health Connect activity",
+      family: "health-connect",
+      connectorStatus: "native-connector-planned",
+      expectedTarget: "context",
+      signal: {
+        sourceId: "health-connect-activity-001",
+        sourceType: "external-session",
+        capturedAt: now,
+        participantId: "miguel",
+        payloadType: "activity",
+        privacyLevel: "sensitive",
+        idempotencyKey: "health-connect:activity:001",
+        payload: {
+          provider: "Android Health Connect",
+          importRoute: "Vibeapp native connector",
+          metrics: { steps: 6200, distanceKm: 4.3, heartRateAvg: 92 },
+        },
+        deviceMetadata: { platform: "android", nativeFutureApi: "Health Connect" },
+      },
+    },
+    {
+      name: "calendar-event-import",
+      label: "Calendar event",
+      family: "calendar",
+      connectorStatus: "contract-ready",
+      expectedTarget: "agenda",
+      signal: {
+        sourceId: "calendar-dinner-001",
+        sourceType: "calendar",
+        capturedAt: now,
+        participantId: "miguel",
+        payloadType: "calendar",
+        privacyLevel: "private",
+        idempotencyKey: "calendar:event:dinner-001",
+        payload: {
+          title: "Cena",
+          location: "Casa",
+          startAt: "2026-05-28T20:00:00.000-04:00",
+          sourceCalendar: "manual-or-native-calendar",
+        },
+        deviceMetadata: { route: "agenda" },
+      },
+    },
+  ];
 }
 
 function validateIntegrationSignal(signal = {}, user = null) {
