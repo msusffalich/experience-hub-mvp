@@ -18,6 +18,7 @@ const files = {
   androidVerify: readFileSync("scripts/verify-android-release.mjs", "utf8"),
   flutterVerify: readFileSync("scripts/verify-flutter-mobile.mjs", "utf8"),
   vibeappPackage: readFileSync("scripts/package-vibeapp-pilot.mjs", "utf8"),
+  vibeappSimulator: readFileSync("scripts/simulate-vibeapp-sync.mjs", "utf8"),
   vibeappMain: readFileSync("vibeapp/lib/main.dart", "utf8"),
   vibeappTest: readFileSync("vibeapp/test/widget_test.dart", "utf8"),
   reportPdf: readFileSync("scripts/report_pdf_reportlab.py", "utf8"),
@@ -274,6 +275,9 @@ assert(files.app.includes("getExternalAssetProfile") && files.app.includes("exte
 assert(files.app.includes("applyRecommendedPublicationMediaSelection") && files.app.includes("publicationRoleLabel") && files.app.includes("data-publication-media-bulk=\"recommended\""), "Publications must support recommended media curation with editorial asset roles.");
 assert(files.packageJson.includes("\"package:vibeapp\"") && files.vibeappPackage.includes("checksums.sha256") && files.vibeappPackage.includes("manifest.json") && files.vibeappPackage.includes("Compress-Archive"), "package.json must expose a Vibeapp pilot package command with checksums, manifest, and transfer ZIP.");
 assert(files.vibeappPackage.includes("verify:android") && files.vibeappPackage.includes("vibeapp-pilot-release.apk") && files.vibeappPackage.includes("vibeapp-pilot-release.aab"), "Vibeapp package script must verify Android and include APK/AAB.");
+assert(files.packageJson.includes("\"simulate:vibeapp\"") && files.packageJson.includes("npm run simulate:vibeapp"), "package.json must expose and run the Vibeapp sync simulator in pilot verification.");
+assert(files.vibeappSimulator.includes("Vibeapp sync simulation passed") && files.vibeappSimulator.includes("meta-glasses-import"), "Vibeapp simulator must validate native and external-session sync samples.");
+assert(files.app.includes("Simulador de sincronizaci") && files.app.includes("Native sync simulator"), "Manual/Admin must expose the Vibeapp sync simulator.");
 assert(files.server.includes("PYTHONPATH") && files.server.includes(".python"), "Server must expose bundled Python packages to ReportLab scripts.");
 assert(!files.index.includes('data-daily-flow="horoscope"'), "Daily should not expose horoscope until the module is reliable.");
 assert(files.app.includes("function experienceMatchesPilotParticipant"), "Participant filtering must support legacy records by participant name.");

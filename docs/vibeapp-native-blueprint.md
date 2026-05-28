@@ -139,5 +139,6 @@ Vibeapp solo debe considerarse lista para piloto cuando:
 - La cola offline se recupera sola.
 - La cola muestra el estado real de cada captura y separa reintentos automaticos de problemas que requieren accion humana.
 - El piloto movil solo se inicia cuando el checklist distingue bloqueos reales de capacidades ya verificadas por pruebas.
+- `npm run simulate:vibeapp` pasa sin telefono fisico y valida nota rapida, agenda, foto, video, audio, biometria, ubicacion e importacion Meta/Oakley contra el contrato PWA.
 - Los errores son comprensibles.
 - La PWA puede generar reportes, hallazgos y publicaciones con datos creados desde Vibeapp.

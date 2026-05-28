@@ -1,4 +1,4 @@
-const APP_VERSION = "20260528-control-audit-473";
+const APP_VERSION = "20260528-vibeapp-sync-sim-474";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2133,6 +2133,7 @@ const manualContent = {
         "Vibeapp ya tiene ruta Android verificable: SDK/JDK instalados, paquete piloto io.vibeapp.mobile, APK debug generado, APK release firmado y App Bundle release firmado. Antes de Play Console queda decidir custodia formal de la upload key.",
         "La compuerta local npm run verify:pilot ejecuta en una sola orden los controles PWA, PDFs ReportLab, Android firmado y Flutter analyze/test. npm run verify:android queda como chequeo específico de firma APK/AAB.",
         "La orden npm run package:vibeapp genera un paquete local en dist/vibeapp-pilot y un ZIP transferible en dist con APK, AAB, checksums, manifiesto y README de instalación. El paquete no incluye claves ni passwords.",
+        "El simulador npm run simulate:vibeapp valida sin teléfono físico que Vibeapp pueda enviar nota rápida, agenda, foto, video, audio, biometría, ubicación y sesiones Meta hacia los destinos correctos del contrato: experiencia, Agenda, activos o contexto.",
         "Vibeapp incorpora un router local de comandos: una captura escrita o transcrita puede crear nota, iniciar/cerrar experiencia o generar un evento de agenda antes de sincronizar. La pantalla muestra qué entendió Vibe y cambia el botón principal a Guardar nota, Crear agenda, Iniciar experiencia o Cerrar experiencia antes de ejecutar.",
         "El contrato de dispositivos se puede exportar como Markdown o JSON para compartirlo con desarrolladores, integraciones API/MCP o proveedores de wearables.",
         "Activos multimodales incluye Procesar ahora y Procesar visibles. Los documentos de texto se extraen localmente; los PDFs escaneados usan OCR del backend cuando OCR_PROVIDER=openai y OPENAI_API_KEY están configurados; los audios usan transcripción del backend si está configurada; las imágenes usan OCR automático del backend.",
@@ -2740,6 +2741,7 @@ const manualContent = {
         "The Devices section now documents a single integration contract. Every new source must provide sourceId, sourceType, capturedAt, participantId, payloadType, and payload before feeding experiences, assets, Agenda, or context.",
         "The backend exposes /api/integration/contract and /api/integration/validate so Vibeapp, Clio, or any connector can test a normalized signal before creating real data. This avoids ambiguous ingestion and keeps retries tied to sourceId and idempotencyKey.",
         "The device contract can be exported as Markdown or JSON to share with developers, API/MCP integrations, or wearable providers.",
+        "npm run simulate:vibeapp validates without a physical phone that Vibeapp can send quick note, agenda, photo, video, audio, biometrics, location, and Meta sessions to the right contract targets: experience, Agenda, assets, or context.",
         "Multimodal Assets includes Process now and Process visible. Text documents are extracted locally; scanned PDFs use backend OCR when OCR_PROVIDER=openai and OPENAI_API_KEY are configured; audio uses backend transcription when configured; images use automatic backend OCR.",
         "Following the CLIO blueprint pattern, synced assets are read by the backend through temporary Supabase signed URLs. Another device can process documents, images, and audio without depending on the original local file.",
         "Asset processing now shows method, status, processed date, and extracted text when available. That text is included in search, JSON/CSV inventory, and metadata audit.",
@@ -25560,6 +25562,8 @@ function renderAdminOperationalFocusPanel() {
         reportPdfDetail: "Reports now use an executive PDF, participant scope, and folded technical exports. Publications recommend type/style/channel from the selected scope, explain format fit, edited text, media actions, and apply recommended editorial roles for images, audio, video, documents, biometrics, and ZIP files. Findings are organized by 8 human themes and can be downloaded.",
         nativeSync: "Vibeapp real queue",
         nativeSyncDetail: "Vibeapp now has real native contracts for text, photo, video, audio, agenda, location, and biometric CSV/JSON files. The native queue validates each payload, persists locally across app restarts, tracks attempts, retries eligible items automatically every 30 seconds when a session is active, separates ready, uploading, retrying, blocked, file, and event states, exposes a pilot checklist, and sends stable idempotency keys so retries update the same experience, agenda event, or Storage object instead of creating duplicates.",
+        nativeSimulator: "Native sync simulator",
+        nativeSimulatorDetail: "npm run simulate:vibeapp validates note, agenda, photo, video, audio, biometrics, location, and Meta imports against the PWA signal contract without needing a physical phone.",
       }
     : {
         title: "Administración operativa",
@@ -25597,6 +25601,8 @@ function renderAdminOperationalFocusPanel() {
     labels.reportPdfDetail = "Reportes usa PDF ejecutivo, alcance por persona y exportaciones técnicas plegadas. Publicaciones recomienda tipo/estilo/canal desde el alcance seleccionado y suma matriz por canal: carrusel, carta/email, dossier, ficha de salud, blog/web, LinkedIn y PDF/HTML, con curaduria recomendada por rol editorial para imagenes, audio, video, documentos, biometria y ZIP. Hallazgos se organiza en 8 ejes humanos y se puede descargar.";
     labels.nativeSync = "Vibeapp con cola real";
     labels.nativeSyncDetail = "Vibeapp ya tiene contratos nativos reales para texto, foto, video, audio, agenda, lugar, biometr\u00eda CSV/JSON e importaci\u00f3n de sesiones externas. La cola nativa valida cada payload, conserva intentos, reintenta autom\u00e1ticamente, separa estados reales, muestra checklist de piloto y usa llaves de idempotencia para que un reintento actualice la misma experiencia, evento de agenda o archivo de Storage sin crear duplicados.";
+    labels.nativeSimulator = "Simulador de sincronizaci\u00f3n nativa";
+    labels.nativeSimulatorDetail = "npm run simulate:vibeapp valida nota, agenda, foto, video, audio, biometr\u00eda, ubicaci\u00f3n e importaciones Meta contra el contrato de se\u00f1ales PWA sin necesitar un tel\u00e9fono f\u00edsico.";
   }
   const cards = [
     [labels.flow, labels.flowDetail],
@@ -25613,6 +25619,7 @@ function renderAdminOperationalFocusPanel() {
     [labels.scopeFilters, labels.scopeFiltersDetail],
     [labels.reportPdf, labels.reportPdfDetail],
     [labels.nativeSync, labels.nativeSyncDetail],
+    [labels.nativeSimulator, labels.nativeSimulatorDetail],
     [labels.next, labels.nextDetail],
   ];
   container.innerHTML = `
