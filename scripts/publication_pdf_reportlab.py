@@ -736,8 +736,19 @@ def distribution_kit(draft, media, all_media):
         "Confirmar medios seleccionados.",
         "Usar PDF como registro final.",
     ]
+    deliverables = kit.get("deliverables") or []
+    deliverable_rows = [
+        (item.get("label") or "Entregable", item.get("value") or "-", item.get("detail") or "-")
+        for item in deliverables[:6]
+    ]
     return [
         section_heading("Kit de salida por canal", f"{channel}: {format_name}. Accion: {action}."),
+        section_heading("Entregables del canal", "Que recibe el usuario, que puede copiar y que queda como revision manual.") if deliverable_rows else Spacer(1, 0),
+        editorial_cards([
+            (label, f"{value}. {detail}", colors.HexColor("#0d7c66") if index % 2 else GOLD)
+            for index, (label, value, detail) in enumerate(deliverable_rows)
+        ]) if deliverable_rows else Spacer(1, 0),
+        Spacer(1, 10) if deliverable_rows else Spacer(1, 0),
         editorial_cards([
             ("Asunto o titulo", subject, GOLD),
             ("Texto corto", short_copy, colors.HexColor("#0d7c66")),

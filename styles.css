@@ -6732,6 +6732,59 @@ button.asset-processing-summary-card {
   box-shadow: 0 8px 18px rgba(23, 32, 27, 0.08);
 }
 
+.publication-channel-deliverables {
+  display: grid;
+  gap: 12px;
+  margin: 12px 0;
+  padding: 14px;
+  border: 1px solid rgba(13, 124, 102, 0.2);
+  border-radius: 8px;
+  background: rgba(247, 250, 252, 0.9);
+}
+
+.publication-channel-deliverables > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.publication-channel-deliverables strong,
+.publication-channel-deliverables p {
+  margin: 0;
+}
+
+.publication-channel-deliverables p {
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.publication-channel-deliverables-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(210px, 100%), 1fr));
+  gap: 10px;
+}
+
+.publication-channel-deliverables-grid article {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 11px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.publication-channel-deliverables-grid span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.publication-channel-deliverables-grid strong,
+.publication-channel-deliverables-grid p {
+  overflow-wrap: anywhere;
+}
+
 .publication-composition-panel {
   display: grid;
   gap: 10px;
