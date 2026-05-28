@@ -1,6 +1,6 @@
 # Conectores de salud y wearables
 
-Version app: `20260528-native-device-connectors-486`
+Version app: `20260528-health-connect-native-488`
 
 Este documento consolida los conectores revisados para Oura, Apple Health, Samsung/Android Health Connect y Meta Wearables.
 
@@ -67,6 +67,13 @@ Rutas backend:
 - `POST /api/integration/health-connect/normalize`
 
 Tipos priorizados: StepsRecord, ActiveCaloriesBurnedRecord, DistanceRecord, HeartRateRecord, RestingHeartRateRecord, HeartRateVariabilityRmssdRecord, OxygenSaturationRecord, RespiratoryRateRecord, BodyTemperatureRecord, SleepSessionRecord y ExerciseSessionRecord.
+
+Incremento Vibeapp Android:
+
+- `AndroidManifest.xml` declara permisos Health Connect por tipo de dato: pasos, calorias activas, distancia, frecuencia cardiaca, pulso en reposo, HRV, oxigeno, respiracion, temperatura, sueno y ejercicio.
+- `HealthConnectPermissionPlan` mantiene el mapa permiso -> dato para que la app pida autorizacion en contexto y no con un permiso generico ambiguo.
+- `HealthConnectPreviewBundle` genera senales `android-health-connect` de prueba sin telefono fisico. Sirve para validar cola, payload, privacidad sensible, idempotencia y lectura posterior desde la PWA.
+- La lectura real queda como paso de dispositivo: instalar plugin Health Connect, pedir permisos en Android y leer registros locales del usuario antes de enviarlos al backend.
 
 ## Meta Wearables
 

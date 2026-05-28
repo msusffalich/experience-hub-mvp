@@ -1155,6 +1155,22 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
     );
   }
 
+  Future<void> _prepareHealthConnectPilotBundle() async {
+    final bundle = HealthConnectPreviewBundle.pilot();
+    setState(() {
+      _queue.insert(0, CaptureQueueItem.healthConnect(bundle));
+      _syncState = SyncState.syncing;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Contexto Health Connect preparado. Se sincronizara como biometria transversal.',
+        ),
+      ),
+    );
+    await _syncPendingQueue(showSnackBar: true);
+  }
+
   @override
   Widget build(BuildContext context) {
     final commandPreview = _noteController.text.trim().isEmpty
@@ -1229,6 +1245,11 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
             const NativeFlowSummary(),
             const SizedBox(height: 16),
             ExternalSessionImportCard(onImport: _importExternalSession),
+            const SizedBox(height: 16),
+            HealthConnectBridgeCard(
+              permissionPlan: HealthConnectPermissionPlan.pilot(),
+              onPreparePilotBundle: _prepareHealthConnectPilotBundle,
+            ),
             const SizedBox(height: 16),
             SyncSettingsCard(
               apiUrlController: _apiUrlController,
@@ -1346,7 +1367,14 @@ class NativePilotChecklist {
         id: 'external-sources',
         title: 'Fuentes externas',
         detail:
-            'Meta/Oakley, Oura, Apple Health, Samsung y galeria tienen perfiles.',
+            'Meta/Oakley, Oura, Apple Health, Samsung, Health Connect y galeria tienen perfiles.',
+        ok: true,
+      ),
+      const NativePilotCheckItem(
+        id: 'health-connect',
+        title: 'Health Connect Android',
+        detail:
+            'Permisos Android y paquete piloto cubren Samsung/Galaxy por pasos, pulso, sueno y actividad.',
         ok: true,
       ),
       const NativePilotCheckItem(
@@ -1499,6 +1527,12 @@ class NativePilotReadinessCard extends StatelessWidget {
                   ok: true,
                   label: 'Contexto',
                   detail: 'Agenda, lugar, biometría e importaciones externas.',
+                ),
+                const ReadinessChip(
+                  ok: true,
+                  label: 'Health Connect',
+                  detail:
+                      'Plan de permisos Android para Samsung/Galaxy y Health Connect.',
                 ),
                 const ReadinessChip(
                   ok: true,
@@ -1666,6 +1700,63 @@ class ExternalSessionImportCard extends StatelessWidget {
               onPressed: onImport,
               icon: const Icon(Icons.upload_file_outlined),
               label: const Text('Importar sesion externa'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class HealthConnectBridgeCard extends StatelessWidget {
+  const HealthConnectBridgeCard({
+    required this.permissionPlan,
+    required this.onPreparePilotBundle,
+    super.key,
+  });
+
+  final HealthConnectPermissionPlan permissionPlan;
+  final Future<void> Function() onPreparePilotBundle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Health Connect / Samsung',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Puente Android para Galaxy Watch, Samsung Health y otros proveedores que escriben en Health Connect. La lectura real pedira permisos por dato en el telefono.',
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final recordType in permissionPlan.recordTypes)
+                  Chip(
+                    label: Text(recordType.label),
+                    visualDensity: VisualDensity.compact,
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: onPreparePilotBundle,
+                icon: const Icon(Icons.monitor_heart_outlined),
+                label: const Text('Preparar prueba Health Connect'),
+              ),
             ),
           ],
         ),
@@ -2896,6 +2987,230 @@ class ExternalSessionImportDraft {
   final String notes;
 }
 
+enum HealthConnectRecordType {
+  steps(
+    'Pasos',
+    'steps',
+    'count',
+    'android.permission.health.READ_STEPS',
+  ),
+  activeCalories(
+    'Calorias activas',
+    'activeCaloriesBurned',
+    'kcal',
+    'android.permission.health.READ_ACTIVE_CALORIES_BURNED',
+  ),
+  distance(
+    'Distancia',
+    'distance',
+    'meters',
+    'android.permission.health.READ_DISTANCE',
+  ),
+  heartRate(
+    'Frecuencia cardiaca',
+    'heartRate',
+    'bpm',
+    'android.permission.health.READ_HEART_RATE',
+  ),
+  restingHeartRate(
+    'Pulso en reposo',
+    'restingHeartRate',
+    'bpm',
+    'android.permission.health.READ_RESTING_HEART_RATE',
+  ),
+  heartRateVariability(
+    'HRV',
+    'heartRateVariability',
+    'ms',
+    'android.permission.health.READ_HEART_RATE_VARIABILITY',
+  ),
+  oxygenSaturation(
+    'Oxigeno',
+    'oxygenSaturation',
+    'percent',
+    'android.permission.health.READ_OXYGEN_SATURATION',
+  ),
+  respiratoryRate(
+    'Respiracion',
+    'respiratoryRate',
+    'breathsPerMinute',
+    'android.permission.health.READ_RESPIRATORY_RATE',
+  ),
+  bodyTemperature(
+    'Temperatura',
+    'bodyTemperature',
+    'celsius',
+    'android.permission.health.READ_BODY_TEMPERATURE',
+  ),
+  sleepSession(
+    'Sueno',
+    'sleep',
+    'minutes',
+    'android.permission.health.READ_SLEEP',
+  ),
+  exerciseSession(
+    'Ejercicio',
+    'exercise',
+    'minutes',
+    'android.permission.health.READ_EXERCISE',
+  );
+
+  const HealthConnectRecordType(
+    this.label,
+    this.payloadKey,
+    this.unit,
+    this.androidReadPermission,
+  );
+
+  final String label;
+  final String payloadKey;
+  final String unit;
+  final String androidReadPermission;
+}
+
+class HealthConnectPermissionPlan {
+  const HealthConnectPermissionPlan({required this.recordTypes});
+
+  factory HealthConnectPermissionPlan.pilot() {
+    return const HealthConnectPermissionPlan(recordTypes: [
+      HealthConnectRecordType.steps,
+      HealthConnectRecordType.activeCalories,
+      HealthConnectRecordType.distance,
+      HealthConnectRecordType.heartRate,
+      HealthConnectRecordType.restingHeartRate,
+      HealthConnectRecordType.heartRateVariability,
+      HealthConnectRecordType.oxygenSaturation,
+      HealthConnectRecordType.respiratoryRate,
+      HealthConnectRecordType.bodyTemperature,
+      HealthConnectRecordType.sleepSession,
+      HealthConnectRecordType.exerciseSession,
+    ]);
+  }
+
+  final List<HealthConnectRecordType> recordTypes;
+
+  List<String> get androidReadPermissions =>
+      recordTypes.map((item) => item.androidReadPermission).toList();
+
+  bool covers(HealthConnectRecordType type) => recordTypes.contains(type);
+
+  Map<String, dynamic> toJson() {
+    return {
+      'connector': 'android-health-connect',
+      'package': 'com.google.android.apps.healthdata',
+      'recordTypes': recordTypes.map((item) => item.payloadKey).toList(),
+      'androidReadPermissions': androidReadPermissions,
+      'runtimePermissionRequired': true,
+      'recommendedProviders': [
+        'Samsung Health',
+        'Galaxy Watch',
+        'Oura',
+        'Fitbit'
+      ],
+    };
+  }
+}
+
+class HealthConnectRecordDraft {
+  HealthConnectRecordDraft({
+    required this.type,
+    required this.value,
+    required this.startAt,
+    required this.endAt,
+    this.sourceDevice = 'Android Health Connect',
+    String? id,
+  }) : id = id ??
+            'health-connect-${type.payloadKey}-${startAt.microsecondsSinceEpoch}';
+
+  final String id;
+  final HealthConnectRecordType type;
+  final num value;
+  final DateTime startAt;
+  final DateTime endAt;
+  final String sourceDevice;
+
+  Map<String, dynamic> toNormalizedSignal() {
+    return {
+      'source': 'Android Health Connect',
+      'connector': 'android-health-connect',
+      'sourceId': id,
+      'capturedAt': endAt.toUtc().toIso8601String(),
+      'participantId': 'miguel',
+      'payloadType': 'biometric',
+      'privacyLevel': 'sensitive',
+      'payload': {
+        'dataType': type.payloadKey,
+        'value': value,
+        'unit': type.unit,
+        'startTime': startAt.toUtc().toIso8601String(),
+        'endTime': endAt.toUtc().toIso8601String(),
+      },
+      'deviceMetadata': {
+        'platform': 'android',
+        'sourceDevice': sourceDevice,
+        'permission': type.androidReadPermission,
+        'nativeBridge': 'Vibeapp',
+      },
+      'idempotencyKey': 'android-health-connect:${type.payloadKey}:$id',
+    };
+  }
+}
+
+class HealthConnectPreviewBundle {
+  const HealthConnectPreviewBundle({
+    required this.records,
+    required this.permissionPlan,
+  });
+
+  factory HealthConnectPreviewBundle.pilot() {
+    final now = DateTime.now().toUtc();
+    final start = now.subtract(const Duration(hours: 2));
+    return HealthConnectPreviewBundle(
+      permissionPlan: HealthConnectPermissionPlan.pilot(),
+      records: [
+        HealthConnectRecordDraft(
+          type: HealthConnectRecordType.steps,
+          value: 4200,
+          startAt: start,
+          endAt: now,
+          sourceDevice: 'Galaxy Watch / Health Connect',
+        ),
+        HealthConnectRecordDraft(
+          type: HealthConnectRecordType.heartRate,
+          value: 74,
+          startAt: start,
+          endAt: now,
+          sourceDevice: 'Galaxy Watch / Health Connect',
+        ),
+        HealthConnectRecordDraft(
+          type: HealthConnectRecordType.sleepSession,
+          value: 420,
+          startAt: now.subtract(const Duration(hours: 10)),
+          endAt: now.subtract(const Duration(hours: 3)),
+          sourceDevice: 'Samsung Health / Health Connect',
+        ),
+      ],
+    );
+  }
+
+  final List<HealthConnectRecordDraft> records;
+  final HealthConnectPermissionPlan permissionPlan;
+
+  String get summaryText {
+    final labels = records.map((item) => item.type.label).join(', ');
+    return 'Health Connect preparado con ${records.length} registros: $labels.';
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'connector': 'android-health-connect',
+      'summary': summaryText,
+      'permissionPlan': permissionPlan.toJson(),
+      'signals': records.map((item) => item.toNormalizedSignal()).toList(),
+    };
+  }
+}
+
 class NativeCaptureAction {
   const NativeCaptureAction(this.icon, this.label, this.detail);
 
@@ -3492,6 +3807,7 @@ class CaptureQueueItem {
     this.closedAt,
     this.externalSessionSource,
     this.externalSessionContract,
+    this.structuredContext = const {},
     this.attemptCount = 0,
     this.lastAttemptAt,
     this.nextRetryAt,
@@ -3561,6 +3877,36 @@ class CaptureQueueItem {
       status: CaptureSyncStatus.queued,
       attachments: [attachment],
       biometricSummary: summary,
+    );
+  }
+
+  factory CaptureQueueItem.healthConnect(HealthConnectPreviewBundle bundle) {
+    final now = DateTime.now().toUtc();
+    final id = 'native-health-connect-${now.microsecondsSinceEpoch}';
+    final records = bundle.records;
+    final events = records.asMap().entries.map((entry) {
+      final order = entry.key + 1;
+      final record = entry.value;
+      return ExperienceEventDraft(
+        id: '$id-event-$order',
+        title: 'Health Connect: ${record.type.label}',
+        description:
+            '${record.value} ${record.type.unit} desde ${record.sourceDevice}.',
+        order: order,
+        timestamp: record.endAt,
+      );
+    }).toList();
+    return CaptureQueueItem(
+      id: id,
+      title: 'Health Connect',
+      detail: bundle.summaryText,
+      sourceType: 'health-connect-context',
+      createdAt: now,
+      status: CaptureSyncStatus.queued,
+      events: events,
+      externalSessionSource: 'Health Connect',
+      externalSessionContract: 'android-health-connect-native-v1',
+      structuredContext: bundle.toJson(),
     );
   }
 
@@ -3698,6 +4044,7 @@ class CaptureQueueItem {
           stringFromJson(json['externalSessionContract']).isEmpty
               ? null
               : stringFromJson(json['externalSessionContract']),
+      structuredContext: mapFromJson(json['structuredContext']),
       attemptCount: intFromJson(json['attemptCount']),
       lastAttemptAt: parseNativeDate(json['lastAttemptAt']),
       nextRetryAt: parseNativeDate(json['nextRetryAt']),
@@ -3720,6 +4067,7 @@ class CaptureQueueItem {
   final DateTime? closedAt;
   final String? externalSessionSource;
   final String? externalSessionContract;
+  final Map<String, dynamic> structuredContext;
   int attemptCount;
   DateTime? lastAttemptAt;
   DateTime? nextRetryAt;
@@ -3730,6 +4078,7 @@ class CaptureQueueItem {
       sourceType == 'text' ||
       sourceType == 'experience-session' ||
       sourceType == 'external-session' ||
+      sourceType == 'health-connect-context' ||
       agendaEvent != null ||
       locationDraft != null ||
       biometricSummary != null ||
@@ -3801,6 +4150,9 @@ class CaptureQueueItem {
     if (sourceType == 'external-session' && attachments.isEmpty) {
       errors.add('La sesion externa no tiene archivos validos.');
     }
+    if (sourceType == 'health-connect-context' && structuredContext.isEmpty) {
+      errors.add('Falta el paquete Health Connect normalizado.');
+    }
     if (events.isNotEmpty) {
       final orders = <int>{};
       for (final event in events) {
@@ -3860,7 +4212,9 @@ class CaptureQueueItem {
       [List<Map<String, dynamic>>? uploadedAttachments]) {
     final iso = createdAt.toIso8601String();
     final locationLabel = locationDraft?.displayLocation ?? 'Captura móvil';
-    final isBiometric = biometricSummary != null || sourceType == 'biometric';
+    final isBiometric = biometricSummary != null ||
+        sourceType == 'biometric' ||
+        sourceType == 'health-connect-context';
     final isSession =
         sourceType == 'experience-session' || sourceType == 'external-session';
     final isExternalSession = sourceType == 'external-session';
@@ -3923,6 +4277,8 @@ class CaptureQueueItem {
           'externalSessionSource': externalSessionSource,
         if (externalSessionContract != null)
           'externalSessionContract': externalSessionContract,
+        if (structuredContext.isNotEmpty)
+          'structuredContext': structuredContext,
         if (locationDraft != null) ...locationDraft!.toMetadata(),
         if (biometricSummary != null)
           'biometricImport': biometricSummary!.toJson(),
@@ -3931,7 +4287,9 @@ class CaptureQueueItem {
             : isExternalSession
                 ? 'vibeapp-external-session-v1'
                 : isBiometric
-                    ? 'vibeapp-biometric-file-v1'
+                    ? sourceType == 'health-connect-context'
+                        ? 'vibeapp-health-connect-v1'
+                        : 'vibeapp-biometric-file-v1'
                     : locationDraft == null
                         ? 'vibeapp-text-v1'
                         : 'vibeapp-location-v1',
@@ -3961,6 +4319,7 @@ class CaptureQueueItem {
       'closedAt': closedAt?.toIso8601String(),
       'externalSessionSource': externalSessionSource,
       'externalSessionContract': externalSessionContract,
+      'structuredContext': structuredContext,
       'attemptCount': attemptCount,
       'lastAttemptAt': lastAttemptAt?.toIso8601String(),
       'nextRetryAt': nextRetryAt?.toIso8601String(),

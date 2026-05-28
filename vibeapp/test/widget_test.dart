@@ -173,6 +173,64 @@ void main() {
     expect(ouraItem.validateForSync().canSync, isTrue);
   });
 
+  test('Health Connect bridge covers Samsung records and normalized payloads',
+      () {
+    final plan = HealthConnectPermissionPlan.pilot();
+    expect(plan.covers(HealthConnectRecordType.steps), isTrue);
+    expect(plan.covers(HealthConnectRecordType.heartRate), isTrue);
+    expect(plan.covers(HealthConnectRecordType.sleepSession), isTrue);
+    expect(
+      plan.androidReadPermissions,
+      contains('android.permission.health.READ_STEPS'),
+    );
+    expect(
+      plan.androidReadPermissions,
+      contains('android.permission.health.READ_HEART_RATE'),
+    );
+    expect(
+      plan.androidReadPermissions,
+      contains('android.permission.health.READ_SLEEP'),
+    );
+
+    final start = DateTime.utc(2026, 5, 28, 8);
+    final end = DateTime.utc(2026, 5, 28, 9);
+    final record = HealthConnectRecordDraft(
+      type: HealthConnectRecordType.heartRateVariability,
+      value: 41,
+      startAt: start,
+      endAt: end,
+      sourceDevice: 'Galaxy Watch',
+    );
+    final signal = record.toNormalizedSignal();
+    expect(signal['connector'], 'android-health-connect');
+    expect(signal['payloadType'], 'biometric');
+    expect(signal['privacyLevel'], 'sensitive');
+    expect(signal['payload']['dataType'], 'heartRateVariability');
+    expect(signal['payload']['unit'], 'ms');
+    expect(signal['deviceMetadata']['sourceDevice'], 'Galaxy Watch');
+    expect(signal['deviceMetadata']['permission'],
+        'android.permission.health.READ_HEART_RATE_VARIABILITY');
+
+    final bundle = HealthConnectPreviewBundle(
+      permissionPlan: plan,
+      records: [record],
+    );
+    final item = CaptureQueueItem.healthConnect(bundle);
+    final validation = item.validateForSync();
+    expect(validation.canSync, isTrue);
+    expect(item.sourceType, 'health-connect-context');
+
+    final payload = item.toExperiencePayload();
+    expect(payload['category'], 'Salud');
+    expect(payload['objective'], contains('transversal desde Vibeapp'));
+    expect(payload['metadata']['syncContract'], 'vibeapp-health-connect-v1');
+    expect(
+      payload['metadata']['structuredContext']['connector'],
+      'android-health-connect',
+    );
+    expect((payload['events'] as List).single['title'], 'Health Connect: HRV');
+  });
+
   test('Native sync client sends media, experience, and agenda requests',
       () async {
     final tempDir = Directory.systemTemp.createTempSync('vibeapp-sync-');
@@ -365,14 +423,14 @@ void main() {
 
   test('Native queue summary explains ready, retry, blocked, and synced items',
       () {
-    final tempDir = Directory.systemTemp.createTempSync('vibeapp-queue-summary-');
+    final tempDir =
+        Directory.systemTemp.createTempSync('vibeapp-queue-summary-');
     addTearDown(() {
       if (tempDir.existsSync()) tempDir.deleteSync(recursive: true);
     });
 
     final now = DateTime.utc(2026, 5, 27, 12);
-    final synced = CaptureQueueItem.text('Ya enviado')
-      ..markSynced('remote-ok');
+    final synced = CaptureQueueItem.text('Ya enviado')..markSynced('remote-ok');
     final ready = CaptureQueueItem.text('Listo para enviar');
     final waiting = CaptureQueueItem.text('Fallo temporal');
     waiting.markAttemptStarted();
@@ -470,6 +528,13 @@ void main() {
     );
     expect(find.text('Sesiones externas'), findsOneWidget);
     expect(find.text('Importar sesion externa'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Health Connect / Samsung'),
+      500,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('Health Connect / Samsung'), findsOneWidget);
+    expect(find.text('Preparar prueba Health Connect'), findsOneWidget);
     await tester.scrollUntilVisible(
       find.text('Audio'),
       500,

@@ -1,4 +1,4 @@
-const APP_VERSION = "20260528-device-selftest-487";
+const APP_VERSION = "20260528-health-connect-native-488";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2125,6 +2125,7 @@ const manualContent = {
         "Vibeapp suma modo Experiencia activa: puedes iniciar una experiencia larga, agregar notas, medios, eventos de agenda, ubicación o contexto biométrico como eventos internos y cerrar el registro sin crear experiencias sueltas. La sincronización usa el mismo identificador de experiencia para que la PWA lea una línea de eventos coherente.",
         "Vibeapp suma Importar sesión externa: permite traer varios archivos de Meta/Oakley/Ray-Ban, Oura, Apple Health, Samsung Health/Galaxy Watch, Health Connect, galería del teléfono u otro origen, agruparlos en una sola experiencia y conservar metadatos normalizados para procesamiento posterior.",
         "El importador externo de Vibeapp distingue el origen real del archivo: un JSON de Meta queda como referencia de cuenta, una foto o video de lentes queda como memoria visual, y un CSV/JSON de Oura, Apple Health, Samsung Health o Health Connect queda como contexto biométrico transversal.",
+        "Vibeapp Android declara permisos Health Connect por tipo de dato y agrega una prueba piloto para Samsung/Galaxy: pasos, calorías, distancia, frecuencia cardiaca, HRV, oxígeno, respiración, temperatura, sueño y ejercicio. La lectura real en teléfono pedirá autorización explícita del usuario antes de enviar señales al backend.",
         "La PWA lee esos perfiles externos en Activos, inventario y evidencia de reportes: muestra origen, tipo de carga, intención de procesamiento, privacidad y si el archivo se puede interpretar automáticamente o solo conservar como transporte.",
         "Vibeapp valida cada captura antes de sincronizar: revisa título, texto, eventos, existencia de archivos, tamaño, MIME, vínculo evento-activo y expectativas por origen. Si algo no cuadra, queda en cola con un mensaje entendible antes de tocar el backend.",
         "Vibeapp muestra una cola local observable: separa capturas listas para enviar, subidas en curso, reintentos automáticos, fallos que requieren acción, archivos pendientes y eventos pendientes. El usuario ve el estado real sin interpretar logs ni comandos.",
@@ -30712,7 +30713,7 @@ function calculateTotalProductProgress(readiness) {
       86 * 0.11 + // Agenda MVP.
       86 * 0.11 + // Publicaciones MVP.
       84 * 0.12 + // Supabase, administración y operación.
-      72 * 0.13 + // Contrato, rutas, kit, simulador y normalizadores Oura/Apple/Health Connect/Meta listos; OAuth/SDK en vivo siguen posteriores.
+      76 * 0.13 + // Contrato, rutas, kit, simulador, normalizadores y permisos Android Health Connect listos; OAuth/SDK en vivo siguen posteriores.
       14 * 0.13, // IA predictiva y agentes todavía futuros.
   );
   return {

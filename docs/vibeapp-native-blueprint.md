@@ -84,6 +84,12 @@ Cada evento o activo debe enviar:
    - Lectura PWA: Activos, inventario y Reportes muestran perfil externo, intencion de procesamiento, privacidad y si el archivo se interpreta automaticamente o solo se conserva.
    - Uso recomendado para lentes Meta: capturar/importar primero en Meta AI o Fotos del telefono, luego traer el conjunto a Vibeapp.
 
+7. **Health Connect / Samsung**
+   - Android declara permisos de lectura por tipo de dato: pasos, calorias activas, distancia, frecuencia cardiaca, pulso en reposo, HRV, oxigeno, respiracion, temperatura, sueno y ejercicio.
+   - Samsung Health y Galaxy Watch deben entrar por Health Connect cuando sea posible, para evitar APIs antiguas o dependencias directas por fabricante.
+   - La lectura real debe pedir autorizacion explicita en el telefono y solo enviar al backend senales normalizadas sensibles.
+   - La prueba piloto genera un paquete Health Connect sin telefono fisico para validar estructura, permisos, idempotencia y lectura posterior desde la PWA.
+
 ## Recomendaciones tecnicas
 
 - Flutter como base comun para iOS, Android, iPadOS y, si conviene, desktop.
@@ -130,6 +136,14 @@ Cada evento o activo debe enviar:
 4. Clasificar cada archivo por origen e intencion: memoria visual, registro de voz, referencia de cuenta, contexto biometrico, documento o ZIP de transporte.
 5. Mantener claro que Meta/Oakley no se controla desde la PWA: Vibeapp recibe el resultado importado y lo convierte en memoria, reporte o publicacion.
 
+## Quinto incremento
+
+1. Activar puente Health Connect Android para Samsung/Galaxy.
+2. Declarar permisos por tipo de dato y mapearlos a un plan de autorizacion visible.
+3. Generar senales normalizadas `android-health-connect` con privacidad `sensitive`.
+4. Enviar contexto biometrico transversal como experiencia sincronizable para que la PWA lo use en reportes, hallazgos y contexto de energia.
+5. Mantener modo piloto simulado hasta tener un telefono Android para validar permisos reales, lectura local y reintentos en segundo plano.
+
 ## Criterio de calidad
 
 Vibeapp solo debe considerarse lista para piloto cuando:
@@ -139,6 +153,7 @@ Vibeapp solo debe considerarse lista para piloto cuando:
 - La cola offline se recupera sola.
 - La cola muestra el estado real de cada captura y separa reintentos automaticos de problemas que requieren accion humana.
 - El piloto movil solo se inicia cuando el checklist distingue bloqueos reales de capacidades ya verificadas por pruebas.
+- Health Connect/Samsung cuenta como listo solo cuando permisos, payload normalizado, cola y lectura PWA esten verificados; la lectura real en dispositivo requiere prueba fisica posterior.
 - `npm run simulate:vibeapp` pasa sin telefono fisico y valida nota rapida, agenda, foto, video, audio, biometria, ubicacion e importacion Meta/Oakley contra el contrato PWA.
 - Los errores son comprensibles.
 - La PWA puede generar reportes, hallazgos y publicaciones con datos creados desde Vibeapp.

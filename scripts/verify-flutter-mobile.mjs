@@ -47,12 +47,20 @@ check(files.settingsGradle.includes('com.android.application") version "8.13.1"'
   "android.permission.READ_MEDIA_VIDEO",
   "android.permission.READ_MEDIA_AUDIO",
   "android.permission.POST_NOTIFICATIONS",
+  "android.permission.health.READ_STEPS",
+  "android.permission.health.READ_HEART_RATE",
+  "android.permission.health.READ_SLEEP",
+  "com.google.android.apps.healthdata",
 ].forEach((permission) => check(files.manifest.includes(permission), `Android manifest is missing ${permission}.`));
 [
   "class VibeAuthClient",
   "class ExperienceSyncClient",
   "class NativeQuickCommand",
   "class ActiveExperienceSession",
+  "class HealthConnectPermissionPlan",
+  "class HealthConnectRecordDraft",
+  "class HealthConnectPreviewBundle",
+  "HealthConnectBridgeCard",
   "Future<void> _capturePhoto",
   "Future<void> _captureVideo",
   "Future<void> _toggleAudioRecording",
@@ -63,6 +71,7 @@ check(files.settingsGradle.includes('com.android.application") version "8.13.1"'
   "Vibeapp",
 ].forEach((needle) => check(files.main.includes(needle), `Native app is missing expected implementation: ${needle}.`));
 check(files.test.includes("Native quick commands parse note, agenda, and experience actions"), "Flutter tests must cover V command parsing.");
+check(files.test.includes("Health Connect bridge covers Samsung records and normalized payloads"), "Flutter tests must cover Health Connect/Samsung bridge.");
 check(!/[\u00c3\u00c2\ufffd]/u.test(files.main + files.test), "Flutter source or tests contain mojibake characters.");
 
 if (failures.length) {

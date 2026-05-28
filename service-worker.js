@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260528-device-selftest-487";
+const CACHE_NAME = "experience-hub-pwa-20260528-health-connect-native-488";
 const APP_SHELL = [
   "/icons/vibe-logo.jpg",
   "/icons/vibe-logo.png",
