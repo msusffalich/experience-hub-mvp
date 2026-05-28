@@ -1,4 +1,4 @@
-const APP_VERSION = "20260527-progress-model-472";
+const APP_VERSION = "20260528-control-audit-473";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2406,6 +2406,7 @@ const manualContent = {
         "Panel recupera automáticamente los bloques de Datos actuales y Estado global de avance aunque el navegador conserve una estructura HTML vieja. La información crítica ya no depende de que el contenedor venga precargado en la página.",
         "Panel y Administración muestran Estado global de avance: PWA operativa, producción/Supabase, reportes/publicaciones, multimedia, Vibeapp nativa, conectores y producto completo. Es una vista honesta para separar lo listo de lo que sigue en desarrollo.",
         "Estado global de avance mide capacidades implementadas y verificables del producto. No baja por cambiar de navegador, limpiar caché o tener menos datos visibles; la sesión y los datos actuales se revisan en Datos actuales.",
+        "Auditoría de control de release agrega la orden npm run audit:control antes de publicar. Revisa versión, cache PWA, reset, modelo de avance, evidencia Manual/Admin y scripts de release para evitar sorpresas por navegadores o versiones viejas.",
         "Ruta al 90% convierte ese avance honesto en frentes concretos con dueño, estado, brecha real a 90 y siguiente acción ejecutable.",
         "Aprobación humana marca si el borrador está en revisión o aprobado. Cualquier edición, cambio de diseño o curaduría multimedia lo devuelve a revisión.",
         "Historial del borrador registra generación, ediciones, cambios de multimedia, diseño, aprobación y exportaciones recientes.",
@@ -3014,6 +3015,7 @@ const manualContent = {
         "Dashboard automatically restores the Current data and Global Progress blocks even when the browser keeps an older HTML structure. Critical status no longer depends on a preloaded container in the page.",
         "Dashboard and Admin show Global Progress: operating PWA, production/Supabase, reports/publications, multimedia, Vibeapp native, connectors, and full product. It is an honest view to separate what is ready from what is still under development.",
         "Global Progress measures implemented and verifiable product capabilities. It does not drop because you switch browser, clear cache, or have less visible data; session and data state are audited in Current data.",
+        "Release control audit adds npm run audit:control before publishing. It checks version, PWA cache, reset, progress model, Manual/Admin evidence, and release scripts to prevent surprises from old browsers or stale versions.",
         "The Route to 90% block turns that honest progress into concrete closure fronts with owner, state, real gap to 90, and the next action to execute.",
         "Editorial readiness evaluates clarity, privacy, media use, and channel fit. Its suggestions help decide whether the draft is ready for final review or needs edits.",
         "Pre-publication closure shows an operational checklist before export: human approval, text and length, privacy, media, and channel fit.",
@@ -26202,6 +26204,14 @@ function renderAdmin() {
         ? "Manual/Admin updates, robustness, agility, and proven patterns are now visible controls."
         : "Manual/Admin, robustez, agilidad y patrones probados quedan como controles visibles.",
       { view: "admin", focus: "developmentRulesPanel", label: state.language === "en" ? "View rules" : "Ver reglas" },
+    ],
+    [
+      state.language === "en" ? "Release control audit" : "Auditoría de control de release",
+      okStatus,
+      state.language === "en"
+        ? "npm run audit:control verifies version, PWA cache/reset, progress model, Manual/Admin evidence, and release scripts before deploy."
+        : "npm run audit:control verifica versión, caché/reset PWA, modelo de avance, evidencia Manual/Admin y scripts de release antes del deploy.",
+      { view: "admin", focus: "adminGlobalProgressPanel", label: state.language === "en" ? "Open progress" : "Ver avance" },
     ],
     [
       state.language === "en" ? "Quick MVP verification" : "Verificación rápida del MVP",
