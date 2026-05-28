@@ -1,4 +1,4 @@
-const APP_VERSION = "20260528-integration-kit-483";
+const APP_VERSION = "20260528-integration-progress-484";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -30596,7 +30596,7 @@ function calculateTotalProductProgress(readiness) {
       86 * 0.11 + // Agenda MVP.
       86 * 0.11 + // Publicaciones MVP.
       84 * 0.12 + // Supabase, administración y operación.
-      22 * 0.13 + // Conectores externos todavía en fase posterior.
+      57 * 0.13 + // Contrato, rutas, kit verificable y simulador listos; conectores directos siguen posteriores.
       14 * 0.13, // IA predictiva y agentes todavía futuros.
   );
   return {
