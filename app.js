@@ -1,4 +1,4 @@
-const APP_VERSION = "20260528-vibeapp-admin-sim-475";
+const APP_VERSION = "20260528-dashboard-state-guard-476";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2409,6 +2409,8 @@ const manualContent = {
         "Panel y Administración muestran Estado global de avance: PWA operativa, producción/Supabase, reportes/publicaciones, multimedia, Vibeapp nativa, conectores y producto completo. Es una vista honesta para separar lo listo de lo que sigue en desarrollo.",
         "Estado global de avance mide capacidades implementadas y verificables del producto. No baja por cambiar de navegador, limpiar caché o tener menos datos visibles; la sesión y los datos actuales se revisan en Datos actuales.",
         "Auditoría de control de release agrega la orden npm run audit:control antes de publicar. Revisa versión, cache PWA, reset, modelo de avance, evidencia Manual/Admin y scripts de release para evitar sorpresas por navegadores o versiones viejas.",
+        "Panel ahora renderiza Datos actuales y Estado global de avance desde una guardia común. Si un cálculo falla, muestra un aviso visible con versión y acción recomendada en lugar de desaparecer.",
+        "Service worker deja de guardar en caché la estructura crítica de la app: index.html, app.js, styles.css, manifest, reset y service-worker siempre van a red para evitar versiones viejas atrapadas.",
         "Ruta al 90% convierte ese avance honesto en frentes concretos con dueño, estado, brecha real a 90 y siguiente acción ejecutable.",
         "Aprobación humana marca si el borrador está en revisión o aprobado. Cualquier edición, cambio de diseño o curaduría multimedia lo devuelve a revisión.",
         "Historial del borrador registra generación, ediciones, cambios de multimedia, diseño, aprobación y exportaciones recientes.",
@@ -3020,6 +3022,8 @@ const manualContent = {
         "Dashboard and Admin show Global Progress: operating PWA, production/Supabase, reports/publications, multimedia, Vibeapp native, connectors, and full product. It is an honest view to separate what is ready from what is still under development.",
         "Global Progress measures implemented and verifiable product capabilities. It does not drop because you switch browser, clear cache, or have less visible data; session and data state are audited in Current data.",
         "Release control audit adds npm run audit:control before publishing. It checks version, PWA cache, reset, progress model, Manual/Admin evidence, and release scripts to prevent surprises from old browsers or stale versions.",
+        "Dashboard now renders Current data and Global Progress through one shared guard. If a calculation fails, it shows a visible warning with version and recommended action instead of disappearing.",
+        "The service worker no longer caches the critical app shell: index.html, app.js, styles.css, manifest, reset, and service-worker always go to the network to avoid trapped old versions.",
         "The Route to 90% block turns that honest progress into concrete closure fronts with owner, state, real gap to 90, and the next action to execute.",
         "Editorial readiness evaluates clarity, privacy, media use, and channel fit. Its suggestions help decide whether the draft is ready for final review or needs edits.",
         "Pre-publication closure shows an operational checklist before export: human approval, text and length, privacy, media, and channel fit.",
@@ -8349,6 +8353,63 @@ function renderGlobalProgressPanel(containerId = "dashboardGlobalProgressPanel",
   `;
 }
 
+function renderDashboardStateAndProgressPanels({ compact = true } = {}) {
+  try {
+    renderDashboardDataStatusPanel();
+  } catch (error) {
+    renderDashboardDataStatusFallback(error);
+  }
+  try {
+    renderGlobalProgressPanel("dashboardGlobalProgressPanel", { compact });
+  } catch (error) {
+    renderGlobalProgressFallback(error);
+  }
+}
+
+function renderDashboardDataStatusFallback(error) {
+  const container = ensureDashboardTopPanel("dashboardDataStatusPanel", "dashboard-data-status-panel");
+  if (!container) return;
+  container.innerHTML = `
+    <article class="is-review">
+      <div>
+        <span>${escapeHtml(state.language === "en" ? "Current data" : "Datos actuales")}</span>
+        <strong>${escapeHtml(state.language === "en" ? "Data status needs refresh" : "Estado de datos requiere refresco")}</strong>
+        <p>${escapeHtml(state.language === "en" ? "The app is loaded, but the data panel could not finish rendering. Press Update app; your experiences and assets are not deleted." : "La app cargó, pero el panel de datos no terminó de renderizar. Pulsa Actualizar app; no se borran tus experiencias ni activos.")}</p>
+      </div>
+      <dl>
+        <div><dt>${escapeHtml(state.language === "en" ? "Version" : "Versión")}</dt><dd>${escapeHtml(APP_VERSION)}</dd></div>
+        <div><dt>${escapeHtml("Detalle")}</dt><dd>${escapeHtml(error?.message || "render_data_status")}</dd></div>
+      </dl>
+    </article>
+  `;
+}
+
+function renderGlobalProgressFallback(error) {
+  const container = resolveGlobalProgressContainer("dashboardGlobalProgressPanel");
+  if (!container) return;
+  container.classList.add("is-compact");
+  container.innerHTML = `
+    <div class="global-progress-heading">
+      <div>
+        <h2>${escapeHtml(state.language === "en" ? "Global Progress" : "Estado global de avance")}</h2>
+        <p>${escapeHtml(state.language === "en" ? "The progress panel did not finish rendering. The app keeps the operational flow available." : "El panel de avance no terminó de renderizar. La app mantiene disponible el flujo operativo.")}</p>
+      </div>
+      <div class="global-progress-score">
+        <span>${escapeHtml(state.language === "en" ? "Version" : "Versión")}</span>
+        <strong>${escapeHtml(APP_VERSION.slice(-3))}</strong>
+      </div>
+    </div>
+    <div class="global-progress-next">
+      <div>
+        <strong>${escapeHtml(state.language === "en" ? "Action required" : "Acción requerida")}</strong>
+        <p>${escapeHtml(state.language === "en" ? "Press Update app. If the warning remains, open Administration and run the control audit." : "Pulsa Actualizar app. Si el aviso sigue, abre Administración y ejecuta la auditoría de control.")}</p>
+      </div>
+      <button class="ghost-button" type="button" data-backlog-view="admin" data-backlog-focus="adminGlobalProgressPanel">${escapeHtml(state.language === "en" ? "Open Admin" : "Abrir Administración")}</button>
+    </div>
+    <p class="card-meta">${escapeHtml(error?.message || "render_global_progress")} · ${escapeHtml(APP_VERSION)}</p>
+  `;
+}
+
 function renderDashboardDataStatusPanel() {
   const container = ensureDashboardTopPanel("dashboardDataStatusPanel", "dashboard-data-status-panel");
   if (!container) return;
@@ -8460,9 +8521,8 @@ function analyzePublicationScopeRecommendation() {
 
 function renderDashboardScopedPanels() {
   updateDashboardParticipantControl();
-  renderDashboardDataStatusPanel();
+  renderDashboardStateAndProgressPanels({ compact: true });
   renderDashboardGroupOnboarding();
-  renderGlobalProgressPanel("dashboardGlobalProgressPanel", { compact: true });
   renderMetrics();
   renderDashboardAttachmentStatus();
   renderDashboardAgenda();
@@ -8950,7 +9010,7 @@ function refreshLiveCaptureDependentViews() {
   updateDashboardParticipantControl();
   updatePilotParticipantControls();
   renderDashboardTimeContext();
-  renderGlobalProgressPanel("dashboardGlobalProgressPanel", { compact: true });
+  renderDashboardStateAndProgressPanels({ compact: true });
   renderMetrics();
   renderDashboardAttachmentStatus();
   renderDashboardAgenda();
@@ -9683,6 +9743,9 @@ function showView(view) {
   if (view === "admin") {
     renderAdmin();
   }
+  if (view === "dashboard") {
+    renderDashboardScopedPanels();
+  }
   if (view === "auth") {
     renderAuthStatePanel();
   }
@@ -9698,7 +9761,7 @@ function applyInitialViewFromUrl() {
 function renderAll() {
   updateDashboardParticipantControl();
   renderDashboardTimeContext();
-  renderGlobalProgressPanel("dashboardGlobalProgressPanel", { compact: true });
+  renderDashboardStateAndProgressPanels({ compact: true });
   renderMetrics();
   updatePilotParticipantControls();
   renderDashboardAttachmentStatus();
@@ -25567,6 +25630,8 @@ function renderAdminOperationalFocusPanel() {
         nativeSyncDetail: "Vibeapp now has real native contracts for text, photo, video, audio, agenda, location, and biometric CSV/JSON files. The native queue validates each payload, persists locally across app restarts, tracks attempts, retries eligible items automatically every 30 seconds when a session is active, separates ready, uploading, retrying, blocked, file, and event states, exposes a pilot checklist, and sends stable idempotency keys so retries update the same experience, agenda event, or Storage object instead of creating duplicates.",
         nativeSimulator: "Native sync simulator",
         nativeSimulatorDetail: "npm run simulate:vibeapp validates note, agenda, photo, video, audio, biometrics, location, and Meta imports against the PWA signal contract without needing a physical phone.",
+        dashboardGuard: "Dashboard state guard",
+        dashboardGuardDetail: "Dashboard renders Current data and Global Progress through one shared guard, with visible fallbacks if a calculation fails. The service worker no longer caches the critical app shell.",
       }
     : {
         title: "Administración operativa",
@@ -25606,6 +25671,8 @@ function renderAdminOperationalFocusPanel() {
     labels.nativeSyncDetail = "Vibeapp ya tiene contratos nativos reales para texto, foto, video, audio, agenda, lugar, biometr\u00eda CSV/JSON e importaci\u00f3n de sesiones externas. La cola nativa valida cada payload, conserva intentos, reintenta autom\u00e1ticamente, separa estados reales, muestra checklist de piloto y usa llaves de idempotencia para que un reintento actualice la misma experiencia, evento de agenda o archivo de Storage sin crear duplicados.";
     labels.nativeSimulator = "Simulador de sincronizaci\u00f3n nativa";
     labels.nativeSimulatorDetail = "npm run simulate:vibeapp valida nota, agenda, foto, video, audio, biometr\u00eda, ubicaci\u00f3n e importaciones Meta contra el contrato de se\u00f1ales PWA sin necesitar un tel\u00e9fono f\u00edsico.";
+    labels.dashboardGuard = "Guardia de estado del Panel";
+    labels.dashboardGuardDetail = "Panel renderiza Datos actuales y Estado global de avance desde una guardia com\u00fan, con avisos visibles si un c\u00e1lculo falla. El service worker ya no guarda en cach\u00e9 la estructura cr\u00edtica de la app.";
   }
   const cards = [
     [labels.flow, labels.flowDetail],
@@ -25623,6 +25690,7 @@ function renderAdminOperationalFocusPanel() {
     [labels.reportPdf, labels.reportPdfDetail],
     [labels.nativeSync, labels.nativeSyncDetail],
     [labels.nativeSimulator, labels.nativeSimulatorDetail],
+    [labels.dashboardGuard, labels.dashboardGuardDetail],
     [labels.next, labels.nextDetail],
   ];
   container.innerHTML = `

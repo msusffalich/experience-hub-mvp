@@ -20,7 +20,7 @@ check(index.includes(`manifest.webmanifest?v=${version}`), "index.html does not 
 check(serviceWorker.includes(version), "service-worker.js cache name does not include the current app version.");
 check(reset.includes(version), "reset.html does not redirect to the current app version.");
 check(reset.includes("getRegistrations") && reset.includes("caches.keys"), "reset.html must clear service workers and app caches.");
-check(serviceWorker.includes('url.pathname === "/reset.html"'), "service worker must bypass caching for reset.html.");
+check(serviceWorker.includes("NETWORK_ONLY_PATHS") && serviceWorker.includes('"/app.js"') && serviceWorker.includes('cache: "no-store"'), "service worker must bypass caching for app shell files.");
 check(app.includes("const fullAmbitionOverall") && app.includes("Current delivery") && app.includes("Entrega actual"), "global progress must separate current delivery from full future ambition.");
 check(app.includes("Estado global de avance mide capacidades implementadas") && app.includes("Global Progress measures implemented"), "manual must explain that progress is capability-based, not browser-data-based.");
 check(Array.isArray(manifest.icons) && manifest.icons.length >= 2, "manifest must declare at least 192 and 512 icons.");
@@ -41,11 +41,6 @@ for (const icon of manifest.icons || []) {
 }
 
 const shellFiles = [
-  "/",
-  "/index.html",
-  "/styles.css",
-  "/app.js",
-  "/manifest.webmanifest",
   "/icons/vibe-icon-192.png",
   "/icons/vibe-icon-512.png",
   "/icons/vibe-apple-touch.png",

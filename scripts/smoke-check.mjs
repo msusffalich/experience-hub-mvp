@@ -47,7 +47,7 @@ assert(files.index.includes(`styles.css?v=${version}`), "index.html does not loa
 assert(files.index.includes(`manifest.webmanifest?v=${version}`), "index.html does not load the current manifest version.");
 assert(files.serviceWorker.includes(`experience-hub-pwa-${version}`), "service-worker.js cache name does not match APP_VERSION.");
 assert(files.reset.includes(version) && files.reset.includes("getRegistrations") && files.reset.includes("caches.keys"), "reset.html must clear PWA caches and redirect to the current version.");
-assert(files.serviceWorker.includes('url.pathname === "/reset.html"') && files.serviceWorker.includes('cache: "no-store"'), "service-worker.js must never cache the reset page.");
+assert(files.serviceWorker.includes("NETWORK_ONLY_PATHS") && files.serviceWorker.includes('"/app.js"') && files.serviceWorker.includes('cache: "no-store"'), "service-worker.js must never cache the app shell files.");
 assert(files.app.includes("const fullAmbitionOverall") && files.app.includes("Current delivery") && files.app.includes("Entrega actual"), "Global progress must separate current delivery from full future ambition.");
 assert(files.app.includes("Estado global de avance mide capacidades implementadas") && files.app.includes("Global Progress measures implemented"), "Manual must explain that global progress is capability-based, not browser-data-based.");
 assert(files.packageJson.includes("\"audit:control\"") && files.packageJson.includes("npm run audit:control"), "Release verification must include the control audit.");
@@ -151,7 +151,7 @@ assert(files.storageFormatsSql.includes("allowed_mime_types = NULL"), "Storage f
 assert(files.server.includes("storage-accept-all-supported-media.sql"), "Supabase diagnostics do not point to the Storage MIME migration.");
 assert(files.app.includes("invalid_mime_type para PDF") && files.app.includes("invalid_mime_type for PDF"), "Manual does not explain PDF MIME bucket remediation.");
 assert(files.index.includes("dashboard-primary-panel") && files.index.includes("Nueva experiencia"), "Dashboard does not expose primary daily actions.");
-assert(files.index.includes("dashboardDataStatusPanel") && files.app.includes("function renderDashboardDataStatusPanel"), "Dashboard does not expose the current data/status guard.");
+assert(files.index.includes("dashboardDataStatusPanel") && files.app.includes("function renderDashboardDataStatusPanel") && files.app.includes("renderDashboardStateAndProgressPanels"), "Dashboard does not expose the current data/status guard.");
 assert(files.app.includes("function ensureDashboardTopPanel") && files.app.includes("resolveGlobalProgressContainer"), "Dashboard cannot recover progress/data panels from stale HTML.");
 assert(files.app.includes("clearAppShellCaches") && files.app.includes("caches.keys"), "Refresh app does not clear stale app-shell caches.");
 assert(files.server.includes("/api/integration/contract") && files.server.includes("/api/integration/validate") && files.server.includes("function validateIntegrationSignal"), "Server does not expose integration contract validation.");

@@ -28,7 +28,7 @@ check(files.index.includes(`app.js?v=${version}`), "index.html is not loading th
 check(files.index.includes(`styles.css?v=${version}`), "index.html is not loading the current styles.css.");
 check(files.index.includes(`manifest.webmanifest?v=${version}`), "index.html is not loading the current manifest.");
 check(files.serviceWorker.includes(`experience-hub-pwa-${version}`), "service-worker cache name is not aligned with APP_VERSION.");
-check(files.serviceWorker.includes('url.pathname === "/reset.html"') && files.serviceWorker.includes('cache: "no-store"'), "reset.html must bypass the service worker cache.");
+check(files.serviceWorker.includes("NETWORK_ONLY_PATHS") && files.serviceWorker.includes('"/app.js"') && files.serviceWorker.includes('cache: "no-store"'), "app shell files must bypass the service worker cache.");
 check(files.reset.includes("getRegistrations") && files.reset.includes("caches.keys"), "reset.html must clear service workers and caches.");
 
 check(files.app.includes("const fullAmbitionOverall"), "global progress does not separate current delivery from future ambition.");

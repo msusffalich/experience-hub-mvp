@@ -1,16 +1,21 @@
-const CACHE_NAME = "experience-hub-pwa-20260528-vibeapp-admin-sim-475";
+const CACHE_NAME = "experience-hub-pwa-20260528-dashboard-state-guard-476";
 const APP_SHELL = [
-  "/",
-  "/index.html",
-  "/styles.css",
-  "/app.js",
-  "/manifest.webmanifest",
   "/icons/vibe-logo.jpg",
   "/icons/vibe-logo.png",
   "/icons/vibe-icon-192.png",
   "/icons/vibe-icon-512.png",
   "/icons/vibe-apple-touch.png"
 ];
+
+const NETWORK_ONLY_PATHS = new Set([
+  "/",
+  "/index.html",
+  "/app.js",
+  "/styles.css",
+  "/manifest.webmanifest",
+  "/service-worker.js",
+  "/reset.html"
+]);
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -34,8 +39,8 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
   const url = new URL(request.url);
   if (url.pathname.startsWith("/api/")) return;
-  if (url.pathname === "/reset.html") {
-    event.respondWith(fetch(request, { cache: "no-store" }).catch(() => new Response("Reset page unavailable", { status: 504 })));
+  if (NETWORK_ONLY_PATHS.has(url.pathname) || request.mode === "navigate" || ["document", "script", "style", "manifest"].includes(request.destination)) {
+    event.respondWith(fetch(request, { cache: "no-store" }).catch(() => new Response("App shell unavailable. Reconnect and reload Vibe.", { status: 504 })));
     return;
   }
   event.respondWith(
