@@ -17,6 +17,7 @@ const assert = (condition, message) => {
 [
   "/api/integration/contract",
   "/api/integration/validate",
+  "/api/integration/ingest",
   "/api/integration/samples",
   "buildIntegrationSampleKit",
   "buildIntegrationSampleSignals",
@@ -39,6 +40,7 @@ const assert = (condition, message) => {
   "runDeviceConnectorSelfTest",
   "/api/integration/device/selftest",
   "validateIntegrationSignal",
+  "ingestIntegrationSignal",
 ].forEach((token) => {
   assert(files.server.includes(token), `Server integration contract is missing ${token}.`);
 });
@@ -87,6 +89,7 @@ assert(files.manualBlueprint.includes("Health Connect") && files.manualBlueprint
 assert(files.ouraDoc.includes("/api/integration/oura/manifest") && files.ouraDoc.includes("daily_readiness") && files.ouraDoc.includes("https://api.ouraring.com"), "Oura connector documentation must explain manifest, readiness, and the corrected API base URL.");
 assert(files.ouraDoc.includes("/api/integration/apple-health/manifest") && files.ouraDoc.includes("/api/integration/health-connect/manifest") && files.ouraDoc.includes("/api/integration/meta-wearables/manifest"), "Device connector documentation must cover Apple Health, Health Connect, and Meta Wearables.");
 assert(files.ouraDoc.includes("/api/integration/device/selftest") && files.server.includes("device-connector-selftest"), "Device connector self-test must be documented and exposed by the manifests.");
+assert(files.ouraDoc.includes("/api/integration/ingest") && files.ouraDoc.includes("accepted_pending_media"), "Device connector documentation must explain validated ingest and pending media behavior.");
 assert(files.app.includes("Conector OpenAPI de Oura") && files.app.includes("Oura OpenAPI connector"), "Manual/Admin must explain the Oura OpenAPI connector.");
 assert(files.app.includes("Rutas Apple, Samsung y Meta") && files.app.includes("Apple, Samsung, and Meta routes"), "Manual/Admin must explain Apple, Samsung, and Meta connector routes.");
 assert(files.app.includes("runDeviceConnectorSelfTest") && files.app.includes("data-device-action=\"run-device-connectors\""), "Admin device panel must run the device connector self-test from the UI.");

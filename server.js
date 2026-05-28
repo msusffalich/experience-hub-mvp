@@ -4,7 +4,7 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { inflateRawSync } from "node:zlib";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { execFile, spawn } from "node:child_process";
 import { promisify } from "node:util";
 import { tmpdir } from "node:os";
@@ -276,6 +276,13 @@ async function handleApi(req, res, url) {
     const user = await getRequestUser(req);
     const body = await readJson(req);
     sendJson(res, 200, validateIntegrationSignal(body, user));
+    return;
+  }
+
+  if (url.pathname === "/api/integration/ingest" && req.method === "POST") {
+    const user = await getRequestUser(req);
+    const body = await readJson(req);
+    sendJson(res, 201, await ingestIntegrationSignals(body, user));
     return;
   }
 
@@ -579,6 +586,7 @@ function buildIntegrationContract() {
   return {
     schemaVersion: INTEGRATION_CONTRACT_VERSION,
     validationEndpoint: "/api/integration/validate",
+    ingestionEndpoint: "/api/integration/ingest",
     samplesEndpoint: "/api/integration/samples",
     requiredFields: ["sourceId", "sourceType", "capturedAt", "participantId", "payloadType", "payload"],
     optionalFields: ["location", "deviceMetadata", "confidence", "privacyLevel", "linkedExperienceId", "permissions", "checksum"],
@@ -600,6 +608,7 @@ function buildIntegrationContract() {
     },
     rules: [
       "Validate before ingesting.",
+      "Ingest through /api/integration/ingest only after validation passes.",
       "Do not write directly to reports.",
       "Keep original files private and store derived analysis separately.",
       "Use stable sourceId or idempotencyKey for retries.",
@@ -1415,6 +1424,9 @@ function validateIntegrationSignal(signal = {}, user = null) {
     payload: signal.payload ?? signal.data ?? null,
     privacyLevel: String(signal.privacyLevel || signal.metadata?.privacyLevel || "normal").trim().toLowerCase(),
     linkedExperienceId: String(signal.linkedExperienceId || signal.experienceId || "").trim(),
+    idempotencyKey: String(signal.idempotencyKey || signal.metadata?.idempotencyKey || signal.sourceId || "").trim(),
+    deviceMetadata: isPlainObject(signal.deviceMetadata) ? signal.deviceMetadata : {},
+    metadata: isPlainObject(signal.metadata) ? signal.metadata : {},
   };
 
   for (const field of contract.requiredFields) {
@@ -1454,6 +1466,264 @@ function validateIntegrationSignal(signal = {}, user = null) {
     normalized,
     acceptedAt: new Date().toISOString(),
   };
+}
+
+async function ingestIntegrationSignals(body = {}, user = { id: LOCAL_USER_ID }) {
+  const signals = Array.isArray(body.signals)
+    ? body.signals
+    : Array.isArray(body)
+      ? body
+      : [body.signal || body].filter(Boolean);
+  const results = [];
+  for (const signal of signals) {
+    results.push(await ingestIntegrationSignal(signal, user));
+  }
+  const targetSummary = results.reduce((acc, item) => {
+    acc[item.target || "unknown"] = (acc[item.target || "unknown"] || 0) + 1;
+    return acc;
+  }, {});
+  const response = {
+    ok: results.every((item) => item.ok),
+    schemaVersion: INTEGRATION_CONTRACT_VERSION,
+    acceptedAt: new Date().toISOString(),
+    count: results.length,
+    targetSummary,
+    results,
+  };
+  await appendLog(response.ok ? "info" : "warn", "integration_ingest_batch", {
+    userId: user.id,
+    count: response.count,
+    targetSummary,
+    statuses: results.map((item) => ({ target: item.target, status: item.status, id: item.id || "" })),
+  });
+  return response;
+}
+
+async function ingestIntegrationSignal(signal = {}, user = { id: LOCAL_USER_ID }) {
+  const validation = validateIntegrationSignal(signal, user);
+  const normalized = validation.normalized;
+  const idempotencyKey = normalized.idempotencyKey || normalized.sourceId || validation.traceId;
+  if (!validation.ok) {
+    return {
+      ok: false,
+      status: "rejected",
+      target: validation.target,
+      traceId: validation.traceId,
+      errors: validation.errors,
+      warnings: validation.warnings,
+    };
+  }
+
+  if (validation.target === "experience") {
+    const experience = await upsertExperience(buildExperienceFromIntegrationSignal(normalized, signal, user), user);
+    return integrationIngestResult(validation, "stored", experience.id, { experience });
+  }
+
+  if (validation.target === "agenda") {
+    const agendaEvent = await upsertAgendaEvent(buildAgendaEventFromIntegrationSignal(normalized, signal), user);
+    return integrationIngestResult(validation, "stored", agendaEvent.id, { agendaEvent });
+  }
+
+  if (validation.target === "context") {
+    const experience = await upsertExperience(buildContextExperienceFromIntegrationSignal(normalized, signal, user), user);
+    return integrationIngestResult(validation, "stored", experience.id, {
+      experience,
+      contextType: normalized.payloadType,
+    });
+  }
+
+  if (validation.target === "assets") {
+    return integrationIngestResult(validation, "accepted_pending_media", stableIntegrationId("asset", idempotencyKey), {
+      route: "/api/media",
+      message: "Asset metadata accepted. Upload binary media through /api/media with the same sourceId and idempotencyKey.",
+    });
+  }
+
+  return integrationIngestResult(validation, "accepted_for_review", stableIntegrationId("review", idempotencyKey), {
+    message: "Signal validated, but no automatic target is configured.",
+  });
+}
+
+function integrationIngestResult(validation, status, id, extra = {}) {
+  return {
+    ok: true,
+    status,
+    id,
+    target: validation.target,
+    traceId: validation.traceId,
+    sourceId: validation.normalized.sourceId,
+    idempotencyKey: validation.normalized.idempotencyKey,
+    warnings: validation.warnings,
+    ...extra,
+  };
+}
+
+function buildExperienceFromIntegrationSignal(normalized, signal = {}, user = { id: LOCAL_USER_ID }) {
+  const payload = isPlainObject(normalized.payload) ? normalized.payload : {};
+  const title = String(payload.title || signal.title || normalized.metadata.title || "Registro desde Vibeapp").trim();
+  const text = String(payload.text || payload.note || payload.description || signal.notes || "").trim();
+  const idempotencyKey = normalized.idempotencyKey || normalized.sourceId;
+  return {
+    id: stableIntegrationId("exp", idempotencyKey),
+    title: title || "Registro desde Vibeapp",
+    category: normalizeCategoryName(payload.category || signal.category || "Trabajo"),
+    timestamp: normalized.capturedAt,
+    duration: Number(payload.durationMinutes || signal.duration || 0),
+    mood: payload.mood || "Calmo",
+    energy: clampServerNumber(payload.energy || signal.energy || 5, 1, 10),
+    location: payload.location || signal.location || "Sin ubicación",
+    people: payload.people || normalized.participantId || "Sin personas",
+    notes: text || title,
+    objective: payload.objective || "Registro creado desde una señal externa validada.",
+    pilotParticipantId: normalized.participantId,
+    pilotParticipantName: normalized.participantId,
+    sourceType: normalized.sourceType,
+    locale: signal.locale || "es",
+    metadata: buildIntegrationMetadata(normalized, signal, user, { target: "experience" }),
+    events: [
+      {
+        id: stableIntegrationId("evt", idempotencyKey),
+        title,
+        description: text || title,
+        timestamp: normalized.capturedAt,
+        order: 1,
+      },
+    ],
+  };
+}
+
+function buildAgendaEventFromIntegrationSignal(normalized, signal = {}) {
+  const payload = isPlainObject(normalized.payload) ? normalized.payload : {};
+  const startAt = payload.startAt || payload.start_at || normalized.capturedAt;
+  const endAt = payload.endAt || payload.end_at || new Date(new Date(startAt).getTime() + 60 * 60 * 1000).toISOString();
+  const idempotencyKey = normalized.idempotencyKey || normalized.sourceId;
+  return {
+    id: stableIntegrationId("agenda", idempotencyKey),
+    title: payload.title || signal.title || "Evento desde Vibeapp",
+    type: payload.type || "Personal",
+    description: payload.description || payload.text || "",
+    startAt,
+    endAt,
+    location: payload.location || signal.location || "Sin ubicación",
+    participants: payload.participants || normalized.participantId || "Sin participantes",
+    source: normalized.sourceType,
+    sourceType: normalized.sourceType,
+    pilotParticipantId: normalized.participantId,
+    metadata: buildIntegrationMetadata(normalized, signal, null, { target: "agenda" }),
+  };
+}
+
+function buildContextExperienceFromIntegrationSignal(normalized, signal = {}, user = { id: LOCAL_USER_ID }) {
+  const payload = isPlainObject(normalized.payload) ? normalized.payload : {};
+  const idempotencyKey = normalized.idempotencyKey || normalized.sourceId;
+  const label = integrationPayloadLabel(normalized);
+  const metrics = payload.metrics && typeof payload.metrics === "object" ? payload.metrics : {};
+  const dataType = payload.dataType || payload.recordType || normalized.payloadType;
+  const rows = Array.isArray(payload.records)
+    ? payload.records
+    : Array.isArray(payload.samples)
+      ? payload.samples
+      : [signal];
+  return {
+    id: stableIntegrationId("ctx", idempotencyKey),
+    title: label,
+    category: normalizeCategoryName(normalized.payloadType === "location" ? "Viajes / Paseos" : "Salud"),
+    timestamp: normalized.capturedAt,
+    duration: 0,
+    mood: "Observado",
+    energy: inferEnergyFromIntegrationPayload(normalized),
+    location: payload.location || signal.location || "Dato del dispositivo",
+    people: normalized.participantId || "Sin personas",
+    notes: buildContextSignalSummary(normalized),
+    objective: "Conservar contexto transversal de dispositivo para análisis por fecha y hora.",
+    pilotParticipantId: normalized.participantId,
+    pilotParticipantName: normalized.participantId,
+    sourceType: normalized.sourceType,
+    locale: signal.locale || "es",
+    metadata: {
+      ...buildIntegrationMetadata(normalized, signal, user, { target: "context" }),
+      structuredContext: {
+        id: stableIntegrationId("structured", idempotencyKey),
+        connector: normalized.sourceType,
+        sourceId: normalized.sourceId,
+        idempotencyKey,
+        payloadType: normalized.payloadType,
+        dataType,
+        summary: buildContextSignalSummary(normalized),
+        metrics,
+        signals: rows,
+      },
+    },
+    events: [
+      {
+        id: stableIntegrationId("evt", idempotencyKey),
+        title: label,
+        description: buildContextSignalSummary(normalized),
+        timestamp: normalized.capturedAt,
+        order: 1,
+      },
+    ],
+  };
+}
+
+function buildIntegrationMetadata(normalized, signal = {}, user = null, extra = {}) {
+  return removeEmptyMetadataFields({
+    ...(isPlainObject(signal.metadata) ? signal.metadata : {}),
+    integration: true,
+    integrationVersion: INTEGRATION_CONTRACT_VERSION,
+    sourceId: normalized.sourceId,
+    sourceType: normalized.sourceType,
+    payloadType: normalized.payloadType,
+    privacyLevel: normalized.privacyLevel,
+    participantId: normalized.participantId,
+    idempotencyKey: normalized.idempotencyKey,
+    capturedAt: normalized.capturedAt,
+    linkedExperienceId: normalized.linkedExperienceId,
+    userId: user?.id || "",
+    deviceMetadata: normalized.deviceMetadata,
+    ...extra,
+  });
+}
+
+function integrationPayloadLabel(normalized) {
+  const payload = isPlainObject(normalized.payload) ? normalized.payload : {};
+  const source = normalized.sourceType || "dispositivo";
+  const dataType = payload.dataType || payload.recordType || payload.type || normalized.payloadType;
+  if (normalized.payloadType === "sleep") return `Sueño desde ${source}`;
+  if (normalized.payloadType === "activity") return `Actividad desde ${source}`;
+  if (normalized.payloadType === "location") return `Ubicación desde ${source}`;
+  if (normalized.payloadType === "biometric") return `Biometría desde ${source}`;
+  return `Contexto desde ${source}: ${dataType}`;
+}
+
+function buildContextSignalSummary(normalized) {
+  const payload = isPlainObject(normalized.payload) ? normalized.payload : {};
+  const metrics = payload.metrics && typeof payload.metrics === "object"
+    ? Object.entries(payload.metrics).slice(0, 4).map(([key, value]) => `${key}: ${value}`).join(", ")
+    : "";
+  const dataType = payload.dataType || payload.recordType || normalized.payloadType;
+  return `Señal ${dataType} recibida desde ${normalized.sourceType}. ${metrics || "Disponible para cruce por fecha/hora."}`.trim();
+}
+
+function inferEnergyFromIntegrationPayload(normalized) {
+  const payload = isPlainObject(normalized.payload) ? normalized.payload : {};
+  const metrics = payload.metrics && typeof payload.metrics === "object" ? payload.metrics : payload;
+  const readiness = Number(metrics.readinessScore || metrics.readiness || metrics.recoveryScore || 0);
+  if (readiness) return clampServerNumber(Math.round(readiness / 10), 1, 10);
+  const sleepMinutes = Number(metrics.sleepMinutes || metrics.durationMinutes || 0);
+  if (normalized.payloadType === "sleep" && sleepMinutes) return clampServerNumber(Math.round(sleepMinutes / 60), 1, 10);
+  return 5;
+}
+
+function stableIntegrationId(prefix, key) {
+  const value = String(key || randomUUID());
+  return `${prefix}-${createHash("sha256").update(value).digest("hex").slice(0, 18)}`;
+}
+
+function clampServerNumber(value, min, max) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return min;
+  return Math.max(min, Math.min(max, number));
 }
 
 function buildVibeappSimulationSamples(now = new Date().toISOString()) {
@@ -5965,7 +6235,7 @@ async function toExperienceRow(experience, user = { id: LOCAL_USER_ID }) {
     locale: normalized.locale || "es",
     attachments: normalized.attachments || [],
     metadata: {
-      ...(experience.metadata || {}),
+      ...(normalized.metadata || {}),
       objective: normalized.objective || "",
       workspaceId: normalized.workspaceId || null,
       pilotParticipantId: normalized.pilotParticipantId || null,
@@ -6000,12 +6270,14 @@ function fromExperienceRow(row) {
     isDemo: Boolean(row.metadata?.isDemo),
     demoBatch: row.metadata?.demoBatch || "",
     attachments: Array.isArray(row.attachments) ? row.attachments : [],
+    metadata: isPlainObject(row.metadata) ? row.metadata : {},
     locale: row.locale || "es",
     updatedAt: row.updated_at,
   });
 }
 
 function normalizeExperience(experience) {
+  const metadata = isPlainObject(experience.metadata) ? experience.metadata : {};
   return {
     id: experience.id || createId(),
     title: experience.title || "Untitled experience",
@@ -6017,14 +6289,15 @@ function normalizeExperience(experience) {
     location: experience.location || "Sin ubicación",
     people: experience.people || "Sin personas",
     notes: experience.notes || "",
-    objective: experience.objective || experience.metadata?.objective || "",
-    workspaceId: experience.workspaceId || experience.metadata?.workspaceId || "",
-    pilotParticipantId: experience.pilotParticipantId || experience.metadata?.pilotParticipantId || "",
-    pilotParticipantName: experience.pilotParticipantName || experience.metadata?.pilotParticipantName || "",
-    events: normalizeExperienceEvents(experience.events || experience.metadata?.events || [], experience.id),
-    isDemo: Boolean(experience.isDemo || experience.metadata?.isDemo),
-    demoBatch: experience.demoBatch || experience.metadata?.demoBatch || "",
+    objective: experience.objective || metadata.objective || "",
+    workspaceId: experience.workspaceId || metadata.workspaceId || "",
+    pilotParticipantId: experience.pilotParticipantId || metadata.pilotParticipantId || "",
+    pilotParticipantName: experience.pilotParticipantName || metadata.pilotParticipantName || "",
+    events: normalizeExperienceEvents(experience.events || metadata.events || [], experience.id),
+    isDemo: Boolean(experience.isDemo || metadata.isDemo),
+    demoBatch: experience.demoBatch || metadata.demoBatch || "",
     attachments: Array.isArray(experience.attachments) ? experience.attachments : [],
+    metadata,
     locale: experience.locale || "es",
     updatedAt: experience.updatedAt || new Date().toISOString(),
   };

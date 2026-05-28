@@ -189,6 +189,7 @@ const check = (condition, message) => {
 };
 
 check(files.server.includes("/api/integration/validate"), "server must expose /api/integration/validate.");
+check(files.server.includes("/api/integration/ingest") && files.server.includes("function ingestIntegrationSignal"), "server must expose a validated integration ingest endpoint.");
 check(files.server.includes("/api/experiences") && files.server.includes("/api/media") && files.server.includes("/api/agenda"), "server must keep native sync endpoints.");
 check(files.server.includes("storageObjectHint") && files.server.includes("idempotencyKey"), "server must preserve storageObjectHint and idempotency metadata.");
 check(files.vibeappMain.includes("Idempotency-Key") && files.vibeappMain.includes("X-Vibe-Source-Id"), "Vibeapp transport must send retry-safe idempotency headers.");
@@ -196,6 +197,7 @@ check(files.vibeappMain.includes("ExperienceSyncClient") && files.vibeappMain.in
 check(files.vibeappMain.includes("CaptureQueueSummary") && files.vibeappMain.includes("NativePilotChecklist"), "Vibeapp must keep queue summary and pilot checklist.");
 check(files.vibeappTest.includes("Native sync client sends media, experience, and agenda requests"), "Flutter tests must cover native sync requests.");
 check(files.app.includes("Vibeapp") && files.app.includes("vibe-signal-contract-v2"), "PWA/Admin must document the Vibeapp signal contract.");
+check(files.app.includes("/api/integration/ingest"), "PWA/Admin manual must document the integration ingest endpoint.");
 
 const results = samples.map((sample) => ({ ...sample, result: validate(sample.signal) }));
 for (const sample of results) {

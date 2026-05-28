@@ -1,4 +1,4 @@
-const APP_VERSION = "20260528-biometric-intelligence-489";
+const APP_VERSION = "20260528-integration-ingest-490";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2114,6 +2114,7 @@ const manualContent = {
         "El proyecto queda preparado para Railway con railway.json, railpack.json, healthcheck /api/health, Node >=20, Python para ReportLab y .gitignore para evitar publicar .env, datos locales, logs o claves.",
         "La sección Dispositivos ahora documenta un contrato único de integración. Cualquier fuente nueva debe entregar sourceId, sourceType, capturedAt, participantId, payloadType y payload antes de alimentar experiencias, activos, Agenda o contexto.",
         "El backend expone /api/integration/contract y /api/integration/validate para que Vibeapp, Clio o cualquier conector pruebe una señal normalizada antes de crear datos reales. Esto evita ingestas ambiguas y hace que los reintentos usen sourceId e idempotencyKey.",
+        "El backend agrega /api/integration/ingest como puerta única de entrada: texto crea experiencia, calendario crea Agenda, biometría/actividad/sueño/ubicación crea contexto sincronizable, y multimedia queda aceptada para subir el archivo por /api/media con la misma idempotencia.",
         "El Kit de integración agrega /api/integration/samples y ejemplos descargables para Vibeapp, Meta/Oakley, Oura, Apple Health, Samsung Health, Health Connect y Calendario. Sirve para probar conectores sin datos reales, convertir cada ruta en issue de GitHub y validar aceptación antes de automatizar.",
         "El OpenAPI de Oura v2 queda incorporado como conector biométrico backend: /api/integration/oura/manifest describe endpoints, scopes y métricas; /api/integration/oura/normalize transforma documentos Oura en señales Vibe sensibles para contexto, reportes y hallazgos. Falta OAuth/token productivo para sincronización real automática.",
         "Apple Health, Samsung/Android Health Connect y Meta Wearables quedan incorporados como conectores nativos planificados: /api/integration/apple-health/manifest, /api/integration/health-connect/manifest y /api/integration/meta-wearables/manifest explican rutas, permisos y normalizadores. Apple Health no tiene REST directo; Samsung debe priorizar Health Connect; Meta debe usar Vibeapp o importación desde Meta AI/Galería hasta tener SDK aprobado.",
@@ -2759,6 +2760,7 @@ const manualContent = {
         "The project is prepared for Railway with railway.json, railpack.json, healthcheck /api/health, Node >=20, Python for ReportLab, and .gitignore to avoid publishing .env, local data, logs, or keys.",
         "The Devices section now documents a single integration contract. Every new source must provide sourceId, sourceType, capturedAt, participantId, payloadType, and payload before feeding experiences, assets, Agenda, or context.",
         "The backend exposes /api/integration/contract and /api/integration/validate so Vibeapp, Clio, or any connector can test a normalized signal before creating real data. This avoids ambiguous ingestion and keeps retries tied to sourceId and idempotencyKey.",
+        "The backend adds /api/integration/ingest as the single entry gate: text creates an experience, calendar creates Agenda, biometrics/activity/sleep/location create synchronized context, and multimedia is accepted for binary upload through /api/media with the same idempotency.",
         "The Integration kit adds /api/integration/samples and downloadable examples for Vibeapp, Meta/Oakley, Oura, Apple Health, Samsung Health, Health Connect, and Calendar. It lets connectors be tested without real data, turns each route into a GitHub issue, and validates acceptance before automation.",
         "The Oura v2 OpenAPI is now incorporated as a backend biometric connector: /api/integration/oura/manifest describes endpoints, scopes, and metrics; /api/integration/oura/normalize transforms Oura documents into sensitive Vibe context signals for reports and findings. Production OAuth/token sync is still required for automatic live synchronization.",
         "Apple Health, Samsung/Android Health Connect, and Meta Wearables are incorporated as planned native connectors: /api/integration/apple-health/manifest, /api/integration/health-connect/manifest, and /api/integration/meta-wearables/manifest explain routes, permissions, and normalizers. Apple Health has no direct REST API; Samsung should prioritize Health Connect; Meta should use Vibeapp or Meta AI/Gallery import until SDK access is approved.",
@@ -26470,6 +26472,8 @@ function renderAdminOperationalFocusPanel() {
         nativeSyncDetail: "Vibeapp now has real native contracts for text, photo, video, audio, agenda, location, and biometric CSV/JSON files. The native queue validates each payload, persists locally across app restarts, tracks attempts, retries eligible items automatically every 30 seconds when a session is active, separates ready, uploading, retrying, blocked, file, and event states, exposes a pilot checklist, and sends stable idempotency keys so retries update the same experience, agenda event, or Storage object instead of creating duplicates.",
         nativeSimulator: "Native sync simulator",
         nativeSimulatorDetail: "npm run simulate:vibeapp validates note, agenda, photo, video, audio, biometrics, location, and Meta imports against the PWA signal contract without needing a physical phone.",
+        integrationIngest: "Validated integration ingest",
+        integrationIngestDetail: "POST /api/integration/ingest now converts validated signals into the right operational target: experiences, Agenda, synchronized context, or pending media upload with the same idempotency key.",
         integrationKit: "Verifiable integration kit",
         integrationKitDetail: "Admin exposes reusable sample payloads for Vibeapp, Meta/Oakley, Oura, Apple Health, Samsung Health, Health Connect, and Calendar. These samples can be exported, copied, validated, and used as connector acceptance fixtures.",
         ouraConnector: "Oura OpenAPI connector",
@@ -26527,6 +26531,8 @@ function renderAdminOperationalFocusPanel() {
     labels.nativeSyncDetail = "Vibeapp ya tiene contratos nativos reales para texto, foto, video, audio, agenda, lugar, biometr\u00eda CSV/JSON e importaci\u00f3n de sesiones externas. La cola nativa valida cada payload, conserva intentos, reintenta autom\u00e1ticamente, separa estados reales, muestra checklist de piloto y usa llaves de idempotencia para que un reintento actualice la misma experiencia, evento de agenda o archivo de Storage sin crear duplicados.";
     labels.nativeSimulator = "Simulador de sincronizaci\u00f3n nativa";
     labels.nativeSimulatorDetail = "npm run simulate:vibeapp valida nota, agenda, foto, video, audio, biometr\u00eda, ubicaci\u00f3n e importaciones Meta contra el contrato de se\u00f1ales PWA sin necesitar un tel\u00e9fono f\u00edsico.";
+    labels.integrationIngest = "Ingesta validada de integraciones";
+    labels.integrationIngestDetail = "POST /api/integration/ingest convierte se\u00f1ales validadas en el destino operativo correcto: experiencias, Agenda, contexto sincronizable o multimedia pendiente de subir con la misma idempotencia.";
     labels.integrationKit = "Kit de integraci\u00f3n verificable";
     labels.integrationKitDetail = "Administraci\u00f3n expone payloads reutilizables para Vibeapp, Meta/Oakley, Oura, Apple Health, Samsung Health, Health Connect y Calendario. Estos ejemplos se pueden exportar, copiar, validar y usar como pruebas de aceptaci\u00f3n de conectores.";
     labels.ouraConnector = "Conector OpenAPI de Oura";
@@ -26560,6 +26566,7 @@ function renderAdminOperationalFocusPanel() {
     [labels.insightPlan, labels.insightPlanDetail],
     [labels.nativeSync, labels.nativeSyncDetail],
     [labels.nativeSimulator, labels.nativeSimulatorDetail],
+    [labels.integrationIngest, labels.integrationIngestDetail],
     [labels.integrationKit, labels.integrationKitDetail],
     [labels.ouraConnector, labels.ouraConnectorDetail],
     [labels.nativeDeviceConnectors, labels.nativeDeviceConnectorsDetail],

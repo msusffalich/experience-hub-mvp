@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260528-biometric-intelligence-489";
+const CACHE_NAME = "experience-hub-pwa-20260528-integration-ingest-490";
 const APP_SHELL = [
   "/icons/vibe-logo.jpg",
   "/icons/vibe-logo.png",

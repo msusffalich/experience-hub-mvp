@@ -1,6 +1,6 @@
 # Conectores de salud y wearables
 
-Version app: `20260528-biometric-intelligence-489`
+Version app: `20260528-integration-ingest-490`
 
 Este documento consolida los conectores revisados para Oura, Apple Health, Samsung/Android Health Connect y Meta Wearables.
 
@@ -102,6 +102,19 @@ Ese resumen alimenta cuatro superficies:
 - Hallazgos: convierte coincidencias biometricas en recomendaciones humanas, no diagnosticas.
 
 Regla operativa: si la señal no tiene fecha/hora clara, queda importada pero sin impacto analitico hasta que exista una experiencia cercana. Esto evita conclusiones falsas.
+
+## Ingesta validada
+
+La ruta `POST /api/integration/ingest` recibe una señal o un arreglo `signals` usando el mismo contrato que `POST /api/integration/validate`.
+
+Comportamiento actual:
+
+- `text`: crea o actualiza una experiencia con id estable derivado de `idempotencyKey`.
+- `calendar`: crea o actualiza un evento de Agenda con id estable.
+- `biometric`, `activity`, `sleep`, `location` y `context`: crean una experiencia de contexto con `metadata.structuredContext.signals`, para que la PWA la use en biometria, Panel, Reportes y Hallazgos.
+- `image`, `audio`, `video`, `document` y `media`: quedan aceptados como `accepted_pending_media`; el archivo binario debe subir por `/api/media` con el mismo `sourceId` e `idempotencyKey`.
+
+La regla sigue siendo la misma: ninguna fuente escribe directamente sobre reportes o hallazgos. Primero se transforma en experiencia, agenda, activo o contexto sincronizable.
 
 ## Prueba integral de conectores
 

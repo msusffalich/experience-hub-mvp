@@ -146,6 +146,17 @@ Cada evento o activo debe enviar:
 
 La PWA ya hidrata esas senales estructuradas junto con CSV/JSON importados desde Activos. El cruce se hace por fecha/hora y evita conclusiones cuando no hay experiencia cercana.
 
+## Ingesta PWA para Vibeapp
+
+Vibeapp debe usar `POST /api/integration/ingest` para señales normalizadas cuando no esté enviando binarios. La ruta valida el contrato, conserva `idempotencyKey` y dirige cada señal al destino correcto:
+
+- Nota o texto: experiencia.
+- Agenda o calendario: Agenda.
+- Biometria, actividad, sueño, ubicación y contexto: experiencia de contexto sincronizable.
+- Multimedia: aceptación de metadata y subida posterior del archivo por `/api/media`.
+
+Esto evita que la app nativa cree caminos paralelos y mantiene una sola fuente de verdad para reportes, hallazgos y publicaciones.
+
 ## Criterio de calidad
 
 Vibeapp solo debe considerarse lista para piloto cuando:
