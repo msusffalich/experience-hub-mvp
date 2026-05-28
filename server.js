@@ -41,6 +41,7 @@ const OCR_PROVIDER = process.env.OCR_PROVIDER || "openai";
 const OPENAI_OCR_MODEL = process.env.OPENAI_OCR_MODEL || "gpt-4o-mini";
 const SIGNAL_METADATA_SCHEMA_VERSION = "clio-inspired-signal-v1";
 const INTEGRATION_CONTRACT_VERSION = "vibe-signal-contract-v2";
+const OURA_API_BASE_URL = (process.env.OURA_API_BASE_URL || "https://api.ouraring.com").replace(/\/$/, "");
 const execFileAsync = promisify(execFile);
 const PYTHON_EXECUTABLE_CANDIDATES = [
   process.env.PYTHON_EXECUTABLE,
@@ -214,6 +215,18 @@ async function handleApi(req, res, url) {
 
   if (url.pathname === "/api/integration/samples" && req.method === "GET") {
     sendJson(res, 200, buildIntegrationSampleKit());
+    return;
+  }
+
+  if (url.pathname === "/api/integration/oura/manifest" && req.method === "GET") {
+    sendJson(res, 200, buildOuraConnectorManifest());
+    return;
+  }
+
+  if (url.pathname === "/api/integration/oura/normalize" && req.method === "POST") {
+    const user = await getOptionalRequestUser(req);
+    const body = await readJson(req);
+    sendJson(res, 200, normalizeOuraPayload(body, user));
     return;
   }
 
@@ -722,6 +735,308 @@ function buildIntegrationSampleSignals(now = new Date().toISOString()) {
       },
     },
   ];
+}
+
+function buildOuraConnectorManifest() {
+  const dataTypes = [
+    {
+      dataType: "daily_readiness",
+      route: "/v2/usercollection/daily_readiness",
+      target: "context",
+      payloadType: "biometric",
+      metrics: ["score", "temperature_deviation", "temperature_trend_deviation", "contributors"],
+      scopes: ["daily"],
+    },
+    {
+      dataType: "daily_sleep",
+      route: "/v2/usercollection/daily_sleep",
+      target: "context",
+      payloadType: "sleep",
+      metrics: ["score", "contributors"],
+      scopes: ["daily"],
+    },
+    {
+      dataType: "sleep",
+      route: "/v2/usercollection/sleep",
+      target: "context",
+      payloadType: "sleep",
+      metrics: ["period", "sleep phases", "heart_rate", "hrv"],
+      scopes: ["daily"],
+    },
+    {
+      dataType: "daily_activity",
+      route: "/v2/usercollection/daily_activity",
+      target: "context",
+      payloadType: "activity",
+      metrics: ["score", "steps", "active_calories", "total_calories", "inactivity_alerts", "contributors"],
+      scopes: ["daily"],
+    },
+    {
+      dataType: "daily_stress",
+      route: "/v2/usercollection/daily_stress",
+      target: "context",
+      payloadType: "biometric",
+      metrics: ["stress_high", "recovery_high", "day_summary"],
+      scopes: ["daily"],
+    },
+    {
+      dataType: "daily_resilience",
+      route: "/v2/usercollection/daily_resilience",
+      target: "context",
+      payloadType: "biometric",
+      metrics: ["level", "contributors.sleep_recovery", "contributors.daytime_recovery", "contributors.stress"],
+      scopes: ["daily"],
+    },
+    {
+      dataType: "daily_spo2",
+      route: "/v2/usercollection/daily_spo2",
+      target: "context",
+      payloadType: "biometric",
+      metrics: ["spo2_percentage", "breathing_disturbance_index"],
+      scopes: ["spo2Daily"],
+    },
+    {
+      dataType: "heart_rate",
+      route: "/v2/usercollection/heartrate",
+      target: "context",
+      payloadType: "biometric",
+      metrics: ["timestamp", "bpm", "source"],
+      scopes: ["heartrate"],
+    },
+    {
+      dataType: "workout",
+      route: "/v2/usercollection/workout",
+      target: "context",
+      payloadType: "activity",
+      metrics: ["activity", "calories", "distance", "intensity", "start_datetime", "end_datetime"],
+      scopes: ["workout"],
+    },
+    {
+      dataType: "daily_cardiovascular_age",
+      route: "/v2/usercollection/daily_cardiovascular_age",
+      target: "context",
+      payloadType: "biometric",
+      metrics: ["vascular_age", "pulse_wave_velocity"],
+      scopes: ["daily"],
+    },
+    {
+      dataType: "vo2_max",
+      route: "/v2/usercollection/vO2_max",
+      target: "context",
+      payloadType: "biometric",
+      metrics: ["vo2_max"],
+      scopes: ["daily"],
+    },
+    {
+      dataType: "ring_battery_level",
+      route: "/v2/usercollection/ring_battery_level",
+      target: "context",
+      payloadType: "context",
+      metrics: ["level", "charging", "in_charger"],
+      scopes: ["daily"],
+    },
+  ];
+  return {
+    schemaVersion: INTEGRATION_CONTRACT_VERSION,
+    connector: "oura-api-v2",
+    source: "openapi-1.30.json",
+    apiBaseUrl: OURA_API_BASE_URL,
+    auth: {
+      recommended: "oauth2-authorization-code",
+      supported: ["oauth2", "bearer-token"],
+      tokenStorage: "backend-only",
+      requiredEnvironment: ["OURA_CLIENT_ID", "OURA_CLIENT_SECRET", "OURA_REDIRECT_URI"],
+    },
+    syncModes: {
+      now: ["csv-json-file-import", "backend-normalize"],
+      next: ["oauth-manual-sync", "daily-background-job"],
+      later: ["webhook-subscription"],
+    },
+    privacyLevel: "sensitive",
+    dataTypes,
+    webhookDataTypes: [
+      "tag",
+      "enhanced_tag",
+      "workout",
+      "session",
+      "sleep",
+      "daily_sleep",
+      "daily_readiness",
+      "daily_activity",
+      "daily_spo2",
+      "sleep_time",
+      "rest_mode_period",
+      "ring_configuration",
+      "daily_stress",
+      "daily_cardiovascular_age",
+      "daily_resilience",
+      "vo2_max",
+      "period_start",
+      "pregnancy",
+      "fertile_window",
+      "ovulation_confirmed",
+      "blood_glucose",
+      "meal",
+    ],
+  };
+}
+
+function getOuraDocumentDate(document = {}) {
+  return document.day || document.timestamp || document.start_datetime || document.end_datetime || document.datetime || new Date().toISOString();
+}
+
+function pickOuraMetrics(dataType, document = {}) {
+  const contributors = document.contributors || {};
+  if (dataType === "daily_readiness") {
+    return {
+      readinessScore: document.score ?? null,
+      temperatureDeviationC: document.temperature_deviation ?? null,
+      temperatureTrendDeviationC: document.temperature_trend_deviation ?? null,
+      contributors,
+    };
+  }
+  if (dataType === "daily_sleep" || dataType === "sleep") {
+    return {
+      sleepScore: document.score ?? null,
+      sleepDay: document.day || null,
+      contributors,
+      bedtimeStart: document.bedtime_start || document.start_datetime || null,
+      bedtimeEnd: document.bedtime_end || document.end_datetime || null,
+      totalSleepDuration: document.total_sleep_duration ?? document.total_sleep ?? null,
+    };
+  }
+  if (dataType === "daily_activity") {
+    return {
+      activityScore: document.score ?? null,
+      steps: document.steps ?? null,
+      activeCalories: document.active_calories ?? null,
+      totalCalories: document.total_calories ?? null,
+      equivalentWalkingDistance: document.equivalent_walking_distance ?? null,
+      inactivityAlerts: document.inactivity_alerts ?? null,
+      contributors,
+    };
+  }
+  if (dataType === "daily_stress") {
+    return {
+      stressHighSeconds: document.stress_high ?? null,
+      recoveryHighSeconds: document.recovery_high ?? null,
+      daySummary: document.day_summary ?? null,
+    };
+  }
+  if (dataType === "daily_resilience") {
+    return {
+      resilienceLevel: document.level ?? null,
+      contributors,
+    };
+  }
+  if (dataType === "daily_spo2") {
+    return {
+      breathingDisturbanceIndex: document.breathing_disturbance_index ?? null,
+      spo2Percentage: document.spo2_percentage ?? null,
+    };
+  }
+  if (dataType === "heart_rate") {
+    return {
+      bpm: document.bpm ?? null,
+      source: document.source ?? null,
+      timestamp: document.timestamp ?? null,
+    };
+  }
+  if (dataType === "workout") {
+    return {
+      activity: document.activity ?? null,
+      calories: document.calories ?? null,
+      distanceMeters: document.distance ?? null,
+      intensity: document.intensity ?? null,
+      startAt: document.start_datetime ?? null,
+      endAt: document.end_datetime ?? null,
+      source: document.source ?? null,
+    };
+  }
+  if (dataType === "daily_cardiovascular_age") {
+    return {
+      vascularAge: document.vascular_age ?? null,
+      pulseWaveVelocity: document.pulse_wave_velocity ?? null,
+    };
+  }
+  if (dataType === "vo2_max") {
+    return {
+      vo2Max: document.vo2_max ?? null,
+    };
+  }
+  if (dataType === "ring_battery_level") {
+    return {
+      batteryLevel: document.level ?? null,
+      charging: document.charging ?? null,
+      inCharger: document.in_charger ?? null,
+    };
+  }
+  return { raw: document };
+}
+
+function buildOuraSignal({ dataType = "daily_readiness", document = {}, participantId = "miguel", user = null } = {}) {
+  const manifest = buildOuraConnectorManifest();
+  const dataTypeConfig = manifest.dataTypes.find((item) => item.dataType === dataType) || {
+    dataType,
+    target: "context",
+    payloadType: "biometric",
+    route: "/v2/usercollection",
+  };
+  const capturedAt = getOuraDocumentDate(document);
+  const documentId = document.id || `${dataType}-${capturedAt}`;
+  return {
+    sourceId: `oura-${dataType}-${documentId}`,
+    sourceType: "wearable",
+    capturedAt,
+    participantId: participantId || user?.id || LOCAL_USER_ID,
+    payloadType: dataTypeConfig.payloadType,
+    privacyLevel: "sensitive",
+    idempotencyKey: `oura:${dataType}:${documentId}:${participantId || user?.id || LOCAL_USER_ID}`,
+    payload: {
+      provider: "Oura",
+      apiVersion: "v2",
+      dataType,
+      route: dataTypeConfig.route,
+      metrics: pickOuraMetrics(dataType, document),
+      originalDocumentId: document.id || null,
+      originalDay: document.day || null,
+    },
+    deviceMetadata: {
+      deviceFamily: "Oura Ring",
+      connector: manifest.connector,
+      apiBaseUrl: manifest.apiBaseUrl,
+      syncMode: "backend-normalize",
+      scopes: dataTypeConfig.scopes || [],
+    },
+  };
+}
+
+function normalizeOuraPayload(body = {}, user = null) {
+  const documents = Array.isArray(body.documents)
+    ? body.documents
+    : Array.isArray(body.data)
+      ? body.data
+      : [body.document || body.data || body];
+  const dataType = String(body.dataType || body.type || "daily_readiness").trim();
+  const participantId = String(body.participantId || body.pilotParticipantId || "miguel").trim();
+  const results = documents
+    .filter((document) => document && typeof document === "object")
+    .map((document) => {
+      const signal = buildOuraSignal({ dataType, document, participantId, user });
+      return validateIntegrationSignal(signal, user);
+    });
+  return {
+    ok: results.length > 0 && results.every((item) => item.ok),
+    connector: "oura-api-v2",
+    schemaVersion: INTEGRATION_CONTRACT_VERSION,
+    dataType,
+    count: results.length,
+    targetSummary: results.reduce((acc, item) => {
+      acc[item.target] = (acc[item.target] || 0) + 1;
+      return acc;
+    }, {}),
+    results,
+  };
 }
 
 function validateIntegrationSignal(signal = {}, user = null) {

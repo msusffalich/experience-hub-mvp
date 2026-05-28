@@ -1,4 +1,4 @@
-const APP_VERSION = "20260528-integration-progress-484";
+const APP_VERSION = "20260528-oura-openapi-connector-485";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2115,6 +2115,7 @@ const manualContent = {
         "La sección Dispositivos ahora documenta un contrato único de integración. Cualquier fuente nueva debe entregar sourceId, sourceType, capturedAt, participantId, payloadType y payload antes de alimentar experiencias, activos, Agenda o contexto.",
         "El backend expone /api/integration/contract y /api/integration/validate para que Vibeapp, Clio o cualquier conector pruebe una señal normalizada antes de crear datos reales. Esto evita ingestas ambiguas y hace que los reintentos usen sourceId e idempotencyKey.",
         "El Kit de integración agrega /api/integration/samples y ejemplos descargables para Vibeapp, Meta/Oakley, Oura, Apple Health, Samsung Health, Health Connect y Calendario. Sirve para probar conectores sin datos reales, convertir cada ruta en issue de GitHub y validar aceptación antes de automatizar.",
+        "El OpenAPI de Oura v2 queda incorporado como conector biométrico backend: /api/integration/oura/manifest describe endpoints, scopes y métricas; /api/integration/oura/normalize transforma documentos Oura en señales Vibe sensibles para contexto, reportes y hallazgos. Falta OAuth/token productivo para sincronización real automática.",
         "Vibeapp nativa se planifica como complemento de la PWA: la PWA queda para análisis, reportes, hallazgos, publicaciones y administración; Vibeapp cubre captura real con cámara, audio, video, ubicación, sensores, biometría, notificaciones y sincronización transparente con Supabase.",
         "El blueprint inicial de Vibeapp está documentado en docs/vibeapp-native-blueprint.md. Ese documento define contrato de sincronización, pantallas iniciales, flujo offline, permisos, privacidad y los primeros incrementos Flutter.",
         "Vibeapp ya tiene captura nativa real para texto, foto, video, audio, agenda, lugar y archivos biométricos CSV/JSON. Foto, video, audio y biometría suben a Storage privado mediante /api/media; Agenda sincroniza con /api/agenda; Lugar guarda coordenadas, precisión y fecha/hora como metadatos estructurados.",
@@ -2755,6 +2756,7 @@ const manualContent = {
         "The Devices section now documents a single integration contract. Every new source must provide sourceId, sourceType, capturedAt, participantId, payloadType, and payload before feeding experiences, assets, Agenda, or context.",
         "The backend exposes /api/integration/contract and /api/integration/validate so Vibeapp, Clio, or any connector can test a normalized signal before creating real data. This avoids ambiguous ingestion and keeps retries tied to sourceId and idempotencyKey.",
         "The Integration kit adds /api/integration/samples and downloadable examples for Vibeapp, Meta/Oakley, Oura, Apple Health, Samsung Health, Health Connect, and Calendar. It lets connectors be tested without real data, turns each route into a GitHub issue, and validates acceptance before automation.",
+        "The Oura v2 OpenAPI is now incorporated as a backend biometric connector: /api/integration/oura/manifest describes endpoints, scopes, and metrics; /api/integration/oura/normalize transforms Oura documents into sensitive Vibe context signals for reports and findings. Production OAuth/token sync is still required for automatic live synchronization.",
         "The device contract can be exported as Markdown or JSON to share with developers, API/MCP integrations, or wearable providers.",
         "npm run simulate:vibeapp validates without a physical phone that Vibeapp can send quick note, agenda, photo, video, audio, biometrics, location, and Meta sessions to the right contract targets: experience, Agenda, assets, or context.",
         "Admin can run the same Vibeapp simulation against /api/vibeapp/simulate from the device integration panel, showing passed signals, targets, and errors without opening the terminal.",
@@ -8181,6 +8183,8 @@ function buildGlobalProgressSnapshot() {
     true, // Meta/Oura/Samsung/Apple practical routes documented.
     true, // Integration sample kit and validation fixtures exist.
     true, // Vibeapp simulation endpoint validates normalized routes.
+    true, // Oura OpenAPI manifest and backend normalizer exist.
+    false, // Oura OAuth/token live sync still pending.
     false, // Direct native connectors not built yet.
     false, // Store-distributed native app not published.
     false, // Direct social publishing APIs not connected.
@@ -8233,7 +8237,7 @@ function buildGlobalProgressSnapshot() {
         native: "Vibeapp native",
         nativeDetail: "Flutter skeleton has auth, command preview/routing, contract tests for event-media payloads, source-specific external import profiles, local HTTP sync tests, failure-path tests, queue/retry-state tests, mobile pilot gate, queue, auto-retry, media, agenda, location, biometrics, Android package id io.vibeapp.mobile, verified debug APK, signed release APK/AAB, Android signing gate, unified pilot verification, and a ZIP-ready Android pilot kit.",
         connectors: "Device and service connectors",
-        connectorsDetail: "Routes documented for Meta/Oakley, Oura, Apple Health, Samsung Health, Health Connect; sample payload kit and validation fixtures are active. Direct connectors remain future work.",
+        connectorsDetail: "Routes documented for Meta/Oakley, Oura, Apple Health, Samsung Health, Health Connect; sample payload kit, validation fixtures, and Oura OpenAPI normalizer are active. Live OAuth connectors remain future work.",
         full: "Full product ambition",
         fullDetail: `Future ambition ${fullAmbitionOverall}% when direct connectors, store distribution, advanced agents, predictive AI, and direct APIs are included. This does not reduce current delivery.`,
         nextDetail: "Run npm run verify:pilot and npm run package:vibeapp, pilot-install Vibeapp on a physical Android device, then harden publication design/output and device-import flows.",
@@ -8268,7 +8272,7 @@ function buildGlobalProgressSnapshot() {
         native: "Vibeapp nativa",
         nativeDetail: "El esqueleto Flutter tiene auth, vista previa de comandos, pruebas de contrato para payloads evento-activo, perfiles de importación externa por origen, pruebas HTTP locales de sincronización, pruebas de rutas de fallo, pruebas de cola y reintentos, compuerta piloto móvil, cola, autoreintento, medios, agenda, lugar, biometría, paquete Android io.vibeapp.mobile, APK debug verificado, APK/AAB release firmados, compuerta local Android, verificación piloto unificada y paquete Android entregable en ZIP.",
         connectors: "Conectores de dispositivos y servicios",
-        connectorsDetail: "Rutas documentadas para Meta/Oakley, Oura, Apple Health, Samsung Health y Health Connect; kit de payloads y pruebas de validación activos. Los conectores directos quedan futuros.",
+        connectorsDetail: "Rutas documentadas para Meta/Oakley, Oura, Apple Health, Samsung Health y Health Connect; kit de payloads, pruebas de validación y normalizador OpenAPI de Oura activos. Los conectores OAuth en vivo quedan futuros.",
         full: "Ambición de producto completo",
         fullDetail: `Ambición futura ${fullAmbitionOverall}% cuando se incluyen conectores directos, tiendas, agentes avanzados, IA predictiva y APIs directas. Esto no descuenta la entrega actual.`,
         nextDetail: "Ejecutar npm run verify:pilot y npm run package:vibeapp, instalar Vibeapp en un Android físico de piloto, luego fortalecer diseño/salidas de publicaciones y flujos de importación por dispositivo.",
@@ -26247,6 +26251,8 @@ function renderAdminOperationalFocusPanel() {
         nativeSimulatorDetail: "npm run simulate:vibeapp validates note, agenda, photo, video, audio, biometrics, location, and Meta imports against the PWA signal contract without needing a physical phone.",
         integrationKit: "Verifiable integration kit",
         integrationKitDetail: "Admin exposes reusable sample payloads for Vibeapp, Meta/Oakley, Oura, Apple Health, Samsung Health, Health Connect, and Calendar. These samples can be exported, copied, validated, and used as connector acceptance fixtures.",
+        ouraConnector: "Oura OpenAPI connector",
+        ouraConnectorDetail: "The Oura v2 OpenAPI now has backend endpoints for manifest and normalization. It maps readiness, sleep, activity, stress, resilience, SpO2, heart rate, workouts, cardiovascular age, VO2 max, and battery data into sensitive Vibe context signals.",
         dashboardGuard: "Dashboard state guard",
         dashboardGuardDetail: "Dashboard renders Current data and Global Progress through one shared guard, with visible fallbacks if a calculation fails. The service worker no longer caches the critical app shell.",
         assetLabelFix: "External asset label fix",
@@ -26298,6 +26304,8 @@ function renderAdminOperationalFocusPanel() {
     labels.nativeSimulatorDetail = "npm run simulate:vibeapp valida nota, agenda, foto, video, audio, biometr\u00eda, ubicaci\u00f3n e importaciones Meta contra el contrato de se\u00f1ales PWA sin necesitar un tel\u00e9fono f\u00edsico.";
     labels.integrationKit = "Kit de integraci\u00f3n verificable";
     labels.integrationKitDetail = "Administraci\u00f3n expone payloads reutilizables para Vibeapp, Meta/Oakley, Oura, Apple Health, Samsung Health, Health Connect y Calendario. Estos ejemplos se pueden exportar, copiar, validar y usar como pruebas de aceptaci\u00f3n de conectores.";
+    labels.ouraConnector = "Conector OpenAPI de Oura";
+    labels.ouraConnectorDetail = "El OpenAPI v2 de Oura ya tiene endpoints backend de manifiesto y normalizaci\u00f3n. Mapea readiness, sue\u00f1o, actividad, estr\u00e9s, resiliencia, SpO2, frecuencia card\u00edaca, entrenamientos, edad cardiovascular, VO2 max y bater\u00eda hacia se\u00f1ales sensibles de contexto Vibe.";
     labels.dashboardGuard = "Guardia de estado del Panel";
     labels.dashboardGuardDetail = "Panel renderiza Datos actuales y Estado global de avance desde una guardia com\u00fan, con avisos visibles si un c\u00e1lculo falla. El service worker ya no guarda en cach\u00e9 la estructura cr\u00edtica de la app.";
     labels.assetLabelFix = "Correcci\u00f3n de etiquetas de activos externos";
@@ -26324,6 +26332,7 @@ function renderAdminOperationalFocusPanel() {
     [labels.nativeSync, labels.nativeSyncDetail],
     [labels.nativeSimulator, labels.nativeSimulatorDetail],
     [labels.integrationKit, labels.integrationKitDetail],
+    [labels.ouraConnector, labels.ouraConnectorDetail],
     [labels.dashboardGuard, labels.dashboardGuardDetail],
     [labels.assetLabelFix, labels.assetLabelFixDetail],
     [labels.runtimeAudit, labels.runtimeAuditDetail],
@@ -26685,8 +26694,15 @@ function buildDeviceIntegrationSamplePayloads(now = new Date().toISOString()) {
         payloadType: "biometric",
         privacyLevel: "sensitive",
         idempotencyKey: "oura:daily:2026-05-28:miguel",
-        payload: { provider: "Oura", importRoute: "CSV export or Oura API JSON", metrics: { readinessScore: 78, sleepScore: 81, hrvMs: 42 } },
-        deviceMetadata: { deviceFamily: "Oura Ring", supportedRoutes: ["csv", "api-json", "apple-health", "health-connect"] },
+        payload: {
+          provider: "Oura",
+          apiVersion: "v2",
+          importRoute: "CSV/JSON now; OAuth API sync next",
+          openApiRoute: "/v2/usercollection/daily_readiness",
+          normalizerEndpoint: "POST /api/integration/oura/normalize",
+          metrics: { readinessScore: 78, sleepScore: 81, hrvMs: 42, temperatureDeviationC: 0.1 },
+        },
+        deviceMetadata: { deviceFamily: "Oura Ring", supportedRoutes: ["csv", "api-json", "oauth2-api", "apple-health", "health-connect"] },
       },
     },
     {
@@ -26767,6 +26783,8 @@ function buildDeviceIntegrationSampleKit() {
     generatedAt: new Date().toISOString(),
     validationEndpoint: "POST /api/integration/validate",
     samplesEndpoint: "GET /api/integration/samples",
+    ouraManifestEndpoint: "GET /api/integration/oura/manifest",
+    ouraNormalizerEndpoint: "POST /api/integration/oura/normalize",
     samples: buildDeviceIntegrationSamplePayloads(),
   };
 }
@@ -26837,6 +26855,8 @@ function buildDeviceIntegrationContract() {
     version: APP_VERSION,
     validationEndpoint: "POST /api/integration/validate",
     samplesEndpoint: "GET /api/integration/samples",
+    ouraManifestEndpoint: "GET /api/integration/oura/manifest",
+    ouraNormalizerEndpoint: "POST /api/integration/oura/normalize",
     owner: state.profile?.name || state.profile?.email || (state.language === "en" ? "Experience Hub owner" : "Responsable de Experience Hub"),
     purpose: state.language === "en"
       ? "Normalize signals from devices, files, apps, and services into experiences, assets, Agenda events, and reports."
@@ -26975,6 +26995,7 @@ function renderDeviceIntegrationPanel() {
           <p>${escapeHtml(labels.sampleKitDetail)}</p>
           <dl>
             <div><dt>endpoint</dt><dd>${escapeHtml(contract.samplesEndpoint)}</dd></div>
+            <div><dt>Oura</dt><dd>${escapeHtml(`${contract.ouraManifestEndpoint} · ${contract.ouraNormalizerEndpoint}`)}</dd></div>
             <div><dt>${escapeHtml(state.language === "en" ? "families" : "familias")}</dt><dd>${escapeHtml(contract.samplePayloads.map((sample) => sample.family).join(", "))}</dd></div>
             <div><dt>${escapeHtml(state.language === "en" ? "samples" : "ejemplos")}</dt><dd>${escapeHtml(String(contract.samplePayloads.length))}</dd></div>
           </dl>
@@ -30596,7 +30617,7 @@ function calculateTotalProductProgress(readiness) {
       86 * 0.11 + // Agenda MVP.
       86 * 0.11 + // Publicaciones MVP.
       84 * 0.12 + // Supabase, administración y operación.
-      57 * 0.13 + // Contrato, rutas, kit verificable y simulador listos; conectores directos siguen posteriores.
+      63 * 0.13 + // Contrato, rutas, kit verificable, simulador y normalizador Oura listos; OAuth/conectores directos siguen posteriores.
       14 * 0.13, // IA predictiva y agentes todavía futuros.
   );
   return {

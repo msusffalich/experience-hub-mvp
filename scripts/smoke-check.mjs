@@ -17,6 +17,7 @@ const files = {
   controlAudit: readFileSync("scripts/audit-control.mjs", "utf8"),
   runtimeAudit: readFileSync("scripts/audit-runtime-helpers.mjs", "utf8"),
   integrationVerify: readFileSync("scripts/verify-integration-contract.mjs", "utf8"),
+  ouraConnectorDoc: readFileSync("docs/oura-openapi-connector.md", "utf8"),
   androidVerify: readFileSync("scripts/verify-android-release.mjs", "utf8"),
   flutterVerify: readFileSync("scripts/verify-flutter-mobile.mjs", "utf8"),
   vibeappPackage: readFileSync("scripts/package-vibeapp-pilot.mjs", "utf8"),
@@ -166,6 +167,9 @@ assert(files.app.includes("function buildDeviceIntegrationSamplePayloads") && fi
 assert(files.app.includes("Meta/Oakley") && files.app.includes("Oura") && files.app.includes("Samsung Health") && files.app.includes("Health Connect"), "Device integration kit does not cover the priority device families.");
 assert(files.packageJson.includes("\"verify:integrations\"") && files.packageJson.includes("npm run verify:integrations"), "Pilot verification must include the integration contract verifier.");
 assert(files.integrationVerify.includes("Integration contract verification passed") && files.integrationVerify.includes("/api/integration/samples"), "Integration contract verifier is missing sample-kit checks.");
+assert(files.server.includes("/api/integration/oura/manifest") && files.server.includes("/api/integration/oura/normalize") && files.server.includes("function buildOuraSignal"), "Server does not expose the Oura OpenAPI connector manifest and normalizer.");
+assert(files.ouraConnectorDoc.includes("Oura OpenAPI v2") && files.ouraConnectorDoc.includes("https://api.ouraring.com") && files.ouraConnectorDoc.includes("daily_readiness"), "Oura connector documentation is missing the OpenAPI-derived decision and mapping.");
+assert(files.app.includes("Conector OpenAPI de Oura") && files.app.includes("Oura OpenAPI connector"), "Manual/Admin does not document the Oura OpenAPI connector.");
 assert(!files.index.includes("dashboardAttachmentPanel") && !files.index.includes("dashboardPilotBox"), "Dashboard still exposes technical/pilot monitoring panels.");
 assert(files.index.includes("capture-layout-clean") && !files.index.includes("captureCoachBox") && !files.index.includes("templateList"), "Capture still exposes parallel coach/template panels.");
 assert(files.index.includes("captureEventPreview") && files.app.includes("function renderCaptureEventPreview"), "Capture does not show the live internal event preview.");

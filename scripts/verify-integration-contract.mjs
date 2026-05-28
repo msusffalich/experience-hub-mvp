@@ -5,6 +5,7 @@ const files = {
   server: readFileSync("server.js", "utf8"),
   packageJson: readFileSync("package.json", "utf8"),
   manualBlueprint: readFileSync("docs/vibeapp-native-blueprint.md", "utf8"),
+  ouraDoc: readFileSync("docs/oura-openapi-connector.md", "utf8"),
   simulator: readFileSync("scripts/simulate-vibeapp-sync.mjs", "utf8"),
 };
 
@@ -19,6 +20,10 @@ const assert = (condition, message) => {
   "/api/integration/samples",
   "buildIntegrationSampleKit",
   "buildIntegrationSampleSignals",
+  "buildOuraConnectorManifest",
+  "normalizeOuraPayload",
+  "/api/integration/oura/manifest",
+  "/api/integration/oura/normalize",
   "validateIntegrationSignal",
 ].forEach((token) => {
   assert(files.server.includes(token), `Server integration contract is missing ${token}.`);
@@ -49,6 +54,7 @@ const assert = (condition, message) => {
 [
   "Meta/Oakley",
   "Oura",
+  "daily_readiness",
   "Apple Health",
   "Samsung Health",
   "Health Connect",
@@ -56,11 +62,14 @@ const assert = (condition, message) => {
 ].forEach((token) => {
   assert(files.app.includes(token) && files.server.includes(token), `Integration kit must document and sample ${token}.`);
 });
+assert(files.server.includes("OURA_API_BASE_URL"), "Server must normalize the Oura API base URL.");
 
 assert(files.packageJson.includes("\"verify:integrations\""), "package.json must expose verify:integrations.");
 assert(files.packageJson.includes("npm run verify:integrations"), "verify:pilot must include verify:integrations.");
 assert(files.simulator.includes("meta-glasses-import"), "Vibeapp simulator must still validate Meta external session imports.");
 assert(files.manualBlueprint.includes("Health Connect") && files.manualBlueprint.includes("Meta"), "Vibeapp native blueprint must retain external device route guidance.");
+assert(files.ouraDoc.includes("/api/integration/oura/manifest") && files.ouraDoc.includes("daily_readiness") && files.ouraDoc.includes("https://api.ouraring.com"), "Oura connector documentation must explain manifest, readiness, and the corrected API base URL.");
+assert(files.app.includes("Conector OpenAPI de Oura") && files.app.includes("Oura OpenAPI connector"), "Manual/Admin must explain the Oura OpenAPI connector.");
 
 if (failures.length) {
   console.error("Integration contract verification failed:");

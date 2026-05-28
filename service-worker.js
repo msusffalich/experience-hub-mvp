@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260528-integration-progress-484";
+const CACHE_NAME = "experience-hub-pwa-20260528-oura-openapi-connector-485";
 const APP_SHELL = [
   "/icons/vibe-logo.jpg",
   "/icons/vibe-logo.png",
