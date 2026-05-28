@@ -230,6 +230,42 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (url.pathname === "/api/integration/apple-health/manifest" && req.method === "GET") {
+    sendJson(res, 200, buildAppleHealthConnectorManifest());
+    return;
+  }
+
+  if (url.pathname === "/api/integration/apple-health/normalize" && req.method === "POST") {
+    const user = await getOptionalRequestUser(req);
+    const body = await readJson(req);
+    sendJson(res, 200, normalizeAppleHealthPayload(body, user));
+    return;
+  }
+
+  if (url.pathname === "/api/integration/health-connect/manifest" && req.method === "GET") {
+    sendJson(res, 200, buildHealthConnectConnectorManifest());
+    return;
+  }
+
+  if (url.pathname === "/api/integration/health-connect/normalize" && req.method === "POST") {
+    const user = await getOptionalRequestUser(req);
+    const body = await readJson(req);
+    sendJson(res, 200, normalizeHealthConnectPayload(body, user));
+    return;
+  }
+
+  if (url.pathname === "/api/integration/meta-wearables/manifest" && req.method === "GET") {
+    sendJson(res, 200, buildMetaWearablesConnectorManifest());
+    return;
+  }
+
+  if (url.pathname === "/api/integration/meta-wearables/normalize" && req.method === "POST") {
+    const user = await getOptionalRequestUser(req);
+    const body = await readJson(req);
+    sendJson(res, 200, normalizeMetaWearablesPayload(body, user));
+    return;
+  }
+
   if (url.pathname === "/api/integration/validate" && req.method === "POST") {
     const user = await getRequestUser(req);
     const body = await readJson(req);
@@ -1036,6 +1072,214 @@ function normalizeOuraPayload(body = {}, user = null) {
       return acc;
     }, {}),
     results,
+  };
+}
+
+function buildAppleHealthConnectorManifest() {
+  return {
+    schemaVersion: INTEGRATION_CONTRACT_VERSION,
+    connector: "apple-healthkit-native",
+    source: "HealthKit client-side framework",
+    directRestApi: false,
+    recommendedRoute: "Vibeapp iOS reads HealthKit locally with user permission and posts normalized signals to the Vibe backend.",
+    notRecommendedRoute: "CloudKit as a primary health bridge, because availability, data types, permissions, and privacy expectations are not reliable enough for Vibe's core flow.",
+    endpoints: {
+      manifest: "/api/integration/apple-health/manifest",
+      normalize: "/api/integration/apple-health/normalize",
+    },
+    privacyLevel: "sensitive",
+    requiredNativeCapabilities: ["HealthKit entitlement", "NSHealthShareUsageDescription", "granular user permission per data type"],
+    dataTypes: [
+      { dataType: "stepCount", healthKitIdentifier: "HKQuantityTypeIdentifierStepCount", payloadType: "activity", target: "context", unit: "count" },
+      { dataType: "activeEnergyBurned", healthKitIdentifier: "HKQuantityTypeIdentifierActiveEnergyBurned", payloadType: "activity", target: "context", unit: "kcal" },
+      { dataType: "distanceWalkingRunning", healthKitIdentifier: "HKQuantityTypeIdentifierDistanceWalkingRunning", payloadType: "activity", target: "context", unit: "m" },
+      { dataType: "heartRate", healthKitIdentifier: "HKQuantityTypeIdentifierHeartRate", payloadType: "biometric", target: "context", unit: "count/min" },
+      { dataType: "restingHeartRate", healthKitIdentifier: "HKQuantityTypeIdentifierRestingHeartRate", payloadType: "biometric", target: "context", unit: "count/min" },
+      { dataType: "heartRateVariabilitySDNN", healthKitIdentifier: "HKQuantityTypeIdentifierHeartRateVariabilitySDNN", payloadType: "biometric", target: "context", unit: "ms" },
+      { dataType: "oxygenSaturation", healthKitIdentifier: "HKQuantityTypeIdentifierOxygenSaturation", payloadType: "biometric", target: "context", unit: "percent" },
+      { dataType: "respiratoryRate", healthKitIdentifier: "HKQuantityTypeIdentifierRespiratoryRate", payloadType: "biometric", target: "context", unit: "count/min" },
+      { dataType: "bodyTemperature", healthKitIdentifier: "HKQuantityTypeIdentifierBodyTemperature", payloadType: "biometric", target: "context", unit: "degC" },
+      { dataType: "sleepAnalysis", healthKitIdentifier: "HKCategoryTypeIdentifierSleepAnalysis", payloadType: "sleep", target: "context", unit: "category" },
+      { dataType: "workout", healthKitIdentifier: "HKWorkoutType", payloadType: "activity", target: "context", unit: "workout" },
+    ],
+  };
+}
+
+function buildHealthConnectConnectorManifest() {
+  return {
+    schemaVersion: INTEGRATION_CONTRACT_VERSION,
+    connector: "android-health-connect",
+    source: "Android Health Connect",
+    directRestApi: false,
+    recommendedRoute: "Vibeapp Android reads Health Connect locally with user permission and posts normalized signals to the Vibe backend.",
+    samsungRoute: "Samsung Health should flow through Health Connect where possible; the older Health Platform API is deprecated.",
+    endpoints: {
+      manifest: "/api/integration/health-connect/manifest",
+      normalize: "/api/integration/health-connect/normalize",
+    },
+    privacyLevel: "sensitive",
+    requiredNativeCapabilities: ["Health Connect permission declaration", "runtime permissions per record type", "background sync policy"],
+    dataTypes: [
+      { dataType: "StepsRecord", payloadType: "activity", target: "context", metrics: ["count", "startTime", "endTime"] },
+      { dataType: "ActiveCaloriesBurnedRecord", payloadType: "activity", target: "context", metrics: ["energy", "startTime", "endTime"] },
+      { dataType: "DistanceRecord", payloadType: "activity", target: "context", metrics: ["distance", "startTime", "endTime"] },
+      { dataType: "HeartRateRecord", payloadType: "biometric", target: "context", metrics: ["samples.bpm", "samples.time"] },
+      { dataType: "RestingHeartRateRecord", payloadType: "biometric", target: "context", metrics: ["beatsPerMinute"] },
+      { dataType: "HeartRateVariabilityRmssdRecord", payloadType: "biometric", target: "context", metrics: ["heartRateVariabilityMillis"] },
+      { dataType: "OxygenSaturationRecord", payloadType: "biometric", target: "context", metrics: ["percentage"] },
+      { dataType: "RespiratoryRateRecord", payloadType: "biometric", target: "context", metrics: ["rate"] },
+      { dataType: "BodyTemperatureRecord", payloadType: "biometric", target: "context", metrics: ["temperature"] },
+      { dataType: "SleepSessionRecord", payloadType: "sleep", target: "context", metrics: ["stages", "startTime", "endTime"] },
+      { dataType: "ExerciseSessionRecord", payloadType: "activity", target: "context", metrics: ["exerciseType", "startTime", "endTime"] },
+    ],
+  };
+}
+
+function buildMetaWearablesConnectorManifest() {
+  return {
+    schemaVersion: INTEGRATION_CONTRACT_VERSION,
+    connector: "meta-wearables-device-access",
+    source: "Meta Wearables Device Access Toolkit / Meta AI app import",
+    directRestApi: false,
+    recommendedRoute: "Use Vibeapp as native bridge for live commands/media when SDK access is available; otherwise import files from Meta AI app or the phone gallery.",
+    currentRoute: "Manual import from Meta AI app to phone photos/files, then Vibeapp/PWA uploads to Storage.",
+    endpoints: {
+      manifest: "/api/integration/meta-wearables/manifest",
+      normalize: "/api/integration/meta-wearables/normalize",
+    },
+    privacyLevel: "private",
+    dataTypes: [
+      { dataType: "photo", payloadType: "image", target: "assets", fileTypes: ["image/jpeg", "image/heic"] },
+      { dataType: "video", payloadType: "video", target: "assets", fileTypes: ["video/mp4", "video/hevc"] },
+      { dataType: "voice_activity", payloadType: "audio", target: "assets", fileTypes: ["audio/mpeg", "audio/mp4", "text/plain", "application/json"] },
+      { dataType: "autocapture_session", payloadType: "media", target: "assets", fileTypes: ["video/mp4", "image/jpeg", "application/json"] },
+      { dataType: "ai_context_export", payloadType: "document", target: "assets", fileTypes: ["application/json", "text/html"] },
+    ],
+  };
+}
+
+function normalizeNativeHealthDate(document = {}) {
+  return document.startDate || document.startTime || document.day || document.timestamp || document.endDate || document.endTime || new Date().toISOString();
+}
+
+function findManifestDataType(manifest, dataType) {
+  const normalized = String(dataType || "").toLowerCase();
+  return manifest.dataTypes.find((item) => String(item.dataType).toLowerCase() === normalized)
+    || manifest.dataTypes.find((item) => String(item.healthKitIdentifier || "").toLowerCase() === normalized)
+    || { dataType, payloadType: "biometric", target: "context" };
+}
+
+function buildNativeHealthSignal({ connector, manifest, dataType, document = {}, participantId = "miguel", user = null } = {}) {
+  const config = findManifestDataType(manifest, dataType);
+  const capturedAt = normalizeNativeHealthDate(document);
+  const documentId = document.id || document.uuid || document.uid || `${config.dataType}-${capturedAt}`;
+  return {
+    sourceId: `${connector}-${config.dataType}-${documentId}`,
+    sourceType: "wearable",
+    capturedAt,
+    participantId: participantId || user?.id || LOCAL_USER_ID,
+    payloadType: config.payloadType || "biometric",
+    privacyLevel: "sensitive",
+    idempotencyKey: `${connector}:${config.dataType}:${documentId}:${participantId || user?.id || LOCAL_USER_ID}`,
+    payload: {
+      provider: connector === "apple-healthkit-native" ? "Apple HealthKit" : "Android Health Connect",
+      dataType: config.dataType,
+      target: config.target || "context",
+      metrics: document.metrics || document.value || document.samples || document,
+      originalDocumentId: document.id || document.uuid || document.uid || null,
+    },
+    deviceMetadata: {
+      connector,
+      nativeBridge: "Vibeapp",
+      sourceFramework: connector === "apple-healthkit-native" ? "HealthKit" : "Health Connect",
+      importMode: document.importMode || "native-or-file",
+    },
+  };
+}
+
+function normalizeAppleHealthPayload(body = {}, user = null) {
+  const manifest = buildAppleHealthConnectorManifest();
+  const dataType = String(body.dataType || body.type || "stepCount").trim();
+  const documents = Array.isArray(body.documents) ? body.documents : Array.isArray(body.data) ? body.data : [body.document || body.data || body];
+  const participantId = String(body.participantId || body.pilotParticipantId || "miguel").trim();
+  const results = documents
+    .filter((document) => document && typeof document === "object")
+    .map((document) => validateIntegrationSignal(buildNativeHealthSignal({ connector: manifest.connector, manifest, dataType, document, participantId, user }), user));
+  return {
+    ok: results.length > 0 && results.every((item) => item.ok),
+    connector: manifest.connector,
+    schemaVersion: INTEGRATION_CONTRACT_VERSION,
+    dataType,
+    count: results.length,
+    targetSummary: results.reduce((acc, item) => {
+      acc[item.target] = (acc[item.target] || 0) + 1;
+      return acc;
+    }, {}),
+    results,
+  };
+}
+
+function normalizeHealthConnectPayload(body = {}, user = null) {
+  const manifest = buildHealthConnectConnectorManifest();
+  const dataType = String(body.dataType || body.type || "StepsRecord").trim();
+  const documents = Array.isArray(body.documents) ? body.documents : Array.isArray(body.data) ? body.data : [body.document || body.data || body];
+  const participantId = String(body.participantId || body.pilotParticipantId || "miguel").trim();
+  const results = documents
+    .filter((document) => document && typeof document === "object")
+    .map((document) => validateIntegrationSignal(buildNativeHealthSignal({ connector: manifest.connector, manifest, dataType, document, participantId, user }), user));
+  return {
+    ok: results.length > 0 && results.every((item) => item.ok),
+    connector: manifest.connector,
+    schemaVersion: INTEGRATION_CONTRACT_VERSION,
+    dataType,
+    count: results.length,
+    targetSummary: results.reduce((acc, item) => {
+      acc[item.target] = (acc[item.target] || 0) + 1;
+      return acc;
+    }, {}),
+    results,
+  };
+}
+
+function normalizeMetaWearablesPayload(body = {}, user = null) {
+  const manifest = buildMetaWearablesConnectorManifest();
+  const dataType = String(body.dataType || body.type || "photo").trim();
+  const config = findManifestDataType(manifest, dataType);
+  const files = Array.isArray(body.files) ? body.files : Array.isArray(body.payload?.files) ? body.payload.files : [body.file || body.payload || body].filter(Boolean);
+  const participantId = String(body.participantId || body.pilotParticipantId || "miguel").trim();
+  const capturedAt = body.capturedAt || body.timestamp || new Date().toISOString();
+  const signal = {
+    sourceId: String(body.sourceId || `meta-wearables-${dataType}-${capturedAt}`).replace(/\s+/g, "-"),
+    sourceType: "external-session",
+    capturedAt,
+    participantId,
+    payloadType: config.payloadType || "media",
+    privacyLevel: "private",
+    linkedExperienceId: body.linkedExperienceId || body.experienceId || "",
+    idempotencyKey: body.idempotencyKey || `meta-wearables:${dataType}:${capturedAt}:${participantId || user?.id || LOCAL_USER_ID}`,
+    payload: {
+      provider: "Meta Wearables",
+      dataType: config.dataType || dataType,
+      importRoute: body.importRoute || manifest.currentRoute,
+      files,
+      metadata: body.metadata || {},
+    },
+    deviceMetadata: {
+      connector: manifest.connector,
+      nativeBridge: "Vibeapp",
+      sourceFramework: "Meta Wearables",
+      captureMode: body.captureMode || "manual-import-or-sdk",
+    },
+  };
+  const validation = validateIntegrationSignal(signal, user);
+  return {
+    ok: validation.ok,
+    connector: manifest.connector,
+    schemaVersion: INTEGRATION_CONTRACT_VERSION,
+    dataType,
+    count: 1,
+    targetSummary: { [validation.target]: 1 },
+    results: [validation],
   };
 }
 

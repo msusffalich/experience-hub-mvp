@@ -1,8 +1,10 @@
-# Conector Oura OpenAPI v2
+# Conectores de salud y wearables
 
-Version app: `20260528-oura-openapi-connector-485`
+Version app: `20260528-native-device-connectors-486`
 
-## Decision
+Este documento consolida los conectores revisados para Oura, Apple Health, Samsung/Android Health Connect y Meta Wearables.
+
+## Oura OpenAPI v2
 
 El archivo `openapi-1.30.json` sirve para Vibe como base de un conector biometrico real de Oura. No sirve para multimedia; su valor esta en sueño, actividad, recuperacion, estres, resiliencia, SpO2, frecuencia cardiaca, entrenamientos, edad cardiovascular, VO2 max y bateria del anillo.
 
@@ -41,3 +43,42 @@ El archivo `openapi-1.30.json` sirve para Vibe como base de un conector biometri
 3. Guardar token cifrado o delegado a Supabase secrets/Edge Function.
 4. Crear job diario para `daily_readiness`, `daily_sleep`, `daily_activity`, `daily_stress` y `daily_resilience`.
 5. Usar webhooks despues de la primera sincronizacion estable.
+
+## Apple Health / HealthKit
+
+Decision: Apple Health no ofrece una REST API directa para que la PWA o el backend consulten datos de salud. La ruta correcta para Vibe es una app nativa iOS que use HealthKit con consentimiento granular del usuario y envie datos normalizados al backend.
+
+Rutas backend:
+
+- `GET /api/integration/apple-health/manifest`
+- `POST /api/integration/apple-health/normalize`
+
+Tipos priorizados: pasos, energia activa, distancia, frecuencia cardiaca, frecuencia cardiaca en reposo, HRV, oxigeno, respiracion, temperatura, sueño y workouts.
+
+Ruta no recomendada como base: CloudKit para HealthKit. Puede servir en casos puntuales, pero no debe ser el flujo principal por privacidad, permisos, cobertura incompleta y fragilidad operacional.
+
+## Samsung / Android Health Connect
+
+Decision: para Samsung Health y Galaxy Watch se debe priorizar Health Connect. El documento de Android indica que Health Platform API v1 esta deprecado y fue reemplazado por Health Connect.
+
+Rutas backend:
+
+- `GET /api/integration/health-connect/manifest`
+- `POST /api/integration/health-connect/normalize`
+
+Tipos priorizados: StepsRecord, ActiveCaloriesBurnedRecord, DistanceRecord, HeartRateRecord, RestingHeartRateRecord, HeartRateVariabilityRmssdRecord, OxygenSaturationRecord, RespiratoryRateRecord, BodyTemperatureRecord, SleepSessionRecord y ExerciseSessionRecord.
+
+## Meta Wearables
+
+Decision: Meta Wearables no debe tratarse como REST cloud general para Vibe. La ruta inmediata es importacion desde Meta AI/Galeria del telefono; la ruta avanzada es Vibeapp como puente nativo si el SDK/Device Access Toolkit queda disponible para el proyecto.
+
+Rutas backend:
+
+- `GET /api/integration/meta-wearables/manifest`
+- `POST /api/integration/meta-wearables/normalize`
+
+Tipos priorizados: photo, video, voice_activity, autocapture_session y ai_context_export.
+
+## Regla comun
+
+Todas estas rutas deben producir señales `vibe-signal-contract-v2`, con `sourceId`, `capturedAt`, `participantId`, `payloadType`, `privacyLevel`, `payload`, `deviceMetadata` e `idempotencyKey`. Los datos de salud se tratan como `sensitive`; los medios de Meta como `private`.

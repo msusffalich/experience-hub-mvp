@@ -24,6 +24,18 @@ const assert = (condition, message) => {
   "normalizeOuraPayload",
   "/api/integration/oura/manifest",
   "/api/integration/oura/normalize",
+  "buildAppleHealthConnectorManifest",
+  "normalizeAppleHealthPayload",
+  "/api/integration/apple-health/manifest",
+  "/api/integration/apple-health/normalize",
+  "buildHealthConnectConnectorManifest",
+  "normalizeHealthConnectPayload",
+  "/api/integration/health-connect/manifest",
+  "/api/integration/health-connect/normalize",
+  "buildMetaWearablesConnectorManifest",
+  "normalizeMetaWearablesPayload",
+  "/api/integration/meta-wearables/manifest",
+  "/api/integration/meta-wearables/normalize",
   "validateIntegrationSignal",
 ].forEach((token) => {
   assert(files.server.includes(token), `Server integration contract is missing ${token}.`);
@@ -58,6 +70,8 @@ const assert = (condition, message) => {
   "Apple Health",
   "Samsung Health",
   "Health Connect",
+  "Apple Health",
+  "Meta Wearables",
   "idempotencyKey",
 ].forEach((token) => {
   assert(files.app.includes(token) && files.server.includes(token), `Integration kit must document and sample ${token}.`);
@@ -69,7 +83,9 @@ assert(files.packageJson.includes("npm run verify:integrations"), "verify:pilot 
 assert(files.simulator.includes("meta-glasses-import"), "Vibeapp simulator must still validate Meta external session imports.");
 assert(files.manualBlueprint.includes("Health Connect") && files.manualBlueprint.includes("Meta"), "Vibeapp native blueprint must retain external device route guidance.");
 assert(files.ouraDoc.includes("/api/integration/oura/manifest") && files.ouraDoc.includes("daily_readiness") && files.ouraDoc.includes("https://api.ouraring.com"), "Oura connector documentation must explain manifest, readiness, and the corrected API base URL.");
+assert(files.ouraDoc.includes("/api/integration/apple-health/manifest") && files.ouraDoc.includes("/api/integration/health-connect/manifest") && files.ouraDoc.includes("/api/integration/meta-wearables/manifest"), "Device connector documentation must cover Apple Health, Health Connect, and Meta Wearables.");
 assert(files.app.includes("Conector OpenAPI de Oura") && files.app.includes("Oura OpenAPI connector"), "Manual/Admin must explain the Oura OpenAPI connector.");
+assert(files.app.includes("Rutas Apple, Samsung y Meta") && files.app.includes("Apple, Samsung, and Meta routes"), "Manual/Admin must explain Apple, Samsung, and Meta connector routes.");
 
 if (failures.length) {
   console.error("Integration contract verification failed:");
