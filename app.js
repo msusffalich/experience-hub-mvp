@@ -1,4 +1,4 @@
-const APP_VERSION = "20260528-dashboard-state-guard-476";
+const APP_VERSION = "20260528-sentence-case-fix-477";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2411,6 +2411,7 @@ const manualContent = {
         "Auditoría de control de release agrega la orden npm run audit:control antes de publicar. Revisa versión, cache PWA, reset, modelo de avance, evidencia Manual/Admin y scripts de release para evitar sorpresas por navegadores o versiones viejas.",
         "Panel ahora renderiza Datos actuales y Estado global de avance desde una guardia común. Si un cálculo falla, muestra un aviso visible con versión y acción recomendada en lugar de desaparecer.",
         "Service worker deja de guardar en caché la estructura crítica de la app: index.html, app.js, styles.css, manifest, reset y service-worker siempre van a red para evitar versiones viejas atrapadas.",
+        "Se corrigió la conversión de etiquetas externas de activos para que payloads como video, audio, biometría o importaciones Meta no rompan el Panel por una función auxiliar ausente.",
         "Ruta al 90% convierte ese avance honesto en frentes concretos con dueño, estado, brecha real a 90 y siguiente acción ejecutable.",
         "Aprobación humana marca si el borrador está en revisión o aprobado. Cualquier edición, cambio de diseño o curaduría multimedia lo devuelve a revisión.",
         "Historial del borrador registra generación, ediciones, cambios de multimedia, diseño, aprobación y exportaciones recientes.",
@@ -3024,6 +3025,7 @@ const manualContent = {
         "Release control audit adds npm run audit:control before publishing. It checks version, PWA cache, reset, progress model, Manual/Admin evidence, and release scripts to prevent surprises from old browsers or stale versions.",
         "Dashboard now renders Current data and Global Progress through one shared guard. If a calculation fails, it shows a visible warning with version and recommended action instead of disappearing.",
         "The service worker no longer caches the critical app shell: index.html, app.js, styles.css, manifest, reset, and service-worker always go to the network to avoid trapped old versions.",
+        "External asset labels now normalize payloads such as video, audio, biometrics, or Meta imports without breaking Dashboard because of a missing helper.",
         "The Route to 90% block turns that honest progress into concrete closure fronts with owner, state, real gap to 90, and the next action to execute.",
         "Editorial readiness evaluates clarity, privacy, media use, and channel fit. Its suggestions help decide whether the draft is ready for final review or needs edits.",
         "Pre-publication closure shows an operational checklist before export: human approval, text and length, privacy, media, and channel fit.",
@@ -9844,6 +9846,15 @@ function renderDashboardTimeContext() {
 
 function capitalizeText(value = "") {
   return String(value).charAt(0).toUpperCase() + String(value).slice(1);
+}
+
+function sentenceCase(value = "") {
+  return String(value || "")
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase()
+    .replace(/^./, (letter) => letter.toUpperCase());
 }
 
 function renderMetrics() {
@@ -25632,6 +25643,8 @@ function renderAdminOperationalFocusPanel() {
         nativeSimulatorDetail: "npm run simulate:vibeapp validates note, agenda, photo, video, audio, biometrics, location, and Meta imports against the PWA signal contract without needing a physical phone.",
         dashboardGuard: "Dashboard state guard",
         dashboardGuardDetail: "Dashboard renders Current data and Global Progress through one shared guard, with visible fallbacks if a calculation fails. The service worker no longer caches the critical app shell.",
+        assetLabelFix: "External asset label fix",
+        assetLabelFixDetail: "External payload labels now use a defined sentence-case helper so synced media, biometrics, and Meta imports cannot break Dashboard rendering.",
       }
     : {
         title: "Administración operativa",
@@ -25673,6 +25686,8 @@ function renderAdminOperationalFocusPanel() {
     labels.nativeSimulatorDetail = "npm run simulate:vibeapp valida nota, agenda, foto, video, audio, biometr\u00eda, ubicaci\u00f3n e importaciones Meta contra el contrato de se\u00f1ales PWA sin necesitar un tel\u00e9fono f\u00edsico.";
     labels.dashboardGuard = "Guardia de estado del Panel";
     labels.dashboardGuardDetail = "Panel renderiza Datos actuales y Estado global de avance desde una guardia com\u00fan, con avisos visibles si un c\u00e1lculo falla. El service worker ya no guarda en cach\u00e9 la estructura cr\u00edtica de la app.";
+    labels.assetLabelFix = "Correcci\u00f3n de etiquetas de activos externos";
+    labels.assetLabelFixDetail = "Las etiquetas de payload externo usan una funci\u00f3n definida de redacci\u00f3n en frase para que medios sincronizados, biometr\u00eda e importaciones Meta no rompan el Panel.";
   }
   const cards = [
     [labels.flow, labels.flowDetail],
@@ -25691,6 +25706,7 @@ function renderAdminOperationalFocusPanel() {
     [labels.nativeSync, labels.nativeSyncDetail],
     [labels.nativeSimulator, labels.nativeSimulatorDetail],
     [labels.dashboardGuard, labels.dashboardGuardDetail],
+    [labels.assetLabelFix, labels.assetLabelFixDetail],
     [labels.next, labels.nextDetail],
   ];
   container.innerHTML = `

@@ -66,6 +66,7 @@ const visibleAndPdfText = files.app + files.index + files.styles + files.manifes
 assert(!/[\u00c3\u00c2\ufffd]/u.test(visibleAndPdfText), "Visible app files or ReportLab scripts contain mojibake characters.");
 
 assert(!/\bnormalizeExperience\s*\(/.test(files.app), "app.js still calls normalizeExperience(); use normalizeExperienceItem() or normalizeExperiences().");
+assert(files.app.includes("function sentenceCase") && files.app.includes("return sentenceCase(payload)"), "sentenceCase helper is missing for external asset payload labels.");
 [
   "function normalizeExperienceItem",
   "function getCaptureEventOptions",
