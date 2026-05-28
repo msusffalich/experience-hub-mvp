@@ -1,4 +1,4 @@
-const APP_VERSION = "20260528-vibeapp-sync-sim-474";
+const APP_VERSION = "20260528-vibeapp-admin-sim-475";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2134,6 +2134,7 @@ const manualContent = {
         "La compuerta local npm run verify:pilot ejecuta en una sola orden los controles PWA, PDFs ReportLab, Android firmado y Flutter analyze/test. npm run verify:android queda como chequeo específico de firma APK/AAB.",
         "La orden npm run package:vibeapp genera un paquete local en dist/vibeapp-pilot y un ZIP transferible en dist con APK, AAB, checksums, manifiesto y README de instalación. El paquete no incluye claves ni passwords.",
         "El simulador npm run simulate:vibeapp valida sin teléfono físico que Vibeapp pueda enviar nota rápida, agenda, foto, video, audio, biometría, ubicación y sesiones Meta hacia los destinos correctos del contrato: experiencia, Agenda, activos o contexto.",
+        "Administración permite ejecutar la misma simulación Vibeapp contra /api/vibeapp/simulate desde el panel de integración de dispositivos, mostrando señales correctas, destinos y errores sin abrir la terminal.",
         "Vibeapp incorpora un router local de comandos: una captura escrita o transcrita puede crear nota, iniciar/cerrar experiencia o generar un evento de agenda antes de sincronizar. La pantalla muestra qué entendió Vibe y cambia el botón principal a Guardar nota, Crear agenda, Iniciar experiencia o Cerrar experiencia antes de ejecutar.",
         "El contrato de dispositivos se puede exportar como Markdown o JSON para compartirlo con desarrolladores, integraciones API/MCP o proveedores de wearables.",
         "Activos multimodales incluye Procesar ahora y Procesar visibles. Los documentos de texto se extraen localmente; los PDFs escaneados usan OCR del backend cuando OCR_PROVIDER=openai y OPENAI_API_KEY están configurados; los audios usan transcripción del backend si está configurada; las imágenes usan OCR automático del backend.",
@@ -2742,6 +2743,7 @@ const manualContent = {
         "The backend exposes /api/integration/contract and /api/integration/validate so Vibeapp, Clio, or any connector can test a normalized signal before creating real data. This avoids ambiguous ingestion and keeps retries tied to sourceId and idempotencyKey.",
         "The device contract can be exported as Markdown or JSON to share with developers, API/MCP integrations, or wearable providers.",
         "npm run simulate:vibeapp validates without a physical phone that Vibeapp can send quick note, agenda, photo, video, audio, biometrics, location, and Meta sessions to the right contract targets: experience, Agenda, assets, or context.",
+        "Admin can run the same Vibeapp simulation against /api/vibeapp/simulate from the device integration panel, showing passed signals, targets, and errors without opening the terminal.",
         "Multimodal Assets includes Process now and Process visible. Text documents are extracted locally; scanned PDFs use backend OCR when OCR_PROVIDER=openai and OPENAI_API_KEY are configured; audio uses backend transcription when configured; images use automatic backend OCR.",
         "Following the CLIO blueprint pattern, synced assets are read by the backend through temporary Supabase signed URLs. Another device can process documents, images, and audio without depending on the original local file.",
         "Asset processing now shows method, status, processed date, and extracted text when available. That text is included in search, JSON/CSV inventory, and metadata audit.",
@@ -3569,6 +3571,7 @@ const state = {
   apiStatus: { ok: false, checkedAt: null, latencyMs: null, message: "", service: "", mode: "local" },
   supabaseDiagnostics: null,
   supabaseSelfTest: loadSupabaseSelfTest(),
+  vibeappSimulation: null,
   uploadAttempts: [],
   uploadAttemptsCheckedAt: null,
   pendingAuthReturn: null,
@@ -26038,6 +26041,10 @@ function renderDeviceIntegrationPanel() {
         validation: "API validation",
         validationDetail: "Connectors can validate a normalized signal before creating real data.",
         sample: "Copy sample payload",
+        simulate: "Run Vibeapp simulation",
+        simulation: "Vibeapp simulation",
+        simulationEmpty: "Run the simulation to validate native notes, agenda, media, biometrics, location, and Meta imports against the production API contract.",
+        simulationRunning: "Running simulation...",
       }
     : {
         title: "Contrato de integración de dispositivos",
@@ -26051,7 +26058,12 @@ function renderDeviceIntegrationPanel() {
         validation: "Validación API",
         validationDetail: "Los conectores pueden validar una señal normalizada antes de crear datos reales.",
         sample: "Copiar payload ejemplo",
+        simulate: "Probar simulación Vibeapp",
+        simulation: "Simulación Vibeapp",
+        simulationEmpty: "Ejecuta la simulación para validar notas nativas, agenda, medios, biometría, ubicación e importaciones Meta contra el contrato API productivo.",
+        simulationRunning: "Ejecutando simulación...",
       };
+  const simulation = state.vibeappSimulation;
   container.innerHTML = `
     <section class="device-integration-panel">
       <div class="device-integration-heading">
@@ -26101,12 +26113,39 @@ function renderDeviceIntegrationPanel() {
         </article>
       </div>
       <div class="device-integration-actions">
+        <button class="primary-button" type="button" data-device-action="run-vibeapp-sim">${escapeHtml(labels.simulate)}</button>
         <button class="ghost-button" type="button" data-device-action="export-md">${escapeHtml(labels.exportMd)}</button>
         <button class="ghost-button" type="button" data-device-action="export-json">${escapeHtml(labels.exportJson)}</button>
         <button class="ghost-button" type="button" data-device-action="copy-sample">${escapeHtml(labels.sample)}</button>
         <button class="ghost-button" type="button" data-backlog-view="admin" data-backlog-focus="assetProcessingActionPlan">${escapeHtml(labels.openAssets)}</button>
         <button class="primary-button" type="button" data-backlog-view="capture">${escapeHtml(labels.openCapture)}</button>
       </div>
+      <article class="device-simulation-panel ${simulation?.ok ? "is-ready" : simulation?.status === "running" ? "is-running" : simulation ? "is-review" : ""}">
+        <div>
+          <strong>${escapeHtml(labels.simulation)}</strong>
+          <p>${escapeHtml(
+            simulation?.status === "running"
+              ? labels.simulationRunning
+              : simulation?.checkedAt
+                ? `${simulation.passed || 0}/${simulation.samples || 0} ${state.language === "en" ? "signals passed" : "señales correctas"} · ${Object.entries(simulation.targetSummary || {}).map(([target, count]) => `${target}: ${count}`).join(" · ")}`
+                : labels.simulationEmpty,
+          )}</p>
+        </div>
+        ${simulation?.checkedAt ? `<span class="${simulation.ok ? "status-ok" : "status-warn"}">${escapeHtml(simulation.ok ? (state.language === "en" ? "Ready" : "Listo") : (state.language === "en" ? "Review" : "Revisar"))}</span>` : ""}
+        ${
+          simulation?.results?.length
+            ? `<div class="device-simulation-results">
+                ${simulation.results.map((item) => `
+                  <div>
+                    <span class="${item.ok ? "status-ok" : "status-warn"}">${escapeHtml(item.ok ? "OK" : "!")}</span>
+                    <strong>${escapeHtml(item.label || item.name)}</strong>
+                    <small>${escapeHtml(`${item.payloadType || "-"} -> ${item.target || "-"}${item.expectedTarget && item.expectedTarget !== item.target ? ` · esperado ${item.expectedTarget}` : ""}`)}</small>
+                  </div>
+                `).join("")}
+              </div>`
+            : ""
+        }
+      </article>
     </section>
   `;
 }
@@ -26151,6 +26190,10 @@ function handleDeviceIntegrationClick(event) {
     handleParallelBacklogClick(event);
     return;
   }
+  if (action === "run-vibeapp-sim") {
+    runVibeappSimulation();
+    return;
+  }
   if (action === "export-md") {
     downloadBlob(new Blob([buildDeviceIntegrationMarkdown()], { type: "text/markdown;charset=utf-8" }), "contrato-integracion-dispositivos.md");
     return;
@@ -26166,6 +26209,30 @@ function handleDeviceIntegrationClick(event) {
         : state.language === "en" ? "Could not copy the sample payload." : "No se pudo copiar el payload ejemplo.");
     });
   }
+}
+
+async function runVibeappSimulation() {
+  state.vibeappSimulation = { status: "running", checkedAt: new Date().toISOString(), results: [] };
+  renderDeviceIntegrationPanel();
+  try {
+    const result = await apiRequest("/vibeapp/simulate", { method: "POST", body: JSON.stringify({}) });
+    state.vibeappSimulation = result;
+    notify(result.ok
+      ? state.language === "en" ? "Vibeapp simulation passed." : "Simulación Vibeapp correcta."
+      : state.language === "en" ? "Vibeapp simulation needs review." : "La simulación Vibeapp requiere revisión.");
+  } catch (error) {
+    state.vibeappSimulation = {
+      ok: false,
+      checkedAt: new Date().toISOString(),
+      samples: 0,
+      passed: 0,
+      failed: 1,
+      targetSummary: {},
+      results: [{ label: "API", ok: false, payloadType: "simulation", target: "review", errors: [error.message] }],
+    };
+    notify(state.language === "en" ? `Vibeapp simulation failed: ${error.message}` : `Falló la simulación Vibeapp: ${error.message}`);
+  }
+  renderDeviceIntegrationPanel();
 }
 
 function renderAdmin() {

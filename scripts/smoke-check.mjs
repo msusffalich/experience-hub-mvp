@@ -278,6 +278,8 @@ assert(files.vibeappPackage.includes("verify:android") && files.vibeappPackage.i
 assert(files.packageJson.includes("\"simulate:vibeapp\"") && files.packageJson.includes("npm run simulate:vibeapp"), "package.json must expose and run the Vibeapp sync simulator in pilot verification.");
 assert(files.vibeappSimulator.includes("Vibeapp sync simulation passed") && files.vibeappSimulator.includes("meta-glasses-import"), "Vibeapp simulator must validate native and external-session sync samples.");
 assert(files.app.includes("Simulador de sincronizaci") && files.app.includes("Native sync simulator"), "Manual/Admin must expose the Vibeapp sync simulator.");
+assert(files.server.includes("/api/vibeapp/simulate") && files.server.includes("runVibeappIntegrationSimulation"), "Server must expose the Vibeapp simulation endpoint.");
+assert(files.app.includes("runVibeappSimulation") && files.app.includes("data-device-action=\"run-vibeapp-sim\""), "Admin device panel must run the Vibeapp simulation from the UI.");
 assert(files.server.includes("PYTHONPATH") && files.server.includes(".python"), "Server must expose bundled Python packages to ReportLab scripts.");
 assert(!files.index.includes('data-daily-flow="horoscope"'), "Daily should not expose horoscope until the module is reliable.");
 assert(files.app.includes("function experienceMatchesPilotParticipant"), "Participant filtering must support legacy records by participant name.");

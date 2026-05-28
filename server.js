@@ -219,6 +219,12 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (url.pathname === "/api/vibeapp/simulate" && req.method === "POST") {
+    const user = await getRequestUser(req);
+    sendJson(res, 200, runVibeappIntegrationSimulation(user));
+    return;
+  }
+
   if (url.pathname === "/api/profile") {
     const user = await getRequestUser(req);
     if (req.method === "GET") {
@@ -591,6 +597,172 @@ function validateIntegrationSignal(signal = {}, user = null) {
     warnings,
     normalized,
     acceptedAt: new Date().toISOString(),
+  };
+}
+
+function buildVibeappSimulationSamples(now = new Date().toISOString()) {
+  return [
+    {
+      name: "quick-note",
+      label: "Nota rapida",
+      expectedTarget: "experience",
+      signal: {
+        sourceId: "vibeapp-note-001",
+        sourceType: "vibeapp-native",
+        capturedAt: now,
+        participantId: "miguel",
+        payloadType: "text",
+        payload: { title: "Nota rapida", text: "V toma nota que este parque esta hermoso." },
+        privacyLevel: "private",
+        idempotencyKey: "vibeapp-capture:text:vibeapp-note-001",
+      },
+    },
+    {
+      name: "agenda-command",
+      label: "Agenda",
+      expectedTarget: "agenda",
+      signal: {
+        sourceId: "vibeapp-agenda-001",
+        sourceType: "vibeapp-native",
+        capturedAt: now,
+        participantId: "miguel",
+        payloadType: "calendar",
+        payload: { title: "Cena", location: "Casa", startAt: "2026-05-28T20:00:00.000Z" },
+        privacyLevel: "private",
+        idempotencyKey: "vibeapp-agenda:vibeapp-agenda-001",
+      },
+    },
+    {
+      name: "photo-asset",
+      label: "Foto",
+      expectedTarget: "assets",
+      signal: {
+        sourceId: "vibeapp-photo-001",
+        sourceType: "vibeapp-native",
+        capturedAt: now,
+        participantId: "miguel",
+        payloadType: "image",
+        payload: { fileName: "vibeapp-photo.jpg", mimeType: "image/jpeg", storageObjectHint: "vibeapp-photo-001.jpg" },
+        privacyLevel: "private",
+        linkedExperienceId: "exp-native-001",
+        idempotencyKey: "vibeapp-asset:vibeapp-photo-001",
+      },
+    },
+    {
+      name: "video-asset",
+      label: "Video",
+      expectedTarget: "assets",
+      signal: {
+        sourceId: "vibeapp-video-001",
+        sourceType: "vibeapp-native",
+        capturedAt: now,
+        participantId: "miguel",
+        payloadType: "video",
+        payload: { fileName: "vibeapp-clip.mp4", mimeType: "video/mp4", storageObjectHint: "vibeapp-video-001.mp4" },
+        privacyLevel: "private",
+        linkedExperienceId: "exp-native-001",
+        idempotencyKey: "vibeapp-asset:vibeapp-video-001",
+      },
+    },
+    {
+      name: "audio-asset",
+      label: "Audio",
+      expectedTarget: "assets",
+      signal: {
+        sourceId: "vibeapp-audio-001",
+        sourceType: "vibeapp-native",
+        capturedAt: now,
+        participantId: "miguel",
+        payloadType: "audio",
+        payload: { fileName: "vibeapp-audio.m4a", mimeType: "audio/mp4", storageObjectHint: "vibeapp-audio-001.m4a" },
+        privacyLevel: "private",
+        linkedExperienceId: "exp-native-001",
+        idempotencyKey: "vibeapp-asset:vibeapp-audio-001",
+      },
+    },
+    {
+      name: "biometric-file",
+      label: "Biometria",
+      expectedTarget: "context",
+      signal: {
+        sourceId: "vibeapp-biometric-001",
+        sourceType: "vibeapp-native",
+        capturedAt: now,
+        participantId: "miguel",
+        payloadType: "biometric",
+        payload: { fileName: "apple-health.csv", metrics: ["steps", "heart_rate", "sleep"] },
+        privacyLevel: "sensitive",
+        idempotencyKey: "vibeapp-capture:biometric:vibeapp-biometric-001",
+      },
+    },
+    {
+      name: "location-context",
+      label: "Ubicacion",
+      expectedTarget: "context",
+      signal: {
+        sourceId: "vibeapp-location-001",
+        sourceType: "vibeapp-native",
+        capturedAt: now,
+        participantId: "miguel",
+        payloadType: "location",
+        payload: { latitude: 18.4655, longitude: -66.1057, accuracyMeters: 18 },
+        privacyLevel: "private",
+        idempotencyKey: "vibeapp-capture:location:vibeapp-location-001",
+      },
+    },
+    {
+      name: "meta-glasses-import",
+      label: "Sesion Meta/Oakley",
+      expectedTarget: "assets",
+      signal: {
+        sourceId: "meta-hstn-001",
+        sourceType: "external-session",
+        capturedAt: now,
+        participantId: "miguel",
+        payloadType: "media",
+        payload: { source: "meta-glasses", files: ["foto.heic", "clip.mp4", "meta-export.json"] },
+        privacyLevel: "private",
+        idempotencyKey: "vibeapp-external-session:meta-hstn-001",
+      },
+    },
+  ];
+}
+
+function runVibeappIntegrationSimulation(user = null) {
+  const checkedAt = new Date().toISOString();
+  const samples = buildVibeappSimulationSamples(checkedAt);
+  const results = samples.map((sample) => {
+    const validation = validateIntegrationSignal(sample.signal, user);
+    const routeOk = validation.target === sample.expectedTarget;
+    return {
+      name: sample.name,
+      label: sample.label,
+      expectedTarget: sample.expectedTarget,
+      target: validation.target,
+      ok: validation.ok && routeOk && validation.warnings.length === 0,
+      validationOk: validation.ok,
+      routeOk,
+      errors: validation.errors,
+      warnings: validation.warnings,
+      payloadType: validation.normalized.payloadType,
+      sourceType: validation.normalized.sourceType,
+      traceId: validation.traceId,
+    };
+  });
+  const targetSummary = results.reduce((acc, item) => {
+    acc[item.target] = (acc[item.target] || 0) + 1;
+    return acc;
+  }, {});
+  const ok = results.every((item) => item.ok);
+  return {
+    ok,
+    checkedAt,
+    schemaVersion: INTEGRATION_CONTRACT_VERSION,
+    samples: results.length,
+    passed: results.filter((item) => item.ok).length,
+    failed: results.filter((item) => !item.ok).length,
+    targetSummary,
+    results,
   };
 }
 
