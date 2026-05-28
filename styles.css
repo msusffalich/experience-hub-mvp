@@ -6653,6 +6653,85 @@ button.asset-processing-summary-card {
   color: var(--accent-dark);
 }
 
+.publication-channel-playbook {
+  display: grid;
+  gap: 12px;
+  margin: 12px 0;
+  padding: 14px;
+  border: 1px solid rgba(46, 110, 166, 0.2);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(46, 110, 166, 0.08), rgba(13, 124, 102, 0.06)),
+    #fff;
+}
+
+.publication-channel-playbook-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.publication-channel-playbook-heading strong,
+.publication-channel-playbook-heading p {
+  margin: 0;
+}
+
+.publication-channel-playbook-heading p {
+  margin-top: 4px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.publication-channel-playbook-heading span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.publication-channel-playbook-grid,
+.publication-channel-playbook-recipes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr));
+  gap: 10px;
+}
+
+.publication-channel-playbook-grid article,
+.publication-channel-playbook-recipes button {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 11px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.84);
+  color: var(--text);
+  text-align: left;
+}
+
+.publication-channel-playbook-grid b,
+.publication-channel-playbook-recipes span,
+.publication-channel-playbook-recipes small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.publication-channel-playbook-grid span,
+.publication-channel-playbook-recipes b {
+  color: var(--ink);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.publication-channel-playbook-recipes button:hover {
+  border-color: rgba(13, 124, 102, 0.42);
+  box-shadow: 0 8px 18px rgba(23, 32, 27, 0.08);
+}
+
 .publication-composition-panel {
   display: grid;
   gap: 10px;

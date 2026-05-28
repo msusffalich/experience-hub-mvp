@@ -764,6 +764,8 @@ def channel_studio_cards(draft):
             ("Decision multimedia", studio.get("mediaDecision") or "-", colors.HexColor("#0d7c66")),
             ("Salida", studio.get("outputAction") or "-", BLUE),
             ("Foco de edicion", studio.get("editorFocus") or "-", colors.HexColor("#7a5cc8")),
+            ("Audiencia del canal", studio.get("audience") or "-", colors.HexColor("#0d7c66")),
+            ("Ritmo del canal", studio.get("rhythm") or "-", GOLD),
         ]),
         Spacer(1, 10),
         checklist_cards(checklist_text, colors.HexColor("#f2b84b")),
