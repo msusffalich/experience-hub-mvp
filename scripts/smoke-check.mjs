@@ -175,6 +175,9 @@ assert(files.server.includes("/api/integration/health-connect/manifest") && file
 assert(files.server.includes("/api/integration/meta-wearables/manifest") && files.server.includes("function normalizeMetaWearablesPayload"), "Server does not expose the Meta Wearables connector manifest and normalizer.");
 assert(files.ouraConnectorDoc.includes("Apple Health / HealthKit") && files.ouraConnectorDoc.includes("Samsung / Android Health Connect") && files.ouraConnectorDoc.includes("Meta Wearables"), "Device connector documentation is missing Apple, Samsung/Health Connect, or Meta sections.");
 assert(files.app.includes("Rutas Apple, Samsung y Meta") && files.app.includes("Apple, Samsung, and Meta routes"), "Manual/Admin does not document the Apple, Samsung, and Meta connector routes.");
+assert(files.server.includes("/api/integration/device/selftest") && files.server.includes("function runDeviceConnectorSelfTest"), "Server does not expose the unified device connector self-test.");
+assert(files.app.includes("runDeviceConnectorSelfTest") && files.app.includes("data-device-action=\"run-device-connectors\"") && files.app.includes("Prueba de conectores"), "Admin device panel does not expose the connector self-test.");
+assert(files.ouraConnectorDoc.includes("/api/integration/device/selftest"), "Device connector documentation must include the unified self-test endpoint.");
 assert(!files.index.includes("dashboardAttachmentPanel") && !files.index.includes("dashboardPilotBox"), "Dashboard still exposes technical/pilot monitoring panels.");
 assert(files.index.includes("capture-layout-clean") && !files.index.includes("captureCoachBox") && !files.index.includes("templateList"), "Capture still exposes parallel coach/template panels.");
 assert(files.index.includes("captureEventPreview") && files.app.includes("function renderCaptureEventPreview"), "Capture does not show the live internal event preview.");

@@ -1,4 +1,4 @@
-const APP_VERSION = "20260528-native-device-connectors-486";
+const APP_VERSION = "20260528-device-selftest-487";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2117,6 +2117,7 @@ const manualContent = {
         "El Kit de integración agrega /api/integration/samples y ejemplos descargables para Vibeapp, Meta/Oakley, Oura, Apple Health, Samsung Health, Health Connect y Calendario. Sirve para probar conectores sin datos reales, convertir cada ruta en issue de GitHub y validar aceptación antes de automatizar.",
         "El OpenAPI de Oura v2 queda incorporado como conector biométrico backend: /api/integration/oura/manifest describe endpoints, scopes y métricas; /api/integration/oura/normalize transforma documentos Oura en señales Vibe sensibles para contexto, reportes y hallazgos. Falta OAuth/token productivo para sincronización real automática.",
         "Apple Health, Samsung/Android Health Connect y Meta Wearables quedan incorporados como conectores nativos planificados: /api/integration/apple-health/manifest, /api/integration/health-connect/manifest y /api/integration/meta-wearables/manifest explican rutas, permisos y normalizadores. Apple Health no tiene REST directo; Samsung debe priorizar Health Connect; Meta debe usar Vibeapp o importación desde Meta AI/Galería hasta tener SDK aprobado.",
+        "Administración incluye Prueba de conectores para validar en una sola acción Oura, Apple Health, Health Connect/Samsung y Meta contra el contrato Vibe. Esta prueba confirma destino, payload e idempotencia antes de conectar OAuth, HealthKit, Health Connect o SDKs reales.",
         "Vibeapp nativa se planifica como complemento de la PWA: la PWA queda para análisis, reportes, hallazgos, publicaciones y administración; Vibeapp cubre captura real con cámara, audio, video, ubicación, sensores, biometría, notificaciones y sincronización transparente con Supabase.",
         "El blueprint inicial de Vibeapp está documentado en docs/vibeapp-native-blueprint.md. Ese documento define contrato de sincronización, pantallas iniciales, flujo offline, permisos, privacidad y los primeros incrementos Flutter.",
         "Vibeapp ya tiene captura nativa real para texto, foto, video, audio, agenda, lugar y archivos biométricos CSV/JSON. Foto, video, audio y biometría suben a Storage privado mediante /api/media; Agenda sincroniza con /api/agenda; Lugar guarda coordenadas, precisión y fecha/hora como metadatos estructurados.",
@@ -2759,6 +2760,7 @@ const manualContent = {
         "The Integration kit adds /api/integration/samples and downloadable examples for Vibeapp, Meta/Oakley, Oura, Apple Health, Samsung Health, Health Connect, and Calendar. It lets connectors be tested without real data, turns each route into a GitHub issue, and validates acceptance before automation.",
         "The Oura v2 OpenAPI is now incorporated as a backend biometric connector: /api/integration/oura/manifest describes endpoints, scopes, and metrics; /api/integration/oura/normalize transforms Oura documents into sensitive Vibe context signals for reports and findings. Production OAuth/token sync is still required for automatic live synchronization.",
         "Apple Health, Samsung/Android Health Connect, and Meta Wearables are incorporated as planned native connectors: /api/integration/apple-health/manifest, /api/integration/health-connect/manifest, and /api/integration/meta-wearables/manifest explain routes, permissions, and normalizers. Apple Health has no direct REST API; Samsung should prioritize Health Connect; Meta should use Vibeapp or Meta AI/Gallery import until SDK access is approved.",
+        "Admin includes a Device connector self-test to validate Oura, Apple Health, Health Connect/Samsung, and Meta in one action against the Vibe contract. This test confirms target, payload, and idempotency before connecting real OAuth, HealthKit, Health Connect, or SDK flows.",
         "The device contract can be exported as Markdown or JSON to share with developers, API/MCP integrations, or wearable providers.",
         "npm run simulate:vibeapp validates without a physical phone that Vibeapp can send quick note, agenda, photo, video, audio, biometrics, location, and Meta sessions to the right contract targets: experience, Agenda, assets, or context.",
         "Admin can run the same Vibeapp simulation against /api/vibeapp/simulate from the device integration panel, showing passed signals, targets, and errors without opening the terminal.",
@@ -3600,6 +3602,7 @@ const state = {
   supabaseDiagnostics: null,
   supabaseSelfTest: loadSupabaseSelfTest(),
   vibeappSimulation: null,
+  deviceConnectorSelfTest: null,
   uploadAttempts: [],
   uploadAttemptsCheckedAt: null,
   pendingAuthReturn: null,
@@ -26258,6 +26261,8 @@ function renderAdminOperationalFocusPanel() {
         ouraConnectorDetail: "The Oura v2 OpenAPI now has backend endpoints for manifest and normalization. It maps readiness, sleep, activity, stress, resilience, SpO2, heart rate, workouts, cardiovascular age, VO2 max, and battery data into sensitive Vibe context signals.",
         nativeDeviceConnectors: "Apple, Samsung, and Meta routes",
         nativeDeviceConnectorsDetail: "Apple Health is handled through Vibeapp iOS and HealthKit permissions; Samsung/Galaxy data goes through Android Health Connect; Meta wearables use Vibeapp or Meta AI/Gallery import until SDK access is approved. Each route now has a backend manifest and normalizer.",
+        deviceSelfTest: "Device connector self-test",
+        deviceSelfTestDetail: "Admin can run one backend self-test that validates Oura, Apple Health, Health Connect/Samsung, and Meta payloads against the Vibe contract before any live OAuth, HealthKit, Health Connect, or SDK integration.",
         dashboardGuard: "Dashboard state guard",
         dashboardGuardDetail: "Dashboard renders Current data and Global Progress through one shared guard, with visible fallbacks if a calculation fails. The service worker no longer caches the critical app shell.",
         assetLabelFix: "External asset label fix",
@@ -26313,6 +26318,8 @@ function renderAdminOperationalFocusPanel() {
     labels.ouraConnectorDetail = "El OpenAPI v2 de Oura ya tiene endpoints backend de manifiesto y normalizaci\u00f3n. Mapea readiness, sue\u00f1o, actividad, estr\u00e9s, resiliencia, SpO2, frecuencia card\u00edaca, entrenamientos, edad cardiovascular, VO2 max y bater\u00eda hacia se\u00f1ales sensibles de contexto Vibe.";
     labels.nativeDeviceConnectors = "Rutas Apple, Samsung y Meta";
     labels.nativeDeviceConnectorsDetail = "Apple Health se maneja con Vibeapp iOS y permisos HealthKit; Samsung/Galaxy va por Android Health Connect; Meta wearables usa Vibeapp o importaci\u00f3n desde Meta AI/Galer\u00eda hasta tener SDK aprobado. Cada ruta ya tiene manifiesto backend y normalizador.";
+    labels.deviceSelfTest = "Prueba de conectores de dispositivos";
+    labels.deviceSelfTestDetail = "Administraci\u00f3n puede ejecutar una prueba backend que valida payloads de Oura, Apple Health, Health Connect/Samsung y Meta contra el contrato Vibe antes de cualquier OAuth, HealthKit, Health Connect o SDK en vivo.";
     labels.dashboardGuard = "Guardia de estado del Panel";
     labels.dashboardGuardDetail = "Panel renderiza Datos actuales y Estado global de avance desde una guardia com\u00fan, con avisos visibles si un c\u00e1lculo falla. El service worker ya no guarda en cach\u00e9 la estructura cr\u00edtica de la app.";
     labels.assetLabelFix = "Correcci\u00f3n de etiquetas de activos externos";
@@ -26341,6 +26348,7 @@ function renderAdminOperationalFocusPanel() {
     [labels.integrationKit, labels.integrationKitDetail],
     [labels.ouraConnector, labels.ouraConnectorDetail],
     [labels.nativeDeviceConnectors, labels.nativeDeviceConnectorsDetail],
+    [labels.deviceSelfTest, labels.deviceSelfTestDetail],
     [labels.dashboardGuard, labels.dashboardGuardDetail],
     [labels.assetLabelFix, labels.assetLabelFixDetail],
     [labels.runtimeAudit, labels.runtimeAuditDetail],
@@ -26940,6 +26948,10 @@ function renderDeviceIntegrationPanel() {
         simulation: "Vibeapp simulation",
         simulationEmpty: "Run the simulation to validate native notes, agenda, media, biometrics, location, and Meta imports against the production API contract.",
         simulationRunning: "Running simulation...",
+        connectorSelfTest: "Test device connectors",
+        connectorSelfTestTitle: "Device connector self-test",
+        connectorSelfTestEmpty: "Run the test to validate Oura, Apple Health, Health Connect/Samsung, and Meta normalizers against the Vibe signal contract.",
+        connectorSelfTestRunning: "Testing connectors...",
       }
     : {
         title: "Contrato de integración de dispositivos",
@@ -26961,8 +26973,13 @@ function renderDeviceIntegrationPanel() {
         simulation: "Simulación Vibeapp",
         simulationEmpty: "Ejecuta la simulación para validar notas nativas, agenda, medios, biometría, ubicación e importaciones Meta contra el contrato API productivo.",
         simulationRunning: "Ejecutando simulación...",
+        connectorSelfTest: "Probar conectores",
+        connectorSelfTestTitle: "Prueba de conectores de dispositivos",
+        connectorSelfTestEmpty: "Ejecuta la prueba para validar normalizadores de Oura, Apple Health, Health Connect/Samsung y Meta contra el contrato de señales Vibe.",
+        connectorSelfTestRunning: "Probando conectores...",
       };
   const simulation = state.vibeappSimulation;
+  const connectorSelfTest = state.deviceConnectorSelfTest;
   container.innerHTML = `
     <section class="device-integration-panel">
       <div class="device-integration-heading">
@@ -27026,6 +27043,7 @@ function renderDeviceIntegrationPanel() {
       </div>
       <div class="device-integration-actions">
         <button class="primary-button" type="button" data-device-action="run-vibeapp-sim">${escapeHtml(labels.simulate)}</button>
+        <button class="primary-button" type="button" data-device-action="run-device-connectors">${escapeHtml(labels.connectorSelfTest)}</button>
         <button class="ghost-button" type="button" data-device-action="export-md">${escapeHtml(labels.exportMd)}</button>
         <button class="ghost-button" type="button" data-device-action="export-json">${escapeHtml(labels.exportJson)}</button>
         <button class="ghost-button" type="button" data-device-action="copy-sample">${escapeHtml(labels.sample)}</button>
@@ -27053,6 +27071,32 @@ function renderDeviceIntegrationPanel() {
                   <div>
                     <span class="${item.ok ? "status-ok" : "status-warn"}">${escapeHtml(item.ok ? "OK" : "!")}</span>
                     <strong>${escapeHtml(item.label || item.name)}</strong>
+                    <small>${escapeHtml(`${item.payloadType || "-"} -> ${item.target || "-"}${item.expectedTarget && item.expectedTarget !== item.target ? ` · esperado ${item.expectedTarget}` : ""}`)}</small>
+                  </div>
+                `).join("")}
+              </div>`
+            : ""
+        }
+      </article>
+      <article class="device-simulation-panel ${connectorSelfTest?.ok ? "is-ready" : connectorSelfTest?.status === "running" ? "is-running" : connectorSelfTest ? "is-review" : ""}">
+        <div>
+          <strong>${escapeHtml(labels.connectorSelfTestTitle)}</strong>
+          <p>${escapeHtml(
+            connectorSelfTest?.status === "running"
+              ? labels.connectorSelfTestRunning
+              : connectorSelfTest?.checkedAt
+                ? `${connectorSelfTest.passed || 0}/${connectorSelfTest.samples || 0} ${state.language === "en" ? "connectors passed" : "conectores correctos"} · ${Object.entries(connectorSelfTest.targetSummary || {}).map(([target, count]) => `${target}: ${count}`).join(" · ")}`
+                : labels.connectorSelfTestEmpty,
+          )}</p>
+        </div>
+        ${connectorSelfTest?.checkedAt ? `<span class="${connectorSelfTest.ok ? "status-ok" : "status-warn"}">${escapeHtml(connectorSelfTest.ok ? (state.language === "en" ? "Ready" : "Listo") : (state.language === "en" ? "Review" : "Revisar"))}</span>` : ""}
+        ${
+          connectorSelfTest?.results?.length
+            ? `<div class="device-simulation-results">
+                ${connectorSelfTest.results.map((item) => `
+                  <div>
+                    <span class="${item.ok ? "status-ok" : "status-warn"}">${escapeHtml(item.ok ? "OK" : "!")}</span>
+                    <strong>${escapeHtml(item.connector || item.name)}</strong>
                     <small>${escapeHtml(`${item.payloadType || "-"} -> ${item.target || "-"}${item.expectedTarget && item.expectedTarget !== item.target ? ` · esperado ${item.expectedTarget}` : ""}`)}</small>
                   </div>
                 `).join("")}
@@ -27112,6 +27156,10 @@ function handleDeviceIntegrationClick(event) {
     runVibeappSimulation();
     return;
   }
+  if (action === "run-device-connectors") {
+    runDeviceConnectorSelfTest();
+    return;
+  }
   if (action === "export-md") {
     downloadBlob(new Blob([buildDeviceIntegrationMarkdown()], { type: "text/markdown;charset=utf-8" }), "contrato-integracion-dispositivos.md");
     return;
@@ -27161,6 +27209,30 @@ async function runVibeappSimulation() {
       results: [{ label: "API", ok: false, payloadType: "simulation", target: "review", errors: [error.message] }],
     };
     notify(state.language === "en" ? `Vibeapp simulation failed: ${error.message}` : `Falló la simulación Vibeapp: ${error.message}`);
+  }
+  renderDeviceIntegrationPanel();
+}
+
+async function runDeviceConnectorSelfTest() {
+  state.deviceConnectorSelfTest = { status: "running", checkedAt: new Date().toISOString(), results: [] };
+  renderDeviceIntegrationPanel();
+  try {
+    const result = await apiRequest("/integration/device/selftest", { method: "GET" });
+    state.deviceConnectorSelfTest = result;
+    notify(result.ok
+      ? state.language === "en" ? "Device connector self-test passed." : "Prueba de conectores correcta."
+      : state.language === "en" ? "Device connector self-test needs review." : "La prueba de conectores requiere revisión.");
+  } catch (error) {
+    state.deviceConnectorSelfTest = {
+      ok: false,
+      checkedAt: new Date().toISOString(),
+      samples: 0,
+      passed: 0,
+      failed: 1,
+      targetSummary: {},
+      results: [{ connector: "API", ok: false, payloadType: "selftest", target: "review", errors: [error.message] }],
+    };
+    notify(state.language === "en" ? `Device connector test failed: ${error.message}` : `Falló la prueba de conectores: ${error.message}`);
   }
   renderDeviceIntegrationPanel();
 }

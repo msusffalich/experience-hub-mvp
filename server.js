@@ -266,6 +266,12 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (url.pathname === "/api/integration/device/selftest" && req.method === "GET") {
+    const user = await getOptionalRequestUser(req);
+    sendJson(res, 200, runDeviceConnectorSelfTest(user));
+    return;
+  }
+
   if (url.pathname === "/api/integration/validate" && req.method === "POST") {
     const user = await getRequestUser(req);
     const body = await readJson(req);
@@ -884,9 +890,14 @@ function buildOuraConnectorManifest() {
       requiredEnvironment: ["OURA_CLIENT_ID", "OURA_CLIENT_SECRET", "OURA_REDIRECT_URI"],
     },
     syncModes: {
-      now: ["csv-json-file-import", "backend-normalize"],
+      now: ["csv-json-file-import", "backend-normalize", "device-connector-selftest"],
       next: ["oauth-manual-sync", "daily-background-job"],
       later: ["webhook-subscription"],
+    },
+    endpoints: {
+      manifest: "/api/integration/oura/manifest",
+      normalize: "/api/integration/oura/normalize",
+      selftest: "/api/integration/device/selftest",
     },
     privacyLevel: "sensitive",
     dataTypes,
@@ -1086,6 +1097,7 @@ function buildAppleHealthConnectorManifest() {
     endpoints: {
       manifest: "/api/integration/apple-health/manifest",
       normalize: "/api/integration/apple-health/normalize",
+      selftest: "/api/integration/device/selftest",
     },
     privacyLevel: "sensitive",
     requiredNativeCapabilities: ["HealthKit entitlement", "NSHealthShareUsageDescription", "granular user permission per data type"],
@@ -1116,6 +1128,7 @@ function buildHealthConnectConnectorManifest() {
     endpoints: {
       manifest: "/api/integration/health-connect/manifest",
       normalize: "/api/integration/health-connect/normalize",
+      selftest: "/api/integration/device/selftest",
     },
     privacyLevel: "sensitive",
     requiredNativeCapabilities: ["Health Connect permission declaration", "runtime permissions per record type", "background sync policy"],
@@ -1146,6 +1159,7 @@ function buildMetaWearablesConnectorManifest() {
     endpoints: {
       manifest: "/api/integration/meta-wearables/manifest",
       normalize: "/api/integration/meta-wearables/normalize",
+      selftest: "/api/integration/device/selftest",
     },
     privacyLevel: "private",
     dataTypes: [
@@ -1280,6 +1294,111 @@ function normalizeMetaWearablesPayload(body = {}, user = null) {
     count: 1,
     targetSummary: { [validation.target]: 1 },
     results: [validation],
+  };
+}
+
+function runDeviceConnectorSelfTest(user = null) {
+  const checkedAt = new Date().toISOString();
+  const cases = [
+    {
+      name: "oura-daily-readiness",
+      connector: "oura-api-v2",
+      expectedTarget: "context",
+      run: () => normalizeOuraPayload({
+        dataType: "daily_readiness",
+        participantId: "selftest",
+        document: {
+          id: "selftest-readiness",
+          day: "2026-05-28",
+          score: 82,
+          temperature_deviation: 0.1,
+          contributors: { hrv_balance: 78, sleep_balance: 80 },
+        },
+      }, user),
+    },
+    {
+      name: "apple-health-steps",
+      connector: "apple-healthkit-native",
+      expectedTarget: "context",
+      run: () => normalizeAppleHealthPayload({
+        dataType: "stepCount",
+        participantId: "selftest",
+        document: {
+          id: "selftest-apple-steps",
+          startDate: "2026-05-28T09:00:00-04:00",
+          value: 8420,
+        },
+      }, user),
+    },
+    {
+      name: "health-connect-steps",
+      connector: "android-health-connect",
+      expectedTarget: "context",
+      run: () => normalizeHealthConnectPayload({
+        dataType: "StepsRecord",
+        participantId: "selftest",
+        document: {
+          id: "selftest-health-connect-steps",
+          startTime: "2026-05-28T09:00:00-04:00",
+          metrics: { count: 6200 },
+        },
+      }, user),
+    },
+    {
+      name: "meta-wearables-photo",
+      connector: "meta-wearables-device-access",
+      expectedTarget: "assets",
+      run: () => normalizeMetaWearablesPayload({
+        dataType: "photo",
+        participantId: "selftest",
+        sourceId: "selftest-meta-photo",
+        capturedAt: "2026-05-28T14:00:00-04:00",
+        files: [{ fileName: "meta-photo.heic", mimeType: "image/heic", storageObjectHint: "meta-photo.heic" }],
+      }, user),
+    },
+  ];
+  const results = cases.map((testCase) => {
+    try {
+      const output = testCase.run();
+      const target = Object.keys(output.targetSummary || {})[0] || output.results?.[0]?.target || "";
+      const ok = Boolean(output.ok && target === testCase.expectedTarget);
+      return {
+        name: testCase.name,
+        connector: testCase.connector,
+        ok,
+        expectedTarget: testCase.expectedTarget,
+        target,
+        count: output.count || 0,
+        payloadType: output.results?.[0]?.normalized?.payloadType || "",
+        errors: output.results?.flatMap((item) => item.errors || []) || [],
+        warnings: output.results?.flatMap((item) => item.warnings || []) || [],
+      };
+    } catch (error) {
+      return {
+        name: testCase.name,
+        connector: testCase.connector,
+        ok: false,
+        expectedTarget: testCase.expectedTarget,
+        target: "error",
+        count: 0,
+        payloadType: "",
+        errors: [error.message],
+        warnings: [],
+      };
+    }
+  });
+  return {
+    ok: results.every((item) => item.ok),
+    checkedAt,
+    schemaVersion: INTEGRATION_CONTRACT_VERSION,
+    samples: results.length,
+    passed: results.filter((item) => item.ok).length,
+    failed: results.filter((item) => !item.ok).length,
+    targetSummary: results.reduce((acc, item) => {
+      acc[item.target] = (acc[item.target] || 0) + 1;
+      return acc;
+    }, {}),
+    results,
   };
 }
 

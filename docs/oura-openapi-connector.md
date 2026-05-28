@@ -82,3 +82,11 @@ Tipos priorizados: photo, video, voice_activity, autocapture_session y ai_contex
 ## Regla comun
 
 Todas estas rutas deben producir señales `vibe-signal-contract-v2`, con `sourceId`, `capturedAt`, `participantId`, `payloadType`, `privacyLevel`, `payload`, `deviceMetadata` e `idempotencyKey`. Los datos de salud se tratan como `sensitive`; los medios de Meta como `private`.
+
+## Prueba integral de conectores
+
+Ruta backend:
+
+- `GET /api/integration/device/selftest`
+
+Esta prueba ejecuta muestras normalizadas de Oura, Apple Health, Health Connect/Samsung y Meta Wearables. Debe devolver `ok=true`, 4 muestras correctas y destinos esperados: contexto para salud/biometría y activos para multimedia Meta. Es la compuerta previa a conectar OAuth, HealthKit, Health Connect o SDKs reales.
