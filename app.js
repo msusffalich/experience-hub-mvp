@@ -1,4 +1,4 @@
-const APP_VERSION = "20260528-health-connect-native-488";
+const APP_VERSION = "20260528-biometric-intelligence-489";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2126,6 +2126,7 @@ const manualContent = {
         "Vibeapp suma Importar sesión externa: permite traer varios archivos de Meta/Oakley/Ray-Ban, Oura, Apple Health, Samsung Health/Galaxy Watch, Health Connect, galería del teléfono u otro origen, agruparlos en una sola experiencia y conservar metadatos normalizados para procesamiento posterior.",
         "El importador externo de Vibeapp distingue el origen real del archivo: un JSON de Meta queda como referencia de cuenta, una foto o video de lentes queda como memoria visual, y un CSV/JSON de Oura, Apple Health, Samsung Health o Health Connect queda como contexto biométrico transversal.",
         "Vibeapp Android declara permisos Health Connect por tipo de dato y agrega una prueba piloto para Samsung/Galaxy: pasos, calorías, distancia, frecuencia cardiaca, HRV, oxígeno, respiración, temperatura, sueño y ejercicio. La lectura real en teléfono pedirá autorización explícita del usuario antes de enviar señales al backend.",
+        "Panel, Captura, Reportes y Hallazgos usan ahora un resumen biométrico central: la PWA hidrata archivos CSV/JSON y señales estructuradas de Vibeapp, los cruza por fecha/hora y los muestra como energía sugerida, cobertura, riesgo contextual y ejemplos vinculados.",
         "La PWA lee esos perfiles externos en Activos, inventario y evidencia de reportes: muestra origen, tipo de carga, intención de procesamiento, privacidad y si el archivo se puede interpretar automáticamente o solo conservar como transporte.",
         "Vibeapp valida cada captura antes de sincronizar: revisa título, texto, eventos, existencia de archivos, tamaño, MIME, vínculo evento-activo y expectativas por origen. Si algo no cuadra, queda en cola con un mensaje entendible antes de tocar el backend.",
         "Vibeapp muestra una cola local observable: separa capturas listas para enviar, subidas en curso, reintentos automáticos, fallos que requieren acción, archivos pendientes y eventos pendientes. El usuario ve el estado real sin interpretar logs ni comandos.",
@@ -2762,6 +2763,7 @@ const manualContent = {
         "The Oura v2 OpenAPI is now incorporated as a backend biometric connector: /api/integration/oura/manifest describes endpoints, scopes, and metrics; /api/integration/oura/normalize transforms Oura documents into sensitive Vibe context signals for reports and findings. Production OAuth/token sync is still required for automatic live synchronization.",
         "Apple Health, Samsung/Android Health Connect, and Meta Wearables are incorporated as planned native connectors: /api/integration/apple-health/manifest, /api/integration/health-connect/manifest, and /api/integration/meta-wearables/manifest explain routes, permissions, and normalizers. Apple Health has no direct REST API; Samsung should prioritize Health Connect; Meta should use Vibeapp or Meta AI/Gallery import until SDK access is approved.",
         "Admin includes a Device connector self-test to validate Oura, Apple Health, Health Connect/Samsung, and Meta in one action against the Vibe contract. This test confirms target, payload, and idempotency before connecting real OAuth, HealthKit, Health Connect, or SDK flows.",
+        "Dashboard, Capture, Reports, and Findings now share one biometric intelligence summary: the PWA hydrates CSV/JSON files and structured Vibeapp signals, matches them by date/time, and shows suggested energy, coverage, contextual risk, and linked examples.",
         "The device contract can be exported as Markdown or JSON to share with developers, API/MCP integrations, or wearable providers.",
         "npm run simulate:vibeapp validates without a physical phone that Vibeapp can send quick note, agenda, photo, video, audio, biometrics, location, and Meta sessions to the right contract targets: experience, Agenda, assets, or context.",
         "Admin can run the same Vibeapp simulation against /api/vibeapp/simulate from the device integration panel, showing passed signals, targets, and errors without opening the terminal.",
@@ -8677,6 +8679,7 @@ function renderDashboardScopedPanels() {
   renderDashboardStateAndProgressPanels({ compact: true });
   renderDashboardGroupOnboarding();
   renderMetrics();
+  renderDashboardBiometricContext();
   renderDashboardAttachmentStatus();
   renderDashboardAgenda();
   renderCategoryChart();
@@ -9916,6 +9919,7 @@ function renderAll() {
   renderDashboardTimeContext();
   renderDashboardStateAndProgressPanels({ compact: true });
   renderMetrics();
+  renderDashboardBiometricContext();
   updatePilotParticipantControls();
   renderDashboardAttachmentStatus();
   renderDashboardAgenda();
@@ -13326,6 +13330,55 @@ function hydrateBiometricImportsFromExperiences(experiences = state.experiences)
   const existingIds = new Set((state.biometricImports || []).map((item) => item.id));
   const imported = [];
   (experiences || []).forEach((experience) => {
+    const structuredContext = experience.metadata?.structuredContext || {};
+    const structuredSignals = Array.isArray(structuredContext.signals) ? structuredContext.signals : [];
+    if (structuredSignals.length) {
+      const id = structuredContext.id || `structured-biometric-${simpleHash(`${experience.id}:${structuredContext.connector || "context"}`)}`;
+      if (!existingIds.has(id)) {
+        const rows = structuredSignals.map(normalizeBiometricRow).filter((row) => row.date || row.type || row.value);
+        const metricNames = detectBiometricMetricNames(rows);
+        const dates = rows
+          .map((row) => row.date)
+          .filter(Boolean)
+          .map((value) => new Date(value))
+          .filter((date) => !Number.isNaN(date.getTime()))
+          .sort((a, b) => a - b);
+        const startAt = dates[0]?.toISOString() || experience.timestamp || "";
+        const endAt = dates[dates.length - 1]?.toISOString() || experience.timestamp || "";
+        const sourceDevice = detectBiometricSource(rows) || structuredContext.connector || "Health Connect";
+        const metricText = metricNames.length ? metricNames.join(", ") : t("labels.biometricAssetNoMetrics");
+        imported.push({
+          id,
+          name: structuredContext.connector === "android-health-connect" ? "health-connect-context.json" : "biometric-context.json",
+          type: "application/json",
+          size: JSON.stringify(structuredContext).length,
+          sourceDevice,
+          importedAt: experience.timestamp || new Date().toISOString(),
+          startAt,
+          endAt,
+          recordCount: rows.length,
+          metricNames,
+          summaryText: state.language === "en"
+            ? `Native biometric context from ${sourceDevice}. ${rows.length} records. Signals: ${metricText}.`
+            : `Contexto biométrico nativo desde ${sourceDevice}. ${rows.length} registros. Señales: ${metricText}.`,
+          analysisText: state.language === "en"
+            ? `Native biometric context linked to ${experience.title || "experience"}. It informs energy, recovery, sleep, activity, and risk by date/time.`
+            : `Contexto biométrico nativo vinculado a ${experience.title || "la experiencia"}. Informa energía, recuperación, sueño, actividad y riesgo por fecha/hora.`,
+          extractedText: JSON.stringify(structuredContext, null, 2),
+          previewText: structuredContext.summary || "",
+          extractionMethod: "vibeapp-health-connect-structured-context",
+          extractionStatus: "automatic",
+          fingerprint: simpleHash(JSON.stringify(structuredContext)),
+          metadata: {
+            ...structuredContext,
+            sourceType: "biometric_structured_context",
+            linkedExperienceId: experience.id || "",
+          },
+          rows,
+        });
+        existingIds.add(id);
+      }
+    }
     const candidates = [
       ...(Array.isArray(experience.attachments) ? experience.attachments : []),
       ...(Array.isArray(experience.media) ? experience.media : []),
@@ -14584,7 +14637,7 @@ function formatBiometricSignalDetail(metrics = {}, count = 0) {
 function extractJsonBiometricRows(payload) {
   if (Array.isArray(payload)) return payload;
   if (!payload || typeof payload !== "object") return [];
-  const candidates = [payload.records, payload.data, payload.healthData, payload.samples, payload.workouts, payload.items];
+  const candidates = [payload.records, payload.data, payload.healthData, payload.samples, payload.workouts, payload.items, payload.signals];
   const array = candidates.find(Array.isArray);
   if (array) return array;
   return Object.entries(payload)
@@ -14594,6 +14647,18 @@ function extractJsonBiometricRows(payload) {
 
 function normalizeBiometricRow(row = {}) {
   if (!row || typeof row !== "object") return {};
+  if (row.payload && typeof row.payload === "object") {
+    const payload = row.payload;
+    const deviceMetadata = row.deviceMetadata || {};
+    return {
+      ...row,
+      type: String(payload.dataType || row.dataType || row.type || row.connector || ""),
+      source: String(deviceMetadata.sourceDevice || deviceMetadata.provider || row.source || row.connector || ""),
+      date: String(payload.endTime || payload.startTime || row.capturedAt || row.date || ""),
+      value: payload.value ?? payload.count ?? payload.duration ?? row.value ?? "",
+      unit: payload.unit || row.unit || "",
+    };
+  }
   const normalized = {};
   Object.entries(row).forEach(([key, value]) => {
     normalized[String(key || "").trim().toLowerCase()] = value;
@@ -18201,7 +18266,7 @@ function hasMeaningfulPeople(value) {
 
 function summarizeBiometricSignalsForExperiences(experiences = []) {
   if (!experiences.length) {
-    return { matched: 0, coveragePct: 0, averageSuggestedEnergy: 0, biometricRiskScore: 0 };
+    return { matched: 0, coveragePct: 0, averageSuggestedEnergy: 0, biometricRiskScore: 0, importedCount: state.biometricImports?.length || 0, rowCount: getAllBiometricRows().length };
   }
   const signals = getBiometricSignalsForExperiences(experiences).map((item) => item.signal);
   const averageSuggestedEnergy = signals.length ? average(signals.map((signal) => Number(signal.energySuggestion || 0))) : 0;
@@ -18214,6 +18279,8 @@ function summarizeBiometricSignalsForExperiences(experiences = []) {
     coveragePct: pct(signals.length, experiences.length),
     averageSuggestedEnergy,
     biometricRiskScore: pct(riskSignals, signals.length || 1),
+    importedCount: state.biometricImports?.length || 0,
+    rowCount: getAllBiometricRows().length,
   };
 }
 
@@ -18224,6 +18291,152 @@ function getBiometricSignalsForExperiences(experiences = []) {
       signal: buildBiometricSignalForTimestamp(experience.timestamp, experience.duration),
     }))
     .filter((item) => item.signal?.matched);
+}
+
+function buildBiometricIntelligenceSummary(experiences = state.experiences) {
+  const scopedExperiences = Array.isArray(experiences) ? experiences : [];
+  const rows = getAllBiometricRows();
+  const signals = getBiometricSignalsForExperiences(scopedExperiences);
+  const signalRows = signals.flatMap((item) => item.signal.rows || []);
+  const metrics = aggregateBiometricRows(signalRows.length ? signalRows : rows);
+  const summary = summarizeBiometricSignalsForExperiences(scopedExperiences);
+  const imported = state.biometricImports || [];
+  const sources = [...new Set(imported.map((item) => item.sourceDevice || item.metadata?.connector || "").filter(Boolean))].slice(0, 4);
+  const recentMatches = signals
+    .slice()
+    .sort((a, b) => new Date(b.experience.timestamp) - new Date(a.experience.timestamp))
+    .slice(0, 3);
+  const status = !imported.length
+    ? "missing"
+    : !rows.length
+      ? "needs-processing"
+      : signals.length
+        ? "active"
+        : "unmatched";
+  const labels = state.language === "en"
+    ? {
+        missing: "No biometric source has been imported yet.",
+        needsProcessing: "Biometric sources exist, but no readable rows were detected.",
+        unmatched: "Biometric data is ready, but it does not match the current dates yet.",
+        active: "Biometric context is active in the current scope.",
+        riskLow: "Low body-signal risk in the selected scope.",
+        riskMedium: "Some body signals deserve attention.",
+        riskHigh: "Body signals suggest recovery should be prioritized.",
+      }
+    : {
+        missing: "Aún no hay fuente biométrica importada.",
+        needsProcessing: "Hay fuentes biométricas, pero no se detectaron registros legibles.",
+        unmatched: "La biometría está lista, pero aún no coincide con las fechas actuales.",
+        active: "El contexto biométrico está activo en el alcance actual.",
+        riskLow: "Riesgo corporal bajo en el alcance seleccionado.",
+        riskMedium: "Algunas señales corporales merecen atención.",
+        riskHigh: "Las señales corporales sugieren priorizar recuperación.",
+      };
+  const riskLabel = summary.biometricRiskScore >= 60
+    ? labels.riskHigh
+    : summary.biometricRiskScore >= 25
+      ? labels.riskMedium
+      : labels.riskLow;
+  const headline = status === "missing"
+    ? labels.missing
+    : status === "needs-processing"
+      ? labels.needsProcessing
+      : status === "unmatched"
+        ? labels.unmatched
+        : labels.active;
+  return {
+    status,
+    headline,
+    riskLabel,
+    importedCount: imported.length,
+    rowCount: rows.length,
+    matchedExperiences: summary.matched,
+    totalExperiences: scopedExperiences.length,
+    coveragePct: summary.coveragePct,
+    averageSuggestedEnergy: summary.averageSuggestedEnergy,
+    biometricRiskScore: summary.biometricRiskScore,
+    metrics,
+    sources,
+    recentMatches,
+  };
+}
+
+function renderDashboardBiometricContext() {
+  const box = document.getElementById("dashboardBiometricBox");
+  if (!box) return;
+  const title = document.getElementById("dashboardBiometricTitle");
+  const status = document.getElementById("dashboardBiometricStatus");
+  if (title) title.textContent = state.language === "en" ? "Biometric context" : "Contexto biométrico";
+  if (status) status.textContent = state.language === "en" ? "Wearables and health" : "Wearables y salud";
+  const summary = buildBiometricIntelligenceSummary(getDashboardExperiences());
+  const labels = state.language === "en"
+    ? {
+        import: "Import biometrics",
+        report: "Open report",
+        coverage: "Coverage",
+        energy: "Suggested energy",
+        risk: "Risk",
+        records: "Rows",
+        sources: "Sources",
+        matches: "Recent matches",
+        noMatches: "No recent matches in this dashboard scope.",
+        method: "Used by Panel, Capture, Reports and Insights. It is context, not a medical diagnosis.",
+        heart: "Heart",
+        steps: "Steps",
+        sleep: "Sleep",
+      }
+    : {
+        import: "Importar biometría",
+        report: "Abrir reporte",
+        coverage: "Cobertura",
+        energy: "Energía sugerida",
+        risk: "Riesgo",
+        records: "Registros",
+        sources: "Fuentes",
+        matches: "Coincidencias recientes",
+        noMatches: "No hay coincidencias recientes en este alcance del panel.",
+        method: "Usado por Panel, Captura, Reportes y Hallazgos. Es contexto, no diagnóstico médico.",
+        heart: "Frecuencia",
+        steps: "Pasos",
+        sleep: "Sueño",
+      };
+  box.innerHTML = `
+    <div class="dashboard-biometric-summary ${summary.status === "active" ? "is-active" : "needs-data"}">
+      <div>
+        <strong>${escapeHtml(summary.headline)}</strong>
+        <p>${escapeHtml(summary.riskLabel)} ${escapeHtml(labels.method)}</p>
+        <small>${escapeHtml(labels.sources)}: ${escapeHtml(summary.sources.join(", ") || "-")}</small>
+      </div>
+      <div class="dashboard-biometric-actions">
+        <button class="ghost-button" type="button" data-backlog-view="assetLibrary" data-backlog-focus="biometricAssetPanelTitle">${escapeHtml(labels.import)}</button>
+        <button class="primary-button" type="button" data-backlog-view="report">${escapeHtml(labels.report)}</button>
+      </div>
+    </div>
+    <div class="dashboard-biometric-metrics">
+      <article><span>${escapeHtml(labels.coverage)}</span><strong>${escapeHtml(`${Math.round(summary.coveragePct)}%`)}</strong></article>
+      <article><span>${escapeHtml(labels.energy)}</span><strong>${summary.averageSuggestedEnergy ? escapeHtml(`${summary.averageSuggestedEnergy.toFixed(1)}/10`) : "-"}</strong></article>
+      <article><span>${escapeHtml(labels.risk)}</span><strong>${escapeHtml(`${Math.round(summary.biometricRiskScore)}%`)}</strong></article>
+      <article><span>${escapeHtml(labels.records)}</span><strong>${escapeHtml(String(summary.rowCount))}</strong></article>
+      <article><span>${escapeHtml(labels.heart)}</span><strong>${summary.metrics.heartAvg ? Math.round(summary.metrics.heartAvg) : "-"}</strong></article>
+      <article><span>${escapeHtml(labels.steps)}</span><strong>${summary.metrics.steps ? Math.round(summary.metrics.steps).toLocaleString() : "-"}</strong></article>
+      <article><span>${escapeHtml(labels.sleep)}</span><strong>${summary.metrics.sleepMinutes ? `${(summary.metrics.sleepMinutes / 60).toFixed(1)} h` : "-"}</strong></article>
+    </div>
+    <div class="dashboard-biometric-matches">
+      <span class="card-meta">${escapeHtml(labels.matches)}</span>
+      ${
+        summary.recentMatches.length
+          ? summary.recentMatches
+              .map(({ experience, signal }) => `
+                <article>
+                  <strong>${escapeHtml(experience.title || "")}</strong>
+                  <p>${escapeHtml(signal.detail || signal.label || "")}</p>
+                </article>
+              `)
+              .join("")
+          : `<p>${escapeHtml(labels.noMatches)}</p>`
+      }
+    </div>
+  `;
 }
 
 function renderReportBiometricImpact(experiences = []) {
@@ -19060,6 +19273,7 @@ function buildReportExportPayload() {
     },
     dataQuality,
     analysis,
+    biometricContext: buildBiometricIntelligenceSummary(reportExperiences),
     integratedReading: buildIntegratedReportCards(reportExperiences, analysis, dataQuality, buildExperienceMapRoutes(routeGraph)),
     predictiveOutlook: buildPredictiveOutlook(reportExperiences, analysis, dataQuality),
     mapRoutes,
@@ -26243,7 +26457,7 @@ function renderAdminOperationalFocusPanel() {
         liveFlow: "Live draft refresh",
         liveFlowDetail: "When Capture syncs an open draft, the same device refreshes Dashboard, Library, Assets, Agenda, Timeline, Map, Reports, Publications, Insights, persistence state, and Admin.",
         biometricAssets: "Biometric files in Assets",
-        biometricAssetsDetail: "CSV/JSON from Apple Health or wearables can enter through Assets or Vibeapp. The PWA hydrates synced biometric files as cross-experience context and uses date/time matching for energy and recovery.",
+        biometricAssetsDetail: "CSV/JSON from Apple Health or wearables can enter through Assets or Vibeapp. The PWA hydrates synced biometric files and structured Health Connect signals as cross-experience context, then uses them in Dashboard, Capture, Reports, and Findings through date/time matching.",
         scopeFilters: "Unified analytical scope",
         scopeFiltersDetail: "Reports, Findings, and Publications now share group/person, category, from-date, and to-date filters so the user can analyze a coherent group of experiences.",
         reportPdf: "Cleaner reports, publications, and findings",
@@ -26300,7 +26514,7 @@ function renderAdminOperationalFocusPanel() {
     labels.liveFlow = "Refresco de borrador vivo";
     labels.liveFlowDetail = "Cuando Captura sincroniza una experiencia abierta, el mismo dispositivo refresca Panel, Librer\u00eda, Activos, Agenda, L\u00ednea de tiempo, Mapa, Reportes, Publicaciones, Hallazgos, persistencia y Administraci\u00f3n.";
     labels.biometricAssets = "Biometr\u00eda desde Activos";
-    labels.biometricAssetsDetail = "CSV/JSON de Apple Health o wearables puede entrar por Activos o Vibeapp. La PWA hidrata archivos biom\u00e9tricos sincronizados como contexto transversal y los cruza por fecha/hora para energ\u00eda y recuperaci\u00f3n.";
+    labels.biometricAssetsDetail = "CSV/JSON de Apple Health o wearables puede entrar por Activos o Vibeapp. La PWA hidrata archivos biom\u00e9tricos y se\u00f1ales estructuradas de Health Connect como contexto transversal, y luego las usa en Panel, Captura, Reportes y Hallazgos por cruce de fecha/hora.";
     labels.scopeFilters = "Alcance anal\u00edtico uniforme";
     labels.scopeFiltersDetail = "Reportes, Hallazgos y Publicaciones comparten filtros de grupo/persona, categor\u00eda, fecha desde y fecha hasta para analizar grupos coherentes de experiencias.";
     labels.reportPdf = "Reportes, publicaciones y hallazgos limpios";
@@ -30431,7 +30645,7 @@ function buildParallelBacklog() {
       vectorAction: "Actualizar embeddings",
       blueprintTitle: "Plan maestro de inteligencia humana",
       blueprintDetail: humanKpis.length
-        ? `${humanKpis.length} índices, ${humanCorrelations.length} correlaciones humanas y proyección inicial visibles en Reportes; la biometría importada desde Activos ya informa energía, recuperación y riesgo cuando coincide por fecha/hora.`
+        ? `${humanKpis.length} índices, ${humanCorrelations.length} correlaciones humanas y proyección inicial visibles en Reportes; la biometría importada desde Activos o Vibeapp ya informa Panel, Captura, Reportes y Hallazgos cuando coincide por fecha/hora.`
         : "Integrar indicadores humanos, reportes por categoría, correlaciones y memoria viva desde el plan maestro.",
       blueprintAction: "Abrir Reporte",
       mapTitle: "Mapa de Experiencias",
@@ -30485,7 +30699,7 @@ function buildParallelBacklog() {
       vectorAction: "Update embeddings",
       blueprintTitle: "Human Intelligence Blueprint",
       blueprintDetail: humanKpis.length
-        ? `${humanKpis.length} indexes, ${humanCorrelations.length} human correlations, and an initial outlook are visible in Reports; imported biometrics from Assets now inform energy, recovery, and risk when matched by date/time.`
+        ? `${humanKpis.length} indexes, ${humanCorrelations.length} human correlations, and an initial outlook are visible in Reports; imported biometrics from Assets or Vibeapp now inform Dashboard, Capture, Reports, and Findings when matched by date/time.`
         : "Integrate human KPIs, category reports, correlations, and living memory from the blueprint.",
       blueprintAction: "Open Report",
       mapTitle: "Experience Map",
@@ -30713,7 +30927,7 @@ function calculateTotalProductProgress(readiness) {
       86 * 0.11 + // Agenda MVP.
       86 * 0.11 + // Publicaciones MVP.
       84 * 0.12 + // Supabase, administración y operación.
-      76 * 0.13 + // Contrato, rutas, kit, simulador, normalizadores y permisos Android Health Connect listos; OAuth/SDK en vivo siguen posteriores.
+      78 * 0.13 + // Contrato, rutas, kit, simulador, normalizadores, permisos Android Health Connect y resumen biometrico central listos; OAuth/SDK en vivo siguen posteriores.
       14 * 0.13, // IA predictiva y agentes todavía futuros.
   );
   return {
@@ -31009,6 +31223,20 @@ function buildInsights(experiences = state.experiences) {
     });
   }
 
+  if (analysis.biometricContext?.status === "active") {
+    insights.push({
+      type: state.language === "en" ? "Biometrics" : "Biometría",
+      confidence: Math.round(Math.min(92, 62 + analysis.biometricContext.coveragePct * 0.3)),
+      title: state.language === "en" ? "Body context now informs this reading" : "El contexto corporal ya informa esta lectura",
+      description: state.language === "en"
+        ? `${Math.round(analysis.biometricContext.coveragePct)}% of the selected experiences have nearby biometric context. Suggested energy averages ${(analysis.biometricContext.averageSuggestedEnergy || 0).toFixed(1)}/10.`
+        : `${Math.round(analysis.biometricContext.coveragePct)}% de las experiencias seleccionadas tiene contexto biométrico cercano. La energía sugerida promedia ${(analysis.biometricContext.averageSuggestedEnergy || 0).toFixed(1)}/10.`,
+      action: analysis.biometricContext.biometricRiskScore >= 40
+        ? (state.language === "en" ? "Before adding demanding activities, review sleep, heart rate, and recovery signals in the Dashboard." : "Antes de sumar actividades exigentes, revisa sueño, frecuencia y recuperación en el Panel.")
+        : (state.language === "en" ? "Keep capturing perceived energy; compare it with biometric suggestions to calibrate future reports." : "Sigue capturando energía percibida; compárala con la sugerencia biométrica para calibrar reportes futuros."),
+    });
+  }
+
   return insights;
 }
 
@@ -31029,6 +31257,7 @@ function buildExperienceAnalysis(experiences) {
   const topObjective = topValue(list.map((item) => item.objective).filter(Boolean));
   const topPerson = topValue(list.flatMap((item) => splitListField(item.people)));
   const topLocation = topValue(list.map((item) => item.location).filter((value) => value && value !== "Sin ubicación"));
+  const biometricContext = buildBiometricIntelligenceSummary(list);
   const trend = list.length < 4
     ? (state.language === "en" ? "At least four experiences are needed for a reliable trend." : "Se necesitan al menos cuatro experiencias para una tendencia confiable.")
     : energyDelta > 0.5
@@ -31047,7 +31276,7 @@ function buildExperienceAnalysis(experiences) {
       ? `Higher-energy contexts can be compared with ${topLocation ? `location ${topLocation}` : `person ${topPerson}`}.`
       : `Los contextos de mayor energía se pueden comparar con ${topLocation ? `ubicación ${topLocation}` : `persona ${topPerson}`}.`
     : "";
-  const action = saturated.length
+  const action = saturated.length || biometricContext.biometricRiskScore >= 60
     ? (state.language === "en" ? "Prioritize recovery, reduce friction, and avoid adding load to saturated contexts." : "Prioriza recuperación, reduce fricción y evita concentrar nuevas cargas en los contextos saturados.")
     : highEnergy.length
       ? (state.language === "en" ? "Replicate the conditions of high-energy experiences and turn them into routines." : "Replica las condiciones de las experiencias con energía alta y conviértelas en rutina.")
@@ -31058,6 +31287,7 @@ function buildExperienceAnalysis(experiences) {
     focus,
     risk,
     action,
+    biometricContext,
     energyDrivers,
     topCategory,
     saturated,

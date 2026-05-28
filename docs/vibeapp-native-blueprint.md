@@ -141,8 +141,10 @@ Cada evento o activo debe enviar:
 1. Activar puente Health Connect Android para Samsung/Galaxy.
 2. Declarar permisos por tipo de dato y mapearlos a un plan de autorizacion visible.
 3. Generar senales normalizadas `android-health-connect` con privacidad `sensitive`.
-4. Enviar contexto biometrico transversal como experiencia sincronizable para que la PWA lo use en reportes, hallazgos y contexto de energia.
+4. Enviar contexto biometrico transversal como experiencia sincronizable para que la PWA lo use en Panel, Captura, Reportes, Hallazgos y contexto de energia.
 5. Mantener modo piloto simulado hasta tener un telefono Android para validar permisos reales, lectura local y reintentos en segundo plano.
+
+La PWA ya hidrata esas senales estructuradas junto con CSV/JSON importados desde Activos. El cruce se hace por fecha/hora y evita conclusiones cuando no hay experiencia cercana.
 
 ## Criterio de calidad
 

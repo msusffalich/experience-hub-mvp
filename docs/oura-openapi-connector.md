@@ -1,6 +1,6 @@
 # Conectores de salud y wearables
 
-Version app: `20260528-health-connect-native-488`
+Version app: `20260528-biometric-intelligence-489`
 
 Este documento consolida los conectores revisados para Oura, Apple Health, Samsung/Android Health Connect y Meta Wearables.
 
@@ -89,6 +89,19 @@ Tipos priorizados: photo, video, voice_activity, autocapture_session y ai_contex
 ## Regla comun
 
 Todas estas rutas deben producir señales `vibe-signal-contract-v2`, con `sourceId`, `capturedAt`, `participantId`, `payloadType`, `privacyLevel`, `payload`, `deviceMetadata` e `idempotencyKey`. Los datos de salud se tratan como `sensitive`; los medios de Meta como `private`.
+
+## Uso en la PWA
+
+La PWA usa la biometria como contexto transversal, no como un adjunto aislado de una sola experiencia. Los CSV/JSON importados desde Activos y las señales estructuradas que llegan desde Vibeapp se hidratan en el mismo resumen biometrico central.
+
+Ese resumen alimenta cuatro superficies:
+
+- Panel: muestra cobertura, energia sugerida, riesgo contextual y ejemplos recientes.
+- Captura: ayuda a comparar energia percibida contra señales cercanas por fecha/hora.
+- Reportes: cruza biometria con el alcance filtrado para explicar energia, recuperacion y confianza.
+- Hallazgos: convierte coincidencias biometricas en recomendaciones humanas, no diagnosticas.
+
+Regla operativa: si la señal no tiene fecha/hora clara, queda importada pero sin impacto analitico hasta que exista una experiencia cercana. Esto evita conclusiones falsas.
 
 ## Prueba integral de conectores
 

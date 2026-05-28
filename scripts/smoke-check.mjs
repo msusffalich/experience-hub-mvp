@@ -178,6 +178,9 @@ assert(files.app.includes("Rutas Apple, Samsung y Meta") && files.app.includes("
 assert(files.server.includes("/api/integration/device/selftest") && files.server.includes("function runDeviceConnectorSelfTest"), "Server does not expose the unified device connector self-test.");
 assert(files.app.includes("runDeviceConnectorSelfTest") && files.app.includes("data-device-action=\"run-device-connectors\"") && files.app.includes("Prueba de conectores"), "Admin device panel does not expose the connector self-test.");
 assert(files.ouraConnectorDoc.includes("/api/integration/device/selftest"), "Device connector documentation must include the unified self-test endpoint.");
+assert(files.index.includes("dashboardBiometricBox") && files.app.includes("function buildBiometricIntelligenceSummary") && files.app.includes("function renderDashboardBiometricContext") && files.styles.includes(".dashboard-biometric-summary"), "Dashboard does not expose the central biometric intelligence panel.");
+assert(files.app.includes("structuredContext.signals") && files.app.includes("vibeapp-health-connect-structured-context"), "PWA does not hydrate structured Vibeapp/Health Connect biometric signals.");
+assert(files.ouraConnectorDoc.includes("Uso en la PWA") && files.ouraConnectorDoc.includes("Panel") && files.ouraConnectorDoc.includes("Hallazgos"), "Device connector documentation does not explain how biometrics inform the PWA.");
 assert(!files.index.includes("dashboardAttachmentPanel") && !files.index.includes("dashboardPilotBox"), "Dashboard still exposes technical/pilot monitoring panels.");
 assert(files.index.includes("capture-layout-clean") && !files.index.includes("captureCoachBox") && !files.index.includes("templateList"), "Capture still exposes parallel coach/template panels.");
 assert(files.index.includes("captureEventPreview") && files.app.includes("function renderCaptureEventPreview"), "Capture does not show the live internal event preview.");
