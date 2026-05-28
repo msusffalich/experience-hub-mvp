@@ -751,6 +751,25 @@ def distribution_kit(draft, media, all_media):
     ]
 
 
+def channel_studio_cards(draft):
+    studio = draft.get("channelStudio") or {}
+    if not studio:
+        return []
+    checklist = studio.get("checklist") or []
+    checklist_text = "\n".join(checklist[:5]) if checklist else "Revisar formato, multimedia, texto y salida antes de publicar."
+    return [
+        section_heading("Criterios de publicacion", "Decision editorial por canal antes de exportar o compartir."),
+        editorial_cards([
+            ("Formato recomendado", studio.get("format") or "-", GOLD),
+            ("Decision multimedia", studio.get("mediaDecision") or "-", colors.HexColor("#0d7c66")),
+            ("Salida", studio.get("outputAction") or "-", BLUE),
+            ("Foco de edicion", studio.get("editorFocus") or "-", colors.HexColor("#7a5cc8")),
+        ]),
+        Spacer(1, 10),
+        checklist_cards(checklist_text, colors.HexColor("#f2b84b")),
+    ]
+
+
 def media_for_page(media, page):
     ids = set(page.get("mediaIds") or [])
     if not ids:
@@ -968,6 +987,8 @@ def build_paged_publication(title, summary, draft, stats, highlights, all_media,
             flow.append(PageBreak())
     flow.extend([
         PageBreak(),
+        *channel_studio_cards(draft),
+        PageBreak(),
         *distribution_kit(draft, media, all_media),
         PageBreak(),
         section_heading("Salida y canal", "Preparacion final para compartir sin publicar automaticamente."),
@@ -1040,6 +1061,8 @@ def build(payload):
         Spacer(1, 12),
         section_heading("Multimedia incluida", "Las imágenes disponibles se incrustan; audio, video y documentos se listan como evidencia para revisar."),
         *media_gallery(media),
+        Spacer(1, 12),
+        *channel_studio_cards(draft),
         Spacer(1, 12),
         section_heading("Salida y canal"),
         *channel_cards(channel_rows(draft.get("channel"))),

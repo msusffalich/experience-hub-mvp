@@ -1,4 +1,4 @@
-const APP_VERSION = "20260528-insight-action-plan-479";
+const APP_VERSION = "20260528-publication-channel-studio-480";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2405,6 +2405,7 @@ const manualContent = {
         "Los tipos de publicación no son iguales: publicación social rápida sirve para mensajes breves, reporte narrativo para contar un periodo, álbum experiencial para memorias visuales, resumen ejecutivo para enviar evidencia clara y guion de story/reel para una secuencia corta.",
         "Los nuevos formatos amplían el uso por canal: carrusel visual para Instagram, Facebook o LinkedIn; carta/email largo para compartir una memoria personal; dossier PDF para un documento más formal; ficha de salud para explicar información médica o biométrica en lenguaje claro; y blog/web para publicar una historia más extensa.",
         "El kit de salida por canal separa asunto, texto corto, texto ampliado, leyenda/gancho, manejo multimedia y checklist. Sirve para saber qué copiar, qué revisar y qué acción hacer según WhatsApp, Instagram, Facebook, LinkedIn, Email, Blog/Web o PDF.",
+        "El Estudio de publicación por canal aparece dentro de cada borrador y resume formato recomendado, propósito, decisión multimedia, salida, secuencia editorial y checklist antes de aprobar o exportar.",
         "Panel muestra un resumen fijo de datos actuales: experiencias, activos, grupos, modo de persistencia y sincronización pendiente. Si la data previa no aparece, ese bloque permite distinguir rápido entre filtro, sesión, nube o cola pendiente.",
         "Panel recupera automáticamente los bloques de Datos actuales y Estado global de avance aunque el navegador conserve una estructura HTML vieja. La información crítica ya no depende de que el contenedor venga precargado en la página.",
         "Panel y Administración muestran Estado global de avance: PWA operativa, producción/Supabase, reportes/publicaciones, multimedia, Vibeapp nativa, conectores y producto completo. Es una vista honesta para separar lo listo de lo que sigue en desarrollo.",
@@ -2507,6 +2508,7 @@ const manualContent = {
         "Una publicacion puede ser corta para redes o mas larga para PDF/HTML. Si quieres una memoria rica, usa Album experiencial o Reporte narrativo y selecciona multimedia relevante.",
         "Si buscas una salida por canal, usa esta regla rápida: WhatsApp para mensaje breve, Instagram/Facebook para carrusel o álbum visual, LinkedIn para aprendizaje o resumen profesional, Email para carta o ficha explicativa, Blog/Web para historia extendida y PDF/HTML para memoria final o dossier.",
         "La guía de salida de Publicaciones muestra una matriz por canal para elegir formato, uso de medios y acción final. Esa matriz evita confundir plantillas visuales con publicación automática: algunos canales exportan archivo, otros abren borrador y otros requieren copiar/pegar por ahora.",
+        "El Estudio de publicación por canal aparece dentro del borrador y resume formato recomendado, propósito, decisión multimedia, salida, secuencia editorial y checklist para que el usuario sepa qué está creando antes de aprobar.",
         "Publicaciones conserva historial del borrador: generado, editado, multimedia cambiada, diseno cambiado, aprobacion y exportaciones.",
       ],
     },
@@ -3005,6 +3007,7 @@ const manualContent = {
         "Agenda events are saved locally and synchronized with the backend so they appear on other devices using the same session. If the agenda_events table does not exist in Supabase yet, the server uses a temporary central fallback until database/agenda-events.sql is applied.",
         "When converting an event, the app creates a linked experience with duration, location, participants, and source notes to preserve the Agenda -> Event -> Experience -> Living memory flow.",
         "Intelligent Publications generates local drafts from the filtered report or latest experiences. It recommends type, style, and channel from scope, media, and content signals; you can review a composition recipe before generating, include or exclude suggested media, apply privacy cleanup, copy the final text/HTML, and export as PDF, HTML, Markdown, or an editorial JSON package.",
+        "The Channel publication studio appears inside each draft and summarizes recommended format, purpose, media decision, output, editorial sequence, and checklist before approval or export.",
         "Human approval marks whether the draft is in review or approved. Any edit, design change, or media curation returns it to review.",
         "Draft history records generation, edits, media changes, design changes, approval, and recent exports.",
         "Suggested media means files already attached to the source experiences. The app proposes them for the publication; including or excluding them does not modify or delete the original experience.",
@@ -3101,6 +3104,7 @@ const manualContent = {
         "Facebook and Instagram do not have automatic API publishing yet. The app prepares the content and opens the network for manual paste until approved connectors exist.",
         "Before sharing, review privacy: names, faces, sensitive locations, health data, documents, and any information you do not want to publish.",
         "A publication can be short for social channels or longer for PDF/HTML. For a richer memory, use Experience album or Narrative report and select relevant media.",
+        "The Channel publication studio appears inside the draft and explains recommended format, purpose, media decision, output, editorial sequence, and checklist so the user knows what is being created before approval.",
         "Publications keeps draft history: generated, edited, media changed, design changed, approval, and exports.",
       ],
     },
@@ -20011,6 +20015,7 @@ function renderPublicationPreview(draft) {
         </div>
         ${renderPublicationApproval(draft)}
         ${renderPublicationUseGuide(draft)}
+        ${renderPublicationChannelStudio(draft)}
         ${renderPublicationEditor(draft)}
         ${renderPublicationTemplateGallery(draft)}
         ${renderPublicationMedia(draft.media || [])}
@@ -20071,6 +20076,106 @@ function renderPublicationUseGuide(draft) {
           <p>${escapeHtml(mediaUse)}</p>
         </article>
       </div>
+    </section>
+  `;
+}
+
+function buildPublicationChannelStudio(draft) {
+  const guide = getPublicationTypeGuide(draft?.type);
+  const profile = getPublicationChannelProfile(draft?.channel);
+  const selectedMedia = getApprovedPublicationMedia(draft || {});
+  const allMedia = draft?.media || [];
+  const imageCount = selectedMedia.filter((item) => String(item.type || "").startsWith("image/")).length;
+  const videoCount = selectedMedia.filter((item) => String(item.type || "").startsWith("video/")).length;
+  const audioCount = selectedMedia.filter((item) => String(item.type || "").startsWith("audio/")).length;
+  const documentCount = selectedMedia.filter((item) => !String(item.type || "").startsWith("image/") && !String(item.type || "").startsWith("video/") && !String(item.type || "").startsWith("audio/")).length;
+  const socialChannel = ["WhatsApp", "Instagram", "Facebook", "LinkedIn"].includes(draft?.channel);
+  const outputAction = socialChannel
+    ? state.language === "en"
+      ? "Assisted output: the app prepares copy, media guidance, and a final PDF; posting remains manual until a channel connector exists."
+      : "Salida asistida: la app prepara texto, guía de medios y PDF final; publicar sigue siendo manual hasta tener un conector del canal."
+    : state.language === "en"
+      ? "Document output: use the ReportLab PDF as the master version and HTML/Markdown only as support formats."
+      : "Salida documental: usa el PDF ReportLab como versión maestra y deja HTML/Markdown como formatos de apoyo.";
+  const mediaDecision = selectedMedia.length
+    ? state.language === "en"
+      ? `${selectedMedia.length} of ${allMedia.length} media asset(s) selected: ${imageCount} images, ${videoCount} videos, ${audioCount} audio, ${documentCount} support files.`
+      : `${selectedMedia.length} de ${allMedia.length} activo(s) seleccionados: ${imageCount} imágenes, ${videoCount} videos, ${audioCount} audios, ${documentCount} archivos de apoyo.`
+    : state.language === "en"
+      ? "No media selected. This can work for a text publication, but a memory, album, carousel, or dossier should usually include selected assets."
+      : "No hay multimedia seleccionada. Puede servir para una publicación de texto, pero una memoria, álbum, carrusel o dossier normalmente debería incluir activos seleccionados.";
+  const editorFocus = state.language === "en"
+    ? "Review title, summary, body, page text, and media captions. The PDF uses the edited text shown in this screen."
+    : "Revisa título, resumen, cuerpo, textos de página y leyendas. El PDF usa el texto editado que ves en esta pantalla.";
+  const structure = (guide?.structure || []).join(" → ");
+  const checklist = state.language === "en"
+    ? [
+        "Confirm that the selected format matches the audience.",
+        "Keep only media that improves the story or evidence.",
+        "Rewrite the first paragraph so it sounds human, not like a log.",
+        "Approve the draft before exporting or sharing.",
+      ]
+    : [
+        "Confirma que el formato elegido calza con la audiencia.",
+        "Deja solo los medios que mejoran la historia o la evidencia.",
+        "Reescribe el primer párrafo para que suene humano, no como bitácora.",
+        "Aprueba el borrador antes de exportar o compartir.",
+      ];
+  return {
+    channel: draft?.channel || "PDF/HTML",
+    type: displayPublicationType(draft?.type || "Reporte narrativo"),
+    style: displayPublicationStyle(draft?.style || "Revista Premium"),
+    format: profile.format,
+    reason: profile.reason,
+    purpose: state.language === "en" ? translatePublicationGuideText(guide?.purpose || "") : guide?.purpose || "",
+    structure,
+    mediaDecision,
+    editorFocus,
+    outputAction,
+    checklist,
+  };
+}
+
+function renderPublicationChannelStudio(draft) {
+  const studio = buildPublicationChannelStudio(draft);
+  return `
+    <section class="publication-channel-studio">
+      <div class="publication-section-heading">
+        <div>
+          <h3>${escapeHtml(state.language === "en" ? "Channel publication studio" : "Estudio de publicación por canal")}</h3>
+          <p class="card-meta">${escapeHtml(state.language === "en" ? "A practical guide for deciding what this piece is, what media it uses, and how it should leave the app." : "Guía práctica para decidir qué pieza estás creando, qué multimedia usa y cómo debe salir de la app.")}</p>
+        </div>
+        <span>${escapeHtml(studio.channel)}</span>
+      </div>
+      <div class="publication-channel-studio-grid">
+        <article>
+          <span>${escapeHtml(state.language === "en" ? "Format" : "Formato")}</span>
+          <strong>${escapeHtml(studio.format)}</strong>
+          <p>${escapeHtml(studio.reason)}</p>
+        </article>
+        <article>
+          <span>${escapeHtml(state.language === "en" ? "Purpose" : "Propósito")}</span>
+          <strong>${escapeHtml(studio.type)} · ${escapeHtml(studio.style)}</strong>
+          <p>${escapeHtml(studio.purpose || studio.structure)}</p>
+        </article>
+        <article>
+          <span>${escapeHtml(state.language === "en" ? "Media" : "Multimedia")}</span>
+          <strong>${escapeHtml(state.language === "en" ? "Selection rule" : "Regla de selección")}</strong>
+          <p>${escapeHtml(studio.mediaDecision)}</p>
+        </article>
+        <article>
+          <span>${escapeHtml(state.language === "en" ? "Output" : "Salida")}</span>
+          <strong>${escapeHtml(state.language === "en" ? "What happens next" : "Qué pasa después")}</strong>
+          <p>${escapeHtml(studio.outputAction)}</p>
+        </article>
+      </div>
+      <div class="publication-channel-studio-flow">
+        <strong>${escapeHtml(state.language === "en" ? "Editorial sequence" : "Secuencia editorial")}</strong>
+        <span>${escapeHtml(studio.structure || studio.editorFocus)}</span>
+      </div>
+      <ol class="publication-channel-studio-checklist">
+        ${studio.checklist.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}
+      </ol>
     </section>
   `;
 }
@@ -21431,6 +21536,15 @@ function exportCurrentPublicationHtml() {
   downloadPublicationBlob(new Blob([html], { type: "text/html;charset=utf-8" }), "publicacion-inteligente.html", warning);
 }
 
+function buildPublicationExportDraft(draft) {
+  return {
+    ...draft,
+    pages: normalizePublicationPages(draft),
+    distributionKit: buildPublicationDistributionKit(draft),
+    channelStudio: buildPublicationChannelStudio(draft),
+  };
+}
+
 async function exportCurrentPublicationPdf() {
   const draft = state.currentPublicationDraft || state.publicationDrafts[0];
   if (!draft) {
@@ -21446,10 +21560,11 @@ async function exportCurrentPublicationPdf() {
   }
   try {
     document.getElementById("publicationStatus").textContent = state.language === "en" ? "Generating edited ReportLab publication PDF..." : "Generando PDF editado ReportLab de publicacion...";
+    const exportDraft = buildPublicationExportDraft(draft);
     const response = await fetch(`${API_BASE}/publication/pdf`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...authHeader() },
-      body: JSON.stringify({ html, draft, title: draft.title, language: state.language }),
+      body: JSON.stringify({ html, draft: exportDraft, title: draft.title, language: state.language }),
     });
     if (!response.ok) throw new Error(await response.text());
     const blob = await response.blob();
@@ -21547,6 +21662,9 @@ function buildPublicationHtml(draft) {
   const approvalText = displayPublicationApprovalStatus(draft.approvalStatus);
   const approvedDate = draft.approvedAt ? ` · ${formatDate(draft.approvedAt)}` : "";
   const kit = buildPublicationDistributionKit(draft);
+  const studio = buildPublicationChannelStudio(draft);
+  const studioHtml = `<section class="publication-export-page"><p class="meta">${escapeHtml(state.language === "en" ? "Channel publication studio" : "Estudio de publicacion por canal")}</p><h2>${escapeHtml(studio.format)}</h2><p>${escapeHtml(studio.outputAction)}</p><pre>${escapeHtml(`${studio.mediaDecision}\n\n${studio.editorFocus}\n\n${studio.checklist.join("\n")}`)}</pre></section>`;
+  const kitHtml = `<section class="publication-export-page"><p class="meta">${escapeHtml(state.language === "en" ? "Channel distribution kit" : "Kit de salida por canal")}</p><h2>${escapeHtml(kit.format)}</h2><p>${escapeHtml(kit.brief)}</p><pre>${escapeHtml(`${kit.subject}\n\n${kit.shortCopy}\n\n${kit.longCopy}`)}</pre></section>`;
   const mediaHtml = approvedMedia.length
     ? `<section><h2>${escapeHtml(t("labels.publicationMedia"))}</h2><div class="media">${approvedMedia
         .map((item) =>
@@ -21605,7 +21723,7 @@ figcaption{color:#627069;font-size:12px;margin-top:4px;overflow-wrap:anywhere}
 .template-story-script pre{border-left:5px solid #c87913}.template-story-script .cover{background:#fff7ed}
 @media print{.cover,.media figure{break-inside:avoid;page-break-inside:avoid}h1,h2,h3{break-after:avoid;page-break-after:avoid}p,pre{orphans:3;widows:3}}
 </style></head>
-<body class="${escapeHtml(exportClass)}"><article><section class="cover"><p class="meta">${escapeHtml(displayPublicationType(draft.type))} · ${escapeHtml(displayPublicationStyle(draft.style))} · ${escapeHtml(draft.channel)}</p><h1>${escapeHtml(draft.title)}</h1></section><p class="approval"><strong>${escapeHtml(t("labels.publicationApprovalTitle"))}:</strong> ${escapeHtml(approvalText)}${escapeHtml(approvedDate)}</p><p>${escapeHtml(draft.summary)}</p><section class="publication-export-page"><p class="meta">${escapeHtml(state.language === "en" ? "Channel distribution kit" : "Kit de salida por canal")}</p><h2>${escapeHtml(kit.format)}</h2><p>${escapeHtml(kit.brief)}</p><pre>${escapeHtml(`${kit.subject}\n\n${kit.shortCopy}\n\n${kit.longCopy}`)}</pre></section>${pageHtml || mediaHtml}<p class="meta">${escapeHtml(t("labels.publicationPrivacyNote"))}</p></article></body></html>`;
+<body class="${escapeHtml(exportClass)}"><article><section class="cover"><p class="meta">${escapeHtml(displayPublicationType(draft.type))} · ${escapeHtml(displayPublicationStyle(draft.style))} · ${escapeHtml(draft.channel)}</p><h1>${escapeHtml(draft.title)}</h1></section><p class="approval"><strong>${escapeHtml(t("labels.publicationApprovalTitle"))}:</strong> ${escapeHtml(approvalText)}${escapeHtml(approvedDate)}</p><p>${escapeHtml(draft.summary)}</p>${studioHtml}${kitHtml}${pageHtml || mediaHtml}<p class="meta">${escapeHtml(t("labels.publicationPrivacyNote"))}</p></article></body></html>`;
 }
 
 function exportCurrentPublicationMarkdown() {
@@ -21628,6 +21746,7 @@ function exportCurrentPublicationPackage() {
   }
   const warning = draft.approvalStatus !== "approved" ? t("labels.publicationExportReviewWarning") : "";
   const media = getApprovedPublicationMedia(draft);
+  const exportDraft = buildPublicationExportDraft(draft);
   const payload = {
     exportedAt: new Date().toISOString(),
     language: state.language,
@@ -21640,8 +21759,9 @@ function exportCurrentPublicationPackage() {
     title: draft.title,
     summary: draft.summary,
     body: draft.body,
-    pages: normalizePublicationPages(draft),
-    distributionKit: buildPublicationDistributionKit(draft),
+    pages: exportDraft.pages,
+    distributionKit: exportDraft.distributionKit,
+    channelStudio: exportDraft.channelStudio,
     html: buildPublicationHtml(draft),
     markdown: buildPublicationMarkdown(draft),
     media: media.map((item) => ({
@@ -21672,6 +21792,7 @@ function exportCurrentPublicationPackage() {
 function buildPublicationMarkdown(draft) {
   const pages = normalizePublicationPages(draft);
   const kit = buildPublicationDistributionKit(draft);
+  const studio = buildPublicationChannelStudio(draft);
   const labels = state.language === "en"
     ? {
         type: "Type",
@@ -21699,6 +21820,13 @@ function buildPublicationMarkdown(draft) {
 - ${t("labels.publicationApprovalTitle")}: ${displayPublicationApprovalStatus(draft.approvalStatus)}${draft.approvedAt ? ` · ${formatDate(draft.approvedAt)}` : ""}
 
 ${draft.summary}
+
+## ${state.language === "en" ? "Channel publication studio" : "Estudio de publicacion por canal"}
+
+- ${state.language === "en" ? "Recommended format" : "Formato recomendado"}: ${studio.format}
+- ${state.language === "en" ? "Media decision" : "Decision multimedia"}: ${studio.mediaDecision}
+- ${state.language === "en" ? "Output" : "Salida"}: ${studio.outputAction}
+- ${state.language === "en" ? "Editor focus" : "Foco de edicion"}: ${studio.editorFocus}
 
 ## ${state.language === "en" ? "Channel distribution kit" : "Kit de salida por canal"}
 
@@ -25873,6 +26001,8 @@ function renderAdminOperationalFocusPanel() {
         scopeFiltersDetail: "Reports, Findings, and Publications now share group/person, category, from-date, and to-date filters so the user can analyze a coherent group of experiences.",
         reportPdf: "Cleaner reports, publications, and findings",
         reportPdfDetail: "Reports now use an executive PDF, participant scope, and folded technical exports. Publications recommend type/style/channel from the selected scope, explain format fit, edited text, media actions, and apply recommended editorial roles for images, audio, video, documents, biometrics, and ZIP files. Findings are organized by 8 human themes and can be downloaded.",
+        publicationStudio: "Publication channel studio",
+        publicationStudioDetail: "Publication drafts now show the channel decision layer: format, purpose, media decision, output, editorial sequence, checklist, and ReportLab export payload.",
         insightPlan: "Findings action plan",
         insightPlanDetail: "Findings now turns the current scope into a 7-day plan with evidence, human wording, and Agenda scheduling for each action.",
         nativeSync: "Vibeapp real queue",
@@ -25920,6 +26050,8 @@ function renderAdminOperationalFocusPanel() {
     labels.scopeFiltersDetail = "Reportes, Hallazgos y Publicaciones comparten filtros de grupo/persona, categor\u00eda, fecha desde y fecha hasta para analizar grupos coherentes de experiencias.";
     labels.reportPdf = "Reportes, publicaciones y hallazgos limpios";
     labels.reportPdfDetail = "Reportes usa PDF ejecutivo, alcance por persona y exportaciones técnicas plegadas. Publicaciones recomienda tipo/estilo/canal desde el alcance seleccionado y suma matriz por canal: carrusel, carta/email, dossier, ficha de salud, blog/web, LinkedIn y PDF/HTML, con curaduria recomendada por rol editorial para imagenes, audio, video, documentos, biometria y ZIP. Hallazgos se organiza en 8 ejes humanos y se puede descargar.";
+    labels.publicationStudio = "Estudio de publicaci\u00f3n por canal";
+    labels.publicationStudioDetail = "Publicaciones ahora muestra una capa de decisi\u00f3n por canal dentro del borrador: formato, prop\u00f3sito, decisi\u00f3n multimedia, salida, secuencia editorial, checklist y payload para PDF ReportLab.";
     labels.insightPlan = "Plan de acción de Hallazgos";
     labels.insightPlanDetail = "Hallazgos convierte el alcance actual en un plan de 7 días con evidencia, redacción humana y envío directo de cada acción a Agenda.";
     labels.nativeSync = "Vibeapp con cola real";
@@ -25947,6 +26079,7 @@ function renderAdminOperationalFocusPanel() {
     [labels.biometricAssets, labels.biometricAssetsDetail],
     [labels.scopeFilters, labels.scopeFiltersDetail],
     [labels.reportPdf, labels.reportPdfDetail],
+    [labels.publicationStudio, labels.publicationStudioDetail],
     [labels.insightPlan, labels.insightPlanDetail],
     [labels.nativeSync, labels.nativeSyncDetail],
     [labels.nativeSimulator, labels.nativeSimulatorDetail],
