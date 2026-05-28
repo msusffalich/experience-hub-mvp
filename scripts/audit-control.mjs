@@ -6,6 +6,7 @@ const files = {
   serviceWorker: readFileSync("service-worker.js", "utf8"),
   reset: readFileSync("reset.html", "utf8"),
   packageJson: readFileSync("package.json", "utf8"),
+  runtimeAudit: readFileSync("scripts/audit-runtime-helpers.mjs", "utf8"),
 };
 
 const failures = [];
@@ -41,7 +42,10 @@ check(files.app.includes("Auditoría de control de release"), "Admin does not ex
 check(files.app.includes("Release control audit"), "English Admin does not expose the release control audit.");
 check(files.app.includes("npm run audit:control"), "Manual/Admin does not mention npm run audit:control.");
 check(files.packageJson.includes('"audit:control"'), "package.json does not expose audit:control.");
+check(files.packageJson.includes('"audit:runtime"'), "package.json does not expose audit:runtime.");
 check(files.packageJson.includes("npm run audit:control") && files.packageJson.includes('"verify:release"'), "verify:release does not include the control audit.");
+check(files.packageJson.includes("npm run audit:runtime"), "check does not include the runtime helper audit.");
+check(files.runtimeAudit.includes("Runtime helper audit passed"), "runtime helper audit script is missing its success guard.");
 
 if (failures.length) {
   console.error("Control audit failed:");

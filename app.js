@@ -1,4 +1,4 @@
-const APP_VERSION = "20260528-sentence-case-fix-477";
+const APP_VERSION = "20260528-runtime-helper-audit-478";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2412,6 +2412,7 @@ const manualContent = {
         "Panel ahora renderiza Datos actuales y Estado global de avance desde una guardia común. Si un cálculo falla, muestra un aviso visible con versión y acción recomendada en lugar de desaparecer.",
         "Service worker deja de guardar en caché la estructura crítica de la app: index.html, app.js, styles.css, manifest, reset y service-worker siempre van a red para evitar versiones viejas atrapadas.",
         "Se corrigió la conversión de etiquetas externas de activos para que payloads como video, audio, biometría o importaciones Meta no rompan el Panel por una función auxiliar ausente.",
+        "La compuerta npm run check ahora ejecuta npm run audit:runtime. Esta auditoría revisa app.js y bloquea llamadas directas a funciones auxiliares que no estén declaradas.",
         "Ruta al 90% convierte ese avance honesto en frentes concretos con dueño, estado, brecha real a 90 y siguiente acción ejecutable.",
         "Aprobación humana marca si el borrador está en revisión o aprobado. Cualquier edición, cambio de diseño o curaduría multimedia lo devuelve a revisión.",
         "Historial del borrador registra generación, ediciones, cambios de multimedia, diseño, aprobación y exportaciones recientes.",
@@ -3026,6 +3027,7 @@ const manualContent = {
         "Dashboard now renders Current data and Global Progress through one shared guard. If a calculation fails, it shows a visible warning with version and recommended action instead of disappearing.",
         "The service worker no longer caches the critical app shell: index.html, app.js, styles.css, manifest, reset, and service-worker always go to the network to avoid trapped old versions.",
         "External asset labels now normalize payloads such as video, audio, biometrics, or Meta imports without breaking Dashboard because of a missing helper.",
+        "The npm run check gate now runs npm run audit:runtime. This audit scans app.js and blocks direct calls to helper functions that are not declared.",
         "The Route to 90% block turns that honest progress into concrete closure fronts with owner, state, real gap to 90, and the next action to execute.",
         "Editorial readiness evaluates clarity, privacy, media use, and channel fit. Its suggestions help decide whether the draft is ready for final review or needs edits.",
         "Pre-publication closure shows an operational checklist before export: human approval, text and length, privacy, media, and channel fit.",
@@ -25645,6 +25647,8 @@ function renderAdminOperationalFocusPanel() {
         dashboardGuardDetail: "Dashboard renders Current data and Global Progress through one shared guard, with visible fallbacks if a calculation fails. The service worker no longer caches the critical app shell.",
         assetLabelFix: "External asset label fix",
         assetLabelFixDetail: "External payload labels now use a defined sentence-case helper so synced media, biometrics, and Meta imports cannot break Dashboard rendering.",
+        runtimeAudit: "Runtime helper audit",
+        runtimeAuditDetail: "npm run check now includes npm run audit:runtime, which scans app.js for unqualified function calls without declarations before release.",
       }
     : {
         title: "Administración operativa",
@@ -25688,6 +25692,8 @@ function renderAdminOperationalFocusPanel() {
     labels.dashboardGuardDetail = "Panel renderiza Datos actuales y Estado global de avance desde una guardia com\u00fan, con avisos visibles si un c\u00e1lculo falla. El service worker ya no guarda en cach\u00e9 la estructura cr\u00edtica de la app.";
     labels.assetLabelFix = "Correcci\u00f3n de etiquetas de activos externos";
     labels.assetLabelFixDetail = "Las etiquetas de payload externo usan una funci\u00f3n definida de redacci\u00f3n en frase para que medios sincronizados, biometr\u00eda e importaciones Meta no rompan el Panel.";
+    labels.runtimeAudit = "Auditor\u00eda de funciones en runtime";
+    labels.runtimeAuditDetail = "npm run check ahora incluye npm run audit:runtime, que revisa app.js y bloquea llamadas a funciones no declaradas antes de publicar.";
   }
   const cards = [
     [labels.flow, labels.flowDetail],
@@ -25707,6 +25713,7 @@ function renderAdminOperationalFocusPanel() {
     [labels.nativeSimulator, labels.nativeSimulatorDetail],
     [labels.dashboardGuard, labels.dashboardGuardDetail],
     [labels.assetLabelFix, labels.assetLabelFixDetail],
+    [labels.runtimeAudit, labels.runtimeAuditDetail],
     [labels.next, labels.nextDetail],
   ];
   container.innerHTML = `

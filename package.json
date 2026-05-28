@@ -12,6 +12,7 @@
     "verify:outputs": "node scripts/verify-output-pdfs.mjs",
     "verify:pwa": "node scripts/verify-pwa-release.mjs",
     "audit:control": "node scripts/audit-control.mjs",
+    "audit:runtime": "node scripts/audit-runtime-helpers.mjs",
     "simulate:vibeapp": "node scripts/simulate-vibeapp-sync.mjs",
     "verify:android": "node scripts/verify-android-release.mjs",
     "verify:flutter": "node scripts/verify-flutter-mobile.mjs",
@@ -20,7 +21,7 @@
     "package:vibeapp": "node scripts/package-vibeapp-pilot.mjs",
     "start": "node server.js",
     "dev": "node server.js",
-    "check": "node --check app.js && node --check server.js && node scripts/smoke-check.mjs",
+    "check": "node --check app.js && node --check server.js && node scripts/smoke-check.mjs && npm run audit:runtime",
     "test": "npm run check"
   }
 }

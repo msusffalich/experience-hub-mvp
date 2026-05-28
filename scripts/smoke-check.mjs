@@ -15,6 +15,7 @@ const files = {
   outputPdfVerify: readFileSync("scripts/verify-output-pdfs.mjs", "utf8"),
   pwaVerify: readFileSync("scripts/verify-pwa-release.mjs", "utf8"),
   controlAudit: readFileSync("scripts/audit-control.mjs", "utf8"),
+  runtimeAudit: readFileSync("scripts/audit-runtime-helpers.mjs", "utf8"),
   androidVerify: readFileSync("scripts/verify-android-release.mjs", "utf8"),
   flutterVerify: readFileSync("scripts/verify-flutter-mobile.mjs", "utf8"),
   vibeappPackage: readFileSync("scripts/package-vibeapp-pilot.mjs", "utf8"),
@@ -52,6 +53,8 @@ assert(files.app.includes("const fullAmbitionOverall") && files.app.includes("Cu
 assert(files.app.includes("Estado global de avance mide capacidades implementadas") && files.app.includes("Global Progress measures implemented"), "Manual must explain that global progress is capability-based, not browser-data-based.");
 assert(files.packageJson.includes("\"audit:control\"") && files.packageJson.includes("npm run audit:control"), "Release verification must include the control audit.");
 assert(files.controlAudit.includes("Control audit passed") && files.controlAudit.includes("Auditoría de control de release"), "Control audit script must verify the release-control Admin evidence.");
+assert(files.packageJson.includes("\"audit:runtime\"") && files.packageJson.includes("npm run audit:runtime"), "Check verification must include the runtime helper audit.");
+assert(files.runtimeAudit.includes("Runtime helper audit passed") && files.runtimeAudit.includes("function sentenceCase"), "Runtime helper audit must verify helper declarations.");
 const manifest = JSON.parse(files.manifest);
 assert(manifest.id === "/", "manifest.webmanifest is missing a stable app id.");
 assert(manifest.start_url === "/index.html?view=dashboard", "manifest.webmanifest start_url must be stable and not point to an old app version.");
