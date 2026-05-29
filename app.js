@@ -1,4 +1,4 @@
-const APP_VERSION = "20260529-report-quickstart-498";
+const APP_VERSION = "20260529-shared-analytical-scope-499";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -307,6 +307,56 @@ const reportQuickStarts = [
     detailEs: "Senales desde Vibeapp, wearables o conectores.",
     detailEn: "Signals from Vibeapp, wearables, or connectors.",
     filters: { scope: "filters", source: "external" },
+  },
+];
+const analyticalScopePresets = [
+  {
+    id: "all",
+    labelEs: "Vista completa",
+    labelEn: "Full view",
+    detailEs: "Todo el alcance del grupo actual.",
+    detailEn: "Everything in the current group scope.",
+    filters: {},
+  },
+  {
+    id: "last7",
+    labelEs: "Ultimos 7 dias",
+    labelEn: "Last 7 days",
+    detailEs: "Lectura reciente para decidir rapido.",
+    detailEn: "Recent reading for fast decisions.",
+    filters: { range: "last7" },
+  },
+  {
+    id: "last30",
+    labelEs: "Ultimos 30 dias",
+    labelEn: "Last 30 days",
+    detailEs: "Tendencia mensual y senales principales.",
+    detailEn: "Monthly trend and main signals.",
+    filters: { range: "last30" },
+  },
+  {
+    id: "health",
+    labelEs: "Salud",
+    labelEn: "Health",
+    detailEs: "Energia, biometria, bienestar y riesgo.",
+    detailEn: "Energy, biometrics, wellbeing, and risk.",
+    filters: { category: "Salud" },
+  },
+  {
+    id: "work",
+    labelEs: "Trabajo",
+    labelEn: "Work",
+    detailEs: "Productividad, carga y decisiones.",
+    detailEn: "Productivity, workload, and decisions.",
+    filters: { category: "Trabajo" },
+  },
+  {
+    id: "devices",
+    labelEs: "Dispositivos",
+    labelEn: "Devices",
+    detailEs: "Vibeapp, wearables y conectores.",
+    detailEn: "Vibeapp, wearables, and connectors.",
+    filters: { source: "external" },
   },
 ];
 const DEMO_BATCH = "experience-hub-demo-v4-multimodal-evidence";
@@ -2588,6 +2638,7 @@ const manualContent = {
         "Entregables por canal aclara la pieza maestra, el texto listo para copiar, el paquete multimedia y la limitación real de cada canal. Así el usuario sabe si obtiene PDF final, borrador de email, texto para WhatsApp, carrusel, HTML o solo preparación manual.",
         "El Estudio de publicación por canal aparece dentro de cada borrador y resume formato recomendado, propósito, decisión multimedia, salida, secuencia editorial y checklist antes de aprobar o exportar.",
         "Panel muestra un resumen fijo de datos actuales: experiencias, activos, grupos, modo de persistencia y sincronización pendiente. Si la data previa no aparece, ese bloque permite distinguir rápido entre filtro, sesión, nube o cola pendiente.",
+        "Panel incluye Alcance analitico compartido: una sola seleccion de vista completa, ultimos 7/30 dias, salud, trabajo o dispositivos se aplica a Reportes, Hallazgos y Publicaciones antes de abrir la salida elegida.",
         "Panel recupera automáticamente los bloques de Datos actuales y Estado global de avance aunque el navegador conserve una estructura HTML vieja. La información crítica ya no depende de que el contenedor venga precargado en la página.",
         "Panel y Administración muestran Estado global de avance: PWA operativa, producción/Supabase, reportes/publicaciones, multimedia, Vibeapp nativa, conectores y producto completo. Es una vista honesta para separar lo listo de lo que sigue en desarrollo.",
         "Estado global de avance mide capacidades implementadas y verificables del producto. No baja por cambiar de navegador, limpiar caché o tener menos datos visibles; la sesión y los datos actuales se revisan en Datos actuales.",
@@ -2875,6 +2926,7 @@ const manualContent = {
         "Insights can be downloaded as a ReportLab PDF, printable HTML, or Markdown for review, sharing, or archiving outside the app.",
         "Report, Findings, and Publication PDFs use ReportLab as the main engine to produce edited documents with cover pages, cards, mixed visuals, indicators, and curated evidence. HTML remains as preview or fallback.",
         "Report quick starts create a full baseline, last 7 days, last 30 days, health, work, or device-data report with one click. They preserve the active group/person and keep the edited ReportLab PDF available for download.",
+        "Dashboard includes Shared analytical scope: one full, last 7/30 days, health, work, or device-data selection is applied to Reports, Findings, and Publications before opening the chosen output.",
         "Technical verification now renders real Report, Findings, Publication, and Manual PDFs from sample payloads before accepting a version. Importing ReportLab is not enough; each output must return a valid PDF.",
         "The PWA release gate validates version alignment, manifest, icons, service worker, installable shell, and, when a production URL is provided, Railway app.js and /api/health.",
         "On Railway, ReportLab requires Python and build-time dependencies. The project includes railpack.json and requirements.txt so production does not fall back to the previous simple PDF.",
@@ -3863,6 +3915,7 @@ const state = {
   dashboardFilters: {
     pilotParticipantId: "all",
   },
+  dashboardAnalyticalScopePresetId: "all",
   insightsFilters: {
     pilotParticipantId: "all",
     category: "all",
@@ -7083,6 +7136,7 @@ function setupActions() {
   document.getElementById("multiDevicePersistencePanel").addEventListener("click", handleParallelBacklogClick);
   document.getElementById("dashboardGroupForm")?.addEventListener("submit", handleDashboardGroupSubmit);
   document.getElementById("dashboardGroupList")?.addEventListener("click", handleDashboardGroupListClick);
+  document.getElementById("dashboardAnalyticalScopeBox")?.addEventListener("click", handleDashboardAnalyticalScopeClick);
   document.getElementById("captureQuickGroupAddButton")?.addEventListener("click", handleCaptureQuickGroupAdd);
   document.getElementById("coreMvpGatePanel").addEventListener("click", handleCoreMvpGateClick);
   document.getElementById("quickQaPanel").addEventListener("click", handleQuickQaClick);
@@ -9439,6 +9493,7 @@ function refreshLiveCaptureDependentViews() {
   updatePilotParticipantControls();
   renderDashboardTimeContext();
   renderDashboardStateAndProgressPanels({ compact: true });
+  renderDashboardAnalyticalScope();
   renderMetrics();
   renderDashboardAttachmentStatus();
   renderDashboardAgenda();
@@ -10173,6 +10228,7 @@ function showView(view) {
   }
   if (view === "dashboard") {
     renderDashboardScopedPanels();
+    renderDashboardAnalyticalScope();
   }
   if (view === "auth") {
     renderAuthStatePanel();
@@ -10190,6 +10246,7 @@ function renderAll() {
   updateDashboardParticipantControl();
   renderDashboardTimeContext();
   renderDashboardStateAndProgressPanels({ compact: true });
+  renderDashboardAnalyticalScope();
   renderMetrics();
   renderDashboardBiometricContext();
   renderDashboardIntegrationHandoff();
@@ -17631,6 +17688,174 @@ function exportExperienceMapMarkdown() {
   downloadBlob(new Blob([lines.join("\n")], { type: "text/markdown;charset=utf-8" }), "mapa-de-experiencias-obsidian.md");
   const box = document.getElementById("experienceMapAnswer");
   if (box) box.textContent = t("labels.experienceMapExported");
+}
+
+function getCurrentDashboardAnalyticalParticipantId() {
+  return state.dashboardFilters?.pilotParticipantId
+    || state.reportFilters?.pilotParticipantId
+    || state.insightsFilters?.pilotParticipantId
+    || state.publicationFilters?.pilotParticipantId
+    || "all";
+}
+
+function buildSharedAnalyticalScopeFilters(preset = analyticalScopePresets[0]) {
+  const filters = {
+    pilotParticipantId: getCurrentDashboardAnalyticalParticipantId(),
+    category: "all",
+    source: "all",
+    dateFrom: "",
+    dateTo: "",
+  };
+  const presetFilters = preset?.filters || {};
+  if (presetFilters.range === "last7" || presetFilters.range === "last30") {
+    const days = presetFilters.range === "last30" ? 30 : 7;
+    const today = new Date();
+    const from = new Date(today.getFullYear(), today.getMonth(), today.getDate() - (days - 1));
+    filters.dateFrom = toDateFilterValue(from);
+    filters.dateTo = toDateFilterValue(today);
+  }
+  if (presetFilters.category) filters.category = presetFilters.category;
+  if (presetFilters.source) filters.source = presetFilters.source;
+  return filters;
+}
+
+function sharedAnalyticalScopeMatchesCurrentFilters(preset) {
+  const filters = buildSharedAnalyticalScopeFilters(preset);
+  return (state.insightsFilters?.pilotParticipantId || "all") === filters.pilotParticipantId
+    && (state.insightsFilters?.category || "all") === filters.category
+    && (state.insightsFilters?.source || "all") === filters.source
+    && (state.insightsFilters?.dateFrom || "") === filters.dateFrom
+    && (state.insightsFilters?.dateTo || "") === filters.dateTo
+    && (state.publicationFilters?.pilotParticipantId || "all") === filters.pilotParticipantId
+    && (state.publicationFilters?.category || "all") === filters.category
+    && (state.publicationFilters?.source || "all") === filters.source
+    && (state.publicationFilters?.dateFrom || "") === filters.dateFrom
+    && (state.publicationFilters?.dateTo || "") === filters.dateTo
+    && (state.reportFilters?.pilotParticipantId || "all") === filters.pilotParticipantId
+    && (state.reportFilters?.category || "all") === filters.category
+    && (state.reportFilters?.source || "all") === filters.source
+    && (state.reportFilters?.dateFrom || "") === filters.dateFrom
+    && (state.reportFilters?.dateTo || "") === filters.dateTo
+    && (state.reportFilters?.scope || "all") === getReportScopeForSharedFilters(filters);
+}
+
+function getReportScopeForSharedFilters(filters = {}) {
+  return filters.category !== "all" || filters.source !== "all" || filters.dateFrom || filters.dateTo || filters.pilotParticipantId !== "all"
+    ? "filters"
+    : "all";
+}
+
+function describeSharedAnalyticalScope(filters = {}) {
+  const parts = buildAnalyticalScopeParts(filters);
+  return parts.length ? parts.join(" / ") : (state.language === "en" ? "Full view" : "Vista completa");
+}
+
+function renderDashboardAnalyticalScope() {
+  const box = document.getElementById("dashboardAnalyticalScopeBox");
+  if (!box) return;
+  const labels = state.language === "en"
+    ? {
+        title: "Shared analytical scope",
+        status: "Reports, Findings, and Publications",
+        help: "Choose one scope once. Vibe applies it to Reports, Findings, and Publications so the outputs compare the same experiences.",
+        report: "Open Report",
+        insights: "Open Findings",
+        publications: "Open Publications",
+        active: "Active",
+        items: "experiences",
+      }
+    : {
+        title: "Alcance analitico compartido",
+        status: "Reportes, Hallazgos y Publicaciones",
+        help: "Elige un alcance una sola vez. Vibe lo aplica a Reportes, Hallazgos y Publicaciones para comparar las mismas experiencias.",
+        report: "Abrir Reporte",
+        insights: "Abrir Hallazgos",
+        publications: "Abrir Publicaciones",
+        active: "Activo",
+        items: "experiencias",
+      };
+  const title = document.getElementById("dashboardAnalyticalScopeTitle");
+  const status = document.getElementById("dashboardAnalyticalScopeStatus");
+  if (title) title.textContent = labels.title;
+  if (status) status.textContent = labels.status;
+  const activePreset = analyticalScopePresets.find((preset) => preset.id === state.dashboardAnalyticalScopePresetId) || analyticalScopePresets[0];
+  const activeFilters = buildSharedAnalyticalScopeFilters(activePreset);
+  const activeCount = filterExperiencesByAnalyticalFilters(state.experiences, activeFilters).length;
+  box.innerHTML = `
+    <div class="dashboard-scope-summary">
+      <div>
+        <p>${escapeHtml(labels.help)}</p>
+        <strong>${escapeHtml(describeSharedAnalyticalScope(activeFilters))}</strong>
+      </div>
+      <span class="pill">${activeCount} ${escapeHtml(labels.items)}</span>
+    </div>
+    <div class="dashboard-scope-presets" role="list">
+      ${analyticalScopePresets.map((preset) => {
+        const filters = buildSharedAnalyticalScopeFilters(preset);
+        const count = filterExperiencesByAnalyticalFilters(state.experiences, filters).length;
+        const active = preset.id === state.dashboardAnalyticalScopePresetId || sharedAnalyticalScopeMatchesCurrentFilters(preset);
+        const label = state.language === "en" ? preset.labelEn : preset.labelEs;
+        const detail = state.language === "en" ? preset.detailEn : preset.detailEs;
+        return `
+          <button class="${active ? "is-active" : ""}" type="button" data-dashboard-scope-preset="${escapeHtml(preset.id)}">
+            <strong>${escapeHtml(label)}</strong>
+            <span>${escapeHtml(detail)}</span>
+            <small>${count} ${escapeHtml(labels.items)}${active ? ` / ${escapeHtml(labels.active)}` : ""}</small>
+          </button>
+        `;
+      }).join("")}
+    </div>
+    <div class="dashboard-scope-actions">
+      <button class="primary-button" type="button" data-dashboard-scope-open="report">${escapeHtml(labels.report)}</button>
+      <button class="ghost-button" type="button" data-dashboard-scope-open="insights">${escapeHtml(labels.insights)}</button>
+      <button class="ghost-button" type="button" data-dashboard-scope-open="publications">${escapeHtml(labels.publications)}</button>
+    </div>
+  `;
+}
+
+function applySharedAnalyticalScope(presetId = state.dashboardAnalyticalScopePresetId || "all") {
+  const preset = analyticalScopePresets.find((item) => item.id === presetId) || analyticalScopePresets[0];
+  state.dashboardAnalyticalScopePresetId = preset.id;
+  const filters = buildSharedAnalyticalScopeFilters(preset);
+  state.insightsFilters = { ...state.insightsFilters, ...filters };
+  state.publicationFilters = { ...state.publicationFilters, ...filters };
+  state.reportFilters = {
+    scope: getReportScopeForSharedFilters(filters),
+    period: "all",
+    experienceId: "",
+    category: filters.category,
+    source: filters.source,
+    pilotParticipantId: filters.pilotParticipantId,
+    dateFrom: filters.dateFrom,
+    dateTo: filters.dateTo,
+    people: "",
+    objective: "",
+    eventQuery: "",
+  };
+  syncReportFilterInputs();
+  syncAnalyticalScopeInputs();
+}
+
+function handleDashboardAnalyticalScopeClick(event) {
+  const presetButton = event.target.closest("[data-dashboard-scope-preset]");
+  if (presetButton) {
+    applySharedAnalyticalScope(presetButton.dataset.dashboardScopePreset || "all");
+    renderDashboardAnalyticalScope();
+    renderReport();
+    renderInsights();
+    renderPublications();
+    const preset = analyticalScopePresets.find((item) => item.id === state.dashboardAnalyticalScopePresetId) || analyticalScopePresets[0];
+    const label = state.language === "en" ? preset.labelEn : preset.labelEs;
+    notify(state.language === "en" ? `Scope applied: ${label}` : `Alcance aplicado: ${label}`, "success");
+    return;
+  }
+  const openButton = event.target.closest("[data-dashboard-scope-open]");
+  if (!openButton) return;
+  applySharedAnalyticalScope(state.dashboardAnalyticalScopePresetId || "all");
+  renderReport();
+  renderInsights();
+  renderPublications();
+  showView(openButton.dataset.dashboardScopeOpen);
 }
 
 function renderReportQuickStart(experiences = getReportExperiences()) {
@@ -27277,6 +27502,8 @@ function renderAdminOperationalFocusPanel() {
         biometricAssetsDetail: "CSV/JSON from Apple Health or wearables can enter through Assets or Vibeapp. The PWA hydrates synced biometric files and structured Health Connect signals as cross-experience context, then uses them in Dashboard, Capture, Reports, and Findings through date/time matching.",
         scopeFilters: "Unified analytical scope",
         scopeFiltersDetail: "Reports, Findings, and Publications now share group/person, category, origin/connector, from-date, and to-date filters so the user can analyze a coherent group of experiences.",
+        sharedAnalyticalScope: "Shared analytical scope",
+        sharedAnalyticalScopeDetail: "Dashboard now applies one full, last 7/30 days, health, work, or device-data scope to Reports, Findings, and Publications, then opens the selected output.",
         reportPdf: "Cleaner reports, publications, and findings",
         reportPdfDetail: "Reports now use an executive PDF, participant scope, and folded technical exports. Publications recommend type/style/channel from the selected scope, explain format fit, edited text, media actions, and apply recommended editorial roles for images, audio, video, documents, biometrics, and ZIP files. Findings are organized by 8 human themes and can be downloaded.",
         publicationStudio: "Publication channel studio",
@@ -27344,6 +27571,8 @@ function renderAdminOperationalFocusPanel() {
     labels.biometricAssetsDetail = "CSV/JSON de Apple Health o wearables puede entrar por Activos o Vibeapp. La PWA hidrata archivos biom\u00e9tricos y se\u00f1ales estructuradas de Health Connect como contexto transversal, y luego las usa en Panel, Captura, Reportes y Hallazgos por cruce de fecha/hora.";
     labels.scopeFilters = "Alcance anal\u00edtico uniforme";
     labels.scopeFiltersDetail = "Reportes, Hallazgos y Publicaciones comparten filtros de grupo/persona, categoria, origen/conector, fecha desde y fecha hasta para analizar grupos coherentes de experiencias.";
+    labels.sharedAnalyticalScope = "Alcance analitico compartido";
+    labels.sharedAnalyticalScopeDetail = "Panel ahora aplica una sola seleccion de vista completa, ultimos 7/30 dias, salud, trabajo o dispositivos a Reportes, Hallazgos y Publicaciones, y luego abre la salida elegida.";
     labels.reportPdf = "Reportes, publicaciones y hallazgos limpios";
     labels.reportPdfDetail = "Reportes usa PDF ejecutivo, alcance por persona y exportaciones técnicas plegadas. Publicaciones recomienda tipo/estilo/canal desde el alcance seleccionado y suma matriz por canal: carrusel, carta/email, dossier, ficha de salud, blog/web, LinkedIn y PDF/HTML, con curaduria recomendada por rol editorial para imagenes, audio, video, documentos, biometria y ZIP. Hallazgos se organiza en 8 ejes humanos y se puede descargar.";
     labels.publicationStudio = "Estudio de publicaci\u00f3n por canal";
@@ -27392,6 +27621,7 @@ function renderAdminOperationalFocusPanel() {
     [labels.liveFlow, labels.liveFlowDetail],
     [labels.biometricAssets, labels.biometricAssetsDetail],
     [labels.scopeFilters, labels.scopeFiltersDetail],
+    [labels.sharedAnalyticalScope, labels.sharedAnalyticalScopeDetail],
     [labels.reportPdf, labels.reportPdfDetail],
     [labels.publicationStudio, labels.publicationStudioDetail],
     [labels.publicationQuickStart, labels.publicationQuickStartDetail],

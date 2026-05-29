@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260529-report-quickstart-498";
+const CACHE_NAME = "experience-hub-pwa-20260529-shared-analytical-scope-499";
 const APP_SHELL = [
   "/icons/vibe-logo.jpg",
   "/icons/vibe-logo.png",

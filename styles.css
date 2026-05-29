@@ -1955,6 +1955,87 @@ button,
   margin-bottom: 16px;
 }
 
+.dashboard-analytical-scope-panel {
+  margin-bottom: 16px;
+  border-color: rgba(13, 124, 102, 0.18);
+  background: linear-gradient(180deg, rgba(13, 124, 102, 0.055), #fff);
+}
+
+.dashboard-analytical-scope-box {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.dashboard-scope-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.dashboard-scope-summary p {
+  margin: 0 0 6px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.dashboard-scope-summary strong {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.dashboard-scope-presets {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.dashboard-scope-presets button {
+  display: grid;
+  gap: 6px;
+  min-height: 108px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid rgba(18, 33, 61, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.dashboard-scope-presets button:hover,
+.dashboard-scope-presets button:focus-visible,
+.dashboard-scope-presets button.is-active {
+  border-color: rgba(13, 124, 102, 0.42);
+  background: rgba(13, 124, 102, 0.09);
+  outline: none;
+}
+
+.dashboard-scope-presets strong,
+.dashboard-scope-presets span,
+.dashboard-scope-presets small {
+  overflow-wrap: anywhere;
+}
+
+.dashboard-scope-presets span,
+.dashboard-scope-presets small {
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.dashboard-scope-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.dashboard-scope-actions button {
+  min-height: 46px;
+}
+
 .dashboard-group-onboarding-panel {
   margin-bottom: 16px;
   border-color: rgba(37, 99, 235, 0.18);
@@ -12427,6 +12508,17 @@ button.asset-processing-summary-card {
   }
 
   .dashboard-primary-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-scope-summary,
+  .dashboard-scope-actions {
+    align-items: stretch;
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-scope-presets {
     grid-template-columns: 1fr;
   }
 
