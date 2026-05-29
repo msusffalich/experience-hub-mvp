@@ -1,4 +1,4 @@
-const APP_VERSION = "20260529-source-filter-493";
+const APP_VERSION = "20260529-publication-quickstart-494";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -138,6 +138,62 @@ const publicationTemplates = [
   { id: "formal-dossier", type: "Dossier PDF", style: "Revista Premium", channel: "PDF/HTML", tone: "dossier" },
   { id: "health-share", type: "Ficha de salud", style: "Clínico claro", channel: "PDF/HTML", tone: "health" },
   { id: "blog-story", type: "Reporte narrativo", style: "Editorial visual", channel: "Blog/Web", tone: "blog" },
+];
+const publicationQuickStarts = [
+  {
+    id: "whatsapp-brief",
+    labelEs: "WhatsApp breve",
+    labelEn: "Quick WhatsApp",
+    detailEs: "Momento corto para compartir con personas cercanas.",
+    detailEn: "Short moment to share with close people.",
+    templateId: "social-card",
+    source: "latest",
+  },
+  {
+    id: "travel-memory",
+    labelEs: "Viaje / album",
+    labelEn: "Trip / album",
+    detailEs: "Memoria visual con momentos, lugares y multimedia.",
+    detailEn: "Visual memory with moments, places, and media.",
+    templateId: "travel-magazine",
+    source: "report",
+  },
+  {
+    id: "health-share",
+    labelEs: "Salud para compartir",
+    labelEn: "Health share",
+    detailEs: "Resumen claro para medico o seguimiento personal.",
+    detailEn: "Clear summary for a doctor or personal follow-up.",
+    templateId: "health-share",
+    source: "report",
+  },
+  {
+    id: "email-letter",
+    labelEs: "Email / carta",
+    labelEn: "Email / letter",
+    detailEs: "Texto cuidado con anexos y contexto suficiente.",
+    detailEn: "Polished text with annexes and enough context.",
+    templateId: "personal-letter",
+    source: "report",
+  },
+  {
+    id: "linkedin-learning",
+    labelEs: "LinkedIn aprendizaje",
+    labelEn: "LinkedIn learning",
+    detailEs: "Carrusel profesional con leccion, evidencia y cierre.",
+    detailEn: "Professional carousel with lesson, evidence, and close.",
+    templateId: "linkedin-carousel",
+    source: "report",
+  },
+  {
+    id: "pdf-dossier",
+    labelEs: "Dossier PDF",
+    labelEn: "PDF dossier",
+    detailEs: "Documento maestro para revisar, imprimir o enviar.",
+    detailEn: "Master document to review, print, or send.",
+    templateId: "formal-dossier",
+    source: "report",
+  },
 ];
 const DEMO_BATCH = "experience-hub-demo-v4-multimodal-evidence";
 const DEMO_AGENDA_BATCH = "experience-hub-demo-agenda-v1";
@@ -3026,6 +3082,7 @@ const manualContent = {
         "Agenda events are saved locally and synchronized with the backend so they appear on other devices using the same session. If the agenda_events table does not exist in Supabase yet, the server uses a temporary central fallback until database/agenda-events.sql is applied.",
         "When converting an event, the app creates a linked experience with duration, location, participants, and source notes to preserve the Agenda -> Event -> Experience -> Living memory flow.",
         "Intelligent Publications generates local drafts from the filtered report or latest experiences. It recommends type, style, and channel from scope, media, and content signals; you can review a composition recipe before generating, include or exclude suggested media, apply privacy cleanup, copy the final text/HTML, and export as PDF, HTML, Markdown, or an editorial JSON package.",
+        "Publication quick start creates the most common outputs with one click: WhatsApp brief, trip/album, health share, email/letter, LinkedIn learning, or PDF dossier. It applies the right type, style, channel, source, and editorial recipe before generating the draft.",
         "The Channel playbook appears before draft generation. For WhatsApp, Instagram, Facebook, LinkedIn, Email, PDF/HTML, and Blog/Web it explains audience, rhythm, output, and one-click recipes.",
         "Channel deliverables clarify the master piece, copy-ready text, media package, and real limitation for each channel. The user can tell whether the output is a final PDF, email draft, WhatsApp copy, carousel plan, HTML, or manual publishing preparation.",
         "The Channel publication studio appears inside each draft and summarizes recommended format, purpose, media decision, output, editorial sequence, and checklist before approval or export.",
@@ -3116,6 +3173,7 @@ const manualContent = {
       title: "Intelligent Publications",
       items: [
         "Publications is not another technical report. Its purpose is to turn selected experiences into something shareable: a travel memory, concert summary, family album, learning recap, social update, or document for another person.",
+        "Use quick start when you do not want to choose every option manually. The buttons create a channel-ready draft and keep the editor, media selection, privacy review, and ReportLab PDF export available for final polish.",
         "The intended flow is: choose group/person and source, choose type/style/channel, generate draft, review text and media, approve, and download the edited ReportLab PDF.",
         "PDF is the main final-user output. HTML, Markdown, copied text, and JSON package are technical or editing options, folded away from the primary flow.",
         "The app suggests media already linked to the source experiences. You can include or exclude images, videos, audio, and documents without deleting the original assets.",
@@ -6852,6 +6910,7 @@ function setupActions() {
   document.getElementById("printReportButton")?.addEventListener("click", downloadPrintableReport);
   document.getElementById("downloadPdfButton")?.addEventListener("click", downloadPdfReport);
   document.getElementById("generatePublicationButton").addEventListener("click", generatePublicationDraft);
+  document.getElementById("publicationQuickStart").addEventListener("click", handlePublicationQuickStart);
   document.getElementById("publicationTypeInput").addEventListener("change", updatePublicationTypeHelp);
   document.getElementById("publicationStyleInput").addEventListener("change", updatePublicationTypeHelp);
   document.getElementById("publicationChannelInput").addEventListener("change", updatePublicationTypeHelp);
@@ -20599,10 +20658,44 @@ function renderPublications() {
   const draft = state.currentPublicationDraft || state.publicationDrafts[0] || null;
   syncAnalyticalScopeInputs();
   document.getElementById("publicationCount").textContent = `${state.publicationDrafts.length} ${t("labels.items")}`;
+  const quickStart = document.getElementById("publicationQuickStart");
+  if (quickStart) quickStart.innerHTML = renderPublicationQuickStart();
   document.getElementById("publicationPreview").innerHTML = `${renderPublicationScopeRecommendation()}${draft ? renderPublicationPreview(draft) : `<p class="card-meta">${t("labels.publicationEmpty")}</p>`}`;
   document.getElementById("publicationDraftList").innerHTML = state.publicationDrafts.length
     ? state.publicationDrafts.map(renderPublicationDraftItem).join("")
     : `<p class="card-meta">${t("labels.publicationHistoryEmpty")}</p>`;
+}
+
+function renderPublicationQuickStart() {
+  const title = state.language === "en" ? "Create by channel or purpose" : "Crear por canal o proposito";
+  const help = state.language === "en"
+    ? "Choose the closest output. Vibe applies type, style, channel, source, and the editorial recipe before generating."
+    : "Elige la salida mas cercana. Vibe aplica tipo, estilo, canal, fuente y receta editorial antes de generar.";
+  return `
+    <section class="publication-quick-panel">
+      <div class="publication-section-heading">
+        <div>
+          <h3>${escapeHtml(title)}</h3>
+          <p class="card-meta">${escapeHtml(help)}</p>
+        </div>
+        <span>${escapeHtml(state.language === "en" ? "Fast mode" : "Modo rapido")}</span>
+      </div>
+      <div class="publication-quick-grid">
+        ${publicationQuickStarts.map((item) => {
+          const template = publicationTemplates.find((candidate) => candidate.id === item.templateId) || publicationTemplates[0];
+          const label = state.language === "en" ? item.labelEn : item.labelEs;
+          const detail = state.language === "en" ? item.detailEn : item.detailEs;
+          return `
+            <button type="button" data-publication-quick="${escapeHtml(item.id)}">
+              <strong>${escapeHtml(label)}</strong>
+              <span>${escapeHtml(detail)}</span>
+              <small>${escapeHtml(`${displayPublicationType(template.type)} · ${displayPublicationStyle(template.style)} · ${template.channel}`)}</small>
+            </button>
+          `;
+        }).join("")}
+      </div>
+    </section>
+  `;
 }
 
 function renderPublicationScopeRecommendation() {
@@ -20656,6 +20749,41 @@ function handlePublicationRecommendationClick(event) {
   document.getElementById("publicationStatus").textContent = state.language === "en"
     ? "Recommended setup applied. Generate the draft when ready."
     : "Configuración recomendada aplicada. Genera el borrador cuando esté listo.";
+}
+
+function applyPublicationTemplateToInputs(template = {}, source = "report") {
+  if (!template) return false;
+  const typeInput = document.getElementById("publicationTypeInput");
+  const styleInput = document.getElementById("publicationStyleInput");
+  const channelInput = document.getElementById("publicationChannelInput");
+  const sourceInput = document.getElementById("publicationSourceInput");
+  if (typeInput) typeInput.value = template.type || typeInput.value;
+  if (styleInput) styleInput.value = template.style || styleInput.value;
+  if (channelInput) channelInput.value = template.channel || channelInput.value;
+  if (sourceInput) sourceInput.value = source || "report";
+  updatePublicationTypeHelp();
+  return true;
+}
+
+function handlePublicationQuickStart(event) {
+  const button = event.target.closest("[data-publication-quick]");
+  if (!button) return;
+  const quick = publicationQuickStarts.find((item) => item.id === button.dataset.publicationQuick);
+  const template = publicationTemplates.find((item) => item.id === quick?.templateId);
+  if (!quick || !template) return;
+  applyPublicationTemplateToInputs(template, quick.source || "report");
+  const count = getPublicationExperiences().length || getReportExperiences().length;
+  if (!count) {
+    document.getElementById("publicationStatus").textContent = state.language === "en"
+      ? "Quick setup applied. Add or select source experiences before generating."
+      : "Receta rapida aplicada. Agrega o selecciona experiencias fuente antes de generar.";
+    renderPublications();
+    return;
+  }
+  generatePublicationDraft();
+  document.getElementById("publicationStatus").textContent = state.language === "en"
+    ? `Quick publication created: ${displayPublicationType(template.type)} for ${template.channel}.`
+    : `Publicacion rapida creada: ${displayPublicationType(template.type)} para ${template.channel}.`;
 }
 
 function renderPublicationPreview(draft) {
@@ -26768,6 +26896,8 @@ function renderAdminOperationalFocusPanel() {
         reportPdfDetail: "Reports now use an executive PDF, participant scope, and folded technical exports. Publications recommend type/style/channel from the selected scope, explain format fit, edited text, media actions, and apply recommended editorial roles for images, audio, video, documents, biometrics, and ZIP files. Findings are organized by 8 human themes and can be downloaded.",
         publicationStudio: "Publication channel studio",
         publicationStudioDetail: "Publication drafts now show the channel decision layer. Before generating, the Channel playbook explains audience, rhythm, output, and one-click recipes; after generating, deliverables and the studio carry that decision into the ReportLab payload.",
+        publicationQuickStart: "Publication quick start",
+        publicationQuickStartDetail: "Publications now has one-click starts for WhatsApp, trip album, health share, email, LinkedIn learning, and PDF dossier. Each option applies type, style, channel, source, and editorial recipe before generating the draft.",
         insightPlan: "Findings action plan",
         insightPlanDetail: "Findings now turns the current scope into a 7-day plan with evidence, human wording, and Agenda scheduling for each action.",
         nativeSync: "Vibeapp real queue",
@@ -26827,6 +26957,8 @@ function renderAdminOperationalFocusPanel() {
     labels.reportPdfDetail = "Reportes usa PDF ejecutivo, alcance por persona y exportaciones técnicas plegadas. Publicaciones recomienda tipo/estilo/canal desde el alcance seleccionado y suma matriz por canal: carrusel, carta/email, dossier, ficha de salud, blog/web, LinkedIn y PDF/HTML, con curaduria recomendada por rol editorial para imagenes, audio, video, documentos, biometria y ZIP. Hallazgos se organiza en 8 ejes humanos y se puede descargar.";
     labels.publicationStudio = "Estudio de publicaci\u00f3n por canal";
     labels.publicationStudioDetail = "Publicaciones ahora muestra una capa de decisi\u00f3n por canal. Antes de generar, el Playbook explica audiencia, ritmo, salida y recetas aplicables; despu\u00e9s de generar, Entregables y Estudio llevan esa decisi\u00f3n al payload del PDF ReportLab.";
+    labels.publicationQuickStart = "Arranque rapido de publicaciones";
+    labels.publicationQuickStartDetail = "Publicaciones ahora tiene arranques de un clic para WhatsApp, viaje/album, salud, email, LinkedIn aprendizaje y dossier PDF. Cada opcion aplica tipo, estilo, canal, fuente y receta editorial antes de generar el borrador.";
     labels.insightPlan = "Plan de acción de Hallazgos";
     labels.insightPlanDetail = "Hallazgos convierte el alcance actual en un plan de 7 días con evidencia, redacción humana y envío directo de cada acción a Agenda.";
     labels.nativeSync = "Vibeapp con cola real";
@@ -26865,6 +26997,7 @@ function renderAdminOperationalFocusPanel() {
     [labels.scopeFilters, labels.scopeFiltersDetail],
     [labels.reportPdf, labels.reportPdfDetail],
     [labels.publicationStudio, labels.publicationStudioDetail],
+    [labels.publicationQuickStart, labels.publicationQuickStartDetail],
     [labels.insightPlan, labels.insightPlanDetail],
     [labels.nativeSync, labels.nativeSyncDetail],
     [labels.nativeSimulator, labels.nativeSimulatorDetail],

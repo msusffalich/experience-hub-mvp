@@ -7397,6 +7397,7 @@ button.asset-processing-summary-card {
 }
 
 .publication-editor,
+.publication-quick-panel,
 .publication-approval,
 .publication-use-guide,
 .publication-channel-studio,
@@ -7416,6 +7417,60 @@ button.asset-processing-summary-card {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
+}
+
+.publication-quick-start {
+  min-width: 0;
+  margin-bottom: 12px;
+}
+
+.publication-quick-panel {
+  border-color: rgba(13, 124, 102, 0.22);
+  background:
+    linear-gradient(135deg, rgba(13, 124, 102, 0.08), rgba(46, 110, 166, 0.07)),
+    var(--surface);
+}
+
+.publication-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr));
+  gap: 10px;
+}
+
+.publication-quick-grid button {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid rgba(18, 33, 61, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.publication-quick-grid button:hover {
+  border-color: rgba(13, 124, 102, 0.42);
+  box-shadow: 0 10px 24px rgba(23, 32, 27, 0.08);
+}
+
+.publication-quick-grid strong,
+.publication-quick-grid span,
+.publication-quick-grid small {
+  overflow-wrap: anywhere;
+}
+
+.publication-quick-grid span {
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.publication-quick-grid small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
 }
 
 .publication-history-list {
