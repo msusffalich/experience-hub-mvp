@@ -1,4 +1,4 @@
-const APP_VERSION = "20260529-output-scope-context-500";
+const APP_VERSION = "20260529-publication-editor-sync-501";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -726,7 +726,7 @@ const i18n = {
       publicationTitleField: "Título",
       publicationSummaryField: "Resumen",
       publicationBodyField: "Cuerpo",
-      publicationSaved: "Borrador actualizado.",
+      publicationSaved: "Borrador actualizado; la vista final y el PDF usan estos cambios.",
       publicationReadiness: "Preparación editorial",
       publicationReady: "Listo para revisión final",
       publicationNeedsReview: "Requiere revisión",
@@ -1543,7 +1543,7 @@ const i18n = {
       publicationTitleField: "Title",
       publicationSummaryField: "Summary",
       publicationBodyField: "Body",
-      publicationSaved: "Draft updated.",
+      publicationSaved: "Draft updated; the final preview and PDF use these changes.",
       publicationReadiness: "Editorial readiness",
       publicationReady: "Ready for final review",
       publicationNeedsReview: "Needs review",
@@ -2631,6 +2631,7 @@ const manualContent = {
         "Los eventos de Agenda se guardan localmente y se sincronizan con el backend para verse en otros dispositivos con la misma sesión. Si la tabla agenda_events aún no existe en Supabase, el servidor usa un respaldo central temporal hasta aplicar database/agenda-events.sql.",
         "Al convertir un evento, la app crea una experiencia vinculada con duración, ubicación, participantes y notas de origen para mantener la continuidad Agenda -> Evento -> Experiencia -> Memoria viva.",
         "Publicaciones Inteligentes genera borradores locales desde el reporte filtrado o las últimas experiencias. Recomienda automáticamente tipo, estilo y canal según alcance, multimedia y señales del contenido; permite aplicar una receta de composición antes de generar, incluir o excluir multimedia sugerida, aplicar limpieza de privacidad, revisar un kit de salida por canal y exportar como PDF ReportLab, HTML, Markdown o paquete editorial JSON.",
+        "El editor de Publicaciones controla la salida real: al cambiar título, resumen o cuerpo se actualizan las páginas visibles, el documento final y el payload que usa ReportLab. Si editas una página específica, esa página queda preservada como edición manual.",
         "Los tipos de publicación no son iguales: publicación social rápida sirve para mensajes breves, reporte narrativo para contar un periodo, álbum experiencial para memorias visuales, resumen ejecutivo para enviar evidencia clara y guion de story/reel para una secuencia corta.",
         "Los nuevos formatos amplían el uso por canal: carrusel visual para Instagram, Facebook o LinkedIn; carta/email largo para compartir una memoria personal; dossier PDF para un documento más formal; ficha de salud para explicar información médica o biométrica en lenguaje claro; y blog/web para publicar una historia más extensa.",
         "El Playbook del canal aparece antes de generar el borrador. Para WhatsApp, Instagram, Facebook, LinkedIn, Email, PDF/HTML y Blog/Web explica audiencia, ritmo, salida y recetas aplicables con un clic.",
@@ -3254,6 +3255,7 @@ const manualContent = {
         "Agenda events are saved locally and synchronized with the backend so they appear on other devices using the same session. If the agenda_events table does not exist in Supabase yet, the server uses a temporary central fallback until database/agenda-events.sql is applied.",
         "When converting an event, the app creates a linked experience with duration, location, participants, and source notes to preserve the Agenda -> Event -> Experience -> Living memory flow.",
         "Intelligent Publications generates local drafts from the filtered report or latest experiences. It recommends type, style, and channel from scope, media, and content signals; you can review a composition recipe before generating, include or exclude suggested media, apply privacy cleanup, copy the final text/HTML, and export as PDF, HTML, Markdown, or an editorial JSON package.",
+        "The Publications editor controls the real output: changing title, summary, or body updates the visible pages, the final document, and the ReportLab payload. If you edit a specific page, that page is preserved as a manual edit.",
         "Publication quick start creates the most common outputs with one click: WhatsApp brief, trip/album, health share, email/letter, LinkedIn learning, or PDF dossier. It applies the right type, style, channel, source, and editorial recipe before generating the draft.",
         "The Channel playbook appears before draft generation. For WhatsApp, Instagram, Facebook, LinkedIn, Email, PDF/HTML, and Blog/Web it explains audience, rhythm, output, and one-click recipes.",
         "Channel deliverables clarify the master piece, copy-ready text, media package, and real limitation for each channel. The user can tell whether the output is a final PDF, email draft, WhatsApp copy, carousel plan, HTML, or manual publishing preparation.",
@@ -20802,6 +20804,7 @@ function normalizePublicationPages(draft) {
       subtitle: page.subtitle || "",
       body: page.body || "",
       mediaIds: Array.isArray(page.mediaIds) ? page.mediaIds : [],
+      editedManually: Boolean(page.editedManually),
     }));
   }
   const body = draft?.body || "";
@@ -20809,6 +20812,33 @@ function normalizePublicationPages(draft) {
     { id: createId(), pageNumber: 1, pageType: "cover", layoutTemplate: "cover-typographic", title: draft?.title || "Publicacion", subtitle: `${displayPublicationType(draft?.type || "")} - ${draft?.channel || ""}`, body: draft?.summary || "", mediaIds: [] },
     { id: createId(), pageNumber: 2, pageType: "story", layoutTemplate: "narrative", title: state.language === "en" ? "Story" : "Historia", subtitle: "", body, mediaIds: [] },
   ];
+}
+
+function replacePublicationPageLeadBlock(value, replacement) {
+  const text = String(value || "");
+  const next = String(replacement || "").trim();
+  if (!next) return text;
+  const parts = text.split(/\n\s*\n/);
+  if (!parts.length) return next;
+  return [next, ...parts.slice(1)].join("\n\n");
+}
+
+function syncPublicationDraftPagesFromTopLevel(draft = {}, key = "") {
+  const pages = normalizePublicationPages(draft);
+  if (!pages.length) return pages;
+  const cover = pages.find((page) => page.pageType === "cover") || pages[0];
+  const summary = pages.find((page) => page.pageType === "summary");
+  const story = pages.find((page) => ["story", "memory", "letter", "chapters", "scenes", "voiceover", "slides", "captions"].includes(page.pageType));
+  if (key === "title" && cover && !cover.editedManually) {
+    cover.title = draft.title || cover.title;
+  }
+  if (key === "summary" && summary && !summary.editedManually) {
+    summary.body = replacePublicationPageLeadBlock(summary.body, draft.summary);
+  }
+  if (key === "body" && story && !story.editedManually) {
+    story.body = buildPublicationPageStory(draft.body, { focus: draft.summary || draft.title || "" });
+  }
+  return syncPublicationPagesWithMedia({ ...draft, pages });
 }
 
 function refreshPublicationMediaRoles(media = [], draft = {}) {
@@ -22297,7 +22327,7 @@ function renderPublicationEditor(draft) {
       <div class="publication-section-heading">
         <div>
           <h3>${escapeHtml(state.language === "en" ? "1. Edit final text" : "1. Editar texto final")}</h3>
-          <p class="card-meta">${escapeHtml(state.language === "en" ? "These fields are live: change title, summary, or body and the final document updates below before PDF export." : "Estos campos son editables: cambia titulo, resumen o cuerpo y el documento final se actualiza abajo antes de exportar el PDF.")}</p>
+          <p class="card-meta">${escapeHtml(state.language === "en" ? "These fields control the final document. Title, summary, and body update the visible pages and the ReportLab PDF payload." : "Estos campos controlan el documento final. Titulo, resumen y cuerpo actualizan las paginas visibles y el PDF ReportLab.")}</p>
         </div>
         <span>${escapeHtml(state.language === "en" ? "Editable" : "Editable")}</span>
       </div>
@@ -22325,7 +22355,7 @@ function renderPublicationPageEditor(draft) {
       <div class="publication-section-heading">
         <div>
           <h3>${escapeHtml(state.language === "en" ? "2. Edit publication pages" : "2. Editar paginas de la publicacion")}</h3>
-          <p class="card-meta">${escapeHtml(state.language === "en" ? "Each page has a purpose, layout and editable text. This is the structure used by the ReportLab PDF." : "Cada pagina tiene proposito, maqueta y texto editable. Esta es la estructura que usa el PDF ReportLab.")}</p>
+          <p class="card-meta">${escapeHtml(state.language === "en" ? "Each page has a purpose, layout, and editable text. A manually edited page is preserved when you adjust the general text above." : "Cada pagina tiene proposito, maqueta y texto editable. Si editas una pagina manualmente, la app la respeta cuando ajustes el texto general.")}</p>
         </div>
         <span>${pages.length} ${escapeHtml(state.language === "en" ? "pages" : "paginas")}</span>
       </div>
@@ -22426,6 +22456,12 @@ function renderPublicationFinalDocument(draft) {
       </article>
     </section>
   `;
+}
+
+function refreshPublicationFinalDocumentOnly(draft) {
+  const finalDocument = document.querySelector(".publication-final-document");
+  if (!finalDocument || !draft) return;
+  finalDocument.outerHTML = renderPublicationFinalDocument(draft);
 }
 
 function renderPublicationFinalPage(page, media) {
@@ -22934,7 +22970,7 @@ function handlePublicationDraftEdit(event) {
     if (!Number.isInteger(index) || !["title", "subtitle", "body"].includes(key)) return;
     const pages = normalizePublicationPages(draft);
     if (!pages[index]) return;
-    pages[index] = { ...pages[index], [key]: pageField.value };
+    pages[index] = { ...pages[index], [key]: pageField.value, editedManually: true };
     draft.pages = pages;
     draft.approvalStatus = "review";
     draft.approvedAt = "";
@@ -22943,6 +22979,7 @@ function handlePublicationDraftEdit(event) {
     state.publicationDrafts = state.publicationDrafts.map((item) => (item.id === draft.id ? draft : item));
     savePublicationDrafts();
     document.getElementById("publicationStatus").textContent = t("labels.publicationSaved");
+    refreshPublicationFinalDocumentOnly(draft);
     renderPublicationDraftListOnly();
     return;
   }
@@ -22953,6 +22990,7 @@ function handlePublicationDraftEdit(event) {
   const key = field.dataset.publicationField;
   if (!["title", "summary", "body"].includes(key)) return;
   draft[key] = field.value;
+  draft.pages = syncPublicationDraftPagesFromTopLevel(draft, key);
   draft.approvalStatus = "review";
   draft.approvedAt = "";
   addPublicationHistory(draft, "edited", t(`labels.publication${key.charAt(0).toUpperCase() + key.slice(1)}Field`) || key, { coalesceMs: 15000 });
@@ -22963,6 +23001,7 @@ function handlePublicationDraftEdit(event) {
   document.querySelectorAll(`[data-publication-final="${key}"]`).forEach((node) => {
     node.textContent = draft[key];
   });
+  refreshPublicationFinalDocumentOnly(draft);
   renderPublicationDraftListOnly();
 }
 
@@ -23091,9 +23130,12 @@ function exportCurrentPublicationHtml() {
 }
 
 function buildPublicationExportDraft(draft) {
+  const exportDraft = { ...draft, pages: normalizePublicationPages(draft) };
+  ["title", "summary", "body"].forEach((key) => {
+    exportDraft.pages = syncPublicationDraftPagesFromTopLevel(exportDraft, key);
+  });
   return {
-    ...draft,
-    pages: normalizePublicationPages(draft),
+    ...exportDraft,
     distributionKit: buildPublicationDistributionKit(draft),
     channelStudio: buildPublicationChannelStudio(draft),
   };
@@ -23209,8 +23251,9 @@ async function copyTextToClipboard(text) {
 }
 
 function buildPublicationHtml(draft) {
+  const exportDraft = buildPublicationExportDraft(draft);
   const approvedMedia = getApprovedPublicationMedia(draft).filter((item) => item.url || item.dataUrl);
-  const pages = normalizePublicationPages(draft);
+  const pages = exportDraft.pages;
   const templateId = getPublicationTemplateId(draft);
   const exportClass = `template-${templateId}`;
   const approvalText = displayPublicationApprovalStatus(draft.approvalStatus);
@@ -23347,9 +23390,10 @@ function exportCurrentPublicationPackage() {
 }
 
 function buildPublicationMarkdown(draft) {
-  const pages = normalizePublicationPages(draft);
-  const kit = buildPublicationDistributionKit(draft);
-  const studio = buildPublicationChannelStudio(draft);
+  const exportDraft = buildPublicationExportDraft(draft);
+  const pages = exportDraft.pages;
+  const kit = exportDraft.distributionKit;
+  const studio = exportDraft.channelStudio;
   const labels = state.language === "en"
     ? {
         type: "Type",
@@ -27582,6 +27626,8 @@ function renderAdminOperationalFocusPanel() {
         publicationQuickStartDetail: "Publications now has one-click starts for WhatsApp, trip album, health share, email, LinkedIn learning, and PDF dossier. Each option applies type, style, channel, source, and editorial recipe before generating the draft.",
         publicationChannelPicker: "Channel-first publication picker",
         publicationChannelPickerDetail: "Publications now lets the user choose a format from the channel first: WhatsApp, Instagram, Facebook, LinkedIn, Email, PDF/HTML, and Blog/Web each expose recommended structures before draft generation.",
+        publicationLiveEditor: "Publication editor tied to export",
+        publicationLiveEditorDetail: "Editing title, summary, or body now updates the visible pages, final document, Markdown, package, and ReportLab payload; page-level edits remain protected as manual edits.",
         reportQuickStart: "Report quick start",
         reportQuickStartDetail: "Reports now has one-click starts for full baseline, last 7/30 days, health, work, and device data. It applies scope, rebuilds the report, and keeps the ReportLab PDF action primary.",
         insightQuickStart: "Findings quick start",
@@ -27653,6 +27699,8 @@ function renderAdminOperationalFocusPanel() {
     labels.publicationQuickStartDetail = "Publicaciones ahora tiene arranques de un clic para WhatsApp, viaje/album, salud, email, LinkedIn aprendizaje y dossier PDF. Cada opcion aplica tipo, estilo, canal, fuente y receta editorial antes de generar el borrador.";
     labels.publicationChannelPicker = "Selector de publicacion por canal";
     labels.publicationChannelPickerDetail = "Publicaciones permite elegir el formato desde el canal primero: WhatsApp, Instagram, Facebook, LinkedIn, Email, PDF/HTML y Blog/Web muestran estructuras recomendadas antes de generar.";
+    labels.publicationLiveEditor = "Editor conectado a la exportacion";
+    labels.publicationLiveEditorDetail = "Editar titulo, resumen o cuerpo actualiza paginas visibles, documento final, Markdown, paquete y payload ReportLab; las paginas editadas manualmente quedan protegidas.";
     labels.reportQuickStart = "Arranque rapido de reportes";
     labels.reportQuickStartDetail = "Reportes ahora tiene arranques de un clic para vista completa, ultimos 7/30 dias, salud, trabajo y dispositivos. Aplica alcance, reconstruye el reporte y deja el PDF ReportLab como accion principal.";
     labels.insightQuickStart = "Arranque rapido de Hallazgos";
@@ -27699,6 +27747,7 @@ function renderAdminOperationalFocusPanel() {
     [labels.publicationStudio, labels.publicationStudioDetail],
     [labels.publicationQuickStart, labels.publicationQuickStartDetail],
     [labels.publicationChannelPicker, labels.publicationChannelPickerDetail],
+    [labels.publicationLiveEditor, labels.publicationLiveEditorDetail],
     [labels.reportQuickStart, labels.reportQuickStartDetail],
     [labels.insightQuickStart, labels.insightQuickStartDetail],
     [labels.insightPlan, labels.insightPlanDetail],
