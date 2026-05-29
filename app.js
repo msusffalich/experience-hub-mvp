@@ -1,4 +1,4 @@
-const APP_VERSION = "20260529-publication-editor-sync-501";
+const APP_VERSION = "20260529-publication-progress-502";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -704,6 +704,17 @@ const i18n = {
       publicationPreviewHelp: "Previsualización del mismo HTML que se descargará. Revisa márgenes, diseño y saltos antes de exportar.",
       publicationDownloadReady: "Archivo listo para descargar.",
       publicationDownloadClick: "Descargar archivo",
+      publicationProgressDraftTitle: "Preparando borrador",
+      publicationProgressDraftDetail: "Se genero el borrador. Revisa texto, multimedia y aprobacion antes de exportar.",
+      publicationProgressPdfStart: "Generando PDF final",
+      publicationProgressPdfStartDetail: "Validando texto editado, paginas, multimedia y payload ReportLab.",
+      publicationProgressPdfServer: "Enviando a ReportLab",
+      publicationProgressPdfServerDetail: "El servidor esta componiendo el PDF editado.",
+      publicationProgressPdfDownload: "Preparando descarga",
+      publicationProgressPdfDownloadDetail: "El PDF fue generado; creando enlace de descarga.",
+      publicationProgressPdfReady: "PDF final listo",
+      publicationProgressPdfReadyDetail: "Archivo generado: {filename}. Si no se abrio la descarga, usa el enlace visible.",
+      publicationProgressPdfError: "No se pudo generar el PDF final",
       publicationCopiedText: "Texto final copiado al portapapeles.",
       publicationCopiedHtml: "HTML final copiado al portapapeles.",
       publicationCopyFailed: "No se pudo copiar automáticamente. Usa la exportación visible.",
@@ -1521,6 +1532,17 @@ const i18n = {
       publicationPreviewHelp: "Preview of the same HTML that will be downloaded. Review margins, design, and page breaks before exporting.",
       publicationDownloadReady: "File ready to download.",
       publicationDownloadClick: "Download file",
+      publicationProgressDraftTitle: "Preparing draft",
+      publicationProgressDraftDetail: "Draft generated. Review text, media, and approval before exporting.",
+      publicationProgressPdfStart: "Generating final PDF",
+      publicationProgressPdfStartDetail: "Validating edited text, pages, media, and ReportLab payload.",
+      publicationProgressPdfServer: "Sending to ReportLab",
+      publicationProgressPdfServerDetail: "The server is composing the edited PDF.",
+      publicationProgressPdfDownload: "Preparing download",
+      publicationProgressPdfDownloadDetail: "The PDF was generated; creating the download link.",
+      publicationProgressPdfReady: "Final PDF ready",
+      publicationProgressPdfReadyDetail: "Generated file: {filename}. If the download did not open, use the visible link.",
+      publicationProgressPdfError: "Could not generate final PDF",
       publicationCopiedText: "Final text copied to clipboard.",
       publicationCopiedHtml: "Final HTML copied to clipboard.",
       publicationCopyFailed: "Could not copy automatically. Use the visible export.",
@@ -2632,6 +2654,7 @@ const manualContent = {
         "Al convertir un evento, la app crea una experiencia vinculada con duración, ubicación, participantes y notas de origen para mantener la continuidad Agenda -> Evento -> Experiencia -> Memoria viva.",
         "Publicaciones Inteligentes genera borradores locales desde el reporte filtrado o las últimas experiencias. Recomienda automáticamente tipo, estilo y canal según alcance, multimedia y señales del contenido; permite aplicar una receta de composición antes de generar, incluir o excluir multimedia sugerida, aplicar limpieza de privacidad, revisar un kit de salida por canal y exportar como PDF ReportLab, HTML, Markdown o paquete editorial JSON.",
         "El editor de Publicaciones controla la salida real: al cambiar título, resumen o cuerpo se actualizan las páginas visibles, el documento final y el payload que usa ReportLab. Si editas una página específica, esa página queda preservada como edición manual.",
+        "Publicaciones muestra progreso de generación: borrador preparado, envío a ReportLab, preparación de descarga y PDF final listo con enlace visible. Así el usuario sabe si falta revisar, aprobar o descargar.",
         "Los tipos de publicación no son iguales: publicación social rápida sirve para mensajes breves, reporte narrativo para contar un periodo, álbum experiencial para memorias visuales, resumen ejecutivo para enviar evidencia clara y guion de story/reel para una secuencia corta.",
         "Los nuevos formatos amplían el uso por canal: carrusel visual para Instagram, Facebook o LinkedIn; carta/email largo para compartir una memoria personal; dossier PDF para un documento más formal; ficha de salud para explicar información médica o biométrica en lenguaje claro; y blog/web para publicar una historia más extensa.",
         "El Playbook del canal aparece antes de generar el borrador. Para WhatsApp, Instagram, Facebook, LinkedIn, Email, PDF/HTML y Blog/Web explica audiencia, ritmo, salida y recetas aplicables con un clic.",
@@ -3256,6 +3279,7 @@ const manualContent = {
         "When converting an event, the app creates a linked experience with duration, location, participants, and source notes to preserve the Agenda -> Event -> Experience -> Living memory flow.",
         "Intelligent Publications generates local drafts from the filtered report or latest experiences. It recommends type, style, and channel from scope, media, and content signals; you can review a composition recipe before generating, include or exclude suggested media, apply privacy cleanup, copy the final text/HTML, and export as PDF, HTML, Markdown, or an editorial JSON package.",
         "The Publications editor controls the real output: changing title, summary, or body updates the visible pages, the final document, and the ReportLab payload. If you edit a specific page, that page is preserved as a manual edit.",
+        "Publications shows generation progress: draft prepared, sent to ReportLab, download prepared, and final PDF ready with a visible link. This tells the user whether review, approval, or download is still pending.",
         "Publication quick start creates the most common outputs with one click: WhatsApp brief, trip/album, health share, email/letter, LinkedIn learning, or PDF dossier. It applies the right type, style, channel, source, and editorial recipe before generating the draft.",
         "The Channel playbook appears before draft generation. For WhatsApp, Instagram, Facebook, LinkedIn, Email, PDF/HTML, and Blog/Web it explains audience, rhythm, output, and one-click recipes.",
         "Channel deliverables clarify the master piece, copy-ready text, media package, and real limitation for each channel. The user can tell whether the output is a final PDF, email draft, WhatsApp copy, carousel plan, HTML, or manual publishing preparation.",
@@ -20440,6 +20464,12 @@ function generatePublicationDraft() {
   state.publicationDrafts = state.publicationDrafts.slice(0, 12);
   savePublicationDrafts();
   renderPublications();
+  setPublicationProgress({
+    title: t("labels.publicationProgressDraftTitle"),
+    detail: t("labels.publicationProgressDraftDetail"),
+    percent: 100,
+    stateName: "complete",
+  });
   document.getElementById("publicationStatus").textContent = t("labels.publicationGenerated");
 }
 
@@ -21314,6 +21344,42 @@ function renderPublications() {
   document.getElementById("publicationDraftList").innerHTML = state.publicationDrafts.length
     ? state.publicationDrafts.map(renderPublicationDraftItem).join("")
     : `<p class="card-meta">${t("labels.publicationHistoryEmpty")}</p>`;
+}
+
+function setPublicationProgress({ title = "", detail = "", percent = 0, stateName = "working" } = {}) {
+  const panel = document.getElementById("publicationProgressPanel");
+  if (!panel) return;
+  const safePercent = Math.max(0, Math.min(100, Number(percent) || 0));
+  panel.hidden = false;
+  panel.classList.toggle("is-error", stateName === "error");
+  panel.style.setProperty("--publication-progress", `${safePercent}%`);
+  panel.innerHTML = `
+    <div class="publication-progress-heading">
+      <strong>${escapeHtml(title || t("labels.publicationProgressPdfStart"))}</strong>
+      <span>${safePercent}%</span>
+    </div>
+    <div class="publication-progress-bar" aria-hidden="true"><span></span></div>
+    <p>${escapeHtml(detail || "")}</p>
+  `;
+}
+
+function finishPublicationProgress(filename) {
+  const detail = t("labels.publicationProgressPdfReadyDetail").replace("{filename}", filename);
+  setPublicationProgress({
+    title: t("labels.publicationProgressPdfReady"),
+    detail,
+    percent: 100,
+    stateName: "complete",
+  });
+}
+
+function failPublicationProgress(detail) {
+  setPublicationProgress({
+    title: t("labels.publicationProgressPdfError"),
+    detail,
+    percent: 100,
+    stateName: "error",
+  });
 }
 
 function renderPublicationQuickStart() {
@@ -23151,27 +23217,45 @@ async function exportCurrentPublicationPdf() {
   const html = buildPublicationHtml(draft);
   if (!state.apiOnline) {
     document.getElementById("publicationStatus").textContent = state.language === "en" ? "PDF requires the API. No HTML fallback was downloaded." : "El PDF requiere la API. No se descargo HTML como sustituto.";
+    failPublicationProgress(document.getElementById("publicationStatus").textContent);
     notify(document.getElementById("publicationStatus").textContent, "error");
     return;
   }
   try {
     document.getElementById("publicationStatus").textContent = state.language === "en" ? "Generating edited ReportLab publication PDF..." : "Generando PDF editado ReportLab de publicacion...";
+    setPublicationProgress({
+      title: t("labels.publicationProgressPdfStart"),
+      detail: t("labels.publicationProgressPdfStartDetail"),
+      percent: 15,
+    });
     const exportDraft = buildPublicationExportDraft(draft);
+    setPublicationProgress({
+      title: t("labels.publicationProgressPdfServer"),
+      detail: t("labels.publicationProgressPdfServerDetail"),
+      percent: 45,
+    });
     const response = await fetch(`${API_BASE}/publication/pdf`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...authHeader() },
       body: JSON.stringify({ html, draft: exportDraft, title: draft.title, language: state.language }),
     });
     if (!response.ok) throw new Error(await response.text());
+    setPublicationProgress({
+      title: t("labels.publicationProgressPdfDownload"),
+      detail: t("labels.publicationProgressPdfDownloadDetail"),
+      percent: 80,
+    });
     const blob = await response.blob();
     addPublicationHistory(draft, "exported", "PDF ReportLab");
     persistPublicationDraft(draft);
     downloadPublicationBlob(blob, "publicacion-inteligente.pdf", warning);
+    finishPublicationProgress("publicacion-inteligente.pdf");
     document.getElementById("publicationStatus").textContent = state.language === "en" ? "Edited ReportLab publication PDF generated." : "PDF editado ReportLab de publicacion generado.";
   } catch (error) {
     console.warn("Publication PDF export failed", error);
     const detail = getExportErrorDetail(error);
     document.getElementById("publicationStatus").textContent = state.language === "en" ? `ReportLab PDF failed. Detail: ${detail}` : `Fallo el PDF ReportLab. Detalle: ${detail}`;
+    failPublicationProgress(document.getElementById("publicationStatus").textContent);
     notify(document.getElementById("publicationStatus").textContent, "error");
   }
 }
@@ -27628,6 +27712,8 @@ function renderAdminOperationalFocusPanel() {
         publicationChannelPickerDetail: "Publications now lets the user choose a format from the channel first: WhatsApp, Instagram, Facebook, LinkedIn, Email, PDF/HTML, and Blog/Web each expose recommended structures before draft generation.",
         publicationLiveEditor: "Publication editor tied to export",
         publicationLiveEditorDetail: "Editing title, summary, or body now updates the visible pages, final document, Markdown, package, and ReportLab payload; page-level edits remain protected as manual edits.",
+        publicationProgress: "Publication generation progress",
+        publicationProgressDetail: "Publications now shows draft, ReportLab, download, final file, and error states so the user knows whether the piece is still generating or ready.",
         reportQuickStart: "Report quick start",
         reportQuickStartDetail: "Reports now has one-click starts for full baseline, last 7/30 days, health, work, and device data. It applies scope, rebuilds the report, and keeps the ReportLab PDF action primary.",
         insightQuickStart: "Findings quick start",
@@ -27701,6 +27787,8 @@ function renderAdminOperationalFocusPanel() {
     labels.publicationChannelPickerDetail = "Publicaciones permite elegir el formato desde el canal primero: WhatsApp, Instagram, Facebook, LinkedIn, Email, PDF/HTML y Blog/Web muestran estructuras recomendadas antes de generar.";
     labels.publicationLiveEditor = "Editor conectado a la exportacion";
     labels.publicationLiveEditorDetail = "Editar titulo, resumen o cuerpo actualiza paginas visibles, documento final, Markdown, paquete y payload ReportLab; las paginas editadas manualmente quedan protegidas.";
+    labels.publicationProgress = "Progreso de generacion de publicaciones";
+    labels.publicationProgressDetail = "Publicaciones muestra estados de borrador, ReportLab, descarga, archivo final y error para que el usuario sepa si la pieza aun se genera o ya esta lista.";
     labels.reportQuickStart = "Arranque rapido de reportes";
     labels.reportQuickStartDetail = "Reportes ahora tiene arranques de un clic para vista completa, ultimos 7/30 dias, salud, trabajo y dispositivos. Aplica alcance, reconstruye el reporte y deja el PDF ReportLab como accion principal.";
     labels.insightQuickStart = "Arranque rapido de Hallazgos";
@@ -27748,6 +27836,7 @@ function renderAdminOperationalFocusPanel() {
     [labels.publicationQuickStart, labels.publicationQuickStartDetail],
     [labels.publicationChannelPicker, labels.publicationChannelPickerDetail],
     [labels.publicationLiveEditor, labels.publicationLiveEditorDetail],
+    [labels.publicationProgress, labels.publicationProgressDetail],
     [labels.reportQuickStart, labels.reportQuickStartDetail],
     [labels.insightQuickStart, labels.insightQuickStartDetail],
     [labels.insightPlan, labels.insightPlanDetail],
