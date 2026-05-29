@@ -1,4 +1,4 @@
-const APP_VERSION = "20260529-insights-quickstart-496";
+const APP_VERSION = "20260529-publication-channel-picker-497";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -138,6 +138,20 @@ const publicationTemplates = [
   { id: "formal-dossier", type: "Dossier PDF", style: "Revista Premium", channel: "PDF/HTML", tone: "dossier" },
   { id: "health-share", type: "Ficha de salud", style: "Clínico claro", channel: "PDF/HTML", tone: "health" },
   { id: "blog-story", type: "Reporte narrativo", style: "Editorial visual", channel: "Blog/Web", tone: "blog" },
+  { id: "whatsapp-thread", type: publicationTypes[6], style: publicationStyles[11], channel: "WhatsApp", tone: "messageThread" },
+  { id: "facebook-album", type: publicationTypes[2], style: "Familiar", channel: "Facebook", tone: "socialAlbum" },
+  { id: "medical-email", type: publicationTypes[8], style: publicationStyles[9], channel: "Email", tone: "medicalEmail" },
+  { id: "executive-pdf", type: "Resumen ejecutivo", style: "Profesional", channel: "PDF/HTML", tone: "executivePdf" },
+  { id: "learning-portfolio", type: "Dossier PDF", style: "Educativo", channel: "Blog/Web", tone: "learningPortfolio" },
+];
+const publicationChannelFormatPicker = [
+  { channel: "WhatsApp", templates: ["social-card", "whatsapp-thread", "family-memory"] },
+  { channel: "Instagram", templates: ["instagram-carousel", "story-script", "social-card"] },
+  { channel: "Facebook", templates: ["facebook-album", "family-memory", "travel-magazine"] },
+  { channel: "LinkedIn", templates: ["linkedin-carousel", "executive-brief", "learning-dossier"] },
+  { channel: "Email", templates: ["personal-letter", "medical-email", "executive-brief"] },
+  { channel: "PDF/HTML", templates: ["formal-dossier", "executive-pdf", "health-share"] },
+  { channel: "Blog/Web", templates: ["blog-story", "travel-magazine", "learning-portfolio"] },
 ];
 const publicationQuickStarts = [
   {
@@ -2588,6 +2602,7 @@ const manualContent = {
         "El PDF del reporte es ejecutivo: resume lo importante, limita evidencia repetida y deja el detalle completo para JSON o CSV.",
         "El selector Grupo/persona de este reporte filtra el analisis por subgrupo de la cuenta. Si eliges uno, el reporte, PDF y exportaciones usan ese mismo alcance.",
         "Los arranques rapidos de Hallazgos permiten entrar directo a Ultimos 7 dias, Salud, Trabajo, Social, Aprendizaje o Datos de dispositivos. Cada boton aplica filtros, reconstruye hallazgos, plan de accion y exportaciones con el mismo alcance.",
+        "Publicaciones incluye un selector de formatos por canal: WhatsApp, Instagram, Facebook, LinkedIn, Email, PDF/HTML y Blog/Web. Sirve para elegir la estructura correcta antes de generar, sin depender de prueba y error.",
         "En Reportes y Publicaciones, las acciones principales quedan visibles. Las opciones tecnicas como JSON, CSV, HTML, Markdown, copias y paquetes quedan plegadas para no confundir al usuario.",
         "La columna Energía muestra el valor 1-10 capturado en cada experiencia. La métrica Energía media muestra el promedio del conjunto filtrado.",
         "La columna Adjuntos muestra cuántos archivos multimedia tiene cada experiencia.",
@@ -3153,6 +3168,7 @@ const manualContent = {
         "If a draft is exported while still in review, the file includes that approval mark so it is not confused with a final version.",
         "The Draft editor lets you edit title, summary, and body. The Final document shows exactly what will be exported, combining the edited text with the included media.",
         "Publication designs shows visual layouts. Selecting one updates type, style, channel, and the final document appearance.",
+        "Publications also includes a channel-first format picker. The user can start from WhatsApp, Instagram, Facebook, LinkedIn, Email, PDF/HTML, or Blog/Web and apply the best structure before generating.",
         "Findings quick starts open Last 7 days, Health, Work, Social, Learning, or Device data with one click. Each button applies filters and rebuilds findings, action plan, and exports from the same scope.",
         "Dashboard shows a fixed current-data summary: experiences, assets, groups, persistence mode, and pending sync. If previous data is not visible, that block quickly separates filter, session, cloud, or queue causes.",
         "Dashboard automatically restores the Current data and Global Progress blocks even when the browser keeps an older HTML structure. Critical status no longer depends on a preloaded container in the page.",
@@ -20845,6 +20861,45 @@ function renderPublicationQuickStart() {
         }).join("")}
       </div>
     </section>
+    ${renderPublicationChannelFormatPicker()}
+  `;
+}
+
+function renderPublicationChannelFormatPicker() {
+  const title = state.language === "en" ? "Choose a format by channel" : "Elegir formato por canal";
+  const help = state.language === "en"
+    ? "Start from the channel first. Each option applies the format, style, and channel before you generate or regenerate the publication."
+    : "Empieza por el canal. Cada opcion aplica formato, estilo y canal antes de generar o regenerar la publicacion.";
+  return `
+    <section class="publication-format-picker">
+      <div class="publication-section-heading">
+        <div>
+          <h3>${escapeHtml(title)}</h3>
+          <p class="card-meta">${escapeHtml(help)}</p>
+        </div>
+        <span>${escapeHtml(state.language === "en" ? "By channel" : "Por canal")}</span>
+      </div>
+      <div class="publication-format-channel-grid">
+        ${publicationChannelFormatPicker.map((group) => {
+          const templates = group.templates
+            .map((id) => publicationTemplates.find((template) => template.id === id))
+            .filter(Boolean);
+          return `
+            <article>
+              <strong>${escapeHtml(group.channel)}</strong>
+              <div>
+                ${templates.map((template) => `
+                  <button type="button" data-publication-format-template="${escapeHtml(template.id)}">
+                    <span>${escapeHtml(displayPublicationType(template.type))}</span>
+                    <b>${escapeHtml(displayPublicationStyle(template.style))}</b>
+                  </button>
+                `).join("")}
+              </div>
+            </article>
+          `;
+        }).join("")}
+      </div>
+    </section>
   `;
 }
 
@@ -20916,6 +20971,17 @@ function applyPublicationTemplateToInputs(template = {}, source = "report") {
 }
 
 function handlePublicationQuickStart(event) {
+  const formatButton = event.target.closest("[data-publication-format-template]");
+  if (formatButton) {
+    const template = publicationTemplates.find((item) => item.id === formatButton.dataset.publicationFormatTemplate);
+    if (!template) return;
+    applyPublicationTemplateToInputs(template, "report");
+    renderPublications();
+    document.getElementById("publicationStatus").textContent = state.language === "en"
+      ? `Format selected: ${displayPublicationType(template.type)} for ${template.channel}. Generate when ready.`
+      : `Formato seleccionado: ${displayPublicationType(template.type)} para ${template.channel}. Genera cuando este listo.`;
+    return;
+  }
   const button = event.target.closest("[data-publication-quick]");
   if (!button) return;
   const quick = publicationQuickStarts.find((item) => item.id === button.dataset.publicationQuick);
@@ -27050,6 +27116,8 @@ function renderAdminOperationalFocusPanel() {
         publicationStudioDetail: "Publication drafts now show the channel decision layer. Before generating, the Channel playbook explains audience, rhythm, output, and one-click recipes; after generating, deliverables and the studio carry that decision into the ReportLab payload.",
         publicationQuickStart: "Publication quick start",
         publicationQuickStartDetail: "Publications now has one-click starts for WhatsApp, trip album, health share, email, LinkedIn learning, and PDF dossier. Each option applies type, style, channel, source, and editorial recipe before generating the draft.",
+        publicationChannelPicker: "Channel-first publication picker",
+        publicationChannelPickerDetail: "Publications now lets the user choose a format from the channel first: WhatsApp, Instagram, Facebook, LinkedIn, Email, PDF/HTML, and Blog/Web each expose recommended structures before draft generation.",
         insightQuickStart: "Findings quick start",
         insightQuickStartDetail: "Findings now has one-click starts for Last 7 days, Health, Work, Social, Learning, and Device data. Each option applies the scope and rebuilds findings, action plan, and exports without manual filtering.",
         insightPlan: "Findings action plan",
@@ -27113,6 +27181,8 @@ function renderAdminOperationalFocusPanel() {
     labels.publicationStudioDetail = "Publicaciones ahora muestra una capa de decisi\u00f3n por canal. Antes de generar, el Playbook explica audiencia, ritmo, salida y recetas aplicables; despu\u00e9s de generar, Entregables y Estudio llevan esa decisi\u00f3n al payload del PDF ReportLab.";
     labels.publicationQuickStart = "Arranque rapido de publicaciones";
     labels.publicationQuickStartDetail = "Publicaciones ahora tiene arranques de un clic para WhatsApp, viaje/album, salud, email, LinkedIn aprendizaje y dossier PDF. Cada opcion aplica tipo, estilo, canal, fuente y receta editorial antes de generar el borrador.";
+    labels.publicationChannelPicker = "Selector de publicacion por canal";
+    labels.publicationChannelPickerDetail = "Publicaciones permite elegir el formato desde el canal primero: WhatsApp, Instagram, Facebook, LinkedIn, Email, PDF/HTML y Blog/Web muestran estructuras recomendadas antes de generar.";
     labels.insightQuickStart = "Arranque rapido de Hallazgos";
     labels.insightQuickStartDetail = "Hallazgos ahora tiene arranques de un clic para Ultimos 7 dias, Salud, Trabajo, Social, Aprendizaje y Datos de dispositivos. Cada opcion aplica el alcance y reconstruye hallazgos, plan de accion y exportaciones sin filtros manuales.";
     labels.insightPlan = "Plan de acción de Hallazgos";
@@ -27154,6 +27224,7 @@ function renderAdminOperationalFocusPanel() {
     [labels.reportPdf, labels.reportPdfDetail],
     [labels.publicationStudio, labels.publicationStudioDetail],
     [labels.publicationQuickStart, labels.publicationQuickStartDetail],
+    [labels.publicationChannelPicker, labels.publicationChannelPickerDetail],
     [labels.insightQuickStart, labels.insightQuickStartDetail],
     [labels.insightPlan, labels.insightPlanDetail],
     [labels.nativeSync, labels.nativeSyncDetail],

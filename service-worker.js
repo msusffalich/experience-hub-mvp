@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260529-insights-quickstart-496";
+const CACHE_NAME = "experience-hub-pwa-20260529-publication-channel-picker-497";
 const APP_SHELL = [
   "/icons/vibe-logo.jpg",
   "/icons/vibe-logo.png",
