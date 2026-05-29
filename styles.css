@@ -4224,7 +4224,7 @@ button,
 
 .insight-axis-metrics {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(min(86px, 100%), 1fr));
   gap: 8px;
 }
 
@@ -4233,6 +4233,7 @@ button,
   border-radius: 8px;
   padding: 8px;
   background: var(--surface);
+  min-width: 0;
 }
 
 .insight-axis-metrics span {
@@ -4240,6 +4241,8 @@ button,
   color: var(--muted);
   font-size: 11px;
   font-weight: 800;
+  overflow-wrap: anywhere;
+  line-height: 1.25;
 }
 
 .insight-axis-metrics strong {
