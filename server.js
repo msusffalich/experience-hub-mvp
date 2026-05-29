@@ -473,7 +473,7 @@ async function handleApi(req, res, url) {
   }
 
   if (url.pathname === "/api/publication/pdf" && req.method === "POST") {
-    const user = await getRequestUser(req);
+    const user = await getOptionalRequestUser(req);
     const body = await readJson(req);
     sendPdf(res, await buildPublicationPdf(body, user), "publicacion-inteligente.pdf");
     return;

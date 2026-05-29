@@ -1,4 +1,4 @@
-const APP_VERSION = "20260529-publication-api-recheck-503";
+const APP_VERSION = "20260529-publication-pdf-smooth-504";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";

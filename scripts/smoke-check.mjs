@@ -43,6 +43,7 @@ const assert = (condition, message) => {
 
 const versionMatch = files.app.match(/const APP_VERSION = "([^"]+)";/);
 const version = versionMatch?.[1] || "";
+const packageJson = JSON.parse(files.packageJson);
 
 assert(Boolean(version), "APP_VERSION was not found in app.js.");
 assert(files.index.includes(`app.js?v=${version}`), "index.html does not load the current app.js version.");
@@ -329,6 +330,9 @@ assert(files.app.includes("Playbook del canal") && files.app.includes("Channel p
 assert(files.app.includes("syncPublicationDraftPagesFromTopLevel") && files.app.includes("Editor conectado a la exportacion") && files.app.includes("Publication editor tied to export"), "Publications editor must synchronize visible pages and export payloads.");
 assert(files.index.includes("publicationProgressPanel") && files.app.includes("setPublicationProgress") && files.app.includes("publicationProgressPdfReady") && files.styles.includes(".publication-progress-panel"), "Publications must show generation progress and final PDF readiness.");
 assert(files.app.includes("ensureApiOnlineForExport") && files.app.includes("publicationProgressApiCheck") && files.app.includes("await ensureApiOnlineForExport()"), "Publication PDF export must recheck API health inside the same flow before reporting API unavailable.");
+assert(files.server.includes('url.pathname === "/api/publication/pdf"') && files.server.includes("getOptionalRequestUser(req)"), "Publication PDF endpoint must not force a separate sign-in when the client already sends the draft payload.");
+assert(packageJson.scripts?.["verify:publication-pdf-endpoint"]?.includes("verify-publication-pdf-endpoint.mjs"), "Release checks must include the authless Publication PDF endpoint acceptance test.");
+assert(packageJson.scripts?.["verify:outputs"]?.includes("verify:publication-pdf-endpoint"), "Output verification must exercise the Publication PDF endpoint, not only the PDF renderer scripts.");
 assert(files.packageJson.includes("\"package:vibeapp\"") && files.vibeappPackage.includes("checksums.sha256") && files.vibeappPackage.includes("manifest.json") && files.vibeappPackage.includes("Compress-Archive"), "package.json must expose a Vibeapp pilot package command with checksums, manifest, and transfer ZIP.");
 assert(files.vibeappPackage.includes("verify:android") && files.vibeappPackage.includes("vibeapp-pilot-release.apk") && files.vibeappPackage.includes("vibeapp-pilot-release.aab"), "Vibeapp package script must verify Android and include APK/AAB.");
 assert(files.packageJson.includes("\"simulate:vibeapp\"") && files.packageJson.includes("npm run simulate:vibeapp"), "package.json must expose and run the Vibeapp sync simulator in pilot verification.");
