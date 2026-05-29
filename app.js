@@ -1,4 +1,4 @@
-const APP_VERSION = "20260529-publication-channel-picker-497";
+const APP_VERSION = "20260529-report-quickstart-498";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -257,6 +257,56 @@ const insightQuickStarts = [
     detailEs: "Senales desde Vibeapp, wearables o conectores.",
     detailEn: "Signals from Vibeapp, wearables, or connectors.",
     filters: { source: "external" },
+  },
+];
+const reportQuickStarts = [
+  {
+    id: "baseline",
+    labelEs: "Vista completa",
+    labelEn: "Full baseline",
+    detailEs: "Todas las experiencias del alcance actual.",
+    detailEn: "All experiences in the current group scope.",
+    filters: { mode: "all" },
+  },
+  {
+    id: "last7",
+    labelEs: "Ultimos 7 dias",
+    labelEn: "Last 7 days",
+    detailEs: "Lectura operativa del periodo reciente.",
+    detailEn: "Operational reading for the recent period.",
+    filters: { scope: "period", period: "7" },
+  },
+  {
+    id: "last30",
+    labelEs: "Ultimos 30 dias",
+    labelEn: "Last 30 days",
+    detailEs: "Tendencia mensual y evidencias principales.",
+    detailEn: "Monthly trend and main evidence.",
+    filters: { scope: "period", period: "30" },
+  },
+  {
+    id: "health",
+    labelEs: "Salud",
+    labelEn: "Health",
+    detailEs: "Energia, biometria, recuperacion y evidencia.",
+    detailEn: "Energy, biometrics, recovery, and evidence.",
+    filters: { scope: "filters", category: "Salud" },
+  },
+  {
+    id: "work",
+    labelEs: "Trabajo",
+    labelEn: "Work",
+    detailEs: "Productividad, carga, decisiones y saturacion.",
+    detailEn: "Productivity, load, decisions, and saturation.",
+    filters: { scope: "filters", category: "Trabajo" },
+  },
+  {
+    id: "devices",
+    labelEs: "Dispositivos",
+    labelEn: "Devices",
+    detailEs: "Senales desde Vibeapp, wearables o conectores.",
+    detailEn: "Signals from Vibeapp, wearables, or connectors.",
+    filters: { scope: "filters", source: "external" },
   },
 ];
 const DEMO_BATCH = "experience-hub-demo-v4-multimodal-evidence";
@@ -2171,6 +2221,7 @@ const manualContent = {
         "Hallazgos ahora incluye un Plan de acción 7 días: convierte calidad de datos, energía, saturación, biometría, eje dominante y hallazgo principal en acciones concretas que se pueden enviar directo a Agenda.",
         "Hallazgos permite descargar la lectura como PDF ReportLab, HTML imprimible o Markdown para revisar, compartir o archivar fuera de la app.",
         "Todos los PDFs operativos de Reportes, Hallazgos y Publicaciones usan ReportLab como motor principal para producir documentos editados, con portada, tarjetas, indicadores, visuales mixtos y evidencia curada. HTML queda como vista o respaldo.",
+        "Reportes rapidos permite crear una vista completa, ultimos 7 dias, ultimos 30 dias, salud, trabajo o dispositivos con un clic. Respeta el grupo/persona activo y deja el PDF ReportLab listo para descargar.",
         "La verificación técnica ahora genera PDFs reales de Reporte, Hallazgos, Publicaciones y Manual con payloads de prueba antes de aceptar una versión. No basta con que ReportLab importe; cada salida debe devolver un PDF válido.",
         "La compuerta de release PWA valida versión, manifest, iconos, service worker, shell instalable y, si se indica la URL productiva, app.js y /api/health en Railway.",
         "En Railway, ReportLab requiere Python y dependencias instaladas en el build. El proyecto incluye railpack.json y requirements.txt para que producción no caiga al PDF simple anterior.",
@@ -2823,6 +2874,7 @@ const manualContent = {
         "Insights now includes a 7-day action plan: data quality, energy, saturation, biometrics, dominant theme, and the strongest finding become concrete actions that can be sent straight to Agenda.",
         "Insights can be downloaded as a ReportLab PDF, printable HTML, or Markdown for review, sharing, or archiving outside the app.",
         "Report, Findings, and Publication PDFs use ReportLab as the main engine to produce edited documents with cover pages, cards, mixed visuals, indicators, and curated evidence. HTML remains as preview or fallback.",
+        "Report quick starts create a full baseline, last 7 days, last 30 days, health, work, or device-data report with one click. They preserve the active group/person and keep the edited ReportLab PDF available for download.",
         "Technical verification now renders real Report, Findings, Publication, and Manual PDFs from sample payloads before accepting a version. Importing ReportLab is not enough; each output must return a valid PDF.",
         "The PWA release gate validates version alignment, manifest, icons, service worker, installable shell, and, when a production URL is provided, Railway app.js and /api/health.",
         "On Railway, ReportLab requires Python and build-time dependencies. The project includes railpack.json and requirements.txt so production does not fall back to the previous simple PDF.",
@@ -6955,6 +7007,7 @@ function setupActions() {
   document.getElementById("manualResetReviewButton").addEventListener("click", resetManualReviewProgress);
   document.getElementById("manualContent").addEventListener("click", handleManualAction);
   document.getElementById("reportScopePanel")?.addEventListener("click", handleReportScopeAction);
+  document.getElementById("reportQuickStart")?.addEventListener("click", handleReportQuickStart);
   document.getElementById("downloadReportButton")?.addEventListener("click", downloadReport);
   document.getElementById("reportAcceptancePanel").addEventListener("click", handleReportAcceptanceClick);
   document.getElementById("reportNarrative").addEventListener("click", handleReportNarrativeAction);
@@ -17580,6 +17633,118 @@ function exportExperienceMapMarkdown() {
   if (box) box.textContent = t("labels.experienceMapExported");
 }
 
+function renderReportQuickStart(experiences = getReportExperiences()) {
+  const title = state.language === "en" ? "Start report by purpose" : "Iniciar reporte por objetivo";
+  const help = state.language === "en"
+    ? "Choose the reading you need. Vibe applies the scope and rebuilds the report while keeping the edited ReportLab PDF as the main output."
+    : "Elige la lectura que necesitas. Vibe aplica el alcance y reconstruye el reporte, dejando el PDF editado ReportLab como salida principal.";
+  return `
+    <section class="report-quick-panel">
+      <div class="section-heading compact">
+        <div>
+          <span class="eyebrow">${escapeHtml(state.language === "en" ? "Quick report" : "Reporte rapido")}</span>
+          <h3>${escapeHtml(title)}</h3>
+          <p>${escapeHtml(help)}</p>
+        </div>
+        <span class="pill">${experiences.length} ${escapeHtml(state.language === "en" ? "items" : "experiencias")}</span>
+      </div>
+      <div class="report-quick-grid">
+        ${reportQuickStarts.map((item) => {
+          const label = state.language === "en" ? item.labelEn : item.labelEs;
+          const detail = state.language === "en" ? item.detailEn : item.detailEs;
+          const active = reportQuickStartMatchesCurrentFilters(item);
+          return `
+            <button class="${active ? "is-active" : ""}" type="button" data-report-quick="${escapeHtml(item.id)}">
+              <strong>${escapeHtml(label)}</strong>
+              <span>${escapeHtml(detail)}</span>
+              <small>${escapeHtml(describeReportQuickStart(item))}</small>
+            </button>
+          `;
+        }).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function describeReportQuickStart(item) {
+  const filters = item?.filters || {};
+  if (state.language === "en") {
+    if (filters.mode === "all") return "Baseline";
+    if (filters.period) return `Range: ${filters.period} days`;
+    if (filters.category) return `Theme: ${displayCategory(filters.category)}`;
+    if (filters.source) return `Origin: ${getIntegrationSourceFilterLabel(filters.source)}`;
+    return "Ready";
+  }
+  if (filters.mode === "all") return "Linea base";
+  if (filters.period) return `Rango: ${filters.period} dias`;
+  if (filters.category) return `Eje: ${displayCategory(filters.category)}`;
+  if (filters.source) return `Origen: ${getIntegrationSourceFilterLabel(filters.source)}`;
+  return "Listo";
+}
+
+function reportQuickStartMatchesCurrentFilters(item) {
+  const next = buildReportQuickStartFilters(item);
+  const current = state.reportFilters || {};
+  return [
+    "scope",
+    "period",
+    "experienceId",
+    "category",
+    "source",
+    "pilotParticipantId",
+    "dateFrom",
+    "dateTo",
+    "people",
+    "objective",
+    "eventQuery",
+  ].every((key) => String(current[key] || "") === String(next[key] || ""));
+}
+
+function buildReportQuickStartFilters(item) {
+  const base = {
+    scope: "all",
+    period: "all",
+    experienceId: "",
+    category: "all",
+    source: "all",
+    pilotParticipantId: state.reportFilters?.pilotParticipantId || "all",
+    dateFrom: "",
+    dateTo: "",
+    people: "",
+    objective: "",
+    eventQuery: "",
+  };
+  const filters = item?.filters || {};
+  if (filters.mode === "all") return base;
+  if (filters.scope) base.scope = filters.scope;
+  if (filters.period) base.period = filters.period;
+  if (filters.category) base.category = filters.category;
+  if (filters.source) base.source = filters.source;
+  if (filters.dateFrom) base.dateFrom = filters.dateFrom;
+  if (filters.dateTo) base.dateTo = filters.dateTo;
+  if (base.category !== "all" || base.source !== "all" || base.dateFrom || base.dateTo) base.scope = "filters";
+  if (base.period !== "all" && base.scope !== "filters") base.scope = "period";
+  return base;
+}
+
+function handleReportQuickStart(event) {
+  const button = event.target.closest("[data-report-quick]");
+  if (!button) return;
+  const quick = reportQuickStarts.find((item) => item.id === button.dataset.reportQuick);
+  if (!quick) return;
+  state.reportFilters = buildReportQuickStartFilters(quick);
+  syncReportFilterInputs();
+  renderReport();
+  const label = state.language === "en" ? quick.labelEn : quick.labelEs;
+  const count = getReportExperiences().length;
+  setReportFlowStatus(
+    state.language === "en"
+      ? `Quick report applied: ${label}. ${count} experience(s) in scope. Read it or download the edited ReportLab PDF.`
+      : `Reporte rapido aplicado: ${label}. ${count} experiencia(s) en alcance. Lee el reporte o descarga el PDF editado ReportLab.`,
+  );
+  notify(state.language === "en" ? `Quick report applied: ${label}` : `Reporte rapido aplicado: ${label}`, "success");
+}
+
 function formatExperienceMapNodeMarkdown(node) {
   if (node.kind !== "experience") {
     return `- [[${node.label}]] (${getRelationTypeLabel(node.type)})`;
@@ -17606,6 +17771,8 @@ function renderReport() {
   document.getElementById("reportRangeLabel").textContent =
     firstDate && lastDate ? `${formatShortDate(firstDate)} - ${formatShortDate(lastDate)}` : state.language === "en" ? "No range" : "Sin rango";
   renderReportScopeSummary(experiences);
+  const reportQuickStart = document.getElementById("reportQuickStart");
+  if (reportQuickStart) reportQuickStart.innerHTML = renderReportQuickStart(experiences);
 
   const stats = [
     [t("metrics.total"), experiences.length],
@@ -27118,6 +27285,8 @@ function renderAdminOperationalFocusPanel() {
         publicationQuickStartDetail: "Publications now has one-click starts for WhatsApp, trip album, health share, email, LinkedIn learning, and PDF dossier. Each option applies type, style, channel, source, and editorial recipe before generating the draft.",
         publicationChannelPicker: "Channel-first publication picker",
         publicationChannelPickerDetail: "Publications now lets the user choose a format from the channel first: WhatsApp, Instagram, Facebook, LinkedIn, Email, PDF/HTML, and Blog/Web each expose recommended structures before draft generation.",
+        reportQuickStart: "Report quick start",
+        reportQuickStartDetail: "Reports now has one-click starts for full baseline, last 7/30 days, health, work, and device data. It applies scope, rebuilds the report, and keeps the ReportLab PDF action primary.",
         insightQuickStart: "Findings quick start",
         insightQuickStartDetail: "Findings now has one-click starts for Last 7 days, Health, Work, Social, Learning, and Device data. Each option applies the scope and rebuilds findings, action plan, and exports without manual filtering.",
         insightPlan: "Findings action plan",
@@ -27183,6 +27352,8 @@ function renderAdminOperationalFocusPanel() {
     labels.publicationQuickStartDetail = "Publicaciones ahora tiene arranques de un clic para WhatsApp, viaje/album, salud, email, LinkedIn aprendizaje y dossier PDF. Cada opcion aplica tipo, estilo, canal, fuente y receta editorial antes de generar el borrador.";
     labels.publicationChannelPicker = "Selector de publicacion por canal";
     labels.publicationChannelPickerDetail = "Publicaciones permite elegir el formato desde el canal primero: WhatsApp, Instagram, Facebook, LinkedIn, Email, PDF/HTML y Blog/Web muestran estructuras recomendadas antes de generar.";
+    labels.reportQuickStart = "Arranque rapido de reportes";
+    labels.reportQuickStartDetail = "Reportes ahora tiene arranques de un clic para vista completa, ultimos 7/30 dias, salud, trabajo y dispositivos. Aplica alcance, reconstruye el reporte y deja el PDF ReportLab como accion principal.";
     labels.insightQuickStart = "Arranque rapido de Hallazgos";
     labels.insightQuickStartDetail = "Hallazgos ahora tiene arranques de un clic para Ultimos 7 dias, Salud, Trabajo, Social, Aprendizaje y Datos de dispositivos. Cada opcion aplica el alcance y reconstruye hallazgos, plan de accion y exportaciones sin filtros manuales.";
     labels.insightPlan = "Plan de acción de Hallazgos";
@@ -27225,6 +27396,7 @@ function renderAdminOperationalFocusPanel() {
     [labels.publicationStudio, labels.publicationStudioDetail],
     [labels.publicationQuickStart, labels.publicationQuickStartDetail],
     [labels.publicationChannelPicker, labels.publicationChannelPickerDetail],
+    [labels.reportQuickStart, labels.reportQuickStartDetail],
     [labels.insightQuickStart, labels.insightQuickStartDetail],
     [labels.insightPlan, labels.insightPlanDetail],
     [labels.nativeSync, labels.nativeSyncDetail],

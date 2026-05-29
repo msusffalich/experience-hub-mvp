@@ -1,6 +1,6 @@
 # Conectores de salud y wearables
 
-Version app: `20260529-publication-channel-picker-497`
+Version app: `20260529-report-quickstart-498`
 
 Este documento consolida los conectores revisados para Oura, Apple Health, Samsung/Android Health Connect y Meta Wearables.
 
