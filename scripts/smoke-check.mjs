@@ -290,7 +290,7 @@ assert(files.flutterVerify.includes("flutter analyze") || files.flutterVerify.in
 assert(files.flutterVerify.includes("flutter test") || files.flutterVerify.includes('["test"]'), "Flutter verifier must run flutter test.");
 assert(files.flutterVerify.includes("io.vibeapp.mobile") && files.flutterVerify.includes("VIBE_REBUILD_ANDROID"), "Flutter verifier must validate the Android package contract and optional rebuild path.");
 assert(files.vibeappTest.includes("Native payloads preserve event, media, location, and biometric context"), "Flutter tests must validate the Vibeapp payload contract without a physical device.");
-assert(files.vibeappTest.includes("Native sync client sends media, experience, and agenda requests"), "Flutter tests must validate the Vibeapp sync client against a local HTTP server.");
+assert(files.vibeappTest.includes("Native sync client sends media, experience, and ingest requests"), "Flutter tests must validate the Vibeapp sync client against a local HTTP server.");
 assert(files.vibeappTest.includes("Native sync client reports media and agenda failures clearly"), "Flutter tests must validate clear Vibeapp sync failure handling.");
 assert(files.vibeappTest.includes("Native queue validates files and retry state before sync"), "Flutter tests must validate queue retries, terminal failures, and local file validation.");
 assert(files.vibeappMain.includes("class CaptureQueueSummary") && files.vibeappTest.includes("Native queue summary explains ready, retry, blocked, and synced items"), "Vibeapp must expose a tested observable queue summary.");

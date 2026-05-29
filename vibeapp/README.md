@@ -32,7 +32,7 @@ Pilot blockers that still need product/account decisions:
 - Local queue panel for captures and pending device actions.
 - Native photo and video flow with camera/gallery picker, local queue, `/api/media` upload, and experience attachment sync.
 - Native audio recording with start/stop, private upload, and experience attachment sync.
-- Native agenda event creation through `/api/agenda`, with optional link to the active experience as an internal event.
+- Native agenda event creation through `/api/integration/ingest`, with optional link to the active experience as an internal event.
 - Native location capture with permission, GPS coordinates, accuracy, and experience/event sync.
 - Native biometric CSV/JSON file import with private upload, summary metadata, and PWA hydration as cross-experience context.
 - When an active experience is open, biometric imports attach to that same experience instead of creating a duplicate standalone capture.
@@ -52,8 +52,8 @@ Pilot blockers that still need product/account decisions:
 - Local command router: text typed in quick capture can interpret practical V commands before sync. Examples: take note, start experience, close experience, or create an agenda reminder. The same parser can later consume native speech-to-text transcripts.
 - Command preview: before saving, Vibeapp shows what it understood and changes the primary button to the expected action, such as Save note, Create agenda, Start experience, or Close experience.
 - Development sync settings: Vibe API endpoint + Supabase Auth email/password.
-- Text notes can sign in through the PWA public Supabase config, then attempt `POST /api/experiences` through the Vibe backend. If an experience is active, every note or native action becomes an internal event under the same experience ID.
-- Photo, video, audio, agenda, location, and biometric file actions now use real backend contracts. Direct wearable APIs remain future connectors.
+- Text notes can sign in through the PWA public Supabase config, then use `POST /api/integration/ingest` through the Vibe backend. If an experience is active, every note or native action becomes an internal event under the same experience ID.
+- Photo, video, audio, agenda, location, and biometric file actions now use real backend contracts. Non-binary signals use `/api/integration/ingest`; binary media uses `/api/media`; rich sessions with attachments consolidate through `/api/experiences`. Direct wearable APIs remain future connectors.
 - User-facing states kept simple: ready, syncing, synced, or needs attention.
 
 ## First milestone
@@ -75,7 +75,7 @@ Pilot blockers that still need product/account decisions:
 ## Third milestone
 
 1. Create agenda events from the native app without opening the PWA.
-2. Sync those events through `/api/agenda` so they appear in the PWA Agenda and Dashboard.
+2. Sync those events through `/api/integration/ingest` so they appear in the PWA Agenda and Dashboard.
 3. If an experience is open, also add a matching internal event to the same experience.
 
 ## Fourth milestone

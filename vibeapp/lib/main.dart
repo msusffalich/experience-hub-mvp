@@ -1360,7 +1360,8 @@ class NativePilotChecklist {
       const NativePilotCheckItem(
         id: 'context',
         title: 'Agenda, lugar y biometria',
-        detail: 'Agenda usa /api/agenda; lugar y biometria via experiencia.',
+        detail:
+            'Agenda, lugar y biometria usan /api/integration/ingest validado.',
         ok: true,
       ),
       const NativePilotCheckItem(
@@ -2244,9 +2245,94 @@ class ExperienceSyncClient {
   Future<SyncResult> syncItem(CaptureQueueItem item) {
     final agendaEvent = item.agendaEvent;
     if (agendaEvent != null) {
-      return upsertAgendaEvent(agendaEvent);
+      return ingestAgendaEvent(agendaEvent);
+    }
+    if (item.shouldUseIntegrationIngest) {
+      return ingestCaptureSignal(item);
     }
     return upsertExperience(item);
+  }
+
+  Future<SyncResult> ingestCaptureSignal(CaptureQueueItem item) async {
+    try {
+      final uri =
+          Uri.parse(settings.apiBaseUrl).resolve('/api/integration/ingest');
+      final payload = item.toIntegrationSignal();
+      final customTransport = transport;
+      final response = customTransport == null
+          ? await NativeHttpTransport().postJson(
+              uri,
+              accessToken: settings.accessToken,
+              idempotencyKey: item.idempotencyKey,
+              payload: payload,
+            )
+          : await customTransport.postJson(
+              uri,
+              accessToken: settings.accessToken,
+              idempotencyKey: item.idempotencyKey,
+              payload: payload,
+            );
+      return parseIntegrationIngestResponse(response, item.id);
+    } on TimeoutException {
+      return SyncResult.failure('Tiempo de espera agotado en la ingesta.');
+    } on SocketException {
+      return SyncResult.failure('Sin conexion para ingesta validada.');
+    } on FormatException {
+      return SyncResult.failure('Respuesta invalida de ingesta.');
+    } catch (error) {
+      return SyncResult.failure(shorten(error.toString()));
+    }
+  }
+
+  Future<SyncResult> ingestAgendaEvent(AgendaEventDraft event) async {
+    try {
+      final uri =
+          Uri.parse(settings.apiBaseUrl).resolve('/api/integration/ingest');
+      final customTransport = transport;
+      final response = customTransport == null
+          ? await NativeHttpTransport().postJson(
+              uri,
+              accessToken: settings.accessToken,
+              idempotencyKey: event.idempotencyKey,
+              payload: event.toIntegrationSignal(),
+            )
+          : await customTransport.postJson(
+              uri,
+              accessToken: settings.accessToken,
+              idempotencyKey: event.idempotencyKey,
+              payload: event.toIntegrationSignal(),
+            );
+      return parseIntegrationIngestResponse(response, event.id);
+    } on TimeoutException {
+      return SyncResult.failure(
+          'Tiempo de espera agotado al guardar el evento.');
+    } on SocketException {
+      return SyncResult.failure('Sin conexion para guardar el evento.');
+    } on FormatException {
+      return SyncResult.failure('Respuesta invalida al guardar el evento.');
+    } catch (error) {
+      return SyncResult.failure(shorten(error.toString()));
+    }
+  }
+
+  SyncResult parseIntegrationIngestResponse(
+    NativeSyncResponse response,
+    String fallbackId,
+  ) {
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      return SyncResult.failure(
+          'Ingesta HTTP ${response.statusCode}: ${shorten(response.body)}');
+    }
+    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+    if (decoded['ok'] == false) {
+      return SyncResult.failure('Ingesta rechazada: ${shorten(response.body)}');
+    }
+    final results = decoded['results'];
+    if (results is List && results.isNotEmpty && results.first is Map) {
+      final first = Map<String, dynamic>.from(results.first as Map);
+      return SyncResult.success((first['id'] ?? fallbackId).toString());
+    }
+    return SyncResult.success((decoded['id'] ?? fallbackId).toString());
   }
 
   Future<SyncResult> upsertExperience(CaptureQueueItem item) async {
@@ -2286,41 +2372,6 @@ class ExperienceSyncClient {
       return SyncResult.failure('Sin conexión con la API.');
     } on FormatException {
       return SyncResult.failure('Respuesta inválida del servidor.');
-    } catch (error) {
-      return SyncResult.failure(shorten(error.toString()));
-    }
-  }
-
-  Future<SyncResult> upsertAgendaEvent(AgendaEventDraft event) async {
-    try {
-      final uri = Uri.parse(settings.apiBaseUrl).resolve('/api/agenda');
-      final customTransport = transport;
-      final response = customTransport == null
-          ? await NativeHttpTransport().postJson(
-              uri,
-              accessToken: settings.accessToken,
-              idempotencyKey: event.idempotencyKey,
-              payload: event.toJson(),
-            )
-          : await customTransport.postJson(
-              uri,
-              accessToken: settings.accessToken,
-              idempotencyKey: event.idempotencyKey,
-              payload: event.toJson(),
-            );
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        return SyncResult.failure(
-            'Agenda HTTP ${response.statusCode}: ${shorten(response.body)}');
-      }
-      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
-      return SyncResult.success((decoded['id'] ?? event.id).toString());
-    } on TimeoutException {
-      return SyncResult.failure(
-          'Tiempo de espera agotado al guardar el evento.');
-    } on SocketException {
-      return SyncResult.failure('Sin conexion para guardar el evento.');
-    } on FormatException {
-      return SyncResult.failure('Respuesta invalida al guardar el evento.');
     } catch (error) {
       return SyncResult.failure(shorten(error.toString()));
     }
@@ -3280,6 +3331,33 @@ class AgendaEventDraft {
       },
     };
   }
+
+  Map<String, dynamic> toIntegrationSignal() {
+    return {
+      'sourceId': id,
+      'sourceType': 'vibeapp-native',
+      'capturedAt': createdAt.toIso8601String(),
+      'participantId': 'Usuario',
+      'payloadType': 'calendar',
+      'payload': {
+        'title': title,
+        'description': description,
+        'location': location.isEmpty ? 'Sin ubicación' : location,
+        'startAt': startAt.toIso8601String(),
+        'endAt': endAt.toIso8601String(),
+        'type': 'Personal',
+      },
+      'privacyLevel': 'private',
+      'idempotencyKey': idempotencyKey,
+      'deviceMetadata': {
+        'platform': Platform.operatingSystem,
+        'sourceDevice': 'Vibeapp',
+      },
+      'metadata': {
+        'syncContract': 'vibeapp-ingest-calendar-v1',
+      },
+    };
+  }
 }
 
 class LocationDraft {
@@ -4074,6 +4152,13 @@ class CaptureQueueItem {
 
   String get idempotencyKey => 'vibeapp-capture:$sourceType:$id';
 
+  bool get shouldUseIntegrationIngest {
+    if (attachments.isNotEmpty) return false;
+    return sourceType == 'text' ||
+        sourceType == 'location' ||
+        sourceType == 'health-connect-context';
+  }
+
   bool get canSync =>
       sourceType == 'text' ||
       sourceType == 'experience-session' ||
@@ -4297,6 +4382,92 @@ class CaptureQueueItem {
       'events': eventList.map((event) => event.toJson()).toList(),
       'attachments': uploadedAttachments ??
           attachments.map((item) => item.toExperienceAttachment()).toList(),
+    };
+  }
+
+  Map<String, dynamic> toIntegrationSignal() {
+    final payloadType = sourceType == 'health-connect-context'
+        ? inferHealthConnectPayloadType()
+        : locationDraft != null
+            ? 'location'
+            : 'text';
+    return {
+      'sourceId': id,
+      'sourceType': sourceType == 'health-connect-context'
+          ? 'android-health-connect'
+          : 'vibeapp-native',
+      'capturedAt': createdAt.toIso8601String(),
+      'participantId': 'Usuario',
+      'payloadType': payloadType,
+      'payload': buildIntegrationPayload(),
+      'privacyLevel': payloadType == 'biometric' || payloadType == 'activity'
+          ? 'sensitive'
+          : 'private',
+      'idempotencyKey': idempotencyKey,
+      'deviceMetadata': {
+        'platform': Platform.operatingSystem,
+        'sourceDevice': sourceType == 'health-connect-context'
+            ? 'Health Connect'
+            : 'Vibeapp',
+      },
+      'metadata': {
+        'syncContract': sourceType == 'health-connect-context'
+            ? 'vibeapp-ingest-health-connect-v1'
+            : locationDraft != null
+                ? 'vibeapp-ingest-location-v1'
+                : 'vibeapp-ingest-text-v1',
+        if (structuredContext.isNotEmpty)
+          'structuredContext': structuredContext,
+      },
+    };
+  }
+
+  String inferHealthConnectPayloadType() {
+    final signals = structuredContext['signals'];
+    if (signals is List && signals.isNotEmpty && signals.first is Map) {
+      final first = Map<String, dynamic>.from(signals.first as Map);
+      final value = stringFromJson(first['payloadType']);
+      if (value.isNotEmpty) return value;
+    }
+    return 'biometric';
+  }
+
+  Map<String, dynamic> buildIntegrationPayload() {
+    if (locationDraft != null) {
+      return {
+        'latitude': locationDraft!.latitude,
+        'longitude': locationDraft!.longitude,
+        'accuracyMeters': locationDraft!.accuracy,
+        'altitude': locationDraft!.altitude,
+        'speed': locationDraft!.speed,
+        'heading': locationDraft!.heading,
+        'location': locationDraft!.displayLocation,
+      };
+    }
+    if (sourceType == 'health-connect-context') {
+      final signals = structuredContext['signals'];
+      final firstSignal =
+          signals is List && signals.isNotEmpty && signals.first is Map
+              ? Map<String, dynamic>.from(signals.first as Map)
+              : <String, dynamic>{};
+      final firstPayload = firstSignal['payload'] is Map
+          ? Map<String, dynamic>.from(firstSignal['payload'] as Map)
+          : <String, dynamic>{};
+      return {
+        ...firstPayload,
+        'records': signals is List ? signals : const [],
+        'metrics': structuredContext['metrics'] is Map
+            ? structuredContext['metrics']
+            : const {},
+        'summary': detail,
+      };
+    }
+    return {
+      'title': title,
+      'text': detail,
+      'category': 'Dato del usuario',
+      'energy': 5,
+      'mood': 'Calmo',
     };
   }
 

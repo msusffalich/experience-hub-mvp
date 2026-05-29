@@ -229,9 +229,17 @@ void main() {
       'android-health-connect',
     );
     expect((payload['events'] as List).single['title'], 'Health Connect: HRV');
+
+    final integrationSignal = item.toIntegrationSignal();
+    expect(integrationSignal['sourceType'], 'android-health-connect');
+    expect(integrationSignal['payloadType'], 'biometric');
+    expect(integrationSignal['metadata']['syncContract'],
+        'vibeapp-ingest-health-connect-v1');
+    expect(integrationSignal['payload']['records'], isA<List>());
+    expect(integrationSignal['payload']['summary'], bundle.summaryText);
   });
 
-  test('Native sync client sends media, experience, and agenda requests',
+  test('Native sync client sends media, experience, and ingest requests',
       () async {
     final tempDir = Directory.systemTemp.createTempSync('vibeapp-sync-');
     addTearDown(() async {
@@ -297,16 +305,30 @@ void main() {
       'supabase-storage',
     );
 
-    final agendaRequest =
-        transport.requests.firstWhere((item) => item['path'] == '/api/agenda');
+    final agendaRequest = transport.requests.firstWhere((item) =>
+        item['path'] == '/api/integration/ingest' &&
+        (item['payload'] as Map<String, dynamic>)['payloadType'] == 'calendar');
     final agendaBody = agendaRequest['payload'] as Map<String, dynamic>;
     expect(agendaRequest['authorization'], 'Bearer test-token');
     expect(agendaRequest['idempotencyKey'],
         startsWith('vibeapp-agenda:native-agenda-'));
-    expect(agendaBody['metadata']['idempotencyKey'],
-        agendaRequest['idempotencyKey']);
-    expect(agendaBody['title'], 'Cena de prueba');
-    expect(agendaBody['sourceType'], 'vibeapp-native-agenda');
+    expect(agendaBody['idempotencyKey'], agendaRequest['idempotencyKey']);
+    expect(agendaBody['payloadType'], 'calendar');
+    expect(agendaBody['payload']['title'], 'Cena de prueba');
+    expect(
+        agendaBody['metadata']['syncContract'], 'vibeapp-ingest-calendar-v1');
+
+    final textResult =
+        await client.syncItem(CaptureQueueItem.text('Nota rapida validada'));
+    expect(textResult.ok, isTrue);
+    expect(textResult.remoteId, 'remote-ingest-1');
+    final textRequest = transport.requests.firstWhere((item) =>
+        item['path'] == '/api/integration/ingest' &&
+        (item['payload'] as Map<String, dynamic>)['payloadType'] == 'text');
+    final textBody = textRequest['payload'] as Map<String, dynamic>;
+    expect(textRequest['authorization'], 'Bearer test-token');
+    expect(textBody['payload']['text'], 'Nota rapida validada');
+    expect(textBody['metadata']['syncContract'], 'vibeapp-ingest-text-v1');
   });
 
   test('Native sync client reports media and agenda failures clearly',
@@ -364,7 +386,7 @@ void main() {
     ));
 
     expect(agendaFailure.ok, isFalse);
-    expect(agendaFailure.message, contains('Agenda HTTP 503'));
+    expect(agendaFailure.message, contains('Ingesta HTTP 503'));
     expect(agendaFailure.message, contains('agenda_unavailable'));
   });
 
@@ -556,7 +578,9 @@ class FakeNativeSyncTransport implements NativeSyncTransport {
     this.experienceStatusCode = 200,
     this.experienceBody = '{"id":"remote-exp-1"}',
     this.agendaStatusCode = 200,
-    this.agendaBody = '{"id":"remote-agenda-1"}',
+    this.agendaBody = '',
+    this.ingestStatusCode = 200,
+    this.ingestBody = '',
   });
 
   final requests = <Map<String, dynamic>>[];
@@ -566,6 +590,8 @@ class FakeNativeSyncTransport implements NativeSyncTransport {
   final String experienceBody;
   final int agendaStatusCode;
   final String agendaBody;
+  final int ingestStatusCode;
+  final String ingestBody;
 
   @override
   Future<NativeSyncResponse> postJson(
@@ -587,10 +613,21 @@ class FakeNativeSyncTransport implements NativeSyncTransport {
         body: experienceBody,
       );
     }
-    if (uri.path == '/api/agenda') {
+    if (uri.path == '/api/integration/ingest') {
+      final signal = payload as Map<String, dynamic>;
+      if (signal['payloadType'] == 'calendar') {
+        return NativeSyncResponse(
+          statusCode: agendaStatusCode,
+          body: agendaBody.isNotEmpty
+              ? agendaBody
+              : '{"ok":true,"results":[{"id":"remote-agenda-1","target":"agenda"}]}',
+        );
+      }
       return NativeSyncResponse(
-        statusCode: agendaStatusCode,
-        body: agendaBody,
+        statusCode: ingestStatusCode,
+        body: ingestBody.isNotEmpty
+            ? ingestBody
+            : '{"ok":true,"results":[{"id":"remote-ingest-1","target":"experience"}]}',
       );
     }
     return const NativeSyncResponse(statusCode: 404, body: '{"error":"no"}');

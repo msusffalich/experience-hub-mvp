@@ -1,6 +1,6 @@
 # Conectores de salud y wearables
 
-Version app: `20260528-integration-ingest-490`
+Version app: `20260529-vibeapp-ingest-sync-491`
 
 Este documento consolida los conectores revisados para Oura, Apple Health, Samsung/Android Health Connect y Meta Wearables.
 

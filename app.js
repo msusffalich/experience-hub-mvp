@@ -1,4 +1,4 @@
-const APP_VERSION = "20260528-integration-ingest-490";
+const APP_VERSION = "20260529-vibeapp-ingest-sync-491";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2121,8 +2121,8 @@ const manualContent = {
         "Administración incluye Prueba de conectores para validar en una sola acción Oura, Apple Health, Health Connect/Samsung y Meta contra el contrato Vibe. Esta prueba confirma destino, payload e idempotencia antes de conectar OAuth, HealthKit, Health Connect o SDKs reales.",
         "Vibeapp nativa se planifica como complemento de la PWA: la PWA queda para análisis, reportes, hallazgos, publicaciones y administración; Vibeapp cubre captura real con cámara, audio, video, ubicación, sensores, biometría, notificaciones y sincronización transparente con Supabase.",
         "El blueprint inicial de Vibeapp está documentado en docs/vibeapp-native-blueprint.md. Ese documento define contrato de sincronización, pantallas iniciales, flujo offline, permisos, privacidad y los primeros incrementos Flutter.",
-        "Vibeapp ya tiene captura nativa real para texto, foto, video, audio, agenda, lugar y archivos biométricos CSV/JSON. Foto, video, audio y biometría suben a Storage privado mediante /api/media; Agenda sincroniza con /api/agenda; Lugar guarda coordenadas, precisión y fecha/hora como metadatos estructurados.",
-        "Vibeapp incluye contrato de sincronización: guarda en cola local, permite entrar con el mismo usuario Supabase de la PWA y crea experiencias mediante POST /api/experiences. El usuario ya no necesita copiar tokens manualmente.",
+        "Vibeapp ya tiene captura nativa real para texto, foto, video, audio, agenda, lugar y archivos biométricos CSV/JSON. Texto, Agenda, ubicación y señales Health Connect usan /api/integration/ingest; foto, video, audio y documentos suben a Storage privado mediante /api/media; sesiones con adjuntos se consolidan como experiencia compartida.",
+        "Vibeapp incluye contrato de sincronización: guarda en cola local, permite entrar con el mismo usuario Supabase de la PWA y usa una ingesta validada para señales no binarias antes de crear datos reales. El usuario ya no necesita copiar tokens manualmente ni elegir rutas técnicas.",
         "Vibeapp suma modo Experiencia activa: puedes iniciar una experiencia larga, agregar notas, medios, eventos de agenda, ubicación o contexto biométrico como eventos internos y cerrar el registro sin crear experiencias sueltas. La sincronización usa el mismo identificador de experiencia para que la PWA lea una línea de eventos coherente.",
         "Vibeapp suma Importar sesión externa: permite traer varios archivos de Meta/Oakley/Ray-Ban, Oura, Apple Health, Samsung Health/Galaxy Watch, Health Connect, galería del teléfono u otro origen, agruparlos en una sola experiencia y conservar metadatos normalizados para procesamiento posterior.",
         "El importador externo de Vibeapp distingue el origen real del archivo: un JSON de Meta queda como referencia de cuenta, una foto o video de lentes queda como memoria visual, y un CSV/JSON de Oura, Apple Health, Samsung Health o Health Connect queda como contexto biométrico transversal.",
@@ -2134,7 +2134,7 @@ const manualContent = {
         "Vibeapp suma un checklist de piloto móvil con escenarios claros: backend, sesión, cola, nota rápida, multimedia, contexto, fuentes externas y lectura en PWA. El puntaje deja de ser una sensación y pasa a criterios verificables.",
         "Vibeapp usa llaves de idempotencia estables para experiencias, agenda y archivos. Un reintento debe actualizar el mismo registro o ruta de Storage, no crear duplicados silenciosos.",
         "La prueba Flutter de contrato valida sin teléfono físico que Vibeapp genere payloads correctos para experiencias activas, vínculos evento-activo, ubicación y biometría antes de sincronizar con la PWA.",
-        "La prueba Flutter de sincronización usa un servidor HTTP local para confirmar que Vibeapp envía medios a /api/media, experiencias a /api/experiences y agenda a /api/agenda con autorización y estructura correcta.",
+        "La prueba Flutter de sincronización usa un servidor HTTP local para confirmar que Vibeapp envía medios a /api/media, sesiones con adjuntos a /api/experiences y notas, Agenda, ubicación o Health Connect a /api/integration/ingest con autorización, idempotencia y estructura correcta.",
         "Las pruebas Flutter de fallo verifican que si media o agenda responden error, Vibeapp devuelve mensajes claros y no marca como sincronizada una experiencia incompleta.",
         "Las pruebas Flutter de cola validan archivos faltantes, fallos temporales, reintentos automaticos, fallos terminales y limpieza del estado sincronizado sin depender de un telefono fisico.",
         "Vibeapp ahora incluye Compuerta piloto móvil: verifica el backend productivo, confirma sesión, revisa cola local y muestra capacidades listas antes de iniciar una prueba real en teléfono. Android ya declara permisos de red, cámara, audio, ubicación, multimedia y notificaciones para evitar bloqueos básicos de plataforma.",
@@ -26469,7 +26469,7 @@ function renderAdminOperationalFocusPanel() {
         insightPlan: "Findings action plan",
         insightPlanDetail: "Findings now turns the current scope into a 7-day plan with evidence, human wording, and Agenda scheduling for each action.",
         nativeSync: "Vibeapp real queue",
-        nativeSyncDetail: "Vibeapp now has real native contracts for text, photo, video, audio, agenda, location, and biometric CSV/JSON files. The native queue validates each payload, persists locally across app restarts, tracks attempts, retries eligible items automatically every 30 seconds when a session is active, separates ready, uploading, retrying, blocked, file, and event states, exposes a pilot checklist, and sends stable idempotency keys so retries update the same experience, agenda event, or Storage object instead of creating duplicates.",
+        nativeSyncDetail: "Vibeapp now has real native contracts for text, photo, video, audio, agenda, location, and biometric CSV/JSON files. Text, agenda, location, and Health Connect signals use /api/integration/ingest; binary media uses /api/media; rich sessions with attachments still consolidate through /api/experiences. The native queue validates each payload, persists locally across app restarts, tracks attempts, retries eligible items automatically, separates real states, exposes a pilot checklist, and sends stable idempotency keys so retries update the same target instead of creating duplicates.",
         nativeSimulator: "Native sync simulator",
         nativeSimulatorDetail: "npm run simulate:vibeapp validates note, agenda, photo, video, audio, biometrics, location, and Meta imports against the PWA signal contract without needing a physical phone.",
         integrationIngest: "Validated integration ingest",
@@ -26528,7 +26528,7 @@ function renderAdminOperationalFocusPanel() {
     labels.insightPlan = "Plan de acción de Hallazgos";
     labels.insightPlanDetail = "Hallazgos convierte el alcance actual en un plan de 7 días con evidencia, redacción humana y envío directo de cada acción a Agenda.";
     labels.nativeSync = "Vibeapp con cola real";
-    labels.nativeSyncDetail = "Vibeapp ya tiene contratos nativos reales para texto, foto, video, audio, agenda, lugar, biometr\u00eda CSV/JSON e importaci\u00f3n de sesiones externas. La cola nativa valida cada payload, conserva intentos, reintenta autom\u00e1ticamente, separa estados reales, muestra checklist de piloto y usa llaves de idempotencia para que un reintento actualice la misma experiencia, evento de agenda o archivo de Storage sin crear duplicados.";
+    labels.nativeSyncDetail = "Vibeapp ya tiene contratos nativos reales para texto, foto, video, audio, agenda, lugar, biometr\u00eda CSV/JSON e importaci\u00f3n de sesiones externas. Texto, agenda, lugar y Health Connect usan /api/integration/ingest; multimedia binaria usa /api/media; sesiones ricas con adjuntos siguen consolid\u00e1ndose por /api/experiences. La cola nativa valida cada payload, conserva intentos, reintenta autom\u00e1ticamente, separa estados reales, muestra checklist de piloto y usa llaves de idempotencia para que un reintento actualice el mismo destino sin crear duplicados.";
     labels.nativeSimulator = "Simulador de sincronizaci\u00f3n nativa";
     labels.nativeSimulatorDetail = "npm run simulate:vibeapp valida nota, agenda, foto, video, audio, biometr\u00eda, ubicaci\u00f3n e importaciones Meta contra el contrato de se\u00f1ales PWA sin necesitar un tel\u00e9fono f\u00edsico.";
     labels.integrationIngest = "Ingesta validada de integraciones";
@@ -30934,7 +30934,7 @@ function calculateTotalProductProgress(readiness) {
       86 * 0.11 + // Agenda MVP.
       86 * 0.11 + // Publicaciones MVP.
       84 * 0.12 + // Supabase, administración y operación.
-      78 * 0.13 + // Contrato, rutas, kit, simulador, normalizadores, permisos Android Health Connect y resumen biometrico central listos; OAuth/SDK en vivo siguen posteriores.
+      80 * 0.13 + // Contrato, rutas, kit, ingesta validada desde Vibeapp, simulador, normalizadores, permisos Android Health Connect y resumen biometrico central listos; OAuth/SDK en vivo siguen posteriores.
       14 * 0.13, // IA predictiva y agentes todavía futuros.
   );
   return {
