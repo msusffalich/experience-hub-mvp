@@ -3735,6 +3735,104 @@ button,
   gap: 8px;
 }
 
+.dashboard-integration-box {
+  display: grid;
+  gap: 12px;
+}
+
+.dashboard-integration-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(50, 84, 104, 0.16);
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.dashboard-integration-summary.is-active {
+  border-color: rgba(45, 116, 113, 0.28);
+  background: linear-gradient(135deg, #f4faf8, #f7fbff);
+}
+
+.dashboard-integration-summary.needs-data {
+  border-color: rgba(184, 128, 35, 0.25);
+  background: #fffaf0;
+}
+
+.dashboard-integration-summary strong,
+.dashboard-integration-summary p,
+.dashboard-integration-recent p {
+  margin: 0;
+}
+
+.dashboard-integration-summary p,
+.dashboard-integration-recent p {
+  color: var(--muted);
+}
+
+.dashboard-integration-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.dashboard-integration-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  gap: 10px;
+}
+
+.dashboard-integration-metrics article,
+.dashboard-integration-recent article {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid rgba(50, 84, 104, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.dashboard-integration-metrics span,
+.dashboard-integration-recent small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.dashboard-integration-metrics strong,
+.dashboard-integration-recent strong {
+  display: block;
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+}
+
+.dashboard-integration-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.dashboard-integration-tags span {
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.dashboard-integration-tags b {
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: rgba(24, 95, 91, 0.08);
+  color: #185f5b;
+  font-size: 0.82rem;
+}
+
+.dashboard-integration-recent {
+  display: grid;
+  gap: 8px;
+}
+
 .biometric-capture-context {
   display: flex;
   align-items: center;
@@ -12179,7 +12277,9 @@ button.asset-processing-summary-card {
     align-items: stretch;
   }
 
-  .dashboard-attachment-actions {
+  .dashboard-attachment-actions,
+  .dashboard-integration-summary,
+  .dashboard-integration-actions {
     display: grid;
     grid-template-columns: 1fr;
     justify-content: stretch;

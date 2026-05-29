@@ -1,4 +1,4 @@
-const APP_VERSION = "20260529-vibeapp-ingest-sync-491";
+const APP_VERSION = "20260529-native-handoff-panel-492";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2123,6 +2123,7 @@ const manualContent = {
         "El blueprint inicial de Vibeapp está documentado en docs/vibeapp-native-blueprint.md. Ese documento define contrato de sincronización, pantallas iniciales, flujo offline, permisos, privacidad y los primeros incrementos Flutter.",
         "Vibeapp ya tiene captura nativa real para texto, foto, video, audio, agenda, lugar y archivos biométricos CSV/JSON. Texto, Agenda, ubicación y señales Health Connect usan /api/integration/ingest; foto, video, audio y documentos suben a Storage privado mediante /api/media; sesiones con adjuntos se consolidan como experiencia compartida.",
         "Vibeapp incluye contrato de sincronización: guarda en cola local, permite entrar con el mismo usuario Supabase de la PWA y usa una ingesta validada para señales no binarias antes de crear datos reales. El usuario ya no necesita copiar tokens manualmente ni elegir rutas técnicas.",
+        "Panel muestra Origen de datos para confirmar, sin entrar en metadatos técnicos, qué llegó desde Vibeapp, Health Connect, Oura, Apple Health, Samsung o Meta y si quedó como experiencia, activo, agenda o contexto biométrico.",
         "Vibeapp suma modo Experiencia activa: puedes iniciar una experiencia larga, agregar notas, medios, eventos de agenda, ubicación o contexto biométrico como eventos internos y cerrar el registro sin crear experiencias sueltas. La sincronización usa el mismo identificador de experiencia para que la PWA lea una línea de eventos coherente.",
         "Vibeapp suma Importar sesión externa: permite traer varios archivos de Meta/Oakley/Ray-Ban, Oura, Apple Health, Samsung Health/Galaxy Watch, Health Connect, galería del teléfono u otro origen, agruparlos en una sola experiencia y conservar metadatos normalizados para procesamiento posterior.",
         "El importador externo de Vibeapp distingue el origen real del archivo: un JSON de Meta queda como referencia de cuenta, una foto o video de lentes queda como memoria visual, y un CSV/JSON de Oura, Apple Health, Samsung Health o Health Connect queda como contexto biométrico transversal.",
@@ -2766,6 +2767,7 @@ const manualContent = {
         "Apple Health, Samsung/Android Health Connect, and Meta Wearables are incorporated as planned native connectors: /api/integration/apple-health/manifest, /api/integration/health-connect/manifest, and /api/integration/meta-wearables/manifest explain routes, permissions, and normalizers. Apple Health has no direct REST API; Samsung should prioritize Health Connect; Meta should use Vibeapp or Meta AI/Gallery import until SDK access is approved.",
         "Admin includes a Device connector self-test to validate Oura, Apple Health, Health Connect/Samsung, and Meta in one action against the Vibe contract. This test confirms target, payload, and idempotency before connecting real OAuth, HealthKit, Health Connect, or SDK flows.",
         "Dashboard, Capture, Reports, and Findings now share one biometric intelligence summary: the PWA hydrates CSV/JSON files and structured Vibeapp signals, matches them by date/time, and shows suggested energy, coverage, contextual risk, and linked examples.",
+        "Dashboard shows Data origins so the user can confirm, without reading technical metadata, what arrived from Vibeapp, Health Connect, Oura, Apple Health, Samsung, or Meta and whether it landed as an experience, asset, agenda item, or biometric context.",
         "The device contract can be exported as Markdown or JSON to share with developers, API/MCP integrations, or wearable providers.",
         "npm run simulate:vibeapp validates without a physical phone that Vibeapp can send quick note, agenda, photo, video, audio, biometrics, location, and Meta sessions to the right contract targets: experience, Agenda, assets, or context.",
         "Admin can run the same Vibeapp simulation against /api/vibeapp/simulate from the device integration panel, showing passed signals, targets, and errors without opening the terminal.",
@@ -8184,6 +8186,7 @@ function buildGlobalProgressSnapshot() {
     true, // Text/photo/video/audio capture contracts.
     true, // Agenda/location/biometric import contracts.
     true, // Android debug APK, signed release APK, release AAB, and local upload signing verified.
+    true, // PWA dashboard handoff shows native and connector origins.
     false, // Push/background capture still pending.
     false, // Direct wearable APIs still pending.
   ];
@@ -8246,7 +8249,7 @@ function buildGlobalProgressSnapshot() {
         multimodal: "Multimedia and OCR/analysis",
         multimodalDetail: `Capability ${multimodalCapability.score}%; current browser evidence ${assetAnalysis.withText}/${assetAnalysis.total} assets with analytical text; workflow ${assetWorkflow.score}%.`,
         native: "Vibeapp native",
-        nativeDetail: "Flutter skeleton has auth, command preview/routing, contract tests for event-media payloads, source-specific external import profiles, local HTTP sync tests, failure-path tests, queue/retry-state tests, mobile pilot gate, queue, auto-retry, media, agenda, location, biometrics, Android package id io.vibeapp.mobile, verified debug APK, signed release APK/AAB, Android signing gate, unified pilot verification, and a ZIP-ready Android pilot kit.",
+        nativeDetail: "Flutter skeleton has auth, command preview/routing, contract tests for event-media payloads, source-specific external import profiles, local HTTP sync tests, failure-path tests, queue/retry-state tests, mobile pilot gate, queue, auto-retry, media, agenda, location, biometrics, Android package id io.vibeapp.mobile, verified debug APK, signed release APK/AAB, Android signing gate, unified pilot verification, a ZIP-ready Android pilot kit, and a PWA handoff panel that shows native/connectors data origins.",
         connectors: "Device and service connectors",
         connectorsDetail: "Routes documented for Meta/Oakley, Oura, Apple Health, Samsung Health, Health Connect; sample payload kit, validation fixtures, Oura, Apple Health, Health Connect/Samsung, and Meta normalizers are active. Live OAuth/SDK connectors remain future work.",
         full: "Full product ambition",
@@ -8281,7 +8284,7 @@ function buildGlobalProgressSnapshot() {
         multimodal: "Multimedia y OCR/análisis",
         multimodalDetail: `Capacidad ${multimodalCapability.score}%; evidencia de este navegador ${assetAnalysis.withText}/${assetAnalysis.total} activos con texto analítico; flujo ${assetWorkflow.score}%.`,
         native: "Vibeapp nativa",
-        nativeDetail: "El esqueleto Flutter tiene auth, vista previa de comandos, pruebas de contrato para payloads evento-activo, perfiles de importación externa por origen, pruebas HTTP locales de sincronización, pruebas de rutas de fallo, pruebas de cola y reintentos, compuerta piloto móvil, cola, autoreintento, medios, agenda, lugar, biometría, paquete Android io.vibeapp.mobile, APK debug verificado, APK/AAB release firmados, compuerta local Android, verificación piloto unificada y paquete Android entregable en ZIP.",
+        nativeDetail: "El esqueleto Flutter tiene auth, vista previa de comandos, pruebas de contrato para payloads evento-activo, perfiles de importación externa por origen, pruebas HTTP locales de sincronización, pruebas de rutas de fallo, pruebas de cola y reintentos, compuerta piloto móvil, cola, autoreintento, medios, agenda, lugar, biometría, paquete Android io.vibeapp.mobile, APK debug verificado, APK/AAB release firmados, compuerta local Android, verificación piloto unificada, paquete Android entregable en ZIP y panel PWA que muestra el origen de datos nativos/conectores.",
         connectors: "Conectores de dispositivos y servicios",
         connectorsDetail: "Rutas documentadas para Meta/Oakley, Oura, Apple Health, Samsung Health y Health Connect; kit de payloads, pruebas de validación y normalizadores Oura, Apple Health, Health Connect/Samsung y Meta activos. Los conectores OAuth/SDK en vivo quedan futuros.",
         full: "Ambición de producto completo",
@@ -8682,6 +8685,7 @@ function renderDashboardScopedPanels() {
   renderDashboardGroupOnboarding();
   renderMetrics();
   renderDashboardBiometricContext();
+  renderDashboardIntegrationHandoff();
   renderDashboardAttachmentStatus();
   renderDashboardAgenda();
   renderCategoryChart();
@@ -9922,6 +9926,7 @@ function renderAll() {
   renderDashboardStateAndProgressPanels({ compact: true });
   renderMetrics();
   renderDashboardBiometricContext();
+  renderDashboardIntegrationHandoff();
   updatePilotParticipantControls();
   renderDashboardAttachmentStatus();
   renderDashboardAgenda();
@@ -14696,6 +14701,206 @@ function detectBiometricSource(rows = []) {
     return acc;
   }, {});
   return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || "";
+}
+
+function getIntegrationSourceProfile(record = {}) {
+  const metadata = record.metadata || {};
+  const structuredContext = metadata.structuredContext || record.structuredContext || {};
+  const deviceMetadata = metadata.deviceMetadata || record.deviceMetadata || {};
+  const externalProfile = getExternalAssetProfile(record);
+  const sourceValue = [
+    externalProfile.source,
+    record.externalSource,
+    structuredContext.connector,
+    metadata.sourceType,
+    metadata.source,
+    record.sourceType,
+    record.source,
+    record.device,
+    record.sourceDevice,
+    deviceMetadata.sourceDevice,
+    deviceMetadata.provider,
+  ].find((value) => String(value || "").trim());
+  const payloadType = [
+    record.externalPayloadType,
+    metadata.externalPayloadType,
+    structuredContext.payloadType,
+    metadata.payloadType,
+    record.payloadType,
+  ].find((value) => String(value || "").trim());
+  const syncContract = metadata.syncContract || metadata.externalSourceContract || record.externalSessionContract || "";
+  const sourceText = String(sourceValue || "").trim();
+  const lower = `${sourceText} ${payloadType || ""} ${syncContract}`.toLowerCase();
+  const active = Boolean(
+    metadata.integration ||
+      structuredContext.connector ||
+      externalProfile.hasProfile ||
+      /vibeapp|health connect|android-health|samsung|galaxy|apple health|healthkit|oura|meta|oakley|ray-ban|wearable|biometric/.test(lower),
+  );
+  const family = classifyIntegrationSourceFamily(lower, sourceText);
+  return {
+    active,
+    family,
+    source: sourceText || family,
+    payloadType: String(payloadType || "").trim(),
+    syncContract,
+    capturedAt: metadata.capturedAt || record.capturedAt || record.timestamp || record.uploadedAt || record.startAt || "",
+  };
+}
+
+function classifyIntegrationSourceFamily(lower = "", fallback = "") {
+  if (/meta|oakley|ray-ban/.test(lower)) return "Meta/Oakley";
+  if (/oura/.test(lower)) return "Oura";
+  if (/samsung|galaxy|health connect|android-health/.test(lower)) return "Health Connect / Samsung";
+  if (/apple health|healthkit/.test(lower)) return "Apple Health";
+  if (/vibeapp|vibeapp-native/.test(lower)) return "Vibeapp";
+  if (/biometric|wearable/.test(lower)) return state.language === "en" ? "Wearable" : "Wearable";
+  return fallback || (state.language === "en" ? "External source" : "Fuente externa");
+}
+
+function buildDashboardIntegrationHandoffSummary() {
+  const experiences = getDashboardExperiences();
+  const experienceIds = new Set(experiences.map((item) => item.id).filter(Boolean));
+  const assets = collectMultimodalAssets().filter((asset) => !experienceIds.size || !asset.experienceId || experienceIds.has(asset.experienceId) || getIntegrationSourceProfile(asset).active);
+  const agendaEvents = (state.agendaEvents || []).filter((event) => getIntegrationSourceProfile(event).active);
+  const rows = [];
+  experiences.forEach((experience) => {
+    const profile = getIntegrationSourceProfile(experience);
+    if (profile.active) {
+      rows.push({
+        type: state.language === "en" ? "Experience/context" : "Experiencia/contexto",
+        title: experience.title || profile.family,
+        detail: [profile.payloadType, experience.category, experience.location].filter(Boolean).join(" · "),
+        timestamp: profile.capturedAt || experience.timestamp,
+        profile,
+      });
+    }
+  });
+  assets.forEach((asset) => {
+    const profile = getIntegrationSourceProfile(asset);
+    if (profile.active) {
+      rows.push({
+        type: state.language === "en" ? "Asset" : "Activo",
+        title: asset.name || asset.experienceTitle || profile.family,
+        detail: [profile.payloadType, asset.kind, asset.experienceTitle].filter(Boolean).join(" · "),
+        timestamp: profile.capturedAt || asset.timestamp || asset.uploadedAt,
+        profile,
+      });
+    }
+  });
+  agendaEvents.forEach((event) => {
+    const profile = getIntegrationSourceProfile(event);
+    rows.push({
+      type: state.language === "en" ? "Agenda" : "Agenda",
+      title: event.title || profile.family,
+      detail: [profile.payloadType || "calendar", event.location].filter(Boolean).join(" · "),
+      timestamp: profile.capturedAt || event.startAt,
+      profile,
+    });
+  });
+  const families = rows.reduce((acc, item) => {
+    const key = item.profile.family || item.profile.source;
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+  const payloads = rows.reduce((acc, item) => {
+    const key = item.profile.payloadType || item.type;
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+  const recent = rows
+    .slice()
+    .sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0))
+    .slice(0, 5);
+  return {
+    total: rows.length,
+    experiences: rows.filter((item) => item.type.includes("Exper") || item.type.includes("Experience")).length,
+    assets: rows.filter((item) => item.type === "Activo" || item.type === "Asset").length,
+    agenda: rows.filter((item) => item.type === "Agenda").length,
+    families,
+    payloads,
+    recent,
+  };
+}
+
+function renderDashboardIntegrationHandoff() {
+  const box = document.getElementById("dashboardIntegrationBox");
+  if (!box) return;
+  const title = document.getElementById("dashboardIntegrationTitle");
+  const status = document.getElementById("dashboardIntegrationStatus");
+  if (title) title.textContent = state.language === "en" ? "Data origins" : "Origen de datos";
+  if (status) status.textContent = state.language === "en" ? "Vibeapp and connectors" : "Vibeapp y conectores";
+  const summary = buildDashboardIntegrationHandoffSummary();
+  const labels = state.language === "en"
+    ? {
+        clear: "No native or connector signals in this scope yet.",
+        clearDetail: "When Vibeapp, Health Connect, Oura, Apple Health, Samsung, or Meta imports send data, this panel will show where it landed.",
+        active: "Native handoff visible",
+        detail: "Signals are grouped by source so you can confirm if they became experiences, assets, agenda items, or biometric context.",
+        experiences: "Experiences/context",
+        assets: "Assets",
+        agenda: "Agenda",
+        sources: "Sources",
+        payloads: "Payloads",
+        recent: "Recent incoming data",
+        openAssets: "Open Assets",
+        openAdmin: "Open connector tests",
+      }
+    : {
+        clear: "Aun no hay señales nativas o de conectores en este alcance.",
+        clearDetail: "Cuando Vibeapp, Health Connect, Oura, Apple Health, Samsung o Meta importen datos, este panel mostrara donde quedaron.",
+        active: "Entrada nativa visible",
+        detail: "Las señales se agrupan por origen para confirmar si quedaron como experiencias, activos, agenda o contexto biometrico.",
+        experiences: "Experiencias/contexto",
+        assets: "Activos",
+        agenda: "Agenda",
+        sources: "Fuentes",
+        payloads: "Tipos",
+        recent: "Entradas recientes",
+        openAssets: "Abrir Activos",
+        openAdmin: "Probar conectores",
+      };
+  const sourceEntries = Object.entries(summary.families).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  const payloadEntries = Object.entries(summary.payloads).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  box.innerHTML = `
+    <div class="dashboard-integration-summary ${summary.total ? "is-active" : "needs-data"}">
+      <div>
+        <strong>${escapeHtml(summary.total ? labels.active : labels.clear)}</strong>
+        <p>${escapeHtml(summary.total ? labels.detail : labels.clearDetail)}</p>
+      </div>
+      <div class="dashboard-integration-actions">
+        <button class="ghost-button" type="button" data-backlog-view="assetLibrary">${escapeHtml(labels.openAssets)}</button>
+        <button class="primary-button" type="button" data-backlog-view="admin" data-backlog-focus="externalIntegrationPanel">${escapeHtml(labels.openAdmin)}</button>
+      </div>
+    </div>
+    <div class="dashboard-integration-metrics">
+      <article><span>${escapeHtml(labels.experiences)}</span><strong>${escapeHtml(String(summary.experiences))}</strong></article>
+      <article><span>${escapeHtml(labels.assets)}</span><strong>${escapeHtml(String(summary.assets))}</strong></article>
+      <article><span>${escapeHtml(labels.agenda)}</span><strong>${escapeHtml(String(summary.agenda))}</strong></article>
+    </div>
+    <div class="dashboard-integration-tags">
+      <span>${escapeHtml(labels.sources)}:</span>
+      ${sourceEntries.length ? sourceEntries.map(([name, count]) => `<b>${escapeHtml(name)} ${escapeHtml(String(count))}</b>`).join("") : `<b>-</b>`}
+    </div>
+    <div class="dashboard-integration-tags">
+      <span>${escapeHtml(labels.payloads)}:</span>
+      ${payloadEntries.length ? payloadEntries.map(([name, count]) => `<b>${escapeHtml(String(name).replace(/_/g, " "))} ${escapeHtml(String(count))}</b>`).join("") : `<b>-</b>`}
+    </div>
+    <div class="dashboard-integration-recent">
+      <span class="card-meta">${escapeHtml(labels.recent)}</span>
+      ${
+        summary.recent.length
+          ? summary.recent.map((item) => `
+              <article>
+                <strong>${escapeHtml(item.title)}</strong>
+                <p>${escapeHtml([item.type, item.profile.family, item.detail].filter(Boolean).join(" · "))}</p>
+                <small>${escapeHtml(item.timestamp ? formatDate(item.timestamp) : "")}</small>
+              </article>
+            `).join("")
+          : `<p>${escapeHtml(summary.total ? labels.detail : labels.clearDetail)}</p>`
+      }
+    </div>
+  `;
 }
 
 function isTruthyImportFlag(value) {
@@ -30934,7 +31139,7 @@ function calculateTotalProductProgress(readiness) {
       86 * 0.11 + // Agenda MVP.
       86 * 0.11 + // Publicaciones MVP.
       84 * 0.12 + // Supabase, administración y operación.
-      80 * 0.13 + // Contrato, rutas, kit, ingesta validada desde Vibeapp, simulador, normalizadores, permisos Android Health Connect y resumen biometrico central listos; OAuth/SDK en vivo siguen posteriores.
+      82 * 0.13 + // Contrato, rutas, kit, ingesta validada desde Vibeapp, handoff visible en Panel, simulador, normalizadores, permisos Android Health Connect y resumen biometrico central listos; OAuth/SDK en vivo siguen posteriores.
       14 * 0.13, // IA predictiva y agentes todavía futuros.
   );
   return {
