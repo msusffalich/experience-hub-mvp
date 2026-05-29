@@ -188,6 +188,15 @@ assert(files.index.includes("capture-layout-clean") && !files.index.includes("ca
 assert(files.index.includes("captureEventPreview") && files.app.includes("function renderCaptureEventPreview"), "Capture does not show the live internal event preview.");
 assert(files.styles.includes(".capture-event-card") && files.app.includes("Capture shows a live Event preview"), "Event preview UI or manual documentation is missing.");
 assert(files.index.includes("reportEventFilter") && files.app.includes("state.reportFilters.eventQuery"), "Reports cannot filter by internal event text.");
+assert(
+  files.index.includes("reportSourceFilter")
+    && files.index.includes("insightsSourceFilter")
+    && files.index.includes("publicationSourceFilter")
+    && files.app.includes("function experienceMatchesIntegrationSource")
+    && files.app.includes("getIntegrationSourceFilterOptions")
+    && files.app.includes("origen/conector"),
+  "Reports, Findings, and Publications do not expose the unified origin/connector filter.",
+);
 assert(files.index.includes("assetEventLinkFilter") && files.app.includes("state.assetFilters.eventLink"), "Assets cannot filter by event link status.");
 assert(files.index.includes(".zip,.rar,.7z") && files.app.includes('"zip", "rar", "7z"') && files.server.includes("type.includes(\"zip\")"), "Compressed files are not consistently accepted as document assets.");
 assert(files.server.includes("/api/ocr-image") && files.server.includes("openai-image-ocr"), "Backend image OCR endpoint is missing.");

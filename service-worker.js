@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260529-native-handoff-panel-492";
+const CACHE_NAME = "experience-hub-pwa-20260529-source-filter-493";
 const APP_SHELL = [
   "/icons/vibe-logo.jpg",
   "/icons/vibe-logo.png",
