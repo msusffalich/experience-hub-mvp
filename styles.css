@@ -7398,6 +7398,7 @@ button.asset-processing-summary-card {
 
 .publication-editor,
 .publication-quick-panel,
+.insights-quick-panel,
 .publication-approval,
 .publication-use-guide,
 .publication-channel-studio,
@@ -7424,6 +7425,11 @@ button.asset-processing-summary-card {
   margin-bottom: 12px;
 }
 
+.insights-quick-start {
+  min-width: 0;
+  margin-bottom: 12px;
+}
+
 .publication-quick-panel {
   border-color: rgba(13, 124, 102, 0.22);
   background:
@@ -7431,13 +7437,22 @@ button.asset-processing-summary-card {
     var(--surface);
 }
 
-.publication-quick-grid {
+.insights-quick-panel {
+  border-color: rgba(46, 110, 166, 0.22);
+  background:
+    linear-gradient(135deg, rgba(46, 110, 166, 0.08), rgba(13, 124, 102, 0.07)),
+    var(--surface);
+}
+
+.publication-quick-grid,
+.insights-quick-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr));
   gap: 10px;
 }
 
-.publication-quick-grid button {
+.publication-quick-grid button,
+.insights-quick-grid button {
   display: grid;
   gap: 6px;
   min-width: 0;
@@ -7450,24 +7465,35 @@ button.asset-processing-summary-card {
   cursor: pointer;
 }
 
-.publication-quick-grid button:hover {
+.publication-quick-grid button:hover,
+.insights-quick-grid button:hover,
+.insights-quick-grid button.is-active {
   border-color: rgba(13, 124, 102, 0.42);
   box-shadow: 0 10px 24px rgba(23, 32, 27, 0.08);
 }
 
+.insights-quick-grid button.is-active {
+  background: rgba(13, 124, 102, 0.1);
+}
+
 .publication-quick-grid strong,
 .publication-quick-grid span,
-.publication-quick-grid small {
+.publication-quick-grid small,
+.insights-quick-grid strong,
+.insights-quick-grid span,
+.insights-quick-grid small {
   overflow-wrap: anywhere;
 }
 
-.publication-quick-grid span {
+.publication-quick-grid span,
+.insights-quick-grid span {
   color: var(--text);
   font-size: 13px;
   line-height: 1.35;
 }
 
-.publication-quick-grid small {
+.publication-quick-grid small,
+.insights-quick-grid small {
   color: var(--muted);
   font-size: 11px;
   font-weight: 800;

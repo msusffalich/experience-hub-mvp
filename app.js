@@ -1,4 +1,4 @@
-const APP_VERSION = "20260529-publication-quickstart-494";
+const APP_VERSION = "20260529-insights-quickstart-495";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -193,6 +193,56 @@ const publicationQuickStarts = [
     detailEn: "Master document to review, print, or send.",
     templateId: "formal-dossier",
     source: "report",
+  },
+];
+const insightQuickStarts = [
+  {
+    id: "recent-week",
+    labelEs: "Ultimos 7 dias",
+    labelEn: "Last 7 days",
+    detailEs: "Lectura inmediata del periodo reciente.",
+    detailEn: "Immediate reading of the recent period.",
+    filters: { range: "last7" },
+  },
+  {
+    id: "health",
+    labelEs: "Salud y bienestar",
+    labelEn: "Health and wellbeing",
+    detailEs: "Energia, recuperacion, biometria y riesgo.",
+    detailEn: "Energy, recovery, biometrics, and risk.",
+    filters: { category: "Salud" },
+  },
+  {
+    id: "work",
+    labelEs: "Trabajo",
+    labelEn: "Work",
+    detailEs: "Productividad, carga, decisiones y saturacion.",
+    detailEn: "Productivity, load, decisions, and saturation.",
+    filters: { category: "Trabajo" },
+  },
+  {
+    id: "social",
+    labelEs: "Social y familia",
+    labelEn: "Social and family",
+    detailEs: "Personas, relaciones, hogar y apoyo.",
+    detailEn: "People, relationships, home, and support.",
+    filters: { category: "Social" },
+  },
+  {
+    id: "learning",
+    labelEs: "Aprendizaje",
+    labelEn: "Learning",
+    detailEs: "Lecciones, patrones y siguiente practica.",
+    detailEn: "Lessons, patterns, and next practice.",
+    filters: { category: "Aprendizaje" },
+  },
+  {
+    id: "devices",
+    labelEs: "Datos de dispositivos",
+    labelEn: "Device data",
+    detailEs: "Senales desde Vibeapp, wearables o conectores.",
+    detailEn: "Signals from Vibeapp, wearables, or connectors.",
+    filters: { source: "external" },
   },
 ];
 const DEMO_BATCH = "experience-hub-demo-v4-multimodal-evidence";
@@ -2537,6 +2587,7 @@ const manualContent = {
         "El Paquete de aceptación del reporte incluye botones propios para registrar revisión humana, exportar JSON, CSV, HTML imprimible, PDF/respaldo y descargar un paquete JSON de aceptación.",
         "El PDF del reporte es ejecutivo: resume lo importante, limita evidencia repetida y deja el detalle completo para JSON o CSV.",
         "El selector Grupo/persona de este reporte filtra el analisis por subgrupo de la cuenta. Si eliges uno, el reporte, PDF y exportaciones usan ese mismo alcance.",
+        "Los arranques rapidos de Hallazgos permiten entrar directo a Ultimos 7 dias, Salud, Trabajo, Social, Aprendizaje o Datos de dispositivos. Cada boton aplica filtros, reconstruye hallazgos, plan de accion y exportaciones con el mismo alcance.",
         "En Reportes y Publicaciones, las acciones principales quedan visibles. Las opciones tecnicas como JSON, CSV, HTML, Markdown, copias y paquetes quedan plegadas para no confundir al usuario.",
         "La columna Energía muestra el valor 1-10 capturado en cada experiencia. La métrica Energía media muestra el promedio del conjunto filtrado.",
         "La columna Adjuntos muestra cuántos archivos multimedia tiene cada experiencia.",
@@ -3102,6 +3153,7 @@ const manualContent = {
         "If a draft is exported while still in review, the file includes that approval mark so it is not confused with a final version.",
         "The Draft editor lets you edit title, summary, and body. The Final document shows exactly what will be exported, combining the edited text with the included media.",
         "Publication designs shows visual layouts. Selecting one updates type, style, channel, and the final document appearance.",
+        "Findings quick starts open Last 7 days, Health, Work, Social, Learning, or Device data with one click. Each button applies filters and rebuilds findings, action plan, and exports from the same scope.",
         "Dashboard shows a fixed current-data summary: experiences, assets, groups, persistence mode, and pending sync. If previous data is not visible, that block quickly separates filter, session, cloud, or queue causes.",
         "Dashboard automatically restores the Current data and Global Progress blocks even when the browser keeps an older HTML structure. Critical status no longer depends on a preloaded container in the page.",
         "Dashboard and Admin show Global Progress: operating PWA, production/Supabase, reports/publications, multimedia, Vibeapp native, connectors, and full product. It is an honest view to separate what is ready from what is still under development.",
@@ -6840,6 +6892,7 @@ function setupActions() {
 
   document.getElementById("askButton").addEventListener("click", answerQuestion);
   document.getElementById("questionSuggestions").addEventListener("click", handleQuestionSuggestionClick);
+  document.getElementById("insightsQuickStart").addEventListener("click", handleInsightsQuickStart);
   document.getElementById("insightList").addEventListener("click", handleInsightAction);
   document.getElementById("exportInsightsHtmlButton").addEventListener("click", exportInsightsHtml);
   document.getElementById("exportInsightsMarkdownButton").addEventListener("click", exportInsightsMarkdown);
@@ -20654,6 +20707,103 @@ function redactSensitiveText(value) {
     .replace(/https?:\/\/\S+/gi, "[enlace oculto]");
 }
 
+function renderInsightsQuickStart() {
+  const title = state.language === "en" ? "Start findings by theme" : "Iniciar hallazgos por eje";
+  const help = state.language === "en"
+    ? "Pick the reading you need. Vibe applies the filters and rebuilds findings, action plan, and exports from the same scope."
+    : "Elige la lectura que necesitas. Vibe aplica filtros y reconstruye hallazgos, plan de accion y exportaciones con el mismo alcance.";
+  return `
+    <section class="insights-quick-panel">
+      <div class="publication-section-heading">
+        <div>
+          <h3>${escapeHtml(title)}</h3>
+          <p class="card-meta">${escapeHtml(help)}</p>
+        </div>
+        <span>${escapeHtml(state.language === "en" ? "Fast analysis" : "Analisis rapido")}</span>
+      </div>
+      <div class="insights-quick-grid">
+        ${insightQuickStarts.map((item) => {
+          const label = state.language === "en" ? item.labelEn : item.labelEs;
+          const detail = state.language === "en" ? item.detailEn : item.detailEs;
+          const active = insightQuickStartMatchesCurrentFilters(item);
+          return `
+            <button class="${active ? "is-active" : ""}" type="button" data-insight-quick="${escapeHtml(item.id)}">
+              <strong>${escapeHtml(label)}</strong>
+              <span>${escapeHtml(detail)}</span>
+              <small>${escapeHtml(describeInsightQuickStart(item))}</small>
+            </button>
+          `;
+        }).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function describeInsightQuickStart(item) {
+  if (item.filters?.range === "last7") {
+    return state.language === "en" ? "Date range: last 7 days" : "Rango: ultimos 7 dias";
+  }
+  if (item.filters?.source) {
+    return state.language === "en" ? "Origin: devices and connectors" : "Origen: dispositivos y conectores";
+  }
+  if (item.filters?.category) {
+    return `${state.language === "en" ? "Category" : "Categoria"}: ${displayCategory(item.filters.category)}`;
+  }
+  return state.language === "en" ? "General findings" : "Hallazgos generales";
+}
+
+function insightQuickStartMatchesCurrentFilters(item) {
+  const filters = buildInsightQuickStartFilters(item);
+  return (state.insightsFilters.category || "all") === filters.category
+    && (state.insightsFilters.source || "all") === filters.source
+    && (state.insightsFilters.dateFrom || "") === filters.dateFrom
+    && (state.insightsFilters.dateTo || "") === filters.dateTo;
+}
+
+function buildInsightQuickStartFilters(item) {
+  const base = {
+    pilotParticipantId: state.insightsFilters?.pilotParticipantId || "all",
+    category: "all",
+    source: "all",
+    dateFrom: "",
+    dateTo: "",
+  };
+  if (item.filters?.range === "last7") {
+    const today = new Date();
+    const from = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6);
+    base.dateFrom = toDateFilterValue(from);
+    base.dateTo = toDateFilterValue(today);
+  }
+  if (item.filters?.category) base.category = item.filters.category;
+  if (item.filters?.source) base.source = item.filters.source;
+  return base;
+}
+
+function toDateFilterValue(date) {
+  const safe = date instanceof Date && !Number.isNaN(date.getTime()) ? date : new Date();
+  const year = safe.getFullYear();
+  const month = String(safe.getMonth() + 1).padStart(2, "0");
+  const day = String(safe.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function handleInsightsQuickStart(event) {
+  const button = event.target.closest("[data-insight-quick]");
+  if (!button) return;
+  const quick = insightQuickStarts.find((item) => item.id === button.dataset.insightQuick);
+  if (!quick) return;
+  state.insightsFilters = buildInsightQuickStartFilters(quick);
+  syncAnalyticalScopeInputs();
+  renderInsights();
+  const label = state.language === "en" ? quick.labelEn : quick.labelEs;
+  notify(
+    state.language === "en"
+      ? `Findings updated: ${label}.`
+      : `Hallazgos actualizados: ${label}.`,
+    "success",
+  );
+}
+
 function renderPublications() {
   const draft = state.currentPublicationDraft || state.publicationDrafts[0] || null;
   syncAnalyticalScopeInputs();
@@ -23309,6 +23459,8 @@ function renderInsights() {
   const thematicAxes = buildInsightThematicAxes(sourceExperiences);
   const actionPlan = buildInsightActionPlan(sourceExperiences, insights, thematicAxes);
   syncAnalyticalScopeInputs();
+  const quickStart = document.getElementById("insightsQuickStart");
+  if (quickStart) quickStart.innerHTML = renderInsightsQuickStart();
   const scopeLabel = document.getElementById("insightScopeLabel");
   if (scopeLabel) {
     const scopeParts = buildAnalyticalScopeParts(state.insightsFilters);
@@ -26898,6 +27050,8 @@ function renderAdminOperationalFocusPanel() {
         publicationStudioDetail: "Publication drafts now show the channel decision layer. Before generating, the Channel playbook explains audience, rhythm, output, and one-click recipes; after generating, deliverables and the studio carry that decision into the ReportLab payload.",
         publicationQuickStart: "Publication quick start",
         publicationQuickStartDetail: "Publications now has one-click starts for WhatsApp, trip album, health share, email, LinkedIn learning, and PDF dossier. Each option applies type, style, channel, source, and editorial recipe before generating the draft.",
+        insightQuickStart: "Findings quick start",
+        insightQuickStartDetail: "Findings now has one-click starts for Last 7 days, Health, Work, Social, Learning, and Device data. Each option applies the scope and rebuilds findings, action plan, and exports without manual filtering.",
         insightPlan: "Findings action plan",
         insightPlanDetail: "Findings now turns the current scope into a 7-day plan with evidence, human wording, and Agenda scheduling for each action.",
         nativeSync: "Vibeapp real queue",
@@ -26959,6 +27113,8 @@ function renderAdminOperationalFocusPanel() {
     labels.publicationStudioDetail = "Publicaciones ahora muestra una capa de decisi\u00f3n por canal. Antes de generar, el Playbook explica audiencia, ritmo, salida y recetas aplicables; despu\u00e9s de generar, Entregables y Estudio llevan esa decisi\u00f3n al payload del PDF ReportLab.";
     labels.publicationQuickStart = "Arranque rapido de publicaciones";
     labels.publicationQuickStartDetail = "Publicaciones ahora tiene arranques de un clic para WhatsApp, viaje/album, salud, email, LinkedIn aprendizaje y dossier PDF. Cada opcion aplica tipo, estilo, canal, fuente y receta editorial antes de generar el borrador.";
+    labels.insightQuickStart = "Arranque rapido de Hallazgos";
+    labels.insightQuickStartDetail = "Hallazgos ahora tiene arranques de un clic para Ultimos 7 dias, Salud, Trabajo, Social, Aprendizaje y Datos de dispositivos. Cada opcion aplica el alcance y reconstruye hallazgos, plan de accion y exportaciones sin filtros manuales.";
     labels.insightPlan = "Plan de acción de Hallazgos";
     labels.insightPlanDetail = "Hallazgos convierte el alcance actual en un plan de 7 días con evidencia, redacción humana y envío directo de cada acción a Agenda.";
     labels.nativeSync = "Vibeapp con cola real";
@@ -26998,6 +27154,7 @@ function renderAdminOperationalFocusPanel() {
     [labels.reportPdf, labels.reportPdfDetail],
     [labels.publicationStudio, labels.publicationStudioDetail],
     [labels.publicationQuickStart, labels.publicationQuickStartDetail],
+    [labels.insightQuickStart, labels.insightQuickStartDetail],
     [labels.insightPlan, labels.insightPlanDetail],
     [labels.nativeSync, labels.nativeSyncDetail],
     [labels.nativeSimulator, labels.nativeSimulatorDetail],
