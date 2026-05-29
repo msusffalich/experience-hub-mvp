@@ -4677,6 +4677,50 @@ button,
   line-height: 1.4;
 }
 
+.shared-scope-context {
+  display: grid;
+  grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.25fr);
+  gap: 12px;
+  align-items: center;
+  margin: 12px 0 14px;
+  padding: 12px;
+  border: 1px solid rgba(13, 124, 102, 0.18);
+  border-radius: 8px;
+  background: rgba(13, 124, 102, 0.06);
+}
+
+.shared-scope-context strong,
+.shared-scope-context p,
+.shared-scope-context span {
+  overflow-wrap: anywhere;
+}
+
+.shared-scope-context p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.shared-scope-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 7px;
+  min-width: 0;
+}
+
+.shared-scope-chip-row span {
+  padding: 6px 8px;
+  border: 1px solid rgba(13, 124, 102, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--accent-dark);
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1.2;
+}
+
 .report-scope-controls {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
@@ -12520,6 +12564,14 @@ button.asset-processing-summary-card {
 
   .dashboard-scope-presets {
     grid-template-columns: 1fr;
+  }
+
+  .shared-scope-context {
+    grid-template-columns: 1fr;
+  }
+
+  .shared-scope-chip-row {
+    justify-content: flex-start;
   }
 
   .dashboard-data-status-panel article,

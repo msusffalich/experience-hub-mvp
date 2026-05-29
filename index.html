@@ -9,10 +9,10 @@
     <meta name="apple-mobile-web-app-title" content="Vibe" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>Vibe</title>
-    <link rel="manifest" href="manifest.webmanifest?v=20260529-shared-analytical-scope-499" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260529-output-scope-context-500" />
     <link rel="icon" href="icons/vibe-icon-192.png" type="image/png" />
     <link rel="apple-touch-icon" href="icons/vibe-apple-touch.png" />
-    <link rel="stylesheet" href="styles.css?v=20260529-shared-analytical-scope-499" />
+    <link rel="stylesheet" href="styles.css?v=20260529-output-scope-context-500" />
   </head>
   <body>
     <noscript>
@@ -95,7 +95,7 @@
             <button id="seedButton" class="ghost-button" type="button">Cargar ejemplo</button>
             <button id="clearDemoButton" class="ghost-button" type="button">Eliminar ejemplo</button>
             <button id="voiceCommandButton" class="ghost-button" type="button">Comando de voz</button>
-            <span id="appVersionBadge" class="app-version-badge">Versión 20260529-shared-analytical-scope-499</span>
+            <span id="appVersionBadge" class="app-version-badge">Versión 20260529-output-scope-context-500</span>
             <button id="reloadAppButton" class="ghost-button" type="button">Actualizar app</button>
             <button id="exportButton" class="primary-button" type="button">Respaldo de datos</button>
             <button id="restoreButton" class="ghost-button" type="button">Restaurar respaldo</button>
@@ -751,6 +751,7 @@
                 </div>
               </section>
               <div id="reportQuickStart" class="report-quick-start" aria-label="Arranque rapido de reportes"></div>
+              <div id="reportSharedScopeContext" class="shared-scope-context" aria-live="polite"></div>
               <div class="filters report-filters">
                 <select id="reportPeriodFilter" aria-label="Periodo del reporte">
                   <option value="all">Todo el historial</option>
@@ -824,6 +825,7 @@
                 <button id="clearInsightsScopeButton" class="ghost-button" type="button">Limpiar filtros</button>
                 <span id="insightsScopeStatus">Vista general</span>
               </div>
+              <div id="insightsSharedScopeContext" class="shared-scope-context" aria-live="polite"></div>
               <div id="insightsQuickStart" class="insights-quick-start" aria-label="Arranque rapido de hallazgos"></div>
               <div id="insightList" class="insight-list"></div>
             </section>
@@ -879,6 +881,7 @@
                 <button id="clearPublicationScopeButton" class="ghost-button" type="button">Limpiar filtros</button>
                 <span id="publicationScopeStatus">Fuente general</span>
               </div>
+              <div id="publicationSharedScopeContext" class="shared-scope-context" aria-live="polite"></div>
               <div id="publicationQuickStart" class="publication-quick-start" aria-label="Arranque rapido de publicaciones"></div>
               <form id="publicationForm" class="experience-form">
                 <div class="two-columns">
@@ -985,7 +988,7 @@
             <div class="manual-version-card">
               <div>
                 <span id="manualVersionEyebrow">Versión vigente</span>
-                <strong id="manualVersionValue">20260529-shared-analytical-scope-499</strong>
+                <strong id="manualVersionValue">20260529-output-scope-context-500</strong>
                 <p id="manualVersionSummary">Guía práctica organizada por temas para entender el flujo de la app sin leer todo de corrido.</p>
               </div>
               <div class="manual-guide-grid" aria-label="Estructura del manual">
@@ -1206,7 +1209,7 @@
       </main>
     </div>
 
-    <script src="app.js?v=20260529-shared-analytical-scope-499"></script>
+    <script src="app.js?v=20260529-output-scope-context-500"></script>
 </body>
 </html>
 

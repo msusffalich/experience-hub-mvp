@@ -1,4 +1,4 @@
-const APP_VERSION = "20260529-shared-analytical-scope-499";
+const APP_VERSION = "20260529-output-scope-context-500";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2639,6 +2639,7 @@ const manualContent = {
         "El Estudio de publicación por canal aparece dentro de cada borrador y resume formato recomendado, propósito, decisión multimedia, salida, secuencia editorial y checklist antes de aprobar o exportar.",
         "Panel muestra un resumen fijo de datos actuales: experiencias, activos, grupos, modo de persistencia y sincronización pendiente. Si la data previa no aparece, ese bloque permite distinguir rápido entre filtro, sesión, nube o cola pendiente.",
         "Panel incluye Alcance analitico compartido: una sola seleccion de vista completa, ultimos 7/30 dias, salud, trabajo o dispositivos se aplica a Reportes, Hallazgos y Publicaciones antes de abrir la salida elegida.",
+        "Reportes, Hallazgos y Publicaciones muestran una tarjeta de alcance usado en esta salida para confirmar grupo, fecha, categoria, origen y cantidad de experiencias antes de leer o exportar.",
         "Panel recupera automáticamente los bloques de Datos actuales y Estado global de avance aunque el navegador conserve una estructura HTML vieja. La información crítica ya no depende de que el contenedor venga precargado en la página.",
         "Panel y Administración muestran Estado global de avance: PWA operativa, producción/Supabase, reportes/publicaciones, multimedia, Vibeapp nativa, conectores y producto completo. Es una vista honesta para separar lo listo de lo que sigue en desarrollo.",
         "Estado global de avance mide capacidades implementadas y verificables del producto. No baja por cambiar de navegador, limpiar caché o tener menos datos visibles; la sesión y los datos actuales se revisan en Datos actuales.",
@@ -2927,6 +2928,7 @@ const manualContent = {
         "Report, Findings, and Publication PDFs use ReportLab as the main engine to produce edited documents with cover pages, cards, mixed visuals, indicators, and curated evidence. HTML remains as preview or fallback.",
         "Report quick starts create a full baseline, last 7 days, last 30 days, health, work, or device-data report with one click. They preserve the active group/person and keep the edited ReportLab PDF available for download.",
         "Dashboard includes Shared analytical scope: one full, last 7/30 days, health, work, or device-data selection is applied to Reports, Findings, and Publications before opening the chosen output.",
+        "Reports, Findings, and Publications show a Scope used in this output card so the user can confirm group, dates, category, origin, and experience count before reading or exporting.",
         "Technical verification now renders real Report, Findings, Publication, and Manual PDFs from sample payloads before accepting a version. Importing ReportLab is not enough; each output must return a valid PDF.",
         "The PWA release gate validates version alignment, manifest, icons, service worker, installable shell, and, when a production URL is provided, Railway app.js and /api/health.",
         "On Railway, ReportLab requires Python and build-time dependencies. The project includes railpack.json and requirements.txt so production does not fall back to the previous simple PDF.",
@@ -6915,6 +6917,39 @@ function buildAnalyticalScopeParts(filters = {}) {
   if (filters.source && filters.source !== "all") parts.push(getIntegrationSourceFilterLabel(filters.source));
   if (filters.dateFrom || filters.dateTo) parts.push(`${filters.dateFrom || "inicio"} - ${filters.dateTo || "hoy"}`);
   return parts;
+}
+
+function renderSharedScopeContext(containerId, filters = {}, count = 0, outputLabel = "", extraParts = []) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const labels = state.language === "en"
+    ? {
+        title: "Scope used in this output",
+        fallback: "Full view",
+        count: "experiences",
+        aligned: "Aligned with the shared analytical scope.",
+        output: "Output",
+      }
+    : {
+        title: "Alcance usado en esta salida",
+        fallback: "Vista completa",
+        count: "experiencias",
+        aligned: "Alineado con el alcance analitico compartido.",
+        output: "Salida",
+      };
+  const parts = [...buildAnalyticalScopeParts(filters), ...extraParts.filter(Boolean)].filter(Boolean);
+  const visibleParts = parts.length ? parts : [labels.fallback];
+  container.innerHTML = `
+    <div>
+      <strong>${escapeHtml(labels.title)}</strong>
+      <p>${escapeHtml(labels.aligned)}</p>
+    </div>
+    <div class="shared-scope-chip-row">
+      <span>${escapeHtml(labels.output)}: ${escapeHtml(outputLabel || "-")}</span>
+      ${visibleParts.slice(0, 6).map((part) => `<span>${escapeHtml(part)}</span>`).join("")}
+      <span>${count} ${escapeHtml(labels.count)}</span>
+    </div>
+  `;
 }
 
 function generateReportFromScope() {
@@ -17998,6 +18033,27 @@ function renderReport() {
   renderReportScopeSummary(experiences);
   const reportQuickStart = document.getElementById("reportQuickStart");
   if (reportQuickStart) reportQuickStart.innerHTML = renderReportQuickStart(experiences);
+  renderSharedScopeContext(
+    "reportSharedScopeContext",
+    {
+      pilotParticipantId: state.reportFilters.pilotParticipantId || "all",
+      category: state.reportFilters.category || "all",
+      source: state.reportFilters.source || "all",
+      dateFrom: state.reportFilters.dateFrom || "",
+      dateTo: state.reportFilters.dateTo || "",
+    },
+    experiences.length,
+    state.language === "en" ? "Report" : "Reporte",
+    [
+      getReportScopeLabel(state.reportFilters.scope),
+      state.reportFilters.period && state.reportFilters.period !== "all"
+        ? state.language === "en" ? `${state.reportFilters.period} days` : `${state.reportFilters.period} dias`
+        : "",
+      state.reportFilters.people ? `${state.language === "en" ? "People" : "Personas"}: ${state.reportFilters.people}` : "",
+      state.reportFilters.objective ? `${state.language === "en" ? "Goal" : "Objetivo"}: ${state.reportFilters.objective}` : "",
+      state.reportFilters.eventQuery ? `${state.language === "en" ? "Event" : "Evento"}: ${state.reportFilters.eventQuery}` : "",
+    ],
+  );
 
   const stats = [
     [t("metrics.total"), experiences.length],
@@ -21215,6 +21271,12 @@ function handleInsightsQuickStart(event) {
 function renderPublications() {
   const draft = state.currentPublicationDraft || state.publicationDrafts[0] || null;
   syncAnalyticalScopeInputs();
+  renderSharedScopeContext(
+    "publicationSharedScopeContext",
+    state.publicationFilters,
+    getPublicationExperiences().length,
+    state.language === "en" ? "Publications" : "Publicaciones",
+  );
   document.getElementById("publicationCount").textContent = `${state.publicationDrafts.length} ${t("labels.items")}`;
   const quickStart = document.getElementById("publicationQuickStart");
   if (quickStart) quickStart.innerHTML = renderPublicationQuickStart();
@@ -23925,6 +23987,12 @@ function renderInsights() {
     const base = scopeParts.length ? scopeParts.join(" · ") : state.language === "en" ? "General view" : "Vista general";
     scopeLabel.textContent = `${base} · ${sourceExperiences.length} ${t("labels.items")}`;
   }
+  renderSharedScopeContext(
+    "insightsSharedScopeContext",
+    state.insightsFilters,
+    sourceExperiences.length,
+    state.language === "en" ? "Findings" : "Hallazgos",
+  );
   renderQuestionSuggestions();
   document.getElementById("insightList").innerHTML = `
     <section class="insight-hub-intro">
@@ -27504,6 +27572,8 @@ function renderAdminOperationalFocusPanel() {
         scopeFiltersDetail: "Reports, Findings, and Publications now share group/person, category, origin/connector, from-date, and to-date filters so the user can analyze a coherent group of experiences.",
         sharedAnalyticalScope: "Shared analytical scope",
         sharedAnalyticalScopeDetail: "Dashboard now applies one full, last 7/30 days, health, work, or device-data scope to Reports, Findings, and Publications, then opens the selected output.",
+        outputScopeContext: "Output scope context",
+        outputScopeContextDetail: "Reports, Findings, and Publications now show the exact scope used by that output before the user reads, downloads, or shares it.",
         reportPdf: "Cleaner reports, publications, and findings",
         reportPdfDetail: "Reports now use an executive PDF, participant scope, and folded technical exports. Publications recommend type/style/channel from the selected scope, explain format fit, edited text, media actions, and apply recommended editorial roles for images, audio, video, documents, biometrics, and ZIP files. Findings are organized by 8 human themes and can be downloaded.",
         publicationStudio: "Publication channel studio",
@@ -27573,6 +27643,8 @@ function renderAdminOperationalFocusPanel() {
     labels.scopeFiltersDetail = "Reportes, Hallazgos y Publicaciones comparten filtros de grupo/persona, categoria, origen/conector, fecha desde y fecha hasta para analizar grupos coherentes de experiencias.";
     labels.sharedAnalyticalScope = "Alcance analitico compartido";
     labels.sharedAnalyticalScopeDetail = "Panel ahora aplica una sola seleccion de vista completa, ultimos 7/30 dias, salud, trabajo o dispositivos a Reportes, Hallazgos y Publicaciones, y luego abre la salida elegida.";
+    labels.outputScopeContext = "Contexto de alcance por salida";
+    labels.outputScopeContextDetail = "Reportes, Hallazgos y Publicaciones muestran el alcance exacto usado antes de leer, descargar o compartir la salida.";
     labels.reportPdf = "Reportes, publicaciones y hallazgos limpios";
     labels.reportPdfDetail = "Reportes usa PDF ejecutivo, alcance por persona y exportaciones técnicas plegadas. Publicaciones recomienda tipo/estilo/canal desde el alcance seleccionado y suma matriz por canal: carrusel, carta/email, dossier, ficha de salud, blog/web, LinkedIn y PDF/HTML, con curaduria recomendada por rol editorial para imagenes, audio, video, documentos, biometria y ZIP. Hallazgos se organiza en 8 ejes humanos y se puede descargar.";
     labels.publicationStudio = "Estudio de publicaci\u00f3n por canal";
@@ -27622,6 +27694,7 @@ function renderAdminOperationalFocusPanel() {
     [labels.biometricAssets, labels.biometricAssetsDetail],
     [labels.scopeFilters, labels.scopeFiltersDetail],
     [labels.sharedAnalyticalScope, labels.sharedAnalyticalScopeDetail],
+    [labels.outputScopeContext, labels.outputScopeContextDetail],
     [labels.reportPdf, labels.reportPdfDetail],
     [labels.publicationStudio, labels.publicationStudioDetail],
     [labels.publicationQuickStart, labels.publicationQuickStartDetail],
