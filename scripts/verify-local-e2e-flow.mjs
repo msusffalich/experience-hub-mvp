@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { existsSync, mkdtempSync, rmSync, readFileSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync, readFileSync, writeFileSync, unlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -24,6 +24,15 @@ const cdpPort = Number(process.env.VIBE_E2E_CDP_PORT || 9347);
 const baseUrl = `http://127.0.0.1:${appPort}`;
 const targetUrl = `${baseUrl}/index.html?v=${encodeURIComponent(version)}&view=dashboard&e2e=local-${Date.now()}`;
 const userDataDir = mkdtempSync(path.join(tmpdir(), "vibe-local-e2e-"));
+const protectedDataFiles = [
+  "data/experience-store.json",
+  "data/operation-log.json",
+  "data/agenda-events.json",
+].map((filePath) => ({
+  filePath,
+  existed: existsSync(filePath),
+  content: existsSync(filePath) ? readFileSync(filePath, "utf8") : "",
+}));
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -136,6 +145,7 @@ const server = spawn(process.execPath, ["server.js"], {
     PORT: String(appPort),
     HOST: "127.0.0.1",
     NODE_ENV: "test",
+    STORAGE_ADAPTER: "json-file",
   },
   stdio: ["ignore", "pipe", "pipe"],
   windowsHide: true,
@@ -185,6 +195,81 @@ try {
   await evaluate(cdp, waitExpression(`return document.body.innerText.includes("${version}") || window.APP_VERSION === "${version}";`));
 
   await evaluate(cdp, `(async () => {
+    const nav = document.querySelector('button[data-view="capture"]');
+    if (!nav) throw new Error("capture nav missing");
+    nav.click();
+    await new Promise((resolve) => setTimeout(resolve, 900));
+    const title = "E2E captura real controlada";
+    const setValue = (id, value) => {
+      const node = document.getElementById(id);
+      if (!node) throw new Error(id + " missing");
+      node.value = value;
+      node.dispatchEvent(new Event("input", { bubbles: true }));
+      node.dispatchEvent(new Event("change", { bubbles: true }));
+    };
+    setValue("titleInput", title);
+    setValue("categoryInput", "Trabajo");
+    setValue("objectiveInput", "Validar flujo E2E real de captura");
+    setValue("timestampInput", "2026-05-30T09:30");
+    setValue("durationInput", "42");
+    setValue("moodInput", "Enfocado");
+    setValue("energyInput", "8");
+    setValue("locationInput", "Laboratorio local");
+    setValue("peopleInput", "QA E2E");
+    setValue("notesInput", "Esta experiencia fue creada por la compuerta automatizada para confirmar guardado, libreria, activos y salidas sin depender solo de datos demo.");
+    setValue("experienceEventsInput", "Inicio - Se crea el registro desde Captura\\nValidacion - Se confirma en Libreria y Activos");
+    const mediaInput = document.getElementById("mediaInput");
+    if (!mediaInput) throw new Error("mediaInput missing");
+    const dt = new DataTransfer();
+    dt.items.add(new File(["Evidencia textual de captura E2E real."], "e2e-captura-real.txt", { type: "text/plain" }));
+    mediaInput.files = dt.files;
+    mediaInput.dispatchEvent(new Event("change", { bubbles: true }));
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    const form = document.getElementById("experienceForm");
+    if (!form) throw new Error("experienceForm missing");
+    form.requestSubmit();
+    const started = Date.now();
+    while (Date.now() - started < 20000) {
+      const status = document.getElementById("captureSaveStatus")?.innerText || "";
+      const text = document.body.innerText || "";
+      if (/Sign in before saving|Inicia sesi/i.test(text)) throw new Error("Capture unexpectedly required auth in local E2E");
+      if (/Guardado no completado|Save failed/i.test(status)) throw new Error("Capture save failed: " + status);
+      if (/Experiencia guardada|Experience saved|Guardada solo en este dispositivo|Saved only on this device/i.test(status)) return true;
+      await new Promise((resolve) => setTimeout(resolve, 350));
+    }
+    throw new Error("Capture save did not show a final status");
+  })()`, 30000);
+
+  await evaluate(cdp, `(async () => {
+    const nav = document.querySelector('button[data-view="library"]');
+    if (!nav) throw new Error("library nav missing after capture");
+    nav.click();
+    const started = Date.now();
+    while (Date.now() - started < 10000) {
+      const text = document.getElementById("libraryGrid")?.innerText || "";
+      if (text.includes("E2E captura real controlada")) return true;
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+    throw new Error("Saved capture was not visible in Library");
+  })()`);
+  console.log("capture E2E ok");
+
+  await evaluate(cdp, `(async () => {
+    const nav = document.querySelector('button[data-view="assetLibrary"]');
+    if (!nav) throw new Error("asset nav missing after capture");
+    nav.click();
+    const started = Date.now();
+    while (Date.now() - started < 10000) {
+      const text = document.getElementById("assetLibraryGrid")?.innerText || "";
+      if (text.includes("e2e-captura-real.txt")) return true;
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+    throw new Error("Saved capture attachment was not visible in Assets");
+  })()`);
+  console.log("capture asset E2E ok");
+
+  await evaluate(cdp, `(async () => {
+    window.confirm = () => true;
     const seed = document.getElementById("seedButton");
     if (!seed) throw new Error("seedButton missing");
     seed.click();
@@ -306,4 +391,10 @@ try {
   try {
     rmSync(userDataDir, { recursive: true, force: true });
   } catch {}
+  protectedDataFiles.forEach((entry) => {
+    try {
+      if (entry.existed) writeFileSync(entry.filePath, entry.content);
+      else if (existsSync(entry.filePath)) unlinkSync(entry.filePath);
+    } catch {}
+  });
 }

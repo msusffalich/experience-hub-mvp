@@ -1,6 +1,6 @@
 # Conectores de salud y wearables
 
-Version app: `20260530-local-e2e-flow-507`
+Version app: `20260530-capture-e2e-flow-508`
 
 Este documento consolida los conectores revisados para Oura, Apple Health, Samsung/Android Health Connect y Meta Wearables.
 
