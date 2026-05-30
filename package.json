@@ -11,6 +11,7 @@
     "verify:pdf": "node scripts/verify-reportlab.mjs",
     "verify:outputs": "node scripts/verify-output-pdfs.mjs && npm run verify:publication-pdf-endpoint",
     "verify:publication-pdf-endpoint": "node scripts/verify-publication-pdf-endpoint.mjs",
+    "verify:production": "node scripts/verify-production-outputs.mjs && node scripts/verify-production-e2e.mjs",
     "verify:pwa": "node scripts/verify-pwa-release.mjs",
     "audit:control": "node scripts/audit-control.mjs",
     "audit:runtime": "node scripts/audit-runtime-helpers.mjs",

@@ -1,4 +1,4 @@
-const APP_VERSION = "20260530-output-progress-505";
+const APP_VERSION = "20260530-production-e2e-506";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2303,6 +2303,7 @@ const manualContent = {
         "La verificación técnica ahora genera PDFs reales de Reporte, Hallazgos, Publicaciones y Manual con payloads de prueba antes de aceptar una versión. No basta con que ReportLab importe; cada salida debe devolver un PDF válido.",
         "La compuerta de release PWA valida versión, manifest, iconos, service worker, shell instalable y, si se indica la URL productiva, app.js y /api/health en Railway.",
         "En Railway, ReportLab requiere Python y dependencias instaladas en el build. El proyecto incluye railpack.json y requirements.txt para que producción no caiga al PDF simple anterior.",
+        "La compuerta de producción npm run verify:production prueba dos capas: endpoints PDF reales y flujo E2E con navegador headless. Carga la PWA publicada, usa datos demo controlados, pulsa los botones reales de Reportes, Hallazgos y Publicaciones, y exige estado final de PDF listo.",
         "El resumen del Panel lista los pendientes principales del piloto para convertir la recomendación en acciones concretas.",
         "Administración permite exportar un paquete piloto completo con preparación, invitación, pruebas, participantes, feedback y acta de cierre.",
         "El paquete piloto muestra una vista previa de su contenido antes de exportar, para revisar preparación, invitación, pruebas, participantes, feedback y acta.",
@@ -2389,7 +2390,7 @@ const manualContent = {
         "Las pruebas Flutter de cola validan archivos faltantes, fallos temporales, reintentos automaticos, fallos terminales y limpieza del estado sincronizado sin depender de un telefono fisico.",
         "Vibeapp ahora incluye Compuerta piloto móvil: verifica el backend productivo, confirma sesión, revisa cola local y muestra capacidades listas antes de iniciar una prueba real en teléfono. Android ya declara permisos de red, cámara, audio, ubicación, multimedia y notificaciones para evitar bloqueos básicos de plataforma.",
         "Vibeapp ya tiene ruta Android verificable: SDK/JDK instalados, paquete piloto io.vibeapp.mobile, APK debug generado, APK release firmado y App Bundle release firmado. Antes de Play Console queda decidir custodia formal de la upload key.",
-        "La compuerta local npm run verify:pilot ejecuta en una sola orden los controles PWA, PDFs ReportLab, Android firmado y Flutter analyze/test. npm run verify:android queda como chequeo específico de firma APK/AAB.",
+        "La compuerta local npm run verify:pilot ejecuta en una sola orden los controles PWA, PDFs ReportLab, Android firmado y Flutter analyze/test. npm run verify:production agrega validación E2E en Railway con navegador headless y botones reales. npm run verify:android queda como chequeo específico de firma APK/AAB.",
         "La orden npm run package:vibeapp genera un paquete local en dist/vibeapp-pilot y un ZIP transferible en dist con APK, AAB, checksums, manifiesto y README de instalación. El paquete no incluye claves ni passwords.",
         "El simulador npm run simulate:vibeapp valida sin teléfono físico que Vibeapp pueda enviar nota rápida, agenda, foto, video, audio, biometría, ubicación y sesiones Meta hacia los destinos correctos del contrato: experiencia, Agenda, activos o contexto.",
         "Administración permite ejecutar la misma simulación Vibeapp contra /api/vibeapp/simulate desde el panel de integración de dispositivos, mostrando señales correctas, destinos y errores sin abrir la terminal.",
@@ -27866,6 +27867,8 @@ function renderAdminOperationalFocusPanel() {
         assetLabelFixDetail: "External payload labels now use a defined sentence-case helper so synced media, biometrics, and Meta imports cannot break Dashboard rendering.",
         runtimeAudit: "Runtime helper audit",
         runtimeAuditDetail: "npm run check now includes npm run audit:runtime, which scans app.js for unqualified function calls without declarations before release.",
+        productionE2e: "Production E2E gate",
+        productionE2eDetail: "npm run verify:production now checks Railway endpoints and then drives a headless browser through the real PWA: load demo data, click Report PDF, Findings PDF, and Publication PDF buttons, and require final ready progress states.",
       }
     : {
         title: "Administración operativa",
@@ -27941,6 +27944,8 @@ function renderAdminOperationalFocusPanel() {
     labels.assetLabelFixDetail = "Las etiquetas de payload externo usan una funci\u00f3n definida de redacci\u00f3n en frase para que medios sincronizados, biometr\u00eda e importaciones Meta no rompan el Panel.";
     labels.runtimeAudit = "Auditor\u00eda de funciones en runtime";
     labels.runtimeAuditDetail = "npm run check ahora incluye npm run audit:runtime, que revisa app.js y bloquea llamadas a funciones no declaradas antes de publicar.";
+    labels.productionE2e = "Compuerta E2E de produccion";
+    labels.productionE2eDetail = "npm run verify:production ahora revisa endpoints en Railway y luego maneja un navegador headless sobre la PWA real: carga datos demo, pulsa los botones PDF de Reportes, Hallazgos y Publicaciones, y exige progreso final listo.";
   }
   const cards = [
     [labels.flow, labels.flowDetail],
@@ -27976,6 +27981,7 @@ function renderAdminOperationalFocusPanel() {
     [labels.dashboardGuard, labels.dashboardGuardDetail],
     [labels.assetLabelFix, labels.assetLabelFixDetail],
     [labels.runtimeAudit, labels.runtimeAuditDetail],
+    [labels.productionE2e, labels.productionE2eDetail],
     [labels.next, labels.nextDetail],
   ];
   container.innerHTML = `
