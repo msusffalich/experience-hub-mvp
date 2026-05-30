@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260530-library-delete-e2e-510";
+const CACHE_NAME = "experience-hub-pwa-20260530-asset-cleanup-e2e-511";
 const APP_SHELL = [
   "/icons/vibe-logo.jpg",
   "/icons/vibe-logo.png",

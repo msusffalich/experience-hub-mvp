@@ -337,6 +337,20 @@ try {
   console.log("library delete E2E ok");
 
   await evaluate(cdp, `(async () => {
+    const nav = document.querySelector('button[data-view="assetLibrary"]');
+    if (!nav) throw new Error("asset nav missing after delete");
+    nav.click();
+    const started = Date.now();
+    while (Date.now() - started < 10000) {
+      const text = document.getElementById("assetLibraryGrid")?.innerText || "";
+      if (!text.includes("e2e-captura-real.txt")) return true;
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+    throw new Error("Deleted capture attachment stayed visible in Assets");
+  })()`);
+  console.log("asset cleanup E2E ok");
+
+  await evaluate(cdp, `(async () => {
     window.confirm = () => true;
     const seed = document.getElementById("seedButton");
     if (!seed) throw new Error("seedButton missing");
