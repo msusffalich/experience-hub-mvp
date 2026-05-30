@@ -93,16 +93,36 @@ function createCdpClient(ws) {
 }
 
 async function evaluate(cdp, expression, timeoutMs = 45000) {
-  const result = await cdp("Runtime.evaluate", {
-    expression,
-    awaitPromise: true,
-    returnByValue: true,
-    timeout: timeoutMs,
-  });
-  if (result.exceptionDetails) {
-    throw new Error(result.exceptionDetails.text || "Runtime.evaluate failed");
+  const started = Date.now();
+  let lastError;
+  while (Date.now() - started < timeoutMs) {
+    try {
+      const result = await cdp("Runtime.evaluate", {
+        expression,
+        awaitPromise: true,
+        returnByValue: true,
+        timeout: Math.min(timeoutMs, 15000),
+      });
+      if (result.exceptionDetails) {
+        const text = result.exceptionDetails.text || result.exceptionDetails.exception?.description || "Runtime.evaluate failed";
+        if (/Execution context was destroyed|Cannot find context|Inspected target navigated/i.test(text)) {
+          lastError = new Error(text);
+          await sleep(350);
+          continue;
+        }
+        throw new Error(text);
+      }
+      return result.result?.value;
+    } catch (error) {
+      if (/Execution context was destroyed|Cannot find context|Inspected target navigated|Target closed/i.test(String(error?.message || error))) {
+        lastError = error;
+        await sleep(350);
+        continue;
+      }
+      throw error;
+    }
   }
-  return result.result?.value;
+  throw lastError || new Error("Runtime.evaluate timed out");
 }
 
 function waitExpression(expression, timeoutMs = 45000) {
