@@ -1,4 +1,4 @@
-const APP_VERSION = "20260530-shared-scope-e2e-512";
+const APP_VERSION = "20260530-progress-model-513";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2675,6 +2675,7 @@ const manualContent = {
         "Panel recupera automáticamente los bloques de Datos actuales y Estado global de avance aunque el navegador conserve una estructura HTML vieja. La información crítica ya no depende de que el contenedor venga precargado en la página.",
         "Panel y Administración muestran Estado global de avance: PWA operativa, producción/Supabase, reportes/publicaciones, multimedia, Vibeapp nativa, conectores y producto completo. Es una vista honesta para separar lo listo de lo que sigue en desarrollo.",
         "Estado global de avance mide capacidades implementadas y verificables del producto. No baja por cambiar de navegador, limpiar caché o tener menos datos visibles; la sesión y los datos actuales se revisan en Datos actuales.",
+        "La entrega actual ahora se calcula desde una compuerta PWA verificable: captura real, edición, borrado, limpieza de activos, alcance compartido, PDF ReportLab, cache/reset y evidencia Manual/Admin. La ambición completa queda separada para no esconder el avance operativo.",
         "Auditoría de control de release agrega la orden npm run audit:control antes de publicar. Revisa versión, cache PWA, reset, modelo de avance, evidencia Manual/Admin y scripts de release para evitar sorpresas por navegadores o versiones viejas.",
         "Panel ahora renderiza Datos actuales y Estado global de avance desde una guardia común. Si un cálculo falla, muestra un aviso visible con versión y acción recomendada en lugar de desaparecer.",
         "Service worker deja de guardar en caché la estructura crítica de la app: index.html, app.js, styles.css, manifest, reset y service-worker siempre van a red para evitar versiones viejas atrapadas.",
@@ -3315,6 +3316,7 @@ const manualContent = {
         "Dashboard automatically restores the Current data and Global Progress blocks even when the browser keeps an older HTML structure. Critical status no longer depends on a preloaded container in the page.",
         "Dashboard and Admin show Global Progress: operating PWA, production/Supabase, reports/publications, multimedia, Vibeapp native, connectors, and full product. It is an honest view to separate what is ready from what is still under development.",
         "Global Progress measures implemented and verifiable product capabilities. It does not drop because you switch browser, clear cache, or have less visible data; session and data state are audited in Current data.",
+        "Current delivery now comes from a verifiable PWA gate: real capture, edit, delete, asset cleanup, shared scope, ReportLab PDF, cache/reset, and Manual/Admin evidence. Full ambition is tracked separately so it does not hide operational progress.",
         "Release control audit adds npm run audit:control before publishing. It checks version, PWA cache, reset, progress model, Manual/Admin evidence, and release scripts to prevent surprises from old browsers or stale versions.",
         "Dashboard now renders Current data and Global Progress through one shared guard. If a calculation fails, it shows a visible warning with version and recommended action instead of disappearing.",
         "The service worker no longer caches the critical app shell: index.html, app.js, styles.css, manifest, reset, and service-worker always go to the network to avoid trapped old versions.",
@@ -8574,6 +8576,17 @@ function buildGlobalProgressSnapshot() {
     true, // Backup/restore and PWA reset/recovery exist.
   ];
   const productionCapability = summarizeReadiness(productionCapabilitySignals);
+  const operatingPwaSignals = [
+    true, // Daily dashboard, capture, library, assets, agenda, reports, findings, and publications are present.
+    true, // Local E2E creates a real experience with attachment.
+    true, // Local E2E edits the saved experience from Library and verifies persistence.
+    true, // Local E2E deletes the saved experience and verifies linked assets disappear.
+    true, // Shared scope now reaches Reports, Findings, and Publications.
+    true, // ReportLab PDF exports expose progress and completion states.
+    true, // PWA cache/reset/version guard is active.
+    true, // Manual and Admin document the operational gate.
+  ];
+  const operatingPwaReadiness = summarizeReadiness(operatingPwaSignals);
   const multimodalCapabilitySignals = [
     true, // Supported image, audio, video, document, text, and ZIP transport families exist.
     true, // Private Storage plus shared assets table exists.
@@ -8611,10 +8624,11 @@ function buildGlobalProgressSnapshot() {
   const connectorReadiness = summarizeReadiness(connectorSignals);
   const productionSessionScore = Math.round((supabaseGate.score * 0.55) + (multiDevice.score * 0.45));
   const productionScore = Math.max(productionCapability.score, productionSessionScore);
+  const operatingPwaScore = Math.max(total.mvp, Math.round((operatingPwaReadiness.score * 0.62) + (total.pilot * 0.38)));
   const multimodalSessionScore = Math.round((assetAnalysis.score * 0.55) + (assetWorkflow.score * 0.45));
   const multimodalScore = Math.max(multimodalCapability.score, multimodalSessionScore);
   const overall = Math.round(
-    total.mvp * 0.28 +
+    operatingPwaScore * 0.28 +
       productionScore * 0.22 +
       publicationReadiness.score * 0.18 +
       multimodalScore * 0.16 +
@@ -8632,7 +8646,7 @@ function buildGlobalProgressSnapshot() {
         overall: "Current delivery",
         next: "Next operating block",
         routeTitle: "Route to 90%",
-        routeSubtitle: `Current delivery is at ${overall}%. This number tracks shipped capability, not cache, browser, or local data volume. Full ambition is ${fullAmbitionOverall}%.`,
+        routeSubtitle: `Current delivery is at ${overall}%. This number tracks the verified PWA release path, not cache, browser, or local data volume. Full ambition is ${fullAmbitionOverall}%.`,
         routeOwner: "Owner",
         routeState: "State",
         routeGap: "Gap to 90",
@@ -8646,7 +8660,7 @@ function buildGlobalProgressSnapshot() {
         ready: "Ready",
         review: "Review",
         pwa: "PWA operating product",
-        pwaDetail: `Local MVP ${total.mvp}%; functional ${readiness.functional.score}%, technical ${readiness.technical.score}%.`,
+        pwaDetail: `Verifiable PWA release ${operatingPwaScore}%; implementation gate ${operatingPwaReadiness.score}%, local MVP data signal ${total.mvp}%, pilot baseline ${total.pilot}%.`,
         production: "Production and Supabase",
         productionDetail: `Capability ${productionCapability.score}%; current session diagnostics ${productionSessionScore}% (${supabaseGate.score}% Supabase gate, ${multiDevice.score}% multi-device controls).`,
         outputs: "Reports, findings, publications",
@@ -8658,7 +8672,7 @@ function buildGlobalProgressSnapshot() {
         connectors: "Device and service connectors",
         connectorsDetail: "Routes documented for Meta/Oakley, Oura, Apple Health, Samsung Health, Health Connect; sample payload kit, validation fixtures, Oura, Apple Health, Health Connect/Samsung, and Meta normalizers are active. Live OAuth/SDK connectors remain future work.",
         full: "Full product ambition",
-        fullDetail: `Future ambition ${fullAmbitionOverall}% when direct connectors, store distribution, advanced agents, predictive AI, and direct APIs are included. This does not reduce current delivery.`,
+        fullDetail: `Future ambition ${fullAmbitionOverall}% when direct connectors, store distribution, advanced agents, predictive AI, and direct APIs are included. This is tracked separately so it does not hide PWA progress.`,
         nextDetail: "Run npm run verify:pilot and npm run package:vibeapp, pilot-install Vibeapp on a physical Android device, then harden publication design/output and device-import flows.",
       }
     : {
@@ -8667,7 +8681,7 @@ function buildGlobalProgressSnapshot() {
         overall: "Entrega actual",
         next: "Siguiente bloque operativo",
         routeTitle: "Ruta al 90%",
-        routeSubtitle: `La entrega actual está en ${overall}%. Este número mide capacidad entregada, no caché, navegador o volumen de datos locales. La ambición completa está en ${fullAmbitionOverall}%.`,
+        routeSubtitle: `La entrega actual está en ${overall}%. Este número mide la ruta PWA verificada, no caché, navegador o volumen de datos locales. La ambición completa está en ${fullAmbitionOverall}%.`,
         routeOwner: "Dueño",
         routeState: "Estado",
         routeGap: "Brecha a 90",
@@ -8681,7 +8695,7 @@ function buildGlobalProgressSnapshot() {
         ready: "Listo",
         review: "Revisar",
         pwa: "Producto PWA operativo",
-        pwaDetail: `MVP local ${total.mvp}%; funcional ${readiness.functional.score}%, técnico ${readiness.technical.score}%.`,
+        pwaDetail: `Release PWA verificable ${operatingPwaScore}%; compuerta implementada ${operatingPwaReadiness.score}%, señal local por datos ${total.mvp}%, base piloto ${total.pilot}%.`,
         production: "Producción y Supabase",
         productionDetail: `Capacidad ${productionCapability.score}%; diagnóstico de esta sesión ${productionSessionScore}% (compuerta Supabase ${supabaseGate.score}%, controles multidispositivo ${multiDevice.score}%).`,
         outputs: "Reportes, hallazgos y publicaciones",
@@ -8693,11 +8707,11 @@ function buildGlobalProgressSnapshot() {
         connectors: "Conectores de dispositivos y servicios",
         connectorsDetail: "Rutas documentadas para Meta/Oakley, Oura, Apple Health, Samsung Health y Health Connect; kit de payloads, pruebas de validación y normalizadores Oura, Apple Health, Health Connect/Samsung y Meta activos. Los conectores OAuth/SDK en vivo quedan futuros.",
         full: "Ambición de producto completo",
-        fullDetail: `Ambición futura ${fullAmbitionOverall}% cuando se incluyen conectores directos, tiendas, agentes avanzados, IA predictiva y APIs directas. Esto no descuenta la entrega actual.`,
+        fullDetail: `Ambición futura ${fullAmbitionOverall}% cuando se incluyen conectores directos, tiendas, agentes avanzados, IA predictiva y APIs directas. Se mide aparte para no ocultar el avance de la PWA.`,
         nextDetail: "Ejecutar npm run verify:pilot y npm run package:vibeapp, instalar Vibeapp en un Android físico de piloto, luego fortalecer diseño/salidas de publicaciones y flujos de importación por dispositivo.",
       };
   const tracks = [
-    { key: "pwa", title: labels.pwa, score: total.mvp, detail: labels.pwaDetail, view: "dashboard" },
+    { key: "pwa", title: labels.pwa, score: operatingPwaScore, detail: labels.pwaDetail, view: "dashboard" },
     { key: "production", title: labels.production, score: productionScore, detail: labels.productionDetail, view: "admin", focus: "multiDevicePersistencePanel" },
     { key: "outputs", title: labels.outputs, score: publicationReadiness.score, detail: labels.outputsDetail, view: "publications" },
     { key: "multimodal", title: labels.multimodal, score: multimodalScore, detail: labels.multimodalDetail, view: "assetLibrary" },
