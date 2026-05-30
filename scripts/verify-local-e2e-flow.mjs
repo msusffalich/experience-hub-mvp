@@ -255,6 +255,51 @@ try {
   console.log("capture E2E ok");
 
   await evaluate(cdp, `(async () => {
+    const card = Array.from(document.querySelectorAll("#libraryGrid .library-card"))
+      .find((item) => item.innerText.includes("E2E captura real controlada"));
+    if (!card) throw new Error("Saved capture card missing before edit");
+    const editButton = Array.from(card.querySelectorAll("button"))
+      .find((button) => /Editar|Edit/i.test(button.innerText || ""));
+    if (!editButton) throw new Error("Library edit button missing for saved capture");
+    editButton.click();
+    await new Promise((resolve) => setTimeout(resolve, 900));
+    const setValue = (id, value) => {
+      const node = document.getElementById(id);
+      if (!node) throw new Error(id + " missing during edit");
+      node.value = value;
+      node.dispatchEvent(new Event("input", { bubbles: true }));
+      node.dispatchEvent(new Event("change", { bubbles: true }));
+    };
+    setValue("titleInput", "E2E captura real editada");
+    setValue("notesInput", "Esta experiencia fue editada desde Libreria por la compuerta E2E para confirmar persistencia posterior al guardado inicial.");
+    const form = document.getElementById("experienceForm");
+    if (!form) throw new Error("experienceForm missing during edit");
+    form.requestSubmit();
+    const started = Date.now();
+    while (Date.now() - started < 20000) {
+      const status = document.getElementById("captureSaveStatus")?.innerText || "";
+      if (/Guardado no completado|Save failed/i.test(status)) throw new Error("Edited capture save failed: " + status);
+      if (/Experiencia guardada|Experience saved|Guardada solo en este dispositivo|Saved only on this device/i.test(status)) return true;
+      await new Promise((resolve) => setTimeout(resolve, 350));
+    }
+    throw new Error("Edited capture save did not show a final status");
+  })()`, 30000);
+
+  await evaluate(cdp, `(async () => {
+    const nav = document.querySelector('button[data-view="library"]');
+    if (!nav) throw new Error("library nav missing after edit");
+    nav.click();
+    const started = Date.now();
+    while (Date.now() - started < 10000) {
+      const text = document.getElementById("libraryGrid")?.innerText || "";
+      if (text.includes("E2E captura real editada") && text.includes("editada desde Libreria")) return true;
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+    throw new Error("Edited capture was not visible in Library");
+  })()`);
+  console.log("library edit E2E ok");
+
+  await evaluate(cdp, `(async () => {
     const nav = document.querySelector('button[data-view="assetLibrary"]');
     if (!nav) throw new Error("asset nav missing after capture");
     nav.click();
