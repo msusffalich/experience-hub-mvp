@@ -1,4 +1,4 @@
-const APP_VERSION = "20260529-publication-pdf-smooth-504";
+const APP_VERSION = "20260530-output-progress-505";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2660,7 +2660,7 @@ const manualContent = {
         "Al convertir un evento, la app crea una experiencia vinculada con duración, ubicación, participantes y notas de origen para mantener la continuidad Agenda -> Evento -> Experiencia -> Memoria viva.",
         "Publicaciones Inteligentes genera borradores locales desde el reporte filtrado o las últimas experiencias. Recomienda automáticamente tipo, estilo y canal según alcance, multimedia y señales del contenido; permite aplicar una receta de composición antes de generar, incluir o excluir multimedia sugerida, aplicar limpieza de privacidad, revisar un kit de salida por canal y exportar como PDF ReportLab, HTML, Markdown o paquete editorial JSON.",
         "El editor de Publicaciones controla la salida real: al cambiar título, resumen o cuerpo se actualizan las páginas visibles, el documento final y el payload que usa ReportLab. Si editas una página específica, esa página queda preservada como edición manual.",
-        "Publicaciones muestra progreso de generación: borrador preparado, verificación automática de conexión, envío a ReportLab, preparación de descarga y PDF final listo con enlace visible. El usuario no tiene que navegar a Administración para recuperar el flujo.",
+        "Reportes, Hallazgos y Publicaciones muestran progreso de generación: alcance o borrador preparado, verificación automática de conexión, envío a ReportLab, preparación de descarga y PDF final listo con enlace visible. El usuario no tiene que navegar a Administración para recuperar el flujo.",
         "Los tipos de publicación no son iguales: publicación social rápida sirve para mensajes breves, reporte narrativo para contar un periodo, álbum experiencial para memorias visuales, resumen ejecutivo para enviar evidencia clara y guion de story/reel para una secuencia corta.",
         "Los nuevos formatos amplían el uso por canal: carrusel visual para Instagram, Facebook o LinkedIn; carta/email largo para compartir una memoria personal; dossier PDF para un documento más formal; ficha de salud para explicar información médica o biométrica en lenguaje claro; y blog/web para publicar una historia más extensa.",
         "El Playbook del canal aparece antes de generar el borrador. Para WhatsApp, Instagram, Facebook, LinkedIn, Email, PDF/HTML y Blog/Web explica audiencia, ritmo, salida y recetas aplicables con un clic.",
@@ -3285,7 +3285,7 @@ const manualContent = {
         "When converting an event, the app creates a linked experience with duration, location, participants, and source notes to preserve the Agenda -> Event -> Experience -> Living memory flow.",
         "Intelligent Publications generates local drafts from the filtered report or latest experiences. It recommends type, style, and channel from scope, media, and content signals; you can review a composition recipe before generating, include or exclude suggested media, apply privacy cleanup, copy the final text/HTML, and export as PDF, HTML, Markdown, or an editorial JSON package.",
         "The Publications editor controls the real output: changing title, summary, or body updates the visible pages, the final document, and the ReportLab payload. If you edit a specific page, that page is preserved as a manual edit.",
-        "Publications shows generation progress: draft prepared, automatic connection check, sent to ReportLab, download prepared, and final PDF ready with a visible link. The user does not need to navigate to Admin to recover the flow.",
+        "Reports, Findings, and Publications show generation progress: scope or draft prepared, automatic connection check, sent to ReportLab, download prepared, and final PDF ready with a visible link. The user does not need to navigate to Admin to recover the flow.",
         "Publication quick start creates the most common outputs with one click: WhatsApp brief, trip/album, health share, email/letter, LinkedIn learning, or PDF dossier. It applies the right type, style, channel, source, and editorial recipe before generating the draft.",
         "The Channel playbook appears before draft generation. For WhatsApp, Instagram, Facebook, LinkedIn, Email, PDF/HTML, and Blog/Web it explains audience, rhythm, output, and one-click recipes.",
         "Channel deliverables clarify the master piece, copy-ready text, media package, and real limitation for each channel. The user can tell whether the output is a final PDF, email draft, WhatsApp copy, carousel plan, HTML, or manual publishing preparation.",
@@ -20416,14 +20416,49 @@ function downloadPrintableReport() {
 }
 
 async function downloadPdfReport() {
-  setReportFlowStatus(state.language === "en" ? "Generating edited ReportLab PDF..." : "Generando PDF editado ReportLab...");
-  if (!state.apiOnline) {
-    setReportFlowStatus(state.language === "en" ? "PDF requires the API. No HTML fallback was downloaded." : "El PDF requiere la API. No se descargo HTML como sustituto.");
-    notify(state.language === "en" ? "PDF requires the API. No HTML fallback was downloaded." : "El PDF requiere la API. No se descargo HTML como sustituto.", "error");
+  const labels = state.language === "en"
+    ? {
+        start: "Generating executive PDF",
+        startDetail: "Validating scope, charts, findings, and ReportLab payload.",
+        api: "Checking connection",
+        apiDetail: "The app is confirming the API automatically before generating the PDF.",
+        server: "Composing in ReportLab",
+        serverDetail: "The server is building the edited experience report.",
+        download: "Preparing download",
+        downloadDetail: "The PDF was generated; creating the download link.",
+        ready: "Report PDF ready",
+        readyDetail: "Generated file: reporte-experiencias.pdf.",
+        error: "Could not generate report PDF",
+        apiUnavailable: "The app tried to reconnect automatically, but the API did not respond. Try again in a few seconds.",
+        statusReady: "Edited ReportLab report PDF generated.",
+      }
+    : {
+        start: "Generando PDF ejecutivo",
+        startDetail: "Validando alcance, graficas, hallazgos y payload ReportLab.",
+        api: "Verificando conexion",
+        apiDetail: "La app confirma la API automaticamente antes de generar el PDF.",
+        server: "Componiendo en ReportLab",
+        serverDetail: "El servidor esta armando el reporte editado de experiencias.",
+        download: "Preparando descarga",
+        downloadDetail: "El PDF fue generado; creando enlace de descarga.",
+        ready: "PDF de reporte listo",
+        readyDetail: "Archivo generado: reporte-experiencias.pdf.",
+        error: "No se pudo generar el PDF del reporte",
+        apiUnavailable: "La app intento reconectar automaticamente, pero la API no respondio. Intenta de nuevo en unos segundos.",
+        statusReady: "PDF editado ReportLab del reporte generado.",
+      };
+  setReportFlowStatus(labels.start);
+  setReportProgress({ title: labels.start, detail: labels.startDetail, percent: 15 });
+  if (!state.apiOnline) setReportProgress({ title: labels.api, detail: labels.apiDetail, percent: 8 });
+  if (!(await ensureApiOnlineForExport())) {
+    setReportFlowStatus(labels.apiUnavailable);
+    setReportProgress({ title: labels.error, detail: labels.apiUnavailable, percent: 100, stateName: "error" });
+    notify(labels.apiUnavailable, "error");
     return;
   }
   const payload = buildReportExportPayload();
   try {
+    setReportProgress({ title: labels.server, detail: labels.serverDetail, percent: 45 });
     const response = await fetch(`${API_BASE}/report/pdf`, {
       method: "POST",
       headers: {
@@ -20433,18 +20468,23 @@ async function downloadPdfReport() {
       body: JSON.stringify({ report: payload }),
     });
     if (!response.ok) throw new Error(await response.text());
-    downloadBlob(await response.blob(), "reporte-experiencias.pdf");
+    setReportProgress({ title: labels.download, detail: labels.downloadDetail, percent: 80 });
+    const blob = await response.blob();
+    downloadBlob(blob, "reporte-experiencias.pdf");
     markReportExport("pdf", payload, "ok");
     renderReportAcceptancePanel();
-    setReportFlowStatus(state.language === "en" ? "Edited ReportLab PDF generated." : "PDF editado ReportLab generado.");
-    notify(state.language === "en" ? "Edited ReportLab report PDF generated." : "PDF editado ReportLab del reporte generado.", "success");
+    setReportFlowStatus(labels.statusReady);
+    setReportProgress({ title: labels.ready, detail: labels.readyDetail, percent: 100, stateName: "complete" });
+    notify(labels.statusReady, "success");
   } catch (error) {
     console.warn("Report PDF export failed", error);
     const detail = getExportErrorDetail(error);
     markReportExport("pdf", payload, "error");
     renderReportAcceptancePanel();
-    setReportFlowStatus(state.language === "en" ? `ReportLab PDF failed. Detail: ${detail}` : `Fallo el PDF ReportLab. Detalle: ${detail}`);
-    notify(state.language === "en" ? `ReportLab PDF failed: ${detail}` : `Fallo el PDF ReportLab: ${detail}`, "error");
+    const message = state.language === "en" ? `ReportLab PDF failed. Detail: ${detail}` : `Fallo el PDF ReportLab. Detalle: ${detail}`;
+    setReportFlowStatus(message);
+    setReportProgress({ title: labels.error, detail: message, percent: 100, stateName: "error" });
+    notify(message, "error");
   }
 }
 
@@ -21367,8 +21407,8 @@ function renderPublications() {
     : `<p class="card-meta">${t("labels.publicationHistoryEmpty")}</p>`;
 }
 
-function setPublicationProgress({ title = "", detail = "", percent = 0, stateName = "working" } = {}) {
-  const panel = document.getElementById("publicationProgressPanel");
+function setOutputProgress(panelId, { title = "", detail = "", percent = 0, stateName = "working" } = {}) {
+  const panel = document.getElementById(panelId);
   if (!panel) return;
   const safePercent = Math.max(0, Math.min(100, Number(percent) || 0));
   panel.hidden = false;
@@ -21382,6 +21422,10 @@ function setPublicationProgress({ title = "", detail = "", percent = 0, stateNam
     <div class="publication-progress-bar" aria-hidden="true"><span></span></div>
     <p>${escapeHtml(detail || "")}</p>
   `;
+}
+
+function setPublicationProgress({ title = "", detail = "", percent = 0, stateName = "working" } = {}) {
+  setOutputProgress("publicationProgressPanel", { title, detail, percent, stateName });
 }
 
 function finishPublicationProgress(filename) {
@@ -21401,6 +21445,14 @@ function failPublicationProgress(detail) {
     percent: 100,
     stateName: "error",
   });
+}
+
+function setReportProgress({ title = "", detail = "", percent = 0, stateName = "working" } = {}) {
+  setOutputProgress("reportProgressPanel", { title, detail, percent, stateName });
+}
+
+function setInsightsProgress({ title = "", detail = "", percent = 0, stateName = "working" } = {}) {
+  setOutputProgress("insightsProgressPanel", { title, detail, percent, stateName });
 }
 
 function renderPublicationQuickStart() {
@@ -24670,8 +24722,47 @@ function exportInsightsHtml() {
 
 async function exportInsightsPdf() {
   const payload = buildInsightsExportPayload();
-  notify(state.language === "en" ? "Generating edited findings PDF..." : "Generando PDF editado de hallazgos...", "info");
+  const labels = state.language === "en"
+    ? {
+        start: "Generating findings PDF",
+        startDetail: "Validating scope, human themes, action plan, and ReportLab payload.",
+        api: "Checking connection",
+        apiDetail: "The app is confirming the API automatically before generating the PDF.",
+        server: "Composing in ReportLab",
+        serverDetail: "The server is building the edited findings document.",
+        download: "Preparing download",
+        downloadDetail: "The PDF was generated; creating the download link.",
+        ready: "Findings PDF ready",
+        readyDetail: "Generated file: hallazgos-experiencias.pdf.",
+        error: "Could not generate findings PDF",
+        apiUnavailable: "The app tried to reconnect automatically, but the API did not respond. Try again in a few seconds.",
+        statusReady: "Edited findings PDF generated.",
+      }
+    : {
+        start: "Generando PDF de hallazgos",
+        startDetail: "Validando alcance, ejes humanos, plan de accion y payload ReportLab.",
+        api: "Verificando conexion",
+        apiDetail: "La app confirma la API automaticamente antes de generar el PDF.",
+        server: "Componiendo en ReportLab",
+        serverDetail: "El servidor esta armando el documento editado de hallazgos.",
+        download: "Preparando descarga",
+        downloadDetail: "El PDF fue generado; creando enlace de descarga.",
+        ready: "PDF de hallazgos listo",
+        readyDetail: "Archivo generado: hallazgos-experiencias.pdf.",
+        error: "No se pudo generar el PDF de hallazgos",
+        apiUnavailable: "La app intento reconectar automaticamente, pero la API no respondio. Intenta de nuevo en unos segundos.",
+        statusReady: "PDF editado de hallazgos generado.",
+      };
+  setInsightsProgress({ title: labels.start, detail: labels.startDetail, percent: 15 });
+  if (!state.apiOnline) setInsightsProgress({ title: labels.api, detail: labels.apiDetail, percent: 8 });
+  if (!(await ensureApiOnlineForExport())) {
+    setInsightsProgress({ title: labels.error, detail: labels.apiUnavailable, percent: 100, stateName: "error" });
+    notify(labels.apiUnavailable, "error");
+    return;
+  }
+  notify(labels.start, "info");
   try {
+    setInsightsProgress({ title: labels.server, detail: labels.serverDetail, percent: 45 });
     const response = await fetch(`${API_BASE}/insights/pdf`, {
       method: "POST",
       headers: {
@@ -24681,11 +24772,18 @@ async function exportInsightsPdf() {
       body: JSON.stringify(payload),
     });
     if (!response.ok) throw new Error(await response.text());
-    downloadBlob(await response.blob(), "hallazgos-experiencias.pdf");
-    notify(state.language === "en" ? "Edited findings PDF generated." : "PDF editado de hallazgos generado.", "success");
+    setInsightsProgress({ title: labels.download, detail: labels.downloadDetail, percent: 80 });
+    const blob = await response.blob();
+    downloadBlob(blob, "hallazgos-experiencias.pdf");
+    setInsightsProgress({ title: labels.ready, detail: labels.readyDetail, percent: 100, stateName: "complete" });
+    notify(labels.statusReady, "success");
   } catch (error) {
     console.warn("Insights PDF export failed", error);
     const detail = getExportErrorDetail(error);
+    const message = state.language === "en"
+      ? `ReportLab PDF failed. Detail: ${detail}`
+      : `Fallo el PDF ReportLab. Detalle: ${detail}`;
+    setInsightsProgress({ title: labels.error, detail: message, percent: 100, stateName: "error" });
     notify(
       state.language === "en"
         ? `ReportLab PDF failed. Detail: ${detail}`
@@ -27741,7 +27839,7 @@ function renderAdminOperationalFocusPanel() {
         publicationLiveEditor: "Publication editor tied to export",
         publicationLiveEditorDetail: "Editing title, summary, or body now updates the visible pages, final document, Markdown, package, and ReportLab payload; page-level edits remain protected as manual edits.",
         publicationProgress: "Publication generation progress",
-        publicationProgressDetail: "Publications now shows draft, automatic API recheck, ReportLab, download, final file, and error states inside the same flow so the user does not need complex navigation.",
+        publicationProgressDetail: "Reports, Findings, and Publications now show automatic API recheck, ReportLab composition, download preparation, final file, and clear error states inside the same flow so the user does not need complex navigation.",
         reportQuickStart: "Report quick start",
         reportQuickStartDetail: "Reports now has one-click starts for full baseline, last 7/30 days, health, work, and device data. It applies scope, rebuilds the report, and keeps the ReportLab PDF action primary.",
         insightQuickStart: "Findings quick start",
@@ -27816,7 +27914,7 @@ function renderAdminOperationalFocusPanel() {
     labels.publicationLiveEditor = "Editor conectado a la exportacion";
     labels.publicationLiveEditorDetail = "Editar titulo, resumen o cuerpo actualiza paginas visibles, documento final, Markdown, paquete y payload ReportLab; las paginas editadas manualmente quedan protegidas.";
     labels.publicationProgress = "Progreso de generacion de publicaciones";
-    labels.publicationProgressDetail = "Publicaciones muestra borrador, re-chequeo automatico de API, ReportLab, descarga, archivo final y errores dentro del mismo flujo para evitar navegacion compleja.";
+    labels.publicationProgressDetail = "Reportes, Hallazgos y Publicaciones muestran re-chequeo automatico de API, composicion ReportLab, preparacion de descarga, archivo final y errores claros dentro del mismo flujo para evitar navegacion compleja.";
     labels.reportQuickStart = "Arranque rapido de reportes";
     labels.reportQuickStartDetail = "Reportes ahora tiene arranques de un clic para vista completa, ultimos 7/30 dias, salud, trabajo y dispositivos. Aplica alcance, reconstruye el reporte y deja el PDF ReportLab como accion principal.";
     labels.insightQuickStart = "Arranque rapido de Hallazgos";

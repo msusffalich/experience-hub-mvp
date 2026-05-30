@@ -459,14 +459,14 @@ async function handleApi(req, res, url) {
   }
 
   if (url.pathname === "/api/report/pdf" && req.method === "POST") {
-    const user = await getRequestUser(req);
+    const user = await getOptionalRequestUser(req);
     const body = await readJson(req);
     sendPdf(res, await buildPdfReport(user, body.report));
     return;
   }
 
   if (url.pathname === "/api/insights/pdf" && req.method === "POST") {
-    const user = await getRequestUser(req);
+    const user = await getOptionalRequestUser(req);
     const body = await readJson(req);
     sendPdf(res, await buildInsightsPdf(body, user), "hallazgos-experiencias.pdf");
     return;
@@ -480,7 +480,7 @@ async function handleApi(req, res, url) {
   }
 
   if (url.pathname === "/api/manual/pdf" && req.method === "POST") {
-    const user = await getRequestUser(req);
+    const user = await getOptionalRequestUser(req);
     const body = await readJson(req);
     sendPdf(res, await buildManualPdf(body.html, user), "manual-vibe.pdf");
     return;
