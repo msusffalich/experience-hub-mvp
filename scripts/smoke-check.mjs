@@ -14,6 +14,7 @@ const files = {
   reportlabVerify: readFileSync("scripts/verify-reportlab.mjs", "utf8"),
   outputPdfVerify: readFileSync("scripts/verify-output-pdfs.mjs", "utf8"),
   pwaVerify: readFileSync("scripts/verify-pwa-release.mjs", "utf8"),
+  localE2eVerify: readFileSync("scripts/verify-local-e2e-flow.mjs", "utf8"),
   controlAudit: readFileSync("scripts/audit-control.mjs", "utf8"),
   runtimeAudit: readFileSync("scripts/audit-runtime-helpers.mjs", "utf8"),
   integrationVerify: readFileSync("scripts/verify-integration-contract.mjs", "utf8"),
@@ -293,6 +294,8 @@ assert(files.pythonInstall.includes("RAILWAY_PROJECT_ID") && files.pythonInstall
 assert(files.reportlabVerify.includes("import reportlab") && files.reportlabVerify.includes("PYTHONPATH"), "ReportLab verifier must import ReportLab with the bundled .python path.");
 assert(files.packageJson.includes("\"verify:outputs\"") && files.packageJson.includes("verify-output-pdfs"), "package.json must expose full PDF output verification.");
 assert(files.outputPdfVerify.includes("report_pdf_reportlab.py") && files.outputPdfVerify.includes("publication_pdf_reportlab.py") && files.outputPdfVerify.includes("manual_pdf_reportlab.py"), "Output PDF verifier must render report, publication, and manual PDFs.");
+assert(packageJson.scripts?.["verify:e2e"]?.includes("verify-local-e2e-flow.mjs") && packageJson.scripts?.["verify:release"]?.includes("verify:e2e"), "Release verification must include the local operational E2E flow.");
+assert(files.localE2eVerify.includes("seedButton") && files.localE2eVerify.includes("libraryGrid") && files.localE2eVerify.includes("assetLibraryGrid") && files.localE2eVerify.includes("downloadEditedReportPdfButton") && files.localE2eVerify.includes("exportInsightsPdfButton") && files.localE2eVerify.includes("exportPublicationPdfButton"), "Local E2E must verify seeded data, Library, Assets, and the real Report, Findings, and Publication PDF buttons.");
 assert(files.packageJson.includes("\"verify:pwa\"") && files.packageJson.includes("\"verify:release\""), "package.json must expose PWA and release verification scripts.");
 assert(files.pwaVerify.includes("manifest.webmanifest") && files.pwaVerify.includes("service-worker.js") && files.pwaVerify.includes("VIBE_RELEASE_URL"), "PWA verifier must check manifest, service worker, and optional production URL.");
 assert(files.packageJson.includes("\"verify:android\"") && files.androidVerify.includes("apksigner") && files.androidVerify.includes("key.properties"), "package.json must expose Android signing verification.");
@@ -336,6 +339,7 @@ assert(files.server.includes('url.pathname === "/api/report/pdf"') && files.serv
 assert(files.server.match(/getOptionalRequestUser\(req\)/g)?.length >= 4, "All client-payload PDF endpoints must allow smooth ReportLab rendering without a separate sign-in navigation.");
 assert(packageJson.scripts?.["verify:publication-pdf-endpoint"]?.includes("verify-publication-pdf-endpoint.mjs"), "Release checks must include the authless Publication PDF endpoint acceptance test.");
 assert(packageJson.scripts?.["verify:outputs"]?.includes("verify:publication-pdf-endpoint"), "Output verification must exercise the Publication PDF endpoint, not only the PDF renderer scripts.");
+assert(files.app.includes("Local operational E2E verification") && files.app.includes("Compuerta E2E operativa local"), "Manual/Admin must document the local operational E2E gate.");
 assert(packageJson.scripts?.["verify:production"]?.includes("verify-production-outputs.mjs") && packageJson.scripts?.["verify:production"]?.includes("verify-production-e2e.mjs"), "Production verification must include endpoint and browser E2E output checks.");
 assert(existsSync("scripts/verify-production-e2e.mjs") && readFileSync("scripts/verify-production-e2e.mjs", "utf8").includes("downloadEditedReportPdfButton") && readFileSync("scripts/verify-production-e2e.mjs", "utf8").includes("exportInsightsPdfButton") && readFileSync("scripts/verify-production-e2e.mjs", "utf8").includes("exportPublicationPdfButton"), "Production E2E must click the real Report, Findings, and Publication PDF buttons.");
 assert(files.packageJson.includes("\"package:vibeapp\"") && files.vibeappPackage.includes("checksums.sha256") && files.vibeappPackage.includes("manifest.json") && files.vibeappPackage.includes("Compress-Archive"), "package.json must expose a Vibeapp pilot package command with checksums, manifest, and transfer ZIP.");
