@@ -1,4 +1,4 @@
-const APP_VERSION = "20260530-library-edit-e2e-509";
+const APP_VERSION = "20260530-library-delete-e2e-510";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2301,7 +2301,7 @@ const manualContent = {
         "Todos los PDFs operativos de Reportes, Hallazgos y Publicaciones usan ReportLab como motor principal para producir documentos editados, con portada, tarjetas, indicadores, visuales mixtos y evidencia curada. HTML queda como vista o respaldo.",
         "Reportes rapidos permite crear una vista completa, ultimos 7 dias, ultimos 30 dias, salud, trabajo o dispositivos con un clic. Respeta el grupo/persona activo y deja el PDF ReportLab listo para descargar.",
         "La verificación técnica ahora genera PDFs reales de Reporte, Hallazgos, Publicaciones y Manual con payloads de prueba antes de aceptar una versión. No basta con que ReportLab importe; cada salida debe devolver un PDF válido.",
-        "La verificación E2E local inicia la app, abre un navegador real controlado, crea una captura real con adjunto, la edita desde Librería, confirma Librería y Activos, carga datos demo controlados, y luego exporta PDFs de Reportes, Hallazgos y Publicaciones desde los botones visibles antes de aceptar un release.",
+        "La verificación E2E local inicia la app, abre un navegador real controlado, crea una captura real con adjunto, la edita y elimina desde Librería con confirmación, confirma Librería y Activos, carga datos demo controlados, y luego exporta PDFs de Reportes, Hallazgos y Publicaciones desde los botones visibles antes de aceptar un release.",
         "La compuerta de release PWA valida versión, manifest, iconos, service worker, shell instalable y, si se indica la URL productiva, app.js y /api/health en Railway.",
         "En Railway, ReportLab requiere Python y dependencias instaladas en el build. El proyecto incluye railpack.json y requirements.txt para que producción no caiga al PDF simple anterior.",
         "La compuerta de producción npm run verify:production prueba dos capas: endpoints PDF reales y flujo E2E con navegador headless. Carga la PWA publicada, usa datos demo controlados, pulsa los botones reales de Reportes, Hallazgos y Publicaciones, y exige estado final de PDF listo.",
@@ -2962,7 +2962,7 @@ const manualContent = {
         "Dashboard includes Shared analytical scope: one full, last 7/30 days, health, work, or device-data selection is applied to Reports, Findings, and Publications before opening the chosen output.",
         "Reports, Findings, and Publications show a Scope used in this output card so the user can confirm group, dates, category, origin, and experience count before reading or exporting.",
         "Technical verification now renders real Report, Findings, Publication, and Manual PDFs from sample payloads before accepting a version. Importing ReportLab is not enough; each output must return a valid PDF.",
-        "Local operational E2E verification now starts the app, opens a real controlled browser, creates a real capture with an attachment, edits it from Library, verifies Library and Assets, loads controlled demo data, and then exports Report, Findings, and Publication PDFs from the visible buttons before a release is accepted.",
+        "Local operational E2E verification now starts the app, opens a real controlled browser, creates a real capture with an attachment, edits and deletes it from Library with confirmation, verifies Library and Assets, loads controlled demo data, and then exports Report, Findings, and Publication PDFs from the visible buttons before a release is accepted.",
         "The PWA release gate validates version alignment, manifest, icons, service worker, installable shell, and, when a production URL is provided, Railway app.js and /api/health.",
         "On Railway, ReportLab requires Python and build-time dependencies. The project includes railpack.json and requirements.txt so production does not fall back to the previous simple PDF.",
         "The Dashboard summary lists the main pilot pending items so the recommendation becomes concrete action.",
@@ -10288,10 +10288,17 @@ function loadExperienceIntoForm(experience) {
 }
 
 async function deleteExperience(id) {
+  const experience = state.experiences.find((item) => item.id === id);
+  const title = experience?.title || (state.language === "en" ? "this experience" : "esta experiencia");
+  const message = state.language === "en"
+    ? `Delete "${title}"? This removes it from Library, Timeline, reports, and local assets linked to it.`
+    : `¿Eliminar "${title}"? Se quitará de Librería, Línea de tiempo, reportes y activos locales vinculados.`;
+  if (!confirm(message)) return;
   state.experiences = state.experiences.filter((item) => item.id !== id);
   saveExperiences();
   await deleteExperienceFromApi(id);
   renderAll();
+  notify(state.language === "en" ? "Experience deleted." : "Experiencia eliminada.", "success");
 }
 
 function showView(view) {
@@ -13372,6 +13379,7 @@ function renderLibrary() {
                 <div class="timeline-actions">
                   <button class="ghost-button" type="button" onclick="editExperience('${item.id}')">${t("buttons.edit")}</button>
                   <button class="ghost-button" type="button" onclick="showExperienceInTimeline('${item.id}')">${t("buttons.viewTimeline")}</button>
+                  <button class="danger-button" type="button" onclick="deleteExperience('${item.id}')">${t("buttons.delete")}</button>
                 </div>
               </article>
             `,
@@ -27870,7 +27878,7 @@ function renderAdminOperationalFocusPanel() {
         runtimeAudit: "Runtime helper audit",
         runtimeAuditDetail: "npm run check now includes npm run audit:runtime, which scans app.js for unqualified function calls without declarations before release.",
         localE2e: "Local operational E2E gate",
-        localE2eDetail: "npm run verify:e2e starts the local API, opens a real controlled browser, creates a real capture with an attachment, edits it from Library, verifies Library and Assets, loads controlled demo data, and exports Report, Findings, and Publication PDFs from the visible buttons.",
+        localE2eDetail: "npm run verify:e2e starts the local API, opens a real controlled browser, creates a real capture with an attachment, edits and deletes it from Library with confirmation, verifies Library and Assets, loads controlled demo data, and exports Report, Findings, and Publication PDFs from the visible buttons.",
         productionE2e: "Production E2E gate",
         productionE2eDetail: "npm run verify:production now checks Railway endpoints and then drives a headless browser through the real PWA: load demo data, click Report PDF, Findings PDF, and Publication PDF buttons, and require final ready progress states.",
       }
@@ -27949,7 +27957,7 @@ function renderAdminOperationalFocusPanel() {
     labels.runtimeAudit = "Auditor\u00eda de funciones en runtime";
     labels.runtimeAuditDetail = "npm run check ahora incluye npm run audit:runtime, que revisa app.js y bloquea llamadas a funciones no declaradas antes de publicar.";
     labels.localE2e = "Compuerta E2E operativa local";
-    labels.localE2eDetail = "npm run verify:e2e inicia la API local, abre un navegador real controlado, crea una captura real con adjunto, la edita desde Librer\u00eda, valida Librer\u00eda y Activos, carga datos demo controlados, y exporta PDFs de Reportes, Hallazgos y Publicaciones desde los botones visibles.";
+    labels.localE2eDetail = "npm run verify:e2e inicia la API local, abre un navegador real controlado, crea una captura real con adjunto, la edita y elimina desde Librer\u00eda con confirmaci\u00f3n, valida Librer\u00eda y Activos, carga datos demo controlados, y exporta PDFs de Reportes, Hallazgos y Publicaciones desde los botones visibles.";
     labels.productionE2e = "Compuerta E2E de produccion";
     labels.productionE2eDetail = "npm run verify:production ahora revisa endpoints en Railway y luego maneja un navegador headless sobre la PWA real: carga datos demo, pulsa los botones PDF de Reportes, Hallazgos y Publicaciones, y exige progreso final listo.";
   }

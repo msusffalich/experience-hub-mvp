@@ -315,6 +315,29 @@ try {
 
   await evaluate(cdp, `(async () => {
     window.confirm = () => true;
+    const nav = document.querySelector('button[data-view="library"]');
+    if (!nav) throw new Error("library nav missing before delete");
+    nav.click();
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    const card = Array.from(document.querySelectorAll("#libraryGrid .library-card"))
+      .find((item) => item.innerText.includes("E2E captura real editada"));
+    if (!card) throw new Error("Edited capture card missing before delete");
+    const deleteButton = card.querySelector(".danger-button") || Array.from(card.querySelectorAll("button"))
+      .find((button) => /Eliminar|Delete|Borrar|Remove/i.test(button.innerText || ""));
+    if (!deleteButton) throw new Error("Library delete button missing for saved capture");
+    deleteButton.click();
+    const started = Date.now();
+    while (Date.now() - started < 10000) {
+      const text = document.getElementById("libraryGrid")?.innerText || "";
+      if (!text.includes("E2E captura real editada")) return true;
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+    throw new Error("Deleted capture stayed visible in Library");
+  })()`);
+  console.log("library delete E2E ok");
+
+  await evaluate(cdp, `(async () => {
+    window.confirm = () => true;
     const seed = document.getElementById("seedButton");
     if (!seed) throw new Error("seedButton missing");
     seed.click();
