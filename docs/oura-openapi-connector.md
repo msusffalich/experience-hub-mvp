@@ -1,6 +1,6 @@
 # Conectores de salud y wearables
 
-Version app: `20260530-asset-cleanup-e2e-511`
+Version app: `20260530-shared-scope-e2e-512`
 
 Este documento consolida los conectores revisados para Oura, Apple Health, Samsung/Android Health Connect y Meta Wearables.
 

@@ -403,6 +403,37 @@ try {
     console.log(`${check.name} E2E ok`);
   }
 
+  await evaluate(cdp, `(async () => {
+    const dashboardNav = document.querySelector('button[data-view="dashboard"]');
+    if (!dashboardNav) throw new Error("dashboard nav missing before shared scope");
+    dashboardNav.click();
+    await new Promise((resolve) => setTimeout(resolve, 900));
+    const workPreset = document.querySelector('[data-dashboard-scope-preset="work"]');
+    if (!workPreset) throw new Error("Shared analytical work preset missing");
+    workPreset.click();
+    await new Promise((resolve) => setTimeout(resolve, 900));
+    const outputs = [
+      ["report", "reportSharedScopeContext"],
+      ["insights", "insightsSharedScopeContext"],
+      ["publications", "publicationSharedScopeContext"],
+    ];
+    for (const [view, contextId] of outputs) {
+      const nav = document.querySelector('button[data-view="' + view + '"]');
+      if (!nav) throw new Error(view + " nav missing for shared scope");
+      nav.click();
+      const started = Date.now();
+      while (Date.now() - started < 10000) {
+        const text = document.getElementById(contextId)?.innerText || "";
+        if (/Trabajo|Work/i.test(text) && /experiencias|experiences/i.test(text)) break;
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      }
+      const finalText = document.getElementById(contextId)?.innerText || "";
+      if (!/Trabajo|Work/i.test(finalText)) throw new Error(view + " did not show shared Work scope");
+    }
+    return true;
+  })()`, 30000);
+  console.log("shared scope E2E ok");
+
   const outputFlows = [
     {
       name: "report",
