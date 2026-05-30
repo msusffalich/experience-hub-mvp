@@ -55,6 +55,7 @@ assert(files.reset.includes(version) && files.reset.includes("getRegistrations")
 assert(files.serviceWorker.includes("NETWORK_ONLY_PATHS") && files.serviceWorker.includes('"/app.js"') && files.serviceWorker.includes('cache: "no-store"'), "service-worker.js must never cache the app shell files.");
 assert(files.app.includes("const fullAmbitionOverall") && files.app.includes("Current delivery") && files.app.includes("Entrega actual"), "Global progress must separate current delivery from full future ambition.");
 assert(files.app.includes("const operatingPwaScore") && files.app.includes("Release PWA verificable") && files.app.includes("verifiable PWA gate"), "Global progress must include the verified PWA delivery gate.");
+assert(files.app.includes("Ruta operativa al 90") && files.app.includes("Operating route to 90"), "Global progress must separate the operating route from future native/connectors horizon.");
 assert(files.app.includes("Estado global de avance mide capacidades implementadas") && files.app.includes("Global Progress measures implemented"), "Manual must explain that global progress is capability-based, not browser-data-based.");
 assert(files.packageJson.includes("\"audit:control\"") && files.packageJson.includes("npm run audit:control"), "Release verification must include the control audit.");
 assert(files.controlAudit.includes("Control audit passed") && files.controlAudit.includes("Auditoría de control de release"), "Control audit script must verify the release-control Admin evidence.");

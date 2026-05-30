@@ -34,6 +34,7 @@ check(files.reset.includes("getRegistrations") && files.reset.includes("caches.k
 
 check(files.app.includes("const fullAmbitionOverall"), "global progress does not separate current delivery from future ambition.");
 check(files.app.includes("const operatingPwaScore") && files.app.includes("compuerta PWA verificable"), "global progress does not expose the verifiable PWA delivery gate.");
+check(files.app.includes("Ruta operativa al 90") && files.app.includes("Operating route to 90"), "global progress must separate the operating route from future native/connectors horizon.");
 check(files.app.includes("Entrega actual") && files.app.includes("Current delivery"), "global progress labels must use current delivery.");
 check(!files.app.includes('overall: "Entrega global"'), "global progress still exposes the old ambiguous Entrega global label.");
 check(files.app.includes("Estado global de avance mide capacidades implementadas"), "Spanish manual is missing the capability-based progress explanation.");

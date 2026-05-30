@@ -23,6 +23,7 @@ check(reset.includes("getRegistrations") && reset.includes("caches.keys"), "rese
 check(serviceWorker.includes("NETWORK_ONLY_PATHS") && serviceWorker.includes('"/app.js"') && serviceWorker.includes('cache: "no-store"'), "service worker must bypass caching for app shell files.");
 check(app.includes("const fullAmbitionOverall") && app.includes("Current delivery") && app.includes("Entrega actual"), "global progress must separate current delivery from full future ambition.");
 check(app.includes("const operatingPwaScore") && app.includes("Release PWA verificable") && app.includes("verifiable PWA gate"), "global progress must include the verified PWA delivery gate.");
+check(app.includes("Ruta operativa al 90") && app.includes("Operating route to 90"), "global progress must separate the operating route from future native/connectors horizon.");
 check(app.includes("Estado global de avance mide capacidades implementadas") && app.includes("Global Progress measures implemented"), "manual must explain that progress is capability-based, not browser-data-based.");
 check(Array.isArray(manifest.icons) && manifest.icons.length >= 2, "manifest must declare at least 192 and 512 icons.");
 check(manifest.display === "standalone", "manifest display must be standalone.");

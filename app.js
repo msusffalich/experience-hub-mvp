@@ -1,4 +1,4 @@
-const APP_VERSION = "20260530-progress-model-513";
+const APP_VERSION = "20260530-operating-progress-514";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2675,13 +2675,13 @@ const manualContent = {
         "Panel recupera automáticamente los bloques de Datos actuales y Estado global de avance aunque el navegador conserve una estructura HTML vieja. La información crítica ya no depende de que el contenedor venga precargado en la página.",
         "Panel y Administración muestran Estado global de avance: PWA operativa, producción/Supabase, reportes/publicaciones, multimedia, Vibeapp nativa, conectores y producto completo. Es una vista honesta para separar lo listo de lo que sigue en desarrollo.",
         "Estado global de avance mide capacidades implementadas y verificables del producto. No baja por cambiar de navegador, limpiar caché o tener menos datos visibles; la sesión y los datos actuales se revisan en Datos actuales.",
-        "La entrega actual ahora se calcula desde una compuerta PWA verificable: captura real, edición, borrado, limpieza de activos, alcance compartido, PDF ReportLab, cache/reset y evidencia Manual/Admin. La ambición completa queda separada para no esconder el avance operativo.",
+        "La entrega actual ahora se calcula desde una compuerta PWA verificable, producción/Supabase, salidas ReportLab y multimedia. La app nativa, conectores directos y agentes avanzados quedan en Ambición completa para no esconder el avance operativo de la PWA.",
         "Auditoría de control de release agrega la orden npm run audit:control antes de publicar. Revisa versión, cache PWA, reset, modelo de avance, evidencia Manual/Admin y scripts de release para evitar sorpresas por navegadores o versiones viejas.",
         "Panel ahora renderiza Datos actuales y Estado global de avance desde una guardia común. Si un cálculo falla, muestra un aviso visible con versión y acción recomendada en lugar de desaparecer.",
         "Service worker deja de guardar en caché la estructura crítica de la app: index.html, app.js, styles.css, manifest, reset y service-worker siempre van a red para evitar versiones viejas atrapadas.",
         "Se corrigió la conversión de etiquetas externas de activos para que payloads como video, audio, biometría o importaciones Meta no rompan el Panel por una función auxiliar ausente.",
         "La compuerta npm run check ahora ejecuta npm run audit:runtime. Esta auditoría revisa app.js y bloquea llamadas directas a funciones auxiliares que no estén declaradas.",
-        "Ruta al 90% convierte ese avance honesto en frentes concretos con dueño, estado, brecha real a 90 y siguiente acción ejecutable.",
+        "Ruta operativa al 90% convierte ese avance honesto en frentes concretos con dueño, estado, brecha real a 90 y siguiente acción ejecutable. Vibeapp nativa y conectores se muestran como horizonte de producto, no como bloqueo de la PWA.",
         "Aprobación humana marca si el borrador está en revisión o aprobado. Cualquier edición, cambio de diseño o curaduría multimedia lo devuelve a revisión.",
         "Historial del borrador registra generación, ediciones, cambios de multimedia, diseño, aprobación y exportaciones recientes.",
         "Multimedia sugerida significa archivos ya adjuntos a las experiencias fuente. La app los propone para la publicación; incluirlos o excluirlos no modifica ni borra la experiencia original.",
@@ -3316,13 +3316,13 @@ const manualContent = {
         "Dashboard automatically restores the Current data and Global Progress blocks even when the browser keeps an older HTML structure. Critical status no longer depends on a preloaded container in the page.",
         "Dashboard and Admin show Global Progress: operating PWA, production/Supabase, reports/publications, multimedia, Vibeapp native, connectors, and full product. It is an honest view to separate what is ready from what is still under development.",
         "Global Progress measures implemented and verifiable product capabilities. It does not drop because you switch browser, clear cache, or have less visible data; session and data state are audited in Current data.",
-        "Current delivery now comes from a verifiable PWA gate: real capture, edit, delete, asset cleanup, shared scope, ReportLab PDF, cache/reset, and Manual/Admin evidence. Full ambition is tracked separately so it does not hide operational progress.",
+        "Current delivery now comes from a verifiable PWA gate, production/Supabase, ReportLab outputs, and multimedia. Native app, direct connectors, and advanced agents stay in Full ambition so they do not hide PWA operational progress.",
         "Release control audit adds npm run audit:control before publishing. It checks version, PWA cache, reset, progress model, Manual/Admin evidence, and release scripts to prevent surprises from old browsers or stale versions.",
         "Dashboard now renders Current data and Global Progress through one shared guard. If a calculation fails, it shows a visible warning with version and recommended action instead of disappearing.",
         "The service worker no longer caches the critical app shell: index.html, app.js, styles.css, manifest, reset, and service-worker always go to the network to avoid trapped old versions.",
         "External asset labels now normalize payloads such as video, audio, biometrics, or Meta imports without breaking Dashboard because of a missing helper.",
         "The npm run check gate now runs npm run audit:runtime. This audit scans app.js and blocks direct calls to helper functions that are not declared.",
-        "The Route to 90% block turns that honest progress into concrete closure fronts with owner, state, real gap to 90, and the next action to execute.",
+        "The Operating route to 90% block turns that honest progress into concrete closure fronts with owner, state, real gap to 90, and the next action to execute. Vibeapp native and connectors are shown as product horizon, not as PWA blockers.",
         "Editorial readiness evaluates clarity, privacy, media use, and channel fit. Its suggestions help decide whether the draft is ready for final review or needs edits.",
         "Pre-publication closure shows an operational checklist before export: human approval, text and length, privacy, media, and channel fit.",
         "Privacy cleanup hides detected emails, phone numbers, and links. The user must still review names, faces, locations, and sensitive data before publishing.",
@@ -8628,16 +8628,16 @@ function buildGlobalProgressSnapshot() {
   const multimodalSessionScore = Math.round((assetAnalysis.score * 0.55) + (assetWorkflow.score * 0.45));
   const multimodalScore = Math.max(multimodalCapability.score, multimodalSessionScore);
   const overall = Math.round(
-    operatingPwaScore * 0.28 +
-      productionScore * 0.22 +
-      publicationReadiness.score * 0.18 +
-      multimodalScore * 0.16 +
-      nativeReadiness.score * 0.16,
+    operatingPwaScore * 0.35 +
+      productionScore * 0.25 +
+      publicationReadiness.score * 0.20 +
+      multimodalScore * 0.20,
   );
   const fullAmbitionOverall = Math.round(
-    overall * 0.74 +
-      connectorReadiness.score * 0.14 +
-      total.full * 0.12,
+    overall * 0.52 +
+      nativeReadiness.score * 0.16 +
+      connectorReadiness.score * 0.18 +
+      total.full * 0.14,
   );
   const labels = state.language === "en"
     ? {
@@ -8645,7 +8645,7 @@ function buildGlobalProgressSnapshot() {
         subtitle: "Implemented product capability. Current browser data is audited separately in Current data.",
         overall: "Current delivery",
         next: "Next operating block",
-        routeTitle: "Route to 90%",
+        routeTitle: "Operating route to 90%",
         routeSubtitle: `Current delivery is at ${overall}%. This number tracks the verified PWA release path, not cache, browser, or local data volume. Full ambition is ${fullAmbitionOverall}%.`,
         routeOwner: "Owner",
         routeState: "State",
@@ -8680,7 +8680,7 @@ function buildGlobalProgressSnapshot() {
         subtitle: "Avance de capacidades implementadas. Los datos visibles de este navegador se revisan aparte en Datos actuales.",
         overall: "Entrega actual",
         next: "Siguiente bloque operativo",
-        routeTitle: "Ruta al 90%",
+        routeTitle: "Ruta operativa al 90%",
         routeSubtitle: `La entrega actual está en ${overall}%. Este número mide la ruta PWA verificada, no caché, navegador o volumen de datos locales. La ambición completa está en ${fullAmbitionOverall}%.`,
         routeOwner: "Dueño",
         routeState: "Estado",
@@ -8785,26 +8785,6 @@ function buildGlobalProgressSnapshot() {
       view: "assetLibrary",
       focus: "assetProcessingActionPlan",
       run: "showPendingAssetText",
-    },
-    {
-      key: "native",
-      title: routeLabels.nativeTitle,
-      owner: routeLabels.ownerNative,
-      score: nativeReadiness.score,
-      detail: labels.nativeDetail,
-      next: routeLabels.nativeNext,
-      view: "admin",
-      focus: "adminOperationalFocusPanel",
-    },
-    {
-      key: "connectors",
-      title: routeLabels.connectorsTitle,
-      owner: routeLabels.ownerIntegration,
-      score: connectorReadiness.score,
-      detail: labels.connectorsDetail,
-      next: routeLabels.connectorsNext,
-      view: "admin",
-      focus: "externalIntegrationPanel",
     },
   ].map((item) => ({
     ...item,
@@ -28901,6 +28881,7 @@ function renderAdmin() {
   renderProfileSettings();
   const readiness = calculateDevelopmentReadiness();
   const totalProgress = calculateTotalProductProgress(readiness);
+  const globalProgress = buildGlobalProgressSnapshot();
   const assetAnalysisReadiness = calculateAssetAnalysisReadiness();
   const assetStorageReadiness = calculateAssetStorageReadiness();
   const assetWorkflowReadiness = calculateAssetWorkflowReadiness();
@@ -28983,12 +28964,11 @@ function renderAdmin() {
       { view: "admin", focus: "apiStatusPanel", label: state.language === "en" ? "View status" : "Ver estado" },
     ],
     [
-      t("labels.totalProductProgress"),
-      totalProgress.full >= 75 ? okStatus : attentionStatus,
-      `${t("labels.totalProductProgressDetail")
-        .replace("{mvp}", String(totalProgress.mvp))
-        .replace("{pilot}", String(totalProgress.pilot))
-        .replace("{full}", String(totalProgress.full))} · ${t("labels.totalProductProgressNext")}`,
+      state.language === "en" ? "Current delivery vs full ambition" : "Entrega actual vs ambición completa",
+      globalProgress.overall >= 90 ? okStatus : attentionStatus,
+      state.language === "en"
+        ? `Current delivery ${globalProgress.overall}%. Full ambition ${globalProgress.tracks.find((track) => track.key === "full")?.score || totalProgress.full}%. Native app and direct connectors are product horizon, not PWA blockers.`
+        : `Entrega actual ${globalProgress.overall}%. Ambición completa ${globalProgress.tracks.find((track) => track.key === "full")?.score || totalProgress.full}%. App nativa y conectores directos son horizonte de producto, no bloqueo de la PWA.`,
     ],
     [
       state.language === "en" ? `${PILOT_TARGET_USERS}-user pilot scope` : `Alcance piloto ${PILOT_TARGET_USERS} usuarios`,

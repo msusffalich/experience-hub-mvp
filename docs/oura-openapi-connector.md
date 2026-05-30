@@ -1,6 +1,6 @@
 # Conectores de salud y wearables
 
-Version app: `20260530-progress-model-513`
+Version app: `20260530-operating-progress-514`
 
 Este documento consolida los conectores revisados para Oura, Apple Health, Samsung/Android Health Connect y Meta Wearables.
 
