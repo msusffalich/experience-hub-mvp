@@ -25,6 +25,7 @@
     "verify:release": "npm run check && npm run audit:control && npm run verify:outputs && npm run verify:e2e && npm run verify:pwa",
     "verify:pilot": "npm run verify:release && npm run verify:integrations && npm run simulate:vibeapp && npm run verify:android && npm run verify:ios && npm run verify:flutter",
     "package:vibeapp": "node scripts/package-vibeapp-pilot.mjs",
+    "package:vibeapp:ios": "node scripts/package-vibeapp-ios-handoff.mjs",
     "start": "node server.js",
     "dev": "node server.js",
     "check": "node --check app.js && node --check server.js && node scripts/smoke-check.mjs && npm run audit:runtime",

@@ -24,6 +24,7 @@ const files = {
   iosVerify: readFileSync("scripts/verify-ios-readiness.mjs", "utf8"),
   flutterVerify: readFileSync("scripts/verify-flutter-mobile.mjs", "utf8"),
   vibeappPackage: readFileSync("scripts/package-vibeapp-pilot.mjs", "utf8"),
+  vibeappIosPackage: readFileSync("scripts/package-vibeapp-ios-handoff.mjs", "utf8"),
   vibeappSimulator: readFileSync("scripts/simulate-vibeapp-sync.mjs", "utf8"),
   vibeappMain: readFileSync("vibeapp/lib/main.dart", "utf8"),
   vibeappTest: readFileSync("vibeapp/test/widget_test.dart", "utf8"),
@@ -357,6 +358,7 @@ assert(packageJson.scripts?.["verify:production"]?.includes("verify-production-o
 assert(existsSync("scripts/verify-production-e2e.mjs") && readFileSync("scripts/verify-production-e2e.mjs", "utf8").includes("downloadEditedReportPdfButton") && readFileSync("scripts/verify-production-e2e.mjs", "utf8").includes("exportInsightsPdfButton") && readFileSync("scripts/verify-production-e2e.mjs", "utf8").includes("exportPublicationPdfButton"), "Production E2E must click the real Report, Findings, and Publication PDF buttons.");
 assert(files.packageJson.includes("\"package:vibeapp\"") && files.vibeappPackage.includes("checksums.sha256") && files.vibeappPackage.includes("manifest.json") && files.vibeappPackage.includes("Compress-Archive"), "package.json must expose a Vibeapp pilot package command with checksums, manifest, and transfer ZIP.");
 assert(files.vibeappPackage.includes("verify:android") && files.vibeappPackage.includes("vibeapp-pilot-release.apk") && files.vibeappPackage.includes("vibeapp-pilot-release.aab"), "Vibeapp package script must verify Android and include APK/AAB.");
+assert(files.packageJson.includes("\"package:vibeapp:ios\"") && files.vibeappIosPackage.includes("verify:ios") && files.vibeappIosPackage.includes("Runner.xcworkspace") && files.vibeappIosPackage.includes("HealthKit"), "package.json must expose a Vibeapp iOS/Mac handoff package.");
 assert(files.packageJson.includes("\"simulate:vibeapp\"") && files.packageJson.includes("npm run simulate:vibeapp"), "package.json must expose and run the Vibeapp sync simulator in pilot verification.");
 assert(files.vibeappSimulator.includes("Vibeapp sync simulation passed") && files.vibeappSimulator.includes("meta-glasses-import"), "Vibeapp simulator must validate native and external-session sync samples.");
 assert(files.app.includes("Simulador de sincronizaci") && files.app.includes("Native sync simulator"), "Manual/Admin must expose the Vibeapp sync simulator.");

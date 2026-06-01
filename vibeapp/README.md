@@ -35,6 +35,7 @@ Run this on the shared workspace before moving to the Mac:
 
 ```powershell
 npm run verify:ios
+npm run package:vibeapp:ios
 ```
 
 Then on the Mac:
