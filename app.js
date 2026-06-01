@@ -1,4 +1,4 @@
-const APP_VERSION = "20260530-operating-progress-514";
+const APP_VERSION = "20260601-pwa-closure-515";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2676,6 +2676,7 @@ const manualContent = {
         "Panel y Administración muestran Estado global de avance: PWA operativa, producción/Supabase, reportes/publicaciones, multimedia, Vibeapp nativa, conectores y producto completo. Es una vista honesta para separar lo listo de lo que sigue en desarrollo.",
         "Estado global de avance mide capacidades implementadas y verificables del producto. No baja por cambiar de navegador, limpiar caché o tener menos datos visibles; la sesión y los datos actuales se revisan en Datos actuales.",
         "La entrega actual ahora se calcula desde una compuerta PWA verificable, producción/Supabase, salidas ReportLab y multimedia. La app nativa, conectores directos y agentes avanzados quedan en Ambición completa para no esconder el avance operativo de la PWA.",
+        "Cierre PWA operativo usa npm run verify:closure como compuerta final. Si pasa, la PWA queda cerrada para operación y el trabajo futuro se mueve a fase 2: Vibeapp nativa, conectores en vivo, APIs directas y agentes avanzados.",
         "Auditoría de control de release agrega la orden npm run audit:control antes de publicar. Revisa versión, cache PWA, reset, modelo de avance, evidencia Manual/Admin y scripts de release para evitar sorpresas por navegadores o versiones viejas.",
         "Panel ahora renderiza Datos actuales y Estado global de avance desde una guardia común. Si un cálculo falla, muestra un aviso visible con versión y acción recomendada en lugar de desaparecer.",
         "Service worker deja de guardar en caché la estructura crítica de la app: index.html, app.js, styles.css, manifest, reset y service-worker siempre van a red para evitar versiones viejas atrapadas.",
@@ -3317,6 +3318,7 @@ const manualContent = {
         "Dashboard and Admin show Global Progress: operating PWA, production/Supabase, reports/publications, multimedia, Vibeapp native, connectors, and full product. It is an honest view to separate what is ready from what is still under development.",
         "Global Progress measures implemented and verifiable product capabilities. It does not drop because you switch browser, clear cache, or have less visible data; session and data state are audited in Current data.",
         "Current delivery now comes from a verifiable PWA gate, production/Supabase, ReportLab outputs, and multimedia. Native app, direct connectors, and advanced agents stay in Full ambition so they do not hide PWA operational progress.",
+        "Operational PWA closure uses npm run verify:closure as the final gate. If it passes, the PWA is closed for operation and future work moves to phase 2: Vibeapp native, live connectors, direct APIs, and advanced agents.",
         "Release control audit adds npm run audit:control before publishing. It checks version, PWA cache, reset, progress model, Manual/Admin evidence, and release scripts to prevent surprises from old browsers or stale versions.",
         "Dashboard now renders Current data and Global Progress through one shared guard. If a calculation fails, it shows a visible warning with version and recommended action instead of disappearing.",
         "The service worker no longer caches the critical app shell: index.html, app.js, styles.css, manifest, reset, and service-worker always go to the network to avoid trapped old versions.",
@@ -8673,7 +8675,9 @@ function buildGlobalProgressSnapshot() {
         connectorsDetail: "Routes documented for Meta/Oakley, Oura, Apple Health, Samsung Health, Health Connect; sample payload kit, validation fixtures, Oura, Apple Health, Health Connect/Samsung, and Meta normalizers are active. Live OAuth/SDK connectors remain future work.",
         full: "Full product ambition",
         fullDetail: `Future ambition ${fullAmbitionOverall}% when direct connectors, store distribution, advanced agents, predictive AI, and direct APIs are included. This is tracked separately so it does not hide PWA progress.`,
-        nextDetail: "Run npm run verify:pilot and npm run package:vibeapp, pilot-install Vibeapp on a physical Android device, then harden publication design/output and device-import flows.",
+        closure: "Operational PWA closure",
+        closureDetail: "npm run verify:closure is the single close-the-cycle command: release checks, output PDFs, local E2E, PWA shell, integration contracts, Vibeapp simulation, Android, and Flutter. If it passes, the PWA is operationally closed; native apps, live connectors, and advanced agents move to phase 2.",
+        nextDetail: "Run npm run verify:closure. If it passes, close the PWA operating cycle and move phase 2 to Vibeapp native, live connectors, and advanced automation.",
       }
     : {
         title: "Estado global de avance",
@@ -8708,10 +8712,13 @@ function buildGlobalProgressSnapshot() {
         connectorsDetail: "Rutas documentadas para Meta/Oakley, Oura, Apple Health, Samsung Health y Health Connect; kit de payloads, pruebas de validación y normalizadores Oura, Apple Health, Health Connect/Samsung y Meta activos. Los conectores OAuth/SDK en vivo quedan futuros.",
         full: "Ambición de producto completo",
         fullDetail: `Ambición futura ${fullAmbitionOverall}% cuando se incluyen conectores directos, tiendas, agentes avanzados, IA predictiva y APIs directas. Se mide aparte para no ocultar el avance de la PWA.`,
-        nextDetail: "Ejecutar npm run verify:pilot y npm run package:vibeapp, instalar Vibeapp en un Android físico de piloto, luego fortalecer diseño/salidas de publicaciones y flujos de importación por dispositivo.",
+        closure: "Cierre PWA operativo",
+        closureDetail: "npm run verify:closure es el comando único para cerrar el ciclo: checks de release, PDFs de salida, E2E local, shell PWA, contratos de integración, simulador Vibeapp, Android y Flutter. Si pasa, la PWA queda cerrada operativamente; apps nativas, conectores en vivo y agentes avanzados pasan a fase 2.",
+        nextDetail: "Ejecutar npm run verify:closure. Si pasa, cerrar el ciclo operativo de la PWA y mover fase 2 a Vibeapp nativa, conectores en vivo y automatización avanzada.",
       };
   const tracks = [
     { key: "pwa", title: labels.pwa, score: operatingPwaScore, detail: labels.pwaDetail, view: "dashboard" },
+    { key: "closure", title: labels.closure, score: overall >= 90 ? 100 : overall, detail: labels.closureDetail, view: "admin", focus: "adminOperationalFocusPanel" },
     { key: "production", title: labels.production, score: productionScore, detail: labels.productionDetail, view: "admin", focus: "multiDevicePersistencePanel" },
     { key: "outputs", title: labels.outputs, score: publicationReadiness.score, detail: labels.outputsDetail, view: "publications" },
     { key: "multimodal", title: labels.multimodal, score: multimodalScore, detail: labels.multimodalDetail, view: "assetLibrary" },
@@ -27875,6 +27882,8 @@ function renderAdminOperationalFocusPanel() {
         localE2eDetail: "npm run verify:e2e starts the local API, opens a real controlled browser, creates a real capture with an attachment, edits and deletes it from Library with confirmation, verifies the attachment disappears from Assets, loads controlled demo data, validates shared scope across Reports, Findings, and Publications, and exports PDFs from the visible buttons.",
         productionE2e: "Production E2E gate",
         productionE2eDetail: "npm run verify:production now checks Railway endpoints and then drives a headless browser through the real PWA: load demo data, click Report PDF, Findings PDF, and Publication PDF buttons, and require final ready progress states.",
+        closureGate: "Operational PWA closure",
+        closureGateDetail: "npm run verify:closure consolidates release, audits, PDFs, local E2E, PWA, integrations, Vibeapp, Android, and Flutter. If it passes, the PWA is closed for operation; native app, live connectors, and advanced agents are phase 2.",
       }
     : {
         title: "Administración operativa",
@@ -27954,6 +27963,8 @@ function renderAdminOperationalFocusPanel() {
     labels.localE2eDetail = "npm run verify:e2e inicia la API local, abre un navegador real controlado, crea una captura real con adjunto, la edita y elimina desde Librer\u00eda con confirmaci\u00f3n, confirma que el adjunto desaparece de Activos, carga datos demo controlados, valida el alcance compartido entre Reportes, Hallazgos y Publicaciones, y exporta PDFs desde los botones visibles.";
     labels.productionE2e = "Compuerta E2E de produccion";
     labels.productionE2eDetail = "npm run verify:production ahora revisa endpoints en Railway y luego maneja un navegador headless sobre la PWA real: carga datos demo, pulsa los botones PDF de Reportes, Hallazgos y Publicaciones, y exige progreso final listo.";
+    labels.closureGate = "Cierre PWA operativo";
+    labels.closureGateDetail = "npm run verify:closure consolida release, auditorias, PDFs, E2E local, PWA, integraciones, Vibeapp, Android y Flutter. Si pasa, la PWA se considera cerrada para operacion; app nativa, conectores en vivo y agentes avanzados quedan como fase 2.";
   }
   const cards = [
     [labels.flow, labels.flowDetail],
@@ -27991,6 +28002,7 @@ function renderAdminOperationalFocusPanel() {
     [labels.runtimeAudit, labels.runtimeAuditDetail],
     [labels.localE2e, labels.localE2eDetail],
     [labels.productionE2e, labels.productionE2eDetail],
+    [labels.closureGate, labels.closureGateDetail],
     [labels.next, labels.nextDetail],
   ];
   container.innerHTML = `

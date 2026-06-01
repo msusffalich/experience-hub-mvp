@@ -45,6 +45,7 @@ check(files.app.includes("Release control audit"), "English Admin does not expos
 check(files.app.includes("npm run audit:control"), "Manual/Admin does not mention npm run audit:control.");
 check(files.packageJson.includes('"audit:control"'), "package.json does not expose audit:control.");
 check(files.packageJson.includes('"audit:runtime"'), "package.json does not expose audit:runtime.");
+check(files.packageJson.includes('"verify:closure"') && files.packageJson.includes("npm run verify:pilot && node scripts/verify-closure.mjs"), "package.json does not expose the final PWA closure gate.");
 check(files.packageJson.includes("npm run audit:control") && files.packageJson.includes('"verify:release"'), "verify:release does not include the control audit.");
 check(files.packageJson.includes("npm run audit:runtime"), "check does not include the runtime helper audit.");
 check(files.runtimeAudit.includes("Runtime helper audit passed"), "runtime helper audit script is missing its success guard.");

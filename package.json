@@ -14,6 +14,7 @@
     "verify:e2e": "node scripts/verify-local-e2e-flow.mjs",
     "verify:production": "node scripts/verify-production-outputs.mjs && node scripts/verify-production-e2e.mjs",
     "verify:pwa": "node scripts/verify-pwa-release.mjs",
+    "verify:closure": "npm run verify:pilot && node scripts/verify-closure.mjs",
     "audit:control": "node scripts/audit-control.mjs",
     "audit:runtime": "node scripts/audit-runtime-helpers.mjs",
     "simulate:vibeapp": "node scripts/simulate-vibeapp-sync.mjs",

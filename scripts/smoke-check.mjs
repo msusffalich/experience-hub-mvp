@@ -15,6 +15,7 @@ const files = {
   outputPdfVerify: readFileSync("scripts/verify-output-pdfs.mjs", "utf8"),
   pwaVerify: readFileSync("scripts/verify-pwa-release.mjs", "utf8"),
   localE2eVerify: readFileSync("scripts/verify-local-e2e-flow.mjs", "utf8"),
+  closureVerify: readFileSync("scripts/verify-closure.mjs", "utf8"),
   controlAudit: readFileSync("scripts/audit-control.mjs", "utf8"),
   runtimeAudit: readFileSync("scripts/audit-runtime-helpers.mjs", "utf8"),
   integrationVerify: readFileSync("scripts/verify-integration-contract.mjs", "utf8"),
@@ -56,6 +57,8 @@ assert(files.serviceWorker.includes("NETWORK_ONLY_PATHS") && files.serviceWorker
 assert(files.app.includes("const fullAmbitionOverall") && files.app.includes("Current delivery") && files.app.includes("Entrega actual"), "Global progress must separate current delivery from full future ambition.");
 assert(files.app.includes("const operatingPwaScore") && files.app.includes("Release PWA verificable") && files.app.includes("verifiable PWA gate"), "Global progress must include the verified PWA delivery gate.");
 assert(files.app.includes("Ruta operativa al 90") && files.app.includes("Operating route to 90"), "Global progress must separate the operating route from future native/connectors horizon.");
+assert(files.app.includes("Cierre PWA operativo") && files.app.includes("Operational PWA closure") && files.packageJson.includes("\"verify:closure\""), "Manual/Admin must expose the final PWA closure gate.");
+assert(files.closureVerify.includes("PWA closure verification passed") && files.closureVerify.includes("phase 2"), "Closure verification script must summarize PWA closure and phase 2.");
 assert(files.app.includes("Estado global de avance mide capacidades implementadas") && files.app.includes("Global Progress measures implemented"), "Manual must explain that global progress is capability-based, not browser-data-based.");
 assert(files.packageJson.includes("\"audit:control\"") && files.packageJson.includes("npm run audit:control"), "Release verification must include the control audit.");
 assert(files.controlAudit.includes("Control audit passed") && files.controlAudit.includes("Auditoría de control de release"), "Control audit script must verify the release-control Admin evidence.");
