@@ -21,6 +21,7 @@ const files = {
   integrationVerify: readFileSync("scripts/verify-integration-contract.mjs", "utf8"),
   ouraConnectorDoc: readFileSync("docs/oura-openapi-connector.md", "utf8"),
   androidVerify: readFileSync("scripts/verify-android-release.mjs", "utf8"),
+  iosVerify: readFileSync("scripts/verify-ios-readiness.mjs", "utf8"),
   flutterVerify: readFileSync("scripts/verify-flutter-mobile.mjs", "utf8"),
   vibeappPackage: readFileSync("scripts/package-vibeapp-pilot.mjs", "utf8"),
   vibeappSimulator: readFileSync("scripts/simulate-vibeapp-sync.mjs", "utf8"),
@@ -309,7 +310,9 @@ assert(files.localE2eVerify.includes("seedButton") && files.localE2eVerify.inclu
 assert(files.packageJson.includes("\"verify:pwa\"") && files.packageJson.includes("\"verify:release\""), "package.json must expose PWA and release verification scripts.");
 assert(files.pwaVerify.includes("manifest.webmanifest") && files.pwaVerify.includes("service-worker.js") && files.pwaVerify.includes("VIBE_RELEASE_URL"), "PWA verifier must check manifest, service worker, and optional production URL.");
 assert(files.packageJson.includes("\"verify:android\"") && files.androidVerify.includes("apksigner") && files.androidVerify.includes("key.properties"), "package.json must expose Android signing verification.");
+assert(files.packageJson.includes("\"verify:ios\"") && files.iosVerify.includes("io.vibeapp.mobile") && files.iosVerify.includes("HealthKit"), "package.json must expose iOS readiness verification.");
 assert(files.packageJson.includes("\"verify:flutter\"") && files.packageJson.includes("\"verify:pilot\""), "package.json must expose Flutter and unified pilot verification scripts.");
+assert(files.packageJson.includes("npm run verify:ios") && files.vibeappPackage.includes("Android") && files.vibeappMain.includes("Vibeapp"), "Unified pilot verification must include iOS readiness while Android packaging remains available.");
 assert(files.flutterVerify.includes("flutter analyze") || files.flutterVerify.includes('["analyze"]'), "Flutter verifier must run flutter analyze.");
 assert(files.flutterVerify.includes("flutter test") || files.flutterVerify.includes('["test"]'), "Flutter verifier must run flutter test.");
 assert(files.flutterVerify.includes("io.vibeapp.mobile") && files.flutterVerify.includes("VIBE_REBUILD_ANDROID"), "Flutter verifier must validate the Android package contract and optional rebuild path.");

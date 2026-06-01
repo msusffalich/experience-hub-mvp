@@ -15,15 +15,39 @@ Safe native packaging baseline now in place:
 - Android bundle packaging is verified for the Play Console path. The current release bundle is generated at `build/app/outputs/bundle/release/app-release.aab` and signed with the local pilot upload key outside the repository.
 - Android declares camera and microphone as optional hardware features. The app can request runtime permissions for capture without excluding pilot devices that lack one of those sensors.
 - Android release builds use a real upload key when `android/key.properties` exists with `storeFile`, `storePassword`, `keyAlias`, and `keyPassword`. The local pilot key lives under `C:\Users\msusf\Documents\Codex\secure`; do not commit the key or passwords.
-- iOS has user-facing usage strings for camera, microphone, photo library, and when-in-use location.
+- iOS uses the pilot bundle id `io.vibeapp.mobile`, matching the Android package id for product continuity.
+- iOS has user-facing usage strings for camera, microphone, photo library read/add, when-in-use location, and Apple Health read/write reservations.
+- iOS includes `Runner/Runner.entitlements` with HealthKit enabled so the Xcode phase starts from an explicit entitlement baseline.
 
 Pilot blockers that still need product/account decisions:
 
 - Keep Android upload signing material local and backed up securely; do not commit keystores or passwords.
 - Confirm the final production package id before Play Console registration. Changing it after store publication is painful, so treat `io.vibeapp.mobile` as the pilot candidate until product ownership is final.
 - Migrate the Android Gradle/Kotlin stack to Flutter's built-in Kotlin path once all plugins support it. For now, AGP 8.13.1 is pinned because it builds reliably with `file_picker`, `image_picker_android`, `package_info_plus`, and `record_android`.
-- Set the iOS development team, provisioning profile, and final bundle identifier in Xcode once the Apple developer account is selected.
+- Set the iOS development team and provisioning profile in Xcode once the Apple developer account is selected.
 - Replace default Flutter launcher icons and launch images before external testers receive the app.
+
+## iOS/Mac handoff
+
+Windows can verify the iOS contract, plist, bundle id, and entitlements, but Apple still requires macOS/Xcode to compile, sign, install, and test on iPhone or iPad.
+
+Run this on the shared workspace before moving to the Mac:
+
+```powershell
+npm run verify:ios
+```
+
+Then on the Mac:
+
+1. Install Flutter and open `vibeapp/ios/Runner.xcworkspace` in Xcode.
+2. Select the Apple Developer team for Runner.
+3. Confirm bundle id `io.vibeapp.mobile`.
+4. Confirm HealthKit capability is enabled and uses `Runner/Runner.entitlements`.
+5. Run `flutter pub get`.
+6. Run `VIBE_IOS_BUILD=1 npm run verify:ios` for a no-codesign build check, or build from Xcode for a signed device install.
+7. Install on iPhone/iPad and test: sign-in, quick note, active experience, camera, video, audio, location, Apple Health export/import, queue retry, and PWA handoff.
+
+The first Mac session should not redesign the app. Its goal is to confirm build/signing, permissions, and one real device capture-to-PWA loop.
 
 ## Current skeleton
 

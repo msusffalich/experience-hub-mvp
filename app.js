@@ -1,4 +1,4 @@
-const APP_VERSION = "20260601-pwa-closure-515";
+const APP_VERSION = "20260601-vibeapp-ios-ready-516";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2391,7 +2391,8 @@ const manualContent = {
         "Las pruebas Flutter de cola validan archivos faltantes, fallos temporales, reintentos automaticos, fallos terminales y limpieza del estado sincronizado sin depender de un telefono fisico.",
         "Vibeapp ahora incluye Compuerta piloto móvil: verifica el backend productivo, confirma sesión, revisa cola local y muestra capacidades listas antes de iniciar una prueba real en teléfono. Android ya declara permisos de red, cámara, audio, ubicación, multimedia y notificaciones para evitar bloqueos básicos de plataforma.",
         "Vibeapp ya tiene ruta Android verificable: SDK/JDK instalados, paquete piloto io.vibeapp.mobile, APK debug generado, APK release firmado y App Bundle release firmado. Antes de Play Console queda decidir custodia formal de la upload key.",
-        "La compuerta local npm run verify:pilot ejecuta en una sola orden los controles PWA, PDFs ReportLab, Android firmado y Flutter analyze/test. npm run verify:production agrega validación E2E en Railway con navegador headless y botones reales. npm run verify:android queda como chequeo específico de firma APK/AAB.",
+        "Vibeapp ya tiene ruta iOS preparada para Mac: bundle id io.vibeapp.mobile, Info.plist con cámara, micrófono, fotos, ubicación y Apple Health, entitlements HealthKit y verificación npm run verify:ios. La compilación/firma real requiere macOS/Xcode y cuenta Apple Developer.",
+        "La compuerta local npm run verify:pilot ejecuta en una sola orden los controles PWA, PDFs ReportLab, Android firmado, iOS readiness y Flutter analyze/test. npm run verify:production agrega validación E2E en Railway con navegador headless y botones reales. npm run verify:android queda como chequeo específico de firma APK/AAB; npm run verify:ios queda como chequeo específico de preparación Apple.",
         "La orden npm run package:vibeapp genera un paquete local en dist/vibeapp-pilot y un ZIP transferible en dist con APK, AAB, checksums, manifiesto y README de instalación. El paquete no incluye claves ni passwords.",
         "El simulador npm run simulate:vibeapp valida sin teléfono físico que Vibeapp pueda enviar nota rápida, agenda, foto, video, audio, biometría, ubicación y sesiones Meta hacia los destinos correctos del contrato: experiencia, Agenda, activos o contexto.",
         "Administración permite ejecutar la misma simulación Vibeapp contra /api/vibeapp/simulate desde el panel de integración de dispositivos, mostrando señales correctas, destinos y errores sin abrir la terminal.",
@@ -27870,6 +27871,8 @@ function renderAdminOperationalFocusPanel() {
         ouraConnectorDetail: "The Oura v2 OpenAPI now has backend endpoints for manifest and normalization. It maps readiness, sleep, activity, stress, resilience, SpO2, heart rate, workouts, cardiovascular age, VO2 max, and battery data into sensitive Vibe context signals.",
         nativeDeviceConnectors: "Apple, Samsung, and Meta routes",
         nativeDeviceConnectorsDetail: "Apple Health is handled through Vibeapp iOS and HealthKit permissions; Samsung/Galaxy data goes through Android Health Connect; Meta wearables use Vibeapp or Meta AI/Gallery import until SDK access is approved. Each route now has a backend manifest and normalizer.",
+        iosReadiness: "Vibeapp iOS ready for Mac",
+        iosReadinessDetail: "Vibeapp iOS uses bundle id io.vibeapp.mobile, camera, microphone, photo, location, and Apple Health permissions, plus HealthKit entitlements. npm run verify:ios validates the package from Windows; real build, signing, and install happen on your Mac with Xcode.",
         deviceSelfTest: "Device connector self-test",
         deviceSelfTestDetail: "Admin can run one backend self-test that validates Oura, Apple Health, Health Connect/Samsung, and Meta payloads against the Vibe contract before any live OAuth, HealthKit, Health Connect, or SDK integration.",
         dashboardGuard: "Dashboard state guard",
@@ -27951,6 +27954,8 @@ function renderAdminOperationalFocusPanel() {
     labels.ouraConnectorDetail = "El OpenAPI v2 de Oura ya tiene endpoints backend de manifiesto y normalizaci\u00f3n. Mapea readiness, sue\u00f1o, actividad, estr\u00e9s, resiliencia, SpO2, frecuencia card\u00edaca, entrenamientos, edad cardiovascular, VO2 max y bater\u00eda hacia se\u00f1ales sensibles de contexto Vibe.";
     labels.nativeDeviceConnectors = "Rutas Apple, Samsung y Meta";
     labels.nativeDeviceConnectorsDetail = "Apple Health se maneja con Vibeapp iOS y permisos HealthKit; Samsung/Galaxy va por Android Health Connect; Meta wearables usa Vibeapp o importaci\u00f3n desde Meta AI/Galer\u00eda hasta tener SDK aprobado. Cada ruta ya tiene manifiesto backend y normalizador.";
+    labels.iosReadiness = "Vibeapp iOS listo para Mac";
+    labels.iosReadinessDetail = "Vibeapp iOS usa bundle id io.vibeapp.mobile, permisos de camara, microfono, fotos, ubicacion y Apple Health, y entitlements HealthKit. npm run verify:ios valida el paquete desde Windows; la compilacion, firma e instalacion real se haran en tu Mac con Xcode.";
     labels.deviceSelfTest = "Prueba de conectores de dispositivos";
     labels.deviceSelfTestDetail = "Administraci\u00f3n puede ejecutar una prueba backend que valida payloads de Oura, Apple Health, Health Connect/Samsung y Meta contra el contrato Vibe antes de cualquier OAuth, HealthKit, Health Connect o SDK en vivo.";
     labels.dashboardGuard = "Guardia de estado del Panel";
@@ -27996,6 +28001,7 @@ function renderAdminOperationalFocusPanel() {
     [labels.integrationKit, labels.integrationKitDetail],
     [labels.ouraConnector, labels.ouraConnectorDetail],
     [labels.nativeDeviceConnectors, labels.nativeDeviceConnectorsDetail],
+    [labels.iosReadiness, labels.iosReadinessDetail],
     [labels.deviceSelfTest, labels.deviceSelfTestDetail],
     [labels.dashboardGuard, labels.dashboardGuardDetail],
     [labels.assetLabelFix, labels.assetLabelFixDetail],

@@ -32,8 +32,16 @@
 	<string>Vibe usa el microfono cuando grabas videos o audios desde la app nativa.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Vibe usa tu biblioteca solo cuando eliges una imagen o video para una experiencia.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Vibe puede guardar o preparar medios solo cuando decides exportarlos o compartirlos desde una experiencia.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Vibe usa tu ubicacion solo cuando eliges guardar el lugar de una experiencia.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Vibe no rastrea ubicacion en segundo plano; esta autorizacion queda reservada para pruebas futuras aprobadas por el usuario.</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Vibe puede leer datos de Apple Health solo con tu permiso para enriquecer reportes de energia, actividad, sueno y recuperacion.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Vibe no escribe datos medicos por defecto; esta autorizacion queda reservada para integraciones futuras que tu apruebes.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
