@@ -54,6 +54,8 @@ check(files.settingsGradle.includes('com.android.application") version "8.13.1"'
 ].forEach((permission) => check(files.manifest.includes(permission), `Android manifest is missing ${permission}.`));
 [
   "class VibeAuthClient",
+  "signInViaBackend",
+  "/api/mobile/auth/sign-in",
   "class ExperienceSyncClient",
   "class NativeQuickCommand",
   "class ActiveExperienceSession",

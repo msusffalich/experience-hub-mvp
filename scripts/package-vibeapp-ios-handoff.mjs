@@ -7,7 +7,7 @@ const root = process.cwd();
 const pwaVersion = readFileSync(path.join(root, "app.js"), "utf8").match(/const APP_VERSION = "([^"]+)";/)?.[1] || "unknown";
 const pubspec = readFileSync(path.join(root, "vibeapp", "pubspec.yaml"), "utf8");
 const vibeappVersion = pubspec.match(/^version:\s*(.+)$/m)?.[1]?.trim() || "0.0.0+0";
-const bundleId = "io.vibeapp.mobile";
+const bundleId = "com.miguelsusffalich.vibeapp";
 const sourceDir = path.join(root, "vibeapp");
 const outDir = path.join(root, "dist", "vibeapp-ios-handoff");
 const sourceOutDir = path.join(outDir, "vibeapp");
@@ -93,7 +93,7 @@ const manifest = {
   pilotFlow: [
     "Open vibeapp/ios/Runner.xcworkspace on the Mac.",
     "Select the Apple Developer Team for Runner.",
-    "Confirm bundle id io.vibeapp.mobile and HealthKit capability.",
+    "Confirm bundle id com.miguelsusffalich.vibeapp and HealthKit capability.",
     "Run a no-codesign build or build/install from Xcode.",
     "Install on iPhone/iPad and test sign-in, quick note, active experience, camera, video, audio, location, queue retry, Apple Health export/import, and PWA handoff.",
   ],

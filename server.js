@@ -208,6 +208,27 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (url.pathname === "/api/mobile/auth/sign-in" && req.method === "POST") {
+    const body = await readJson(req);
+    const email = String(body.email || "").trim();
+    const password = String(body.password || "");
+    if (!email || !password) {
+      throw new HttpError(400, "missing_credentials", "Ingresa correo y clave.");
+    }
+    const auth = await signInSupabasePassword(email, password);
+    sendJson(res, 200, {
+      ok: true,
+      accessToken: auth.access_token,
+      tokenType: auth.token_type || "bearer",
+      expiresIn: auth.expires_in || null,
+      user: {
+        id: auth.user?.id || "",
+        email: auth.user?.email || email,
+      },
+    });
+    return;
+  }
+
   if (url.pathname === "/api/integration/contract" && req.method === "GET") {
     sendJson(res, 200, buildIntegrationContract());
     return;
@@ -2081,6 +2102,34 @@ async function verifySupabaseUser(token) {
   return JSON.parse(text);
 }
 
+async function signInSupabasePassword(email, password) {
+  if (activePersistence() !== "supabase") {
+    throw new HttpError(503, "supabase_not_active", "La nube de Vibe no está lista para iniciar sesión.");
+  }
+  const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+    method: "POST",
+    headers: {
+      apikey: SUPABASE_PUBLISHABLE_KEY,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email, password }),
+  });
+  const text = await response.text();
+  if (!response.ok) {
+    throw new HttpError(response.status === 400 ? 401 : response.status, "auth_rejected", cleanAuthError(text));
+  }
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new HttpError(502, "auth_invalid_response", "Vibe no recibió una respuesta válida de acceso.");
+  }
+  if (!data?.access_token) {
+    throw new HttpError(502, "auth_missing_token", "Vibe no recibió el token de sesión.");
+  }
+  return data;
+}
+
 async function getProfile(user = { id: LOCAL_USER_ID, email: "local-user@example.com" }) {
   const parameters = await getProfileParameters(user.id || LOCAL_USER_ID);
   if (activePersistence() === "supabase") {
@@ -3444,6 +3493,22 @@ function sanitizeDiagnosticError(error) {
     .replace(SUPABASE_SERVICE_ROLE_KEY || "__never__", "[service_role]")
     .replace(SUPABASE_PUBLISHABLE_KEY || "__never__", "[publishable_key]")
     .slice(0, 220);
+}
+
+function cleanAuthError(text = "") {
+  try {
+    const data = JSON.parse(text);
+    const message = String(data.msg || data.message || data.error_description || data.error || "");
+    if (/invalid login|invalid credentials|email not confirmed|invalid grant/i.test(message)) {
+      return "Correo o clave no válidos, o cuenta pendiente de confirmación.";
+    }
+    if (message) return message.slice(0, 180);
+  } catch {
+    // Fall through to a short plain-text response.
+  }
+  const plain = String(text || "").trim();
+  if (!plain) return "No se pudo iniciar sesión.";
+  return plain.slice(0, 180);
 }
 
 async function getSupabaseStorageBucket() {

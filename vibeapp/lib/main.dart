@@ -57,6 +57,7 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
   bool _autoRetryRunning = false;
   bool _isCheckingBackend = false;
   bool _backendHealthOk = false;
+  int _selectedHomeTab = 0;
   String _backendHealthMessage = 'Verifica el backend antes del piloto móvil.';
 
   @override
@@ -142,9 +143,16 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
     );
     final email = _emailController.text.trim();
     final password = _passwordController.text;
-    if (email.isEmpty || password.isEmpty) return;
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Ingresa correo y clave para sincronizar.')),
+      );
+      return;
+    }
     setState(() => _syncState = SyncState.syncing);
-    final result = await VibeAuthClient(settings).signIn(email, password);
+    final result =
+        await VibeAuthClient(settings).signInViaBackend(email, password);
     if (!mounted) return;
     if (result.ok && result.accessToken.isNotEmpty) {
       setState(() {
@@ -1141,6 +1149,23 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
   }
 
   Future<void> _clearSyncedQueueItems() async {
+    final syncedCount =
+        _queue.where((item) => item.status == CaptureSyncStatus.synced).length;
+    if (syncedCount == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No hay capturas sincronizadas para limpiar.'),
+        ),
+      );
+      return;
+    }
+    final confirmed = await _confirmAction(
+      title: 'Limpiar capturas sincronizadas',
+      message:
+          'Se quitarán $syncedCount captura(s) ya enviadas de la cola local. No se borrarán de Vibe PWA.',
+      confirmLabel: 'Limpiar',
+    );
+    if (!confirmed || !mounted) return;
     setState(() {
       _queue.removeWhere((item) => item.status == CaptureSyncStatus.synced);
       _syncState = _queue.any(
@@ -1153,6 +1178,31 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Capturas sincronizadas limpiadas.')),
     );
+  }
+
+  Future<bool> _confirmAction({
+    required String title,
+    required String message,
+    String confirmLabel = 'Continuar',
+  }) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(confirmLabel),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
   }
 
   Future<void> _prepareHealthConnectPilotBundle() async {
@@ -1173,41 +1223,894 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final commandPreview = _noteController.text.trim().isEmpty
-        ? null
-        : NativeQuickCommand.parse(_noteController.text);
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Vibeapp'),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: Center(child: SyncBadge(state: _syncState)),
-          ),
-        ],
+    final hasDraft = _noteController.text.trim().isNotEmpty;
+    final commandPreview =
+        !hasDraft ? null : NativeQuickCommand.parse(_noteController.text);
+    final queueSummary = CaptureQueueSummary.fromItems(_queue);
+
+    final noteComposer = QuickNoteComposer(
+      noteController: _noteController,
+      commandPreview: commandPreview,
+      hasDraft: hasDraft,
+      onSave: _saveDraft,
+    );
+
+    final captureActions = CaptureActionGrid(
+      onAction: _registerNativeAction,
+      onAudio: _toggleAudioRecording,
+      onPhoto: _openPhotoCaptureSheet,
+      onVideo: _openVideoCaptureSheet,
+      onAgenda: _openAgendaSheet,
+      onLocation: _captureLocation,
+      onBiometrics: _importBiometricFile,
+      isRecordingAudio: _isRecordingAudio,
+    );
+
+    final sessionCard = ExperienceSessionCard(
+      titleController: _sessionTitleController,
+      session: _activeSession,
+      onStart: _startExperienceSession,
+      onClose: _closeExperienceSession,
+    );
+
+    final queuePanel = CaptureQueuePanel(
+      queue: _queue,
+      onClearSynced: _clearSyncedQueueItems,
+    );
+
+    final settingsCard = SyncSettingsCard(
+      apiUrlController: _apiUrlController,
+      emailController: _emailController,
+      passwordController: _passwordController,
+      signedInEmail: _signedInEmail,
+      onSignIn: _signIn,
+      onRetry: _syncPendingQueue,
+    );
+
+    final advancedSettings = AdvancedSettingsCard(
+      readinessCard: NativePilotReadinessCard(
+        backendOk: _backendHealthOk,
+        backendMessage: _backendHealthMessage,
+        checkingBackend: _isCheckingBackend,
+        signedInEmail: _signedInEmail,
+        queue: _queue,
+        onVerifyBackend: _verifyBackendHealth,
       ),
+      flowSummary: const NativeFlowSummary(),
+      externalImportCard:
+          ExternalSessionImportCard(onImport: _importExternalSession),
+      healthConnectCard: HealthConnectBridgeCard(
+        permissionPlan: HealthConnectPermissionPlan.pilot(),
+        onPreparePilotBundle: _prepareHealthConnectPilotBundle,
+      ),
+    );
+
+    final readinessCard = NativePilotReadinessCard(
+      backendOk: _backendHealthOk,
+      backendMessage: _backendHealthMessage,
+      checkingBackend: _isCheckingBackend,
+      signedInEmail: _signedInEmail,
+      queue: _queue,
+      onVerifyBackend: _verifyBackendHealth,
+    );
+
+    final pages = [
+      [
+        VibeHomeHeader(
+          syncState: _syncState,
+          signedInEmail: _signedInEmail,
+          queueSummary: queueSummary,
+          activeSession: _activeSession,
+        ),
+        const SizedBox(height: 18),
+        const VibeHomeSegments(),
+        const SizedBox(height: 22),
+        Text(
+          'Captura al paso',
+          style: Theme.of(context)
+              .textTheme
+              .titleLarge
+              ?.copyWith(fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: 12),
+        captureActions,
+        const SizedBox(height: 18),
+        noteComposer,
+        const SizedBox(height: 18),
+        sessionCard,
+        const SizedBox(height: 18),
+        CompactQueueStatusCard(summary: queueSummary),
+      ],
+      [
+        const AppSectionHeader(
+          title: 'Capturar',
+          subtitle: 'Notas, voz, camara, video, ubicacion y archivos.',
+          icon: Icons.add_circle_outline,
+        ),
+        const SizedBox(height: 14),
+        noteComposer,
+        const SizedBox(height: 18),
+        captureActions,
+        const SizedBox(height: 18),
+        sessionCard,
+      ],
+      [
+        MobileLibraryPanel(queue: _queue, activeSession: _activeSession),
+      ],
+      [
+        MobileAssetsPanel(queue: _queue, activeSession: _activeSession),
+      ],
+      [
+        MobileAgendaPanel(queue: _queue, activeSession: _activeSession),
+      ],
+      [
+        const AppSectionHeader(
+          title: 'Estado',
+          subtitle: 'Sincronizacion clara, sin exponer la maquinaria interna.',
+          icon: Icons.cloud_done_outlined,
+        ),
+        const SizedBox(height: 14),
+        CompactQueueStatusCard(summary: queueSummary),
+        const SizedBox(height: 14),
+        queuePanel,
+      ],
+      [
+        const AppSectionHeader(
+          title: 'Ajustes',
+          subtitle: 'Cuenta, backend, conectores y opciones avanzadas.',
+          icon: Icons.tune_outlined,
+        ),
+        const SizedBox(height: 14),
+        settingsCard,
+        const SizedBox(height: 16),
+        readinessCard,
+        const SizedBox(height: 16),
+        advancedSettings,
+      ],
+    ];
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFFAFAFA),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 120),
+          children: pages[_selectedHomeTab],
+        ),
+      ),
+      bottomNavigationBar: VibeBottomNavigation(
+        selectedIndex: _selectedHomeTab,
+        onSelected: (index) => setState(() => _selectedHomeTab = index),
+      ),
+    );
+  }
+}
+
+class VibeHomeHeader extends StatelessWidget {
+  const VibeHomeHeader({
+    required this.syncState,
+    required this.signedInEmail,
+    required this.queueSummary,
+    required this.activeSession,
+    super.key,
+  });
+
+  final SyncState syncState;
+  final String signedInEmail;
+  final CaptureQueueSummary queueSummary;
+  final ActiveExperienceSession? activeSession;
+
+  @override
+  Widget build(BuildContext context) {
+    final status = _homeStatusText();
+    final statusColor = _homeStatusColor();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Vibe',
+                    style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0,
+                        ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    activeSession == null
+                        ? 'Captura tu experiencia en el momento.'
+                        : 'Experiencia abierta: ${activeSession!.title}',
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: Colors.black54,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+            _RoundHeaderButton(
+              icon: Icons.search,
+              label: 'Buscar',
+              onPressed: () {},
+            ),
+            const SizedBox(width: 10),
+            _RoundHeaderButton(
+              icon: Icons.person_outline,
+              label: 'Cuenta',
+              onPressed: () {},
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: statusColor.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: statusColor.withValues(alpha: 0.22)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.cloud_done_outlined, color: statusColor, size: 18),
+                const SizedBox(width: 8),
+                Text(
+                  status,
+                  style: TextStyle(
+                    color: statusColor,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _homeStatusText() {
+    if (signedInEmail.isEmpty) return 'Entra para sincronizar';
+    if (queueSummary.pending > 0) {
+      return '${queueSummary.pending} pendiente(s) por sincronizar';
+    }
+    return switch (syncState) {
+      SyncState.syncing => 'Sincronizando ahora',
+      SyncState.needsAttention => 'Revisar conexión',
+      _ => 'Todo sincronizado',
+    };
+  }
+
+  Color _homeStatusColor() {
+    if (signedInEmail.isEmpty) return Colors.orange;
+    if (queueSummary.pending > 0 || syncState == SyncState.needsAttention) {
+      return Colors.orange;
+    }
+    if (syncState == SyncState.syncing) return Colors.blue;
+    return const Color(0xFF0D7C66);
+  }
+}
+
+class _RoundHeaderButton extends StatelessWidget {
+  const _RoundHeaderButton({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: label,
+      child: IconButton.filledTonal(
+        onPressed: onPressed,
+        icon: Icon(icon),
+        style: IconButton.styleFrom(
+          fixedSize: const Size(58, 58),
+          backgroundColor: const Color(0xFFF0F0F0),
+          foregroundColor: Colors.black87,
+        ),
+      ),
+    );
+  }
+}
+
+class VibeHomeSegments extends StatelessWidget {
+  const VibeHomeSegments({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          _SegmentPill(
+            icon: Icons.auto_awesome,
+            label: 'Para ti',
+            selected: true,
+          ),
+          SizedBox(width: 10),
+          _SegmentPill(icon: Icons.group_outlined, label: 'Grupos'),
+          SizedBox(width: 10),
+          _SegmentPill(icon: Icons.schedule, label: 'Recientes'),
+        ],
+      ),
+    );
+  }
+}
+
+class _SegmentPill extends StatelessWidget {
+  const _SegmentPill({
+    required this.icon,
+    required this.label,
+    this.selected = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: selected ? Colors.black : const Color(0xFFF0F0F0),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        child: Row(
+          children: [
+            Icon(icon, color: selected ? Colors.white : Colors.black, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                color: selected ? Colors.white : Colors.black,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class VibeBottomNavigation extends StatelessWidget {
+  const VibeBottomNavigation({
+    required this.selectedIndex,
+    required this.onSelected,
+    super.key,
+  });
+
+  final int selectedIndex;
+  final ValueChanged<int> onSelected;
+
+  static const items = [
+    _BottomNavItem(Icons.home_outlined, Icons.home, 'Inicio'),
+    _BottomNavItem(Icons.add_circle_outline, Icons.add_circle, 'Captura'),
+    _BottomNavItem(
+        Icons.library_books_outlined, Icons.library_books, 'Libreria'),
+    _BottomNavItem(Icons.perm_media_outlined, Icons.perm_media, 'Activos'),
+    _BottomNavItem(Icons.event_note_outlined, Icons.event_note, 'Agenda'),
+    _BottomNavItem(Icons.cloud_done_outlined, Icons.cloud_done, 'Estado'),
+    _BottomNavItem(Icons.tune_outlined, Icons.tune, 'Ajustes'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      minimum: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.96),
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x1F000000),
+              blurRadius: 24,
+              offset: Offset(0, 10),
+            ),
+          ],
+        ),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          child: Row(
+            children: [
+              for (var index = 0; index < items.length; index++)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 3),
+                  child: _BottomNavChip(
+                    item: items[index],
+                    selected: selectedIndex == index,
+                    onPressed: () => onSelected(index),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BottomNavItem {
+  const _BottomNavItem(this.icon, this.selectedIcon, this.label);
+
+  final IconData icon;
+  final IconData selectedIcon;
+  final String label;
+}
+
+class _BottomNavChip extends StatelessWidget {
+  const _BottomNavChip({
+    required this.item,
+    required this.selected,
+    required this.onPressed,
+  });
+
+  final _BottomNavItem item;
+  final bool selected;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final foreground = selected ? Colors.white : Colors.black87;
+    return Tooltip(
+      message: item.label,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(24),
+        onTap: onPressed,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          width: selected ? 112 : 82,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: selected ? Colors.black : const Color(0xFFF1F1F1),
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(selected ? item.selectedIcon : item.icon,
+                  color: foreground, size: 21),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  item.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: foreground,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class AppSectionHeader extends StatelessWidget {
+  const AppSectionHeader({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    super.key,
+  });
+
+  final String title;
+  final String subtitle;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: const Color(0xFFE7F4F0),
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Icon(icon, color: const Color(0xFF0D7C66)),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: Theme.of(context)
+                    .textTheme
+                    .headlineSmall
+                    ?.copyWith(fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: Colors.black54),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class MobileLibraryPanel extends StatelessWidget {
+  const MobileLibraryPanel({
+    required this.queue,
+    required this.activeSession,
+    super.key,
+  });
+
+  final List<CaptureQueueItem> queue;
+  final ActiveExperienceSession? activeSession;
+
+  @override
+  Widget build(BuildContext context) {
+    final experiences =
+        queue.where((item) => item.sourceType == 'experience-session').toList();
+    final visible = [
+      if (activeSession != null) CaptureQueueItem.fromSession(activeSession!),
+      ...queue,
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const AppSectionHeader(
+          title: 'Libreria',
+          subtitle:
+              'Experiencias y capturas recientes disponibles en el movil.',
+          icon: Icons.library_books_outlined,
+        ),
+        const SizedBox(height: 14),
+        Row(
+          children: [
+            Expanded(
+                child:
+                    _MetricTile(label: 'Capturas', value: '${queue.length}')),
+            const SizedBox(width: 10),
+            Expanded(
+                child: _MetricTile(
+                    label: 'Sesiones', value: '${experiences.length}')),
+          ],
+        ),
+        const SizedBox(height: 14),
+        if (visible.isEmpty)
+          const _EmptyStateCard(
+            icon: Icons.inbox_outlined,
+            title: 'Aun no hay experiencias locales',
+            detail: 'Crea una nota, abre una experiencia o importa un archivo.',
+          )
+        else
+          for (final item in visible.take(12))
+            _ExperiencePreviewCard(item: item),
+      ],
+    );
+  }
+}
+
+class MobileAssetsPanel extends StatelessWidget {
+  const MobileAssetsPanel({
+    required this.queue,
+    required this.activeSession,
+    super.key,
+  });
+
+  final List<CaptureQueueItem> queue;
+  final ActiveExperienceSession? activeSession;
+
+  @override
+  Widget build(BuildContext context) {
+    final assets = [
+      ...queue.expand((item) => item.attachments),
+      if (activeSession != null) ...activeSession!.attachments,
+    ];
+    final counts = <String, int>{};
+    for (final asset in assets) {
+      counts[asset.displayLabel] = (counts[asset.displayLabel] ?? 0) + 1;
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const AppSectionHeader(
+          title: 'Activos',
+          subtitle:
+              'Fotos, videos, audio, documentos y biometria listos para sincronizar.',
+          icon: Icons.perm_media_outlined,
+        ),
+        const SizedBox(height: 14),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final entry in counts.entries)
+              Chip(label: Text('${entry.key}: ${entry.value}')),
+            if (counts.isEmpty) const Chip(label: Text('Sin activos')),
+          ],
+        ),
+        const SizedBox(height: 14),
+        if (assets.isEmpty)
+          const _EmptyStateCard(
+            icon: Icons.photo_library_outlined,
+            title: 'Sin multimedia local',
+            detail:
+                'Usa Foto, Video, Audio o Biometria para poblar esta vista.',
+          )
+        else
+          for (final asset in assets.take(14)) _AssetPreviewCard(asset: asset),
+      ],
+    );
+  }
+}
+
+class MobileAgendaPanel extends StatelessWidget {
+  const MobileAgendaPanel({
+    required this.queue,
+    required this.activeSession,
+    super.key,
+  });
+
+  final List<CaptureQueueItem> queue;
+  final ActiveExperienceSession? activeSession;
+
+  @override
+  Widget build(BuildContext context) {
+    final agendaItems = queue
+        .where(
+            (item) => item.agendaEvent != null || item.sourceType == 'agenda')
+        .toList();
+    final events = [
+      if (activeSession != null) ...activeSession!.events,
+      ...queue.expand((item) => item.events),
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const AppSectionHeader(
+          title: 'Agenda',
+          subtitle:
+              'Eventos creados por comando, captura rapida o experiencia abierta.',
+          icon: Icons.event_note_outlined,
+        ),
+        const SizedBox(height: 14),
+        Row(
+          children: [
+            Expanded(
+                child: _MetricTile(
+                    label: 'Agenda', value: '${agendaItems.length}')),
+            const SizedBox(width: 10),
+            Expanded(
+                child:
+                    _MetricTile(label: 'Eventos', value: '${events.length}')),
+          ],
+        ),
+        const SizedBox(height: 14),
+        if (agendaItems.isEmpty && events.isEmpty)
+          const _EmptyStateCard(
+            icon: Icons.event_available_outlined,
+            title: 'Sin eventos aun',
+            detail: 'Di algo como: V, agenda cena hoy a las 8 pm.',
+          )
+        else ...[
+          for (final item in agendaItems.take(8))
+            _ExperiencePreviewCard(item: item),
+          for (final event in events.take(8)) _EventPreviewCard(event: event),
+        ],
+      ],
+    );
+  }
+}
+
+class _MetricTile extends StatelessWidget {
+  const _MetricTile({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      color: Colors.white,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(value,
+                style: Theme.of(context)
+                    .textTheme
+                    .headlineMedium
+                    ?.copyWith(fontWeight: FontWeight.w800)),
+            Text(label, style: Theme.of(context).textTheme.bodyMedium),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyStateCard extends StatelessWidget {
+  const _EmptyStateCard({
+    required this.icon,
+    required this.title,
+    required this.detail,
+  });
+
+  final IconData icon;
+  final String title;
+  final String detail;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      color: Colors.white,
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Row(
+          children: [
+            Icon(icon, size: 34, color: const Color(0xFF0D7C66)),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      style: const TextStyle(fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 4),
+                  Text(detail),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ExperiencePreviewCard extends StatelessWidget {
+  const _ExperiencePreviewCard({required this.item});
+
+  final CaptureQueueItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      color: Colors.white,
+      child: ListTile(
+        leading: Icon(item.status.icon, color: const Color(0xFF0D7C66)),
+        title: Text(item.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+        subtitle:
+            Text(item.subtitle, maxLines: 2, overflow: TextOverflow.ellipsis),
+        trailing: Text(item.status.label),
+      ),
+    );
+  }
+}
+
+class _AssetPreviewCard extends StatelessWidget {
+  const _AssetPreviewCard({required this.asset});
+
+  final NativeAttachmentDraft asset;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      color: Colors.white,
+      child: ListTile(
+        leading:
+            Icon(_assetIcon(asset.sourceType), color: const Color(0xFF0D7C66)),
+        title: Text(asset.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+        subtitle: Text(
+            '${asset.displayLabel} · ${asset.mimeType} · ${asset.size} bytes'),
+        trailing: asset.eventTitle.isEmpty
+            ? null
+            : const Icon(Icons.link_outlined, size: 18),
+      ),
+    );
+  }
+
+  IconData _assetIcon(String sourceType) {
+    if (sourceType == 'video') return Icons.videocam_outlined;
+    if (sourceType == 'audio') return Icons.graphic_eq_outlined;
+    if (sourceType == 'biometric') return Icons.favorite_border;
+    if (sourceType == 'document') return Icons.description_outlined;
+    if (sourceType == 'zip') return Icons.archive_outlined;
+    return Icons.photo_outlined;
+  }
+}
+
+class _EventPreviewCard extends StatelessWidget {
+  const _EventPreviewCard({required this.event});
+
+  final ExperienceEventDraft event;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      color: Colors.white,
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: const Color(0xFFE7F4F0),
+          child: Text('${event.order}'),
+        ),
+        title: Text(event.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+        subtitle: Text(event.description,
+            maxLines: 2, overflow: TextOverflow.ellipsis),
+      ),
+    );
+  }
+}
+
+class QuickNoteComposer extends StatelessWidget {
+  const QuickNoteComposer({
+    required this.noteController,
+    required this.commandPreview,
+    required this.hasDraft,
+    required this.onSave,
+    super.key,
+  });
+
+  final TextEditingController noteController;
+  final NativeQuickCommand? commandPreview;
+  final bool hasDraft;
+  final Future<void> Function() onSave;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Captura rápida',
+              'Nota rápida',
               style: Theme.of(context)
                   .textTheme
-                  .headlineMedium
-                  ?.copyWith(fontWeight: FontWeight.w700),
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w800),
             ),
-            const SizedBox(height: 8),
-            const Text(
-              'Registra una nota al paso. Si hay sesión, Vibeapp la envía al backend de Vibe para que aparezca en la PWA.',
-            ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
             TextField(
-              controller: _noteController,
-              minLines: 5,
-              maxLines: 8,
+              controller: noteController,
+              minLines: 4,
+              maxLines: 7,
               decoration: const InputDecoration(
-                labelText: 'Nota',
+                labelText: 'Cuenta lo que está pasando',
                 hintText:
                     'Ejemplo: V, toma nota que estoy llegando al museo...',
                 border: OutlineInputBorder(),
@@ -1215,68 +2118,95 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
             ),
             if (commandPreview != null) ...[
               const SizedBox(height: 12),
-              NativeCommandPreviewCard(command: commandPreview),
+              NativeCommandPreviewCard(command: commandPreview!),
             ],
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              onPressed: _saveDraft,
-              icon: const Icon(Icons.cloud_upload_outlined),
-              label: Text(commandPreview == null
-                  ? 'Guardar captura'
-                  : commandPreview.primaryActionLabel),
-            ),
-            const SizedBox(height: 24),
-            ExperienceSessionCard(
-              titleController: _sessionTitleController,
-              session: _activeSession,
-              onStart: _startExperienceSession,
-              onClose: _closeExperienceSession,
-            ),
-            const SizedBox(height: 16),
-            NativePilotReadinessCard(
-              backendOk: _backendHealthOk,
-              backendMessage: _backendHealthMessage,
-              checkingBackend: _isCheckingBackend,
-              signedInEmail: _signedInEmail,
-              queue: _queue,
-              onVerifyBackend: _verifyBackendHealth,
-            ),
-            const SizedBox(height: 16),
-            const NativeFlowSummary(),
-            const SizedBox(height: 16),
-            ExternalSessionImportCard(onImport: _importExternalSession),
-            const SizedBox(height: 16),
-            HealthConnectBridgeCard(
-              permissionPlan: HealthConnectPermissionPlan.pilot(),
-              onPreparePilotBundle: _prepareHealthConnectPilotBundle,
-            ),
-            const SizedBox(height: 16),
-            SyncSettingsCard(
-              apiUrlController: _apiUrlController,
-              emailController: _emailController,
-              passwordController: _passwordController,
-              signedInEmail: _signedInEmail,
-              onSignIn: _signIn,
-              onRetry: _syncPendingQueue,
-            ),
-            const SizedBox(height: 16),
-            CaptureActionGrid(
-              onAction: _registerNativeAction,
-              onAudio: _toggleAudioRecording,
-              onPhoto: _openPhotoCaptureSheet,
-              onVideo: _openVideoCaptureSheet,
-              onAgenda: _openAgendaSheet,
-              onLocation: _captureLocation,
-              onBiometrics: _importBiometricFile,
-              isRecordingAudio: _isRecordingAudio,
-            ),
-            const SizedBox(height: 16),
-            CaptureQueuePanel(
-              queue: _queue,
-              onClearSynced: _clearSyncedQueueItems,
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: hasDraft ? onSave : null,
+                icon: const Icon(Icons.cloud_upload_outlined),
+                label: Text(commandPreview == null
+                    ? 'Guardar captura'
+                    : commandPreview!.primaryActionLabel),
+              ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class CompactQueueStatusCard extends StatelessWidget {
+  const CompactQueueStatusCard({required this.summary, super.key});
+
+  final CaptureQueueSummary summary;
+
+  @override
+  Widget build(BuildContext context) {
+    final clear = summary.isClear;
+    return Card(
+      elevation: 0,
+      color: clear ? const Color(0xFFEAF7F2) : const Color(0xFFFFF4DF),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(
+              clear ? Icons.check_circle_outline : Icons.sync_problem_outlined,
+              color: clear ? const Color(0xFF0D7C66) : Colors.orange.shade800,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                summary.operatorMessage,
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class AdvancedSettingsCard extends StatelessWidget {
+  const AdvancedSettingsCard({
+    required this.readinessCard,
+    required this.flowSummary,
+    required this.externalImportCard,
+    required this.healthConnectCard,
+    super.key,
+  });
+
+  final Widget readinessCard;
+  final Widget flowSummary;
+  final Widget externalImportCard;
+  final Widget healthConnectCard;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+      child: ExpansionTile(
+        title: const Text('Configuración y fuentes avanzadas'),
+        subtitle: const Text(
+          'Backend, sesiones externas, Health Connect y contrato técnico.',
+        ),
+        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        children: [
+          readinessCard,
+          const SizedBox(height: 16),
+          flowSummary,
+          const SizedBox(height: 16),
+          externalImportCard,
+          const SizedBox(height: 16),
+          healthConnectCard,
+        ],
       ),
     );
   }
@@ -1888,7 +2818,7 @@ class ExperienceSessionCard extends StatelessWidget {
   }
 }
 
-class SyncSettingsCard extends StatelessWidget {
+class SyncSettingsCard extends StatefulWidget {
   const SyncSettingsCard({
     required this.apiUrlController,
     required this.emailController,
@@ -1905,6 +2835,39 @@ class SyncSettingsCard extends StatelessWidget {
   final String signedInEmail;
   final Future<void> Function() onSignIn;
   final Future<void> Function({bool showSnackBar, bool force}) onRetry;
+
+  @override
+  State<SyncSettingsCard> createState() => _SyncSettingsCardState();
+}
+
+class _SyncSettingsCardState extends State<SyncSettingsCard> {
+  bool _showPassword = false;
+  String get signedInEmail => widget.signedInEmail;
+
+  Future<void> _confirmRetryQueue() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Reintentar sincronización'),
+        content: const Text(
+          'Vibeapp intentará enviar ahora las capturas pendientes. Si no hay conexión o sesión, quedarán en cola local.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Reintentar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await widget.onRetry(showSnackBar: true, force: true);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1926,7 +2889,7 @@ class SyncSettingsCard extends StatelessWidget {
                 'Primer contrato real: entra con el mismo usuario de Vibe PWA. La cola se reintenta sola cada 30 segundos cuando hay sesión activa; el botón queda para forzar el reintento.'),
             const SizedBox(height: 12),
             TextField(
-              controller: apiUrlController,
+              controller: widget.apiUrlController,
               decoration: const InputDecoration(
                 labelText: 'API de Vibe',
                 border: OutlineInputBorder(),
@@ -1934,7 +2897,7 @@ class SyncSettingsCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             TextField(
-              controller: emailController,
+              controller: widget.emailController,
               keyboardType: TextInputType.emailAddress,
               decoration: const InputDecoration(
                 labelText: 'Correo',
@@ -1943,16 +2906,24 @@ class SyncSettingsCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             TextField(
-              controller: passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(
+              controller: widget.passwordController,
+              obscureText: !_showPassword,
+              decoration: InputDecoration(
                 labelText: 'Clave',
                 helperText:
-                    'Se usa contra Supabase Auth mediante la clave pública de la PWA.',
-                border: OutlineInputBorder(),
+                    'Se valida con el backend de Vibe; el teléfono no llama directo a Supabase.',
+                border: const OutlineInputBorder(),
+                suffixIcon: IconButton(
+                  tooltip: _showPassword ? 'Ocultar clave' : 'Mostrar clave',
+                  onPressed: () =>
+                      setState(() => _showPassword = !_showPassword),
+                  icon: Icon(_showPassword
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined),
+                ),
               ),
             ),
-            if (signedInEmail.isNotEmpty) ...[
+            if (widget.signedInEmail.isNotEmpty) ...[
               const SizedBox(height: 10),
               Text('Sesión activa: $signedInEmail'),
             ],
@@ -1962,12 +2933,12 @@ class SyncSettingsCard extends StatelessWidget {
               runSpacing: 10,
               children: [
                 FilledButton.icon(
-                  onPressed: onSignIn,
+                  onPressed: widget.onSignIn,
                   icon: const Icon(Icons.login_outlined),
                   label: const Text('Entrar'),
                 ),
                 OutlinedButton.icon(
-                  onPressed: () => onRetry(showSnackBar: true, force: true),
+                  onPressed: _confirmRetryQueue,
                   icon: const Icon(Icons.sync_outlined),
                   label: const Text('Reintentar cola'),
                 ),
@@ -2517,53 +3488,31 @@ class VibeAuthClient {
 
   final SyncSettings settings;
 
-  Future<AuthResult> signIn(String email, String password) async {
+  Future<AuthResult> signInViaBackend(String email, String password) async {
     try {
-      final config = await _loadConfig();
-      final supabaseUrl = (config['supabaseUrl'] ?? '').toString();
-      final publishableKey =
-          (config['supabasePublishableKey'] ?? '').toString();
-      if (supabaseUrl.isEmpty || publishableKey.isEmpty) {
-        return AuthResult.failure(
-            'La API de Vibe no expone configuración Supabase.');
-      }
       final uri =
-          Uri.parse(supabaseUrl).resolve('/auth/v1/token?grant_type=password');
+          Uri.parse(settings.apiBaseUrl).resolve('/api/mobile/auth/sign-in');
       final request =
           await HttpClient().postUrl(uri).timeout(const Duration(seconds: 10));
       request.headers.contentType = ContentType.json;
-      request.headers.set('apikey', publishableKey);
       request.write(jsonEncode({'email': email, 'password': password}));
       final response =
           await request.close().timeout(const Duration(seconds: 20));
       final responseText = await response.transform(utf8.decoder).join();
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        return AuthResult.failure('Acceso rechazado: ${shorten(responseText)}');
+        return AuthResult.failure(authMessageFromResponse(responseText));
       }
       final decoded = jsonDecode(responseText) as Map<String, dynamic>;
-      return AuthResult.success((decoded['access_token'] ?? '').toString());
+      return AuthResult.success((decoded['accessToken'] ?? '').toString());
     } on TimeoutException {
       return AuthResult.failure('Tiempo de espera agotado al entrar.');
     } on SocketException {
-      return AuthResult.failure('Sin conexión con Vibe o Supabase.');
+      return AuthResult.failure('Sin conexión con Vibe.');
     } on FormatException {
       return AuthResult.failure('Respuesta de acceso inválida.');
     } catch (error) {
       return AuthResult.failure(shorten(error.toString()));
     }
-  }
-
-  Future<Map<String, dynamic>> _loadConfig() async {
-    final uri = Uri.parse(settings.apiBaseUrl).resolve('/api/config');
-    final request =
-        await HttpClient().getUrl(uri).timeout(const Duration(seconds: 10));
-    final response = await request.close().timeout(const Duration(seconds: 15));
-    final responseText = await response.transform(utf8.decoder).join();
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw StateError(
-          'config_http_${response.statusCode}: ${shorten(responseText)}');
-    }
-    return jsonDecode(responseText) as Map<String, dynamic>;
   }
 }
 
@@ -2574,6 +3523,26 @@ class SyncSettings {
   final String accessToken;
 
   bool get hasSession => apiBaseUrl.isNotEmpty && accessToken.isNotEmpty;
+}
+
+String authMessageFromResponse(String responseText) {
+  try {
+    final decoded = jsonDecode(responseText);
+    if (decoded is Map) {
+      final values = [
+        stringFromJson(decoded['detail']),
+        stringFromJson(decoded['message']),
+        stringFromJson(decoded['error']),
+      ];
+      for (final value in values) {
+        if (value.isNotEmpty) return value;
+      }
+    }
+  } catch (_) {
+    // Keep the fallback short and readable for the phone UI.
+  }
+  final plain = responseText.trim();
+  return plain.isEmpty ? 'No se pudo iniciar sesión.' : shorten(plain);
 }
 
 class AuthResult {

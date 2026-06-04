@@ -518,30 +518,82 @@ void main() {
   testWidgets('Vibeapp quick capture smoke test', (WidgetTester tester) async {
     await tester.pumpWidget(const VibeApp());
 
-    expect(find.text('Vibeapp'), findsOneWidget);
-    expect(find.text('Captura rápida'), findsOneWidget);
+    expect(find.text('Vibe'), findsOneWidget);
+    expect(find.text('Captura al paso'), findsOneWidget);
+    expect(find.text('Para ti'), findsOneWidget);
+    expect(find.text('Audio'), findsOneWidget);
+    expect(find.text('Foto'), findsOneWidget);
+    expect(find.text('Video'), findsOneWidget);
+    expect(find.text('Agenda'), findsWidgets);
+    expect(find.text('Biometría'), findsOneWidget);
+    expect(find.text('Lugar'), findsOneWidget);
+    expect(find.text('Inicio'), findsOneWidget);
+    expect(find.text('Captura'), findsWidgets);
+    expect(find.text('Libreria'), findsWidgets);
+    expect(find.text('Activos'), findsOneWidget);
+    expect(find.text('Agenda'), findsWidgets);
+    expect(find.text('Estado'), findsOneWidget);
+    expect(find.text('Ajustes'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('Guardar captura'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('Guardar captura'), findsOneWidget);
-    expect(find.text('Experiencia activa'), findsOneWidget);
 
     await tester.enterText(
-      find.widgetWithText(TextField, 'Nota'),
+      find.widgetWithText(TextField, 'Cuenta lo que está pasando'),
       'V, toma nota de prueba.',
     );
     await tester.pump();
     expect(find.text('Vibe entendió: guardar nota'), findsOneWidget);
     expect(find.text('Guardar nota'), findsOneWidget);
-    await tester.tap(find.text('Guardar nota'));
+    await tester
+        .ensureVisible(find.widgetWithText(FilledButton, 'Guardar nota'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Guardar nota'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Revisar'), findsOneWidget);
+    await tester.tap(find.text('Estado'));
+    await tester.pumpAndSettle();
+    expect(find.text('Cola local'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pumpAndSettle();
 
+    await tester.tap(find.text('Libreria').last);
+    await tester.pumpAndSettle();
+    expect(
+        find.text('Experiencias y capturas recientes disponibles en el movil.'),
+        findsOneWidget);
+
+    await tester.tap(find.text('Activos'));
+    await tester.pumpAndSettle();
+    expect(
+        find.text(
+            'Fotos, videos, audio, documentos y biometria listos para sincronizar.'),
+        findsOneWidget);
+
+    await tester.tap(find.text('Agenda').last);
+    await tester.pumpAndSettle();
+    expect(
+        find.text(
+            'Eventos creados por comando, captura rapida o experiencia abierta.'),
+        findsOneWidget);
+
+    await tester.tap(find.text('Ajustes'));
+    await tester.pumpAndSettle();
+    expect(find.text('Sincronización'), findsOneWidget);
     await tester.scrollUntilVisible(
-      find.text('Compuerta piloto móvil'),
-      300,
+      find.text('Configuración y fuentes avanzadas'),
+      500,
       scrollable: find.byType(Scrollable).first,
     );
-    expect(find.text('Compuerta piloto móvil'), findsOneWidget);
-    expect(find.text('Verificar backend Vibe'), findsOneWidget);
+    expect(find.text('Configuración y fuentes avanzadas'), findsOneWidget);
+    await tester.tap(find.text('Configuración y fuentes avanzadas'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Compuerta piloto móvil'), findsWidgets);
+    expect(find.text('Verificar backend Vibe'), findsWidgets);
 
     await tester.scrollUntilVisible(
       find.text('Importar sesion externa'),
@@ -557,17 +609,6 @@ void main() {
     );
     expect(find.text('Health Connect / Samsung'), findsOneWidget);
     expect(find.text('Preparar prueba Health Connect'), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.text('Audio'),
-      500,
-      scrollable: find.byType(Scrollable).first,
-    );
-    expect(find.text('Audio'), findsOneWidget);
-    expect(find.text('Foto'), findsOneWidget);
-    expect(find.text('Video'), findsOneWidget);
-    expect(find.text('Agenda'), findsOneWidget);
-    expect(find.text('Biometría'), findsOneWidget);
-    expect(find.text('Lugar'), findsOneWidget);
   });
 }
 

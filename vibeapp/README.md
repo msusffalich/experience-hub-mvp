@@ -15,7 +15,8 @@ Safe native packaging baseline now in place:
 - Android bundle packaging is verified for the Play Console path. The current release bundle is generated at `build/app/outputs/bundle/release/app-release.aab` and signed with the local pilot upload key outside the repository.
 - Android declares camera and microphone as optional hardware features. The app can request runtime permissions for capture without excluding pilot devices that lack one of those sensors.
 - Android release builds use a real upload key when `android/key.properties` exists with `storeFile`, `storePassword`, `keyAlias`, and `keyPassword`. The local pilot key lives under `C:\Users\msusf\Documents\Codex\secure`; do not commit the key or passwords.
-- iOS uses the pilot bundle id `io.vibeapp.mobile`, matching the Android package id for product continuity.
+- iOS uses the pilot Personal Team bundle id `com.miguelsusffalich.vibeapp` for physical iPhone testing. Android keeps `io.vibeapp.mobile` until store ownership is finalized.
+- iOS shared scheme `Runner` launches with `LaunchAction` in `Release`; this prevents the iPhone icon from opening a blank screen and returning to Home after a local install.
 - iOS has user-facing usage strings for camera, microphone, photo library read/add, when-in-use location, and Apple Health read/write reservations.
 - iOS includes `Runner/Runner.entitlements` with HealthKit enabled so the Xcode phase starts from an explicit entitlement baseline.
 
@@ -42,11 +43,13 @@ Then on the Mac:
 
 1. Install Flutter and open `vibeapp/ios/Runner.xcworkspace` in Xcode.
 2. Select the Apple Developer team for Runner.
-3. Confirm bundle id `io.vibeapp.mobile`.
+3. Confirm bundle id `com.miguelsusffalich.vibeapp`.
 4. Confirm HealthKit capability is enabled and uses `Runner/Runner.entitlements`.
-5. Run `flutter pub get`.
-6. Run `VIBE_IOS_BUILD=1 npm run verify:ios` for a no-codesign build check, or build from Xcode for a signed device install.
-7. Install on iPhone/iPad and test: sign-in, quick note, active experience, camera, video, audio, location, Apple Health export/import, queue retry, and PWA handoff.
+5. Confirm scheme `Runner` uses `LaunchAction` with `buildConfiguration = "Release"`.
+6. Remove any old iOS install that uses bundle `io.vibeapp.mobile`; the iPhone pilot bundle is `com.miguelsusffalich.vibeapp`.
+7. Run `flutter pub get`.
+8. Run `VIBE_IOS_BUILD=1 npm run verify:ios` for a no-codesign build check, or build from Xcode for a signed device install.
+9. Install on iPhone/iPad and test: sign-in, quick note, active experience, camera, video, audio, location, Apple Health export/import, queue retry, app icon reopen, and PWA handoff.
 
 The first Mac session should not redesign the app. Its goal is to confirm build/signing, permissions, and one real device capture-to-PWA loop.
 
@@ -76,14 +79,14 @@ The first Mac session should not redesign the app. Its goal is to confirm build/
 - Android permission baseline includes network state, internet, camera, microphone, location, image/video/audio library access, legacy storage read, and notifications so mobile builds do not fail on basic platform permissions.
 - Local command router: text typed in quick capture can interpret practical V commands before sync. Examples: take note, start experience, close experience, or create an agenda reminder. The same parser can later consume native speech-to-text transcripts.
 - Command preview: before saving, Vibeapp shows what it understood and changes the primary button to the expected action, such as Save note, Create agenda, Start experience, or Close experience.
-- Development sync settings: Vibe API endpoint + Supabase Auth email/password.
-- Text notes can sign in through the PWA public Supabase config, then use `POST /api/integration/ingest` through the Vibe backend. If an experience is active, every note or native action becomes an internal event under the same experience ID.
+- Development sync settings: Vibe API endpoint + Vibe account email/password.
+- Sign-in uses `POST /api/mobile/auth/sign-in` through the Vibe backend. The phone does not call Supabase Auth directly; after sign-in, text notes use `POST /api/integration/ingest` through the same backend. If an experience is active, every note or native action becomes an internal event under the same experience ID.
 - Photo, video, audio, agenda, location, and biometric file actions now use real backend contracts. Non-binary signals use `/api/integration/ingest`; binary media uses `/api/media`; rich sessions with attachments consolidate through `/api/experiences`. Direct wearable APIs remain future connectors.
 - User-facing states kept simple: ready, syncing, synced, or needs attention.
 
 ## First milestone
 
-1. Supabase sign-in.
+1. Vibe sign-in through the backend proxy.
 2. Quick text capture.
 3. Local queue.
 4. Sync one experience to Supabase.

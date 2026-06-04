@@ -11,6 +11,7 @@ const files = {
   pubspec: readFileSync(path.join(appDir, "pubspec.yaml"), "utf8"),
   infoPlist: readFileSync(path.join(appDir, "ios", "Runner", "Info.plist"), "utf8"),
   project: readFileSync(path.join(appDir, "ios", "Runner.xcodeproj", "project.pbxproj"), "utf8"),
+  scheme: readFileSync(path.join(appDir, "ios", "Runner.xcodeproj", "xcshareddata", "xcschemes", "Runner.xcscheme"), "utf8"),
   entitlements: readFileSync(path.join(appDir, "ios", "Runner", "Runner.entitlements"), "utf8"),
   readme: readFileSync(path.join(appDir, "README.md"), "utf8"),
 };
@@ -21,9 +22,13 @@ const check = (condition, message) => {
 };
 
 check(files.pubspec.includes("name: vibeapp"), "pubspec must identify the app as vibeapp.");
-check(files.project.includes("PRODUCT_BUNDLE_IDENTIFIER = io.vibeapp.mobile;"), "iOS Runner bundle id must be io.vibeapp.mobile.");
-check(files.project.includes("PRODUCT_BUNDLE_IDENTIFIER = io.vibeapp.mobile.RunnerTests;"), "iOS test bundle id must use io.vibeapp.mobile.RunnerTests.");
+check(files.project.includes("PRODUCT_BUNDLE_IDENTIFIER = com.miguelsusffalich.vibeapp;"), "iOS Runner bundle id must be com.miguelsusffalich.vibeapp for Personal Team testing.");
+check(files.project.includes("PRODUCT_BUNDLE_IDENTIFIER = com.miguelsusffalich.vibeapp.RunnerTests;"), "iOS test bundle id must use com.miguelsusffalich.vibeapp.RunnerTests.");
 check(files.project.includes("CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;"), "iOS project must reference Runner.entitlements.");
+check(
+  /<LaunchAction[\s\S]*buildConfiguration = "Release"/.test(files.scheme),
+  "iOS Runner scheme LaunchAction must use Release so the app opens correctly from the iPhone icon.",
+);
 check(files.entitlements.includes("com.apple.developer.healthkit") && files.entitlements.includes("<true/>"), "HealthKit entitlement must be declared for iOS readiness.");
 [
   "NSCameraUsageDescription",

@@ -311,7 +311,7 @@ assert(files.localE2eVerify.includes("seedButton") && files.localE2eVerify.inclu
 assert(files.packageJson.includes("\"verify:pwa\"") && files.packageJson.includes("\"verify:release\""), "package.json must expose PWA and release verification scripts.");
 assert(files.pwaVerify.includes("manifest.webmanifest") && files.pwaVerify.includes("service-worker.js") && files.pwaVerify.includes("VIBE_RELEASE_URL"), "PWA verifier must check manifest, service worker, and optional production URL.");
 assert(files.packageJson.includes("\"verify:android\"") && files.androidVerify.includes("apksigner") && files.androidVerify.includes("key.properties"), "package.json must expose Android signing verification.");
-assert(files.packageJson.includes("\"verify:ios\"") && files.iosVerify.includes("io.vibeapp.mobile") && files.iosVerify.includes("HealthKit"), "package.json must expose iOS readiness verification.");
+assert(files.packageJson.includes("\"verify:ios\"") && files.iosVerify.includes("com.miguelsusffalich.vibeapp") && files.iosVerify.includes("HealthKit"), "package.json must expose iOS readiness verification.");
 assert(files.packageJson.includes("\"verify:flutter\"") && files.packageJson.includes("\"verify:pilot\""), "package.json must expose Flutter and unified pilot verification scripts.");
 assert(files.packageJson.includes("npm run verify:ios") && files.vibeappPackage.includes("Android") && files.vibeappMain.includes("Vibeapp"), "Unified pilot verification must include iOS readiness while Android packaging remains available.");
 assert(files.flutterVerify.includes("flutter analyze") || files.flutterVerify.includes('["analyze"]'), "Flutter verifier must run flutter analyze.");
@@ -360,6 +360,8 @@ assert(files.packageJson.includes("\"package:vibeapp\"") && files.vibeappPackage
 assert(files.vibeappPackage.includes("verify:android") && files.vibeappPackage.includes("vibeapp-pilot-release.apk") && files.vibeappPackage.includes("vibeapp-pilot-release.aab"), "Vibeapp package script must verify Android and include APK/AAB.");
 assert(files.packageJson.includes("\"package:vibeapp:ios\"") && files.vibeappIosPackage.includes("verify:ios") && files.vibeappIosPackage.includes("Runner.xcworkspace") && files.vibeappIosPackage.includes("HealthKit"), "package.json must expose a Vibeapp iOS/Mac handoff package.");
 assert(files.packageJson.includes("\"simulate:vibeapp\"") && files.packageJson.includes("npm run simulate:vibeapp"), "package.json must expose and run the Vibeapp sync simulator in pilot verification.");
+assert(files.server.includes('url.pathname === "/api/mobile/auth/sign-in"') && files.server.includes("signInSupabasePassword"), "Server must expose the Vibeapp mobile sign-in proxy.");
+assert(files.vibeappMain.includes("/api/mobile/auth/sign-in") && files.vibeappMain.includes("signInViaBackend"), "Vibeapp must sign in through the Vibe backend instead of direct mobile Supabase auth.");
 assert(files.vibeappSimulator.includes("Vibeapp sync simulation passed") && files.vibeappSimulator.includes("meta-glasses-import"), "Vibeapp simulator must validate native and external-session sync samples.");
 assert(files.app.includes("Simulador de sincronizaci") && files.app.includes("Native sync simulator"), "Manual/Admin must expose the Vibeapp sync simulator.");
 assert(files.server.includes("/api/vibeapp/simulate") && files.server.includes("runVibeappIntegrationSimulation"), "Server must expose the Vibeapp simulation endpoint.");

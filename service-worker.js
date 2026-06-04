@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260601-vibeapp-ios-handoff-517";
+const CACHE_NAME = "experience-hub-pwa-20260604-vibeapp-auth-proxy-520";
 const APP_SHELL = [
   "/icons/vibe-logo.jpg",
   "/icons/vibe-logo.png",
