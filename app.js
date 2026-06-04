@@ -1,4 +1,4 @@
-const APP_VERSION = "20260604-vibeapp-auth-proxy-520";
+const APP_VERSION = "20260604-vibeapp-login-ux-521";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";

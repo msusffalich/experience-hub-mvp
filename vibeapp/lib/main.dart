@@ -57,8 +57,11 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
   bool _autoRetryRunning = false;
   bool _isCheckingBackend = false;
   bool _backendHealthOk = false;
+  bool _isSigningIn = false;
   int _selectedHomeTab = 0;
   String _backendHealthMessage = 'Verifica el backend antes del piloto móvil.';
+  String _authStatusMessage = 'Entra con tu cuenta para sincronizar.';
+  bool _authStatusOk = false;
 
   @override
   void initState() {
@@ -143,31 +146,60 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
     );
     final email = _emailController.text.trim();
     final password = _passwordController.text;
+    if (settings.apiBaseUrl.isEmpty) {
+      setState(() {
+        _authStatusOk = false;
+        _authStatusMessage = 'No se pudo entrar. Revisa la conexión.';
+        _syncState = SyncState.needsAttention;
+      });
+      return;
+    }
     if (email.isEmpty || password.isEmpty) {
+      setState(() {
+        _authStatusOk = false;
+        _authStatusMessage = 'Ingresa correo y clave.';
+        _syncState = SyncState.needsAttention;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content: Text('Ingresa correo y clave para sincronizar.')),
       );
       return;
     }
-    setState(() => _syncState = SyncState.syncing);
+    setState(() {
+      _isSigningIn = true;
+      _authStatusOk = false;
+      _authStatusMessage = 'Entrando...';
+      _syncState = SyncState.syncing;
+    });
     final result =
         await VibeAuthClient(settings).signInViaBackend(email, password);
     if (!mounted) return;
     if (result.ok && result.accessToken.isNotEmpty) {
       setState(() {
+        _isSigningIn = false;
         _accessToken = result.accessToken;
         _signedInEmail = email;
+        _authStatusOk = true;
+        _authStatusMessage = 'Listo. Tus capturas se sincronizarán.';
         _syncState = SyncState.synced;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sesión lista. Reintentando cola.')),
+        const SnackBar(content: Text('Listo. Revisando guardados pendientes.')),
       );
       await _syncPendingQueue(showSnackBar: true);
     } else {
-      setState(() => _syncState = SyncState.needsAttention);
+      setState(() {
+        _isSigningIn = false;
+        _authStatusOk = false;
+        _authStatusMessage =
+            'No se pudo entrar. Revisa correo, clave o conexión.';
+        _syncState = SyncState.needsAttention;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.message)),
+        const SnackBar(
+            content:
+                Text('No se pudo entrar. Revisa correo, clave o conexión.')),
       );
     }
   }
@@ -303,7 +335,7 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
       setState(() {
         for (final item in pending) {
           item.status = CaptureSyncStatus.needsSession;
-          item.error = 'Falta iniciar sesion para enviar a Supabase.';
+          item.error = 'Entra para guardar en tus otros dispositivos.';
         }
         _syncState = SyncState.needsAttention;
       });
@@ -357,7 +389,7 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
           content: Text(
             failures == 0
                 ? 'Captura sincronizada con Vibe PWA.'
-                : 'Captura en cola. Revisa conexión o sesión.',
+                : 'Captura guardada en este dispositivo. Se enviará cuando haya conexión.',
           ),
         ),
       );
@@ -1263,6 +1295,9 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
       emailController: _emailController,
       passwordController: _passwordController,
       signedInEmail: _signedInEmail,
+      authStatusMessage: _authStatusMessage,
+      authStatusOk: _authStatusOk,
+      isSigningIn: _isSigningIn,
       onSignIn: _signIn,
       onRetry: _syncPendingQueue,
     );
@@ -1357,7 +1392,7 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
       [
         const AppSectionHeader(
           title: 'Ajustes',
-          subtitle: 'Cuenta, backend, conectores y opciones avanzadas.',
+          subtitle: 'Cuenta, conexión, fuentes externas y opciones avanzadas.',
           icon: Icons.tune_outlined,
         ),
         const SizedBox(height: 14),
@@ -2824,6 +2859,9 @@ class SyncSettingsCard extends StatefulWidget {
     required this.emailController,
     required this.passwordController,
     required this.signedInEmail,
+    required this.authStatusMessage,
+    required this.authStatusOk,
+    required this.isSigningIn,
     required this.onSignIn,
     required this.onRetry,
     super.key,
@@ -2833,6 +2871,9 @@ class SyncSettingsCard extends StatefulWidget {
   final TextEditingController emailController;
   final TextEditingController passwordController;
   final String signedInEmail;
+  final String authStatusMessage;
+  final bool authStatusOk;
+  final bool isSigningIn;
   final Future<void> Function() onSignIn;
   final Future<void> Function({bool showSnackBar, bool force}) onRetry;
 
@@ -2848,9 +2889,9 @@ class _SyncSettingsCardState extends State<SyncSettingsCard> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Reintentar sincronización'),
+        title: const Text('Reintentar guardado'),
         content: const Text(
-          'Vibeapp intentará enviar ahora las capturas pendientes. Si no hay conexión o sesión, quedarán en cola local.',
+          'Vibe intentará guardar ahora las capturas pendientes. Si no hay conexión, las conserva para intentarlo después.',
         ),
         actions: [
           TextButton(
@@ -2878,7 +2919,7 @@ class _SyncSettingsCardState extends State<SyncSettingsCard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Sincronización',
+              'Cuenta',
               style: Theme.of(context)
                   .textTheme
                   .titleMedium
@@ -2886,7 +2927,7 @@ class _SyncSettingsCardState extends State<SyncSettingsCard> {
             ),
             const SizedBox(height: 8),
             const Text(
-                'Primer contrato real: entra con el mismo usuario de Vibe PWA. La cola se reintenta sola cada 30 segundos cuando hay sesión activa; el botón queda para forzar el reintento.'),
+                'Entra con tu cuenta Vibe para guardar tus capturas y verlas en tus otros dispositivos.'),
             const SizedBox(height: 12),
             TextField(
               controller: widget.apiUrlController,
@@ -2910,8 +2951,7 @@ class _SyncSettingsCardState extends State<SyncSettingsCard> {
               obscureText: !_showPassword,
               decoration: InputDecoration(
                 labelText: 'Clave',
-                helperText:
-                    'Se valida con el backend de Vibe; el teléfono no llama directo a Supabase.',
+                helperText: 'Clave de tu cuenta Vibe.',
                 border: const OutlineInputBorder(),
                 suffixIcon: IconButton(
                   tooltip: _showPassword ? 'Ocultar clave' : 'Mostrar clave',
@@ -2923,6 +2963,16 @@ class _SyncSettingsCardState extends State<SyncSettingsCard> {
                 ),
               ),
             ),
+            const SizedBox(height: 12),
+            AuthStatusBanner(
+              message: widget.isSigningIn
+                  ? 'Entrando...'
+                  : widget.signedInEmail.isNotEmpty
+                      ? 'Listo. Tus capturas se sincronizarán.'
+                      : widget.authStatusMessage,
+              ok: widget.signedInEmail.isNotEmpty || widget.authStatusOk,
+              busy: widget.isSigningIn,
+            ),
             if (widget.signedInEmail.isNotEmpty) ...[
               const SizedBox(height: 10),
               Text('Sesión activa: $signedInEmail'),
@@ -2933,16 +2983,65 @@ class _SyncSettingsCardState extends State<SyncSettingsCard> {
               runSpacing: 10,
               children: [
                 FilledButton.icon(
-                  onPressed: widget.onSignIn,
+                  onPressed: widget.isSigningIn ? null : widget.onSignIn,
                   icon: const Icon(Icons.login_outlined),
-                  label: const Text('Entrar'),
+                  label: Text(widget.isSigningIn ? 'Entrando...' : 'Entrar'),
                 ),
                 OutlinedButton.icon(
                   onPressed: _confirmRetryQueue,
                   icon: const Icon(Icons.sync_outlined),
-                  label: const Text('Reintentar cola'),
+                  label: const Text('Reintentar guardado'),
                 ),
               ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class AuthStatusBanner extends StatelessWidget {
+  const AuthStatusBanner({
+    required this.message,
+    required this.ok,
+    required this.busy,
+    super.key,
+  });
+
+  final String message;
+  final bool ok;
+  final bool busy;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = ok ? const Color(0xFF0D7C66) : Colors.orange.shade800;
+    final background = ok ? const Color(0xFFEAF7F2) : const Color(0xFFFFF4DF);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.22)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            if (busy)
+              SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2, color: color),
+              )
+            else
+              Icon(ok ? Icons.check_circle_outline : Icons.info_outline,
+                  color: color),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                message,
+                style: TextStyle(color: color, fontWeight: FontWeight.w700),
+              ),
             ),
           ],
         ),
@@ -3489,6 +3588,16 @@ class VibeAuthClient {
   final SyncSettings settings;
 
   Future<AuthResult> signInViaBackend(String email, String password) async {
+    final primary = await _signInThroughBackend(email, password);
+    if (primary.ok) return primary;
+    final fallback = await _signInDirectSupabase(email, password);
+    if (fallback.ok) return fallback;
+    return AuthResult.failure(
+        'No se pudo entrar. Revisa correo, clave o conexión.');
+  }
+
+  Future<AuthResult> _signInThroughBackend(
+      String email, String password) async {
     try {
       final uri =
           Uri.parse(settings.apiBaseUrl).resolve('/api/mobile/auth/sign-in');
@@ -3513,6 +3622,54 @@ class VibeAuthClient {
     } catch (error) {
       return AuthResult.failure(shorten(error.toString()));
     }
+  }
+
+  Future<AuthResult> _signInDirectSupabase(
+      String email, String password) async {
+    try {
+      final config = await _loadConfig();
+      final supabaseUrl = stringFromJson(config['supabaseUrl']);
+      final publishableKey = stringFromJson(config['supabasePublishableKey']);
+      if (supabaseUrl.isEmpty || publishableKey.isEmpty) {
+        return AuthResult.failure(
+            'No se pudo entrar. Revisa correo, clave o conexión.');
+      }
+      final uri =
+          Uri.parse(supabaseUrl).resolve('/auth/v1/token?grant_type=password');
+      final request =
+          await HttpClient().postUrl(uri).timeout(const Duration(seconds: 10));
+      request.headers.contentType = ContentType.json;
+      request.headers.set('apikey', publishableKey);
+      request.write(jsonEncode({'email': email, 'password': password}));
+      final response =
+          await request.close().timeout(const Duration(seconds: 20));
+      final responseText = await response.transform(utf8.decoder).join();
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        return AuthResult.failure(authMessageFromResponse(responseText));
+      }
+      final decoded = jsonDecode(responseText) as Map<String, dynamic>;
+      return AuthResult.success((decoded['access_token'] ?? '').toString());
+    } on TimeoutException {
+      return AuthResult.failure('Tiempo de espera agotado al entrar.');
+    } on SocketException {
+      return AuthResult.failure('Sin conexión con Vibe.');
+    } on FormatException {
+      return AuthResult.failure('Respuesta de acceso inválida.');
+    } catch (error) {
+      return AuthResult.failure(shorten(error.toString()));
+    }
+  }
+
+  Future<Map<String, dynamic>> _loadConfig() async {
+    final uri = Uri.parse(settings.apiBaseUrl).resolve('/api/config');
+    final request =
+        await HttpClient().getUrl(uri).timeout(const Duration(seconds: 10));
+    final response = await request.close().timeout(const Duration(seconds: 15));
+    final responseText = await response.transform(utf8.decoder).join();
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw StateError(shorten(responseText));
+    }
+    return jsonDecode(responseText) as Map<String, dynamic>;
   }
 }
 
@@ -3556,7 +3713,7 @@ class AuthResult {
         ok: accessToken.isNotEmpty,
         message: accessToken.isNotEmpty
             ? 'Sesión iniciada'
-            : 'Supabase no devolvió token.',
+            : 'No se pudo entrar. Revisa correo, clave o conexión.',
         accessToken: accessToken,
       );
   factory AuthResult.failure(String message) =>

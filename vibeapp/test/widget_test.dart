@@ -582,7 +582,11 @@ void main() {
 
     await tester.tap(find.text('Ajustes'));
     await tester.pumpAndSettle();
-    expect(find.text('Sincronización'), findsOneWidget);
+    expect(find.text('Cuenta'), findsOneWidget);
+    expect(
+        find.text(
+            'Entra con tu cuenta Vibe para guardar tus capturas y verlas en tus otros dispositivos.'),
+        findsOneWidget);
     await tester.scrollUntilVisible(
       find.text('Configuración y fuentes avanzadas'),
       500,

@@ -1,6 +1,6 @@
 # Conectores de salud y wearables
 
-Version app: `20260604-vibeapp-auth-proxy-520`
+Version app: `20260604-vibeapp-login-ux-521`
 
 Este documento consolida los conectores revisados para Oura, Apple Health, Samsung/Android Health Connect y Meta Wearables.
 
