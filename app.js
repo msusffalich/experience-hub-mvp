@@ -1,4 +1,4 @@
-const APP_VERSION = "20260604-vibeapp-login-ux-521";
+const APP_VERSION = "20260605-flow-closure-532";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -611,9 +611,9 @@ const i18n = {
       assetMetadataImportNone: "Aún no hay importaciones de metadatos registradas.",
       assetMetadataImportFailed: "No se pudieron importar los metadatos. Revisa que el archivo sea JSON o CSV de inventario válido.",
       biometricAssetPanelTitle: "Biometria transversal",
-      biometricAssetPanelHelp: "Importa CSV o JSON de Apple Health u otro wearable desde Activos. La app lo usa como contexto por fecha/hora, no como adjunto de una sola experiencia.",
+      biometricAssetPanelHelp: "Importa CSV, JSON o export.xml de Apple Health u otro wearable desde Activos. La app lo interpreta, lo sincroniza con el servidor y lo usa como contexto por fecha/hora.",
       biometricAssetImported: "Biometria importada: {count} registros, {metrics} senales detectadas.",
-      biometricAssetImportFailed: "No se pudo importar la biometria. Usa un archivo CSV o JSON legible.",
+      biometricAssetImportFailed: "No se pudo importar la biometria. Usa CSV, JSON o export.xml legible; si Apple Health entrega un ZIP, descomprímelo y carga export.xml.",
       biometricAssetExperienceTitle: "Contexto biometrico",
       biometricAssetNoMetrics: "sin senales identificadas",
       attachmentReady: "Listo para guardar",
@@ -1442,9 +1442,9 @@ const i18n = {
       assetMetadataImportNone: "No metadata imports have been recorded yet.",
       assetMetadataImportFailed: "Metadata could not be imported. Check that the file is a valid inventory JSON or CSV.",
       biometricAssetPanelTitle: "Cross-experience biometrics",
-      biometricAssetPanelHelp: "Import Apple Health or wearable CSV/JSON from Assets. The app uses it as time-based context, not as an attachment to one single experience.",
+      biometricAssetPanelHelp: "Import Apple Health or wearable CSV, JSON, or export.xml from Assets. The app interprets it, syncs it with the server, and uses it as time-based context.",
       biometricAssetImported: "Biometrics imported: {count} records, {metrics} detected signals.",
-      biometricAssetImportFailed: "Biometrics could not be imported. Use a readable CSV or JSON file.",
+      biometricAssetImportFailed: "Biometrics could not be imported. Use readable CSV, JSON, or export.xml; if Apple Health gives you a ZIP, unzip it and upload export.xml.",
       biometricAssetExperienceTitle: "Biometric context",
       biometricAssetNoMetrics: "no detected signals",
       attachmentReady: "Ready to save",
@@ -3880,6 +3880,7 @@ const state = {
   config: null,
   health: null,
   apiStatus: { ok: false, checkedAt: null, latencyMs: null, message: "", service: "", mode: "local" },
+  serverSync: { token: "", checkedAt: "", changedAt: "", status: "idle", inProgress: false, failures: 0 },
   supabaseDiagnostics: null,
   supabaseSelfTest: loadSupabaseSelfTest(),
   vibeappSimulation: null,
@@ -4023,6 +4024,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   renderAllAndScheduleAutomation();
   applyInitialViewFromUrl();
   setupOpsPolling();
+  setupServerSyncPolling();
   setupDailyBriefingRefresh();
   setupDashboardClock();
   startAttachmentSyncSupervisor();
@@ -4823,6 +4825,7 @@ async function hydrateFromApi() {
     }
     await syncOfflineQueue({ silent: true });
     await loadBackendRoutines();
+    await updateServerSyncStateBaseline({ silent: true });
     scheduleAutomaticAssetBacklogProcessing({ reason: "hydrate", delayMs: 1200, silent: true });
   } catch (error) {
     state.apiOnline = false;
@@ -4838,6 +4841,72 @@ async function hydrateFromApi() {
       service: "",
       mode: "local",
     };
+  }
+}
+
+function setupServerSyncPolling() {
+  window.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") pollServerSyncState({ reason: "visible" });
+  });
+  window.addEventListener("online", () => pollServerSyncState({ reason: "online" }));
+  window.setInterval(() => {
+    pollServerSyncState({ reason: "interval" });
+  }, 15000);
+}
+
+async function updateServerSyncStateBaseline(options = {}) {
+  if (!state.apiOnline || !state.session?.access_token) return null;
+  try {
+    const syncState = await apiRequest("/sync/state");
+    state.serverSync = {
+      ...state.serverSync,
+      token: syncState.token || "",
+      checkedAt: syncState.generatedAt || new Date().toISOString(),
+      status: "synced",
+      failures: 0,
+      lastState: syncState,
+    };
+    return syncState;
+  } catch (error) {
+    if (!options.silent) console.warn("Server sync baseline failed", error);
+    return null;
+  }
+}
+
+async function pollServerSyncState(options = {}) {
+  if (!state.apiOnline || !state.session?.access_token || state.serverSync.inProgress) return;
+  if (document.visibilityState && document.visibilityState !== "visible" && options.reason !== "online") return;
+  state.serverSync.inProgress = true;
+  try {
+    const syncState = await apiRequest("/sync/state");
+    const previousToken = state.serverSync.token || "";
+    const nextToken = syncState.token || "";
+    state.serverSync.checkedAt = syncState.generatedAt || new Date().toISOString();
+    state.serverSync.lastState = syncState;
+    state.serverSync.failures = 0;
+    if (previousToken && nextToken && previousToken !== nextToken) {
+      state.serverSync.status = "refreshing";
+      state.serverSync.changedAt = new Date().toISOString();
+      await hydrateFromApi();
+      state.serverSync.status = "synced";
+      state.serverSync.token = nextToken;
+      renderAll();
+      notify(
+        state.language === "en"
+          ? "Updated with changes from another device."
+          : "Actualizado con cambios de otro dispositivo.",
+        "success",
+      );
+      return;
+    }
+    state.serverSync.status = "synced";
+    state.serverSync.token = nextToken || previousToken;
+  } catch (error) {
+    state.serverSync.status = "attention";
+    state.serverSync.failures = Number(state.serverSync.failures || 0) + 1;
+    if (state.serverSync.failures <= 2) console.warn("Server sync polling failed", error);
+  } finally {
+    state.serverSync.inProgress = false;
   }
 }
 
@@ -14876,10 +14945,11 @@ async function importBiometricAssetFromFile(event) {
   try {
     const rawText = await file.text();
     const parsed = parseBiometricFile(rawText, file);
+    const fingerprint = simpleHash(rawText.slice(0, 2000));
     const imported = {
       id: `biometric-${Date.now()}-${simpleHash(file.name + rawText.slice(0, 400))}`,
       name: file.name,
-      type: file.type || (getFileExtension(file.name) === "json" ? "application/json" : "text/csv"),
+      type: file.type || inferBiometricFileMime(file.name),
       size: file.size || rawText.length,
       sourceDevice: parsed.sourceDevice || "Apple Health export",
       importedAt: new Date().toISOString(),
@@ -14893,7 +14963,8 @@ async function importBiometricAssetFromFile(event) {
       previewText: parsed.summaryText,
       extractionMethod: "biometric_file_import",
       extractionStatus: "automatic",
-      fingerprint: simpleHash(rawText.slice(0, 2000)),
+      fingerprint,
+      serverSyncStatus: "pending",
       metadata: {
         sourceType: "biometric_file_import",
         source: "assets_library",
@@ -14905,15 +14976,30 @@ async function importBiometricAssetFromFile(event) {
       },
       rows: parsed.rows.slice(0, 20000),
     };
+    try {
+      const syncResult = await syncBiometricImportToServer(imported, parsed);
+      applyIntegrationAutomationResponse(syncResult);
+      imported.serverSyncStatus = syncResult?.ok ? "synced" : "attention";
+      imported.serverContextId = syncResult?.results?.find((item) => item.target === "context")?.id || "";
+      imported.serverAutomation = syncResult?.automation || null;
+      imported.analysisText = `${imported.analysisText} ${state.language === "en" ? "Server context updated automatically." : "El contexto del servidor se actualizo automaticamente."}`;
+    } catch (syncError) {
+      imported.serverSyncStatus = "pending";
+      imported.serverSyncError = cleanClientError(syncError);
+      imported.analysisText = `${imported.analysisText} ${state.language === "en" ? "Server sync is pending; local analysis remains available." : "La sincronizacion con servidor quedo pendiente; el analisis local sigue disponible."}`;
+    }
     state.biometricImports.unshift(imported);
     saveBiometricImports();
     state.assetFilters.type = "document";
     state.assetFilters.category = "Salud";
     renderAll();
     showView("assetLibrary");
+    const serverLabel = imported.serverSyncStatus === "synced"
+      ? (state.language === "en" ? " Server context updated." : " Contexto del servidor actualizado.")
+      : (state.language === "en" ? " Server sync pending." : " Sincronizacion del servidor pendiente.");
     document.getElementById("assetLibraryIntro").textContent = t("labels.biometricAssetImported")
       .replace("{count}", String(parsed.recordCount))
-      .replace("{metrics}", String(parsed.metricNames.length));
+      .replace("{metrics}", String(parsed.metricNames.length)) + serverLabel;
   } catch (error) {
     console.warn("Biometric import failed", error);
     document.getElementById("assetLibraryIntro").textContent = t("labels.biometricAssetImportFailed");
@@ -14923,9 +15009,13 @@ async function importBiometricAssetFromFile(event) {
 function parseBiometricFile(rawText, file = {}) {
   const text = String(rawText || "").replace(/^\uFEFF/, "");
   const extension = getFileExtension(file.name || "");
-  const rows = extension === "csv" || String(file.type || "").includes("csv")
+  const mime = String(file.type || "").toLowerCase();
+  const looksXml = extension === "xml" || mime.includes("xml") || /^<\?xml|<HealthData/i.test(text.trim());
+  const rows = extension === "csv" || mime.includes("csv")
     ? parseCsvTable(text)
-    : extractJsonBiometricRows(JSON.parse(text));
+    : looksXml
+      ? extractAppleHealthXmlRows(text)
+      : extractJsonBiometricRows(JSON.parse(text));
   const normalizedRows = rows.map((row) => normalizeBiometricRow(row)).filter((row) => Object.keys(row).length);
   const metricNames = detectBiometricMetricNames(normalizedRows);
   const dates = normalizedRows
@@ -14946,6 +15036,131 @@ function parseBiometricFile(rawText, file = {}) {
     ? `${summaryText} This asset is cross-experience context and should be matched by date/time before adjusting energy, recovery, stress, sleep, or activity indicators.`
     : `${summaryText} Este activo es contexto transversal y debe vincularse por fecha/hora antes de ajustar energia, recuperacion, estres, sueno o actividad.`;
   return { rows: normalizedRows, recordCount: normalizedRows.length, metricNames, startAt, endAt, sourceDevice, summaryText, analysisText };
+}
+
+function inferBiometricFileMime(fileName = "") {
+  const extension = getFileExtension(fileName);
+  if (extension === "json") return "application/json";
+  if (extension === "xml") return "application/xml";
+  return "text/csv";
+}
+
+function extractAppleHealthXmlRows(text = "") {
+  if (typeof window === "undefined" || typeof window.DOMParser === "undefined") {
+    throw new Error("xml_parser_unavailable");
+  }
+  const documentXml = new window.DOMParser().parseFromString(String(text || ""), "application/xml");
+  if (documentXml.querySelector("parsererror")) {
+    throw new Error("invalid_apple_health_xml");
+  }
+  const records = Array.from(documentXml.querySelectorAll("Record")).slice(0, 50000).map((node) => ({
+    type: String(node.getAttribute("type") || "").replace(/^HKQuantityTypeIdentifier/, "").replace(/^HKCategoryTypeIdentifier/, ""),
+    sourceName: node.getAttribute("sourceName") || "",
+    sourceVersion: node.getAttribute("sourceVersion") || "",
+    device: node.getAttribute("device") || "",
+    unit: node.getAttribute("unit") || "",
+    creationDate: node.getAttribute("creationDate") || "",
+    startDate: node.getAttribute("startDate") || "",
+    endDate: node.getAttribute("endDate") || "",
+    value: node.getAttribute("value") || "",
+  }));
+  const workouts = Array.from(documentXml.querySelectorAll("Workout")).slice(0, 5000).map((node) => ({
+    type: String(node.getAttribute("workoutActivityType") || "Workout").replace(/^HKWorkoutActivityType/, "Workout"),
+    sourceName: node.getAttribute("sourceName") || "",
+    sourceVersion: node.getAttribute("sourceVersion") || "",
+    unit: node.getAttribute("durationUnit") || "min",
+    creationDate: node.getAttribute("creationDate") || "",
+    startDate: node.getAttribute("startDate") || "",
+    endDate: node.getAttribute("endDate") || "",
+    duration: node.getAttribute("duration") || "",
+    value: node.getAttribute("duration") || "",
+  }));
+  return [...records, ...workouts];
+}
+
+async function syncBiometricImportToServer(imported = {}, parsed = {}) {
+  const metrics = buildBiometricImportMetrics(parsed);
+  const signal = {
+    sourceId: imported.id,
+    sourceType: inferBiometricSourceType(imported, parsed),
+    capturedAt: parsed.endAt || parsed.startAt || imported.importedAt || new Date().toISOString(),
+    participantId: getActivePilotParticipantId(["dashboard", "library"]) || PRIMARY_PARTICIPANT_ID,
+    payloadType: inferBiometricPayloadType(parsed.metricNames),
+    privacyLevel: "sensitive",
+    idempotencyKey: `biometric-file:${imported.fingerprint || imported.id}`,
+    payload: {
+      dataType: "biometric_file_import",
+      fileName: imported.name,
+      sourceDevice: imported.sourceDevice,
+      recordCount: parsed.recordCount,
+      metricNames: parsed.metricNames,
+      startAt: parsed.startAt || "",
+      endAt: parsed.endAt || "",
+      metrics,
+      records: (parsed.rows || []).slice(0, 250),
+    },
+    metadata: {
+      fileName: imported.name,
+      importId: imported.id,
+      ingestionMode: "automatic_post_import",
+    },
+  };
+  return apiRequest("/integration/ingest", {
+    method: "POST",
+    body: JSON.stringify({
+      signals: [signal],
+      refreshContext: true,
+      refreshDailyBriefing: false,
+    }),
+  });
+}
+
+function inferBiometricSourceType(imported = {}, parsed = {}) {
+  const haystack = `${imported.name || ""} ${imported.sourceDevice || ""} ${parsed.sourceDevice || ""}`.toLowerCase();
+  if (/oura/.test(haystack)) return "oura-api-v2";
+  if (/health connect|samsung|galaxy|android/.test(haystack)) return "android-health-connect";
+  if (/apple|healthkit|export\.xml/.test(haystack)) return "apple-healthkit-native";
+  return "vibeapp-native";
+}
+
+function inferBiometricPayloadType(metricNames = []) {
+  const text = (metricNames || []).join(" ").toLowerCase();
+  if (/sleep|sueno/.test(text)) return "sleep";
+  if (/step|distance|workout|activity|calorie|paso|actividad/.test(text)) return "activity";
+  return "biometric";
+}
+
+function buildBiometricImportMetrics(parsed = {}) {
+  const rows = Array.isArray(parsed.rows) ? parsed.rows : [];
+  const aggregated = aggregateBiometricRows(rows);
+  return {
+    recordCount: parsed.recordCount || rows.length,
+    metricCount: parsed.metricNames?.length || 0,
+    startAt: parsed.startAt || "",
+    endAt: parsed.endAt || "",
+    heartAvg: aggregated.heartAvg || 0,
+    steps: aggregated.steps || 0,
+    activeEnergy: aggregated.activeEnergy || 0,
+    sleepMinutes: aggregated.sleepMinutes || 0,
+    activityCount: aggregated.activityCount || 0,
+    metricTypes: aggregated.metricTypes || [],
+  };
+}
+
+function applyIntegrationAutomationResponse(response = {}) {
+  const automation = response?.automation;
+  if (!automation) return;
+  if (automation.contextImpact?.status === "refreshed" && automation.contextImpact.impact) {
+    state.contextImpact = automation.contextImpact.impact;
+  }
+  if (automation.dailyBriefing?.status === "refreshed" && automation.dailyBriefing.briefing) {
+    state.dailyBriefing = automation.dailyBriefing.briefing;
+    saveDailyBriefing();
+  }
+}
+
+function cleanClientError(error) {
+  return String(error?.message || error || "unknown_error").slice(0, 180);
 }
 
 function getAllBiometricRows() {
@@ -15699,7 +15914,7 @@ async function processAssetKeysInBackground(assetKeys = [], contextId = "", opti
   let processed = 0;
   try {
     for (const key of uniqueKeys) {
-      const ok = await processAssetNow(key, { silent: true, countLocal: false });
+      const ok = await processAssetNow(key, { silent: true, countLocal: false, preferServerQueue: true });
       if (ok) processed += 1;
     }
   } finally {
@@ -15720,6 +15935,10 @@ async function processAssetNow(key, options = {}) {
   const existing = state.assetMetadata[key] || {};
   const tags = Array.isArray(existing.tags) ? existing.tags : Array.isArray(asset.manualTags) ? asset.manualTags : [];
   const note = Object.hasOwn(existing, "note") ? existing.note : asset.manualNote || "";
+  if (options.preferServerQueue && canQueueAssetProcessingJob(asset)) {
+    const queued = await queueAssetProcessingJob(key, asset, { ...existing, tags, note }, options);
+    if (queued) return true;
+  }
   const result = await buildProcessedAssetAnalysis(asset, { tags, note });
   const detectedLanguage = result.detectedLanguage || detectAssetTextLanguage(result.extractedText || "");
   const translatedText = result.translatedText || (result.extractedText ? await translateExtractedAssetText(result.extractedText, detectedLanguage, state.language) : "");
@@ -15761,6 +15980,73 @@ async function processAssetNow(key, options = {}) {
     requestAnimationFrame(() => focusAppElement("assetProcessingActionPlan"));
   }
   return remoteSync.synced || options.countLocal !== false;
+}
+
+function canQueueAssetProcessingJob(asset = {}) {
+  return Boolean(
+    state.apiOnline
+      && state.session?.access_token
+      && state.config?.persistence === "supabase"
+      && asset?.assetKey
+      && !isArchiveAsset(asset),
+  );
+}
+
+async function queueAssetProcessingJob(key, asset = {}, existing = {}, options = {}) {
+  try {
+    const queuedAt = new Date().toISOString();
+    const metadata = {
+      ...existing,
+      extractionMethod: "server-asset-processing-queue",
+      extractionStatus: "queued",
+      processingStatus: "queued",
+      updatedAt: queuedAt,
+      queuedAt,
+      remoteSyncError: "",
+    };
+    state.assetMetadata[key] = metadata;
+    saveAssetMetadata();
+    await apiRequest("/jobs/asset-processing", {
+      method: "POST",
+      body: JSON.stringify({
+        assetId: asset.id || asset.assetKey || key,
+        reason: options.reason || "automatic-asset-processing",
+        asset: {
+          id: asset.id || asset.assetKey || key,
+          assetKey: asset.assetKey || key,
+          name: asset.name || "",
+          type: asset.type || asset.originalType || "application/octet-stream",
+          originalType: asset.originalType || asset.type || "",
+          size: asset.size || 0,
+          kind: asset.kind || "",
+          extension: asset.extension || getFileExtension(asset.name || asset.url || ""),
+          dataUrl: asset.dataUrl || "",
+          url: asset.url || "",
+          path: asset.path || "",
+          previewText: asset.previewText || "",
+          analysisText: asset.analysisText || "",
+          extractedText: existing.extractedText || asset.extractedText || "",
+          sourceType: asset.sourceType || "",
+          sourceDevice: asset.sourceDevice || "",
+          sourceId: asset.sourceId || "",
+          metadata: {
+            ...(asset.metadata || {}),
+            tags: existing.tags || [],
+            note: existing.note || "",
+          },
+        },
+      }),
+    });
+    markAssetWorkflowAudit("assetProcessingQueuedAt", { assetId: key, source: "server-job" });
+    return true;
+  } catch (error) {
+    state.assetMetadata[key] = {
+      ...existing,
+      remoteSyncError: error.message || "asset_processing_queue_failed",
+    };
+    saveAssetMetadata();
+    return false;
+  }
 }
 
 async function syncProcessedAssetMetadata(key, metadata, asset = {}) {
@@ -19383,7 +19669,7 @@ function renderReportBiometricImpact(experiences = []) {
   const labels = state.language === "en"
     ? {
         title: "Biometric impact",
-        noImports: "No biometric file has been imported yet. Import Apple Health or wearable CSV/JSON from Assets to compare body signals with experiences.",
+        noImports: "No biometric file has been imported yet. Import Apple Health export.xml, CSV, or JSON from Assets to compare body signals with experiences.",
         noMatches: "Biometrics are imported, but no records match the date/time of this report scope yet.",
         coverage: "Coverage",
         energy: "Suggested energy",
@@ -19398,7 +19684,7 @@ function renderReportBiometricImpact(experiences = []) {
       }
     : {
         title: "Impacto biométrico",
-        noImports: "Aún no hay archivo biométrico importado. Importa CSV/JSON de Apple Health o wearables desde Activos para comparar señales corporales con las experiencias.",
+        noImports: "Aún no hay archivo biométrico importado. Importa export.xml de Apple Health, CSV o JSON desde Activos para comparar señales corporales con las experiencias.",
         noMatches: "La biometría está importada, pero no hay registros que coincidan con la fecha/hora del alcance actual del reporte.",
         coverage: "Cobertura",
         energy: "Energía sugerida",
@@ -27836,7 +28122,7 @@ function renderAdminOperationalFocusPanel() {
         liveFlow: "Live draft refresh",
         liveFlowDetail: "When Capture syncs an open draft, the same device refreshes Dashboard, Library, Assets, Agenda, Timeline, Map, Reports, Publications, Insights, persistence state, and Admin.",
         biometricAssets: "Biometric files in Assets",
-        biometricAssetsDetail: "CSV/JSON from Apple Health or wearables can enter through Assets or Vibeapp. The PWA hydrates synced biometric files and structured Health Connect signals as cross-experience context, then uses them in Dashboard, Capture, Reports, and Findings through date/time matching.",
+        biometricAssetsDetail: "Apple Health export.xml, CSV, or JSON from wearables can enter through Assets or Vibeapp. The PWA syncs and hydrates biometric files and structured Health Connect signals as cross-experience context, then uses them in Dashboard, Capture, Reports, and Findings through date/time matching.",
         scopeFilters: "Unified analytical scope",
         scopeFiltersDetail: "Reports, Findings, and Publications now share group/person, category, origin/connector, from-date, and to-date filters so the user can analyze a coherent group of experiences.",
         sharedAnalyticalScope: "Shared analytical scope",
@@ -27862,7 +28148,7 @@ function renderAdminOperationalFocusPanel() {
         insightPlan: "Findings action plan",
         insightPlanDetail: "Findings now turns the current scope into a 7-day plan with evidence, human wording, and Agenda scheduling for each action.",
         nativeSync: "Vibeapp real queue",
-        nativeSyncDetail: "Vibeapp now has real native contracts for text, photo, video, audio, agenda, location, and biometric CSV/JSON files. Text, agenda, location, and Health Connect signals use /api/integration/ingest; binary media uses /api/media; rich sessions with attachments still consolidate through /api/experiences. The native queue validates each payload, persists locally across app restarts, tracks attempts, retries eligible items automatically, separates real states, exposes a pilot checklist, and sends stable idempotency keys so retries update the same target instead of creating duplicates.",
+        nativeSyncDetail: "Vibeapp now has real native contracts for text, photo, video, audio, agenda, location, and biometric export.xml/CSV/JSON files. Text, agenda, location, Apple Health, and Health Connect signals use /api/integration/ingest; binary media uses /api/media; rich sessions with attachments still consolidate through /api/experiences. The native queue validates each payload, persists locally across app restarts, tracks attempts, retries eligible items automatically, separates real states, exposes a pilot checklist, and sends stable idempotency keys so retries update the same target instead of creating duplicates.",
         nativeSimulator: "Native sync simulator",
         nativeSimulatorDetail: "npm run simulate:vibeapp validates note, agenda, photo, video, audio, biometrics, location, and Meta imports against the PWA signal contract without needing a physical phone.",
         integrationIngest: "Validated integration ingest",
@@ -27919,7 +28205,7 @@ function renderAdminOperationalFocusPanel() {
     labels.liveFlow = "Refresco de borrador vivo";
     labels.liveFlowDetail = "Cuando Captura sincroniza una experiencia abierta, el mismo dispositivo refresca Panel, Librer\u00eda, Activos, Agenda, L\u00ednea de tiempo, Mapa, Reportes, Publicaciones, Hallazgos, persistencia y Administraci\u00f3n.";
     labels.biometricAssets = "Biometr\u00eda desde Activos";
-    labels.biometricAssetsDetail = "CSV/JSON de Apple Health o wearables puede entrar por Activos o Vibeapp. La PWA hidrata archivos biom\u00e9tricos y se\u00f1ales estructuradas de Health Connect como contexto transversal, y luego las usa en Panel, Captura, Reportes y Hallazgos por cruce de fecha/hora.";
+    labels.biometricAssetsDetail = "export.xml de Apple Health, CSV o JSON de wearables puede entrar por Activos o Vibeapp. La PWA sincroniza e hidrata archivos biom\u00e9tricos y se\u00f1ales estructuradas de Health Connect como contexto transversal, y luego las usa en Panel, Captura, Reportes y Hallazgos por cruce de fecha/hora.";
     labels.scopeFilters = "Alcance anal\u00edtico uniforme";
     labels.scopeFiltersDetail = "Reportes, Hallazgos y Publicaciones comparten filtros de grupo/persona, categoria, origen/conector, fecha desde y fecha hasta para analizar grupos coherentes de experiencias.";
     labels.sharedAnalyticalScope = "Alcance analitico compartido";
@@ -27945,7 +28231,7 @@ function renderAdminOperationalFocusPanel() {
     labels.insightPlan = "Plan de acción de Hallazgos";
     labels.insightPlanDetail = "Hallazgos convierte el alcance actual en un plan de 7 días con evidencia, redacción humana y envío directo de cada acción a Agenda.";
     labels.nativeSync = "Vibeapp con cola real";
-    labels.nativeSyncDetail = "Vibeapp ya tiene contratos nativos reales para texto, foto, video, audio, agenda, lugar, biometr\u00eda CSV/JSON e importaci\u00f3n de sesiones externas. Texto, agenda, lugar y Health Connect usan /api/integration/ingest; multimedia binaria usa /api/media; sesiones ricas con adjuntos siguen consolid\u00e1ndose por /api/experiences. La cola nativa valida cada payload, conserva intentos, reintenta autom\u00e1ticamente, separa estados reales, muestra checklist de piloto y usa llaves de idempotencia para que un reintento actualice el mismo destino sin crear duplicados.";
+    labels.nativeSyncDetail = "Vibeapp ya tiene contratos nativos reales para texto, foto, video, audio, agenda, lugar, biometr\u00eda export.xml/CSV/JSON e importaci\u00f3n de sesiones externas. Texto, agenda, lugar, Apple Health y Health Connect usan /api/integration/ingest; multimedia binaria usa /api/media; sesiones ricas con adjuntos siguen consolid\u00e1ndose por /api/experiences. La cola nativa valida cada payload, conserva intentos, reintenta autom\u00e1ticamente, separa estados reales, muestra checklist de piloto y usa llaves de idempotencia para que un reintento actualice el mismo destino sin crear duplicados.";
     labels.nativeSimulator = "Simulador de sincronizaci\u00f3n nativa";
     labels.nativeSimulatorDetail = "npm run simulate:vibeapp valida nota, agenda, foto, video, audio, biometr\u00eda, ubicaci\u00f3n e importaciones Meta contra el contrato de se\u00f1ales PWA sin necesitar un tel\u00e9fono f\u00edsico.";
     labels.integrationIngest = "Ingesta validada de integraciones";
@@ -28393,7 +28679,7 @@ function buildDeviceIntegrationSamplePayloads(now = new Date().toISOString()) {
         payloadType: "activity",
         privacyLevel: "sensitive",
         idempotencyKey: "apple-health:activity:001",
-        payload: { provider: "Apple Health", importRoute: "CSV/JSON file now; HealthKit in native iOS later", metrics: { steps: 8420, activeEnergyKcal: 512 } },
+        payload: { provider: "Apple Health", importRoute: "export.xml/CSV/JSON file now; HealthKit in native iOS later", metrics: { steps: 8420, activeEnergyKcal: 512 } },
         deviceMetadata: { platform: "ios", nativeFutureApi: "HealthKit" },
       },
     },

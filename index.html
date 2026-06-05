@@ -9,10 +9,10 @@
     <meta name="apple-mobile-web-app-title" content="Vibe" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>Vibe</title>
-    <link rel="manifest" href="manifest.webmanifest?v=20260604-vibeapp-login-ux-521" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260605-flow-closure-532" />
     <link rel="icon" href="icons/vibe-icon-192.png" type="image/png" />
     <link rel="apple-touch-icon" href="icons/vibe-apple-touch.png" />
-    <link rel="stylesheet" href="styles.css?v=20260604-vibeapp-login-ux-521" />
+    <link rel="stylesheet" href="styles.css?v=20260605-flow-closure-532" />
   </head>
   <body>
     <noscript>
@@ -95,7 +95,7 @@
             <button id="seedButton" class="ghost-button" type="button">Cargar ejemplo</button>
             <button id="clearDemoButton" class="ghost-button" type="button">Eliminar ejemplo</button>
             <button id="voiceCommandButton" class="ghost-button" type="button">Comando de voz</button>
-            <span id="appVersionBadge" class="app-version-badge">Versión 20260604-vibeapp-login-ux-521</span>
+            <span id="appVersionBadge" class="app-version-badge">Versión 20260605-flow-closure-532</span>
             <button id="reloadAppButton" class="ghost-button" type="button">Actualizar app</button>
             <button id="exportButton" class="primary-button" type="button">Respaldo de datos</button>
             <button id="restoreButton" class="ghost-button" type="button">Restaurar respaldo</button>
@@ -459,12 +459,12 @@
             <section class="asset-biometric-panel">
               <div>
                 <strong id="biometricAssetPanelTitle">Biometria transversal</strong>
-                <p id="biometricAssetPanelHelp">Importa CSV o JSON de Apple Health u otro wearable desde Activos.</p>
+                <p id="biometricAssetPanelHelp">Importa CSV, JSON o export.xml de Apple Health u otro wearable desde Activos.</p>
                 <small id="biometricAssetImportSummary"></small>
               </div>
               <div class="asset-biometric-actions">
                 <button id="importBiometricAssetButton" class="primary-button" type="button">Importar biometria</button>
-                <input id="importBiometricAssetInput" class="sr-only" type="file" accept="application/json,text/csv,.json,.csv" />
+                <input id="importBiometricAssetInput" class="sr-only" type="file" accept="application/json,text/csv,text/xml,application/xml,.json,.csv,.xml" />
               </div>
             </section>
             <div class="metric-grid compact-metric-grid" id="assetMetricGrid"></div>
@@ -991,7 +991,7 @@
             <div class="manual-version-card">
               <div>
                 <span id="manualVersionEyebrow">Versión vigente</span>
-                <strong id="manualVersionValue">20260604-vibeapp-login-ux-521</strong>
+                <strong id="manualVersionValue">20260605-flow-closure-532</strong>
                 <p id="manualVersionSummary">Guía práctica organizada por temas para entender el flujo de la app sin leer todo de corrido.</p>
               </div>
               <div class="manual-guide-grid" aria-label="Estructura del manual">
@@ -1212,7 +1212,7 @@
       </main>
     </div>
 
-    <script src="app.js?v=20260604-vibeapp-login-ux-521"></script>
+    <script src="app.js?v=20260605-flow-closure-532"></script>
 </body>
 </html>
 

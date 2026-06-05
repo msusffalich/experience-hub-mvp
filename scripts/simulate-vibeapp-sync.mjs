@@ -190,6 +190,7 @@ const check = (condition, message) => {
 
 check(files.server.includes("/api/integration/validate"), "server must expose /api/integration/validate.");
 check(files.server.includes("/api/integration/ingest") && files.server.includes("function ingestIntegrationSignal"), "server must expose a validated integration ingest endpoint.");
+check(files.server.includes("buildPostIngestAutomation") && files.server.includes("biometric_impact_recomputed"), "server ingest must trigger post-ingest automation for context, dashboard, and biometric impact.");
 check(files.server.includes("/api/experiences") && files.server.includes("/api/media") && files.server.includes("/api/integration/ingest"), "server must keep native sync and validated ingest endpoints.");
 check(files.server.includes("storageObjectHint") && files.server.includes("idempotencyKey"), "server must preserve storageObjectHint and idempotency metadata.");
 check(files.vibeappMain.includes("Idempotency-Key") && files.vibeappMain.includes("X-Vibe-Source-Id"), "Vibeapp transport must send retry-safe idempotency headers.");
@@ -198,6 +199,7 @@ check(files.vibeappMain.includes("CaptureQueueSummary") && files.vibeappMain.inc
 check(files.vibeappTest.includes("Native sync client sends media, experience, and ingest requests"), "Flutter tests must cover native sync and ingest requests.");
 check(files.app.includes("Vibeapp") && files.app.includes("vibe-signal-contract-v2"), "PWA/Admin must document the Vibeapp signal contract.");
 check(files.app.includes("/api/integration/ingest"), "PWA/Admin manual must document the integration ingest endpoint.");
+check(files.app.includes("syncBiometricImportToServer") && files.app.includes("extractAppleHealthXmlRows"), "PWA biometric import must parse Apple Health XML and sync context through server ingest.");
 
 const results = samples.map((sample) => ({ ...sample, result: validate(sample.signal) }));
 for (const sample of results) {

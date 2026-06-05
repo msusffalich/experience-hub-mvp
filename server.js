@@ -435,6 +435,12 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (url.pathname === "/api/sync/state" && req.method === "GET") {
+    const user = await getRequestUser(req);
+    sendJson(res, 200, await getServerSyncState(user));
+    return;
+  }
+
   if (url.pathname === "/api/supabase/diagnostics" && req.method === "GET") {
     const user = await getRequestUser(req);
     sendJson(res, 200, await runSupabaseDiagnostics(user));
@@ -457,6 +463,13 @@ async function handleApi(req, res, url) {
     const user = await getRequestUser(req);
     const body = await readJson(req);
     sendJson(res, 202, enqueueJob("embeddings-backfill", user, { limit: body.limit || 200 }));
+    return;
+  }
+
+  if (url.pathname === "/api/jobs/asset-processing" && req.method === "POST") {
+    const user = await getRequestUser(req);
+    const body = await readJson(req);
+    sendJson(res, 202, enqueueJob("asset-processing", user, body));
     return;
   }
 
@@ -611,7 +624,21 @@ function buildIntegrationContract() {
     samplesEndpoint: "/api/integration/samples",
     requiredFields: ["sourceId", "sourceType", "capturedAt", "participantId", "payloadType", "payload"],
     optionalFields: ["location", "deviceMetadata", "confidence", "privacyLevel", "linkedExperienceId", "permissions", "checksum"],
-    allowedSourceTypes: ["mobile", "wearable", "file_import", "api", "calendar", "voice", "manual", "vibeapp-native", "external-session"],
+    allowedSourceTypes: [
+      "mobile",
+      "wearable",
+      "file_import",
+      "api",
+      "calendar",
+      "voice",
+      "manual",
+      "vibeapp-native",
+      "external-session",
+      "apple-healthkit-native",
+      "android-health-connect",
+      "oura-api-v2",
+      "meta-wearables-device-access",
+    ],
     allowedPayloadTypes: ["biometric", "location", "media", "image", "audio", "video", "document", "activity", "sleep", "text", "calendar", "context"],
     targets: {
       media: "assets",
@@ -1511,11 +1538,17 @@ async function ingestIntegrationSignals(body = {}, user = { id: LOCAL_USER_ID })
     targetSummary,
     results,
   };
+  response.automation = await buildPostIngestAutomation(response, user, body);
   await appendLog(response.ok ? "info" : "warn", "integration_ingest_batch", {
     userId: user.id,
     count: response.count,
     targetSummary,
     statuses: results.map((item) => ({ target: item.target, status: item.status, id: item.id || "" })),
+    automation: {
+      status: response.automation.status,
+      panels: response.automation.updatedPanels,
+      actions: response.automation.actions,
+    },
   });
   return response;
 }
@@ -1571,11 +1604,156 @@ function integrationIngestResult(validation, status, id, extra = {}) {
     status,
     id,
     target: validation.target,
+    payloadType: validation.normalized.payloadType,
+    sourceType: validation.normalized.sourceType,
     traceId: validation.traceId,
     sourceId: validation.normalized.sourceId,
     idempotencyKey: validation.normalized.idempotencyKey,
     warnings: validation.warnings,
     ...extra,
+  };
+}
+
+async function buildPostIngestAutomation(response = {}, user = { id: LOCAL_USER_ID }, options = {}) {
+  const results = Array.isArray(response.results) ? response.results : [];
+  const stored = results.filter((item) => item?.ok && ["stored", "accepted_pending_media"].includes(item.status));
+  const targetSet = new Set(stored.map((item) => item.target).filter(Boolean));
+  const payloadSet = new Set(stored.map((item) => item.payloadType || item.contextType).filter(Boolean));
+  const updatedPanels = inferUpdatedPanelsFromIngest(targetSet, payloadSet);
+  const actions = inferPostIngestActions(targetSet, payloadSet);
+  const automation = {
+    ok: true,
+    status: stored.length ? "completed" : "no_changes",
+    triggered: stored.length > 0,
+    generatedAt: new Date().toISOString(),
+    updatedTargets: [...targetSet],
+    payloadTypes: [...payloadSet],
+    updatedPanels,
+    actions,
+    biometricImpact: buildBiometricImpactFromIngest(stored),
+    contextImpact: { status: "not_required" },
+    dailyBriefing: { status: "not_required" },
+  };
+
+  const location = inferPostIngestLocation(stored);
+  if (location && shouldRefreshContextImpact(payloadSet, targetSet, options)) {
+    try {
+      const profile = await getProfile(user);
+      automation.contextImpact = {
+        status: "refreshed",
+        location,
+        impact: await getContextImpact(location, profile, inferExperienceTypeFromPayloads(payloadSet)),
+      };
+    } catch (error) {
+      automation.contextImpact = {
+        status: "deferred",
+        location,
+        reason: sanitizeDiagnosticError(error),
+      };
+      automation.status = "completed_with_attention";
+    }
+  }
+
+  if (location && shouldRefreshDailyBriefing(payloadSet, targetSet, options)) {
+    try {
+      const briefing = await getDailyBriefing(location, "es", { user, force: Boolean(options.forceDailyBriefing) });
+      automation.dailyBriefing = {
+        status: "refreshed",
+        location,
+        generatedAt: briefing.generatedAt,
+        nextRefreshAt: briefing.nextRefreshAt,
+        briefing,
+      };
+    } catch (error) {
+      automation.dailyBriefing = {
+        status: "deferred",
+        location,
+        reason: sanitizeDiagnosticError(error),
+      };
+      automation.status = "completed_with_attention";
+    }
+  }
+
+  return automation;
+}
+
+function inferUpdatedPanelsFromIngest(targetSet = new Set(), payloadSet = new Set()) {
+  const panels = new Set();
+  if (targetSet.has("experience")) ["dashboard", "library", "reports", "findings", "publications"].forEach((item) => panels.add(item));
+  if (targetSet.has("agenda")) ["dashboard", "agenda"].forEach((item) => panels.add(item));
+  if (targetSet.has("assets")) ["assets", "library", "reports", "publications"].forEach((item) => panels.add(item));
+  if (targetSet.has("context") || ["biometric", "activity", "sleep", "location", "context"].some((item) => payloadSet.has(item))) {
+    ["dashboard", "capture", "assets", "reports", "findings"].forEach((item) => panels.add(item));
+  }
+  return [...panels];
+}
+
+function inferPostIngestActions(targetSet = new Set(), payloadSet = new Set()) {
+  const actions = [];
+  if (targetSet.has("experience")) actions.push("library_updated");
+  if (targetSet.has("agenda")) actions.push("agenda_updated");
+  if (targetSet.has("assets")) actions.push("asset_upload_required");
+  if (targetSet.has("context")) actions.push("context_index_updated");
+  if (["biometric", "activity", "sleep"].some((item) => payloadSet.has(item))) actions.push("biometric_impact_recomputed");
+  if (payloadSet.has("location")) actions.push("external_context_refresh_requested");
+  return actions;
+}
+
+function shouldRefreshContextImpact(payloadSet = new Set(), targetSet = new Set(), options = {}) {
+  if (options.refreshContext === false) return false;
+  return targetSet.has("agenda") || payloadSet.has("location") || payloadSet.has("context");
+}
+
+function shouldRefreshDailyBriefing(payloadSet = new Set(), targetSet = new Set(), options = {}) {
+  if (options.refreshDailyBriefing === false) return false;
+  return targetSet.has("agenda") || payloadSet.has("location");
+}
+
+function inferExperienceTypeFromPayloads(payloadSet = new Set()) {
+  if (payloadSet.has("activity") || payloadSet.has("sleep") || payloadSet.has("biometric")) return "Salud";
+  if (payloadSet.has("calendar")) return "Agenda";
+  if (payloadSet.has("location")) return "Viajes / Paseos";
+  return "auto";
+}
+
+function inferPostIngestLocation(results = []) {
+  const candidates = [];
+  for (const result of results) {
+    candidates.push(result.agendaEvent?.location);
+    candidates.push(result.experience?.location);
+    const context = result.experience?.metadata?.structuredContext;
+    candidates.push(context?.signals?.[0]?.location);
+    candidates.push(context?.signals?.[0]?.payload?.location);
+  }
+  return candidates
+    .map((item) => String(item || "").trim())
+    .find((item) => item && !/^(sin ubicaci[oó]n|dato del dispositivo|unknown|n\/a)$/i.test(item)) || "";
+}
+
+function buildBiometricImpactFromIngest(results = []) {
+  const biometricResults = results.filter((item) => ["biometric", "activity", "sleep"].includes(item.payloadType || item.contextType));
+  if (!biometricResults.length) {
+    return { status: "not_required" };
+  }
+  const metricNames = new Set();
+  let recordCount = 0;
+  let suggestedEnergyTotal = 0;
+  for (const result of biometricResults) {
+    const context = result.experience?.metadata?.structuredContext || {};
+    const metrics = context.metrics && typeof context.metrics === "object" ? context.metrics : {};
+    Object.keys(metrics).forEach((key) => metricNames.add(key));
+    const signals = Array.isArray(context.signals) ? context.signals : [];
+    recordCount += signals.length || Number(metrics.recordCount || 0) || 1;
+    suggestedEnergyTotal += Number(result.experience?.energy || 0);
+  }
+  const averageEnergy = biometricResults.length ? Number((suggestedEnergyTotal / biometricResults.length).toFixed(1)) : 0;
+  return {
+    status: "updated",
+    imports: biometricResults.length,
+    recordCount,
+    metricNames: [...metricNames].slice(0, 12),
+    suggestedEnergy: averageEnergy,
+    message: "Biometric context was interpreted and is available for dashboard, capture, reports, and findings.",
   };
 }
 
@@ -4036,6 +4214,8 @@ async function processJobs() {
     try {
       if (job.type === "embeddings-backfill") {
         job.result = await backfillEmbeddings(job.user, job.payload.limit || 200);
+      } else if (job.type === "asset-processing") {
+        job.result = await processAssetJob(job.user, job.payload);
       } else {
         throw new Error(`unknown_job_type:${job.type}`);
       }
@@ -4070,6 +4250,183 @@ function getJobSummary() {
     completed: values.filter((job) => job.status === "completed").length,
     failed: values.filter((job) => job.status === "failed").length,
   };
+}
+
+async function processAssetJob(user = { id: LOCAL_USER_ID }, payload = {}) {
+  const rawAsset = payload.asset || payload.media || payload;
+  const assetId = String(payload.assetId || rawAsset.assetId || rawAsset.assetKey || rawAsset.id || "").trim();
+  const media = normalizeMedia({
+    ...rawAsset,
+    id: assetId || rawAsset.id,
+    kind: rawAsset.kind || inferServerMediaKind(rawAsset),
+  });
+  const kind = media.kind || inferServerMediaKind(media);
+  const processedAt = new Date().toISOString();
+  const processing = await analyzeAssetOnServer(media, kind);
+  const extractedText = cleanExtractedText(processing.text || "");
+  const analysisText = buildServerAssetProcessingAnalysis(media, kind, processing, extractedText);
+  const processingStatus = normalizeAssetJobStatus(processing.status, extractedText);
+  const result = {
+    assetId,
+    kind,
+    processingStatus,
+    extractedText,
+    analysisText,
+    detectedLanguage: "",
+    translatedText: "",
+    translationLanguage: "",
+    extractionMethod: processing.method || `${kind || "asset"}-server-processing`,
+    extractionStatus: processing.status || processingStatus,
+    provider: processing.provider || "",
+    message: processing.message || "",
+    processedAt,
+    remoteSynced: false,
+  };
+  if (assetId) {
+    try {
+      const updated = await updateAssetProcessing(assetId, result, user);
+      result.remoteSynced = Boolean(updated?.synced);
+      result.asset = updated?.asset || null;
+    } catch (error) {
+      result.remoteSynced = false;
+      result.remoteSyncError = error.message || "asset_processing_sync_failed";
+      await appendLog("warn", "Asset processing completed without remote patch", { assetId, error: result.remoteSyncError });
+    }
+  }
+  return result;
+}
+
+async function analyzeAssetOnServer(media = {}, kind = "") {
+  const existingText = cleanExtractedText(media.extractedText || media.previewText || media.analysisText || media.metadata?.extractedText || "");
+  if (existingText) {
+    return {
+      status: "ok",
+      method: "server-existing-text",
+      text: existingText,
+      characters: existingText.length,
+    };
+  }
+  const hasReadableSource = Boolean(media.dataUrl || media.url);
+  const extension = getExtension(media.name || media.extension || media.type || "");
+  if (kind === "document" && ["zip", "rar", "7z"].includes(extension)) {
+    return {
+      status: "skipped",
+      method: "archive-transport-only",
+      text: "",
+      message: "Compressed files are stored and synchronized, but are not interpreted automatically.",
+    };
+  }
+  if (kind === "document") {
+    if (!hasReadableSource) return buildAssetProviderPending("document-source-unavailable");
+    return extractDocumentText(media);
+  }
+  if (kind === "image") {
+    if (!hasReadableSource) return buildAssetProviderPending("image-source-unavailable");
+    return ocrImage(media);
+  }
+  if (kind === "audio") {
+    if (!hasReadableSource) return buildAssetProviderPending("audio-source-unavailable");
+    return transcribeMedia(media);
+  }
+  if (kind === "video") {
+    return {
+      status: "needs_review",
+      method: "video-metadata-review",
+      text: "",
+      message: "Video is stored and synchronized. Automatic scene/audio interpretation remains a provider-backed step.",
+    };
+  }
+  return buildAssetProviderPending("unsupported-asset-kind");
+}
+
+function buildAssetProviderPending(reason = "provider-unavailable") {
+  return {
+    status: "pending_provider",
+    method: reason,
+    text: "",
+    message: reason,
+  };
+}
+
+function normalizeAssetJobStatus(status = "", extractedText = "") {
+  const normalized = String(status || "").toLowerCase();
+  if (normalized === "ok" || normalized === "automatic") return "processed";
+  if (normalized === "empty") return "processed-empty";
+  if (normalized === "skipped") return "transport-only";
+  if (normalized === "unavailable" || normalized === "pending_provider") return "pending-provider";
+  if (extractedText) return "processed";
+  return "needs-review";
+}
+
+function buildServerAssetProcessingAnalysis(media = {}, kind = "", processing = {}, extractedText = "") {
+  const name = media.name || media.id || "activo";
+  if (extractedText) {
+    return [
+      `Activo procesado por el servidor: ${name}.`,
+      `Tipo: ${kind || "archivo"}.`,
+      `Metodo: ${processing.method || "server-processing"}.`,
+      `Contenido util para reportes y hallazgos: ${extractedText.slice(0, 900)}`,
+    ].join(" ");
+  }
+  if (processing.status === "skipped") {
+    return `Activo sincronizado como transporte: ${name}. El archivo queda disponible para descarga, pero no se interpreta automaticamente.`;
+  }
+  if (processing.status === "pending_provider" || processing.status === "unavailable") {
+    return `Activo recibido por el servidor: ${name}. Queda sincronizado, pero el analisis automatico requiere habilitar el proveedor correspondiente.`;
+  }
+  return `Activo recibido por el servidor: ${name}. Queda disponible para revision humana y uso como evidencia vinculada.`;
+}
+
+async function getServerSyncState(user = { id: LOCAL_USER_ID }) {
+  const [experiences, agendaEvents, logs] = await Promise.all([
+    listExperiences(user),
+    listAgendaEvents(user).catch(() => []),
+    readLogs().catch(() => []),
+  ]);
+  const attachments = experiences.flatMap((experience) => Array.isArray(experience.attachments) ? experience.attachments : []);
+  const events = experiences.flatMap((experience) => Array.isArray(experience.events) ? experience.events : []);
+  const contextSignals = experiences.filter((experience) => experience.metadata?.structuredContext);
+  const latestAt = latestTimestamp([
+    ...experiences.map((item) => item.updatedAt || item.timestamp),
+    ...agendaEvents.map((item) => item.updatedAt || item.startAt),
+    ...attachments.map((item) => item.updatedAt || item.uploadedAt || item.createdAt),
+    ...events.map((item) => item.updatedAt || item.timestamp),
+    ...logs.slice(0, 10).map((item) => item.timestamp),
+  ]);
+  const counts = {
+    experiences: experiences.length,
+    agenda: agendaEvents.length,
+    assets: attachments.length,
+    events: events.length,
+    context: contextSignals.length,
+    jobs: getJobSummary(),
+  };
+  const fingerprint = {
+    userId: user.id || LOCAL_USER_ID,
+    persistence: activePersistence(),
+    latestAt,
+    counts,
+    experienceIds: experiences.slice(0, 80).map((item) => `${item.id}:${item.updatedAt || item.timestamp || ""}`),
+    agendaIds: agendaEvents.slice(0, 80).map((item) => `${item.id}:${item.updatedAt || item.startAt || ""}`),
+    assetIds: attachments.slice(0, 120).map((item) => `${item.id || item.assetId || item.name}:${item.updatedAt || item.uploadedAt || item.path || ""}`),
+  };
+  return {
+    schemaVersion: "server-sync-state-v1",
+    generatedAt: new Date().toISOString(),
+    userId: user.id || LOCAL_USER_ID,
+    persistence: activePersistence(),
+    latestAt,
+    counts,
+    token: createHash("sha256").update(JSON.stringify(fingerprint)).digest("hex").slice(0, 24),
+  };
+}
+
+function latestTimestamp(values = []) {
+  const latest = values
+    .map((value) => new Date(value).getTime())
+    .filter((value) => Number.isFinite(value))
+    .sort((a, b) => b - a)[0];
+  return latest ? new Date(latest).toISOString() : "";
 }
 
 async function listUserRoutines(user) {
