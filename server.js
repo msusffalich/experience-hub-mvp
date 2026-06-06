@@ -42,13 +42,14 @@ const OCR_PROVIDER = process.env.OCR_PROVIDER || "openai";
 const OPENAI_OCR_MODEL = process.env.OPENAI_OCR_MODEL || "gpt-4o-mini";
 const SIGNAL_METADATA_SCHEMA_VERSION = "clio-inspired-signal-v1";
 const INTEGRATION_CONTRACT_VERSION = "vibe-signal-contract-v2";
-const OURA_API_BASE_URL = (process.env.OURA_API_BASE_URL || "https://api.ouraring.com").replace(/\/$/, "");
-const OURA_AUTH_BASE_URL = (process.env.OURA_AUTH_BASE_URL || "https://cloud.ouraring.com").replace(/\/$/, "");
-const OURA_CLIENT_ID = process.env.OURA_CLIENT_ID || "";
-const OURA_CLIENT_SECRET = process.env.OURA_CLIENT_SECRET || "";
-const OURA_REDIRECT_URI = process.env.OURA_REDIRECT_URI || "";
-const OURA_TOKEN_ENCRYPTION_SECRET = process.env.OURA_TOKEN_ENCRYPTION_SECRET || "";
-const OURA_WEBHOOK_SECRET = process.env.OURA_WEBHOOK_SECRET || "";
+const OURA_API_BASE_URL = (process.env.OURA_API_BASE_URL || "https://api.ouraring.com").trim().replace(/\/$/, "");
+const OURA_AUTH_BASE_URL = (process.env.OURA_AUTH_BASE_URL || "https://cloud.ouraring.com").trim().replace(/\/$/, "");
+const OURA_CLIENT_ID = (process.env.OURA_CLIENT_ID || "").trim();
+const OURA_CLIENT_SECRET = (process.env.OURA_CLIENT_SECRET || "").trim();
+const OURA_REDIRECT_URI = (process.env.OURA_REDIRECT_URI || "").trim();
+const OURA_TOKEN_ENCRYPTION_SECRET = (process.env.OURA_TOKEN_ENCRYPTION_SECRET || "").trim();
+const OURA_WEBHOOK_SECRET = (process.env.OURA_WEBHOOK_SECRET || "").trim();
+const OURA_SCOPES = (process.env.OURA_SCOPES || "").split(/[,\s]+/).map((scope) => scope.trim()).filter(Boolean);
 const OURA_DEFAULT_SYNC_DAYS = Math.max(1, Math.min(Number(process.env.OURA_DEFAULT_SYNC_DAYS || 14), 365));
 const execFileAsync = promisify(execFile);
 const PYTHON_EXECUTABLE_CANDIDATES = [
@@ -1204,7 +1205,36 @@ function normalizeOuraPayload(body = {}, user = null) {
 }
 
 function getOuraRequiredScopes(dataTypes = buildOuraConnectorManifest().dataTypes) {
+  if (OURA_SCOPES.length) return [...new Set(OURA_SCOPES)].sort();
   return [...new Set(dataTypes.flatMap((item) => item.scopes || []))].filter(Boolean).sort();
+}
+
+function buildOuraOAuthDiagnostics() {
+  const scopes = getOuraRequiredScopes();
+  let redirectHost = "";
+  let redirectPath = "";
+  let redirectValid = false;
+  try {
+    const redirectUrl = new URL(OURA_REDIRECT_URI);
+    redirectHost = redirectUrl.host;
+    redirectPath = redirectUrl.pathname;
+    redirectValid = redirectUrl.protocol === "https:" && redirectPath === "/api/integration/oura/callback";
+  } catch {
+    redirectValid = false;
+  }
+  return {
+    authBaseUrl: OURA_AUTH_BASE_URL,
+    apiBaseUrl: OURA_API_BASE_URL,
+    redirectUri: OURA_REDIRECT_URI,
+    redirectHost,
+    redirectPath,
+    redirectValid,
+    scopes,
+    scopesSource: OURA_SCOPES.length ? "OURA_SCOPES" : "manifest",
+    clientIdPresent: Boolean(OURA_CLIENT_ID),
+    clientIdSuffix: OURA_CLIENT_ID ? OURA_CLIENT_ID.slice(-6) : "",
+    expectedRedirectUri: "https://experience-hub-web-production.up.railway.app/api/integration/oura/callback",
+  };
 }
 
 function getOuraMissingConfig() {
@@ -1338,6 +1368,7 @@ async function getOuraConnectionStatus(user = { id: LOCAL_USER_ID }) {
     missingConfig,
     personalAccessTokenStatus: manifest.auth.personalAccessTokenStatus,
     requiredScopes: getOuraRequiredScopes(),
+    oauthDiagnostics: buildOuraOAuthDiagnostics(),
     dataTypes: manifest.dataTypes.map((item) => item.dataType),
     tokenSavedAt,
     tokenExpiresAt,
@@ -1363,18 +1394,27 @@ async function createOuraOAuthUrl(url, user) {
       message: `Oura requiere OAuth en backend. Faltan: ${missingConfig.join(", ")}.`,
     });
   }
+  const oauthDiagnostics = buildOuraOAuthDiagnostics();
+  if (!oauthDiagnostics.redirectValid) {
+    throw new HttpError(503, "oura_redirect_uri_invalid", {
+      message: "La URL de retorno Oura no coincide con el formato seguro esperado.",
+      redirectUri: oauthDiagnostics.redirectUri,
+      expectedRedirectUri: oauthDiagnostics.expectedRedirectUri,
+    });
+  }
   const state = randomUUID();
   await rememberOuraOAuthState(state, user, url.searchParams.get("returnTo") || "");
   const authUrl = new URL("/oauth/authorize", OURA_AUTH_BASE_URL);
   authUrl.searchParams.set("response_type", "code");
   authUrl.searchParams.set("client_id", OURA_CLIENT_ID);
   authUrl.searchParams.set("redirect_uri", OURA_REDIRECT_URI);
-  authUrl.searchParams.set("scope", getOuraRequiredScopes().join(" "));
+  authUrl.searchParams.set("scope", oauthDiagnostics.scopes.join(" "));
   authUrl.searchParams.set("state", state);
   return {
     ok: true,
     connector: "oura-api-v2",
     authUrl: authUrl.toString(),
+    oauthDiagnostics,
     expiresInSeconds: 20 * 60,
     message: "Abriendo autorizacion segura de Oura.",
   };

@@ -65,8 +65,15 @@ Variables requeridas para lectura completa:
 - `OURA_CLIENT_SECRET`
 - `OURA_REDIRECT_URI`
 - `OURA_TOKEN_ENCRYPTION_SECRET`
+- `OURA_SCOPES` opcional: lista separada por espacios o comas para controlar permisos OAuth sin cambiar codigo. Si no se define, Vibe usa los scopes del manifiesto.
 
 Si faltan, `/api/integration/oura/status`, `/connect` y `/sync` deben decir exactamente que variable falta. No debe haber falla silenciosa.
+
+`OURA_REDIRECT_URI` debe quedar exactamente como la URL configurada en Oura. Para Railway actual:
+
+`https://experience-hub-web-production.up.railway.app/api/integration/oura/callback`
+
+Si Oura responde `400 invalid_request`, revisar primero `/api/integration/oura/status`: el bloque `oauthDiagnostics` muestra redirect URI, host, path, origen de scopes y sufijo del client id sin exponer secretos. El servidor limpia espacios accidentales en variables de Railway antes de generar la URL OAuth.
 
 ## Mapeo principal
 
