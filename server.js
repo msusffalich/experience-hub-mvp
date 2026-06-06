@@ -1456,34 +1456,36 @@ async function completeOuraOAuthFlow(req, res, url) {
     grant_type: "authorization_code",
     code,
   };
-  if (savedState.metadata?.includeRedirectUri) tokenRequest.redirect_uri = OURA_REDIRECT_URI;
-  const tokens = await exchangeOuraToken(tokenRequest);
+  let tokens;
+  try {
+    tokens = await exchangeOuraAuthorizationCode(tokenRequest, savedState);
+  } catch (error) {
+    const returnUrl = savedState.returnTo || "/index.html?view=dashboard&integration=oura&status=token-error";
+    const callbackUrl = new URL(returnUrl, `http://${req.headers.host || "localhost"}`);
+    callbackUrl.searchParams.set("integration", "oura");
+    callbackUrl.searchParams.set("status", "token-error");
+    callbackUrl.searchParams.set("message", "Oura no completo la conexion. Revisa Client ID y Client Secret en Railway.");
+    res.writeHead(302, { Location: `${callbackUrl.pathname}${callbackUrl.search}` });
+    res.end();
+    return;
+  }
   const saved = await storeOuraTokens(savedState.userId, tokens);
   await appendLog("info", "oura_oauth_connected", {
     userId: savedState.userId,
     scope: saved.scope,
     expiresAt: saved.expires_at,
   });
-  sendJson(res, 200, {
-    ok: true,
-    connector: "oura-api-v2",
-    status: "connected",
-    message: "Oura conectado. Ya puedes ejecutar sincronizacion.",
-    token: {
-      savedAt: saved.saved_at,
-      expiresAt: saved.expires_at,
-      scope: saved.scope,
-    },
-    returnTo: savedState.returnTo || "",
-  });
+  const returnUrl = savedState.returnTo || "/index.html?view=dashboard&integration=oura&status=connected";
+  res.writeHead(302, { Location: returnUrl });
+  res.end();
 }
 
-async function exchangeOuraToken(params = {}) {
+async function exchangeOuraToken(params = {}, options = {}) {
   const payload = Object.entries(params).reduce((acc, [key, value]) => {
     if (value !== null && value !== undefined && value !== "") acc[key] = String(value);
     return acc;
   }, {});
-  const useBasicAuth = OURA_TOKEN_AUTH_MODE !== "body";
+  const useBasicAuth = (options.authMode || OURA_TOKEN_AUTH_MODE) !== "body";
   if (!useBasicAuth) {
     payload.client_id = OURA_CLIENT_ID;
     payload.client_secret = OURA_CLIENT_SECRET;
@@ -1493,7 +1495,8 @@ async function exchangeOuraToken(params = {}) {
   if (useBasicAuth) {
     headers.Authorization = `Basic ${Buffer.from(`${OURA_CLIENT_ID}:${OURA_CLIENT_SECRET}`, "utf8").toString("base64")}`;
   }
-  const response = await fetch(`${OURA_API_BASE_URL}/oauth/token`, {
+  const tokenBaseUrl = (options.tokenBaseUrl || OURA_API_BASE_URL).replace(/\/$/, "");
+  const response = await fetch(`${tokenBaseUrl}/oauth/token`, {
     method: "POST",
     headers,
     body,
@@ -1509,6 +1512,57 @@ async function exchangeOuraToken(params = {}) {
     throw new HttpError(response.status, "oura_token_exchange_failed", data);
   }
   return data;
+}
+
+async function exchangeOuraAuthorizationCode(baseRequest = {}, savedState = {}) {
+  const includeRedirectUri = Boolean(savedState.metadata?.includeRedirectUri);
+  const variants = [
+    { tokenBaseUrl: OURA_API_BASE_URL, authMode: "basic", includeRedirectUri },
+    { tokenBaseUrl: OURA_API_BASE_URL, authMode: "basic", includeRedirectUri: true },
+    { tokenBaseUrl: OURA_API_BASE_URL, authMode: "body", includeRedirectUri },
+    { tokenBaseUrl: OURA_API_BASE_URL, authMode: "body", includeRedirectUri: true },
+    { tokenBaseUrl: OURA_AUTH_BASE_URL, authMode: "basic", includeRedirectUri },
+    { tokenBaseUrl: OURA_AUTH_BASE_URL, authMode: "basic", includeRedirectUri: true },
+    { tokenBaseUrl: OURA_AUTH_BASE_URL, authMode: "body", includeRedirectUri },
+    { tokenBaseUrl: OURA_AUTH_BASE_URL, authMode: "body", includeRedirectUri: true },
+  ].filter((variant, index, list) => (
+    index === list.findIndex((candidate) => (
+      candidate.tokenBaseUrl === variant.tokenBaseUrl
+      && candidate.authMode === variant.authMode
+      && candidate.includeRedirectUri === variant.includeRedirectUri
+    ))
+  ));
+  const failures = [];
+  for (const variant of variants) {
+    const request = {
+      ...baseRequest,
+      ...(variant.includeRedirectUri ? { redirect_uri: OURA_REDIRECT_URI } : {}),
+    };
+    try {
+      const tokens = await exchangeOuraToken(request, variant);
+      await appendLog("info", "oura_token_exchange_variant_ok", {
+        tokenBaseUrl: variant.tokenBaseUrl,
+        authMode: variant.authMode,
+        includeRedirectUri: variant.includeRedirectUri,
+      });
+      return tokens;
+    } catch (error) {
+      failures.push({
+        status: error.statusCode || 500,
+        tokenBaseUrl: variant.tokenBaseUrl,
+        authMode: variant.authMode,
+        includeRedirectUri: variant.includeRedirectUri,
+        detail: error.detail || error.message,
+      });
+    }
+  }
+  await appendLog("error", "oura_token_exchange_all_variants_failed", {
+    attempts: failures.map(({ status, tokenBaseUrl, authMode, includeRedirectUri }) => ({ status, tokenBaseUrl, authMode, includeRedirectUri })),
+  });
+  throw new HttpError(400, "oura_token_exchange_failed", {
+    message: "Oura rechazo el intercambio final de token. Verifica que Client ID y Client Secret pertenezcan a la misma app Oura.",
+    attempts: failures,
+  });
 }
 
 async function refreshOuraTokensIfNeeded(userId, tokens) {
