@@ -52,6 +52,7 @@ const OURA_WEBHOOK_SECRET = (process.env.OURA_WEBHOOK_SECRET || "").trim();
 const OURA_SCOPES = (process.env.OURA_SCOPES || "").split(/[,\s]+/).map((scope) => scope.trim()).filter(Boolean);
 const OURA_AUTHORIZE_REDIRECT_MODE = (process.env.OURA_AUTHORIZE_REDIRECT_MODE || "registered").trim().toLowerCase();
 const OURA_AUTHORIZE_SCOPE_MODE = (process.env.OURA_AUTHORIZE_SCOPE_MODE || "core").trim().toLowerCase();
+const OURA_TOKEN_AUTH_MODE = (process.env.OURA_TOKEN_AUTH_MODE || "basic").trim().toLowerCase();
 const OURA_DEFAULT_SYNC_DAYS = Math.max(1, Math.min(Number(process.env.OURA_DEFAULT_SYNC_DAYS || 14), 365));
 const execFileAsync = promisify(execFile);
 const PYTHON_EXECUTABLE_CANDIDATES = [
@@ -1454,8 +1455,8 @@ async function completeOuraOAuthFlow(req, res, url) {
   const tokenRequest = {
     grant_type: "authorization_code",
     code,
-    redirect_uri: OURA_REDIRECT_URI,
   };
+  if (savedState.metadata?.includeRedirectUri) tokenRequest.redirect_uri = OURA_REDIRECT_URI;
   const tokens = await exchangeOuraToken(tokenRequest);
   const saved = await storeOuraTokens(savedState.userId, tokens);
   await appendLog("info", "oura_oauth_connected", {
@@ -1478,17 +1479,23 @@ async function completeOuraOAuthFlow(req, res, url) {
 }
 
 async function exchangeOuraToken(params = {}) {
-  const body = new URLSearchParams({
-    client_id: OURA_CLIENT_ID,
-    client_secret: OURA_CLIENT_SECRET,
-    ...Object.entries(params).reduce((acc, [key, value]) => {
-      if (value !== null && value !== undefined && value !== "") acc[key] = String(value);
-      return acc;
-    }, {}),
-  });
+  const payload = Object.entries(params).reduce((acc, [key, value]) => {
+    if (value !== null && value !== undefined && value !== "") acc[key] = String(value);
+    return acc;
+  }, {});
+  const useBasicAuth = OURA_TOKEN_AUTH_MODE !== "body";
+  if (!useBasicAuth) {
+    payload.client_id = OURA_CLIENT_ID;
+    payload.client_secret = OURA_CLIENT_SECRET;
+  }
+  const body = new URLSearchParams(payload);
+  const headers = { "Content-Type": "application/x-www-form-urlencoded" };
+  if (useBasicAuth) {
+    headers.Authorization = `Basic ${Buffer.from(`${OURA_CLIENT_ID}:${OURA_CLIENT_SECRET}`, "utf8").toString("base64")}`;
+  }
   const response = await fetch(`${OURA_API_BASE_URL}/oauth/token`, {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    headers,
     body,
   });
   const text = await response.text();
