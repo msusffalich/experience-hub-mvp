@@ -66,6 +66,8 @@ Variables requeridas para lectura completa:
 - `OURA_REDIRECT_URI`
 - `OURA_TOKEN_ENCRYPTION_SECRET`
 - `OURA_SCOPES` opcional: lista separada por espacios o comas para controlar permisos OAuth sin cambiar codigo. Si no se define, Vibe usa los scopes del manifiesto.
+- `OURA_AUTHORIZE_REDIRECT_MODE` opcional: `registered` por defecto. Usa la redirect URI registrada en Oura y evita rechazos por coincidencia exacta. Usar `explicit` solo si Oura requiere mandar `redirect_uri` en la URL de autorizacion.
+- `OURA_AUTHORIZE_SCOPE_MODE` opcional: `core` por defecto. Solicita `daily`, `heartrate` y `workout` en el primer enlace. Usar `full` o `OURA_SCOPES` cuando Oura apruebe permisos adicionales como `spo2`.
 
 Si faltan, `/api/integration/oura/status`, `/connect` y `/sync` deben decir exactamente que variable falta. No debe haber falla silenciosa.
 
@@ -73,7 +75,7 @@ Si faltan, `/api/integration/oura/status`, `/connect` y `/sync` deben decir exac
 
 `https://experience-hub-web-production.up.railway.app/api/integration/oura/callback`
 
-Si Oura responde `400 invalid_request`, revisar primero `/api/integration/oura/status`: el bloque `oauthDiagnostics` muestra redirect URI, host, path, origen de scopes y sufijo del client id sin exponer secretos. El servidor limpia espacios accidentales en variables de Railway antes de generar la URL OAuth.
+Si Oura responde `400 invalid_request`, revisar primero `/api/integration/oura/status`: el bloque `oauthDiagnostics` muestra redirect URI, modo de redirect, scopes de autorizacion, origen de scopes y sufijo del client id sin exponer secretos. El servidor limpia espacios accidentales en variables de Railway antes de generar la URL OAuth.
 
 ## Mapeo principal
 

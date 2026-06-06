@@ -50,6 +50,8 @@ const OURA_REDIRECT_URI = (process.env.OURA_REDIRECT_URI || "").trim();
 const OURA_TOKEN_ENCRYPTION_SECRET = (process.env.OURA_TOKEN_ENCRYPTION_SECRET || "").trim();
 const OURA_WEBHOOK_SECRET = (process.env.OURA_WEBHOOK_SECRET || "").trim();
 const OURA_SCOPES = (process.env.OURA_SCOPES || "").split(/[,\s]+/).map((scope) => scope.trim()).filter(Boolean);
+const OURA_AUTHORIZE_REDIRECT_MODE = (process.env.OURA_AUTHORIZE_REDIRECT_MODE || "registered").trim().toLowerCase();
+const OURA_AUTHORIZE_SCOPE_MODE = (process.env.OURA_AUTHORIZE_SCOPE_MODE || "core").trim().toLowerCase();
 const OURA_DEFAULT_SYNC_DAYS = Math.max(1, Math.min(Number(process.env.OURA_DEFAULT_SYNC_DAYS || 14), 365));
 const execFileAsync = promisify(execFile);
 const PYTHON_EXECUTABLE_CANDIDATES = [
@@ -1209,8 +1211,15 @@ function getOuraRequiredScopes(dataTypes = buildOuraConnectorManifest().dataType
   return [...new Set(dataTypes.flatMap((item) => item.scopes || []))].filter(Boolean).sort();
 }
 
+function getOuraAuthorizeScopes() {
+  if (OURA_SCOPES.length) return [...new Set(OURA_SCOPES)].sort();
+  if (OURA_AUTHORIZE_SCOPE_MODE === "full") return getOuraRequiredScopes();
+  return ["daily", "heartrate", "workout"].sort();
+}
+
 function buildOuraOAuthDiagnostics() {
-  const scopes = getOuraRequiredScopes();
+  const requiredScopes = getOuraRequiredScopes();
+  const authorizeScopes = getOuraAuthorizeScopes();
   let redirectHost = "";
   let redirectPath = "";
   let redirectValid = false;
@@ -1229,8 +1238,11 @@ function buildOuraOAuthDiagnostics() {
     redirectHost,
     redirectPath,
     redirectValid,
-    scopes,
-    scopesSource: OURA_SCOPES.length ? "OURA_SCOPES" : "manifest",
+    requiredScopes,
+    authorizeScopes,
+    scopes: authorizeScopes,
+    scopesSource: OURA_SCOPES.length ? "OURA_SCOPES" : OURA_AUTHORIZE_SCOPE_MODE,
+    authorizeRedirectMode: OURA_AUTHORIZE_REDIRECT_MODE === "explicit" ? "explicit" : "registered",
     clientIdPresent: Boolean(OURA_CLIENT_ID),
     clientIdSuffix: OURA_CLIENT_ID ? OURA_CLIENT_ID.slice(-6) : "",
     expectedRedirectUri: "https://experience-hub-web-production.up.railway.app/api/integration/oura/callback",
@@ -1320,12 +1332,13 @@ async function storeOuraTokens(userId, tokenPayload = {}) {
   return { ...tokens, access_token: "stored", refresh_token: tokens.refresh_token ? "stored" : "" };
 }
 
-async function rememberOuraOAuthState(state, user, returnTo = "") {
+async function rememberOuraOAuthState(state, user, returnTo = "", metadata = {}) {
   const store = await readOuraTokenStore();
   store.states[state] = {
     userId: user.id,
     email: user.email || "",
     returnTo,
+    metadata,
     createdAt: new Date().toISOString(),
   };
   const cutoff = Date.now() - 20 * 60 * 1000;
@@ -1403,12 +1416,16 @@ async function createOuraOAuthUrl(url, user) {
     });
   }
   const state = randomUUID();
-  await rememberOuraOAuthState(state, user, url.searchParams.get("returnTo") || "");
+  const includeRedirectUri = oauthDiagnostics.authorizeRedirectMode === "explicit";
+  await rememberOuraOAuthState(state, user, url.searchParams.get("returnTo") || "", {
+    includeRedirectUri,
+    authorizeScopes: oauthDiagnostics.authorizeScopes,
+  });
   const authUrl = new URL("/oauth/authorize", OURA_AUTH_BASE_URL);
   authUrl.searchParams.set("response_type", "code");
   authUrl.searchParams.set("client_id", OURA_CLIENT_ID);
-  authUrl.searchParams.set("redirect_uri", OURA_REDIRECT_URI);
-  authUrl.searchParams.set("scope", oauthDiagnostics.scopes.join(" "));
+  if (includeRedirectUri) authUrl.searchParams.set("redirect_uri", OURA_REDIRECT_URI);
+  authUrl.searchParams.set("scope", oauthDiagnostics.authorizeScopes.join(" "));
   authUrl.searchParams.set("state", state);
   return {
     ok: true,
@@ -1434,11 +1451,12 @@ async function completeOuraOAuthFlow(req, res, url) {
   const state = url.searchParams.get("state");
   if (!code || !state) throw new HttpError(400, "oura_oauth_code_or_state_missing");
   const savedState = await consumeOuraOAuthState(state);
-  const tokens = await exchangeOuraToken({
+  const tokenRequest = {
     grant_type: "authorization_code",
     code,
-    redirect_uri: OURA_REDIRECT_URI,
-  });
+  };
+  if (savedState.metadata?.includeRedirectUri) tokenRequest.redirect_uri = OURA_REDIRECT_URI;
+  const tokens = await exchangeOuraToken(tokenRequest);
   const saved = await storeOuraTokens(savedState.userId, tokens);
   await appendLog("info", "oura_oauth_connected", {
     userId: savedState.userId,
