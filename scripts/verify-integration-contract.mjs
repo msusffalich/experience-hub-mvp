@@ -24,6 +24,11 @@ const assert = (condition, message) => {
   "buildOuraConnectorManifest",
   "normalizeOuraPayload",
   "/api/integration/oura/manifest",
+  "/api/integration/oura/status",
+  "/api/integration/oura/connect",
+  "/api/integration/oura/callback",
+  "/api/integration/oura/sync",
+  "/api/integration/oura/webhook",
   "/api/integration/oura/normalize",
   "buildAppleHealthConnectorManifest",
   "normalizeAppleHealthPayload",
@@ -81,12 +86,20 @@ const assert = (condition, message) => {
   assert(files.app.includes(token) && files.server.includes(token), `Integration kit must document and sample ${token}.`);
 });
 assert(files.server.includes("OURA_API_BASE_URL"), "Server must normalize the Oura API base URL.");
+assert(files.server.includes("OURA_CLIENT_ID") && files.server.includes("OURA_CLIENT_SECRET") && files.server.includes("OURA_REDIRECT_URI"), "Server must expose Oura OAuth backend configuration.");
+assert(files.server.includes("OURA_WEBHOOK_SECRET") && files.server.includes("handleOuraWebhook"), "Server must expose Oura webhook handling for product sync.");
+assert(files.server.includes("next_token") && files.server.includes("maxPages") && files.server.includes("paginated-api-sync"), "Oura product sync must support pagination and bounded page limits.");
+assert(files.server.includes("id: \"oura-sync\"") && files.server.includes("syncOuraApiData({"), "Oura product sync must have a disabled scheduled routine.");
+assert(files.server.includes("personalAccessTokenStatus: \"deprecated-not-for-product\""), "Server must not treat Oura Personal Access Tokens as the product path.");
+assert(files.server.includes("scopes: [\"spo2\"]"), "Oura SpO2 scope must be spo2.");
 
 assert(files.packageJson.includes("\"verify:integrations\""), "package.json must expose verify:integrations.");
 assert(files.packageJson.includes("npm run verify:integrations"), "verify:pilot must include verify:integrations.");
 assert(files.simulator.includes("meta-glasses-import"), "Vibeapp simulator must still validate Meta external session imports.");
 assert(files.manualBlueprint.includes("Health Connect") && files.manualBlueprint.includes("Meta"), "Vibeapp native blueprint must retain external device route guidance.");
 assert(files.ouraDoc.includes("/api/integration/oura/manifest") && files.ouraDoc.includes("daily_readiness") && files.ouraDoc.includes("https://api.ouraring.com"), "Oura connector documentation must explain manifest, readiness, and the corrected API base URL.");
+assert(files.ouraDoc.includes("/api/integration/oura/connect") && files.ouraDoc.includes("/api/integration/oura/sync") && files.ouraDoc.includes("Personal Access Token") && files.ouraDoc.includes("deprecados"), "Oura documentation must explain OAuth connect/sync and PAT deprecation.");
+assert(files.ouraDoc.includes("/api/integration/oura/webhook") && files.ouraDoc.includes("paginas") && files.ouraDoc.includes("Oura Sync"), "Oura documentation must explain webhook, pagination, and scheduled product sync.");
 assert(files.ouraDoc.includes("/api/integration/apple-health/manifest") && files.ouraDoc.includes("/api/integration/health-connect/manifest") && files.ouraDoc.includes("/api/integration/meta-wearables/manifest"), "Device connector documentation must cover Apple Health, Health Connect, and Meta Wearables.");
 assert(files.ouraDoc.includes("/api/integration/device/selftest") && files.server.includes("device-connector-selftest"), "Device connector self-test must be documented and exposed by the manifests.");
 assert(files.ouraDoc.includes("/api/integration/ingest") && files.ouraDoc.includes("accepted_pending_media"), "Device connector documentation must explain validated ingest and pending media behavior.");

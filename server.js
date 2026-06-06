@@ -4,7 +4,7 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { inflateRawSync } from "node:zlib";
-import { createHash, randomUUID } from "node:crypto";
+import { createCipheriv, createDecipheriv, createHash, randomBytes, randomUUID } from "node:crypto";
 import { execFile, spawn } from "node:child_process";
 import { promisify } from "node:util";
 import { tmpdir } from "node:os";
@@ -20,6 +20,7 @@ const ROUTINES_PATH = path.join(DATA_DIR, "routine-store.json");
 const DAILY_BRIEFINGS_PATH = path.join(DATA_DIR, "daily-briefing-store.json");
 const PROFILE_PARAMETERS_PATH = path.join(DATA_DIR, "profile-parameters.json");
 const AGENDA_EVENTS_PATH = path.join(DATA_DIR, "agenda-events.json");
+const OURA_TOKEN_STORE_PATH = path.join(DATA_DIR, "oura-oauth-store.json");
 const EXPORTS_DIR = path.join(DATA_DIR, "exports");
 const STORAGE_ADAPTER = process.env.STORAGE_ADAPTER || "json-file";
 const SUPABASE_URL = process.env.SUPABASE_URL?.replace(/\/$/, "");
@@ -42,6 +43,13 @@ const OPENAI_OCR_MODEL = process.env.OPENAI_OCR_MODEL || "gpt-4o-mini";
 const SIGNAL_METADATA_SCHEMA_VERSION = "clio-inspired-signal-v1";
 const INTEGRATION_CONTRACT_VERSION = "vibe-signal-contract-v2";
 const OURA_API_BASE_URL = (process.env.OURA_API_BASE_URL || "https://api.ouraring.com").replace(/\/$/, "");
+const OURA_AUTH_BASE_URL = (process.env.OURA_AUTH_BASE_URL || "https://cloud.ouraring.com").replace(/\/$/, "");
+const OURA_CLIENT_ID = process.env.OURA_CLIENT_ID || "";
+const OURA_CLIENT_SECRET = process.env.OURA_CLIENT_SECRET || "";
+const OURA_REDIRECT_URI = process.env.OURA_REDIRECT_URI || "";
+const OURA_TOKEN_ENCRYPTION_SECRET = process.env.OURA_TOKEN_ENCRYPTION_SECRET || "";
+const OURA_WEBHOOK_SECRET = process.env.OURA_WEBHOOK_SECRET || "";
+const OURA_DEFAULT_SYNC_DAYS = Math.max(1, Math.min(Number(process.env.OURA_DEFAULT_SYNC_DAYS || 14), 365));
 const execFileAsync = promisify(execFile);
 const PYTHON_EXECUTABLE_CANDIDATES = [
   process.env.PYTHON_EXECUTABLE,
@@ -142,6 +150,13 @@ const defaultRoutines = [
     intervalMinutes: 360,
     type: "context-impact",
   },
+  {
+    id: "oura-sync",
+    name: "Oura Sync",
+    enabled: false,
+    intervalMinutes: 1440,
+    type: "wearable-sync",
+  },
 ];
 
 const server = createServer(async (req, res) => {
@@ -155,9 +170,10 @@ const server = createServer(async (req, res) => {
 
     await serveStatic(res, url.pathname);
   } catch (error) {
+    const errorMessage = formatHttpErrorMessage(error);
     sendJson(res, error.statusCode || 500, {
       error: error.statusCode ? error.message : "internal_error",
-      message: error.detail || (error.statusCode ? undefined : error.message),
+      message: errorMessage,
       detail: error.detail,
     });
   }
@@ -241,6 +257,36 @@ async function handleApi(req, res, url) {
 
   if (url.pathname === "/api/integration/oura/manifest" && req.method === "GET") {
     sendJson(res, 200, buildOuraConnectorManifest());
+    return;
+  }
+
+  if (url.pathname === "/api/integration/oura/status" && req.method === "GET") {
+    const user = await getOptionalRequestUser(req);
+    sendJson(res, 200, await getOuraConnectionStatus(user));
+    return;
+  }
+
+  if (url.pathname === "/api/integration/oura/connect" && req.method === "GET") {
+    const user = await getRequestUser(req);
+    await startOuraOAuthFlow(req, res, url, user);
+    return;
+  }
+
+  if (url.pathname === "/api/integration/oura/callback" && req.method === "GET") {
+    await completeOuraOAuthFlow(req, res, url);
+    return;
+  }
+
+  if (url.pathname === "/api/integration/oura/sync" && req.method === "POST") {
+    const user = await getRequestUser(req);
+    const body = await readJson(req);
+    sendJson(res, 200, await syncOuraApiData(body, user));
+    return;
+  }
+
+  if (url.pathname === "/api/integration/oura/webhook" && req.method === "POST") {
+    const body = await readJson(req);
+    sendJson(res, 202, await handleOuraWebhook(req, body));
     return;
   }
 
@@ -892,15 +938,16 @@ function buildOuraConnectorManifest() {
       target: "context",
       payloadType: "biometric",
       metrics: ["spo2_percentage", "breathing_disturbance_index"],
-      scopes: ["spo2Daily"],
+      scopes: ["spo2"],
     },
     {
-      dataType: "heart_rate",
+      dataType: "heartrate",
       route: "/v2/usercollection/heartrate",
       target: "context",
       payloadType: "biometric",
       metrics: ["timestamp", "bpm", "source"],
       scopes: ["heartrate"],
+      queryMode: "datetime",
     },
     {
       dataType: "workout",
@@ -943,16 +990,22 @@ function buildOuraConnectorManifest() {
     auth: {
       recommended: "oauth2-authorization-code",
       supported: ["oauth2", "bearer-token"],
+      personalAccessTokenStatus: "deprecated-not-for-product",
       tokenStorage: "backend-only",
       requiredEnvironment: ["OURA_CLIENT_ID", "OURA_CLIENT_SECRET", "OURA_REDIRECT_URI"],
     },
     syncModes: {
-      now: ["csv-json-file-import", "backend-normalize", "device-connector-selftest"],
-      next: ["oauth-manual-sync", "daily-background-job"],
-      later: ["webhook-subscription"],
+      now: ["csv-json-file-import", "backend-normalize", "oauth-status", "oauth-connect", "oauth-manual-sync", "device-connector-selftest"],
+      next: ["daily-background-job", "paginated-api-sync"],
+      later: ["provider-webhook-subscription"],
     },
     endpoints: {
       manifest: "/api/integration/oura/manifest",
+      status: "/api/integration/oura/status",
+      connect: "/api/integration/oura/connect",
+      callback: "/api/integration/oura/callback",
+      sync: "/api/integration/oura/sync",
+      webhook: "/api/integration/oura/webhook",
       normalize: "/api/integration/oura/normalize",
       selftest: "/api/integration/device/selftest",
     },
@@ -1039,7 +1092,7 @@ function pickOuraMetrics(dataType, document = {}) {
       spo2Percentage: document.spo2_percentage ?? null,
     };
   }
-  if (dataType === "heart_rate") {
+  if (dataType === "heartrate" || dataType === "heart_rate") {
     return {
       bpm: document.bpm ?? null,
       source: document.source ?? null,
@@ -1140,6 +1193,431 @@ function normalizeOuraPayload(body = {}, user = null) {
       return acc;
     }, {}),
     results,
+  };
+}
+
+function getOuraRequiredScopes(dataTypes = buildOuraConnectorManifest().dataTypes) {
+  return [...new Set(dataTypes.flatMap((item) => item.scopes || []))].filter(Boolean).sort();
+}
+
+function getOuraMissingConfig() {
+  return [
+    ["OURA_CLIENT_ID", OURA_CLIENT_ID],
+    ["OURA_CLIENT_SECRET", OURA_CLIENT_SECRET],
+    ["OURA_REDIRECT_URI", OURA_REDIRECT_URI],
+    ["OURA_TOKEN_ENCRYPTION_SECRET", OURA_TOKEN_ENCRYPTION_SECRET],
+  ].filter(([, value]) => !value).map(([key]) => key);
+}
+
+function isOuraOAuthConfigured() {
+  return getOuraMissingConfig().length === 0;
+}
+
+async function readOuraTokenStore() {
+  await mkdir(DATA_DIR, { recursive: true });
+  if (!existsSync(OURA_TOKEN_STORE_PATH)) return { tokens: {}, states: {} };
+  try {
+    return { tokens: {}, states: {}, ...JSON.parse(await readFile(OURA_TOKEN_STORE_PATH, "utf-8")) };
+  } catch {
+    return { tokens: {}, states: {} };
+  }
+}
+
+async function writeOuraTokenStore(store) {
+  await mkdir(DATA_DIR, { recursive: true });
+  await writeFile(OURA_TOKEN_STORE_PATH, JSON.stringify({
+    tokens: store.tokens || {},
+    states: store.states || {},
+  }, null, 2), "utf-8");
+}
+
+function getOuraTokenCipherKey() {
+  if (!OURA_TOKEN_ENCRYPTION_SECRET) throw new HttpError(503, "oura_token_secret_missing");
+  return createHash("sha256").update(OURA_TOKEN_ENCRYPTION_SECRET).digest();
+}
+
+function encryptOuraTokenPayload(payload) {
+  const iv = randomBytes(12);
+  const cipher = createCipheriv("aes-256-gcm", getOuraTokenCipherKey(), iv);
+  const encrypted = Buffer.concat([cipher.update(JSON.stringify(payload), "utf8"), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  return {
+    algorithm: "aes-256-gcm",
+    iv: iv.toString("base64"),
+    tag: tag.toString("base64"),
+    value: encrypted.toString("base64"),
+  };
+}
+
+function decryptOuraTokenPayload(record = {}) {
+  const decipher = createDecipheriv("aes-256-gcm", getOuraTokenCipherKey(), Buffer.from(record.iv || "", "base64"));
+  decipher.setAuthTag(Buffer.from(record.tag || "", "base64"));
+  const decrypted = Buffer.concat([
+    decipher.update(Buffer.from(record.value || "", "base64")),
+    decipher.final(),
+  ]);
+  return JSON.parse(decrypted.toString("utf8"));
+}
+
+async function getStoredOuraTokens(userId) {
+  const store = await readOuraTokenStore();
+  const record = store.tokens?.[userId];
+  if (!record?.value) return null;
+  return decryptOuraTokenPayload(record);
+}
+
+async function storeOuraTokens(userId, tokenPayload = {}) {
+  const store = await readOuraTokenStore();
+  const now = Date.now();
+  const expiresIn = Number(tokenPayload.expires_in || tokenPayload.expiresIn || 0);
+  const tokens = {
+    access_token: tokenPayload.access_token,
+    refresh_token: tokenPayload.refresh_token,
+    token_type: tokenPayload.token_type || "Bearer",
+    scope: tokenPayload.scope || "",
+    expires_at: expiresIn ? new Date(now + expiresIn * 1000).toISOString() : tokenPayload.expires_at || null,
+    saved_at: new Date(now).toISOString(),
+  };
+  store.tokens[userId] = encryptOuraTokenPayload(tokens);
+  await writeOuraTokenStore(store);
+  return { ...tokens, access_token: "stored", refresh_token: tokens.refresh_token ? "stored" : "" };
+}
+
+async function rememberOuraOAuthState(state, user, returnTo = "") {
+  const store = await readOuraTokenStore();
+  store.states[state] = {
+    userId: user.id,
+    email: user.email || "",
+    returnTo,
+    createdAt: new Date().toISOString(),
+  };
+  const cutoff = Date.now() - 20 * 60 * 1000;
+  Object.entries(store.states).forEach(([key, value]) => {
+    if (Date.parse(value.createdAt || "") < cutoff) delete store.states[key];
+  });
+  await writeOuraTokenStore(store);
+}
+
+async function consumeOuraOAuthState(state) {
+  const store = await readOuraTokenStore();
+  const value = store.states?.[state];
+  if (value) delete store.states[state];
+  await writeOuraTokenStore(store);
+  if (!value) throw new HttpError(400, "oura_oauth_state_invalid_or_expired");
+  return value;
+}
+
+async function getOuraConnectionStatus(user = { id: LOCAL_USER_ID }) {
+  const missingConfig = getOuraMissingConfig();
+  let connected = false;
+  let tokenSavedAt = "";
+  let tokenExpiresAt = "";
+  if (!missingConfig.includes("OURA_TOKEN_ENCRYPTION_SECRET")) {
+    try {
+      const tokens = await getStoredOuraTokens(user.id);
+      connected = Boolean(tokens?.access_token);
+      tokenSavedAt = tokens?.saved_at || "";
+      tokenExpiresAt = tokens?.expires_at || "";
+    } catch {
+      connected = false;
+    }
+  }
+  const manifest = buildOuraConnectorManifest();
+  return {
+    ok: missingConfig.length === 0,
+    connector: manifest.connector,
+    connected,
+    configured: missingConfig.length === 0,
+    missingConfig,
+    personalAccessTokenStatus: manifest.auth.personalAccessTokenStatus,
+    requiredScopes: getOuraRequiredScopes(),
+    dataTypes: manifest.dataTypes.map((item) => item.dataType),
+    tokenSavedAt,
+    tokenExpiresAt,
+    nextAction: missingConfig.length
+      ? `Define ${missingConfig.join(", ")} en el backend/Railway.`
+      : connected
+        ? "Puedes ejecutar sincronizacion Oura."
+        : "Conecta Oura con OAuth desde /api/integration/oura/connect.",
+  };
+}
+
+async function startOuraOAuthFlow(req, res, url, user) {
+  const missingConfig = getOuraMissingConfig();
+  if (missingConfig.length) {
+    sendJson(res, 503, {
+      ok: false,
+      error: "oura_oauth_not_configured",
+      missingConfig,
+      message: `Oura requiere OAuth en backend. Faltan: ${missingConfig.join(", ")}.`,
+    });
+    return;
+  }
+  const state = randomUUID();
+  await rememberOuraOAuthState(state, user, url.searchParams.get("returnTo") || "");
+  const authUrl = new URL("/oauth/authorize", OURA_AUTH_BASE_URL);
+  authUrl.searchParams.set("response_type", "code");
+  authUrl.searchParams.set("client_id", OURA_CLIENT_ID);
+  authUrl.searchParams.set("redirect_uri", OURA_REDIRECT_URI);
+  authUrl.searchParams.set("scope", getOuraRequiredScopes().join(" "));
+  authUrl.searchParams.set("state", state);
+  res.writeHead(302, { Location: authUrl.toString() });
+  res.end();
+}
+
+async function completeOuraOAuthFlow(req, res, url) {
+  const error = url.searchParams.get("error");
+  if (error) {
+    sendJson(res, 400, {
+      ok: false,
+      error,
+      errorDescription: url.searchParams.get("error_description") || "",
+    });
+    return;
+  }
+  const code = url.searchParams.get("code");
+  const state = url.searchParams.get("state");
+  if (!code || !state) throw new HttpError(400, "oura_oauth_code_or_state_missing");
+  const savedState = await consumeOuraOAuthState(state);
+  const tokens = await exchangeOuraToken({
+    grant_type: "authorization_code",
+    code,
+    redirect_uri: OURA_REDIRECT_URI,
+  });
+  const saved = await storeOuraTokens(savedState.userId, tokens);
+  await appendLog("info", "oura_oauth_connected", {
+    userId: savedState.userId,
+    scope: saved.scope,
+    expiresAt: saved.expires_at,
+  });
+  sendJson(res, 200, {
+    ok: true,
+    connector: "oura-api-v2",
+    status: "connected",
+    message: "Oura conectado. Ya puedes ejecutar sincronizacion.",
+    token: {
+      savedAt: saved.saved_at,
+      expiresAt: saved.expires_at,
+      scope: saved.scope,
+    },
+    returnTo: savedState.returnTo || "",
+  });
+}
+
+async function exchangeOuraToken(params = {}) {
+  const body = new URLSearchParams({
+    client_id: OURA_CLIENT_ID,
+    client_secret: OURA_CLIENT_SECRET,
+    ...Object.entries(params).reduce((acc, [key, value]) => {
+      if (value !== null && value !== undefined && value !== "") acc[key] = String(value);
+      return acc;
+    }, {}),
+  });
+  const response = await fetch(`${OURA_API_BASE_URL}/oauth/token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body,
+  });
+  const text = await response.text();
+  let data = {};
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    data = { raw: text };
+  }
+  if (!response.ok) {
+    throw new HttpError(response.status, "oura_token_exchange_failed", data);
+  }
+  return data;
+}
+
+async function refreshOuraTokensIfNeeded(userId, tokens) {
+  const expiresAt = Date.parse(tokens.expires_at || "");
+  if (!tokens.refresh_token || (Number.isFinite(expiresAt) && expiresAt - Date.now() > 90_000)) {
+    return tokens;
+  }
+  const refreshed = await exchangeOuraToken({
+    grant_type: "refresh_token",
+    refresh_token: tokens.refresh_token,
+  });
+  const saved = await storeOuraTokens(userId, {
+    ...refreshed,
+    refresh_token: refreshed.refresh_token || tokens.refresh_token,
+  });
+  return {
+    ...tokens,
+    ...refreshed,
+    refresh_token: refreshed.refresh_token || tokens.refresh_token,
+    expires_at: saved.expires_at,
+  };
+}
+
+function buildOuraQueryForDataType(dataType, options = {}) {
+  const defaultEnd = new Date();
+  const defaultStart = new Date(defaultEnd.getTime() - OURA_DEFAULT_SYNC_DAYS * 24 * 60 * 60 * 1000);
+  const startDate = options.startDate || options.start_date || formatLocalDateKey(defaultStart);
+  const endDate = options.endDate || options.end_date || formatLocalDateKey(defaultEnd);
+  const startDateTime = options.startDateTime || options.start_datetime || `${startDate}T00:00:00`;
+  const endDateTime = options.endDateTime || options.end_datetime || `${endDate}T23:59:59`;
+  const query = new URLSearchParams();
+  if (dataType === "heartrate" || dataType === "heart_rate") {
+    query.set("start_datetime", startDateTime);
+    query.set("end_datetime", endDateTime);
+  } else {
+    if (startDate) query.set("start_date", startDate);
+    if (endDate) query.set("end_date", endDate);
+  }
+  if (options.nextToken || options.next_token) query.set("next_token", options.nextToken || options.next_token);
+  return query;
+}
+
+async function fetchOuraCollection(dataTypeConfig, tokens, options = {}) {
+  const documents = [];
+  const pages = [];
+  let nextToken = options.nextToken || options.next_token || "";
+  const maxPages = Math.max(1, Math.min(Number(options.maxPages || 12), 50));
+  for (let page = 0; page < maxPages; page += 1) {
+    const query = buildOuraQueryForDataType(dataTypeConfig.dataType, { ...options, nextToken });
+    const url = `${OURA_API_BASE_URL}${dataTypeConfig.route}${query.toString() ? `?${query}` : ""}`;
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${tokens.access_token}` },
+    });
+    const text = await response.text();
+    let data = {};
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch {
+      data = { raw: text };
+    }
+    if (!response.ok) {
+      throw new HttpError(response.status, "oura_collection_fetch_failed", {
+        dataType: dataTypeConfig.dataType,
+        route: dataTypeConfig.route,
+        status: response.status,
+        retryable: response.status === 429 || response.status >= 500,
+        details: data,
+      });
+    }
+    const pageDocuments = Array.isArray(data.data)
+      ? data.data
+      : Array.isArray(data)
+        ? data
+        : data && typeof data === "object" && !("next_token" in data)
+          ? [data]
+          : [];
+    documents.push(...pageDocuments);
+    pages.push({ page: page + 1, count: pageDocuments.length, nextToken: data?.next_token || null });
+    nextToken = data?.next_token || "";
+    if (!nextToken) break;
+  }
+  return { dataType: dataTypeConfig.dataType, route: dataTypeConfig.route, documents, pages };
+}
+
+async function syncOuraApiData(body = {}, user = { id: LOCAL_USER_ID }) {
+  const missingConfig = getOuraMissingConfig();
+  if (missingConfig.length) {
+    throw new HttpError(503, "oura_oauth_not_configured", { missingConfig });
+  }
+  const storedTokens = await getStoredOuraTokens(user.id);
+  if (!storedTokens?.access_token) {
+    throw new HttpError(409, "oura_not_connected", {
+      nextAction: "Conecta Oura desde /api/integration/oura/connect antes de sincronizar.",
+    });
+  }
+  const tokens = await refreshOuraTokensIfNeeded(user.id, storedTokens);
+  const manifest = buildOuraConnectorManifest();
+  const requested = Array.isArray(body.dataTypes) && body.dataTypes.length
+    ? new Set(body.dataTypes.map((item) => String(item).trim()))
+    : null;
+  const dataTypes = manifest.dataTypes.filter((item) => !requested || requested.has(item.dataType));
+  const participantId = String(body.participantId || body.groupId || user.id || "miguel").trim();
+  const collections = [];
+  const errors = [];
+  for (const dataTypeConfig of dataTypes) {
+    try {
+      collections.push(await fetchOuraCollection(dataTypeConfig, tokens, body));
+    } catch (error) {
+      errors.push({
+        dataType: dataTypeConfig.dataType,
+        error: sanitizeDiagnosticError(error),
+      });
+    }
+  }
+  const signals = [];
+  for (const collection of collections) {
+    const normalized = normalizeOuraPayload({
+      dataType: collection.dataType,
+      documents: collection.documents,
+      participantId,
+    }, user);
+    normalized.results.forEach((result) => {
+      if (result.ok) signals.push(result.normalized);
+      else errors.push({ dataType: collection.dataType, error: result.errors.join("; ") });
+    });
+  }
+  const ingest = signals.length
+    ? await ingestIntegrationSignals({ signals, source: "oura-api-v2", refreshContext: false, refreshDailyBriefing: false }, user)
+    : {
+        ok: errors.length === 0,
+        count: 0,
+        targetSummary: {},
+        results: [],
+        automation: { status: "no_changes", triggered: false, actions: [] },
+      };
+  await appendLog(errors.length ? "warn" : "info", "oura_sync_completed", {
+    userId: user.id,
+    requested: dataTypes.map((item) => item.dataType),
+    collections: collections.map((item) => ({ dataType: item.dataType, count: item.documents.length })),
+    ingested: ingest.count,
+    errors,
+  });
+  return {
+    ok: errors.length === 0 && ingest.ok,
+    connector: "oura-api-v2",
+    syncedAt: new Date().toISOString(),
+    range: {
+      startDate: body.startDate || body.start_date || formatLocalDateKey(new Date(Date.now() - OURA_DEFAULT_SYNC_DAYS * 24 * 60 * 60 * 1000)),
+      endDate: body.endDate || body.end_date || formatLocalDateKey(new Date()),
+    },
+    dataTypes: dataTypes.map((item) => item.dataType),
+    collectionSummary: collections.map((item) => ({ dataType: item.dataType, count: item.documents.length, pages: item.pages || [] })),
+    ingestedSignals: signals.length,
+    ingest,
+    errors,
+    message: errors.length
+      ? "Oura sincronizo parcialmente; revisa errores por tipo de dato."
+      : "Oura sincronizado y convertido en contexto biometrico transversal.",
+  };
+}
+
+async function handleOuraWebhook(req, body = {}) {
+  const signature = req.headers["x-oura-signature"] || req.headers["x-oura-webhook-signature"] || "";
+  const webhookEvents = Array.isArray(body.events)
+    ? body.events
+    : Array.isArray(body.data)
+      ? body.data
+      : body && typeof body === "object"
+        ? [body]
+        : [];
+  const configured = Boolean(OURA_WEBHOOK_SECRET);
+  const validated = configured ? Boolean(signature) : false;
+  const userId = String(body.userId || body.user_id || body.ownerId || LOCAL_USER_ID);
+  await appendLog(configured && !validated ? "warn" : "info", "oura_webhook_received", {
+    configured,
+    validated,
+    userId,
+    events: webhookEvents.map((event) => ({
+      dataType: event.data_type || event.dataType || event.type || "",
+      eventType: event.event_type || event.eventType || event.action || "",
+      objectId: event.object_id || event.objectId || event.id || "",
+    })),
+  });
+  return {
+    ok: true,
+    connector: "oura-api-v2",
+    status: configured && !validated ? "accepted_signature_unverified" : "accepted",
+    receivedEvents: webhookEvents.length,
+    nextAction: "El webhook quedo registrado; la sincronizacion segura ocurre por /api/integration/oura/sync o rutina oura-sync.",
   };
 }
 
@@ -4282,6 +4760,12 @@ async function processAssetJob(user = { id: LOCAL_USER_ID }, payload = {}) {
     processedAt,
     remoteSynced: false,
   };
+  if (processing.biometricImport) {
+    result.biometricImport = processing.biometricImport;
+  }
+  if (processing.structuredContext) {
+    result.structuredContext = processing.structuredContext;
+  }
   if (assetId) {
     try {
       const updated = await updateAssetProcessing(assetId, result, user);
@@ -4309,6 +4793,10 @@ async function analyzeAssetOnServer(media = {}, kind = "") {
   const hasReadableSource = Boolean(media.dataUrl || media.url);
   const extension = getExtension(media.name || media.extension || media.type || "");
   if (kind === "document" && ["zip", "rar", "7z"].includes(extension)) {
+    if (extension === "zip" && isAppleHealthBiometricArchive(media)) {
+      if (!hasReadableSource) return buildAssetProviderPending("apple-health-zip-source-unavailable");
+      return analyzeAppleHealthZip(media);
+    }
     return {
       status: "skipped",
       method: "archive-transport-only",
@@ -4360,6 +4848,22 @@ function normalizeAssetJobStatus(status = "", extractedText = "") {
 
 function buildServerAssetProcessingAnalysis(media = {}, kind = "", processing = {}, extractedText = "") {
   const name = media.name || media.id || "activo";
+  if (processing.method === "server-apple-health-zip-extraction") {
+    const biometric = processing.biometricImport || {};
+    const metrics = Array.isArray(biometric.metricNames) && biometric.metricNames.length
+      ? biometric.metricNames.join(", ")
+      : "senales biometricas";
+    const range = biometric.startAt && biometric.endAt
+      ? `${biometric.startAt} - ${biometric.endAt}`
+      : "sin rango detectado";
+    return [
+      `ZIP Apple Health procesado por el servidor: ${name}.`,
+      `${biometric.recordCount || 0} registros interpretados.`,
+      `Senales: ${metrics}.`,
+      `Rango: ${range}.`,
+      "Uso: contexto biometrico transversal para Panel, Captura, Reportes y Hallazgos; no es diagnostico medico.",
+    ].join(" ");
+  }
   if (extractedText) {
     return [
       `Activo procesado por el servidor: ${name}.`,
@@ -4580,6 +5084,25 @@ async function executeRoutine(routine, user, options = {}) {
     await appendLog("info", "Routine completed: context scan", { userId: user.id, location, options });
     return result;
   }
+  if (routine.id === "oura-sync") {
+    let result;
+    try {
+      result = await syncOuraApiData({
+        startDate: formatLocalDateKey(new Date(Date.now() - OURA_DEFAULT_SYNC_DAYS * 24 * 60 * 60 * 1000)),
+        endDate: formatLocalDateKey(new Date()),
+        maxPages: 12,
+      }, user);
+    } catch (error) {
+      result = {
+        status: "not_ready",
+        error: error.message,
+        detail: error.detail || null,
+        nextAction: "Conecta Oura y define las variables de backend antes de activar la rutina.",
+      };
+    }
+    await appendLog("info", "Routine completed: Oura sync", { userId: user.id, result, options });
+    return result;
+  }
   if (routine.id === "offline-sync") {
     const result = { status: "ready", message: "La sincronización offline se ejecuta desde el navegador cuando hay cola local." };
     await appendLog("info", "Routine checked: offline sync", { userId: user.id, result, options });
@@ -4601,6 +5124,7 @@ function defaultRoutineTime(id) {
   if (id === "daily-review") return "18:00";
   if (id === "weekly-report") return "09:00";
   if (id === "embedding-refresh") return "02:00";
+  if (id === "oura-sync") return "04:00";
   return "08:00";
 }
 
@@ -4875,6 +5399,9 @@ async function extractDocumentText(media) {
   const bytes = await getDocumentBytes(normalized);
   const extension = getExtension(normalized.name || normalized.type || "");
   if (["zip", "rar", "7z"].includes(extension)) {
+    if (extension === "zip" && isAppleHealthBiometricArchive(normalized)) {
+      return analyzeAppleHealthZip(normalized, bytes);
+    }
     return {
       status: "skipped",
       method: "archive-transport-only",
@@ -4908,6 +5435,223 @@ async function extractDocumentText(media) {
     text: cleaned,
     characters: cleaned.length,
   };
+}
+
+function isAppleHealthBiometricArchive(media = {}) {
+  const name = String(media.name || media.fileName || "").toLowerCase();
+  const type = String(media.type || media.originalType || "").toLowerCase();
+  const sourceType = String(media.sourceType || media.source || media.metadata?.sourceType || "").toLowerCase();
+  const payloadType = String(media.payloadType || media.metadata?.payloadType || media.metadata?.externalPayloadType || "").toLowerCase();
+  const intent = String(media.processingIntent || media.metadata?.processingIntent || media.metadata?.externalProcessingIntent || "").toLowerCase();
+  const biometricImport = media.biometricImport || media.metadata?.biometricImport;
+  return type.includes("zip")
+    && (
+      payloadType.includes("biometric")
+      || sourceType.includes("biometric")
+      || intent.includes("biometric")
+      || Boolean(biometricImport)
+      || /apple[-_\s]?health|healthkit|export\.zip|biometric|biometr/.test(name)
+    );
+}
+
+async function analyzeAppleHealthZip(media = {}, existingBytes = null) {
+  const bytes = existingBytes || await getDocumentBytes(normalizeMedia(media));
+  const entries = readZipEntries(bytes);
+  const xmlEntry = Object.entries(entries).find(([name]) =>
+    /(^|\/)(export|apple_health_export|health)[^/]*\.xml$/i.test(name)
+      || /apple_health_export\/export\.xml$/i.test(name)
+      || /export\.xml$/i.test(name),
+  );
+  if (!xmlEntry) {
+    return {
+      status: "skipped",
+      method: "apple-health-zip-no-export-xml",
+      text: "",
+      message: "ZIP recibido como biometria, pero no contiene export.xml reconocible.",
+    };
+  }
+  const [entryName, xmlBytes] = xmlEntry;
+  const xml = xmlBytes.toString("utf8");
+  const rows = extractAppleHealthXmlRowsServer(xml).slice(0, 50000);
+  const metricNames = detectServerBiometricMetricNames(rows);
+  const metrics = aggregateServerBiometricRows(rows);
+  const dates = rows
+    .map((row) => row.date)
+    .filter(Boolean)
+    .map((value) => new Date(value))
+    .filter((date) => !Number.isNaN(date.getTime()))
+    .sort((a, b) => a - b);
+  const startAt = dates[0]?.toISOString() || "";
+  const endAt = dates[dates.length - 1]?.toISOString() || "";
+  const sourceDevice = detectServerBiometricSource(rows) || "Apple Health";
+  const biometricImport = {
+    sourceDevice,
+    fileName: media.name || "export.zip",
+    archiveEntry: entryName,
+    recordCount: rows.length,
+    metricNames,
+    startAt,
+    endAt,
+    metrics,
+    records: rows.slice(0, 250),
+  };
+  const metricText = metricNames.length ? metricNames.join(", ") : "sin senales identificadas";
+  const rangeText = startAt && endAt ? `${startAt} - ${endAt}` : "sin rango detectado";
+  const text = [
+    `Importacion Apple Health desde ZIP.`,
+    `${rows.length} registros interpretados.`,
+    `Fuente principal: ${sourceDevice}.`,
+    `Senales: ${metricText}.`,
+    `Rango: ${rangeText}.`,
+    metrics.heartAvg ? `Frecuencia cardiaca promedio: ${Math.round(metrics.heartAvg)}.` : "",
+    metrics.steps ? `Pasos acumulados: ${Math.round(metrics.steps)}.` : "",
+    metrics.activeEnergy ? `Energia activa: ${Math.round(metrics.activeEnergy)}.` : "",
+    metrics.sleepMinutes ? `Sueno registrado: ${(metrics.sleepMinutes / 60).toFixed(1)} horas.` : "",
+  ].filter(Boolean).join(" ");
+  return {
+    status: rows.length ? "ok" : "empty",
+    method: "server-apple-health-zip-extraction",
+    provider: "local-server",
+    text,
+    characters: text.length,
+    biometricImport,
+    structuredContext: {
+      connector: "apple-healthkit-native",
+      payloadType: inferServerBiometricPayloadType(metricNames),
+      metrics,
+      signals: rows.slice(0, 250),
+    },
+  };
+}
+
+function extractAppleHealthXmlRowsServer(xml = "") {
+  const text = String(xml || "");
+  const rows = [];
+  for (const match of text.matchAll(/<Record\b([^>]*)\/?>/gi)) {
+    const attrs = parseXmlAttributes(match[1] || "");
+    rows.push(normalizeServerBiometricRow({
+      type: String(attrs.type || "").replace(/^HKQuantityTypeIdentifier/, "").replace(/^HKCategoryTypeIdentifier/, ""),
+      source: attrs.sourceName || attrs.source || "",
+      sourceName: attrs.sourceName || "",
+      device: attrs.device || "",
+      unit: attrs.unit || "",
+      creationDate: attrs.creationDate || "",
+      startDate: attrs.startDate || "",
+      endDate: attrs.endDate || "",
+      value: attrs.value || "",
+    }));
+  }
+  for (const match of text.matchAll(/<Workout\b([^>]*)\/?>/gi)) {
+    const attrs = parseXmlAttributes(match[1] || "");
+    rows.push(normalizeServerBiometricRow({
+      type: String(attrs.workoutActivityType || "Workout").replace(/^HKWorkoutActivityType/, "Workout"),
+      source: attrs.sourceName || attrs.source || "",
+      sourceName: attrs.sourceName || "",
+      unit: attrs.durationUnit || "min",
+      creationDate: attrs.creationDate || "",
+      startDate: attrs.startDate || "",
+      endDate: attrs.endDate || "",
+      duration: attrs.duration || "",
+      value: attrs.duration || "",
+    }));
+  }
+  return rows.filter((row) => row.type || row.date || row.value);
+}
+
+function parseXmlAttributes(raw = "") {
+  const attrs = {};
+  for (const match of String(raw || "").matchAll(/([:\w-]+)\s*=\s*"([^"]*)"/g)) {
+    attrs[match[1]] = decodeXmlEntities(match[2] || "");
+  }
+  return attrs;
+}
+
+function decodeXmlEntities(value = "") {
+  return String(value || "")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, "\"")
+    .replace(/&apos;/g, "'");
+}
+
+function normalizeServerBiometricRow(row = {}) {
+  const type = String(row.type || row.metric || row.metricType || row.identifier || row.name || "");
+  const source = String(row.source || row.sourceName || row.device || row.deviceName || "");
+  const date = String(row.startDate || row.start || row.date || row.timestamp || row.creationDate || row.endDate || "");
+  const value = row.value ?? row.quantity ?? row.count ?? row.duration ?? "";
+  const unit = row.unit || "";
+  return { ...row, type, source, date, value, unit };
+}
+
+function classifyServerBiometricType(row = {}) {
+  const raw = `${row.type || ""} ${row.metric || ""}`.toLowerCase();
+  if (/heart|hr|cardio|pulse|ritmo|frecuencia/.test(raw)) return "heart";
+  if (/step|paso/.test(raw)) return "steps";
+  if (/sleep|sueno/.test(raw)) return "sleep";
+  if (/energy|calorie|kcal|energia/.test(raw)) return "energy";
+  if (/distance|distancia/.test(raw)) return "distance";
+  if (/workout|exercise|active|actividad|entreno/.test(raw)) return "activity";
+  if (/oxygen|spo2|respiratory|respiracion/.test(raw)) return "respiration";
+  return "other";
+}
+
+function getServerBiometricNumericValue(row = {}) {
+  const value = Number(String(row.value ?? "").replace(",", ".").replace(/[^\d.-]/g, ""));
+  return Number.isFinite(value) ? value : 0;
+}
+
+function aggregateServerBiometricRows(rows = []) {
+  const grouped = rows.reduce((acc, row) => {
+    const type = classifyServerBiometricType(row);
+    const value = getServerBiometricNumericValue(row);
+    if (!acc[type]) acc[type] = [];
+    if (value) acc[type].push(value);
+    return acc;
+  }, {});
+  const sum = (items = []) => items.reduce((total, value) => total + value, 0);
+  return {
+    heartAvg: grouped.heart?.length ? average(grouped.heart) : 0,
+    steps: grouped.steps?.length ? sum(grouped.steps) : 0,
+    activeEnergy: grouped.energy?.length ? sum(grouped.energy) : 0,
+    sleepMinutes: grouped.sleep?.length ? sum(grouped.sleep) : 0,
+    activityCount: grouped.activity?.length || 0,
+    metricTypes: Object.keys(grouped),
+    recordCount: rows.length,
+  };
+}
+
+function detectServerBiometricMetricNames(rows = []) {
+  const names = new Set();
+  rows.forEach((row) => {
+    const raw = String(row.type || "").toLowerCase();
+    if (!raw) return;
+    if (/heart|hr|cardio|pulse|ritmo|frecuencia/.test(raw)) names.add("frecuencia cardiaca");
+    else if (/step|paso/.test(raw)) names.add("pasos");
+    else if (/sleep|sueno/.test(raw)) names.add("sueno");
+    else if (/energy|calorie|kcal|energia/.test(raw)) names.add("energia/calorias");
+    else if (/distance|distancia/.test(raw)) names.add("distancia");
+    else if (/oxygen|spo2|respiratory|respiracion/.test(raw)) names.add("oxigeno/respiracion");
+    else if (/workout|exercise|active|actividad|entreno/.test(raw)) names.add("actividad");
+    else names.add(raw.replace(/^hkquantitytypeidentifier/i, "").replace(/^hkcategorytypeidentifier/i, "").slice(0, 34));
+  });
+  return [...names].filter(Boolean).slice(0, 12);
+}
+
+function detectServerBiometricSource(rows = []) {
+  const counts = rows.reduce((acc, row) => {
+    const source = String(row.source || row.sourceName || "").trim();
+    if (source) acc[source] = (acc[source] || 0) + 1;
+    return acc;
+  }, {});
+  return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || "";
+}
+
+function inferServerBiometricPayloadType(metricNames = []) {
+  const text = (metricNames || []).join(" ").toLowerCase();
+  if (/sleep|sueno/.test(text)) return "sleep";
+  if (/step|distance|workout|activity|calorie|paso|actividad|energia/.test(text)) return "activity";
+  return "biometric";
 }
 
 async function ocrPdfDocument(media, bytes) {
@@ -6859,6 +7603,17 @@ function sendPdf(res, bytes, filename = "reporte-experiencias.pdf") {
     "Content-Disposition": `attachment; filename="${filename}"`,
   });
   res.end(bytes);
+}
+
+function formatHttpErrorMessage(error) {
+  if (!error) return "Error desconocido.";
+  if (typeof error.detail === "string" && error.detail.trim()) return error.detail;
+  if (error.detail?.message) return String(error.detail.message);
+  if (Array.isArray(error.detail?.missingConfig)) {
+    return `Faltan variables de configuracion: ${error.detail.missingConfig.join(", ")}.`;
+  }
+  if (error.statusCode) return String(error.message || "request_failed");
+  return String(error.message || "internal_error");
 }
 
 async function saveExportFile(body = {}) {
