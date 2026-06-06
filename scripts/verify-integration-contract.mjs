@@ -106,6 +106,7 @@ assert(files.ouraDoc.includes("/api/integration/device/selftest") && files.serve
 assert(files.ouraDoc.includes("/api/integration/ingest") && files.ouraDoc.includes("accepted_pending_media"), "Device connector documentation must explain validated ingest and pending media behavior.");
 assert(files.app.includes("Conector OpenAPI de Oura") && files.app.includes("Oura OpenAPI connector"), "Manual/Admin must explain the Oura OpenAPI connector.");
 assert(files.app.includes("data-device-action=\"connect-oura\"") && files.app.includes("/integration/oura/connect-url"), "Admin UI must connect Oura through an authenticated connect-url endpoint, not a naked API link.");
+assert(files.app.includes("handleDashboardIntegrationAction") && files.app.includes("data-dashboard-connect-oura") && readFileSync("index.html", "utf8").includes("dashboardOuraConnectButton"), "Dashboard must expose a direct Oura connection button outside Admin.");
 assert(files.app.includes("Rutas Apple, Samsung y Meta") && files.app.includes("Apple, Samsung, and Meta routes"), "Manual/Admin must explain Apple, Samsung, and Meta connector routes.");
 assert(files.app.includes("runDeviceConnectorSelfTest") && files.app.includes("data-device-action=\"run-device-connectors\""), "Admin device panel must run the device connector self-test from the UI.");
 

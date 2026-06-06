@@ -1,4 +1,4 @@
-const APP_VERSION = "20260605-v-command-wake-533";
+const APP_VERSION = "20260606-oura-direct-connect-534";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -7305,7 +7305,9 @@ function setupActions() {
   document.getElementById("apiStatusPanel").addEventListener("click", handleApiStatusClick);
   document.getElementById("uiQualityPanel").addEventListener("click", handleUiQualityClick);
   document.querySelector(".dashboard-primary-panel")?.addEventListener("click", handleParallelBacklogClick);
+  document.getElementById("dashboardOuraConnectButton")?.addEventListener("click", connectOuraAccount);
   document.getElementById("dashboardAttachmentBox")?.addEventListener("click", handleDashboardAttachmentAction);
+  document.getElementById("dashboardIntegrationBox")?.addEventListener("click", handleDashboardIntegrationAction);
   document.getElementById("dashboardPilotBox")?.addEventListener("click", handleDashboardPilotAction);
   document.getElementById("parallelBacklog").addEventListener("click", handleParallelBacklogClick);
   document.getElementById("mvpClosurePanel").addEventListener("click", handleMvpClosureClick);
@@ -15495,6 +15497,7 @@ function renderDashboardIntegrationHandoff() {
         sources: "Sources",
         payloads: "Payloads",
         recent: "Recent incoming data",
+        connectOura: "Connect Oura",
         openAssets: "Open Assets",
         openAdmin: "Open connector tests",
       }
@@ -15509,6 +15512,7 @@ function renderDashboardIntegrationHandoff() {
         sources: "Fuentes",
         payloads: "Tipos",
         recent: "Entradas recientes",
+        connectOura: "Conectar Oura",
         openAssets: "Abrir Activos",
         openAdmin: "Probar conectores",
       };
@@ -15521,8 +15525,9 @@ function renderDashboardIntegrationHandoff() {
         <p>${escapeHtml(summary.total ? labels.detail : labels.clearDetail)}</p>
       </div>
       <div class="dashboard-integration-actions">
+        <button class="primary-button" type="button" data-dashboard-connect-oura="1">${escapeHtml(labels.connectOura)}</button>
         <button class="ghost-button" type="button" data-backlog-view="assetLibrary">${escapeHtml(labels.openAssets)}</button>
-        <button class="primary-button" type="button" data-backlog-view="admin" data-backlog-focus="externalIntegrationPanel">${escapeHtml(labels.openAdmin)}</button>
+        <button class="ghost-button" type="button" data-backlog-view="admin" data-backlog-focus="deviceList">${escapeHtml(labels.openAdmin)}</button>
       </div>
     </div>
     <div class="dashboard-integration-metrics">
@@ -15553,6 +15558,15 @@ function renderDashboardIntegrationHandoff() {
       }
     </div>
   `;
+}
+
+function handleDashboardIntegrationAction(event) {
+  const ouraButton = event.target.closest("[data-dashboard-connect-oura]");
+  if (ouraButton) {
+    connectOuraAccount();
+    return;
+  }
+  handleParallelBacklogClick(event);
 }
 
 function isTruthyImportFlag(value) {
