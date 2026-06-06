@@ -1454,8 +1454,8 @@ async function completeOuraOAuthFlow(req, res, url) {
   const tokenRequest = {
     grant_type: "authorization_code",
     code,
+    redirect_uri: OURA_REDIRECT_URI,
   };
-  if (savedState.metadata?.includeRedirectUri) tokenRequest.redirect_uri = OURA_REDIRECT_URI;
   const tokens = await exchangeOuraToken(tokenRequest);
   const saved = await storeOuraTokens(savedState.userId, tokens);
   await appendLog("info", "oura_oauth_connected", {
