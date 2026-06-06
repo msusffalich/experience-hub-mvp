@@ -1,4 +1,4 @@
-const APP_VERSION = "20260605-flow-closure-532";
+const APP_VERSION = "20260605-v-command-wake-533";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -12887,16 +12887,33 @@ function normalizeVoiceCommand(value) {
 }
 
 function stripVoiceWakePhrase(command = "") {
-  return String(command || "")
-    .replace(/^(hola|hello|hi|hey|oye)\s+(v|ve|vee)\b[,:;\s-]*/, "")
-    .replace(/^(v|ve|vee)\b[,:;\s-]*/, "")
-    .replace(/^(por favor|please)\b/, "")
-    .trim();
+  const raw = String(command || "").trim();
+  const greeted = raw.match(/^(hola|hello|hi|hey|oye)\s+([a-z]+)\b[,:;\s-]*(.*)$/i);
+  if (greeted && isVoiceWakeToken(greeted[2], greeted[3])) return greeted[3].trim();
+  const direct = raw.match(/^([a-z]+)\b[,:;\s-]*(.*)$/i);
+  if (direct && isVoiceWakeToken(direct[1], direct[2])) return direct[2].trim();
+  return raw.replace(/^(por favor|please)\b/, "").trim();
 }
 
 function hasVoiceWakePhrase(command = "") {
-  return /^(hola|hello|hi|hey|oye)\s+(v|ve|vee)\b/.test(String(command || ""))
-    || /^(v|ve|vee)\b/.test(String(command || ""));
+  const raw = String(command || "").trim();
+  const greeted = raw.match(/^(hola|hello|hi|hey|oye)\s+([a-z]+)\b[,:;\s-]*(.*)$/i);
+  if (greeted) return isVoiceWakeToken(greeted[2], greeted[3]);
+  const direct = raw.match(/^([a-z]+)\b[,:;\s-]*(.*)$/i);
+  return Boolean(direct && isVoiceWakeToken(direct[1], direct[2]));
+}
+
+function isVoiceWakeToken(token = "", followingCommand = "") {
+  const normalized = String(token || "").toLowerCase().trim();
+  if (/^(v|ve|vee)$/.test(normalized)) return true;
+  if (/^(by|bye|bay|vai)$/.test(normalized)) return looksLikeVoiceActionCommand(followingCommand);
+  return false;
+}
+
+function looksLikeVoiceActionCommand(command = "") {
+  const lower = String(command || "").toLowerCase().trim();
+  if (!lower) return false;
+  return /\b(abrir|abre|open|panel|dashboard|captura|capture|libreria|library|activos|assets|agenda|calendario|calendar|reporte|report|publicaciones|publications|hallazgos|insights|manual|ayuda|help|actualizar|refresh|diario|daily|analizar|impacto|contexto|toma nota|tomar nota|anota|nota que|guarda esto|guardar esto|take note|note that|save this|nueva experiencia|new experience|inicia|iniciar|empieza|graba|grabar|start|begin|cerrar|cierra|close|end|toma|tomar|saca|sacar|foto|imagen|photo|picture|video|audio|voz|voice)\b/.test(lower);
 }
 
 async function clearAppShellCaches() {
@@ -28897,6 +28914,8 @@ function renderDeviceIntegrationPanel() {
         connectorSelfTestTitle: "Device connector self-test",
         connectorSelfTestEmpty: "Run the test to validate Oura, Apple Health, Health Connect/Samsung, and Meta normalizers against the Vibe signal contract.",
         connectorSelfTestRunning: "Testing connectors...",
+        connectOura: "Connect Oura",
+        connectOuraDetail: "Opens Oura authorization using your active Vibe session. Do not open the API link manually.",
       }
     : {
         title: "Contrato de integración de dispositivos",
@@ -28922,6 +28941,8 @@ function renderDeviceIntegrationPanel() {
         connectorSelfTestTitle: "Prueba de conectores de dispositivos",
         connectorSelfTestEmpty: "Ejecuta la prueba para validar normalizadores de Oura, Apple Health, Health Connect/Samsung y Meta contra el contrato de señales Vibe.",
         connectorSelfTestRunning: "Probando conectores...",
+        connectOura: "Conectar Oura",
+        connectOuraDetail: "Abre la autorizacion de Oura usando tu sesion activa de Vibe. No abras el enlace API manualmente.",
       };
   const simulation = state.vibeappSimulation;
   const connectorSelfTest = state.deviceConnectorSelfTest;
@@ -28989,6 +29010,7 @@ function renderDeviceIntegrationPanel() {
       <div class="device-integration-actions">
         <button class="primary-button" type="button" data-device-action="run-vibeapp-sim">${escapeHtml(labels.simulate)}</button>
         <button class="primary-button" type="button" data-device-action="run-device-connectors">${escapeHtml(labels.connectorSelfTest)}</button>
+        <button class="primary-button" type="button" data-device-action="connect-oura">${escapeHtml(labels.connectOura)}</button>
         <button class="ghost-button" type="button" data-device-action="export-md">${escapeHtml(labels.exportMd)}</button>
         <button class="ghost-button" type="button" data-device-action="export-json">${escapeHtml(labels.exportJson)}</button>
         <button class="ghost-button" type="button" data-device-action="copy-sample">${escapeHtml(labels.sample)}</button>
@@ -28997,6 +29019,7 @@ function renderDeviceIntegrationPanel() {
         <button class="ghost-button" type="button" data-backlog-view="admin" data-backlog-focus="assetProcessingActionPlan">${escapeHtml(labels.openAssets)}</button>
         <button class="primary-button" type="button" data-backlog-view="capture">${escapeHtml(labels.openCapture)}</button>
       </div>
+      <p class="microcopy">${escapeHtml(labels.connectOuraDetail)}</p>
       <article class="device-simulation-panel ${simulation?.ok ? "is-ready" : simulation?.status === "running" ? "is-running" : simulation ? "is-review" : ""}">
         <div>
           <strong>${escapeHtml(labels.simulation)}</strong>
@@ -29105,6 +29128,10 @@ function handleDeviceIntegrationClick(event) {
     runDeviceConnectorSelfTest();
     return;
   }
+  if (action === "connect-oura") {
+    connectOuraAccount();
+    return;
+  }
   if (action === "export-md") {
     downloadBlob(new Blob([buildDeviceIntegrationMarkdown()], { type: "text/markdown;charset=utf-8" }), "contrato-integracion-dispositivos.md");
     return;
@@ -29131,6 +29158,21 @@ function handleDeviceIntegrationClick(event) {
         ? state.language === "en" ? "Integration sample kit copied." : "Kit de integración copiado."
         : state.language === "en" ? "Could not copy the integration kit." : "No se pudo copiar el kit de integración.");
     });
+  }
+}
+
+async function connectOuraAccount() {
+  try {
+    notify(state.language === "en" ? "Opening Oura authorization..." : "Abriendo autorizacion Oura...");
+    const payload = await apiRequest("/integration/oura/connect-url");
+    if (!payload?.authUrl) {
+      throw new Error(state.language === "en" ? "Oura authorization URL was not received." : "No se recibio la URL de autorizacion Oura.");
+    }
+    window.location.href = payload.authUrl;
+  } catch (error) {
+    notify(state.language === "en"
+      ? `Could not connect Oura: ${error.message}`
+      : `No se pudo conectar Oura: ${error.message}`);
   }
 }
 

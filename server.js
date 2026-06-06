@@ -272,6 +272,12 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (url.pathname === "/api/integration/oura/connect-url" && req.method === "GET") {
+    const user = await getRequestUser(req);
+    sendJson(res, 200, await createOuraOAuthUrl(url, user));
+    return;
+  }
+
   if (url.pathname === "/api/integration/oura/callback" && req.method === "GET") {
     await completeOuraOAuthFlow(req, res, url);
     return;
@@ -1003,6 +1009,7 @@ function buildOuraConnectorManifest() {
       manifest: "/api/integration/oura/manifest",
       status: "/api/integration/oura/status",
       connect: "/api/integration/oura/connect",
+      connectUrl: "/api/integration/oura/connect-url",
       callback: "/api/integration/oura/callback",
       sync: "/api/integration/oura/sync",
       webhook: "/api/integration/oura/webhook",
@@ -1343,15 +1350,18 @@ async function getOuraConnectionStatus(user = { id: LOCAL_USER_ID }) {
 }
 
 async function startOuraOAuthFlow(req, res, url, user) {
+  const payload = await createOuraOAuthUrl(url, user);
+  res.writeHead(302, { Location: payload.authUrl });
+  res.end();
+}
+
+async function createOuraOAuthUrl(url, user) {
   const missingConfig = getOuraMissingConfig();
   if (missingConfig.length) {
-    sendJson(res, 503, {
-      ok: false,
-      error: "oura_oauth_not_configured",
+    throw new HttpError(503, "oura_oauth_not_configured", {
       missingConfig,
       message: `Oura requiere OAuth en backend. Faltan: ${missingConfig.join(", ")}.`,
     });
-    return;
   }
   const state = randomUUID();
   await rememberOuraOAuthState(state, user, url.searchParams.get("returnTo") || "");
@@ -1361,8 +1371,13 @@ async function startOuraOAuthFlow(req, res, url, user) {
   authUrl.searchParams.set("redirect_uri", OURA_REDIRECT_URI);
   authUrl.searchParams.set("scope", getOuraRequiredScopes().join(" "));
   authUrl.searchParams.set("state", state);
-  res.writeHead(302, { Location: authUrl.toString() });
-  res.end();
+  return {
+    ok: true,
+    connector: "oura-api-v2",
+    authUrl: authUrl.toString(),
+    expiresInSeconds: 20 * 60,
+    message: "Abriendo autorizacion segura de Oura.",
+  };
 }
 
 async function completeOuraOAuthFlow(req, res, url) {

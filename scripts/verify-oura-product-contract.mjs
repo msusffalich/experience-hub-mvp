@@ -74,6 +74,7 @@ try {
   assert(manifestResult.response.ok, "oura_manifest_not_ok");
   const manifest = manifestResult.payload;
   assert(manifest.endpoints?.webhook === "/api/integration/oura/webhook", "oura_webhook_endpoint_missing");
+  assert(manifest.endpoints?.connectUrl === "/api/integration/oura/connect-url", "oura_connect_url_endpoint_missing");
   assert(manifest.syncModes?.next?.includes("paginated-api-sync"), "oura_paginated_sync_not_declared");
   assert(manifest.dataTypes?.some((item) => item.dataType === "heartrate" && item.queryMode === "datetime"), "oura_heartrate_datetime_query_missing");
 
@@ -84,6 +85,9 @@ try {
   const syncResult = await fetchJson("/integration/oura/sync", { method: "POST", body: "{}" });
   assert(syncResult.response.status === 503, `oura_sync_should_report_missing_config:${syncResult.response.status}`);
   assert(syncResult.payload.detail?.missingConfig?.includes("OURA_CLIENT_ID"), "oura_sync_missing_config_not_explicit");
+
+  const connectUrlResult = await fetchJson("/integration/oura/connect-url");
+  assert(connectUrlResult.response.status === 401 || connectUrlResult.response.status === 503, `oura_connect_url_should_require_auth_or_config:${connectUrlResult.response.status}`);
 
   const webhookResult = await fetchJson("/integration/oura/webhook", {
     method: "POST",

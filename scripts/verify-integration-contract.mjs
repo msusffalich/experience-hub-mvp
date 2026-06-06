@@ -26,6 +26,7 @@ const assert = (condition, message) => {
   "/api/integration/oura/manifest",
   "/api/integration/oura/status",
   "/api/integration/oura/connect",
+  "/api/integration/oura/connect-url",
   "/api/integration/oura/callback",
   "/api/integration/oura/sync",
   "/api/integration/oura/webhook",
@@ -104,6 +105,7 @@ assert(files.ouraDoc.includes("/api/integration/apple-health/manifest") && files
 assert(files.ouraDoc.includes("/api/integration/device/selftest") && files.server.includes("device-connector-selftest"), "Device connector self-test must be documented and exposed by the manifests.");
 assert(files.ouraDoc.includes("/api/integration/ingest") && files.ouraDoc.includes("accepted_pending_media"), "Device connector documentation must explain validated ingest and pending media behavior.");
 assert(files.app.includes("Conector OpenAPI de Oura") && files.app.includes("Oura OpenAPI connector"), "Manual/Admin must explain the Oura OpenAPI connector.");
+assert(files.app.includes("data-device-action=\"connect-oura\"") && files.app.includes("/integration/oura/connect-url"), "Admin UI must connect Oura through an authenticated connect-url endpoint, not a naked API link.");
 assert(files.app.includes("Rutas Apple, Samsung y Meta") && files.app.includes("Apple, Samsung, and Meta routes"), "Manual/Admin must explain Apple, Samsung, and Meta connector routes.");
 assert(files.app.includes("runDeviceConnectorSelfTest") && files.app.includes("data-device-action=\"run-device-connectors\""), "Admin device panel must run the device connector self-test from the UI.");
 
