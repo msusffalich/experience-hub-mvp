@@ -1281,6 +1281,7 @@ async function writeOuraTokenStore(store) {
   await writeFile(OURA_TOKEN_STORE_PATH, JSON.stringify({
     tokens: store.tokens || {},
     states: store.states || {},
+    connectionResults: store.connectionResults || {},
   }, null, 2), "utf-8");
 }
 
@@ -1336,6 +1337,50 @@ async function storeOuraTokens(userId, tokenPayload = {}) {
   return { ...tokens, access_token: "stored", refresh_token: tokens.refresh_token ? "stored" : "" };
 }
 
+function summarizeOuraConnectionError(error = {}, fallbackMessage = "") {
+  const detail = error.detail || {};
+  const firstAttempt = Array.isArray(detail.attempts) ? detail.attempts[0] : null;
+  const providerDetail = firstAttempt?.detail || detail;
+  const providerError = providerDetail?.error || providerDetail?.message || error.message || "";
+  const providerDescription = providerDetail?.error_description || providerDetail?.errorDescription || "";
+  const status = firstAttempt?.status || error.statusCode || detail.status || 0;
+  const detailCode = providerDetail?.error || error.message || "oura_connection_failed";
+  const message = fallbackMessage
+    || providerDescription
+    || providerError
+    || "Oura no completo la conexion.";
+  return {
+    ok: false,
+    status: status ? String(status) : "",
+    detailCode: String(detailCode).slice(0, 120),
+    message: String(message).slice(0, 240),
+    checkedAt: new Date().toISOString(),
+    tokenAuthMode: OURA_TOKEN_AUTH_MODE === "basic" ? "basic" : "body",
+    authorizeRedirectMode: OURA_AUTHORIZE_REDIRECT_MODE === "registered" ? "registered" : "explicit",
+  };
+}
+
+async function rememberOuraConnectionResult(userId, result = {}) {
+  if (!userId) return;
+  const store = await readOuraTokenStore();
+  store.connectionResults = store.connectionResults || {};
+  store.connectionResults[userId] = {
+    ok: Boolean(result.ok),
+    status: result.status || "",
+    detailCode: result.detailCode || "",
+    message: result.message || "",
+    checkedAt: result.checkedAt || new Date().toISOString(),
+    tokenAuthMode: result.tokenAuthMode || (OURA_TOKEN_AUTH_MODE === "basic" ? "basic" : "body"),
+    authorizeRedirectMode: result.authorizeRedirectMode || (OURA_AUTHORIZE_REDIRECT_MODE === "registered" ? "registered" : "explicit"),
+  };
+  await writeOuraTokenStore(store);
+}
+
+async function getStoredOuraConnectionResult(userId) {
+  const store = await readOuraTokenStore();
+  return store.connectionResults?.[userId] || null;
+}
+
 async function rememberOuraOAuthState(state, user, returnTo = "", metadata = {}) {
   const store = await readOuraTokenStore();
   store.states[state] = {
@@ -1377,6 +1422,7 @@ async function getOuraConnectionStatus(user = { id: LOCAL_USER_ID }) {
     }
   }
   const manifest = buildOuraConnectorManifest();
+  const lastConnection = await getStoredOuraConnectionResult(user.id);
   return {
     ok: missingConfig.length === 0,
     connector: manifest.connector,
@@ -1389,11 +1435,14 @@ async function getOuraConnectionStatus(user = { id: LOCAL_USER_ID }) {
     dataTypes: manifest.dataTypes.map((item) => item.dataType),
     tokenSavedAt,
     tokenExpiresAt,
+    lastConnection,
     nextAction: missingConfig.length
       ? `Define ${missingConfig.join(", ")} en el backend/Railway.`
       : connected
         ? "Puedes ejecutar sincronizacion Oura."
-        : "Conecta Oura con OAuth desde /api/integration/oura/connect.",
+        : lastConnection?.message
+          ? `Ultimo intento Oura: ${lastConnection.message}`
+          : "Conecta Oura con OAuth desde /api/integration/oura/connect.",
   };
 }
 
@@ -1443,17 +1492,34 @@ async function createOuraOAuthUrl(url, user) {
 
 async function completeOuraOAuthFlow(req, res, url) {
   const error = url.searchParams.get("error");
+  const state = url.searchParams.get("state");
   if (error) {
-    sendJson(res, 400, {
-      ok: false,
-      error,
-      errorDescription: url.searchParams.get("error_description") || "",
-    });
+    let savedState = null;
+    try {
+      savedState = state ? await consumeOuraOAuthState(state) : null;
+    } catch {
+      savedState = null;
+    }
+    const summary = summarizeOuraConnectionError({
+      message: error,
+      detail: {
+        error,
+        error_description: url.searchParams.get("error_description") || "",
+      },
+    }, url.searchParams.get("error_description") || "Oura cancelo o rechazo la autorizacion.");
+    if (savedState?.userId) await rememberOuraConnectionResult(savedState.userId, summary);
+    redirectOuraConnectionResult(req, res, savedState?.returnTo, "oauth-error", summary);
     return;
   }
   const code = url.searchParams.get("code");
-  const state = url.searchParams.get("state");
-  if (!code || !state) throw new HttpError(400, "oura_oauth_code_or_state_missing");
+  if (!code || !state) {
+    const summary = summarizeOuraConnectionError({
+      message: "oura_oauth_code_or_state_missing",
+      detail: { error: "callback_incompleto" },
+    }, "Oura regreso sin codigo o sin estado de seguridad. Inicia la conexion nuevamente desde Vibe.");
+    redirectOuraConnectionResult(req, res, "", "callback-error", summary);
+    return;
+  }
   const savedState = await consumeOuraOAuthState(state);
   const tokenRequest = {
     grant_type: "authorization_code",
@@ -1463,23 +1529,41 @@ async function completeOuraOAuthFlow(req, res, url) {
   try {
     tokens = await exchangeOuraAuthorizationCode(tokenRequest, savedState);
   } catch (error) {
-    const returnUrl = savedState.returnTo || "/index.html?view=dashboard&integration=oura&status=token-error";
-    const callbackUrl = new URL(returnUrl, `http://${req.headers.host || "localhost"}`);
-    callbackUrl.searchParams.set("integration", "oura");
-    callbackUrl.searchParams.set("status", "token-error");
-    callbackUrl.searchParams.set("message", "Oura no completo la conexion. Revisa Client ID y Client Secret en Railway.");
-    res.writeHead(302, { Location: `${callbackUrl.pathname}${callbackUrl.search}` });
-    res.end();
+    const summary = summarizeOuraConnectionError(error, "Oura no completo la conexion. Revisa Client ID, Client Secret y Redirect URI en Railway/Oura.");
+    await rememberOuraConnectionResult(savedState.userId, summary);
+    redirectOuraConnectionResult(req, res, savedState.returnTo, "token-error", summary);
     return;
   }
   const saved = await storeOuraTokens(savedState.userId, tokens);
+  await rememberOuraConnectionResult(savedState.userId, {
+    ok: true,
+    status: "connected",
+    detailCode: "connected",
+    message: "Oura quedo conectado correctamente.",
+    checkedAt: new Date().toISOString(),
+  });
   await appendLog("info", "oura_oauth_connected", {
     userId: savedState.userId,
     scope: saved.scope,
     expiresAt: saved.expires_at,
   });
   const returnUrl = savedState.returnTo || "/index.html?view=dashboard&integration=oura&status=connected";
-  res.writeHead(302, { Location: returnUrl });
+  redirectOuraConnectionResult(req, res, returnUrl, "connected", {
+    ok: true,
+    detailCode: "connected",
+    message: "Oura quedo conectado correctamente.",
+  });
+}
+
+function redirectOuraConnectionResult(req, res, returnTo = "", status = "", result = {}) {
+  const baseUrl = `http://${req.headers.host || "localhost"}`;
+  const returnPath = returnTo || "/index.html?view=dashboard";
+  const callbackUrl = new URL(returnPath, baseUrl);
+  callbackUrl.searchParams.set("integration", "oura");
+  callbackUrl.searchParams.set("status", status || (result.ok ? "connected" : "error"));
+  callbackUrl.searchParams.set("message", result.message || "");
+  if (result.detailCode) callbackUrl.searchParams.set("detail", result.detailCode);
+  res.writeHead(302, { Location: `${callbackUrl.pathname}${callbackUrl.search}` });
   res.end();
 }
 

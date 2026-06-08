@@ -352,8 +352,10 @@ try {
 
   await evaluate(cdp, `(async () => {
     window.confirm = () => true;
-    const seed = document.getElementById("seedButton");
-    if (!seed) throw new Error("seedButton missing");
+    const seed = document.getElementById("seedButton")
+      || document.querySelector('[data-product-settings-action="load-demo"]')
+      || document.querySelector('[data-demo-action="load"]');
+    if (!seed) throw new Error("demo load control missing");
     seed.click();
     const started = Date.now();
     while (Date.now() - started < 10000) {

@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260608-oura-oauth-official-559";
+const CACHE_NAME = "experience-hub-pwa-20260608-oura-callback-detail-560";
 const APP_SHELL = [
   "/icons/vibe-logo.jpg",
   "/icons/vibe-logo.png",

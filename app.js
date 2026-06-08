@@ -1,4 +1,4 @@
-const APP_VERSION = "20260608-oura-oauth-official-559";
+const APP_VERSION = "20260608-oura-callback-detail-560";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -3892,6 +3892,7 @@ const state = {
   supabaseSelfTest: loadSupabaseSelfTest(),
   vibeappSimulation: null,
   deviceConnectorSelfTest: null,
+  ouraConnectionStatus: null,
   uploadAttempts: [],
   uploadAttemptsCheckedAt: null,
   pendingAuthReturn: null,
@@ -4028,8 +4029,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   await hydrateFromApi();
   ensurePrimaryParticipant();
   ensurePilotClosureCompleted();
+  await refreshOuraConnectionStatus({ silent: true });
   renderAllAndScheduleAutomation();
   applyInitialViewFromUrl();
+  await handleIntegrationReturnFromUrl();
   setupOpsPolling();
   setupServerSyncPolling();
   setupDailyBriefingRefresh();
@@ -10545,6 +10548,55 @@ function applyInitialViewFromUrl() {
   const params = new URLSearchParams(window.location.search);
   const view = params.get("view") || (window.location.hash || "").replace("#", "");
   if (view && document.querySelector(`[data-view="${view}"]`)) showView(view);
+}
+
+async function handleIntegrationReturnFromUrl() {
+  const url = new URL(window.location.href);
+  const integration = url.searchParams.get("integration");
+  if (integration !== "oura") return;
+  const status = url.searchParams.get("status") || "";
+  const detail = url.searchParams.get("detail") || "";
+  const message = url.searchParams.get("message")
+    || (status === "connected"
+      ? state.language === "en" ? "Oura connected successfully." : "Oura quedo conectado correctamente."
+      : state.language === "en" ? "Oura did not finish connecting." : "Oura no termino de conectarse.");
+  notify(detail ? `${message} (${detail})` : message, status === "connected" ? "ok" : "warn");
+  try {
+    await refreshOuraConnectionStatus({ silent: true });
+  } catch (error) {
+    state.ouraConnectionStatus = {
+      connected: false,
+      lastConnection: {
+        ok: false,
+        message: error.message,
+        checkedAt: new Date().toISOString(),
+      },
+    };
+  }
+  ["integration", "status", "message", "detail"].forEach((key) => url.searchParams.delete(key));
+  if (!url.searchParams.get("v")) url.searchParams.set("v", APP_VERSION);
+  window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+  renderDashboardIntegrationHandoff();
+  renderDeviceIntegrationPanel();
+}
+
+async function refreshOuraConnectionStatus(options = {}) {
+  try {
+    state.ouraConnectionStatus = await apiRequest("/integration/oura/status");
+    return state.ouraConnectionStatus;
+  } catch (error) {
+    state.ouraConnectionStatus = {
+      connected: false,
+      configured: false,
+      lastConnection: {
+        ok: false,
+        message: error.message,
+        checkedAt: new Date().toISOString(),
+      },
+    };
+    if (!options.silent) notify(`Oura: ${error.message}`, "warn");
+    return state.ouraConnectionStatus;
+  }
 }
 
 function renderAll() {
@@ -29068,6 +29120,13 @@ function renderDeviceIntegrationPanel() {
         connectorSelfTestRunning: "Testing connectors...",
         connectOura: "Connect Oura",
         connectOuraDetail: "Opens Oura authorization using your active Vibe session. Do not open the API link manually.",
+        ouraStatus: "Oura status",
+        ouraConnected: "Connected. You can sync biometric data.",
+        ouraDisconnected: "Not connected yet.",
+        ouraConfigured: "Backend configured.",
+        ouraNotConfigured: "Backend configuration incomplete.",
+        ouraLastAttempt: "Last attempt",
+        ouraNextAction: "Next action",
       }
     : {
         title: "Contrato de integración de dispositivos",
@@ -29095,9 +29154,18 @@ function renderDeviceIntegrationPanel() {
         connectorSelfTestRunning: "Probando conectores...",
         connectOura: "Conectar Oura",
         connectOuraDetail: "Abre la autorizacion de Oura usando tu sesion activa de Vibe. No abras el enlace API manualmente.",
+        ouraStatus: "Estado de Oura",
+        ouraConnected: "Conectado. Ya puedes sincronizar datos biometricos.",
+        ouraDisconnected: "Aun no conectado.",
+        ouraConfigured: "Backend configurado.",
+        ouraNotConfigured: "Configuracion backend incompleta.",
+        ouraLastAttempt: "Ultimo intento",
+        ouraNextAction: "Siguiente accion",
       };
   const simulation = state.vibeappSimulation;
   const connectorSelfTest = state.deviceConnectorSelfTest;
+  const ouraStatus = state.ouraConnectionStatus || {};
+  const ouraLastConnection = ouraStatus.lastConnection || {};
   container.innerHTML = `
     <section class="device-integration-panel">
       <div class="device-integration-heading">
@@ -29172,6 +29240,26 @@ function renderDeviceIntegrationPanel() {
         <button class="primary-button" type="button" data-backlog-view="capture">${escapeHtml(labels.openCapture)}</button>
       </div>
       <p class="microcopy">${escapeHtml(labels.connectOuraDetail)}</p>
+      <article class="device-simulation-panel ${ouraStatus.connected ? "is-ready" : ouraStatus.pending ? "is-running" : ouraStatus.configured ? "is-review" : "is-review"}">
+        <div>
+          <strong>${escapeHtml(labels.ouraStatus)}</strong>
+          <p>${escapeHtml(ouraStatus.connected ? labels.ouraConnected : labels.ouraDisconnected)}</p>
+          <small>${escapeHtml(ouraStatus.configured ? labels.ouraConfigured : labels.ouraNotConfigured)}</small>
+        </div>
+        <span class="${ouraStatus.connected ? "status-ok" : "status-warn"}">${escapeHtml(ouraStatus.connected ? (state.language === "en" ? "Connected" : "Conectado") : (state.language === "en" ? "Review" : "Revisar"))}</span>
+        <div class="device-simulation-results">
+          <div>
+            <span class="${ouraLastConnection.ok ? "status-ok" : "status-warn"}">${escapeHtml(ouraLastConnection.ok ? "OK" : "!")}</span>
+            <strong>${escapeHtml(labels.ouraLastAttempt)}</strong>
+            <small>${escapeHtml(ouraLastConnection.message || (state.language === "en" ? "No attempt registered in this session." : "Sin intento registrado en esta sesion."))}</small>
+          </div>
+          <div>
+            <span class="${ouraStatus.connected ? "status-ok" : "status-warn"}">${escapeHtml(ouraStatus.connected ? "OK" : "!")}</span>
+            <strong>${escapeHtml(labels.ouraNextAction)}</strong>
+            <small>${escapeHtml(ouraStatus.nextAction || (state.language === "en" ? "Connect Oura from this button." : "Conecta Oura desde este boton."))}</small>
+          </div>
+        </div>
+      </article>
       <article class="device-simulation-panel ${simulation?.ok ? "is-ready" : simulation?.status === "running" ? "is-running" : simulation ? "is-review" : ""}">
         <div>
           <strong>${escapeHtml(labels.simulation)}</strong>
@@ -29316,15 +29404,39 @@ function handleDeviceIntegrationClick(event) {
 async function connectOuraAccount() {
   try {
     notify(state.language === "en" ? "Opening Oura authorization..." : "Abriendo autorizacion Oura...");
-    const payload = await apiRequest("/integration/oura/connect-url");
+    state.ouraConnectionStatus = {
+      ...(state.ouraConnectionStatus || {}),
+      pending: true,
+      lastConnection: {
+        ok: false,
+        status: "opening",
+        message: state.language === "en" ? "Opening Oura authorization..." : "Abriendo autorizacion Oura...",
+        checkedAt: new Date().toISOString(),
+      },
+    };
+    renderDashboardIntegrationHandoff();
+    renderDeviceIntegrationPanel();
+    const returnTo = `/index.html?v=${encodeURIComponent(APP_VERSION)}&view=dashboard`;
+    const payload = await apiRequest(`/integration/oura/connect-url?returnTo=${encodeURIComponent(returnTo)}`);
     if (!payload?.authUrl) {
       throw new Error(state.language === "en" ? "Oura authorization URL was not received." : "No se recibio la URL de autorizacion Oura.");
     }
     window.location.href = payload.authUrl;
   } catch (error) {
+    state.ouraConnectionStatus = {
+      ...(state.ouraConnectionStatus || {}),
+      pending: false,
+      lastConnection: {
+        ok: false,
+        message: error.message,
+        checkedAt: new Date().toISOString(),
+      },
+    };
     notify(state.language === "en"
       ? `Could not connect Oura: ${error.message}`
-      : `No se pudo conectar Oura: ${error.message}`);
+      : `No se pudo conectar Oura: ${error.message}`, "warn");
+    renderDashboardIntegrationHandoff();
+    renderDeviceIntegrationPanel();
   }
 }
 
