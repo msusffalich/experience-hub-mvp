@@ -50,9 +50,10 @@ const OURA_REDIRECT_URI = (process.env.OURA_REDIRECT_URI || "").trim();
 const OURA_TOKEN_ENCRYPTION_SECRET = (process.env.OURA_TOKEN_ENCRYPTION_SECRET || "").trim();
 const OURA_WEBHOOK_SECRET = (process.env.OURA_WEBHOOK_SECRET || "").trim();
 const OURA_SCOPES = (process.env.OURA_SCOPES || "").split(/[,\s]+/).map((scope) => scope.trim()).filter(Boolean);
-const OURA_AUTHORIZE_REDIRECT_MODE = (process.env.OURA_AUTHORIZE_REDIRECT_MODE || "registered").trim().toLowerCase();
+const OURA_AUTHORIZE_REDIRECT_MODE = (process.env.OURA_AUTHORIZE_REDIRECT_MODE || "explicit").trim().toLowerCase();
 const OURA_AUTHORIZE_SCOPE_MODE = (process.env.OURA_AUTHORIZE_SCOPE_MODE || "core").trim().toLowerCase();
-const OURA_TOKEN_AUTH_MODE = (process.env.OURA_TOKEN_AUTH_MODE || "basic").trim().toLowerCase();
+const OURA_TOKEN_AUTH_MODE = (process.env.OURA_TOKEN_AUTH_MODE || "body").trim().toLowerCase();
+const OURA_TOKEN_EXCHANGE_FALLBACK = ["1", "true", "yes"].includes(String(process.env.OURA_TOKEN_EXCHANGE_FALLBACK || "").trim().toLowerCase());
 const OURA_DEFAULT_SYNC_DAYS = Math.max(1, Math.min(Number(process.env.OURA_DEFAULT_SYNC_DAYS || 14), 365));
 const execFileAsync = promisify(execFile);
 const PYTHON_EXECUTABLE_CANDIDATES = [
@@ -1243,7 +1244,9 @@ function buildOuraOAuthDiagnostics() {
     authorizeScopes,
     scopes: authorizeScopes,
     scopesSource: OURA_SCOPES.length ? "OURA_SCOPES" : OURA_AUTHORIZE_SCOPE_MODE,
-    authorizeRedirectMode: OURA_AUTHORIZE_REDIRECT_MODE === "explicit" ? "explicit" : "registered",
+    authorizeRedirectMode: OURA_AUTHORIZE_REDIRECT_MODE === "registered" ? "registered" : "explicit",
+    tokenAuthMode: OURA_TOKEN_AUTH_MODE === "basic" ? "basic" : "body",
+    tokenExchangeFallback: OURA_TOKEN_EXCHANGE_FALLBACK,
     clientIdPresent: Boolean(OURA_CLIENT_ID),
     clientIdSuffix: OURA_CLIENT_ID ? OURA_CLIENT_ID.slice(-6) : "",
     expectedRedirectUri: "https://experience-hub-web-production.up.railway.app/api/integration/oura/callback",
@@ -1515,23 +1518,27 @@ async function exchangeOuraToken(params = {}, options = {}) {
 }
 
 async function exchangeOuraAuthorizationCode(baseRequest = {}, savedState = {}) {
-  const includeRedirectUri = Boolean(savedState.metadata?.includeRedirectUri);
-  const variants = [
-    { tokenBaseUrl: OURA_API_BASE_URL, authMode: "basic", includeRedirectUri },
-    { tokenBaseUrl: OURA_API_BASE_URL, authMode: "basic", includeRedirectUri: true },
-    { tokenBaseUrl: OURA_API_BASE_URL, authMode: "body", includeRedirectUri },
-    { tokenBaseUrl: OURA_API_BASE_URL, authMode: "body", includeRedirectUri: true },
-    { tokenBaseUrl: OURA_AUTH_BASE_URL, authMode: "basic", includeRedirectUri },
-    { tokenBaseUrl: OURA_AUTH_BASE_URL, authMode: "basic", includeRedirectUri: true },
-    { tokenBaseUrl: OURA_AUTH_BASE_URL, authMode: "body", includeRedirectUri },
-    { tokenBaseUrl: OURA_AUTH_BASE_URL, authMode: "body", includeRedirectUri: true },
-  ].filter((variant, index, list) => (
-    index === list.findIndex((candidate) => (
-      candidate.tokenBaseUrl === variant.tokenBaseUrl
-      && candidate.authMode === variant.authMode
-      && candidate.includeRedirectUri === variant.includeRedirectUri
-    ))
-  ));
+  const includeRedirectUri = savedState.metadata?.includeRedirectUri !== false;
+  const officialVariant = {
+    tokenBaseUrl: OURA_API_BASE_URL,
+    authMode: OURA_TOKEN_AUTH_MODE === "basic" ? "basic" : "body",
+    includeRedirectUri,
+  };
+  const variants = OURA_TOKEN_EXCHANGE_FALLBACK
+    ? [
+        officialVariant,
+        { tokenBaseUrl: OURA_API_BASE_URL, authMode: "body", includeRedirectUri: true },
+        { tokenBaseUrl: OURA_API_BASE_URL, authMode: "basic", includeRedirectUri: true },
+        { tokenBaseUrl: OURA_AUTH_BASE_URL, authMode: "body", includeRedirectUri: true },
+        { tokenBaseUrl: OURA_AUTH_BASE_URL, authMode: "basic", includeRedirectUri: true },
+      ].filter((variant, index, list) => (
+        index === list.findIndex((candidate) => (
+          candidate.tokenBaseUrl === variant.tokenBaseUrl
+          && candidate.authMode === variant.authMode
+          && candidate.includeRedirectUri === variant.includeRedirectUri
+        ))
+      ))
+    : [officialVariant];
   const failures = [];
   for (const variant of variants) {
     const request = {

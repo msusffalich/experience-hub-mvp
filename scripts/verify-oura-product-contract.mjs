@@ -81,6 +81,9 @@ try {
   const statusResult = await fetchJson("/integration/oura/status");
   assert(statusResult.response.ok, "oura_status_not_ok");
   assert(Array.isArray(statusResult.payload.missingConfig), "oura_status_missing_config_shape");
+  assert(statusResult.payload.oauthDiagnostics?.authorizeRedirectMode === "explicit", "oura_oauth_must_send_explicit_redirect_uri");
+  assert(statusResult.payload.oauthDiagnostics?.tokenAuthMode === "body", "oura_token_exchange_must_use_body_auth_by_default");
+  assert(statusResult.payload.oauthDiagnostics?.tokenExchangeFallback === false, "oura_token_exchange_fallback_must_be_off_by_default");
 
   const syncResult = await fetchJson("/integration/oura/sync", { method: "POST", body: "{}" });
   assert(syncResult.response.status === 503, `oura_sync_should_report_missing_config:${syncResult.response.status}`);

@@ -9,10 +9,10 @@
     <meta name="apple-mobile-web-app-title" content="Vibe" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>Vibe</title>
-    <link rel="manifest" href="manifest.webmanifest?v=20260606-oura-direct-connect-534" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260608-oura-oauth-official-559" />
     <link rel="icon" href="icons/vibe-icon-192.png" type="image/png" />
     <link rel="apple-touch-icon" href="icons/vibe-apple-touch.png" />
-    <link rel="stylesheet" href="styles.css?v=20260606-oura-direct-connect-534" />
+    <link rel="stylesheet" href="styles.css?v=20260608-oura-oauth-official-559" />
   </head>
   <body>
     <noscript>
@@ -32,55 +32,26 @@
 
         <nav class="nav-list">
           <button class="nav-item" data-view="auth" type="button">Acceso</button>
-          <button class="nav-item active" data-view="dashboard" type="button">Panel</button>
-          <button class="nav-item" data-view="capture" type="button">Captura</button>
+          <button class="nav-item active" data-view="dashboard" type="button">Inicio</button>
+          <button class="nav-item" data-view="capture" type="button">Capturar</button>
           <button class="nav-item" data-view="library" type="button">Librería</button>
-          <button class="nav-item" data-view="assetLibrary" type="button">Activos multimodales</button>
+          <button class="nav-item" data-view="assetLibrary" type="button">Archivos</button>
           <button class="nav-item" data-view="agenda" type="button">Agenda</button>
-          <button class="nav-item" data-view="timeline" type="button">Línea de tiempo</button>
-          <button class="nav-item" data-view="experienceMap" type="button">Mapa de Experiencias</button>
-          <button class="nav-item" data-view="report" type="button">Reporte</button>
-          <button class="nav-item" data-view="publications" type="button">Publicaciones</button>
+          <button class="nav-item" data-view="report" type="button">Reportes</button>
+          <button class="nav-item" data-view="publications" type="button">Publicar</button>
           <button class="nav-item" data-view="insights" type="button">Hallazgos</button>
-          <button class="nav-item" data-view="automation" type="button">Automatizaciones</button>
-          <button class="nav-item" data-view="manual" type="button">Manual del Usuario</button>
-          <button class="nav-item" data-view="admin" type="button">Administración</button>
+          <button class="nav-item" data-view="manual" type="button">Ayuda</button>
+          <button class="nav-item" data-view="admin" type="button">Diagnóstico</button>
         </nav>
 
-        <section class="privacy-panel" aria-labelledby="privacy-title">
-          <h2 id="privacy-title">Privacidad</h2>
-          <label class="toggle-row privacy-option">
-            <span><strong id="privacyLocalTitle">Procesamiento local</strong><small id="privacyLocalHelp">Mantiene trabajo en este navegador cuando es posible.</small></span>
-            <input id="localProcessing" type="checkbox" checked />
-          </label>
-          <label class="toggle-row privacy-option">
-            <span><strong id="privacyAnalyticsTitle">Compartir analítica anónima</strong><small id="privacyAnalyticsHelp">Métricas generales de uso; recomendado apagado en MVP.</small></span>
-            <input id="shareAnalytics" type="checkbox" />
-          </label>
-          <label class="toggle-row privacy-option">
-            <span><strong id="privacySensitiveTitle">Modo sensible</strong><small id="privacySensitiveHelp">Cifra datos locales y respaldos si escribes una Clave local.</small></span>
-            <input id="sensitiveMode" type="checkbox" />
-          </label>
-          <label class="local-key-row">
-            <span><strong id="privacyLocalKeyTitle">Clave local</strong><small id="privacyLocalKeyHelp">No se guarda. Si la olvidas, no se recuperan datos cifrados.</small></span>
-            <input id="localKeyInput" type="password" placeholder="opcional" autocomplete="off" />
-          </label>
-          <div id="localKeyStatus" class="local-key-status" aria-live="polite"></div>
-          <div id="privacyChecklist" class="privacy-checklist" aria-live="polite"></div>
-          <div class="privacy-actions">
-            <button id="privacyRecommendedButton" class="primary-button sidebar-button" type="button">Aplicar recomendado</button>
-            <button id="toggleLocalKeyButton" class="ghost-button sidebar-button" type="button">Mostrar clave</button>
-            <button id="rotateLocalKeyButton" class="ghost-button sidebar-button" type="button">Aplicar clave</button>
-          </div>
-          <button id="unlockLocalButton" class="ghost-button sidebar-button" type="button">Desbloquear local</button>
-        </section>
+
       </aside>
 
       <main class="workspace">
         <header class="topbar">
           <div>
-            <p class="eyebrow">MVP local</p>
-            <h1 id="viewTitle">Panel cognitivo</h1>
+            <p class="eyebrow">Vibe</p>
+            <h1 id="viewTitle">Inicio</h1>
           </div>
           <div class="topbar-actions">
             <div id="authStatus" class="auth-status"></div>
@@ -92,13 +63,6 @@
                 <option value="en">EN</option>
               </select>
             </label>
-            <button id="seedButton" class="ghost-button" type="button">Cargar ejemplo</button>
-            <button id="clearDemoButton" class="ghost-button" type="button">Eliminar ejemplo</button>
-            <button id="voiceCommandButton" class="ghost-button" type="button">Comando de voz</button>
-            <span id="appVersionBadge" class="app-version-badge">Versión 20260606-oura-direct-connect-534</span>
-            <button id="reloadAppButton" class="ghost-button" type="button">Actualizar app</button>
-            <button id="exportButton" class="primary-button" type="button">Respaldo de datos</button>
-            <button id="restoreButton" class="ghost-button" type="button">Restaurar respaldo</button>
             <input id="restoreBackupInput" class="sr-only" type="file" accept="application/json,.json" />
           </div>
         </header>
@@ -744,9 +708,9 @@
                     <li><strong>3</strong><span>Aceptar y exportar</span></li>
                   </ol>
                   <div class="report-scope-actions">
-                    <button id="generateReportButton" class="primary-button" type="button" onclick="generateReportFromScope()">Generar / actualizar reporte</button>
-                    <button id="downloadEditedReportPdfButton" class="primary-button" type="button" onclick="downloadPdfReport()">Descargar PDF editado ReportLab</button>
-                    <button id="resetReportScopeButton" class="ghost-button" type="button" onclick="resetReportScope()">Limpiar alcance</button>
+                    <button id="generateReportButton" class="primary-button" type="button">Generar / actualizar reporte</button>
+                    <button id="downloadEditedReportPdfButton" class="primary-button" type="button">Descargar PDF editado ReportLab</button>
+                    <button id="resetReportScopeButton" class="ghost-button" type="button">Limpiar alcance</button>
                   </div>
                   <div id="reportProgressPanel" class="publication-progress-panel" hidden aria-live="polite"></div>
                   <p id="reportFlowStatus" class="report-flow-status" aria-live="polite">Prepara el alcance, genera el reporte y usa el paquete de aceptación para exportar evidencia.</p>
@@ -992,7 +956,7 @@
             <div class="manual-version-card">
               <div>
                 <span id="manualVersionEyebrow">Versión vigente</span>
-                <strong id="manualVersionValue">20260606-oura-direct-connect-534</strong>
+                <strong id="manualVersionValue">20260608-oura-oauth-official-559</strong>
                 <p id="manualVersionSummary">Guía práctica organizada por temas para entender el flujo de la app sin leer todo de corrido.</p>
               </div>
               <div class="manual-guide-grid" aria-label="Estructura del manual">
@@ -1006,7 +970,7 @@
                 </article>
                 <article>
                   <strong id="manualGuideAdminTitle">Administración</strong>
-                  <span id="manualGuideAdminText">QA, piloto, diagnóstico y publicación.</span>
+                  <span id="manualGuideAdminText">Calidad, diagnóstico y publicación.</span>
                 </article>
               </div>
             </div>
@@ -1049,13 +1013,39 @@
               <button id="workspaceBackfillButton" class="ghost-button" type="button">Sincronizar estructura</button>
               <button id="refreshOpsButton" class="ghost-button" type="button">Refrescar operación</button>
               <button id="syncOfflineButton" class="ghost-button" type="button">Sincronizar sin conexión</button>
-              <button id="supabaseDiagnosticsButton" class="ghost-button" type="button">Verificar Supabase</button>
-              <button id="supabaseSelfTestButton" class="ghost-button" type="button">Probar flujo real</button>
-              <button id="adminExportBackupButton" class="ghost-button" type="button">Respaldar</button>
-              <button id="adminRestoreBackupButton" class="ghost-button" type="button">Restaurar</button>
-              <button id="clearLocalDataButton" class="danger-button" type="button">Vaciar datos locales</button>
+              <button id="supabaseDiagnosticsButton" class="ghost-button" type="button">Verificar nube</button>
+              <button id="supabaseSelfTestButton" class="ghost-button" type="button">Probar flujo completo</button>
               <span id="embeddingStatus" class="card-meta">Búsqueda vectorial lista para Supabase</span>
             </div>
+
+            <div id="productSettingsPanel" class="product-settings-panel" aria-live="polite"></div>
+            <section class="privacy-panel product-privacy-panel" aria-labelledby="privacy-title">
+              <h2 id="privacy-title">Privacidad</h2>
+              <label class="toggle-row privacy-option">
+                <span><strong id="privacyLocalTitle">Procesamiento local</strong><small id="privacyLocalHelp">Mantiene trabajo en este navegador cuando es posible.</small></span>
+                <input id="localProcessing" type="checkbox" checked />
+              </label>
+              <label class="toggle-row privacy-option">
+                <span><strong id="privacyAnalyticsTitle">Compartir analítica anónima</strong><small id="privacyAnalyticsHelp">Métricas generales de uso; recomendado apagado por privacidad.</small></span>
+                <input id="shareAnalytics" type="checkbox" />
+              </label>
+              <label class="toggle-row privacy-option">
+                <span><strong id="privacySensitiveTitle">Modo sensible</strong><small id="privacySensitiveHelp">Cifra datos locales y respaldos si escribes una Clave local.</small></span>
+                <input id="sensitiveMode" type="checkbox" />
+              </label>
+              <label class="local-key-row">
+                <span><strong id="privacyLocalKeyTitle">Clave local</strong><small id="privacyLocalKeyHelp">No se guarda. Si la olvidas, no se recuperan datos cifrados.</small></span>
+                <input id="localKeyInput" type="password" placeholder="opcional" autocomplete="off" />
+              </label>
+              <div id="localKeyStatus" class="local-key-status" aria-live="polite"></div>
+              <div id="privacyChecklist" class="privacy-checklist" aria-live="polite"></div>
+              <div class="privacy-actions">
+                <button id="privacyRecommendedButton" class="primary-button sidebar-button" type="button">Aplicar recomendado</button>
+                <button id="toggleLocalKeyButton" class="ghost-button sidebar-button" type="button">Mostrar clave</button>
+                <button id="rotateLocalKeyButton" class="ghost-button sidebar-button" type="button">Aplicar clave</button>
+                <button id="unlockLocalButton" class="ghost-button sidebar-button" type="button">Desbloquear local</button>
+              </div>
+            </section>
 
             <div class="admin-accordion-stack">
               <details class="admin-section-drawer" open>
@@ -1071,8 +1061,8 @@
 
               <details class="admin-section-drawer" open>
                 <summary>
-                  <span id="adminPersistenceTitle">Persistencia y Supabase</span>
-                  <small id="adminPersistenceHelp">Multidispositivo, sincronización, respaldo y pruebas reales</small>
+                  <span id="adminPersistenceTitle">Sincronización y nube</span>
+                  <small id="adminPersistenceHelp">Multidispositivo, respaldo y verificación</small>
                 </summary>
                 <div id="multiDevicePersistencePanel" class="multi-device-persistence-panel"></div>
                 <div id="supabaseDiagnostics" class="supabase-diagnostics"></div>
@@ -1083,8 +1073,8 @@
 
               <details class="admin-section-drawer">
                 <summary>
-                  <span id="adminPeopleTitle">Personas y piloto</span>
-                  <small id="adminPeopleHelp">Participantes, feedback, preparación y cierre</small>
+                  <span id="adminPeopleTitle">Grupos y validación</span>
+                  <small id="adminPeopleHelp">Grupos, feedback, revisión y cierre</small>
                 </summary>
                 <div id="pilotParticipantsPanel" class="pilot-participants-panel"></div>
                 <div id="pilotFeedbackPanel" class="pilot-feedback-panel"></div>
@@ -1179,8 +1169,8 @@
 
               <details class="admin-section-drawer">
                 <summary>
-                  <span id="adminQualityTitle">Calidad, cierre y evidencias</span>
-                  <small id="adminQualityHelp">QA, MVP central, reglas y registros</small>
+                  <span id="adminQualityTitle">Calidad y evidencias</span>
+                  <small id="adminQualityHelp">Reglas, pruebas, trazabilidad y registros</small>
                 </summary>
                 <div id="systemHealth" class="health-grid"></div>
                 <div id="developmentRulesPanel" class="development-rules-panel"></div>
@@ -1193,8 +1183,8 @@
 
               <details class="admin-section-drawer">
                 <summary>
-                  <span id="adminAdvancedTitle">Diagnóstico técnico avanzado</span>
-                  <small id="adminAdvancedHelp">API, datos demo, integraciones, backlog y logs</small>
+                  <span id="adminAdvancedTitle">Diagnóstico avanzado</span>
+                  <small id="adminAdvancedHelp">Servidor, datos de prueba, integraciones y registros</small>
                 </summary>
                 <div id="apiStatusPanel" class="api-status-panel"></div>
                 <div id="demoDataPanel" class="demo-data-panel"></div>
@@ -1213,7 +1203,7 @@
       </main>
     </div>
 
-    <script src="app.js?v=20260606-oura-direct-connect-534"></script>
+    <script src="app.js?v=20260608-oura-oauth-official-559"></script>
 </body>
 </html>
 

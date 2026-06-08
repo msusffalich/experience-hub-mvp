@@ -1,4 +1,4 @@
-const APP_VERSION = "20260606-oura-direct-connect-534";
+const APP_VERSION = "20260608-oura-oauth-official-559";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -383,23 +383,23 @@ const i18n = {
     languageLabel: "Idioma",
     nav: {
       auth: "Acceso",
-      dashboard: "Panel",
-      capture: "Captura",
+      dashboard: "Inicio",
+      capture: "Capturar",
       library: "Librería",
-      assetLibrary: "Activos multimodales",
+      assetLibrary: "Archivos",
       agenda: "Agenda",
       timeline: "Línea de tiempo",
       experienceMap: "Mapa de Experiencias",
-      report: "Reporte",
-      publications: "Publicaciones",
+      report: "Reportes",
+      publications: "Publicar",
       insights: "Hallazgos",
       automation: "Automatizaciones",
-      manual: "Manual",
-      admin: "Administración",
+      manual: "Ayuda",
+      admin: "Diagnóstico",
     },
     viewTitles: {
       auth: "Acceso seguro",
-      dashboard: "Panel cognitivo",
+      dashboard: "Inicio",
       capture: "Captura rápida",
       library: "Librería de experiencias",
       assetLibrary: "Activos multimodales",
@@ -411,7 +411,7 @@ const i18n = {
       insights: "Hallazgos accionables",
       automation: "Capacidades, rutinas y MCP",
       manual: "Manual del Usuario",
-      admin: "Panel operativo",
+      admin: "Diagnóstico",
     },
     buttons: {
       reset: "Cargar ejemplo",
@@ -464,8 +464,8 @@ const i18n = {
       updateEmbeddings: "Actualizar embeddings",
       syncWorkspaceStructure: "Sincronizar estructura",
       refreshOps: "Refrescar operación",
-      verifySupabase: "Verificar Supabase",
-      testSupabaseFlow: "Probar flujo real",
+      verifySupabase: "Verificar nube",
+      testSupabaseFlow: "Probar flujo completo",
       syncOffline: "Sincronizar sin conexión",
       unlockLocal: "Desbloquear local",
       showLocalKey: "Mostrar clave",
@@ -1014,7 +1014,7 @@ const i18n = {
       privacyLocalTitle: "Procesamiento local",
       privacyLocalHelp: "Mantiene trabajo en este navegador cuando es posible.",
       privacyAnalyticsTitle: "Compartir analítica anónima",
-      privacyAnalyticsHelp: "Métricas generales de uso; recomendado apagado en MVP.",
+      privacyAnalyticsHelp: "Métricas generales de uso; recomendado apagado por privacidad.",
       privacySensitiveTitle: "Modo sensible",
       privacySensitiveHelp: "Cifra datos locales y respaldos si escribes una Clave local.",
       privacyLocalKeyTitle: "Clave local",
@@ -1046,8 +1046,8 @@ const i18n = {
       functionalReadiness: "Avance funcional",
       technicalReadiness: "Avance técnico",
       totalProductProgress: "Avance total estimado",
-      totalProductProgressDetail: "MVP local {mvp}% · Piloto 3 usuarios {pilot}% · Producto completo {full}%",
-      totalProductProgressNext: "Objetivo de cierre: piloto rápido de 3 usuarios. Conectores externos, IA avanzada, OCR/transcripción automática y publicación directa quedan fuera del cierre inmediato.",
+      totalProductProgressDetail: "Producto operativo {mvp}% · Validación controlada {pilot}% · Producto completo {full}%",
+      totalProductProgressNext: "Objetivo de cierre: versión limpia, estable y usable. Conectores externos, IA avanzada, OCR/transcripción automática y publicación directa se cierran por bloque verificable.",
       supabaseDiagnosticsTitle: "Cierre técnico Supabase",
       supabaseDiagnosticsEmpty: "Ejecuta la verificación para revisar Auth, RLS, experiencias, perfil, Storage y búsqueda.",
       supabaseDiagnosticsRunning: "Verificando Supabase...",
@@ -1072,11 +1072,11 @@ const i18n = {
       authRefreshReady: "Token de renovación disponible",
       authRefreshMissing: "Sin token de renovación",
       authReturnNone: "Sin retorno pendiente",
-      authReturnQuickQa: "Después de entrar, volveré a Administración, ejecutaré Verificar Supabase y actualizaré la Verificación rápida del MVP.",
+      authReturnQuickQa: "Después de entrar, volveré a Diagnóstico, ejecutaré Verificar nube y actualizaré la verificación rápida.",
       authNextStep: "Próximo paso",
       authNextConfig: "Configura Supabase en el servidor local antes de iniciar sesión.",
       authNextSignIn: "Ingresa tu correo electrónico y contraseña. Pulsa Entrar o presiona Enter.",
-      authNextVerify: "Sesión activa. Vuelve a Administración y ejecuta Verificar Supabase o Probar flujo real.",
+      authNextVerify: "Sesión activa. Vuelve a Diagnóstico y ejecuta Verificar nube o Probar flujo completo.",
       offlineQueueTitle: "Cola sin conexión",
       offlineQueueEmpty: "No hay cambios pendientes. Todo lo local está sincronizado o no se ha modificado.",
       offlineQueuePending: "Cambios pendientes por sincronizar",
@@ -1115,7 +1115,7 @@ const i18n = {
       offlineQueueNextLogin: "Inicia sesión y pulsa Reintentar ahora.",
       offlineQueueNextApi: "Verifica que el servidor local esté activo y pulsa Reintentar ahora.",
       offlineQueueAutoRetry: "La app reintentará automáticamente mientras este dispositivo esté abierto y con sesión activa.",
-      offlineQueueNextRetry: "Pulsa Reintentar ahora; si falla, revisa Verificar Supabase.",
+      offlineQueueNextRetry: "Pulsa Reintentar ahora; si falla, ejecuta Verificar nube.",
       demoDataTitle: "Datos de prueba",
       demoDataEmpty: "No hay datos de ejemplo cargados.",
       demoDataLoaded: "Datos de ejemplo visibles",
@@ -1126,8 +1126,8 @@ const i18n = {
       demoDataLoad: "Cargar ejemplo",
       demoDataClear: "Eliminar ejemplo",
       demoAgendaLoaded: "Incluye {count} eventos de Agenda de ejemplo.",
-      authReturnDiagnostics: "Después de entrar, volveré a Administración y ejecutaré Verificar Supabase.",
-      authReturnSelfTest: "Después de entrar, volveré a Administración y ejecutaré Probar flujo real.",
+      authReturnDiagnostics: "Después de entrar, volveré a Diagnóstico y ejecutaré Verificar nube.",
+      authReturnSelfTest: "Después de entrar, volveré a Diagnóstico y ejecutaré Probar flujo completo.",
       readyModules: "módulos listos",
       pendingModules: "módulos pendientes",
       parallelBacklogTitle: "Lista de pendientes paralelos",
@@ -1214,26 +1214,26 @@ const i18n = {
     languageLabel: "Language",
     nav: {
       auth: "Access",
-      dashboard: "Dashboard",
+      dashboard: "Home",
       capture: "Capture",
       library: "Library",
-      assetLibrary: "Multimodal Assets",
+      assetLibrary: "Files",
       agenda: "Agenda",
       timeline: "Timeline",
       experienceMap: "Experience Map",
-      report: "Report",
-      publications: "Publications",
+      report: "Reports",
+      publications: "Publish",
       insights: "Insights",
       automation: "Automations",
-      manual: "Manual",
-      admin: "Admin",
+      manual: "Help",
+      admin: "Diagnostics",
     },
     viewTitles: {
       auth: "Secure access",
-      dashboard: "Cognitive dashboard",
+      dashboard: "Home",
       capture: "Quick capture",
       library: "Experience library",
-      assetLibrary: "Multimodal assets",
+      assetLibrary: "Files",
       agenda: "Intelligent Agenda",
       timeline: "Contextual timeline",
       experienceMap: "Relationship map",
@@ -1241,8 +1241,8 @@ const i18n = {
       publications: "Intelligent Publications",
       insights: "Actionable insights",
       automation: "Skills, Routines and MCPs",
-      manual: "User Manual",
-      admin: "Operations panel",
+      manual: "Help",
+      admin: "Diagnostics",
     },
     buttons: {
       reset: "Load example",
@@ -1295,8 +1295,8 @@ const i18n = {
       updateEmbeddings: "Update embeddings",
       syncWorkspaceStructure: "Sync structure",
       refreshOps: "Refresh ops",
-      verifySupabase: "Verify Supabase",
-      testSupabaseFlow: "Test real flow",
+      verifySupabase: "Verify cloud",
+      testSupabaseFlow: "Test full flow",
       syncOffline: "Sync offline",
       unlockLocal: "Unlock local",
       showLocalKey: "Show key",
@@ -1845,7 +1845,7 @@ const i18n = {
       privacyLocalTitle: "Local processing",
       privacyLocalHelp: "Keeps work in this browser when possible.",
       privacyAnalyticsTitle: "Share anonymous analytics",
-      privacyAnalyticsHelp: "General usage metrics; recommended off in the MVP.",
+      privacyAnalyticsHelp: "General usage metrics; recommended off for privacy.",
       privacySensitiveTitle: "Sensitive mode",
       privacySensitiveHelp: "Encrypts local data and backups when you enter a Local key.",
       privacyLocalKeyTitle: "Local key",
@@ -1877,8 +1877,8 @@ const i18n = {
       functionalReadiness: "Functional progress",
       technicalReadiness: "Technical progress",
       totalProductProgress: "Estimated total progress",
-      totalProductProgressDetail: "Local MVP {mvp}% · 3-user pilot {pilot}% · Full product {full}%",
-      totalProductProgressNext: "Closure target: fast 3-user pilot. External connectors, advanced AI, OCR/automatic transcription, and direct publishing stay outside the immediate release.",
+      totalProductProgressDetail: "Operational product {mvp}% · Controlled validation {pilot}% · Full product {full}%",
+      totalProductProgressNext: "Closure target: clean, stable, usable product. External connectors, advanced AI, OCR/automatic transcription, and direct publishing are closed by verified block.",
       supabaseDiagnosticsTitle: "Supabase technical closure",
       supabaseDiagnosticsEmpty: "Run verification to check Auth, RLS, experiences, profile, Storage, and search.",
       supabaseDiagnosticsRunning: "Verifying Supabase...",
@@ -1903,11 +1903,11 @@ const i18n = {
       authRefreshReady: "Refresh token available",
       authRefreshMissing: "No refresh token",
       authReturnNone: "No pending return",
-      authReturnQuickQa: "After sign-in, I will return to Admin, run Verify Supabase, and update Quick MVP Verification.",
+      authReturnQuickQa: "After sign-in, I will return to Diagnostics, run cloud verification, and update the quick check.",
       authNextStep: "Next step",
       authNextConfig: "Configure Supabase in the backend before signing in.",
       authNextSignIn: "Enter your email and password. Click Sign in or press Enter.",
-      authNextVerify: "Active session. Return to Admin and run Verify Supabase or Test real flow.",
+      authNextVerify: "Active session. Return to Diagnostics and run Verify cloud or Test full flow.",
       offlineQueueTitle: "Offline queue",
       offlineQueueEmpty: "No pending changes. Local data is synced or has not changed.",
       offlineQueuePending: "Pending changes to sync",
@@ -1945,7 +1945,7 @@ const i18n = {
       offlineQueueKeptLocal: "Local version marked as final for the next retry.",
       offlineQueueNextLogin: "Sign in and click Retry now.",
       offlineQueueNextApi: "Verify the local server is running and click Retry now.",
-      offlineQueueNextRetry: "Click Retry now; if it fails, run Verify Supabase.",
+      offlineQueueNextRetry: "Click Retry now; if it fails, run Verify cloud.",
       offlineQueueAutoRetry: "The app will retry automatically while this device remains open with an active session.",
       demoDataTitle: "Example data",
       demoDataEmpty: "No example data is loaded.",
@@ -1957,8 +1957,8 @@ const i18n = {
       demoDataLoad: "Load example",
       demoDataClear: "Delete example",
       demoAgendaLoaded: "Includes {count} example Agenda events.",
-      authReturnDiagnostics: "After sign-in, I will return to Admin and run Verify Supabase.",
-      authReturnSelfTest: "After sign-in, I will return to Admin and run Test real flow.",
+      authReturnDiagnostics: "After sign-in, I will return to Diagnostics and run Verify cloud.",
+      authReturnSelfTest: "After sign-in, I will return to Diagnostics and run Test full flow.",
       readyModules: "ready modules",
       pendingModules: "pending modules",
       parallelBacklogTitle: "Parallel backlog",
@@ -2282,19 +2282,19 @@ const automationCatalog = {
 const manualContent = {
   es: [
     {
-      title: "Qué es Experience Hub",
+      title: "Qué es VibePWA",
       body: [
-        "Experience Hub es un MVP para capturar, organizar, analizar y resguardar experiencias personales o profesionales. Convierte momentos, notas, energía, contexto, multimedia y aprendizajes en una librería consultable.",
-        "La app funciona con Supabase como servidor de datos cuando hay sesión, y mantiene capacidades locales y sin conexión para que no pierdas trabajo si la API no está disponible.",
+        "VibePWA es la versión web de Vibe para capturar, organizar, analizar y resguardar experiencias personales o profesionales. Convierte momentos, notas, energía, contexto, multimedia y aprendizajes en una memoria consultable.",
+        "La app usa la nube como servidor de datos cuando hay sesión activa, y conserva capacidades locales y sin conexión para que no pierdas trabajo si la conexión no está disponible.",
         "Este Manual del Usuario tiene búsqueda, contador de resultados y filtros por sección para consultar rápidamente una función específica sin recorrer todo el documento.",
         "El manual puede exportarse como Markdown o HTML imprimible usando el filtro actual, útil para compartir instrucciones, llevarlo a Obsidian/Notion o revisarlo fuera de la aplicación.",
         "Cada sección del manual puede copiarse de forma individual en formato Markdown para compartir instrucciones puntuales sin exportar todo el documento.",
         "Las secciones del manual pueden marcarse como revisadas para acompañar el onboarding y saber qué partes ya fueron leídas.",
         "El progreso del manual incluye acciones rápidas para marcar todas las secciones como revisadas o reiniciar la revisión del idioma activo.",
         "También puedes filtrar el manual para ver todas las secciones, solo las pendientes o solo las revisadas.",
-        "Administración usa el avance de revisión del manual como señal de onboarding para Salud del sistema y Preparación del piloto.",
-        "El Panel muestra un resumen operativo de preparación del piloto con manual, pruebas, participantes y feedback para seguimiento rápido.",
-        "El Panel también muestra una siguiente acción recomendada del piloto y permite copiar un resumen breve para seguimiento.",
+        "Diagnóstico usa el avance de revisión del manual como señal de onboarding y salud operativa.",
+        "Inicio muestra el estado de datos, acciones principales, grupos/personas, señales recientes y próximos eventos sin exponer controles técnicos innecesarios.",
+        "Inicio también muestra la siguiente acción recomendada y permite retomar rápidamente captura, librería, activos o diario.",
         "Hallazgos es la salida principal de lectura humana: organiza las experiencias en 8 ejes de análisis y luego muestra hallazgos priorizados con evidencia, confianza y próxima acción.",
         "Hallazgos ahora incluye un Plan de acción 7 días: convierte calidad de datos, energía, saturación, biometría, eje dominante y hallazgo principal en acciones concretas que se pueden enviar directo a Agenda.",
         "Hallazgos permite descargar la lectura como PDF ReportLab, HTML imprimible o Markdown para revisar, compartir o archivar fuera de la app.",
@@ -3880,6 +3880,13 @@ const state = {
   config: null,
   health: null,
   apiStatus: { ok: false, checkedAt: null, latencyMs: null, message: "", service: "", mode: "local" },
+  connectivity: {
+    status: "unknown",
+    consecutiveFailures: 0,
+    lastOkAt: "",
+    lastFailureAt: "",
+    lastFailureMessage: "",
+  },
   serverSync: { token: "", checkedAt: "", changedAt: "", status: "idle", inProgress: false, failures: 0 },
   supabaseDiagnostics: null,
   supabaseSelfTest: loadSupabaseSelfTest(),
@@ -4765,11 +4772,137 @@ function t(path) {
   return value ?? path;
 }
 
+const API_FAILURES_BEFORE_OFFLINE = 2;
+
+function markApiOnline(details = {}) {
+  state.apiOnline = true;
+  state.connectivity = {
+    ...(state.connectivity || {}),
+    status: "online",
+    consecutiveFailures: 0,
+    lastOkAt: new Date().toISOString(),
+    lastFailureAt: state.connectivity?.lastFailureAt || "",
+    lastFailureMessage: "",
+  };
+  if (details.health) state.health = details.health;
+  if (details.persistence) state.persistence = details.persistence;
+}
+
+function markApiConnectivityFailure(error, options = {}) {
+  const consecutiveFailures = Number(state.connectivity?.consecutiveFailures || 0) + 1;
+  const lastFailureMessage = String(error?.message || error || "").trim();
+  const hadRecentSuccess = Boolean(state.connectivity?.lastOkAt);
+  const shouldDeclareOffline = options.immediate || !hadRecentSuccess || consecutiveFailures >= API_FAILURES_BEFORE_OFFLINE;
+  state.connectivity = {
+    ...(state.connectivity || {}),
+    status: shouldDeclareOffline ? "offline" : "slow",
+    consecutiveFailures,
+    lastOkAt: state.connectivity?.lastOkAt || "",
+    lastFailureAt: new Date().toISOString(),
+    lastFailureMessage,
+  };
+  if (shouldDeclareOffline) state.apiOnline = false;
+  return state.connectivity.status;
+}
+
+function getConnectivitySummary() {
+  const pending = state.offlineQueue?.length || 0;
+  const hasSession = Boolean(state.session?.access_token);
+  const labels = state.language === "en"
+    ? {
+        synced: "Synced",
+        syncing: "Syncing",
+        pending: "pending save",
+        signIn: "Sign in to save",
+        slow: "Server slow",
+        offline: "Connection pending",
+        local: "Local mode",
+      }
+    : {
+        synced: "Sincronizado",
+        syncing: "Sincronizando",
+        pending: "guardado pendiente",
+        signIn: "Entrar para guardar",
+        slow: "Servidor lento",
+        offline: "Conexión pendiente",
+        local: "Modo local",
+      };
+  if (!state.config || state.config.persistence !== "supabase") {
+    return { text: labels.local, tone: "neutral", action: "status" };
+  }
+  if (!hasSession) return { text: labels.signIn, tone: "warn", action: "auth" };
+  if (pending) return { text: `${pending} ${labels.pending}`, tone: "warn", action: "sync" };
+  if (state.attachmentRetryInProgress || state.serverSync?.inProgress) {
+    return { text: labels.syncing, tone: "neutral", action: "status" };
+  }
+  if (state.connectivity?.status === "slow") return { text: labels.slow, tone: "warn-soft", action: "status" };
+  if (!state.apiOnline || state.connectivity?.status === "offline") return { text: labels.offline, tone: "warn", action: "status" };
+  return { text: labels.synced, tone: "ok", action: "status" };
+}
+
+function productNavLabel(view) {
+  const labels = state.language === "en"
+    ? {
+        dashboard: "Home",
+        capture: "Capture",
+        library: "Library",
+        assetLibrary: "Files",
+        agenda: "Agenda",
+        report: "Reports",
+        publications: "Publish",
+        insights: "Insights",
+        manual: "Help",
+        admin: "Diagnostics",
+      }
+    : {
+        dashboard: "Inicio",
+        capture: "Capturar",
+        library: "Biblioteca",
+        assetLibrary: "Archivos",
+        agenda: "Agenda",
+        report: "Reportes",
+        publications: "Publicar",
+        insights: "Hallazgos",
+        manual: "Ayuda",
+        admin: "Diagnóstico",
+      };
+  return labels[view] || t(`nav.${view}`);
+}
+
+function productViewTitle(view) {
+  const labels = state.language === "en"
+    ? {
+        dashboard: "Home",
+        capture: "Capture",
+        library: "Library",
+        assetLibrary: "Files",
+        agenda: "Agenda",
+        report: "Reports",
+        publications: "Publish",
+        insights: "Insights",
+        manual: "Help",
+        admin: "Diagnostics",
+      }
+    : {
+        dashboard: "Inicio",
+        capture: "Capturar",
+        library: "Biblioteca",
+        assetLibrary: "Archivos",
+        agenda: "Agenda",
+        report: "Reportes",
+        publications: "Publicar",
+        insights: "Hallazgos",
+        manual: "Ayuda",
+        admin: "Diagnóstico",
+      };
+  return labels[view] || t(`viewTitles.${view}`);
+}
+
 async function hydrateFromApi() {
   const startedAt = performance.now();
   try {
     const health = await apiRequest("/health", { skipAuth: true });
-    state.apiOnline = true;
+    markApiOnline({ health, persistence: health.persistence || "json-file" });
     state.persistence = health.persistence || "json-file";
     state.health = health;
     state.apiStatus = {
@@ -4828,7 +4961,7 @@ async function hydrateFromApi() {
     await updateServerSyncStateBaseline({ silent: true });
     scheduleAutomaticAssetBacklogProcessing({ reason: "hydrate", delayMs: 1200, silent: true });
   } catch (error) {
-    state.apiOnline = false;
+    markApiConnectivityFailure(error, { immediate: true });
     state.persistence = "local";
     state.health = null;
     state.apiStatus = {
@@ -5206,7 +5339,7 @@ async function saveAgendaEventToApi(agendaEvent, options = {}) {
     }
     return { remote: true, event: saved };
   } catch (error) {
-    if (isApiConnectivityError(error)) state.apiOnline = false;
+    if (isApiConnectivityError(error)) markApiConnectivityFailure(error);
     if (!options.silent) {
       const status = document.getElementById("agendaFormStatus");
       if (status) status.textContent = state.language === "en"
@@ -5223,7 +5356,7 @@ async function deleteAgendaEventFromApi(id, options = {}) {
     await apiRequest(`/agenda/${encodeURIComponent(id)}`, { method: "DELETE" });
     return true;
   } catch (error) {
-    if (isApiConnectivityError(error)) state.apiOnline = false;
+    if (isApiConnectivityError(error)) markApiConnectivityFailure(error);
     if (!options.silent) notify(state.language === "en" ? "Event deleted locally; cloud delete will need retry." : "Evento eliminado localmente; el borrado en la nube requerirá reintento.", "warn");
     return false;
   }
@@ -5353,7 +5486,7 @@ async function saveExperienceToApi(experience) {
     return { remote: true, queued: mediaPending, experience: readbackExperience, mediaPending, readback: true };
   } catch (error) {
     const reason = error?.status === 401 ? "auth_required" : "api_error";
-    if (reason === "api_error" && isApiConnectivityError(error)) state.apiOnline = false;
+    if (reason === "api_error" && isApiConnectivityError(error)) markApiConnectivityFailure(error);
     queueOfflineMutation("upsert", experience, reason);
     scheduleAttachmentRetry({ delayMs: 5000 });
     return { remote: false, queued: true, reason };
@@ -5364,10 +5497,10 @@ async function ensureApiOnlineForSave() {
   if (state.apiOnline) return true;
   try {
     await apiRequest("/health", { skipAuth: true });
-    state.apiOnline = true;
+    markApiOnline();
     return true;
   } catch {
-    state.apiOnline = false;
+    markApiConnectivityFailure(new Error("health_check_failed"));
     return false;
   }
 }
@@ -5376,13 +5509,13 @@ async function ensureApiOnlineForExport() {
   if (state.apiOnline) return true;
   try {
     const health = await apiRequest("/health", { skipAuth: true });
-    state.apiOnline = true;
+    markApiOnline({ health, persistence: health.persistence || state.persistence });
     state.health = health;
     state.persistence = health.persistence || state.persistence;
     state.config = { ...(state.config || {}), ...(health.config || {}) };
     return true;
   } catch {
-    state.apiOnline = false;
+    markApiConnectivityFailure(new Error("health_check_failed"));
     return false;
   }
 }
@@ -5485,8 +5618,8 @@ async function deleteExperienceFromApi(id) {
   }
   try {
     await apiRequest(`/experiences/${encodeURIComponent(id)}`, { method: "DELETE" });
-  } catch {
-    state.apiOnline = false;
+  } catch (error) {
+    markApiConnectivityFailure(error);
     queueOfflineMutation("delete", { id }, "api_error");
   }
 }
@@ -5647,7 +5780,7 @@ async function syncOfflineQueue(options = {}) {
   if (!options.silent) document.getElementById("embeddingStatus").textContent = state.language === "en" ? "Saving pending changes..." : "Guardando cambios pendientes...";
   try {
     await apiRequest("/health", { skipAuth: true });
-    state.apiOnline = true;
+    markApiOnline();
     if (state.config?.persistence === "supabase" || state.persistence === "supabase") {
       try {
         const resolved = await reconcileOfflineQueueFromSupabase({ silent: true });
@@ -5667,8 +5800,8 @@ async function syncOfflineQueue(options = {}) {
         // Continue with direct retry if reconciliation cannot read remote data.
       }
     }
-  } catch {
-    state.apiOnline = false;
+  } catch (error) {
+    markApiConnectivityFailure(error);
     if (!options.silent) document.getElementById("embeddingStatus").textContent = state.language === "en" ? "Connection is not ready to save pending changes." : "La conexión no está lista para guardar pendientes.";
     renderPersistenceGateBanner();
     renderAuthStatus();
@@ -6199,8 +6332,10 @@ function renderAuthStatus() {
       : !state.apiOnline
         ? labels.offline
         : labels.synced;
-  const statusClass = !state.session?.access_token || pending || !state.apiOnline ? "is-warn" : "is-ok";
-  const statusChip = `<button class="sync-status-chip ${statusClass}" type="button" onclick="${pending ? "syncOfflineQueue()" : "renderPersistenceGateBanner()"}">${escapeHtml(statusText)}</button>`;
+  const connectivitySummary = getConnectivitySummary();
+  const statusClass = connectivitySummary.tone === "ok" ? "is-ok" : connectivitySummary.tone === "neutral" ? "is-neutral" : "is-warn";
+  const statusAction = connectivitySummary.action === "sync" ? "syncOfflineQueue()" : connectivitySummary.action === "auth" ? "showAuthView()" : "renderPersistenceGateBanner()";
+  const statusChip = `<button class="sync-status-chip ${statusClass}" type="button" onclick="${statusAction}">${escapeHtml(connectivitySummary.text || statusText)}</button>`;
   if (state.session?.access_token && state.session?.user?.email) {
     node.innerHTML = `${statusChip}<span>${escapeHtml(state.session.user.email)}</span><button class="ghost-button" type="button" onclick="signOut()">${t("buttons.signOut")}</button>`;
   } else if (state.session?.user?.email) {
@@ -6284,8 +6419,8 @@ function setupLanguage() {
           method: "PUT",
           body: JSON.stringify({ language: state.language }),
         });
-      } catch {
-        state.apiOnline = false;
+      } catch (error) {
+        markApiConnectivityFailure(error);
       }
     }
   });
@@ -6296,14 +6431,14 @@ function applyLanguage() {
   document.documentElement.lang = state.language;
   document.querySelector(".language-control span").textContent = t("languageLabel");
   document.querySelectorAll(".nav-item").forEach((button) => {
-    button.textContent = t(`nav.${button.dataset.view}`);
+    button.textContent = productNavLabel(button.dataset.view);
   });
   const activeView = document.querySelector(".nav-item.active")?.dataset.view || "dashboard";
-  document.getElementById("viewTitle").textContent = t(`viewTitles.${activeView}`);
-  document.getElementById("seedButton").textContent = t("buttons.reset");
-  document.getElementById("clearDemoButton").textContent = t("buttons.clearDemo");
-  document.getElementById("voiceCommandButton").textContent = t("buttons.voiceCommand");
-  document.getElementById("reloadAppButton").textContent = t("buttons.reloadApp");
+  document.getElementById("viewTitle").textContent = productViewTitle(activeView);
+  if (document.getElementById("seedButton")) document.getElementById("seedButton").textContent = t("buttons.reset");
+  if (document.getElementById("clearDemoButton")) document.getElementById("clearDemoButton").textContent = t("buttons.clearDemo");
+  if (document.getElementById("voiceCommandButton")) document.getElementById("voiceCommandButton").textContent = t("buttons.voiceCommand");
+  if (document.getElementById("reloadAppButton")) document.getElementById("reloadAppButton").textContent = t("buttons.reloadApp");
   document.getElementById("privacy-title").textContent = state.language === "en" ? "Privacy" : "Privacidad";
   document.getElementById("privacyLocalTitle").textContent = t("labels.privacyLocalTitle");
   document.getElementById("privacyLocalHelp").textContent = t("labels.privacyLocalHelp");
@@ -6315,8 +6450,8 @@ function applyLanguage() {
   document.getElementById("privacyLocalKeyHelp").textContent = t("labels.privacyLocalKeyHelp");
   renderAppVersionBadge();
   renderVersionNotice();
-  document.getElementById("exportButton").textContent = t("buttons.export");
-  document.getElementById("restoreButton").textContent = t("buttons.restoreBackup");
+  if (document.getElementById("exportButton")) document.getElementById("exportButton").textContent = t("buttons.export");
+  if (document.getElementById("restoreButton")) document.getElementById("restoreButton").textContent = t("buttons.restoreBackup");
   document.querySelector("#experienceForm .primary-button").textContent = t("buttons.save");
   document.getElementById("clearFormButton").textContent = t("buttons.clear");
   document.getElementById("attachmentInputLabel").textContent = t("labels.attachmentInputLabel");
@@ -6374,7 +6509,7 @@ function applyLanguage() {
   document.getElementById("manualGuideOperateTitle").textContent = state.language === "en" ? "Operations" : "Operación";
   document.getElementById("manualGuideOperateText").textContent = state.language === "en" ? "Privacy, Supabase, backup, and multi-device use." : "Privacidad, Supabase, respaldo y multidispositivo.";
   document.getElementById("manualGuideAdminTitle").textContent = state.language === "en" ? "Administration" : "Administración";
-  document.getElementById("manualGuideAdminText").textContent = state.language === "en" ? "QA, pilot, diagnostics, and publishing." : "QA, piloto, diagnóstico y publicación.";
+  document.getElementById("manualGuideAdminText").textContent = state.language === "en" ? "Quality, diagnostics, and publishing." : "Calidad, diagnóstico y publicación.";
   document.getElementById("manualSearchLabel").textContent = state.language === "en" ? "Search the manual" : "Buscar en el manual";
   document.getElementById("manualSearchInput").placeholder =
     state.language === "en" ? "Search section, feature, or keyword" : "Buscar sección, función o palabra clave";
@@ -6448,26 +6583,26 @@ function applyLanguage() {
   document.getElementById("adminHubStatus").textContent = state.language === "en" ? "Operations center" : "Centro operativo";
   document.getElementById("adminExecutiveTitle").textContent = state.language === "en" ? "Executive summary" : "Resumen ejecutivo";
   document.getElementById("adminExecutiveHelp").textContent = state.language === "en" ? "Status, priorities, and publishing" : "Estado, prioridades y publicación";
-  document.getElementById("adminPersistenceTitle").textContent = state.language === "en" ? "Persistence and Supabase" : "Persistencia y Supabase";
-  document.getElementById("adminPersistenceHelp").textContent = state.language === "en" ? "Multi-device, sync, backup, and real tests" : "Multidispositivo, sincronización, respaldo y pruebas reales";
-  document.getElementById("adminPeopleTitle").textContent = state.language === "en" ? "People and pilot" : "Personas y piloto";
-  document.getElementById("adminPeopleHelp").textContent = state.language === "en" ? "Participants, feedback, readiness, and closure" : "Participantes, feedback, preparación y cierre";
+  document.getElementById("adminPersistenceTitle").textContent = state.language === "en" ? "Sync and cloud" : "Sincronización y nube";
+  document.getElementById("adminPersistenceHelp").textContent = state.language === "en" ? "Multi-device, backup, and verification" : "Multidispositivo, respaldo y verificación";
+  document.getElementById("adminPeopleTitle").textContent = state.language === "en" ? "Groups and validation" : "Grupos y validación";
+  document.getElementById("adminPeopleHelp").textContent = state.language === "en" ? "Groups, feedback, review, and closure" : "Grupos, feedback, revisión y cierre";
   document.getElementById("adminAssetsTitle").textContent = state.language === "en" ? "Assets and media" : "Activos y multimedia";
   document.getElementById("adminAssetsHelp").textContent = state.language === "en" ? "Inventory, import, review, and processing" : "Inventario, importación, revisión y procesamiento";
   document.getElementById("adminProfileDevicesTitle").textContent = state.language === "en" ? "Profile and devices" : "Perfil y dispositivos";
   document.getElementById("adminProfileDevicesHelp").textContent = state.language === "en" ? "Account, preferences, and capture sources" : "Cuenta, preferencias y fuentes de captura";
-  document.getElementById("adminQualityTitle").textContent = state.language === "en" ? "Quality, closure, and evidence" : "Calidad, cierre y evidencias";
-  document.getElementById("adminQualityHelp").textContent = state.language === "en" ? "QA, core MVP, rules, and records" : "QA, MVP central, reglas y registros";
-  document.getElementById("adminAdvancedTitle").textContent = state.language === "en" ? "Advanced technical diagnostics" : "Diagnóstico técnico avanzado";
-  document.getElementById("adminAdvancedHelp").textContent = state.language === "en" ? "API, demo data, integrations, backlog, and logs" : "API, datos demo, integraciones, backlog y logs";
+  document.getElementById("adminQualityTitle").textContent = state.language === "en" ? "Quality and evidence" : "Calidad y evidencias";
+  document.getElementById("adminQualityHelp").textContent = state.language === "en" ? "Rules, tests, traceability, and records" : "Reglas, pruebas, trazabilidad y registros";
+  document.getElementById("adminAdvancedTitle").textContent = state.language === "en" ? "Advanced diagnostics" : "Diagnóstico avanzado";
+  document.getElementById("adminAdvancedHelp").textContent = state.language === "en" ? "Server, test data, integrations, and logs" : "Servidor, datos de prueba, integraciones y registros";
   document.getElementById("workspaceBackfillButton").textContent = t("buttons.syncWorkspaceStructure");
   document.getElementById("refreshOpsButton").textContent = t("buttons.refreshOps");
   document.getElementById("supabaseDiagnosticsButton").textContent = t("buttons.verifySupabase");
   document.getElementById("supabaseSelfTestButton").textContent = t("buttons.testSupabaseFlow");
   document.getElementById("syncOfflineButton").textContent = t("buttons.syncOffline");
-  document.getElementById("adminExportBackupButton").textContent = t("buttons.export");
-  document.getElementById("adminRestoreBackupButton").textContent = t("buttons.restoreBackup");
-  document.getElementById("clearLocalDataButton").textContent = t("buttons.clearLocalData");
+  if (document.getElementById("adminExportBackupButton")) document.getElementById("adminExportBackupButton").textContent = t("buttons.export");
+  if (document.getElementById("adminRestoreBackupButton")) document.getElementById("adminRestoreBackupButton").textContent = t("buttons.restoreBackup");
+  if (document.getElementById("clearLocalDataButton")) document.getElementById("clearLocalDataButton").textContent = t("buttons.clearLocalData");
   document.getElementById("unlockLocalButton").textContent = t("buttons.unlockLocal");
   document.getElementById("privacyRecommendedButton").textContent = t("buttons.applyRecommendedPrivacy");
   document.getElementById("toggleLocalKeyButton").textContent =
@@ -7125,8 +7260,6 @@ function setReportFlowStatus(message) {
 function handleReportScopeAction(event) {
   const target = event.target.closest("button");
   if (!target) return;
-  if (target.id === "generateReportButton") generateReportFromScope();
-  if (target.id === "resetReportScopeButton") resetReportScope();
   if (target.id === "jumpReportAcceptanceButton") scrollToReportAcceptance();
 }
 
@@ -7149,10 +7282,10 @@ function getReportScopeLabel(scope = state.reportFilters.scope) {
 }
 
 function setupActions() {
-  document.getElementById("seedButton").addEventListener("click", loadDemoData);
-  document.getElementById("clearDemoButton").addEventListener("click", clearDemoData);
-  document.getElementById("voiceCommandButton").addEventListener("click", startVoiceCommand);
-  document.getElementById("reloadAppButton").addEventListener("click", reloadCurrentAppVersion);
+  document.getElementById("seedButton")?.addEventListener("click", loadDemoData);
+  document.getElementById("clearDemoButton")?.addEventListener("click", clearDemoData);
+  document.getElementById("voiceCommandButton")?.addEventListener("click", startVoiceCommand);
+  document.getElementById("reloadAppButton")?.addEventListener("click", reloadCurrentAppVersion);
   document.getElementById("versionNotice").addEventListener("click", (event) => {
     if (event.target.closest("[data-version-refresh]")) reloadCurrentAppVersion();
   });
@@ -7165,10 +7298,10 @@ function setupActions() {
   document.addEventListener("error", handleNewsImageFailure, true);
   document.addEventListener("load", handleNewsImageLoad, true);
 
-  document.getElementById("exportButton").addEventListener("click", exportLocalBackup);
-  document.getElementById("adminExportBackupButton").addEventListener("click", exportLocalBackup);
-  document.getElementById("restoreButton").addEventListener("click", openRestoreBackupPicker);
-  document.getElementById("adminRestoreBackupButton").addEventListener("click", openRestoreBackupPicker);
+  document.getElementById("exportButton")?.addEventListener("click", exportLocalBackup);
+  document.getElementById("adminExportBackupButton")?.addEventListener("click", exportLocalBackup);
+  document.getElementById("restoreButton")?.addEventListener("click", openRestoreBackupPicker);
+  document.getElementById("adminRestoreBackupButton")?.addEventListener("click", openRestoreBackupPicker);
   document.getElementById("restoreBackupInput").addEventListener("change", restoreBackupFromFile);
   document.getElementById("profileForm").addEventListener("submit", saveProfileSettings);
 
@@ -7222,6 +7355,9 @@ function setupActions() {
   document.getElementById("manualContent").addEventListener("click", handleManualAction);
   document.getElementById("reportScopePanel")?.addEventListener("click", handleReportScopeAction);
   document.getElementById("reportQuickStart")?.addEventListener("click", handleReportQuickStart);
+  document.getElementById("generateReportButton")?.addEventListener("click", generateReportFromScope);
+  document.getElementById("downloadEditedReportPdfButton")?.addEventListener("click", downloadPdfReport);
+  document.getElementById("resetReportScopeButton")?.addEventListener("click", resetReportScope);
   document.getElementById("downloadReportButton")?.addEventListener("click", downloadReport);
   document.getElementById("reportAcceptancePanel").addEventListener("click", handleReportAcceptanceClick);
   document.getElementById("reportNarrative").addEventListener("click", handleReportNarrativeAction);
@@ -7277,7 +7413,7 @@ function setupActions() {
   document.getElementById("supabaseDiagnosticsButton").addEventListener("click", runSupabaseDiagnostics);
   document.getElementById("supabaseSelfTestButton").addEventListener("click", runSupabaseSelfTest);
   document.getElementById("syncOfflineButton").addEventListener("click", syncOfflineQueue);
-  document.getElementById("clearLocalDataButton").addEventListener("click", clearLocalData);
+  document.getElementById("clearLocalDataButton")?.addEventListener("click", clearLocalData);
   document.getElementById("unlockLocalButton").addEventListener("click", unlockLocalData);
   document.getElementById("privacyRecommendedButton").addEventListener("click", applyRecommendedPrivacySettings);
   document.getElementById("toggleLocalKeyButton").addEventListener("click", toggleLocalKeyVisibility);
@@ -7293,6 +7429,7 @@ function setupActions() {
   document.getElementById("persistenceGateBanner").addEventListener("click", handlePersistenceGateClick);
   document.getElementById("systemHealth").addEventListener("click", handleParallelBacklogClick);
   document.getElementById("adminCommandCenter").addEventListener("click", handleParallelBacklogClick);
+  document.getElementById("productSettingsPanel")?.addEventListener("click", handleProductSettingsAction);
   document.getElementById("publishPlanPanel").addEventListener("click", handleParallelBacklogClick);
   document.getElementById("multiDevicePersistencePanel").addEventListener("click", handleParallelBacklogClick);
   document.getElementById("dashboardGroupForm")?.addEventListener("submit", handleDashboardGroupSubmit);
@@ -7494,7 +7631,7 @@ async function syncDemoDataToApi() {
     await Promise.all(demoItems.map((experience) => saveExperienceToApi(experience)));
     status.textContent = t("labels.demoDataSynced");
   } catch {
-    status.textContent = "No se pudieron sincronizar los datos de ejemplo. Revisa Verificar Supabase.";
+    status.textContent = "No se pudieron sincronizar los datos de ejemplo. Ejecuta Verificar nube.";
   }
   renderDemoDataPanel();
   renderAdmin();
@@ -7773,8 +7910,8 @@ async function loadDemoData() {
     try {
       await Promise.all(existingDemo.map((experience) => deleteExperienceFromApi(experience.id)));
       await Promise.all(nextDemo.map((experience) => saveExperienceToApi(experience)));
-    } catch {
-      state.apiOnline = false;
+    } catch (error) {
+      markApiConnectivityFailure(error);
     }
   }
   renderAll();
@@ -7799,8 +7936,8 @@ async function clearDemoData() {
   saveExperiences();
   saveAgendaEvents();
   if (state.apiOnline && state.session?.access_token) {
-    await Promise.all(demoItems.map((experience) => deleteExperienceFromApi(experience.id))).catch(() => {
-      state.apiOnline = false;
+    await Promise.all(demoItems.map((experience) => deleteExperienceFromApi(experience.id))).catch((error) => {
+      markApiConnectivityFailure(error);
     });
   }
   renderAll();
@@ -9763,10 +9900,11 @@ function readSelectedFiles() {
     return validType && file.size <= maxSize;
   });
   if (accepted.length !== files.length) {
-    alert(
+    notify(
       state.language === "en"
-        ? `Some files were skipped. The MVP accepts supported image, audio, video, document, and compressed-file formats up to ${canUploadBinary ? 75 : 25} MB per file.`
-        : `Algunos archivos se omitieron. El MVP acepta formatos compatibles de imagen, audio, video, documentos y comprimidos de hasta ${canUploadBinary ? 75 : 25} MB por archivo.`,
+        ? `Some files were skipped. Vibe accepts supported image, audio, video, document, and compressed-file formats up to ${canUploadBinary ? 75 : 25} MB per file.`
+        : `Algunos archivos se omitieron. Vibe acepta formatos compatibles de imagen, audio, video, documentos y comprimidos de hasta ${canUploadBinary ? 75 : 25} MB por archivo.`,
+      "warn",
     );
   }
   return Promise.all(accepted.map((file) => readAndPersistMedia(file)));
@@ -9781,8 +9919,8 @@ async function readAndPersistMedia(file, overrides = {}) {
         await appendBackendTranscript(uploaded);
       }
       return uploaded;
-    } catch {
-      state.apiOnline = false;
+    } catch (error) {
+      markApiConnectivityFailure(error);
     }
   }
   const attachment = await readFileAsAttachment(file, metadata);
@@ -10384,7 +10522,7 @@ function showView(view) {
   document.querySelectorAll(".view").forEach((item) => item.classList.remove("active-view"));
   button.classList.add("active");
   section.classList.add("active-view");
-  document.getElementById("viewTitle").textContent = t(`viewTitles.${view}`);
+  document.getElementById("viewTitle").textContent = productViewTitle(view);
   updateUrlForView(view);
   if (view === "automation") {
     refreshOps({ silent: true });
@@ -12663,7 +12801,7 @@ function executeVoiceCommand(transcript) {
   }
   if (command.includes("respaldo") || command.includes("backup")) {
     setVoiceCommandStatus(`${t("labels.voiceCommandStatusExecuted")}: ${transcript}`, "success");
-    document.getElementById("exportButton")?.click();
+    exportLocalBackup();
     return;
   }
   if (viewMatch) {
@@ -25497,8 +25635,8 @@ async function handleRoutineToggle(event) {
         body: JSON.stringify(buildRoutineSchedulePayload(id, { enabled: event.target.checked })),
       });
       await loadBackendRoutines();
-    } catch {
-      state.apiOnline = false;
+    } catch (error) {
+      markApiConnectivityFailure(error);
     }
   }
   renderAutomations();
@@ -25522,8 +25660,8 @@ async function handleRoutineScheduleChange(event) {
     });
     await loadBackendRoutines();
     document.getElementById("embeddingStatus").textContent = t("labels.scheduleSaved");
-  } catch {
-    state.apiOnline = false;
+  } catch (error) {
+    markApiConnectivityFailure(error);
     document.getElementById("embeddingStatus").textContent = "No se pudo guardar la programación.";
   }
   renderAutomations();
@@ -25647,8 +25785,8 @@ async function runRoutine(id) {
       backendExecuted = true;
       await loadBackendRoutines();
       await refreshOps({ silent: true });
-    } catch {
-      state.apiOnline = false;
+    } catch (error) {
+      markApiConnectivityFailure(error);
     }
   }
   if (id === "daily-review") {
@@ -28208,8 +28346,8 @@ function renderAdminOperationalFocusPanel() {
         closureGateDetail: "npm run verify:closure consolidates release, audits, PDFs, local E2E, PWA, integrations, Vibeapp, Android, and Flutter. If it passes, the PWA is closed for operation; native app, live connectors, and advanced agents are phase 2.",
       }
     : {
-        title: "Administración operativa",
-        subtitle: "Primero los controles principales. El cierre del piloto y la evidencia técnica pasaron a Diagnóstico avanzado.",
+        title: "Diagnóstico operativo",
+        subtitle: "Primero los controles principales. La evidencia histórica y técnica queda agrupada en Diagnóstico avanzado.",
         flow: "Flujo operativo actual",
         flowDetail: "Captura, Librería, Activos, Reportes, Publicaciones, Agenda, Participantes, Feedback, Respaldo y Deploy.",
         hidden: "Menos ruido visual",
@@ -28262,7 +28400,7 @@ function renderAdminOperationalFocusPanel() {
     labels.insightPlan = "Plan de acción de Hallazgos";
     labels.insightPlanDetail = "Hallazgos convierte el alcance actual en un plan de 7 días con evidencia, redacción humana y envío directo de cada acción a Agenda.";
     labels.nativeSync = "Vibeapp con cola real";
-    labels.nativeSyncDetail = "Vibeapp ya tiene contratos nativos reales para texto, foto, video, audio, agenda, lugar, biometr\u00eda export.xml/CSV/JSON e importaci\u00f3n de sesiones externas. Texto, agenda, lugar, Apple Health y Health Connect usan /api/integration/ingest; multimedia binaria usa /api/media; sesiones ricas con adjuntos siguen consolid\u00e1ndose por /api/experiences. La cola nativa valida cada payload, conserva intentos, reintenta autom\u00e1ticamente, separa estados reales, muestra checklist de piloto y usa llaves de idempotencia para que un reintento actualice el mismo destino sin crear duplicados.";
+    labels.nativeSyncDetail = "Vibeapp ya tiene contratos nativos reales para texto, foto, video, audio, agenda, lugar, biometr\u00eda export.xml/CSV/JSON e importaci\u00f3n de sesiones externas. Texto, agenda, lugar, Apple Health y Health Connect usan /api/integration/ingest; multimedia binaria usa /api/media; sesiones ricas con adjuntos siguen consolid\u00e1ndose por /api/experiences. La cola nativa valida cada payload, conserva intentos, reintenta autom\u00e1ticamente, separa estados reales, muestra una compuerta m\u00f3vil y usa llaves de idempotencia para que un reintento actualice el mismo destino sin crear duplicados.";
     labels.nativeSimulator = "Simulador de sincronizaci\u00f3n nativa";
     labels.nativeSimulatorDetail = "npm run simulate:vibeapp valida nota, agenda, foto, video, audio, biometr\u00eda, ubicaci\u00f3n e importaciones Meta contra el contrato de se\u00f1ales PWA sin necesitar un tel\u00e9fono f\u00edsico.";
     labels.integrationIngest = "Ingesta validada de integraciones";
@@ -28359,8 +28497,8 @@ function renderAdminCommandCenter() {
   const labels = state.language === "en"
     ? {
         title: "Command Center",
-        subtitle: "Post-MVP focus: fewer panels, clearer decisions, and direct movement toward publication.",
-        stage: "MVP and pilot closed",
+        subtitle: "Product focus: fewer panels, clearer decisions, and direct movement toward publication.",
+        stage: "Core validation closed",
         device: "Device integration",
         deviceStatus: "Next build block",
         deviceDetail: "Define the ingestion contract for wearables, phones, files, and future APIs before adding more UI.",
@@ -28375,8 +28513,8 @@ function renderAdminCommandCenter() {
       }
     : {
         title: "Centro de mando",
-        subtitle: "Enfoque posterior al MVP: menos paneles, decisiones más claras y avance directo hacia publicación.",
-        stage: "MVP y piloto cerrados",
+        subtitle: "Enfoque de producto: menos paneles, decisiones más claras y avance directo hacia publicación.",
+        stage: "Validación central cerrada",
         device: "Integración de dispositivos",
         deviceStatus: "Siguiente bloque",
         deviceDetail: "Definir el contrato de ingesta para wearables, móviles, archivos y futuras API antes de agregar más interfaz.",
@@ -29238,6 +29376,152 @@ async function runDeviceConnectorSelfTest() {
   renderDeviceIntegrationPanel();
 }
 
+function renderProductSettingsPanel() {
+  const container = document.getElementById("productSettingsPanel");
+  if (!container) return;
+  const connectivity = getConnectivitySummary();
+  const labels = state.language === "en"
+    ? {
+        title: "Product controls",
+        help: "Daily use stays simple. Technical checks, backup, privacy, and test data live here.",
+        app: "App",
+        sync: "Sync",
+        data: "Data",
+        security: "Privacy",
+        diagnostics: "Diagnostics",
+        refresh: "Refresh app",
+        voice: "Voice command",
+        backup: "Download backup",
+        restore: "Restore backup",
+        syncOffline: "Sync pending changes",
+        verify: "Verify cloud",
+        selfTest: "Run full flow test",
+        recommended: "Apply recommended privacy",
+        showKey: document.getElementById("localKeyInput")?.type === "password" ? "Show local key" : "Hide local key",
+        applyKey: "Apply local key",
+        unlock: "Unlock local data",
+        demoOpen: "Test data",
+        demoHelp: "Only for QA or demos. Real user data is not deleted by these buttons.",
+        loadDemo: "Load example",
+        clearDemo: "Remove example",
+        clearLocal: "Clear this browser",
+        localMode: "Local security",
+        localReady: "Recommended privacy is active.",
+        localReview: "Review local key or privacy settings.",
+      }
+    : {
+        title: "Controles del producto",
+        help: "El uso diario queda simple. Las pruebas técnicas, respaldo, privacidad y datos de ejemplo viven aquí.",
+        app: "App",
+        sync: "Sincronización",
+        data: "Datos",
+        security: "Privacidad",
+        diagnostics: "Diagnóstico",
+        refresh: "Actualizar app",
+        voice: "Comando de voz",
+        backup: "Descargar respaldo",
+        restore: "Restaurar respaldo",
+        syncOffline: "Sincronizar pendientes",
+        verify: "Verificar nube",
+        selfTest: "Probar flujo completo",
+        recommended: "Aplicar privacidad recomendada",
+        showKey: document.getElementById("localKeyInput")?.type === "password" ? "Mostrar clave local" : "Ocultar clave local",
+        applyKey: "Aplicar clave local",
+        unlock: "Desbloquear datos locales",
+        demoOpen: "Datos de prueba",
+        demoHelp: "Solo para QA o demostraciones. Estos botones no borran datos reales del usuario.",
+        loadDemo: "Cargar ejemplo",
+        clearDemo: "Eliminar ejemplo",
+        clearLocal: "Vaciar este navegador",
+        localMode: "Seguridad local",
+        localReady: "Privacidad recomendada activa.",
+        localReview: "Revisa clave local o privacidad.",
+      };
+  const privacy = readPrivacySettings();
+  const key = document.getElementById("localKeyInput")?.value || "";
+  const encryptedStored = hasEncryptedLocalData();
+  const privacyReady = privacy.localProcessing && privacy.sensitiveMode && !privacy.shareAnalytics && Boolean(key || encryptedStored);
+  const statusClass = connectivity.tone === "ok" ? "is-ok" : connectivity.tone === "neutral" ? "is-neutral" : "is-warn";
+  container.innerHTML = `
+    <div class="product-settings-heading">
+      <div>
+        <h3>${escapeHtml(labels.title)}</h3>
+        <p>${escapeHtml(labels.help)}</p>
+      </div>
+      <span class="sync-status-chip ${statusClass}">${escapeHtml(connectivity.text)}</span>
+    </div>
+    <div class="product-settings-grid">
+      <section>
+        <strong>${escapeHtml(labels.app)}</strong>
+        <div class="product-settings-actions">
+          <button class="primary-button" type="button" data-product-settings-action="refresh">${escapeHtml(labels.refresh)}</button>
+          <button class="ghost-button" type="button" data-product-settings-action="voice">${escapeHtml(labels.voice)}</button>
+        </div>
+      </section>
+      <section>
+        <strong>${escapeHtml(labels.data)}</strong>
+        <div class="product-settings-actions">
+          <button class="primary-button" type="button" data-product-settings-action="backup">${escapeHtml(labels.backup)}</button>
+          <button class="ghost-button" type="button" data-product-settings-action="restore">${escapeHtml(labels.restore)}</button>
+        </div>
+      </section>
+      <section>
+        <strong>${escapeHtml(labels.sync)}</strong>
+        <div class="product-settings-actions">
+          <button class="primary-button" type="button" data-product-settings-action="sync">${escapeHtml(labels.syncOffline)}</button>
+          <button class="ghost-button" type="button" data-product-settings-action="verify">${escapeHtml(labels.verify)}</button>
+          <button class="ghost-button" type="button" data-product-settings-action="selftest">${escapeHtml(labels.selfTest)}</button>
+        </div>
+      </section>
+      <section>
+        <strong>${escapeHtml(labels.security)}</strong>
+        <p class="card-meta">${escapeHtml(privacyReady ? labels.localReady : labels.localReview)}</p>
+        <div class="product-settings-actions">
+          <button class="primary-button" type="button" data-product-settings-action="privacy">${escapeHtml(labels.recommended)}</button>
+          <button class="ghost-button" type="button" data-product-settings-action="show-key">${escapeHtml(labels.showKey)}</button>
+          <button class="ghost-button" type="button" data-product-settings-action="apply-key">${escapeHtml(labels.applyKey)}</button>
+          <button class="ghost-button" type="button" data-product-settings-action="unlock">${escapeHtml(labels.unlock)}</button>
+        </div>
+      </section>
+    </div>
+    <details class="product-settings-danger">
+      <summary>
+        <span>${escapeHtml(labels.demoOpen)}</span>
+        <small>${escapeHtml(labels.demoHelp)}</small>
+      </summary>
+      <div class="product-settings-actions">
+        <button class="ghost-button" type="button" data-product-settings-action="load-demo">${escapeHtml(labels.loadDemo)}</button>
+        <button class="ghost-button" type="button" data-product-settings-action="clear-demo">${escapeHtml(labels.clearDemo)}</button>
+        <button class="danger-button" type="button" data-product-settings-action="clear-local">${escapeHtml(labels.clearLocal)}</button>
+      </div>
+    </details>
+  `;
+}
+
+function handleProductSettingsAction(event) {
+  const button = event.target.closest("[data-product-settings-action]");
+  if (!button) return;
+  const action = button.dataset.productSettingsAction;
+  const actions = {
+    refresh: reloadCurrentAppVersion,
+    voice: startVoiceCommand,
+    backup: exportLocalBackup,
+    restore: openRestoreBackupPicker,
+    sync: syncOfflineQueue,
+    verify: runSupabaseDiagnostics,
+    selftest: runSupabaseSelfTest,
+    privacy: applyRecommendedPrivacySettings,
+    "show-key": toggleLocalKeyVisibility,
+    "apply-key": applyLocalKeyToCurrentData,
+    unlock: unlockLocalData,
+    "load-demo": loadDemoData,
+    "clear-demo": clearDemoData,
+    "clear-local": clearLocalData,
+  };
+  actions[action]?.();
+  window.setTimeout(renderProductSettingsPanel, 50);
+}
+
 function renderAdmin() {
   refreshOps({ silent: true });
   renderProfileSettings();
@@ -29266,6 +29550,7 @@ function renderAdmin() {
   const manualReviewSummary = calculateManualReviewSummary();
   const supabaseGate = buildSupabasePilotGate();
   const mvpFlowReadiness = summarizeReadiness(buildMvpFlowChecks().map((check) => check.ok));
+  renderProductSettingsPanel();
   const health = [
     [
       state.language === "en" ? "Core MVP closure" : "Cierre operativo del MVP",
@@ -29666,7 +29951,7 @@ function buildSupabasePilotGate() {
       ok: diagnostics?.status === "ok",
       detail: diagnostics
         ? formatDiagnosticSummary(diagnostics)
-        : state.language === "en" ? "Run Verify Supabase." : "Ejecuta Verificar Supabase.",
+        : state.language === "en" ? "Run Verify cloud." : "Ejecuta Verificar nube.",
       action: "diagnostics",
     },
     {
@@ -29720,8 +30005,8 @@ function renderSupabasePilotGatePanel() {
       <strong class="${gate.ok ? "status-ok" : "status-warn"}">${escapeHtml(`${gate.score}%`)}</strong>
     </div>
     <div class="supabase-pilot-gate-actions">
-      <button class="ghost-button" type="button" data-supabase-gate-action="diagnostics">${escapeHtml(state.language === "en" ? "Verify Supabase" : "Verificar Supabase")}</button>
-      <button class="ghost-button" type="button" data-supabase-gate-action="selfTest">${escapeHtml(state.language === "en" ? "Run real test" : "Probar flujo real")}</button>
+      <button class="ghost-button" type="button" data-supabase-gate-action="diagnostics">${escapeHtml(state.language === "en" ? "Verify cloud" : "Verificar nube")}</button>
+      <button class="ghost-button" type="button" data-supabase-gate-action="selfTest">${escapeHtml(state.language === "en" ? "Test full flow" : "Probar flujo completo")}</button>
       <button class="ghost-button" type="button" data-supabase-gate-action="auth">${escapeHtml(state.language === "en" ? "Open access" : "Abrir acceso")}</button>
       <button class="ghost-button" type="button" data-supabase-gate-action="sync">${escapeHtml(state.language === "en" ? "Sync queue" : "Sincronizar cola")}</button>
     </div>
@@ -29974,7 +30259,7 @@ async function runSupabaseSelfTest() {
               : "Inicia sesión y vuelve a ejecutar la prueba real."
             : state.language === "en"
               ? "Run Verify Supabase first and resolve the pending closure action."
-              : "Ejecuta Verificar Supabase primero y resuelve la acción de cierre pendiente.",
+              : "Ejecuta Verificar nube primero y resuelve la acción pendiente.",
           actionType: needsSession ? "openAuth" : "openAdmin",
         },
       ],
@@ -30007,7 +30292,7 @@ async function runSupabaseDiagnostics() {
           label: "Auth",
           status: "warn",
           detail: t("labels.supabaseDiagnosticsNeedsSession"),
-          action: state.language === "en" ? "Sign in from the app access panel and run Verify Supabase again." : "Inicia sesión desde el panel de acceso y vuelve a ejecutar Verificar Supabase.",
+          action: state.language === "en" ? "Sign in from the app access panel and run Verify cloud again." : "Inicia sesión desde el panel de acceso y vuelve a ejecutar Verificar nube.",
           actionType: "openAuth",
         },
       ],
@@ -30034,7 +30319,7 @@ async function runSupabaseDiagnostics() {
           action: needsSession
             ? state.language === "en"
               ? "Sign in from the app access panel and run Verify Supabase again."
-              : "Inicia sesión desde el panel de acceso y vuelve a ejecutar Verificar Supabase."
+              : "Inicia sesión desde el panel de acceso y vuelve a ejecutar Verificar nube."
             : state.language === "en"
               ? "Review the local API and run the verification again."
               : "Revisa la API local y vuelve a ejecutar la verificación.",
@@ -30425,15 +30710,15 @@ function buildMvpClosureSummary(readiness = calculateDevelopmentReadiness(), tot
     ? ["External account connectors", "Advanced predictive AI", "Automatic OCR/transcription", "Direct social publishing", "Massive-scale operations"]
     : ["Conectores externos de cuentas", "IA predictiva avanzada", "OCR/transcripción automática", "Publicación directa en redes", "Operación a escala masiva"];
   const headline = state.language === "en"
-    ? `Local MVP ${totalProgress.mvp}% · ${PILOT_TARGET_USERS}-user pilot ${totalProgress.pilot}% · full product ${totalProgress.full}%`
-    : `MVP local ${totalProgress.mvp}% · piloto ${PILOT_TARGET_USERS} usuarios ${totalProgress.pilot}% · producto completo ${totalProgress.full}%`;
+    ? `Operational base ${totalProgress.mvp}% · product validation ${totalProgress.pilot}% · final product ${totalProgress.full}%`
+    : `Base operativa ${totalProgress.mvp}% · validación de producto ${totalProgress.pilot}% · producto final ${totalProgress.full}%`;
   const status = pending.length
     ? state.language === "en"
-      ? `${pending.length} pilot-blocking closures remain before inviting ${PILOT_TARGET_USERS} users.`
-      : `Quedan ${pending.length} cierres que bloquean invitar ${PILOT_TARGET_USERS} usuarios.`
+      ? `${pending.length} product-critical closures remain before expanding usage.`
+      : `Quedan ${pending.length} cierres críticos antes de ampliar el uso.`
     : state.language === "en"
-      ? `The ${PILOT_TARGET_USERS}-user pilot is operationally closeable; remaining work belongs to later product phases.`
-      : `El piloto de ${PILOT_TARGET_USERS} usuarios se puede cerrar operativamente; lo restante pertenece a fases posteriores del producto.`;
+      ? "The core validation is operationally closed; remaining work belongs to advanced product phases."
+      : "La validación central está cerrada operativamente; lo restante pertenece a fases avanzadas del producto.";
   return {
     exportedAt: new Date().toISOString(),
     appVersion: APP_VERSION,
@@ -30452,7 +30737,7 @@ function buildMvpClosureSummary(readiness = calculateDevelopmentReadiness(), tot
       ready: Boolean(item.ready),
     })),
     later,
-    scope: state.language === "en" ? `Fast controlled pilot for ${PILOT_TARGET_USERS} users` : `Piloto rápido controlado de ${PILOT_TARGET_USERS} usuarios`,
+    scope: state.language === "en" ? "VibePWA product consolidation" : "Consolidación de producto VibePWA",
   };
 }
 
@@ -30487,15 +30772,15 @@ async function copyMvpClosureSummary() {
   const status = document.getElementById("embeddingStatus");
   if (status) {
     status.textContent = copied
-      ? state.language === "en" ? "Pilot closure summary copied." : "Resumen de cierre del piloto copiado."
-      : state.language === "en" ? "Could not copy the pilot closure summary." : "No se pudo copiar el resumen de cierre del piloto.";
+      ? state.language === "en" ? "Product closure summary copied." : "Resumen de cierre del producto copiado."
+      : state.language === "en" ? "Could not copy the product closure summary." : "No se pudo copiar el resumen de cierre del producto.";
   }
 }
 
 function buildMvpClosureMarkdown(summary) {
   const labels = state.language === "en"
-    ? { title: "Pilot Closure", progress: "Progress", readiness: "Readiness", ready: "Ready capabilities", pending: "Pilot blockers", later: "Post-pilot phase", generated: "Generated", scope: "Scope" }
-    : { title: "Cierre del piloto", progress: "Avance", readiness: "Preparación", ready: "Capacidades listas", pending: "Bloqueos del piloto", later: "Fase posterior al piloto", generated: "Generado", scope: "Alcance" };
+    ? { title: "Product Closure", progress: "Progress", readiness: "Readiness", ready: "Ready capabilities", pending: "Critical pending items", later: "Advanced phase", generated: "Generated", scope: "Scope" }
+    : { title: "Cierre del producto", progress: "Avance", readiness: "Preparación", ready: "Capacidades listas", pending: "Pendientes críticos", later: "Fase avanzada", generated: "Generado", scope: "Alcance" };
   const readyLines = summary.ready.length
     ? summary.ready.map((item) => `- ${item.title}: ${item.detail}`).join("\n")
     : `- ${state.language === "en" ? "No ready capabilities recorded." : "No hay capacidades listas registradas."}`;
@@ -30535,7 +30820,7 @@ function renderMvpClosurePanel(readiness, totalProgress) {
   document.getElementById("mvpClosurePanel").innerHTML = `
     <div class="mvp-closure-heading">
       <div>
-        <h3>${escapeHtml(state.language === "en" ? "Pilot Closure" : "Cierre del piloto")}</h3>
+        <h3>${escapeHtml(state.language === "en" ? "Product Closure" : "Cierre del producto")}</h3>
         <p class="card-meta">${escapeHtml(closure.headline)} · ${escapeHtml(closure.status)}</p>
       </div>
       <div class="mvp-closure-meter" aria-label="${escapeHtml(closure.headline)}">
@@ -30556,14 +30841,14 @@ function renderMvpClosurePanel(readiness, totalProgress) {
         </div>
       </article>
       <article class="mvp-closure-card">
-        <strong>${escapeHtml(state.language === "en" ? "Post-pilot phase" : "Fase posterior al piloto")}</strong>
+        <strong>${escapeHtml(state.language === "en" ? "Advanced phase" : "Fase avanzada")}</strong>
         <div class="pill-row">${closure.later.map((item) => `<span class="pill">${escapeHtml(item)}</span>`).join("")}</div>
       </article>
     </div>
     ${
       closure.pending.length
         ? `<div class="mvp-closure-pending">
-            <strong>${escapeHtml(state.language === "en" ? "Pilot blockers" : "Bloqueos del piloto")}</strong>
+            <strong>${escapeHtml(state.language === "en" ? "Critical pending items" : "Pendientes críticos")}</strong>
             ${closure.pending
               .map(
                 (item) => `
@@ -33181,8 +33466,8 @@ async function semanticSearch(question) {
         body: JSON.stringify({ query: question, limit: 8 }),
       });
       if (Array.isArray(payload.results)) return payload.results.map((result) => result.experience);
-    } catch {
-      state.apiOnline = false;
+    } catch (error) {
+      markApiConnectivityFailure(error);
     }
   }
   return semanticSearchExperiences(question);

@@ -228,13 +228,16 @@ assert(
   files.app.includes('const VOICE_ASSISTANT_NAME = "V"')
     && files.app.includes("stripVoiceWakePhrase")
     && files.app.includes("hasVoiceWakePhrase")
+    && files.app.includes("isVoiceWakeToken")
+    && files.app.includes("looksLikeVoiceActionCommand")
     && files.app.includes("handleVoiceContentCommand")
     && files.app.includes("createVoiceAgendaEvent")
     && files.app.includes("appendVoiceNoteToCapture")
     && files.app.includes("processAudioTranscriptCommands")
     && files.app.includes("voiceCommandContinuousHelp")
     && files.app.includes("Hola V")
-    && files.app.includes("Hi V"),
+    && files.app.includes("Hi V")
+    && files.app.includes("by|bye|bay|vai"),
   "V voice invocation is missing.",
 );
 assert(
@@ -274,7 +277,7 @@ assert(/@media \(max-width: 720px\)[\s\S]*\.capture-layout-clean,[\s\S]*\.filter
 assert(files.index.includes("Activos y multimedia") && files.index.includes("Opciones avanzadas de calendario"), "Assets operations or Agenda advanced tools are not properly grouped.");
 assert(!/assetLibraryView[\s\S]*Herramientas avanzadas de activos/.test(files.index), "Asset Library still exposes technical asset tools in the user view.");
 assert(files.index.includes("Opciones técnicas") && files.index.includes("Opciones técnicas del reporte"), "Reports or Publications still lack the simplified advanced-action flow.");
-assert(files.index.includes("admin-accordion-stack") && files.index.includes("Resumen ejecutivo") && files.index.includes("Persistencia y Supabase"), "Admin is not organized into thematic accordions.");
+assert(files.index.includes("admin-accordion-stack") && files.index.includes("Resumen ejecutivo") && files.index.includes("Sincronización y nube"), "Admin is not organized into thematic accordions.");
 assert(files.index.includes("manual-version-card") && files.index.includes("manualVersionValue"), "Manual does not expose the current version guide card.");
 assert(files.app.includes("Librería, Activos, Reportes, Publicaciones y Agenda usan una vista limpia"), "Spanish manual does not explain the cleaned user pages.");
 assert(files.app.includes("La operación técnica de Activos y multimedia vive en Administración"), "Spanish manual does not explain that technical asset operations moved to Admin.");
@@ -322,7 +325,7 @@ assert(files.vibeappTest.includes("Native sync client sends media, experience, a
 assert(files.vibeappTest.includes("Native sync client reports media and agenda failures clearly"), "Flutter tests must validate clear Vibeapp sync failure handling.");
 assert(files.vibeappTest.includes("Native queue validates files and retry state before sync"), "Flutter tests must validate queue retries, terminal failures, and local file validation.");
 assert(files.vibeappMain.includes("class CaptureQueueSummary") && files.vibeappTest.includes("Native queue summary explains ready, retry, blocked, and synced items"), "Vibeapp must expose a tested observable queue summary.");
-assert(files.vibeappMain.includes("class NativePilotChecklist") && files.vibeappTest.includes("Native pilot checklist scores backend, session, and queue blockers"), "Vibeapp must expose a tested mobile pilot checklist.");
+assert(files.vibeappMain.includes("class NativePilotChecklist") && files.vibeappTest.includes("Native mobile compatibility gate scores backend, session, and queue blockers"), "Vibeapp must expose a tested mobile compatibility gate.");
 assert(files.vibeappMain.includes("idempotencyKey") && files.server.includes("storageObjectHint") && files.vibeappTest.includes("storageObjectHint"), "Vibeapp/server sync must keep stable idempotency keys and Storage object hints.");
 assert(files.vibeappTest.includes("External session import profiles Meta and biometric sources correctly"), "Flutter tests must validate source-specific external import profiles.");
 assert(files.app.includes("getExternalAssetProfile") && files.app.includes("externalPayloadType") && files.app.includes("Perfil de dispositivo/origen"), "PWA must surface Vibeapp external import profiles in assets and reports.");

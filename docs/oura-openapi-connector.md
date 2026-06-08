@@ -66,7 +66,9 @@ Variables requeridas para lectura completa:
 - `OURA_REDIRECT_URI`
 - `OURA_TOKEN_ENCRYPTION_SECRET`
 - `OURA_SCOPES` opcional: lista separada por espacios o comas para controlar permisos OAuth sin cambiar codigo. Si no se define, Vibe usa los scopes del manifiesto.
-- `OURA_AUTHORIZE_REDIRECT_MODE` opcional: `registered` por defecto. Usa la redirect URI registrada en Oura y evita rechazos por coincidencia exacta. Usar `explicit` solo si Oura requiere mandar `redirect_uri` en la URL de autorizacion.
+- `OURA_AUTHORIZE_REDIRECT_MODE` opcional: `explicit` por defecto. Vibe envia `redirect_uri` en la autorizacion y vuelve a enviarla igual durante el intercambio de token. Usar `registered` solo como diagnostico si Oura cambia el comportamiento de la app registrada.
+- `OURA_TOKEN_AUTH_MODE` opcional: `body` por defecto. Vibe envia `client_id` y `client_secret` en el cuerpo `application/x-www-form-urlencoded`, que es el camino principal de Oura para el intercambio server-side.
+- `OURA_TOKEN_EXCHANGE_FALLBACK` opcional: apagado por defecto. No conviene probar multiples variantes con el mismo `code`, porque el codigo OAuth puede quedar consumido. Activarlo solo para diagnostico controlado.
 - `OURA_AUTHORIZE_SCOPE_MODE` opcional: `core` por defecto. Solicita `daily`, `heartrate` y `workout` en el primer enlace. Usar `full` o `OURA_SCOPES` cuando Oura apruebe permisos adicionales como `spo2`.
 
 Si faltan, `/api/integration/oura/status`, `/connect` y `/sync` deben decir exactamente que variable falta. No debe haber falla silenciosa.
