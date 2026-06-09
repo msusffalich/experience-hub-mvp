@@ -9,13 +9,13 @@ This folder is a starter skeleton. Flutter SDK is available locally at `C:\Users
 Safe native packaging baseline now in place:
 
 - Android applies both the Android application plugin and Kotlin Android plugin, which is required because the launcher activity is Kotlin.
-- Android uses the package id `com.miguelsusffalich.vibeapp`, aligned with the iOS bundle id and Meta/Oakley DAT configuration.
+- Android uses the pilot package id `io.vibeapp.mobile`, replacing the default Flutter `com.example.vibeapp` placeholder.
 - Android debug packaging is verified. The current debug APK is generated at `build/app/outputs/flutter-apk/app-debug.apk` after setting `JAVA_HOME`, `ANDROID_HOME`, and `ANDROID_SDK_ROOT`.
 - Android release APK packaging is verified for direct pilot installation. The current signed APK is generated at `build/app/outputs/flutter-apk/app-release.apk`.
 - Android bundle packaging is verified for the Play Console path. The current release bundle is generated at `build/app/outputs/bundle/release/app-release.aab` and signed with the local pilot upload key outside the repository.
 - Android declares camera and microphone as optional hardware features. The app can request runtime permissions for capture without excluding pilot devices that lack one of those sensors.
 - Android release builds use a real upload key when `android/key.properties` exists with `storeFile`, `storePassword`, `keyAlias`, and `keyPassword`. The local pilot key lives under `C:\Users\msusf\Documents\Codex\secure`; do not commit the key or passwords.
-- iOS uses the pilot Personal Team bundle id `com.miguelsusffalich.vibeapp` for physical iPhone testing. Android now uses the same product identifier family: `com.miguelsusffalich.vibeapp`.
+- iOS uses the pilot Personal Team bundle id `com.miguelsusffalich.vibeapp` for physical iPhone testing. Android keeps `io.vibeapp.mobile` until store ownership is finalized.
 - iOS shared scheme `Runner` launches with `LaunchAction` in `Release`; this prevents the iPhone icon from opening a blank screen and returning to Home after a local install.
 - iOS has user-facing usage strings for camera, microphone, photo library read/add, when-in-use location, and Apple Health read/write reservations.
 - iOS includes `Runner/Runner.entitlements` with HealthKit enabled so the Xcode phase starts from an explicit entitlement baseline.
@@ -23,7 +23,7 @@ Safe native packaging baseline now in place:
 Pilot blockers that still need product/account decisions:
 
 - Keep Android upload signing material local and backed up securely; do not commit keystores or passwords.
-- Keep `com.miguelsusffalich.vibeapp` as the current native package/bundle identifier across iOS, Android, Universal Links, and Meta/Oakley DAT unless a future store decision explicitly changes it.
+- Confirm the final production package id before Play Console registration. Changing it after store publication is painful, so treat `io.vibeapp.mobile` as the pilot candidate until product ownership is final.
 - Migrate the Android Gradle/Kotlin stack to Flutter's built-in Kotlin path once all plugins support it. For now, AGP 8.13.1 is pinned because it builds reliably with `file_picker`, `image_picker_android`, `package_info_plus`, and `record_android`.
 - Set the iOS development team and provisioning profile in Xcode once the Apple developer account is selected.
 - Replace default Flutter launcher icons and launch images before external testers receive the app.
@@ -46,7 +46,7 @@ Then on the Mac:
 3. Confirm bundle id `com.miguelsusffalich.vibeapp`.
 4. Confirm HealthKit capability is enabled and uses `Runner/Runner.entitlements`.
 5. Confirm scheme `Runner` uses `LaunchAction` with `buildConfiguration = "Release"`.
-6. Remove any old install that used a previous bundle/package id; the current native identifier is `com.miguelsusffalich.vibeapp`.
+6. Remove any old iOS install that uses bundle `io.vibeapp.mobile`; the iPhone pilot bundle is `com.miguelsusffalich.vibeapp`.
 7. Run `flutter pub get`.
 8. Run `VIBE_IOS_BUILD=1 npm run verify:ios` for a no-codesign build check, or build from Xcode for a signed device install.
 9. Install on iPhone/iPad and test: sign-in, quick note, active experience, camera, video, audio, location, Apple Health export/import, queue retry, app icon reopen, and PWA handoff.

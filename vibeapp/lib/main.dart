@@ -17,8 +17,8 @@ import 'package:speech_to_text/speech_recognition_error.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
-const String vibeappBuildLabel = 'Vibeapp 566';
-const String vibeappReleaseLabel = '20260609-vibeapp-remove-clio-566';
+const String vibeappBuildLabel = 'Vibeapp 568';
+const String vibeappReleaseLabel = '20260609-vibeapp-merge-participants-security-568';
 
 /// Notificador global del idioma de la app. Es la unica fuente de verdad para
 /// el idioma activo: al cambiarlo se reconstruye todo el arbol (incluido el
@@ -49,6 +49,35 @@ const String kBuildOuraToken =
 /// de audio; luego V puede resumirlas con Claude. NO toca el backend de Vibe.
 const String kBuildTranscribeKey =
     String.fromEnvironment('TRANSCRIBE_KEY', defaultValue: '');
+
+/// SEGURIDAD: enruta las llamadas de IA (Claude, transcripcion, Oura) por el
+/// backend de Vibeapp en vez de pegar directo al proveedor con la clave a bordo.
+/// Asi las claves de proveedor viven SOLO en el backend y nunca viajan en el
+/// binario de la app (donde serian extraibles). Se enciende en builds seguros
+/// con `--dart-define=AI_PROXY=true`. Por defecto false = modo directo (dev),
+/// para no romper el flujo mientras el backend expone los endpoints.
+const bool kAiProxyEnabled =
+    bool.fromEnvironment('AI_PROXY', defaultValue: false);
+
+/// Config del proxy de IA: URL base del backend + token de sesion (Bearer). Se
+/// setea al cargar/iniciar sesion (mismos valores que el sync). Si no esta listo
+/// (flag apagado o sin sesion), los clientes caen a modo directo al proveedor.
+class AiProxyConfig {
+  static String baseUrl = '';
+  static String sessionToken = '';
+
+  /// True solo si el flag esta encendido Y hay backend + token de sesion.
+  static bool get ready =>
+      kAiProxyEnabled &&
+      baseUrl.trim().isNotEmpty &&
+      sessionToken.trim().isNotEmpty;
+
+  /// Actualiza la config desde la sesion de sync (URL del backend + access token).
+  static void update(String backendUrl, String token) {
+    baseUrl = backendUrl.trim();
+    sessionToken = token.trim();
+  }
+}
 
 /// Almacen seguro (Keychain en iOS / Keystore en Android). Persiste el login y
 /// los ajustes incluso si se reinstala la app. NO toca el backend ni los
@@ -2259,7 +2288,7 @@ class VibeTranscriber {
   final String baseUrl;
   final String model;
 
-  bool get isConfigured => apiKey.trim().isNotEmpty;
+  bool get isConfigured => apiKey.trim().isNotEmpty || AiProxyConfig.ready;
 
   Future<String> transcribe(String filePath) async {
     final file = File(filePath);
@@ -2273,13 +2302,22 @@ class VibeTranscriber {
     final client = HttpClient();
     client.connectionTimeout = const Duration(seconds: 15);
     try {
-      final request = await client
-          .postUrl(Uri.parse('$baseUrl/v1/audio/transcriptions'));
+      // Modo proxy: sube al backend con Bearer de sesion (el backend tiene la
+      // clave del proveedor). Modo directo: a OpenAI con la Bearer key local.
+      final useProxy = AiProxyConfig.ready;
+      final uri = useProxy
+          ? Uri.parse('${AiProxyConfig.baseUrl}/api/mobile/ai/transcribe')
+          : Uri.parse('$baseUrl/v1/audio/transcriptions');
+      final request = await client.postUrl(uri);
       final boundary =
           '----vibe${DateTime.now().microsecondsSinceEpoch}';
       request.headers
           .set('content-type', 'multipart/form-data; boundary=$boundary');
-      request.headers.set('authorization', 'Bearer ${apiKey.trim()}');
+      request.headers.set(
+          'authorization',
+          useProxy
+              ? 'Bearer ${AiProxyConfig.sessionToken}'
+              : 'Bearer ${apiKey.trim()}');
       final pre = StringBuffer()
         ..write('--$boundary\r\n')
         ..write('Content-Disposition: form-data; name="model"\r\n\r\n')
@@ -2463,7 +2501,7 @@ class VibeOura {
   final String token;
   final String baseUrl;
 
-  bool get isConfigured => token.trim().isNotEmpty;
+  bool get isConfigured => token.trim().isNotEmpty || AiProxyConfig.ready;
 
   String _date(DateTime d) {
     String two(int n) => n.toString().padLeft(2, '0');
@@ -2471,16 +2509,25 @@ class VibeOura {
   }
 
   /// GET a una coleccion de Oura entre [start] y [end]; devuelve la lista `data`.
+  /// Modo proxy: pide al backend (que guarda el token Oura del usuario); modo
+  /// directo: a la Oura Cloud API con el token local.
   Future<List<dynamic>> _get(
       String collection, DateTime start, DateTime end) async {
     final client = HttpClient();
     client.connectionTimeout = const Duration(seconds: 10);
     try {
-      final uri = Uri.parse(
-          '$baseUrl/v2/usercollection/$collection'
-          '?start_date=${_date(start)}&end_date=${_date(end)}');
+      final useProxy = AiProxyConfig.ready;
+      final uri = useProxy
+          ? Uri.parse('${AiProxyConfig.baseUrl}/api/mobile/oura/$collection'
+              '?start_date=${_date(start)}&end_date=${_date(end)}')
+          : Uri.parse('$baseUrl/v2/usercollection/$collection'
+              '?start_date=${_date(start)}&end_date=${_date(end)}');
       final request = await client.getUrl(uri);
-      request.headers.set('Authorization', 'Bearer ${token.trim()}');
+      request.headers.set(
+          'Authorization',
+          useProxy
+              ? 'Bearer ${AiProxyConfig.sessionToken}'
+              : 'Bearer ${token.trim()}');
       final response =
           await request.close().timeout(const Duration(seconds: 20));
       final body = await response.transform(utf8.decoder).join();
@@ -5760,6 +5807,8 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
         _syncState = SyncState.synced;
         _refreshAssistantClient();
       });
+      // Proxy de IA seguro: las claves de proveedor viven en el backend.
+      AiProxyConfig.update(session.apiBaseUrl, session.accessToken);
       unawaited(_loadParticipants());
       unawaited(_syncPendingQueue());
     } catch (_) {
@@ -5892,6 +5941,8 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
         _syncState = SyncState.synced;
         _refreshAssistantClient();
       });
+      // Proxy de IA seguro: las claves de proveedor viven en el backend.
+      AiProxyConfig.update(_apiUrlController.text.trim(), result.accessToken);
       await _saveSession();
       await _loadParticipants();
       if (!mounted) return;
