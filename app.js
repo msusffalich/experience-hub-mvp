@@ -1,4 +1,4 @@
-const APP_VERSION = "20260608-oura-callback-detail-560";
+const APP_VERSION = "20260608-oura-session-safe-561";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -5066,7 +5066,7 @@ async function loadRemoteConfig() {
 async function apiRequest(pathname, options = {}) {
   const response = await fetchApi(pathname, options);
   if (response.status === 401 && !options.skipAuth && !options._retriedAuth && state.session?.refresh_token) {
-    const refreshed = await refreshSupabaseSession();
+    const refreshed = await refreshSupabaseSession({ preserveOnFailure: options.preserveSessionOnAuthFailure });
     if (refreshed) return apiRequest(pathname, { ...options, _retriedAuth: true });
   }
   if (!response.ok) {
@@ -5098,11 +5098,11 @@ async function fetchApi(pathname, options = {}) {
 }
 
 function withoutClientOptions(options) {
-  const { skipAuth, _retriedAuth, ...rest } = options;
+  const { skipAuth, _retriedAuth, preserveSessionOnAuthFailure, ...rest } = options;
   return rest;
 }
 
-async function refreshSupabaseSession() {
+async function refreshSupabaseSession(options = {}) {
   if (!state.config?.supabaseUrl || !state.config?.supabasePublishableKey || !state.session?.refresh_token) return false;
   try {
     const session = await supabaseAuthRequest("/token?grant_type=refresh_token", {
@@ -5117,7 +5117,7 @@ async function refreshSupabaseSession() {
     }
     return true;
   } catch {
-    expireAuthSession();
+    if (!options.preserveOnFailure) expireAuthSession();
     return false;
   }
 }
@@ -29403,6 +29403,20 @@ function handleDeviceIntegrationClick(event) {
 
 async function connectOuraAccount() {
   try {
+    if (!state.session?.access_token) {
+      state.pendingAuthReturn = "oura";
+      notify(state.language === "en"
+        ? "Sign in first, then connect Oura."
+        : "Primero inicia sesion; luego conecta Oura.", "warn");
+      showAuthView();
+      const message = document.getElementById("authMessage");
+      if (message) {
+        message.textContent = state.language === "en"
+          ? "After signing in, return to Panel and connect Oura again."
+          : "Despues de iniciar sesion, vuelve al Panel y conecta Oura nuevamente.";
+      }
+      return;
+    }
     notify(state.language === "en" ? "Opening Oura authorization..." : "Abriendo autorizacion Oura...");
     state.ouraConnectionStatus = {
       ...(state.ouraConnectionStatus || {}),
@@ -29417,7 +29431,9 @@ async function connectOuraAccount() {
     renderDashboardIntegrationHandoff();
     renderDeviceIntegrationPanel();
     const returnTo = `/index.html?v=${encodeURIComponent(APP_VERSION)}&view=dashboard`;
-    const payload = await apiRequest(`/integration/oura/connect-url?returnTo=${encodeURIComponent(returnTo)}`);
+    const payload = await apiRequest(`/integration/oura/connect-url?returnTo=${encodeURIComponent(returnTo)}`, {
+      preserveSessionOnAuthFailure: true,
+    });
     if (!payload?.authUrl) {
       throw new Error(state.language === "en" ? "Oura authorization URL was not received." : "No se recibio la URL de autorizacion Oura.");
     }
@@ -29435,6 +29451,16 @@ async function connectOuraAccount() {
     notify(state.language === "en"
       ? `Could not connect Oura: ${error.message}`
       : `No se pudo conectar Oura: ${error.message}`, "warn");
+    if (error.status === 401 || /auth_required|invalid_auth/i.test(error.message || "")) {
+      state.pendingAuthReturn = "oura";
+      showAuthView();
+      const message = document.getElementById("authMessage");
+      if (message) {
+        message.textContent = state.language === "en"
+          ? "Your Vibe session needs confirmation before connecting Oura. Sign in again; your local data was not deleted."
+          : "Tu sesion de Vibe necesita confirmacion antes de conectar Oura. Inicia sesion de nuevo; tus datos locales no se borraron.";
+      }
+    }
     renderDashboardIntegrationHandoff();
     renderDeviceIntegrationPanel();
   }
