@@ -44,6 +44,44 @@
 		<string>Vibe puede leer datos de Apple Health solo con tu permiso para enriquecer reportes de energia, actividad, sueno y recuperacion.</string>
 		<key>NSHealthUpdateUsageDescription</key>
 		<string>Vibe no escribe datos medicos por defecto; esta autorizacion queda reservada para integraciones futuras que tu apruebes.</string>
+		<key>NSBluetoothAlwaysUsageDescription</key>
+		<string>Vibe usa Bluetooth solo para conectarse a tus gafas Meta cuando tu lo autorizas.</string>
+		<!-- ===== Meta Wearables Device Access Toolkit (DAT) ===== -->
+		<key>MWDAT</key>
+		<dict>
+			<key>AppLinkURLScheme</key>
+			<string>vibeapp://</string>
+			<key>MetaAppID</key>
+			<string>1320347803536099</string>
+			<key>ClientToken</key>
+			<string>AR|1320347803536099|c678f2a5643f9db8495e42b0d9b49a6a</string>
+			<key>TeamID</key>
+			<string>$(DEVELOPMENT_TEAM)</string>
+			<key>DAMEnabled</key>
+			<true/>
+		</dict>
+		<key>CFBundleURLTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
+				<key>CFBundleURLName</key>
+				<string>com.miguelsusffalich.vibeapp</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>vibeapp</string>
+				</array>
+			</dict>
+		</array>
+		<key>UISupportedExternalAccessoryProtocols</key>
+		<array>
+			<string>com.meta.ar.wearable</string>
+		</array>
+		<key>UIBackgroundModes</key>
+		<array>
+			<string>bluetooth-peripheral</string>
+			<string>external-accessory</string>
+		</array>
 		<key>UIApplicationSceneManifest</key>
 		<dict>
 			<key>UIApplicationSupportsMultipleScenes</key>

@@ -1,0 +1,15 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["K5M38T7TJA.com.miguelsusffalich.vibeapp"],
+        "components": [
+          {
+            "/": "/applink/*",
+            "comment": "Vibeapp universal links (Meta Wearables Device Access Toolkit)"
+          }
+        ]
+      }
+    ]
+  }
+}

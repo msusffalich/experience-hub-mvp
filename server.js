@@ -40,6 +40,9 @@ const TRANSCRIPTION_PROVIDER = process.env.TRANSCRIPTION_PROVIDER || "openai";
 const OPENAI_TRANSCRIPTION_MODEL = process.env.OPENAI_TRANSCRIPTION_MODEL || "gpt-4o-mini-transcribe";
 const OCR_PROVIDER = process.env.OCR_PROVIDER || "openai";
 const OPENAI_OCR_MODEL = process.env.OPENAI_OCR_MODEL || "gpt-4o-mini";
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || "claude-haiku-4-5";
+const ANTHROPIC_API_BASE_URL = (process.env.ANTHROPIC_API_BASE_URL || "https://api.anthropic.com").trim().replace(/\/$/, "");
 const SIGNAL_METADATA_SCHEMA_VERSION = "clio-inspired-signal-v1";
 const INTEGRATION_CONTRACT_VERSION = "vibe-signal-contract-v2";
 const OURA_API_BASE_URL = (process.env.OURA_API_BASE_URL || "https://api.ouraring.com").trim().replace(/\/$/, "");
@@ -247,6 +250,26 @@ async function handleApi(req, res, url) {
         email: auth.user?.email || email,
       },
     });
+    return;
+  }
+
+  if (url.pathname === "/api/mobile/assistant/message" && req.method === "POST") {
+    const user = await getRequestUser(req);
+    const body = await readJson(req);
+    sendJson(res, 200, await handleMobileAssistantMessage(body, user));
+    return;
+  }
+
+  if (url.pathname === "/api/mobile/assistant/vision" && req.method === "POST") {
+    const user = await getRequestUser(req);
+    const body = await readJson(req);
+    sendJson(res, 200, await handleMobileAssistantVision(body, user));
+    return;
+  }
+
+  if (url.pathname === "/api/mobile/participants" && req.method === "GET") {
+    const user = await getRequestUser(req);
+    sendJson(res, 200, await listMobileParticipants(user));
     return;
   }
 
@@ -665,6 +688,14 @@ async function loadDotEnv() {
 }
 
 async function serveStatic(res, pathname) {
+  if (pathname === "/applink/meta") {
+    res.writeHead(200, {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "no-store",
+    });
+    res.end(`<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Vibeapp</title></head><body><h1>Vibeapp</h1><p>Este enlace abre Vibeapp cuando la aplicacion nativa esta instalada.</p></body></html>`);
+    return;
+  }
   const requested = pathname === "/" ? "/index.html" : pathname;
   const safePath = path.normalize(decodeURIComponent(requested)).replace(/^(\.\.[/\\])+/, "");
   const filePath = path.join(__dirname, safePath);
@@ -675,9 +706,12 @@ async function serveStatic(res, pathname) {
   }
 
   const ext = path.extname(filePath).toLowerCase();
+  const contentType = path.basename(filePath) === "apple-app-site-association"
+    ? "application/json; charset=utf-8"
+    : mimeTypes[ext] || "application/octet-stream";
   const content = await readFile(filePath);
   res.writeHead(200, {
-    "Content-Type": mimeTypes[ext] || "application/octet-stream",
+    "Content-Type": contentType,
     "Cache-Control": "no-store",
   });
   res.end(content);
@@ -3085,6 +3119,125 @@ async function signInSupabasePassword(email, password) {
   return data;
 }
 
+async function handleMobileAssistantMessage(body = {}, user = {}) {
+  const system = limitAssistantText(body.system, 4000, "system");
+  const text = limitAssistantText(body.text || body.userText || body.prompt, 8000, "text");
+  if (!system || !text) {
+    throw new HttpError(400, "assistant_payload_incomplete", "Falta el texto para consultar a V.");
+  }
+  const history = normalizeAssistantHistory(body.history);
+  const result = await callAnthropicMessages({
+    system,
+    messages: [...history, { role: "user", content: text }],
+    maxTokens: Number(body.maxTokens || body.max_tokens || 700),
+  });
+  await appendLog("info", "mobile_assistant_message", {
+    userId: user.id,
+    promptLength: text.length,
+    historyTurns: history.length,
+    model: result.model,
+  });
+  return { ok: true, text: result.text, model: result.model };
+}
+
+async function handleMobileAssistantVision(body = {}, user = {}) {
+  const system = limitAssistantText(body.system, 4000, "system");
+  const question = limitAssistantText(body.question || body.text || "Describe esta imagen de forma breve y util.", 4000, "question");
+  const mediaType = String(body.mediaType || body.media_type || "image/jpeg").trim().toLowerCase();
+  const data = String(body.data || body.base64 || "").trim();
+  if (!system || !question || !data) {
+    throw new HttpError(400, "assistant_vision_payload_incomplete", "Falta la imagen o la pregunta para analizar la foto.");
+  }
+  if (!/^image\/(jpeg|jpg|png|webp|heic|heif)$/i.test(mediaType)) {
+    throw new HttpError(415, "assistant_vision_media_not_supported", "V puede analizar imagenes JPEG, PNG, WebP o HEIC.");
+  }
+  const approxBytes = Math.ceil((data.length * 3) / 4);
+  if (approxBytes > 8_000_000) {
+    throw new HttpError(413, "assistant_vision_image_too_large", "La imagen es muy grande para analizarla. Usa una version mas liviana.");
+  }
+  const result = await callAnthropicMessages({
+    system,
+    messages: [
+      {
+        role: "user",
+        content: [
+          {
+            type: "image",
+            source: {
+              type: "base64",
+              media_type: mediaType === "image/jpg" ? "image/jpeg" : mediaType,
+              data,
+            },
+          },
+          { type: "text", text: question },
+        ],
+      },
+    ],
+    maxTokens: Number(body.maxTokens || body.max_tokens || 700),
+  });
+  await appendLog("info", "mobile_assistant_vision", {
+    userId: user.id,
+    mediaType,
+    approxBytes,
+    model: result.model,
+  });
+  return { ok: true, text: result.text, model: result.model };
+}
+
+function normalizeAssistantHistory(history = []) {
+  if (!Array.isArray(history)) return [];
+  return history.slice(-8).map((item) => {
+    const role = item?.role === "assistant" ? "assistant" : "user";
+    const content = limitAssistantText(item?.text || item?.content || "", 2000, "history");
+    return content ? { role, content } : null;
+  }).filter(Boolean);
+}
+
+function limitAssistantText(value, maxLength, fieldName) {
+  const text = String(value || "").trim();
+  if (text.length > maxLength) {
+    throw new HttpError(413, "assistant_payload_too_large", `${fieldName} es muy largo para procesarlo en una sola solicitud.`);
+  }
+  return text;
+}
+
+async function callAnthropicMessages({ system, messages, maxTokens = 700 }) {
+  if (!ANTHROPIC_API_KEY) {
+    throw new HttpError(503, "assistant_not_configured", "La IA de V no esta configurada en Railway. Define ANTHROPIC_API_KEY.");
+  }
+  const response = await fetch(`${ANTHROPIC_API_BASE_URL}/v1/messages`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": ANTHROPIC_API_KEY,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: ANTHROPIC_MODEL,
+      max_tokens: Math.max(1, Math.min(Number(maxTokens) || 700, 1200)),
+      system,
+      messages,
+    }),
+  });
+  const raw = await response.text();
+  let decoded = {};
+  try {
+    decoded = raw ? JSON.parse(raw) : {};
+  } catch {
+    decoded = { raw };
+  }
+  if (!response.ok) {
+    const providerMessage = decoded?.error?.message || raw || `HTTP ${response.status}`;
+    throw new HttpError(response.status, "assistant_provider_failed", providerMessage);
+  }
+  const content = Array.isArray(decoded.content) ? decoded.content : [];
+  const text = content.map((part) => (part?.type === "text" ? String(part.text || "").trim() : "")).filter(Boolean).join("\n\n").trim();
+  if (!text) {
+    throw new HttpError(502, "assistant_empty_response", "La IA respondio sin texto util.");
+  }
+  return { text, model: decoded.model || ANTHROPIC_MODEL };
+}
+
 async function getProfile(user = { id: LOCAL_USER_ID, email: "local-user@example.com" }) {
   const parameters = await getProfileParameters(user.id || LOCAL_USER_ID);
   if (activePersistence() === "supabase") {
@@ -3330,6 +3483,69 @@ async function getWorkspaceContext(user = { id: LOCAL_USER_ID, email: "local-use
     workspaceSchemaState.checkedAt = new Date().toISOString();
     workspaceSchemaState.error = sanitizeDiagnosticError(error);
     return null;
+  }
+}
+
+function defaultMobileParticipant(user = { id: LOCAL_USER_ID, email: "local-user@example.com" }) {
+  const email = String(user?.email || "").trim();
+  const emailName = email.includes("@") ? email.split("@")[0] : email;
+  const rawName = emailName || "Mi cuenta";
+  const name = rawName.charAt(0).toUpperCase() + rawName.slice(1);
+  return {
+    id: String(user?.id || LOCAL_USER_ID),
+    name,
+    email,
+    status: "active",
+    source: "account-default",
+  };
+}
+
+async function listMobileParticipants(user = { id: LOCAL_USER_ID, email: "local-user@example.com" }) {
+  const fallback = defaultMobileParticipant(user);
+  if (activePersistence() !== "supabase") {
+    return { ok: true, participants: [fallback], selectedParticipantId: fallback.id, source: "local-fallback" };
+  }
+  const workspace = await getWorkspaceContext(user);
+  if (!workspace?.id) {
+    return { ok: true, participants: [fallback], selectedParticipantId: fallback.id, source: "workspace-fallback" };
+  }
+  try {
+    const rows = await supabaseRest("participants", {
+      searchParams: {
+        workspace_id: `eq.${workspace.id}`,
+        status: "neq.archived",
+        order: "display_name.asc",
+        limit: "100",
+      },
+      accessToken: user.accessToken,
+    });
+    const participants = rows
+      .map((row) => ({
+        id: String(row.participant_id || "").trim(),
+        name: String(row.display_name || row.participant_id || "").trim(),
+        email: String(row.email || "").trim(),
+        status: String(row.status || "active").trim() || "active",
+        source: "workspace",
+      }))
+      .filter((item) => item.id && item.name);
+    if (!participants.length) {
+      return { ok: true, participants: [fallback], selectedParticipantId: fallback.id, workspaceId: workspace.id, source: "empty-workspace-fallback" };
+    }
+    return {
+      ok: true,
+      participants,
+      selectedParticipantId: participants[0].id,
+      workspaceId: workspace.id,
+      source: "workspace",
+    };
+  } catch (error) {
+    return {
+      ok: true,
+      participants: [fallback],
+      selectedParticipantId: fallback.id,
+      source: "participants-fallback",
+      warning: sanitizeDiagnosticError(error),
+    };
   }
 }
 

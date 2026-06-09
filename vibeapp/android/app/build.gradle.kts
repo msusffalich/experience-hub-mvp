@@ -19,7 +19,7 @@ val hasPilotReleaseSigning =
     }
 
 android {
-    namespace = "io.vibeapp.mobile"
+    namespace = "com.miguelsusffalich.vibeapp"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -29,7 +29,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "io.vibeapp.mobile"
+        applicationId = "com.miguelsusffalich.vibeapp"
         // Health Connect / paquete `health` exige minSdk 26 (nota 559).
         minSdk = maxOf(26, flutter.minSdkVersion)
         targetSdk = flutter.targetSdkVersion

@@ -4,5 +4,9 @@
 <dict>
 	<key>com.apple.developer.healthkit</key>
 	<true/>
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:experience-hub-web-production.up.railway.app</string>
+	</array>
 </dict>
 </plist>

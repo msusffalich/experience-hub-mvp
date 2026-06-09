@@ -84,6 +84,11 @@ void main() {
 
   test('Native payloads preserve event, media, location, and biometric context',
       () {
+    const participant = VibeParticipant(
+      id: 'grupo-familia',
+      name: 'Familia',
+      email: 'familia@example.com',
+    );
     final tempDir = Directory.systemTemp.createTempSync('vibeapp-contract-');
     addTearDown(() {
       if (tempDir.existsSync()) tempDir.deleteSync(recursive: true);
@@ -101,7 +106,8 @@ void main() {
         File('${tempDir.path}${Platform.pathSeparator}export.zip')
           ..writeAsBytesSync([80, 75, 3, 4, 1, 2, 3, 4]);
 
-    final session = ActiveExperienceSession.start('Paseo de prueba');
+    final session =
+        ActiveExperienceSession.start('Paseo de prueba', participant: participant);
     session.addTextEvent('Llegada al parque.');
     session.addAttachmentEvent(NativeAttachmentDraft.fromFilePath(
       imageFile.path,
@@ -114,6 +120,9 @@ void main() {
     expect(validation.canSync, isTrue);
 
     final sessionPayload = sessionItem.toExperiencePayload();
+    expect(sessionPayload['people'], participant.name);
+    expect(sessionPayload['pilotParticipantId'], participant.id);
+    expect(sessionPayload['metadata']['participantName'], participant.name);
     expect(sessionPayload['metadata']['syncContract'], 'vibeapp-session-v1');
     expect(sessionPayload['events'], isA<List>());
     expect((sessionPayload['events'] as List).length, 2);
@@ -125,15 +134,20 @@ void main() {
     expect(attachment['metadata']['linkedEventId'], attachment['eventId']);
     expect(attachment['metadata']['eventOrder'], greaterThan(0));
 
-    final locationItem = CaptureQueueItem.location(LocationDraft(
-      latitude: 38.8895,
-      longitude: -77.0353,
-      accuracy: 12,
-    ));
+    final locationItem = CaptureQueueItem.location(
+      LocationDraft(
+        latitude: 38.8895,
+        longitude: -77.0353,
+        accuracy: 12,
+      ),
+      participant: participant,
+    );
     final locationPayload = locationItem.toExperiencePayload();
+    expect(locationPayload['pilotParticipantId'], participant.id);
     expect(locationPayload['objective'], 'Ubicacion capturada desde Vibeapp');
     expect(locationPayload['metadata']['payloadType'], 'location');
     expect(locationPayload['metadata']['accuracyMeters'], 12);
+    expect(locationItem.toIntegrationSignal()['participantId'], participant.id);
 
     final biometricSummary = BiometricImportSummary.fromRawText(
       biometricFile.readAsStringSync(),
@@ -147,9 +161,11 @@ void main() {
       analysisText: biometricSummary.analysisText,
     );
     final biometricItem =
-        CaptureQueueItem.biometric(biometricAttachment, biometricSummary);
+        CaptureQueueItem.biometric(
+            biometricAttachment, biometricSummary, participant: participant);
     final biometricPayload = biometricItem.toExperiencePayload();
     expect(biometricPayload['category'], 'Salud');
+    expect(biometricPayload['pilotParticipantName'], participant.name);
     expect(biometricPayload['metadata']['syncContract'],
         'vibeapp-biometric-file-v1');
     expect(biometricPayload['metadata']['biometricImport']['recordCount'], 1);
@@ -335,11 +351,17 @@ void main() {
       apiBaseUrl: 'https://vibe.test',
       accessToken: 'test-token',
     );
+    const participant = VibeParticipant(
+      id: 'grupo-trabajo',
+      name: 'Trabajo',
+      email: 'trabajo@example.com',
+    );
     final client = ExperienceSyncClient(settings, transport: transport);
     final attachmentFile =
         File('${tempDir.path}${Platform.pathSeparator}nota.txt')
           ..writeAsStringSync('Contenido de prueba');
-    final session = ActiveExperienceSession.start('Contrato sync');
+    final session =
+        ActiveExperienceSession.start('Contrato sync', participant: participant);
     session.addTextEvent('Evento con documento.');
     session.addAttachmentEvent(NativeAttachmentDraft.fromFilePath(
       attachmentFile.path,
@@ -360,6 +382,7 @@ void main() {
         startAt: DateTime.utc(2026, 5, 27, 20),
         endAt: DateTime.utc(2026, 5, 27, 21),
       ),
+      participant: participant,
     ));
     expect(agendaResult.ok, isTrue);
     expect(agendaResult.remoteId, 'remote-agenda-1');
@@ -381,6 +404,8 @@ void main() {
     expect(experienceRequest['idempotencyKey'],
         startsWith('vibeapp-capture:experience-session:'));
     expect(experienceBody['metadata']['syncContract'], 'vibeapp-session-v1');
+    expect(experienceBody['pilotParticipantId'], participant.id);
+    expect(experienceBody['people'], participant.name);
     expect(experienceBody['metadata']['idempotencyKey'],
         experienceRequest['idempotencyKey']);
     expect((experienceBody['events'] as List).length, 2);
@@ -397,13 +422,16 @@ void main() {
     expect(agendaRequest['idempotencyKey'],
         startsWith('vibeapp-agenda:native-agenda-'));
     expect(agendaBody['idempotencyKey'], agendaRequest['idempotencyKey']);
+    expect(agendaBody['participantId'], participant.id);
+    expect(agendaBody['metadata']['participantName'], participant.name);
     expect(agendaBody['payloadType'], 'calendar');
     expect(agendaBody['payload']['title'], 'Cena de prueba');
     expect(
         agendaBody['metadata']['syncContract'], 'vibeapp-ingest-calendar-v1');
 
-    final textResult =
-        await client.syncItem(CaptureQueueItem.text('Nota rapida validada'));
+    final textResult = await client.syncItem(
+      CaptureQueueItem.text('Nota rapida validada', participant: participant),
+    );
     expect(textResult.ok, isTrue);
     expect(textResult.remoteId, 'remote-ingest-1');
     final textRequest = transport.requests.firstWhere((item) =>
@@ -411,6 +439,7 @@ void main() {
         (item['payload'] as Map<String, dynamic>)['payloadType'] == 'text');
     final textBody = textRequest['payload'] as Map<String, dynamic>;
     expect(textRequest['authorization'], 'Bearer test-token');
+    expect(textBody['participantId'], participant.id);
     expect(textBody['payload']['text'], 'Nota rapida validada');
     expect(textBody['metadata']['syncContract'], 'vibeapp-ingest-text-v1');
   });

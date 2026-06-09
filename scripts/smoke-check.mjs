@@ -327,7 +327,7 @@ assert(files.packageJson.includes("\"verify:flutter\"") && files.packageJson.inc
 assert(files.packageJson.includes("npm run verify:ios") && files.vibeappPackage.includes("Android") && files.vibeappMain.includes("Vibeapp"), "Unified pilot verification must include iOS readiness while Android packaging remains available.");
 assert(files.flutterVerify.includes("flutter analyze") || files.flutterVerify.includes('["analyze"') || files.flutterVerify.includes('"analyze"'), "Flutter verifier must run flutter analyze.");
 assert(files.flutterVerify.includes("flutter test") || files.flutterVerify.includes('["test"') || files.flutterVerify.includes('"test"'), "Flutter verifier must run flutter test.");
-assert(files.flutterVerify.includes("io.vibeapp.mobile") && files.flutterVerify.includes("VIBE_REBUILD_ANDROID"), "Flutter verifier must validate the Android package contract and optional rebuild path.");
+assert(files.flutterVerify.includes("com.miguelsusffalich.vibeapp") && files.flutterVerify.includes("VIBE_REBUILD_ANDROID"), "Flutter verifier must validate the Android package contract and optional rebuild path.");
 assert(files.vibeappTest.includes("Native payloads preserve event, media, location, and biometric context"), "Flutter tests must validate the Vibeapp payload contract without a physical device.");
 assert(files.vibeappTest.includes("Native sync client sends media, experience, and ingest requests"), "Flutter tests must validate the Vibeapp sync client against a local HTTP server.");
 assert(files.vibeappTest.includes("Native sync client reports media and agenda failures clearly"), "Flutter tests must validate clear Vibeapp sync failure handling.");

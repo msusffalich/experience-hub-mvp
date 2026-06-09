@@ -3,7 +3,7 @@
 ## Estado actual
 
 - SDK Android, JDK 21, platform-tools, NDK, CMake y licencias estan instalados localmente.
-- El paquete Android piloto es `io.vibeapp.mobile`.
+- El paquete Android vigente es `com.miguelsusffalich.vibeapp`.
 - APK debug verificado: `vibeapp/build/app/outputs/flutter-apk/app-debug.apk`.
 - APK release firmado verificado para instalacion directa: `vibeapp/build/app/outputs/flutter-apk/app-release.apk`.
 - App Bundle release firmado verificado para Play Console: `vibeapp/build/app/outputs/bundle/release/app-release.aab`.
@@ -97,7 +97,7 @@ Resultado esperado: `Verifies`, `Verified using v2 scheme: true`, un firmante y 
 
 ## Siguiente paso de piloto
 
-1. Confirmar que `io.vibeapp.mobile` sera el identificador de paquete para pruebas.
+1. Confirmar que `com.miguelsusffalich.vibeapp` sera el identificador de paquete para pruebas.
 2. Instalar el APK release firmado en un Android fisico para prueba rapida, o subir el AAB firmado a una pista interna de Play Console.
 3. Validar inicio de sesion, captura de texto, foto, video, audio, ubicacion y cola offline.
 4. Confirmar en la PWA que la experiencia creada desde Vibeapp aparece en Libreria, Activos, Reportes, Hallazgos y Publicaciones.

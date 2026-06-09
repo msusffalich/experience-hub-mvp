@@ -17,8 +17,8 @@ import 'package:speech_to_text/speech_recognition_error.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
-const String vibeappBuildLabel = 'Vibeapp 563';
-const String vibeappReleaseLabel = '20260609-vibeapp-vfixes-sync-563';
+const String vibeappBuildLabel = 'Vibeapp 566';
+const String vibeappReleaseLabel = '20260609-vibeapp-remove-clio-566';
 
 /// Notificador global del idioma de la app. Es la unica fuente de verdad para
 /// el idioma activo: al cambiarlo se reconstruye todo el arbol (incluido el
@@ -37,14 +37,6 @@ final ValueNotifier<ThemeMode> themeModeNotifier =
 /// modo que los widgets sin estado pueden leer `tr` directamente en su build sin
 /// necesidad de recibir AppStrings por constructor.
 AppStrings get tr => AppStrings(appLanguageNotifier.value);
-
-/// Clave de IA opcional inyectada en tiempo de compilacion con
-/// `--dart-define=CLAUDE_API_KEY=...`. No se escribe en el codigo fuente ni en
-/// los handoffs; sirve para precargar la clave en el build sin que el usuario la
-/// pegue en el dispositivo. Si esta vacia, se usa la clave que el usuario guarde
-/// en Ajustes.
-const String kBuildClaudeKey =
-    String.fromEnvironment('CLAUDE_API_KEY', defaultValue: '');
 
 /// Token personal de la Oura Cloud API v2, inyectado en el build con
 /// --dart-define=OURA_TOKEN=...  (puente; igual patron que la clave de Claude).
@@ -768,26 +760,26 @@ class AppStrings {
         'Bonjour, je suis V. Je suis prete a vous aider.',
       );
   String get claudeKeyLabel =>
-      _s('Clave de IA (Claude)', 'AI key (Claude)', 'Cle IA (Claude)');
+      _s('IA de Vibe', 'Vibe AI', 'IA de Vibe');
   String get claudeKeyHint => _s(
-        'Pega tu clave de Anthropic para que V responda preguntas.',
-        'Paste your Anthropic key so V can answer questions.',
-        'Collez votre clé Anthropic pour que V réponde aux questions.',
+        'La IA se configura en el servidor. El telefono no guarda claves.',
+        'AI is configured on the server. The phone stores no keys.',
+        'L IA est configuree sur le serveur. Le telephone ne garde aucune cle.',
       );
   String get claudeKeySaved =>
-      _s('Clave guardada.', 'Key saved.', 'Cle enregistree.');
+      _s('Estado de IA actualizado.', 'AI status refreshed.', 'Etat IA actualise.');
   String get aiStatusActive => _s('IA activa: V responde preguntas.',
       'AI active: V answers questions.', 'IA active: V répond aux questions.');
   String get aiStatusNoKey => _s(
-        'IA sin clave: pega tu clave de Anthropic y pulsa Guardar.',
-        'AI has no key: paste your Anthropic key and tap Save.',
-        'IA sans clé: collez votre clé Anthropic et appuyez sur Enregistrer.',
+        'IA pendiente: entra con tu cuenta y verifica que Railway tenga la clave del servidor.',
+        'AI pending: sign in and verify the server key in Railway.',
+        'IA en attente: connectez-vous et verifiez la cle serveur dans Railway.',
       );
   String get aiTestButton => _s('Probar IA', 'Test AI', 'Tester l\'IA');
   String get aiTestOk => _s('IA OK:', 'AI OK:', 'IA OK:');
   String get aiTestFail => _s('Fallo IA:', 'AI failed:', 'Echec IA:');
-  String get aiTestNoKey => _s('Falta la clave de IA.', 'AI key is missing.',
-      'Cle IA manquante.');
+  String get aiTestNoKey => _s('Falta sesion o IA del servidor.',
+      'Missing session or server AI.', 'Session ou IA serveur manquante.');
 
   // --- Salud / wearables ---
   String get healthTitle => _s('Salud', 'Health', 'Santé');
@@ -872,27 +864,6 @@ class AppStrings {
       _s('Audio transcrito a texto.', 'Audio transcribed.', 'Audio transcrit.');
   String get transcribeFail => _s('No se pudo transcribir:',
       'Could not transcribe:', 'Transcription impossible:');
-  // --- Conexion CLIO (MCP) ---
-  String get clioTitle => _s('Conexión con CLIO (beta)', 'CLIO connection (beta)',
-      'Connexion CLIO (beta)');
-  String get clioSubtitle => _s(
-        'Conecta V al servidor MCP de CLIO para usar sus herramientas y, más adelante, las gafas. Pide a tu hijo la URL del MCP y un token.',
-        'Connect V to CLIO\'s MCP server to use its tools and, later, the glasses. Ask for the MCP URL and a token.',
-        'Connectez V au serveur MCP de CLIO pour ses outils et, plus tard, les lunettes. Demandez l\'URL MCP et un jeton.',
-      );
-  String get clioUrlLabel =>
-      _s('URL del servidor MCP', 'MCP server URL', 'URL du serveur MCP');
-  String get clioTokenLabel => _s('Token de CLIO', 'CLIO token', 'Jeton CLIO');
-  String get clioTestBtn =>
-      _s('Probar conexión', 'Test connection', 'Tester la connexion');
-  String get clioSaved => _s('Conexión CLIO guardada.', 'CLIO connection saved.',
-      'Connexion CLIO enregistrée.');
-  String get clioNeedsConfig => _s('Falta la URL del MCP o el token de CLIO.',
-      'Missing MCP URL or CLIO token.', 'URL MCP ou jeton CLIO manquant.');
-  String clioTestOk(int n) => _s('Conectado. $n herramientas disponibles.',
-      'Connected. $n tools available.', 'Connecté. $n outils disponibles.');
-  String get clioTestFail =>
-      _s('No se pudo conectar:', 'Could not connect:', 'Connexion impossible:');
   // --- Gafas inteligentes (Meta / Oakley) ---
   String get glassesTitle =>
       _s('Gafas inteligentes', 'Smart glasses', 'Lunettes intelligentes');
@@ -1529,6 +1500,130 @@ class AppStrings {
         'Vibeapp capture vos expériences et les synchronise avec votre compte. '
             'Ce guide explique chaque section et comment tirer le meilleur de V.',
       );
+  String get manualOverviewTitle =>
+      _s('¿Qué es Vibeapp?', 'What is Vibeapp?', 'Qu\'est-ce que Vibeapp?');
+  String get manualOverviewBody => _s(
+        'Vibeapp es tu compañero para capturar experiencias —notas, fotos, vídeo, audio, ubicación y salud— y organizarlas. Su centro es V, un asistente de voz que controla la app y responde con inteligencia. Captura sin manos, pregunta lo que quieras y todo se sincroniza con tu cuenta.\n\nAbajo tienes guías paso a paso por función.',
+        'Vibeapp is your companion to capture experiences —notes, photos, video, audio, location and health— and organize them. At its center is V, a voice assistant that controls the app and answers intelligently. Capture hands-free, ask anything, and everything syncs to your account.\n\nBelow are step-by-step guides by function.',
+        'Vibeapp est votre compagnon pour capturer des expériences —notes, photos, vidéo, audio, position et santé— et les organiser. Au centre, V, un assistant vocal qui pilote l\'app et répond intelligemment. Capturez mains libres, demandez tout, et tout se synchronise avec votre compte.\n\nCi-dessous, des guides pas à pas par fonction.',
+      );
+
+  /// Guías estilo CLIO: cada función con pasos numerados.
+  List<ManualGuide> get manualGuides => [
+        ManualGuide(Icons.record_voice_over_outlined,
+            _s('Hablar con V', 'Talk to V', 'Parler avec V'), [
+          _s('Toca el micrófono o "Hablar con V" para activarla.',
+              'Tap the microphone or "Talk to V" to activate it.',
+              'Touchez le micro ou "Parler avec V" pour l\'activer.'),
+          _s('Habla con naturalidad: pide acciones ("saca una foto", "ve a la agenda") o haz preguntas.',
+              'Speak naturally: ask for actions ("take a photo", "go to the agenda") or ask questions.',
+              'Parlez naturellement: demandez des actions ("prends une photo") ou posez des questions.'),
+          _s('V responde por voz y recuerda la conversación, así que puedes encadenar ("y tradúcelo").',
+              'V replies by voice and remembers the conversation, so you can chain ("and translate it").',
+              'V répond par la voix et se souvient de la conversation, vous pouvez enchaîner.'),
+          _s('Para que deje de escuchar, di "desactivar V".',
+              'To stop it listening, say "stop V".',
+              'Pour qu\'elle arrête d\'écouter, dites "désactiver V".'),
+        ]),
+        ManualGuide(Icons.center_focus_strong_outlined,
+            _s('Analizar una foto', 'Analyze a photo', 'Analyser une photo'), [
+          _s('Toca "Analizar foto con V" y elige tomar una foto o una de tu galería.',
+              'Tap "Analyze photo with V" and choose to take a photo or pick one from your gallery.',
+              'Touchez "Analyser photo avec V" et choisissez prendre une photo ou en choisir une.'),
+          _s('Apunta a un letrero, comida, objeto, lugar u obra.',
+              'Point at a sign, food, object, place or artwork.',
+              'Visez un panneau, un plat, un objet, un lieu ou une œuvre.'),
+          _s('V lee, traduce o explica al instante, en voz.',
+              'V reads, translates or explains instantly, out loud.',
+              'V lit, traduit ou explique à voix haute, instantanément.'),
+          _s('Sigue preguntando: "tradúcelo", "¿qué contiene?", "¿cuál es su historia?".',
+              'Keep asking: "translate it", "what does it contain?", "what is its history?".',
+              'Continuez: "traduis", "que contient-il?", "quelle est son histoire?".'),
+        ]),
+        ManualGuide(Icons.bolt_outlined,
+            _s('Capturar', 'Capture', 'Capturer'), [
+          _s('En Capturar elige nota, foto, vídeo, audio o ubicación.',
+              'In Capture choose note, photo, video, audio or location.',
+              'Dans Capturer, choisissez note, photo, vidéo, audio ou position.'),
+          _s('Lo que capturas se guarda primero en tu teléfono.',
+              'What you capture is saved on your phone first.',
+              'Vos captures sont d\'abord enregistrées sur le téléphone.'),
+          _s('Con sesión y conexión, se sincroniza con tu cuenta.',
+              'With a session and connection, it syncs to your account.',
+              'Avec session et connexion, tout se synchronise avec votre compte.'),
+          _s('En una nota puedes pulsar "Mejorar con IA" para ordenarla y titularla.',
+              'On a note you can tap "Improve with AI" to tidy and title it.',
+              'Sur une note, touchez "Améliorer avec l\'IA" pour l\'organiser.'),
+        ]),
+        ManualGuide(Icons.auto_awesome_motion_outlined,
+            _s('Crear una experiencia', 'Create an experience',
+                'Créer une expérience'), [
+          _s('Di "V, crea la experiencia ___" (opcional: "de 6 horas").',
+              'Say "V, create the experience ___" (optional: "for 6 hours").',
+              'Dites "V, crée l\'expérience ___" (option: "de 6 heures").'),
+          _s('Captura notas, fotos o audios: quedan agrupados en esa experiencia.',
+              'Capture notes, photos or audio: they group under that experience.',
+              'Capturez notes, photos ou audios: ils sont regroupés dans l\'expérience.'),
+          _s('Di "cierra la experiencia" para terminarla y sincronizarla.',
+              'Say "close the experience" to end and sync it.',
+              'Dites "ferme l\'expérience" pour la terminer et la synchroniser.'),
+        ]),
+        ManualGuide(Icons.favorite_border,
+            _s('Salud y wearables', 'Health and wearables',
+                'Santé et wearables'), [
+          _s('Cuenta → Salud → "Conectar salud" (acepta Apple Salud una sola vez).',
+              'Account → Health → "Connect health" (grant Apple Health once).',
+              'Compte → Santé → "Connecter la santé" (autorisez Apple Santé une fois).'),
+          _s('Pega tu token de Oura para añadir sueño, preparación y HRV del anillo.',
+              'Paste your Oura token to add sleep, readiness and HRV from the ring.',
+              'Collez votre jeton Oura pour ajouter sommeil, préparation et VFC.'),
+          _s('Pregunta a V "¿cuántos pasos llevo?" o "¿cómo dormí?".',
+              'Ask V "how many steps?" or "how did I sleep?".',
+              'Demandez à V "combien de pas?" ou "comment ai-je dormi?".'),
+          _s('Se envía a tu cuenta una vez al día (para VibePWA).',
+              'It is sent to your account once a day (for VibePWA).',
+              'Envoyé à votre compte une fois par jour (pour VibePWA).'),
+        ]),
+        ManualGuide(Icons.cloud_sync_outlined,
+            _s('Sincronización y cuenta', 'Sync and account',
+                'Synchronisation et compte'), [
+          _s('Entra con tu cuenta Vibe en la pestaña Cuenta.',
+              'Sign in with your Vibe account in the Account tab.',
+              'Connectez-vous avec votre compte Vibe dans l\'onglet Compte.'),
+          _s('Lo capturado se guarda y se sube cuando hay conexión.',
+              'Captures are saved and uploaded when there is a connection.',
+              'Les captures sont enregistrées et envoyées quand il y a une connexion.'),
+          _s('Di "V, sincroniza" y te confirma cuántas capturas se enviaron.',
+              'Say "V, sync" and it confirms how many captures were sent.',
+              'Dites "V, synchronise" et elle confirme combien ont été envoyées.'),
+        ]),
+        ManualGuide(Icons.tune_outlined,
+            _s('Idioma, voz y tema', 'Language, voice and theme',
+                'Langue, voix et thème'), [
+          _s('Cuenta → Asistente V: idioma (español/inglés/francés) y voz (hombre/mujer).',
+              'Account → V assistant: language (Spanish/English/French) and voice (male/female).',
+              'Compte → Assistant V: langue (es/en/fr) et voix (homme/femme).'),
+          _s('Tema: Sistema, Claro u Oscuro.',
+              'Theme: System, Light or Dark.',
+              'Thème: Système, Clair ou Sombre.'),
+          _s('Usa "Probar voz" para escuchar cómo suena V.',
+              'Use "Test voice" to hear how V sounds.',
+              'Utilisez "Tester la voix" pour écouter V.'),
+        ]),
+        ManualGuide(Icons.help_outline,
+            _s('Solución de problemas', 'Troubleshooting', 'Dépannage'), [
+          _s('Si V no te escucha, revisa el permiso de micrófono y vuelve a tocar el micro.',
+              'If V can\'t hear you, check the microphone permission and tap the mic again.',
+              'Si V ne vous entend pas, vérifiez le micro et touchez-le à nouveau.'),
+          _s('Si no responde preguntas, confirma la clave de IA en Cuenta.',
+              'If it doesn\'t answer questions, confirm the AI key in Account.',
+              'Si elle ne répond pas, confirmez la clé IA dans Compte.'),
+          _s('Si algo no sincroniza, revisa tu sesión y el backend en Estado.',
+              'If something doesn\'t sync, check your session and the backend in Status.',
+              'Si la synchro échoue, vérifiez la session et le backend dans État.'),
+        ]),
+      ];
+
   String get manualSectionsTitle =>
       _s('Las secciones', 'The sections', 'Les sections');
   String get manualSectionsBody => _s(
@@ -1951,23 +2046,20 @@ class IntentEngine {
   }
 }
 
-/// Cliente de IA INDEPENDIENTE del backend de Vibe. Usa su propio [HttpClient]
-/// contra la API publica de Anthropic. Nunca lee el token de sesion ni llama a
-/// ExperienceSyncClient/VibeAuthClient.
+/// Cliente de IA de Vibeapp. Para producto final NO llama al proveedor desde el
+/// telefono ni pide claves al usuario: usa Railway como proxy autenticado.
 class ClaudeAssistantClient {
   ClaudeAssistantClient(
-    this.apiKey, {
+    this.settings, {
     this.model = 'claude-haiku-4-5',
-    this.baseUrl = 'https://api.anthropic.com',
     this.maxTokens = 600,
   });
 
-  final String apiKey;
+  final SyncSettings settings;
   final String model;
-  final String baseUrl;
   final int maxTokens;
 
-  bool get isConfigured => apiKey.trim().isNotEmpty;
+  bool get isConfigured => settings.hasSession;
 
   String _langName(AppLanguage lang) => switch (lang) {
         AppLanguage.spanish => 'espanol',
@@ -1982,53 +2074,40 @@ class ClaudeAssistantClient {
         '${two(now.hour)}:${two(now.minute)}';
   }
 
-  /// POST generico a /v1/messages. Devuelve el texto de la respuesta.
+  /// POST generico al backend de Vibe. Devuelve el texto de la respuesta.
   /// [history] es el contexto de conversacion previo (lista de {role, text} con
   /// roles 'user'/'assistant' alternados), para que V recuerde el hilo.
   Future<String> _post(String system, String userText,
       {int? maxTok, List<Map<String, String>> history = const []}) async {
+    if (!isConfigured) {
+      throw const HttpException('Entra con tu cuenta de Vibe para usar la IA.');
+    }
     final client = HttpClient();
     client.connectionTimeout = const Duration(seconds: 10);
     try {
-      final uri = Uri.parse('$baseUrl/v1/messages');
+      final uri = Uri.parse(settings.apiBaseUrl)
+          .resolve('/api/mobile/assistant/message');
       final request = await client.postUrl(uri);
       request.headers.set('content-type', 'application/json');
-      request.headers.set('x-api-key', apiKey.trim());
-      request.headers.set('anthropic-version', '2023-06-01');
-      final messages = <Map<String, dynamic>>[
-        for (final h in history)
-          {'role': h['role'], 'content': h['text'] ?? ''},
-        {'role': 'user', 'content': userText},
-      ];
+      request.headers
+          .set(HttpHeaders.authorizationHeader, 'Bearer ${settings.accessToken}');
       final payload = <String, dynamic>{
-        'model': model,
-        'max_tokens': maxTok ?? maxTokens,
         'system': system,
-        'messages': messages,
+        'text': userText,
+        'history': history,
+        'maxTokens': maxTok ?? maxTokens,
       };
       request.add(utf8.encode(jsonEncode(payload)));
       final response =
           await request.close().timeout(const Duration(seconds: 30));
       final body = await response.transform(utf8.decoder).join();
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        String detail = body;
-        try {
-          final err = jsonDecode(body);
-          if (err is Map &&
-              err['error'] is Map &&
-              err['error']['message'] is String) {
-            detail = err['error']['message'] as String;
-          }
-        } catch (_) {}
-        throw HttpException('${response.statusCode}: $detail');
+        throw HttpException(
+            '${response.statusCode}: ${serverMessageFromBody(body)}');
       }
       final decoded = jsonDecode(body);
-      final content = decoded is Map ? decoded['content'] : null;
-      if (content is List && content.isNotEmpty) {
-        final first = content.first;
-        if (first is Map && first['text'] is String) {
-          return (first['text'] as String).trim();
-        }
+      if (decoded is Map && decoded['text'] is String) {
+        return (decoded['text'] as String).trim();
       }
       throw const HttpException('Respuesta de IA sin texto.');
     } finally {
@@ -2088,14 +2167,18 @@ class ClaudeAssistantClient {
     required AppLanguage lang,
     String? question,
   }) async {
+    if (!isConfigured) {
+      throw const HttpException('Entra con tu cuenta de Vibe para analizar fotos.');
+    }
     final client = HttpClient();
     client.connectionTimeout = const Duration(seconds: 10);
     try {
-      final uri = Uri.parse('$baseUrl/v1/messages');
+      final uri = Uri.parse(settings.apiBaseUrl)
+          .resolve('/api/mobile/assistant/vision');
       final request = await client.postUrl(uri);
       request.headers.set('content-type', 'application/json');
-      request.headers.set('x-api-key', apiKey.trim());
-      request.headers.set('anthropic-version', '2023-06-01');
+      request.headers
+          .set(HttpHeaders.authorizationHeader, 'Bearer ${settings.accessToken}');
       final system =
           'Eres V, un asistente visual dentro de Vibeapp. Analiza la imagen y '
           'responde de forma breve, clara y util en ${_langName(lang)}. '
@@ -2110,49 +2193,23 @@ class ClaudeAssistantClient {
           ? question.trim()
           : 'Describe esta imagen de forma breve y util.';
       final payload = <String, dynamic>{
-        'model': model,
-        'max_tokens': 600,
         'system': system,
-        'messages': [
-          {
-            'role': 'user',
-            'content': [
-              {
-                'type': 'image',
-                'source': {
-                  'type': 'base64',
-                  'media_type': mediaType,
-                  'data': base64Encode(bytes),
-                },
-              },
-              {'type': 'text', 'text': userText},
-            ],
-          },
-        ],
+        'question': userText,
+        'mediaType': mediaType,
+        'data': base64Encode(bytes),
+        'maxTokens': 600,
       };
       request.add(utf8.encode(jsonEncode(payload)));
       final response =
           await request.close().timeout(const Duration(seconds: 45));
       final body = await response.transform(utf8.decoder).join();
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        String detail = body;
-        try {
-          final err = jsonDecode(body);
-          if (err is Map &&
-              err['error'] is Map &&
-              err['error']['message'] is String) {
-            detail = err['error']['message'] as String;
-          }
-        } catch (_) {}
-        throw HttpException('${response.statusCode}: $detail');
+        throw HttpException(
+            '${response.statusCode}: ${serverMessageFromBody(body)}');
       }
       final decoded = jsonDecode(body);
-      final content = decoded is Map ? decoded['content'] : null;
-      if (content is List && content.isNotEmpty) {
-        final first = content.first;
-        if (first is Map && first['text'] is String) {
-          return (first['text'] as String).trim();
-        }
+      if (decoded is Map && decoded['text'] is String) {
+        return (decoded['text'] as String).trim();
       }
       throw const HttpException('Respuesta de vision sin texto.');
     } finally {
@@ -2184,88 +2241,6 @@ class ClaudeAssistantClient {
     }
     // Si no vino JSON, lo tratamos como respuesta libre.
     return {'action': 'answer', 'note': '', 'answer': raw};
-  }
-}
-
-/// Cliente MCP (Model Context Protocol) hacia CLIO — BORRADOR. Subsistema
-/// independiente del backend de Vibe: su propio HttpClient + Bearer token contra
-/// el servidor MCP de CLIO (p.ej. https://mcp.clioapp.io). Habla JSON-RPC sobre
-/// HTTP (Streamable HTTP); tolera respuesta JSON o SSE. Cuando Miguel facilite
-/// el endpoint + token reales, se afina el handshake. NO toca el backend de Vibe.
-class VibeClioClient {
-  VibeClioClient(this.baseUrl, this.token);
-
-  final String baseUrl; // URL del servidor MCP de CLIO
-  final String token; // Bearer token / access token
-
-  bool get isConfigured =>
-      baseUrl.trim().isNotEmpty && token.trim().isNotEmpty;
-
-  /// POST JSON-RPC al endpoint MCP. Devuelve el `result` decodificado.
-  Future<dynamic> _rpc(String method, [Map<String, dynamic>? params]) async {
-    final client = HttpClient();
-    client.connectionTimeout = const Duration(seconds: 10);
-    try {
-      final request = await client.postUrl(Uri.parse(baseUrl.trim()));
-      request.headers.set('content-type', 'application/json');
-      request.headers.set('accept', 'application/json, text/event-stream');
-      request.headers.set('authorization', 'Bearer ${token.trim()}');
-      final payload = <String, dynamic>{
-        'jsonrpc': '2.0',
-        'id': 1,
-        'method': method,
-        if (params != null) 'params': params,
-      };
-      request.add(utf8.encode(jsonEncode(payload)));
-      final response =
-          await request.close().timeout(const Duration(seconds: 25));
-      final body = await response.transform(utf8.decoder).join();
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        throw HttpException('${response.statusCode}: $body');
-      }
-      // La respuesta puede venir como JSON puro o como SSE (event-stream).
-      final jsonText = _extractJsonRpc(body);
-      final decoded = jsonDecode(jsonText);
-      if (decoded is Map && decoded['error'] != null) {
-        throw HttpException('MCP error: ${jsonEncode(decoded['error'])}');
-      }
-      return decoded is Map ? decoded['result'] : decoded;
-    } finally {
-      client.close(force: true);
-    }
-  }
-
-  /// Extrae el primer objeto JSON-RPC de una respuesta JSON o SSE.
-  String _extractJsonRpc(String body) {
-    final trimmed = body.trim();
-    if (trimmed.startsWith('{') || trimmed.startsWith('[')) return trimmed;
-    // SSE: lineas "data: {...}"
-    for (final line in const LineSplitter().convert(body)) {
-      final l = line.trim();
-      if (l.startsWith('data:')) {
-        final d = l.substring(5).trim();
-        if (d.startsWith('{')) return d;
-      }
-    }
-    return trimmed;
-  }
-
-  /// Lista las herramientas que expone el MCP de CLIO. Devuelve sus nombres.
-  Future<List<String>> listTools() async {
-    final result = await _rpc('tools/list');
-    final tools = (result is Map ? result['tools'] : null);
-    if (tools is List) {
-      return tools
-          .map((t) => t is Map ? '${t['name']}' : '$t')
-          .where((s) => s.isNotEmpty)
-          .toList();
-    }
-    return const [];
-  }
-
-  /// Invoca una herramienta del MCP de CLIO.
-  Future<dynamic> callTool(String name, Map<String, dynamic> args) {
-    return _rpc('tools/call', {'name': name, 'arguments': args});
   }
 }
 
@@ -2341,8 +2316,8 @@ enum GlassesStatus { unavailable, disconnected, connecting, connected }
 /// Device Access Toolkit a traves de [MethodChannel]/[EventChannel]. Mientras el
 /// lado NATIVO no este implementado, las llamadas lanzan MissingPluginException
 /// y se reportan como `unavailable` (la UI lo muestra como "pendiente del
-/// plugin"). Cuando llegue el plugin de CLIO (o uno propio sobre Meta DAT), solo
-/// hay que implementar el lado nativo con estos mismos nombres de canal/metodos.
+/// plugin"). Cuando se integre el SDK de Meta DAT, solo hay que implementar el
+/// lado nativo con estos mismos nombres de canal/metodos.
 class VibeGlasses {
   static const MethodChannel _channel = MethodChannel('vibeapp/glasses');
   static const EventChannel _events = EventChannel('vibeapp/glasses/events');
@@ -2571,7 +2546,7 @@ class VibeOura {
 
 /// Lectura nativa de salud/wearables via el paquete `health`. INDEPENDIENTE del
 /// backend de Vibe. Solo lectura (READ). En iOS usa HealthKit; en Android,
-/// Health Connect. Las gafas Meta/Oakley NO van por aqui (van por CLIO).
+/// Health Connect. Las gafas Meta/Oakley NO van por aqui (van por Meta DAT).
 class VibeHealth {
   final Health _health = Health();
   bool _configured = false;
@@ -2765,8 +2740,6 @@ class PersistedAssistantSettings {
     required this.ouraToken,
     required this.healthEnabled,
     required this.lastHealthSyncDay,
-    required this.clioMcpUrl,
-    required this.clioToken,
     required this.onboardingDone,
     required this.transcribeKey,
     required this.themeMode,
@@ -2782,10 +2755,6 @@ class PersistedAssistantSettings {
   /// Ultimo dia (yyyy-mm-dd) en que se envio el resumen de salud al servidor.
   /// Evita duplicar la evidencia biometrica diaria en cada apertura/refresco.
   final String lastHealthSyncDay;
-
-  /// Conexion a CLIO via MCP (borrador): URL del servidor MCP y token. Local.
-  final String clioMcpUrl;
-  final String clioToken;
 
   /// Si el usuario ya vio el onboarding de bienvenida.
   final bool onboardingDone;
@@ -2805,8 +2774,6 @@ class PersistedAssistantSettings {
         'ouraToken': ouraToken,
         'healthEnabled': healthEnabled,
         'lastHealthSyncDay': lastHealthSyncDay,
-        'clioMcpUrl': clioMcpUrl,
-        'clioToken': clioToken,
         'onboardingDone': onboardingDone,
         'transcribeKey': transcribeKey,
         'themeMode': themeMode,
@@ -2823,8 +2790,6 @@ class PersistedAssistantSettings {
       ouraToken: json['ouraToken'] as String? ?? '',
       healthEnabled: json['healthEnabled'] as bool? ?? false,
       lastHealthSyncDay: json['lastHealthSyncDay'] as String? ?? '',
-      clioMcpUrl: json['clioMcpUrl'] as String? ?? '',
-      clioToken: json['clioToken'] as String? ?? '',
       onboardingDone: json['onboardingDone'] as bool? ?? false,
       transcribeKey: json['transcribeKey'] as String? ?? '',
       themeMode: json['themeMode'] as String? ?? 'system',
@@ -3075,6 +3040,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 }
 
+/// Una guía del manual: ícono + título + pasos numerados (estilo CLIO).
+class ManualGuide {
+  const ManualGuide(this.icon, this.title, this.steps);
+  final IconData icon;
+  final String title;
+  final List<String> steps;
+}
+
 class UserManualScreen extends StatelessWidget {
   const UserManualScreen({super.key, required this.strings});
 
@@ -3082,28 +3055,12 @@ class UserManualScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final sections = <(IconData, String, String)>[
-      (Icons.grid_view_outlined, strings.manualSectionsTitle,
-          strings.manualSectionsBody),
-      (Icons.assistant_outlined, strings.manualAssistantTitle,
-          strings.manualAssistantBody),
-      (Icons.record_voice_over_outlined, strings.manualVoiceTitle,
-          strings.manualVoiceBody),
-      (Icons.favorite_border, strings.manualHealthTitle,
-          strings.manualHealthBody),
-      (Icons.shield_outlined, strings.manualPermissionsTitle,
-          strings.manualPermissionsBody),
-      (Icons.cloud_sync_outlined, strings.manualSyncTitle,
-          strings.manualSyncBody),
-      (Icons.help_outline, strings.manualTroubleTitle,
-          strings.manualTroubleBody),
-    ];
     return Scaffold(
       appBar: AppBar(title: Text(strings.manualTitle)),
       body: ListView(
         padding: const EdgeInsets.all(VibeTokens.space16),
         children: [
-          // Tarjeta de intro con acento de marca.
+          // 1) Descripción general (hero de marca).
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(VibeTokens.space20),
@@ -3129,62 +3086,111 @@ class UserManualScreen extends StatelessWidget {
                     color: Colors.white, size: 28),
                 const SizedBox(height: VibeTokens.space12),
                 Text(
-                  strings.manualIntro,
+                  strings.manualOverviewTitle,
                   style: const TextStyle(
-                      fontSize: 14.5, height: 1.4, color: Colors.white),
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white),
+                ),
+                const SizedBox(height: VibeTokens.space8),
+                Text(
+                  strings.manualOverviewBody,
+                  style: const TextStyle(
+                      fontSize: 14.5, height: 1.45, color: Colors.white),
                 ),
               ],
             ),
           ),
           const SizedBox(height: VibeTokens.space20),
-          for (final s in sections) ...[
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.only(bottom: VibeTokens.space12),
-              padding: const EdgeInsets.all(VibeTokens.space16),
-              decoration: BoxDecoration(
-                color: VibeTokens.panel,
-                borderRadius: BorderRadius.circular(VibeTokens.rLg),
-                border: Border.all(color: VibeTokens.border),
-                boxShadow: VibeTokens.softShadow,
+          // 2) Guías por función (pasos numerados).
+          for (final guide in strings.manualGuides) ...[
+            _GuideCard(guide: guide),
+            const SizedBox(height: VibeTokens.space12),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Tarjeta de una guía con pasos numerados.
+class _GuideCard extends StatelessWidget {
+  const _GuideCard({required this.guide});
+  final ManualGuide guide;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(VibeTokens.space16),
+      decoration: BoxDecoration(
+        color: VibeTokens.panel,
+        borderRadius: BorderRadius.circular(VibeTokens.rLg),
+        border: Border.all(color: VibeTokens.border),
+        boxShadow: VibeTokens.softShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: VibeTokens.brand.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(VibeTokens.rSm),
+                ),
+                child: Icon(guide.icon, color: VibeTokens.brand, size: 20),
               ),
-              child: Column(
+              const SizedBox(width: VibeTokens.space12),
+              Expanded(
+                child: Text(
+                  guide.title,
+                  style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 16,
+                      color: VibeTokens.ink),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: VibeTokens.space12),
+          for (var i = 0; i < guide.steps.length; i++)
+            Padding(
+              padding: EdgeInsets.only(
+                  bottom: i == guide.steps.length - 1 ? 0 : VibeTokens.space12),
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 38,
-                        height: 38,
-                        decoration: BoxDecoration(
-                          color: VibeTokens.brand.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(VibeTokens.rSm),
-                        ),
-                        child: Icon(s.$1, color: VibeTokens.brand, size: 20),
-                      ),
-                      const SizedBox(width: VibeTokens.space12),
-                      Expanded(
-                        child: Text(
-                          s.$2,
-                          style: TextStyle(
+                  Container(
+                    width: 24,
+                    height: 24,
+                    decoration: const BoxDecoration(
+                      color: VibeTokens.brand,
+                      shape: BoxShape.circle,
+                    ),
+                    alignment: Alignment.center,
+                    child: Text('${i + 1}',
+                        style: const TextStyle(
+                            color: Colors.white,
                             fontWeight: FontWeight.w800,
-                            fontSize: 16,
-                            color: VibeTokens.ink,
-                          ),
-                        ),
-                      ),
-                    ],
+                            fontSize: 12.5)),
                   ),
-                  const SizedBox(height: VibeTokens.space12),
-                  Text(
-                    s.$3,
-                    style: TextStyle(
-                        fontSize: 14, height: 1.45, color: VibeTokens.muted),
+                  const SizedBox(width: VibeTokens.space12),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        guide.steps[i],
+                        style: TextStyle(
+                            fontSize: 14, height: 1.4, color: VibeTokens.ink),
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
-          ],
         ],
       ),
     );
@@ -3226,6 +3232,10 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
   bool _backendHealthOk = false;
   bool _isSigningIn = false;
   int _selectedHomeTab = 0;
+  List<VibeParticipant> _participants = const [];
+  VibeParticipant? _selectedParticipant;
+  bool _participantsLoading = false;
+  String _participantsMessage = 'Usando tu cuenta como grupo principal.';
   DateTime? _lastSyncAt;
   String _backendHealthMessage =
       'Verifica el backend antes de sincronizar en produccion.';
@@ -3259,7 +3269,6 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
   // Memoria de conversacion de V (turnos {role,text}) para dar contexto multi-turno
   // a la IA. Se limpia al desactivar V. NO se persiste ni toca el backend.
   final List<Map<String, String>> _vibeHistory = [];
-  bool _claudeKeyVisible = false;
   bool _vibeTestingAi = false;
   String _vibeAiTestResult = '';
   final VibeTts _tts = VibeTts();
@@ -3275,15 +3284,6 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
   final TextEditingController _claudeKeyController = TextEditingController();
   final TextEditingController _ouraTokenController = TextEditingController();
   bool _ouraTokenVisible = false;
-  // Conexion CLIO (MCP) — borrador.
-  String _clioMcpUrl = '';
-  String _clioToken = '';
-  VibeClioClient? _clio;
-  final TextEditingController _clioUrlController = TextEditingController();
-  final TextEditingController _clioTokenController = TextEditingController();
-  bool _clioTokenVisible = false;
-  bool _clioTesting = false;
-  String _clioTestResult = '';
   // Gafas inteligentes (andamiaje, a la espera del plugin nativo).
   final VibeGlasses _glasses = VibeGlasses();
   GlassesStatus _glassesStatus = GlassesStatus.unavailable;
@@ -3326,8 +3326,6 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
     _sessionTitleController.dispose();
     _claudeKeyController.dispose();
     _ouraTokenController.dispose();
-    _clioUrlController.dispose();
-    _clioTokenController.dispose();
     _transcribeKeyController.dispose();
     _retryTimer?.cancel();
     _vibeWatchdogTimer?.cancel();
@@ -3339,6 +3337,22 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
   }
 
   // ===== Persistencia de ajustes del asistente (patron de archivo JSON) =====
+
+  SyncSettings _currentSyncSettings() => SyncSettings(
+        apiBaseUrl: _apiUrlController.text.trim(),
+        accessToken: _accessToken,
+      );
+
+  VibeParticipant get _currentParticipant {
+    final selected = _selectedParticipant;
+    if (selected != null && selected.id.trim().isNotEmpty) return selected;
+    return VibeParticipant.fallback(_signedInEmail);
+  }
+
+  void _refreshAssistantClient() {
+    final settings = _currentSyncSettings();
+    _claude = settings.hasSession ? ClaudeAssistantClient(settings) : null;
+  }
 
   Future<File> _assistantSettingsFile() async {
     final dir = await getApplicationDocumentsDirectory();
@@ -3368,10 +3382,8 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
     } catch (_) {
       // Ajustes corruptos: se usan valores por defecto.
     }
-    // La clave/token guardados por el usuario tienen prioridad; si no hay, se usa
-    // el valor inyectado en el build (kBuildClaudeKey / kBuildOuraToken).
-    final savedKey = settings?.claudeApiKey.trim() ?? '';
-    final effectiveKey = savedKey.isNotEmpty ? savedKey : kBuildClaudeKey.trim();
+    // Las claves IA ya no se piden al usuario: Vibeapp usa Railway autenticado.
+    // Se ignoran claves antiguas guardadas localmente para no exponer secretos.
     final savedOura = settings?.ouraToken.trim() ?? '';
     final effectiveOura =
         savedOura.isNotEmpty ? savedOura : kBuildOuraToken.trim();
@@ -3388,20 +3400,12 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
         _healthEnabled = settings.healthEnabled;
         _lastHealthSyncDay = settings.lastHealthSyncDay;
       }
-      _claudeApiKey = effectiveKey;
-      _claudeKeyController.text = effectiveKey;
-      _claude =
-          effectiveKey.isEmpty ? null : ClaudeAssistantClient(effectiveKey);
+      _claudeApiKey = '';
+      _claudeKeyController.text = '';
+      _refreshAssistantClient();
       _ouraToken = effectiveOura;
       _ouraTokenController.text = effectiveOura;
       _oura = effectiveOura.isEmpty ? null : VibeOura(effectiveOura);
-      _clioMcpUrl = settings?.clioMcpUrl ?? '';
-      _clioToken = settings?.clioToken ?? '';
-      _clioUrlController.text = _clioMcpUrl;
-      _clioTokenController.text = _clioToken;
-      _clio = (_clioMcpUrl.isEmpty || _clioToken.isEmpty)
-          ? null
-          : VibeClioClient(_clioMcpUrl, _clioToken);
       _onboardingDone = settings?.onboardingDone ?? false;
       _transcribeKey = effectiveTr;
       _transcribeKeyController.text = effectiveTr;
@@ -3482,8 +3486,6 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
         ouraToken: _ouraToken,
         healthEnabled: _healthEnabled,
         lastHealthSyncDay: _lastHealthSyncDay,
-        clioMcpUrl: _clioMcpUrl,
-        clioToken: _clioToken,
         onboardingDone: _onboardingDone,
         transcribeKey: _transcribeKey,
         themeMode: _themeModeToString(_themeMode),
@@ -3535,10 +3537,10 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
   }
 
   Future<void> _saveClaudeKey() async {
-    final key = _claudeKeyController.text.trim();
     setState(() {
-      _claudeApiKey = key;
-      _claude = key.isEmpty ? null : ClaudeAssistantClient(key);
+      _claudeApiKey = '';
+      _claudeKeyController.text = '';
+      _refreshAssistantClient();
     });
     await _saveAssistantSettings();
     if (!mounted) return;
@@ -3612,50 +3614,6 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
                 Text('${_t.transcribeFail} ${shorten(error.toString(), 140)}')),
       );
     }
-  }
-
-  /// Guarda la conexion CLIO (URL del MCP + token) y recrea el cliente.
-  Future<void> _saveClioConnection() async {
-    final url = _clioUrlController.text.trim();
-    final token = _clioTokenController.text.trim();
-    setState(() {
-      _clioMcpUrl = url;
-      _clioToken = token;
-      _clio = (url.isEmpty || token.isEmpty) ? null : VibeClioClient(url, token);
-    });
-    await _saveAssistantSettings();
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(_t.clioSaved)),
-    );
-  }
-
-  /// Prueba la conexion al MCP de CLIO: lista las herramientas y muestra cuantas
-  /// hay (o el error exacto). Sirve para validar URL+token cuando lleguen.
-  Future<void> _testClioConnection() async {
-    final url = _clioUrlController.text.trim();
-    final token = _clioTokenController.text.trim();
-    if (url.isEmpty || token.isEmpty) {
-      setState(() => _clioTestResult = _t.clioNeedsConfig);
-      return;
-    }
-    setState(() {
-      _clioTesting = true;
-      _clioTestResult = '';
-    });
-    final client = VibeClioClient(url, token);
-    String result;
-    try {
-      final tools = await client.listTools();
-      result = _t.clioTestOk(tools.length);
-    } catch (error) {
-      result = '${_t.clioTestFail} ${shorten(error.toString(), 200)}';
-    }
-    if (!mounted) return;
-    setState(() {
-      _clioTesting = false;
-      _clioTestResult = result;
-    });
   }
 
   /// Intenta conectar las gafas (andamiaje). Hasta que exista el plugin nativo,
@@ -3790,7 +3748,8 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
     final title = name.isEmpty ? _t.experienceFromV : name;
     final minutes = _parseDurationMinutes(transcript ?? rawName ?? '');
     setState(() {
-      _activeSession = ActiveExperienceSession.start(title);
+      _activeSession =
+          ActiveExperienceSession.start(title, participant: _currentParticipant);
       _sessionTitleController.text = title;
       _syncState = SyncState.ready;
     });
@@ -4023,7 +3982,14 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
       final session = _activeSession;
       setState(() {
         if (session == null) {
-          _queue.insert(0, CaptureQueueItem.biometric(attachment, summary));
+          _queue.insert(
+            0,
+            CaptureQueueItem.biometric(
+              attachment,
+              summary,
+              participant: _currentParticipant,
+            ),
+          );
         } else {
           session.addBiometricAttachment(attachment, summary);
           _upsertSessionQueueItem(session);
@@ -4119,7 +4085,10 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
         _vibeCommandStatusMessage = desc;
         _vibeCommandOnline = true;
         if (session == null) {
-          _queue.insert(0, CaptureQueueItem.media(attachment));
+          _queue.insert(
+            0,
+            CaptureQueueItem.media(attachment, participant: _currentParticipant),
+          );
         } else {
           session.addAttachmentEvent(attachment);
           _upsertSessionQueueItem(session);
@@ -4575,108 +4544,6 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
     );
   }
 
-  Widget _buildClioCard() {
-    return Container(
-      padding: const EdgeInsets.all(VibeTokens.space16),
-      decoration: BoxDecoration(
-        color: VibeTokens.panel,
-        borderRadius: BorderRadius.circular(VibeTokens.rLg),
-        border: Border.all(color: VibeTokens.border),
-        boxShadow: VibeTokens.softShadow,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: VibeTokens.brand.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(VibeTokens.rSm),
-                ),
-                child: const Icon(Icons.hub_outlined, color: VibeTokens.brand),
-              ),
-              const SizedBox(width: VibeTokens.space12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(_t.clioTitle,
-                        style: TextStyle(
-                            fontWeight: FontWeight.w800,
-                            fontSize: 16,
-                            color: VibeTokens.ink)),
-                    const SizedBox(height: 2),
-                    Text(_t.clioSubtitle,
-                        style: TextStyle(
-                            fontSize: 12.5, color: VibeTokens.muted)),
-                  ],
-                ),
-              ),
-              if (_clio != null)
-                const Icon(Icons.check_circle,
-                    color: Color(0xFF2E9E5B), size: 20),
-            ],
-          ),
-          const SizedBox(height: VibeTokens.space12),
-          TextField(
-            controller: _clioUrlController,
-            decoration: InputDecoration(
-              isDense: true,
-              labelText: _t.clioUrlLabel,
-              hintText: 'https://mcp.clioapp.io/mcp',
-            ),
-          ),
-          const SizedBox(height: VibeTokens.space8),
-          TextField(
-            controller: _clioTokenController,
-            obscureText: !_clioTokenVisible,
-            decoration: InputDecoration(
-              isDense: true,
-              labelText: _t.clioTokenLabel,
-              suffixIcon: IconButton(
-                icon: Icon(_clioTokenVisible
-                    ? Icons.visibility_off_outlined
-                    : Icons.visibility_outlined),
-                onPressed: () =>
-                    setState(() => _clioTokenVisible = !_clioTokenVisible),
-              ),
-            ),
-          ),
-          const SizedBox(height: VibeTokens.space12),
-          Row(
-            children: [
-              Expanded(
-                child: FilledButton(
-                  onPressed: _clioTesting ? null : _saveClioConnection,
-                  child: Text(_t.save),
-                ),
-              ),
-              const SizedBox(width: VibeTokens.space8),
-              OutlinedButton.icon(
-                onPressed: _clioTesting ? null : _testClioConnection,
-                icon: _clioTesting
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Icon(Icons.cable_outlined),
-                label: Text(_t.clioTestBtn),
-              ),
-            ],
-          ),
-          if (_clioTestResult.isNotEmpty) ...[
-            const SizedBox(height: VibeTokens.space8),
-            Text(_clioTestResult,
-                style: TextStyle(fontSize: 12.5, color: VibeTokens.muted)),
-          ],
-        ],
-      ),
-    );
-  }
-
   Widget _buildAssistantSettingsCard() {
     return Container(
       padding: const EdgeInsets.all(VibeTokens.space16),
@@ -4808,7 +4675,7 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
           ),
           const SizedBox(height: VibeTokens.space16),
 
-          // Clave de IA (Claude).
+          // IA centralizada: no se piden claves al usuario.
           Text(_t.claudeKeyLabel,
               style: TextStyle(
                   fontWeight: FontWeight.w700, color: VibeTokens.ink)),
@@ -4822,29 +4689,23 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
               Expanded(
                 child: TextField(
                   controller: _claudeKeyController,
-                  obscureText: !_claudeKeyVisible,
+                  readOnly: true,
                   autocorrect: false,
                   enableSuggestions: false,
-                  keyboardType: TextInputType.visiblePassword,
                   decoration: InputDecoration(
                     isDense: true,
                     border: const OutlineInputBorder(),
-                    hintText: 'sk-ant-...',
-                    suffixIcon: IconButton(
-                      tooltip: _claudeKeyVisible ? _t.hidePassword : _t.showPassword,
-                      onPressed: () => setState(
-                          () => _claudeKeyVisible = !_claudeKeyVisible),
-                      icon: Icon(_claudeKeyVisible
-                          ? Icons.visibility_off_outlined
-                          : Icons.visibility_outlined),
-                    ),
+                    hintText: _accessToken.isEmpty
+                        ? 'Entra con tu cuenta'
+                        : 'Configurada en Railway',
+                    suffixIcon: const Icon(Icons.cloud_done_outlined),
                   ),
                 ),
               ),
               const SizedBox(width: VibeTokens.space8),
               FilledButton(
                 onPressed: _saveClaudeKey,
-                child: Text(_t.save),
+                child: const Text('Actualizar'),
               ),
             ],
           ),
@@ -4865,7 +4726,7 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
               Expanded(
                 child: Text(
                   _claude != null && _claude!.isConfigured
-                      ? '${_t.aiStatusActive} (${_claudeApiKey.length} car.)'
+                      ? _t.aiStatusActive
                       : _t.aiStatusNoKey,
                   style: TextStyle(
                     fontSize: 12.5,
@@ -4932,6 +4793,110 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildParticipantSelectorCard({bool compact = false}) {
+    final signedIn = _accessToken.isNotEmpty;
+    final selected = _currentParticipant;
+    final participants = _participants.isEmpty ? [selected] : _participants;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE7F4F0),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Padding(
+                    padding: EdgeInsets.all(10),
+                    child: Icon(Icons.groups_2_outlined,
+                        color: Color(0xFF0D7C66)),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Grupo/persona activa',
+                        style: TextStyle(fontWeight: FontWeight.w900),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        signedIn
+                            ? 'Todas las nuevas capturas se guardan con esta asociacion.'
+                            : 'Entra con tu cuenta para cargar tus grupos.',
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodySmall
+                            ?.copyWith(color: Colors.black54),
+                      ),
+                    ],
+                  ),
+                ),
+                if (_participantsLoading)
+                  const SizedBox.square(
+                    dimension: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                else
+                  IconButton(
+                    tooltip: 'Actualizar grupos',
+                    onPressed: signedIn ? _loadParticipants : null,
+                    icon: const Icon(Icons.refresh_outlined),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              initialValue: participants.any((item) => item.id == selected.id)
+                  ? selected.id
+                  : participants.first.id,
+              decoration: const InputDecoration(
+                labelText: 'Guardar nuevas capturas como',
+                border: OutlineInputBorder(),
+              ),
+              items: [
+                for (final participant in participants)
+                  DropdownMenuItem<String>(
+                    value: participant.id,
+                    child: Text(
+                      participant.label,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+              ],
+              onChanged: signedIn
+                  ? (value) {
+                      if (value == null) return;
+                      final next = participants.firstWhere(
+                        (item) => item.id == value,
+                        orElse: () => selected,
+                      );
+                      unawaited(_selectParticipant(next));
+                    }
+                  : null,
+            ),
+            if (!compact || _participantsMessage.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                _participantsMessage,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(color: Colors.black54),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -5777,10 +5742,25 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
         _emailController.text = session.email;
         _accessToken = session.accessToken;
         _signedInEmail = session.email;
+        if (session.participantId.isNotEmpty ||
+            session.participantName.isNotEmpty) {
+          _selectedParticipant = VibeParticipant(
+            id: session.participantId.isEmpty
+                ? session.participantName
+                : session.participantId,
+            name: session.participantName.isEmpty
+                ? session.participantId
+                : session.participantName,
+            email: session.email,
+            source: 'remembered',
+          );
+        }
         _authStatusOk = true;
         _authStatusMessage = _t.sessionRemembered;
         _syncState = SyncState.synced;
+        _refreshAssistantClient();
       });
+      unawaited(_loadParticipants());
       unawaited(_syncPendingQueue());
     } catch (_) {
       // If the remembered session cannot be read, the user can still sign in.
@@ -5794,6 +5774,8 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
         email: _signedInEmail,
         accessToken: _accessToken,
         savedAt: DateTime.now().toUtc(),
+        participantId: _currentParticipant.id,
+        participantName: _currentParticipant.name,
       );
       if (!session.isUsable) return;
       final raw = jsonEncode(session.toJson());
@@ -5804,6 +5786,65 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
     } catch (_) {
       // Session persistence is only a convenience; sync still works in memory.
     }
+  }
+
+  Future<void> _loadParticipants() async {
+    final settings = _currentSyncSettings();
+    if (!settings.hasSession) {
+      if (!mounted) return;
+      setState(() {
+        _participants = const [];
+        _selectedParticipant = null;
+        _participantsMessage = 'Entra con tu cuenta para cargar tus grupos.';
+      });
+      return;
+    }
+    if (mounted) {
+      setState(() {
+        _participantsLoading = true;
+        _participantsMessage = 'Cargando grupos/personas...';
+      });
+    }
+    try {
+      final loaded = await VibeParticipantClient(settings).listParticipants();
+      if (!mounted) return;
+      final fallback = VibeParticipant.fallback(_signedInEmail);
+      final effective = loaded.isEmpty ? [fallback] : loaded;
+      final previous = _selectedParticipant;
+      final selected = previous == null
+          ? effective.first
+          : effective.firstWhere(
+              (item) => item.id == previous.id,
+              orElse: () => effective.first,
+            );
+      setState(() {
+        _participants = effective;
+        _selectedParticipant = selected;
+        _participantsLoading = false;
+        _participantsMessage = effective.length == 1
+            ? 'Capturas asociadas a ${selected.name}.'
+            : '${effective.length} grupos/personas disponibles.';
+      });
+      await _saveSession();
+    } catch (_) {
+      if (!mounted) return;
+      final fallback = _selectedParticipant ?? VibeParticipant.fallback(_signedInEmail);
+      setState(() {
+        _participants = [fallback];
+        _selectedParticipant = fallback;
+        _participantsLoading = false;
+        _participantsMessage =
+            'No se pudo refrescar la lista; se mantiene ${fallback.name}.';
+      });
+    }
+  }
+
+  Future<void> _selectParticipant(VibeParticipant participant) async {
+    setState(() {
+      _selectedParticipant = participant;
+      _participantsMessage = 'Nuevas capturas asociadas a ${participant.name}.';
+    });
+    await _saveSession();
   }
 
   Future<void> _signIn() async {
@@ -5849,8 +5890,10 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
         _authStatusOk = true;
         _authStatusMessage = _t.signInReady;
         _syncState = SyncState.synced;
+        _refreshAssistantClient();
       });
       await _saveSession();
+      await _loadParticipants();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(_t.reviewingPending)),
@@ -5964,7 +6007,10 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
           : command.cleanedText;
       setState(() {
         if (_activeSession == null) {
-          _activeSession = ActiveExperienceSession.start(title);
+          _activeSession = ActiveExperienceSession.start(
+            title,
+            participant: _currentParticipant,
+          );
         } else {
           _activeSession!.addTextEvent('Nuevo tramo: $title');
           _upsertSessionQueueItem(_activeSession!);
@@ -5991,7 +6037,10 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
     final session = _activeSession;
     setState(() {
       if (session == null) {
-        _queue.insert(0, CaptureQueueItem.text(noteText));
+        _queue.insert(
+          0,
+          CaptureQueueItem.text(noteText, participant: _currentParticipant),
+        );
       } else {
         session.addTextEvent(noteText);
         _upsertSessionQueueItem(session);
@@ -6326,9 +6375,11 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
   void _queueAgendaEvent(AgendaEventDraft draft) {
     setState(() {
       final session = _activeSession;
-      _queue.insert(0, CaptureQueueItem.agenda(draft));
+      final participant = _currentParticipant;
+      final scopedDraft = draft.withParticipant(participant);
+      _queue.insert(0, CaptureQueueItem.agenda(scopedDraft, participant: participant));
       if (session != null) {
-        session.addAgendaEvent(draft);
+        session.addAgendaEvent(scopedDraft);
         _upsertSessionQueueItem(session);
       }
       _syncState = SyncState.syncing;
@@ -6375,7 +6426,10 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
       final session = _activeSession;
       setState(() {
         if (session == null) {
-          _queue.insert(0, CaptureQueueItem.location(location));
+          _queue.insert(
+            0,
+            CaptureQueueItem.location(location, participant: _currentParticipant),
+          );
         } else {
           session.addLocationEvent(location);
           _upsertSessionQueueItem(session);
@@ -6467,7 +6521,14 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
       final session = _activeSession;
       setState(() {
         if (session == null) {
-          _queue.insert(0, CaptureQueueItem.biometric(attachment, summary));
+          _queue.insert(
+            0,
+            CaptureQueueItem.biometric(
+              attachment,
+              summary,
+              participant: _currentParticipant,
+            ),
+          );
         } else {
           session.addBiometricAttachment(attachment, summary);
           _upsertSessionQueueItem(session);
@@ -6692,7 +6753,11 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
               .toList() ??
           const <PlatformFile>[];
       if (files.isEmpty) return;
-      final item = CaptureQueueItem.externalSession(draft, files);
+      final item = CaptureQueueItem.externalSession(
+        draft,
+        files,
+        participant: _currentParticipant,
+      );
       setState(() {
         _queue.insert(0, item);
         _syncState = SyncState.syncing;
@@ -6805,7 +6870,10 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
       final session = _activeSession;
       setState(() {
         if (session == null) {
-          _queue.insert(0, CaptureQueueItem.media(attachment));
+          _queue.insert(
+            0,
+            CaptureQueueItem.media(attachment, participant: _currentParticipant),
+          );
         } else {
           session.addAttachmentEvent(attachment);
           _upsertSessionQueueItem(session);
@@ -6838,7 +6906,10 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
       final session = _activeSession;
       setState(() {
         if (session == null) {
-          _queue.insert(0, CaptureQueueItem.media(attachment));
+          _queue.insert(
+            0,
+            CaptureQueueItem.media(attachment, participant: _currentParticipant),
+          );
         } else {
           session.addAttachmentEvent(attachment);
           _upsertSessionQueueItem(session);
@@ -6943,7 +7014,10 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
       final session = _activeSession;
       setState(() {
         if (session == null) {
-          _queue.insert(0, CaptureQueueItem.media(attachment));
+          _queue.insert(
+            0,
+            CaptureQueueItem.media(attachment, participant: _currentParticipant),
+          );
         } else {
           session.addAttachmentEvent(attachment);
           _upsertSessionQueueItem(session);
@@ -6974,7 +7048,8 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
         ? 'Experiencia desde Vibeapp'
         : _sessionTitleController.text.trim();
     setState(() {
-      _activeSession = ActiveExperienceSession.start(title);
+      _activeSession =
+          ActiveExperienceSession.start(title, participant: _currentParticipant);
       _syncState = SyncState.ready;
     });
     ScaffoldMessenger.of(context).showSnackBar(
@@ -6996,7 +7071,10 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
   }
 
   void _upsertSessionQueueItem(ActiveExperienceSession session) {
-    final item = CaptureQueueItem.fromSession(session);
+    final item = CaptureQueueItem.fromSession(
+      session,
+      participant: _currentParticipant,
+    );
     final index = _queue.indexWhere((queued) => queued.id == item.id);
     if (index >= 0) {
       final previous = _queue[index];
@@ -7124,7 +7202,13 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
   Future<void> _prepareHealthConnectPilotBundle() async {
     final bundle = HealthConnectPreviewBundle.pilot();
     setState(() {
-      _queue.insert(0, CaptureQueueItem.healthConnect(bundle));
+      _queue.insert(
+        0,
+        CaptureQueueItem.healthConnect(
+          bundle,
+          participant: _currentParticipant,
+        ),
+      );
       _syncState = SyncState.syncing;
     });
     ScaffoldMessenger.of(context).showSnackBar(
@@ -7265,6 +7349,8 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
           activeSession: _activeSession,
           syncState: _syncState,
         ),
+        const SizedBox(height: 16),
+        _buildParticipantSelectorCard(compact: true),
         const SizedBox(height: 20),
         HomeActionPanel(
           isRecordingAudio: _isRecordingAudio,
@@ -7326,6 +7412,8 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
         const SizedBox(height: 14),
         settingsCard,
         const SizedBox(height: 16),
+        _buildParticipantSelectorCard(),
+        const SizedBox(height: 16),
         _buildAssistantSettingsCard(),
         const SizedBox(height: 16),
         _buildHealthCard(),
@@ -7333,8 +7421,6 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
         _buildTranscribeCard(),
         const SizedBox(height: 16),
         _buildGlassesCard(),
-        const SizedBox(height: 16),
-        _buildClioCard(),
         const SizedBox(height: 16),
         VibePanelButton(
           icon: Icons.menu_book_outlined,
@@ -11170,6 +11256,86 @@ class VibeAuthClient {
   }
 }
 
+class VibeParticipant {
+  const VibeParticipant({
+    required this.id,
+    required this.name,
+    this.email = '',
+    this.source = '',
+  });
+
+  factory VibeParticipant.fromJson(Map<String, dynamic> json) {
+    final id = stringFromJson(json['id']).trim();
+    final name = stringFromJson(json['name']).trim();
+    return VibeParticipant(
+      id: id.isEmpty ? name : id,
+      name: name.isEmpty ? (id.isEmpty ? 'Mi cuenta' : id) : name,
+      email: stringFromJson(json['email']).trim(),
+      source: stringFromJson(json['source']).trim(),
+    );
+  }
+
+  factory VibeParticipant.fallback(String email) {
+    final cleanEmail = email.trim();
+    final emailName = cleanEmail.contains('@')
+        ? cleanEmail.split('@').first
+        : cleanEmail;
+    final display = emailName.trim().isEmpty ? 'Mi cuenta' : emailName.trim();
+    return VibeParticipant(
+      id: cleanEmail.isEmpty ? 'mi-cuenta' : cleanEmail,
+      name: display[0].toUpperCase() + display.substring(1),
+      email: cleanEmail,
+      source: 'account-default',
+    );
+  }
+
+  final String id;
+  final String name;
+  final String email;
+  final String source;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'email': email,
+      'source': source,
+    };
+  }
+
+  bool get isUsable => id.trim().isNotEmpty && name.trim().isNotEmpty;
+  String get label => email.trim().isEmpty ? name : '$name - $email';
+}
+
+class VibeParticipantClient {
+  const VibeParticipantClient(this.settings);
+
+  final SyncSettings settings;
+
+  Future<List<VibeParticipant>> listParticipants() async {
+    if (!settings.hasSession) return const [];
+    final uri = Uri.parse(settings.apiBaseUrl).resolve('/api/mobile/participants');
+    final request =
+        await HttpClient().getUrl(uri).timeout(const Duration(seconds: 8));
+    request.headers.set(HttpHeaders.authorizationHeader, 'Bearer ${settings.accessToken}');
+    final response = await request.close().timeout(const Duration(seconds: 12));
+    final responseText = await response.transform(utf8.decoder).join();
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw StateError(serverMessageFromBody(responseText));
+    }
+    final decoded = jsonDecode(responseText);
+    final data = decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
+    final rows = data['participants'] is List
+        ? data['participants'] as List
+        : const [];
+    return rows
+        .whereType<Map>()
+        .map((item) => VibeParticipant.fromJson(Map<String, dynamic>.from(item)))
+        .where((item) => item.isUsable)
+        .toList();
+  }
+}
+
 class SyncSettings {
   const SyncSettings({required this.apiBaseUrl, required this.accessToken});
 
@@ -11185,6 +11351,8 @@ class PersistedVibeSession {
     required this.email,
     required this.accessToken,
     required this.savedAt,
+    this.participantId = '',
+    this.participantName = '',
   });
 
   factory PersistedVibeSession.fromJson(Map<String, dynamic> json) {
@@ -11194,6 +11362,8 @@ class PersistedVibeSession {
       accessToken: stringFromJson(json['accessToken']).trim(),
       savedAt: DateTime.tryParse(stringFromJson(json['savedAt'])) ??
           DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+      participantId: stringFromJson(json['participantId']).trim(),
+      participantName: stringFromJson(json['participantName']).trim(),
     );
   }
 
@@ -11201,6 +11371,8 @@ class PersistedVibeSession {
   final String email;
   final String accessToken;
   final DateTime savedAt;
+  final String participantId;
+  final String participantName;
 
   bool get isUsable =>
       apiBaseUrl.isNotEmpty && email.isNotEmpty && accessToken.isNotEmpty;
@@ -11212,6 +11384,8 @@ class PersistedVibeSession {
       'email': email,
       'accessToken': accessToken,
       'savedAt': savedAt.toUtc().toIso8601String(),
+      'participantId': participantId,
+      'participantName': participantName,
     };
   }
 }
@@ -11234,6 +11408,26 @@ String authMessageFromResponse(String responseText) {
   }
   final plain = responseText.trim();
   return plain.isEmpty ? 'No se pudo iniciar sesion.' : shorten(plain);
+}
+
+String serverMessageFromBody(String responseText) {
+  try {
+    final decoded = jsonDecode(responseText);
+    if (decoded is Map) {
+      final values = [
+        stringFromJson(decoded['detail']),
+        stringFromJson(decoded['message']),
+        stringFromJson(decoded['error']),
+      ];
+      for (final value in values) {
+        if (value.isNotEmpty) return value;
+      }
+    }
+  } catch (_) {
+    // Keep a readable fallback for phone UI.
+  }
+  final plain = responseText.trim();
+  return plain.isEmpty ? 'El servidor no devolvio detalle.' : shorten(plain);
 }
 
 class AuthResult {
@@ -11859,7 +12053,7 @@ class HealthConnectRecordDraft {
       'connector': 'android-health-connect',
       'sourceId': id,
       'capturedAt': endAt.toUtc().toIso8601String(),
-      'participantId': 'miguel',
+      'participantId': 'mi-cuenta',
       'payloadType': 'biometric',
       'privacyLevel': 'sensitive',
       'payload': {
@@ -11950,6 +12144,8 @@ class AgendaEventDraft {
     required this.endAt,
     this.description = '',
     this.location = '',
+    this.participantId = '',
+    this.participantName = '',
     String? id,
     DateTime? createdAt,
   })  : id = id ?? 'native-agenda-${DateTime.now().microsecondsSinceEpoch}',
@@ -11964,6 +12160,8 @@ class AgendaEventDraft {
           : stringFromJson(json['title']),
       description: stringFromJson(json['description']),
       location: stringFromJson(json['location']),
+      participantId: stringFromJson(json['participantId']),
+      participantName: stringFromJson(json['participantName']),
       startAt: startAt,
       endAt: parseNativeDate(json['endAt']) ??
           startAt.add(const Duration(hours: 1)),
@@ -11975,11 +12173,31 @@ class AgendaEventDraft {
   final String title;
   final String description;
   final String location;
+  final String participantId;
+  final String participantName;
   final DateTime startAt;
   final DateTime endAt;
   final DateTime createdAt;
 
   String get idempotencyKey => 'vibeapp-agenda:$id';
+  String get effectiveParticipantId =>
+      participantId.trim().isEmpty ? 'mi-cuenta' : participantId.trim();
+  String get effectiveParticipantName =>
+      participantName.trim().isEmpty ? effectiveParticipantId : participantName.trim();
+
+  AgendaEventDraft withParticipant(VibeParticipant participant) {
+    return AgendaEventDraft(
+      id: id,
+      title: title,
+      description: description,
+      location: location,
+      participantId: participant.id,
+      participantName: participant.name,
+      startAt: startAt,
+      endAt: endAt,
+      createdAt: createdAt,
+    );
+  }
 
   Map<String, dynamic> toJson() {
     return {
@@ -11990,7 +12208,9 @@ class AgendaEventDraft {
       'startAt': startAt.toIso8601String(),
       'endAt': endAt.toIso8601String(),
       'location': location.isEmpty ? 'Sin ubicacion' : location,
-      'participants': 'Usuario',
+      'participants': effectiveParticipantName,
+      'participantId': effectiveParticipantId,
+      'participantName': effectiveParticipantName,
       'priority': 'normal',
       'status': 'Planificado',
       'sourceType': 'vibeapp-native-agenda',
@@ -12001,6 +12221,8 @@ class AgendaEventDraft {
         'sourceDevice': Platform.operatingSystem,
         'idempotencyKey': idempotencyKey,
         'payloadType': 'calendar',
+        'participantId': effectiveParticipantId,
+        'participantName': effectiveParticipantName,
       },
     };
   }
@@ -12010,7 +12232,7 @@ class AgendaEventDraft {
       'sourceId': id,
       'sourceType': 'vibeapp-native',
       'capturedAt': createdAt.toIso8601String(),
-      'participantId': 'Usuario',
+      'participantId': effectiveParticipantId,
       'payloadType': 'calendar',
       'payload': {
         'title': title,
@@ -12028,6 +12250,7 @@ class AgendaEventDraft {
       },
       'metadata': {
         'syncContract': 'vibeapp-ingest-calendar-v1',
+        'participantName': effectiveParticipantName,
       },
     };
   }
@@ -12601,12 +12824,14 @@ class CaptureQueueItem {
     this.externalSessionSource,
     this.externalSessionContract,
     this.structuredContext = const {},
+    this.participantId = '',
+    this.participantName = '',
     this.attemptCount = 0,
     this.lastAttemptAt,
     this.nextRetryAt,
   });
 
-  factory CaptureQueueItem.text(String text) {
+  factory CaptureQueueItem.text(String text, {VibeParticipant? participant}) {
     final now = DateTime.now().toUtc();
     return CaptureQueueItem(
       id: 'native-${now.microsecondsSinceEpoch}',
@@ -12615,10 +12840,15 @@ class CaptureQueueItem {
       sourceType: 'text',
       createdAt: now,
       status: CaptureSyncStatus.queued,
+      participantId: participant?.id ?? '',
+      participantName: participant?.name ?? '',
     );
   }
 
-  factory CaptureQueueItem.media(NativeAttachmentDraft attachment) {
+  factory CaptureQueueItem.media(
+    NativeAttachmentDraft attachment, {
+    VibeParticipant? participant,
+  }) {
     final now = DateTime.now().toUtc();
     final label = attachment.displayLabel;
     return CaptureQueueItem(
@@ -12629,23 +12859,35 @@ class CaptureQueueItem {
       createdAt: now,
       status: CaptureSyncStatus.queued,
       attachments: [attachment],
+      participantId: participant?.id ?? '',
+      participantName: participant?.name ?? '',
     );
   }
 
-  factory CaptureQueueItem.agenda(AgendaEventDraft event) {
+  factory CaptureQueueItem.agenda(
+    AgendaEventDraft event, {
+    VibeParticipant? participant,
+  }) {
+    final effectiveEvent =
+        participant == null ? event : event.withParticipant(participant);
     return CaptureQueueItem(
-      id: event.id,
+      id: effectiveEvent.id,
       title: 'Agenda',
       detail:
-          '${event.title} - ${formatDateLabel(event.startAt.toLocal())} ${formatClock(event.startAt)}',
+          '${effectiveEvent.title} - ${formatDateLabel(effectiveEvent.startAt.toLocal())} ${formatClock(effectiveEvent.startAt)}',
       sourceType: 'agenda',
-      createdAt: event.createdAt,
+      createdAt: effectiveEvent.createdAt,
       status: CaptureSyncStatus.queued,
-      agendaEvent: event,
+      agendaEvent: effectiveEvent,
+      participantId: effectiveEvent.effectiveParticipantId,
+      participantName: effectiveEvent.effectiveParticipantName,
     );
   }
 
-  factory CaptureQueueItem.location(LocationDraft location) {
+  factory CaptureQueueItem.location(
+    LocationDraft location, {
+    VibeParticipant? participant,
+  }) {
     return CaptureQueueItem(
       id: location.id,
       title: 'Lugar',
@@ -12654,13 +12896,16 @@ class CaptureQueueItem {
       createdAt: location.capturedAt,
       status: CaptureSyncStatus.queued,
       locationDraft: location,
+      participantId: participant?.id ?? '',
+      participantName: participant?.name ?? '',
     );
   }
 
   factory CaptureQueueItem.biometric(
     NativeAttachmentDraft attachment,
-    BiometricImportSummary summary,
-  ) {
+    BiometricImportSummary summary, {
+    VibeParticipant? participant,
+  }) {
     return CaptureQueueItem(
       id: 'native-biometric-${DateTime.now().microsecondsSinceEpoch}',
       title: 'Biometria',
@@ -12670,10 +12915,15 @@ class CaptureQueueItem {
       status: CaptureSyncStatus.queued,
       attachments: [attachment],
       biometricSummary: summary,
+      participantId: participant?.id ?? '',
+      participantName: participant?.name ?? '',
     );
   }
 
-  factory CaptureQueueItem.healthConnect(HealthConnectPreviewBundle bundle) {
+  factory CaptureQueueItem.healthConnect(
+    HealthConnectPreviewBundle bundle, {
+    VibeParticipant? participant,
+  }) {
     final now = DateTime.now().toUtc();
     final id = 'native-health-connect-${now.microsecondsSinceEpoch}';
     final records = bundle.records;
@@ -12700,13 +12950,16 @@ class CaptureQueueItem {
       externalSessionSource: 'Health Connect',
       externalSessionContract: 'android-health-connect-native-v1',
       structuredContext: bundle.toJson(),
+      participantId: participant?.id ?? '',
+      participantName: participant?.name ?? '',
     );
   }
 
   factory CaptureQueueItem.externalSession(
     ExternalSessionImportDraft draft,
-    List<PlatformFile> files,
-  ) {
+    List<PlatformFile> files, {
+    VibeParticipant? participant,
+  }) {
     final now = DateTime.now().toUtc();
     final id = 'native-external-${now.microsecondsSinceEpoch}';
     final intro = draft.notes.isEmpty
@@ -12761,10 +13014,15 @@ class CaptureQueueItem {
       attachments: attachments,
       externalSessionSource: draft.source.label,
       externalSessionContract: draft.source.contract,
+      participantId: participant?.id ?? '',
+      participantName: participant?.name ?? '',
     );
   }
 
-  factory CaptureQueueItem.fromSession(ActiveExperienceSession session) {
+  factory CaptureQueueItem.fromSession(
+    ActiveExperienceSession session, {
+    VibeParticipant? participant,
+  }) {
     final details = session.events
         .map((event) => '${event.order}. ${event.title}: ${event.description}')
         .join('\n');
@@ -12778,6 +13036,8 @@ class CaptureQueueItem {
       events: List<ExperienceEventDraft>.from(session.events),
       attachments: List<NativeAttachmentDraft>.from(session.attachments),
       closedAt: session.closedAt,
+      participantId: participant?.id ?? session.participantId,
+      participantName: participant?.name ?? session.participantName,
     );
   }
 
@@ -12838,6 +13098,8 @@ class CaptureQueueItem {
               ? null
               : stringFromJson(json['externalSessionContract']),
       structuredContext: mapFromJson(json['structuredContext']),
+      participantId: stringFromJson(json['participantId']),
+      participantName: stringFromJson(json['participantName']),
       attemptCount: intFromJson(json['attemptCount']),
       lastAttemptAt: parseNativeDate(json['lastAttemptAt']),
       nextRetryAt: parseNativeDate(json['nextRetryAt']),
@@ -12861,11 +13123,17 @@ class CaptureQueueItem {
   final String? externalSessionSource;
   final String? externalSessionContract;
   final Map<String, dynamic> structuredContext;
+  final String participantId;
+  final String participantName;
   int attemptCount;
   DateTime? lastAttemptAt;
   DateTime? nextRetryAt;
 
   String get idempotencyKey => 'vibeapp-capture:$sourceType:$id';
+  String get effectiveParticipantId =>
+      participantId.trim().isEmpty ? 'mi-cuenta' : participantId.trim();
+  String get effectiveParticipantName =>
+      participantName.trim().isEmpty ? effectiveParticipantId : participantName.trim();
 
   bool get shouldUseIntegrationIngest {
     if (attachments.isNotEmpty) return false;
@@ -13054,7 +13322,9 @@ class CaptureQueueItem {
           : isBiometric
               ? 'Contexto transversal'
               : locationLabel,
-      'people': 'Usuario',
+      'people': effectiveParticipantName,
+      'pilotParticipantId': effectiveParticipantId,
+      'pilotParticipantName': effectiveParticipantName,
       'objective': sourceType == 'experience-session'
           ? 'Experiencia con eventos desde Vibeapp'
           : isExternalSession
@@ -13071,6 +13341,8 @@ class CaptureQueueItem {
         'sourceDevice': Platform.operatingSystem,
         'sourceEventId': id,
         'idempotencyKey': idempotencyKey,
+        'participantId': effectiveParticipantId,
+        'participantName': effectiveParticipantName,
         'capturedAt': iso,
         'closedAt': closedAt?.toIso8601String(),
         if (externalSessionSource != null)
@@ -13112,7 +13384,7 @@ class CaptureQueueItem {
           ? 'android-health-connect'
           : 'vibeapp-native',
       'capturedAt': createdAt.toIso8601String(),
-      'participantId': 'Usuario',
+      'participantId': effectiveParticipantId,
       'payloadType': payloadType,
       'payload': buildIntegrationPayload(),
       'privacyLevel': payloadType == 'biometric' || payloadType == 'activity'
@@ -13133,6 +13405,7 @@ class CaptureQueueItem {
                 : 'vibeapp-ingest-text-v1',
         if (structuredContext.isNotEmpty)
           'structuredContext': structuredContext,
+        'participantName': effectiveParticipantName,
       },
     };
   }
@@ -13206,6 +13479,8 @@ class CaptureQueueItem {
       'externalSessionSource': externalSessionSource,
       'externalSessionContract': externalSessionContract,
       'structuredContext': structuredContext,
+      'participantId': participantId,
+      'participantName': participantName,
       'attemptCount': attemptCount,
       'lastAttemptAt': lastAttemptAt?.toIso8601String(),
       'nextRetryAt': nextRetryAt?.toIso8601String(),
@@ -13354,24 +13629,33 @@ class ActiveExperienceSession {
     required this.id,
     required this.title,
     required this.startedAt,
+    this.participantId = '',
+    this.participantName = '',
     this.closedAt,
     List<ExperienceEventDraft>? events,
     List<NativeAttachmentDraft>? attachments,
   })  : events = events ?? [],
         attachments = attachments ?? [];
 
-  factory ActiveExperienceSession.start(String title) {
+  factory ActiveExperienceSession.start(
+    String title, {
+    VibeParticipant? participant,
+  }) {
     final now = DateTime.now().toUtc();
     return ActiveExperienceSession(
       id: 'native-session-${now.microsecondsSinceEpoch}',
       title: title,
       startedAt: now,
+      participantId: participant?.id ?? '',
+      participantName: participant?.name ?? '',
     );
   }
 
   final String id;
   final String title;
   final DateTime startedAt;
+  final String participantId;
+  final String participantName;
   DateTime? closedAt;
   final List<ExperienceEventDraft> events;
   final List<NativeAttachmentDraft> attachments;

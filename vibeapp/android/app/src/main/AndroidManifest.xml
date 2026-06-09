@@ -54,6 +54,23 @@
             <intent-filter>
                 <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
             </intent-filter>
+            <!-- Meta Wearables DAT: callback por esquema personalizado vibeapp:// -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="vibeapp" />
+            </intent-filter>
+            <!-- Universal Link / App Links (https, verificado): /applink/* en el dominio del backend -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="https"
+                    android:host="experience-hub-web-production.up.railway.app"
+                    android:pathPrefix="/applink" />
+            </intent-filter>
         </activity>
         <!-- Health Connect (Android 14+, HC integrado en plataforma): racional de permisos. -->
         <activity-alias

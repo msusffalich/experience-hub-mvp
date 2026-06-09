@@ -54,8 +54,8 @@ if (labelMatch && buildMatch) {
 if (labelMatch && releaseMatch) {
   check(releaseMatch[1].endsWith(`-${labelMatch[1]}`), `Release label must end with the Vibeapp build number ${labelMatch[1]}.`);
 }
-check(files.buildGradle.includes('namespace = "io.vibeapp.mobile"'), "Android namespace must be io.vibeapp.mobile.");
-check(files.buildGradle.includes('applicationId = "io.vibeapp.mobile"'), "Android applicationId must be io.vibeapp.mobile.");
+check(files.buildGradle.includes('namespace = "com.miguelsusffalich.vibeapp"'), "Android namespace must be com.miguelsusffalich.vibeapp.");
+check(files.buildGradle.includes('applicationId = "com.miguelsusffalich.vibeapp"'), "Android applicationId must be com.miguelsusffalich.vibeapp.");
 check(files.buildGradle.includes("pilotRelease"), "Android release signing configuration must support the current release/upload key.");
 check(files.settingsGradle.includes('com.android.application") version "8.13.1"'), "Android Gradle Plugin should remain pinned to 8.13.1 until plugin compatibility is rechecked.");
 [

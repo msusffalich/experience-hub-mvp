@@ -11,6 +11,7 @@ const files = {
   simulateVibeapp: readFileSync("scripts/simulate-vibeapp-sync.mjs", "utf8"),
   nativeBlueprint: readFileSync("docs/vibeapp-native-blueprint.md", "utf8"),
   clioPlan: readFileSync("docs/clio-adoption-plan.md", "utf8"),
+  productGapRegister: readFileSync("docs/product-gap-register.md", "utf8"),
 };
 
 const failures = [];
@@ -35,6 +36,7 @@ check(files.server.includes("getDailyBriefing") && files.server.includes("getCon
 check(files.server.includes("allowedSourceTypes") && files.server.includes("apple-healthkit-native") && files.server.includes("android-health-connect"), "Device source catalog must include Apple HealthKit and Health Connect.");
 check(files.server.includes("/api/sync/state") && files.server.includes("getServerSyncState"), "Server must expose a sync state endpoint for automatic multi-device refresh.");
 check(files.server.includes("/api/jobs/asset-processing") && files.server.includes("processAssetJob"), "Server must process assets through a central job queue.");
+check(files.server.includes("server-apple-health-zip-extraction") && files.server.includes("extractAppleHealthXmlRowsServer"), "Server must process Apple Health export.zip when it contains biometric XML.");
 
 check(files.app.includes("syncBiometricImportToServer"), "PWA biometric imports must sync to server ingest.");
 check(files.app.includes("extractAppleHealthXmlRows"), "PWA must support Apple Health export.xml, not only CSV/JSON.");
@@ -58,6 +60,9 @@ check(files.app.includes("reportProgressPanel") && files.app.includes("insightsP
 check(files.simulateVibeapp.includes("buildPostIngestAutomation") && files.simulateVibeapp.includes("extractAppleHealthXmlRows"), "Vibeapp simulation must guard post-ingest and biometric XML support.");
 check(files.packageJson.includes('"simulate:vibeapp"') && files.packageJson.includes('"verify:integrations"'), "Package scripts must expose Vibeapp simulation and integration verification.");
 check(files.packageJson.includes('"verify:processing"') && files.packageJson.includes("verify-asset-processing-job.mjs"), "Package scripts must verify server asset processing jobs.");
+check(files.productGapRegister.includes("Registro de brechas de producto Vibe"), "Product gap register is missing.");
+check(files.productGapRegister.includes("Apple Health") && files.productGapRegister.includes("Samsung Watch") && files.productGapRegister.includes("Oura Ring") && files.productGapRegister.includes("Meta/Oakley"), "Product gap register must track device/accessory universe explicitly.");
+check(files.productGapRegister.includes("Cerrado con prueba") && files.productGapRegister.includes("Pendiente hardware/API"), "Product gap register must separate tested closure from hardware/API assumptions.");
 check(files.packageJson.includes('"verify:flows"') && files.packageJson.includes("verify-flow-automation.mjs"), "Package scripts must verify automatic server flow closure.");
 check(files.packageJson.includes("npm run verify:flows"), "Release verification must run the automatic flow closure gate.");
 check(files.packageJson.includes("verify-local-e2e-flow.mjs") && files.packageJson.includes("verify-production-e2e.mjs"), "Package scripts must expose local and production E2E verification.");

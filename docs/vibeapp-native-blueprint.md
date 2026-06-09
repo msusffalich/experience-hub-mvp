@@ -127,6 +127,9 @@ Cada evento o activo debe enviar:
 2. Transcripcion backend.
 3. Creacion de evento interno.
 4. Vinculo con agenda si el texto contiene una intencion clara.
+5. Comando activo por voz con `V`, `ve`, `vee`, `Hola V` o `Hi V` mientras la app esta abierta.
+6. Variantes de dictado como `by`, `bye` o `vai` solo se aceptan como activacion si despues hay una accion reconocible; nunca deben borrar una nota normal.
+7. Wake-up con app cerrada queda fuera de la PWA y debe resolverse con App Intents/Shortcuts, servicio nativo o capacidad aprobada por iOS/Android.
 
 ## Cuarto incremento
 

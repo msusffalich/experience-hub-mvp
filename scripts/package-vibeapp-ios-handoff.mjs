@@ -7,11 +7,20 @@ const root = process.cwd();
 const pwaVersion = readFileSync(path.join(root, "app.js"), "utf8").match(/const APP_VERSION = "([^"]+)";/)?.[1] || "unknown";
 const pubspec = readFileSync(path.join(root, "vibeapp", "pubspec.yaml"), "utf8");
 const vibeappVersion = pubspec.match(/^version:\s*(.+)$/m)?.[1]?.trim() || "0.0.0+0";
+const vibeappMain = readFileSync(path.join(root, "vibeapp", "lib", "main.dart"), "utf8");
+const vibeappReleaseLabel = vibeappMain.match(/vibeappReleaseLabel\s*=\s*'([^']+)'/)?.[1] || pwaVersion;
 const bundleId = "com.miguelsusffalich.vibeapp";
+const handoffCategory = (process.env.VIBE_HANDOFF_CATEGORY || "").trim();
+const allowedHandoffCategories = [
+  "Cambio funcional nuevo",
+  "Absorcion de cambio Mac",
+  "Revalidacion sin cambio funcional",
+  "Solo nota / sin codigo",
+];
 const sourceDir = path.join(root, "vibeapp");
 const outDir = path.join(root, "dist", "vibeapp-ios-handoff");
 const sourceOutDir = path.join(outDir, "vibeapp");
-const zipName = `vibeapp-ios-handoff-${pwaVersion}.zip`;
+const zipName = `vibeapp-ios-handoff-${vibeappReleaseLabel}.zip`;
 const zipPath = path.join(root, "dist", zipName);
 const zipChecksumPath = `${zipPath}.sha256`;
 
@@ -26,6 +35,9 @@ function formatBytes(bytes) {
 }
 
 console.log("Verifying iOS readiness before packaging...");
+if (!allowedHandoffCategories.includes(handoffCategory)) {
+  throw new Error(`VIBE_HANDOFF_CATEGORY is required before packaging. Use one of: ${allowedHandoffCategories.join(" | ")}`);
+}
 const verifyResult = process.platform === "win32"
   ? spawnSync("npm.cmd run verify:ios", [], { cwd: root, encoding: "utf8", shell: true, windowsHide: true })
   : spawnSync("npm", ["run", "verify:ios"], { cwd: root, encoding: "utf8", windowsHide: true });
@@ -51,12 +63,31 @@ mkdirSync(sourceOutDir, { recursive: true });
   "README.md",
 ].forEach((file) => copyFileSync(path.join(sourceDir, file), path.join(sourceOutDir, file)));
 
+[
+  "PROTOCOLO_VERSIONES_CODEX_WINDOWS_MAC.md",
+  "NOTA_CODEX_WINDOWS_VIBEAPP_536_IPAD.md",
+  "NOTA_CODEX_WINDOWS_VIBEAPP_537_V_FEEDBACK_IPAD.md",
+  "docs/vibeapp-compatibility-matrix.md",
+  "docs/product-gap-register.md",
+].forEach((file) => {
+  const sourcePath = path.join(root, file);
+  if (!existsSync(sourcePath)) return;
+  const destinationPath = path.join(outDir, file);
+  mkdirSync(path.dirname(destinationPath), { recursive: true });
+  copyFileSync(sourcePath, destinationPath);
+});
+
 const keyFiles = [
   "vibeapp/pubspec.yaml",
   "vibeapp/ios/Runner/Info.plist",
   "vibeapp/ios/Runner/Runner.entitlements",
   "vibeapp/ios/Runner.xcodeproj/project.pbxproj",
   "vibeapp/README.md",
+  "PROTOCOLO_VERSIONES_CODEX_WINDOWS_MAC.md",
+  "NOTA_CODEX_WINDOWS_VIBEAPP_536_IPAD.md",
+  "NOTA_CODEX_WINDOWS_VIBEAPP_537_V_FEEDBACK_IPAD.md",
+  "docs/vibeapp-compatibility-matrix.md",
+  "docs/product-gap-register.md",
 ].map((relativePath) => {
   const filePath = path.join(outDir, relativePath);
   return {
@@ -71,8 +102,10 @@ const generatedAt = new Date().toISOString();
 const manifest = {
   generatedAt,
   packageName: "vibeapp-ios-mac-handoff",
+  handoffCategory,
   pwaVersion,
   vibeappVersion,
+  vibeappReleaseLabel,
   bundleId,
   backendUrl: "https://experience-hub-web-production.up.railway.app",
   requiredPreMacCheck: "npm run verify:ios",
@@ -110,6 +143,7 @@ writeFileSync(
   `# Vibeapp iOS/Mac handoff package
 
 Generated: ${generatedAt}
+Handoff category: ${handoffCategory}
 PWA version: ${pwaVersion}
 Vibeapp version: ${vibeappVersion}
 iOS bundle id: ${bundleId}

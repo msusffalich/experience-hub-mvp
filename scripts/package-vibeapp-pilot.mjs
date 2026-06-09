@@ -7,7 +7,7 @@ const root = process.cwd();
 const pwaVersion = readFileSync(path.join(root, "app.js"), "utf8").match(/const APP_VERSION = "([^"]+)";/)?.[1] || "unknown";
 const pubspec = readFileSync(path.join(root, "vibeapp", "pubspec.yaml"), "utf8");
 const vibeappVersion = pubspec.match(/^version:\s*(.+)$/m)?.[1]?.trim() || "0.0.0+0";
-const packageId = "io.vibeapp.mobile";
+const packageId = "com.miguelsusffalich.vibeapp";
 const outDir = path.join(root, "dist", "vibeapp-pilot");
 const zipName = `vibeapp-pilot-${pwaVersion}.zip`;
 const zipPath = path.join(root, "dist", zipName);

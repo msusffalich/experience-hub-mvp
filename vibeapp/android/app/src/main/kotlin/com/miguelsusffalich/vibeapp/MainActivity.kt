@@ -1,4 +1,4 @@
-package io.vibeapp.mobile
+package com.miguelsusffalich.vibeapp
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 
