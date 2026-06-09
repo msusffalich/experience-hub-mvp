@@ -1,4 +1,4 @@
-const APP_VERSION = "20260608-oura-visible-result-563";
+const APP_VERSION = "20260609-vibepwa-logo-564";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
