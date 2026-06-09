@@ -184,6 +184,8 @@ assert(files.app.includes("preserveSessionOnAuthFailure") && files.app.includes(
 const ouraConnectFunction = files.app.match(/async function connectOuraAccount\(\) \{[\s\S]*?\n\}/)?.[0] || "";
 assert(ouraConnectFunction.includes("fetchApi(") && !ouraConnectFunction.includes("apiRequest("), "Oura connector must use an isolated fetch path, not generic apiRequest session handling.");
 assert(!ouraConnectFunction.includes("showAuthView()") && !ouraConnectFunction.includes("expireAuthSession()"), "Oura connector must not navigate to auth or expire the global session.");
+assert(files.app.indexOf("await handleIntegrationReturnFromUrl()") < files.app.indexOf("applyInitialViewFromUrl()"), "Oura callback result must be handled before initial view navigation rewrites the URL.");
+assert(files.app.includes("diagnostic-ok") && files.app.includes("ouraLastConnection?.message"), "Oura diagnostic return must be shown persistently in the dashboard.");
 assert(files.app.includes("Tus datos y sincronizacion no fueron modificados") && files.app.includes("Your data and sync state were not changed"), "Oura connector must show a user-safe no-side-effect recovery message.");
 assert(files.server.includes("/api/integration/apple-health/manifest") && files.server.includes("function normalizeAppleHealthPayload"), "Server does not expose the Apple Health connector manifest and normalizer.");
 assert(files.server.includes("/api/integration/health-connect/manifest") && files.server.includes("function normalizeHealthConnectPayload"), "Server does not expose the Android Health Connect connector manifest and normalizer.");

@@ -1,4 +1,4 @@
-const APP_VERSION = "20260608-oura-isolated-connect-562";
+const APP_VERSION = "20260608-oura-visible-result-563";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -4031,8 +4031,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   ensurePilotClosureCompleted();
   await refreshOuraConnectionStatus({ silent: true });
   renderAllAndScheduleAutomation();
-  applyInitialViewFromUrl();
   await handleIntegrationReturnFromUrl();
+  applyInitialViewFromUrl();
   setupOpsPolling();
   setupServerSyncPolling();
   setupDailyBriefingRefresh();
@@ -10557,10 +10557,17 @@ async function handleIntegrationReturnFromUrl() {
   const status = url.searchParams.get("status") || "";
   const detail = url.searchParams.get("detail") || "";
   const message = url.searchParams.get("message")
-    || (status === "connected"
+    || (status === "connected" || status === "diagnostic-ok"
       ? state.language === "en" ? "Oura connected successfully." : "Oura quedo conectado correctamente."
       : state.language === "en" ? "Oura did not finish connecting." : "Oura no termino de conectarse.");
-  notify(detail ? `${message} (${detail})` : message, status === "connected" ? "ok" : "warn");
+  const callbackResult = {
+    ok: status === "connected" || status === "diagnostic-ok",
+    status,
+    detailCode: detail,
+    message,
+    checkedAt: new Date().toISOString(),
+  };
+  notify(detail ? `${message} (${detail})` : message, callbackResult.ok ? "ok" : "warn");
   try {
     await refreshOuraConnectionStatus({ silent: true });
   } catch (error) {
@@ -10573,9 +10580,15 @@ async function handleIntegrationReturnFromUrl() {
       },
     };
   }
+  state.ouraConnectionStatus = {
+    ...(state.ouraConnectionStatus || {}),
+    connected: status === "connected" ? true : Boolean(state.ouraConnectionStatus?.connected),
+    lastConnection: callbackResult,
+  };
   ["integration", "status", "message", "detail"].forEach((key) => url.searchParams.delete(key));
   if (!url.searchParams.get("v")) url.searchParams.set("v", APP_VERSION);
   window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+  showView("dashboard");
   renderDashboardIntegrationHandoff();
   renderDeviceIntegrationPanel();
 }
@@ -15690,6 +15703,7 @@ function renderDashboardIntegrationHandoff() {
         connectOura: "Connect Oura",
         openAssets: "Open Assets",
         openAdmin: "Open connector tests",
+        ouraResult: "Oura",
       }
     : {
         clear: "Aun no hay señales nativas o de conectores en este alcance.",
@@ -15705,9 +15719,11 @@ function renderDashboardIntegrationHandoff() {
         connectOura: "Conectar Oura",
         openAssets: "Abrir Activos",
         openAdmin: "Probar conectores",
+        ouraResult: "Oura",
       };
   const sourceEntries = Object.entries(summary.families).sort((a, b) => b[1] - a[1]).slice(0, 6);
   const payloadEntries = Object.entries(summary.payloads).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  const ouraLastConnection = state.ouraConnectionStatus?.lastConnection || null;
   box.innerHTML = `
     <div class="dashboard-integration-summary ${summary.total ? "is-active" : "needs-data"}">
       <div>
@@ -15733,6 +15749,15 @@ function renderDashboardIntegrationHandoff() {
       <span>${escapeHtml(labels.payloads)}:</span>
       ${payloadEntries.length ? payloadEntries.map(([name, count]) => `<b>${escapeHtml(String(name).replace(/_/g, " "))} ${escapeHtml(String(count))}</b>`).join("") : `<b>-</b>`}
     </div>
+    ${
+      ouraLastConnection?.message
+        ? `<div class="dashboard-integration-tags">
+            <span>${escapeHtml(labels.ouraResult)}:</span>
+            <b class="${ouraLastConnection.ok ? "status-ok" : "status-warn"}">${escapeHtml(ouraLastConnection.ok ? "OK" : "!")}</b>
+            <small>${escapeHtml(`${ouraLastConnection.message}${ouraLastConnection.detailCode ? ` (${ouraLastConnection.detailCode})` : ""}`)}</small>
+          </div>`
+        : ""
+    }
     <div class="dashboard-integration-recent">
       <span class="card-meta">${escapeHtml(labels.recent)}</span>
       ${
