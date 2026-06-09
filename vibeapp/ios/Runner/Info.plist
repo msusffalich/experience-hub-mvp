@@ -1,86 +1,92 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
-<dict>
-	<key>CADisableMinimumFrameDurationOnPhone</key>
-	<true/>
-	<key>CFBundleDevelopmentRegion</key>
-	<string>$(DEVELOPMENT_LANGUAGE)</string>
-	<key>CFBundleDisplayName</key>
-	<string>Vibeapp</string>
-	<key>CFBundleExecutable</key>
-	<string>$(EXECUTABLE_NAME)</string>
-	<key>CFBundleIdentifier</key>
-	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
-	<key>CFBundleInfoDictionaryVersion</key>
-	<string>6.0</string>
-	<key>CFBundleName</key>
-	<string>Vibeapp</string>
-	<key>CFBundlePackageType</key>
-	<string>APPL</string>
-	<key>CFBundleShortVersionString</key>
-	<string>$(FLUTTER_BUILD_NAME)</string>
-	<key>CFBundleSignature</key>
-	<string>????</string>
-	<key>CFBundleVersion</key>
-	<string>$(FLUTTER_BUILD_NUMBER)</string>
-	<key>LSRequiresIPhoneOS</key>
-	<true/>
-	<key>NSCameraUsageDescription</key>
-	<string>Vibe usa la camara para capturar fotos vinculadas a tus experiencias.</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>Vibe usa el microfono cuando grabas videos o audios desde la app nativa.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Vibe usa tu biblioteca solo cuando eliges una imagen o video para una experiencia.</string>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Vibe puede guardar o preparar medios solo cuando decides exportarlos o compartirlos desde una experiencia.</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Vibe usa tu ubicacion solo cuando eliges guardar el lugar de una experiencia.</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Vibe no rastrea ubicacion en segundo plano; esta autorizacion queda reservada para pruebas futuras aprobadas por el usuario.</string>
-	<key>NSHealthShareUsageDescription</key>
-	<string>Vibe puede leer datos de Apple Health solo con tu permiso para enriquecer reportes de energia, actividad, sueno y recuperacion.</string>
-	<key>NSHealthUpdateUsageDescription</key>
-	<string>Vibe no escribe datos medicos por defecto; esta autorizacion queda reservada para integraciones futuras que tu apruebes.</string>
-	<key>UIApplicationSceneManifest</key>
 	<dict>
-		<key>UIApplicationSupportsMultipleScenes</key>
-		<false/>
-		<key>UISceneConfigurations</key>
+		<key>CADisableMinimumFrameDurationOnPhone</key>
+		<true/>
+		<key>CFBundleDevelopmentRegion</key>
+		<string>$(DEVELOPMENT_LANGUAGE)</string>
+		<key>CFBundleDisplayName</key>
+		<string>Vibeapp</string>
+		<key>CFBundleExecutable</key>
+		<string>$(EXECUTABLE_NAME)</string>
+		<key>CFBundleIdentifier</key>
+		<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+		<key>CFBundleInfoDictionaryVersion</key>
+		<string>6.0</string>
+		<key>CFBundleName</key>
+		<string>Vibeapp</string>
+		<key>CFBundlePackageType</key>
+		<string>APPL</string>
+		<key>CFBundleShortVersionString</key>
+		<string>$(FLUTTER_BUILD_NAME)</string>
+		<key>CFBundleSignature</key>
+		<string>????</string>
+		<key>CFBundleVersion</key>
+		<string>$(FLUTTER_BUILD_NUMBER)</string>
+		<key>LSRequiresIPhoneOS</key>
+		<true/>
+		<key>NSCameraUsageDescription</key>
+		<string>Vibe usa la camara para capturar fotos vinculadas a tus experiencias.</string>
+		<key>NSMicrophoneUsageDescription</key>
+		<string>Vibe usa el microfono cuando grabas videos o audios desde la app nativa.</string>
+		<key>NSSpeechRecognitionUsageDescription</key>
+		<string>Vibe usa reconocimiento de voz para entender comandos como nota, foto, video, agenda y navegacion dentro de la app.</string>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>Vibe usa tu biblioteca solo cuando eliges una imagen o video para una experiencia.</string>
+		<key>NSPhotoLibraryAddUsageDescription</key>
+		<string>Vibe puede guardar o preparar medios solo cuando decides exportarlos o compartirlos desde una experiencia.</string>
+		<key>NSLocationWhenInUseUsageDescription</key>
+		<string>Vibe usa tu ubicacion solo cuando eliges guardar el lugar de una experiencia.</string>
+		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+		<string>Vibe no rastrea ubicacion en segundo plano; esta autorizacion queda reservada para pruebas futuras aprobadas por el usuario.</string>
+		<key>NSHealthShareUsageDescription</key>
+		<string>Vibe puede leer datos de Apple Health solo con tu permiso para enriquecer reportes de energia, actividad, sueno y recuperacion.</string>
+		<key>NSHealthUpdateUsageDescription</key>
+		<string>Vibe no escribe datos medicos por defecto; esta autorizacion queda reservada para integraciones futuras que tu apruebes.</string>
+		<key>UIApplicationSceneManifest</key>
 		<dict>
-			<key>UIWindowSceneSessionRoleApplication</key>
-			<array>
-				<dict>
-					<key>UISceneClassName</key>
-					<string>UIWindowScene</string>
-					<key>UISceneConfigurationName</key>
-					<string>flutter</string>
-					<key>UISceneDelegateClassName</key>
-					<string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
-					<key>UISceneStoryboardFile</key>
-					<string>Main</string>
-				</dict>
-			</array>
+			<key>UIApplicationSupportsMultipleScenes</key>
+			<false/>
+			<key>UISceneConfigurations</key>
+			<dict>
+				<key>UIWindowSceneSessionRoleApplication</key>
+				<array>
+					<dict>
+						<key>UISceneClassName</key>
+						<string>UIWindowScene</string>
+						<key>UISceneConfigurationName</key>
+						<string>flutter</string>
+						<key>UISceneDelegateClassName</key>
+						<string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
+						<key>UISceneStoryboardFile</key>
+						<string>Main</string>
+					</dict>
+				</array>
+			</dict>
 		</dict>
+		<key>UIApplicationSupportsIndirectInputEvents</key>
+		<true/>
+		<key>UILaunchStoryboardName</key>
+		<string>LaunchScreen</string>
+		<key>UIMainStoryboardFile</key>
+		<string>Main</string>
+		<key>UISupportedInterfaceOrientations</key>
+		<array>
+			<string>UIInterfaceOrientationPortrait</string>
+			<string>UIInterfaceOrientationLandscapeLeft</string>
+			<string>UIInterfaceOrientationLandscapeRight</string>
+		</array>
+		<key>UISupportedInterfaceOrientations~ipad</key>
+		<array>
+			<string>UIInterfaceOrientationPortrait</string>
+			<string>UIInterfaceOrientationPortraitUpsideDown</string>
+			<string>UIInterfaceOrientationLandscapeLeft</string>
+			<string>UIInterfaceOrientationLandscapeRight</string>
+		</array>
+		<key>UIStatusBarHidden</key>
+		<true/>
+		<key>UIViewControllerBasedStatusBarAppearance</key>
+		<false/>
 	</dict>
-	<key>UIApplicationSupportsIndirectInputEvents</key>
-	<true/>
-	<key>UILaunchStoryboardName</key>
-	<string>LaunchScreen</string>
-	<key>UIMainStoryboardFile</key>
-	<string>Main</string>
-	<key>UISupportedInterfaceOrientations</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-	<key>UISupportedInterfaceOrientations~ipad</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-</dict>
 </plist>

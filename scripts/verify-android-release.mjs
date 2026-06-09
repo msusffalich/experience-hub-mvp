@@ -28,7 +28,7 @@ check(existsSync(keyExamplePath), "Safe key.properties.example is missing.");
 
 let gitIgnored = "";
 try {
-  gitIgnored = execFileSync("git", ["-c", "core.excludesFile=", "status", "--short", "--ignored", "vibeapp/android/key.properties"], {
+  gitIgnored = execFileSync("git", ["-c", "core.excludesFile=", "check-ignore", "vibeapp/android/key.properties"], {
     cwd: root,
     encoding: "utf8",
     windowsHide: true,
@@ -36,7 +36,7 @@ try {
 } catch (error) {
   failures.push(`Could not verify ignored key.properties: ${error.message}`);
 }
-check(gitIgnored.includes("!! vibeapp/android/key.properties"), "vibeapp/android/key.properties must be ignored by Git.");
+check(gitIgnored.trim() === "vibeapp/android/key.properties", "vibeapp/android/key.properties must be ignored by Git.");
 
 let trackedSecrets = "";
 try {

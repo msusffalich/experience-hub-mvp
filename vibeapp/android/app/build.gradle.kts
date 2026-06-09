@@ -30,7 +30,8 @@ android {
 
     defaultConfig {
         applicationId = "io.vibeapp.mobile"
-        minSdk = flutter.minSdkVersion
+        // Health Connect / paquete `health` exige minSdk 26 (nota 559).
+        minSdk = maxOf(26, flutter.minSdkVersion)
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

@@ -1,5 +1,7 @@
 package io.vibeapp.mobile
 
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 
-class MainActivity : FlutterActivity()
+// FlutterFragmentActivity es requerido por el paquete `health` para mostrar los
+// dialogos de permisos de Health Connect en Android (nota 559).
+class MainActivity : FlutterFragmentActivity()

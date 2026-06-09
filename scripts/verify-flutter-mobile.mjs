@@ -44,7 +44,7 @@ check(files.pubspec.includes("name: vibeapp"), "pubspec must identify the native
 check(files.pubspec.includes("image_picker") && files.pubspec.includes("record") && files.pubspec.includes("geolocator"), "vibeapp must keep camera/audio/location dependencies.");
 const labelMatch = files.main.match(/vibeappBuildLabel\s*=\s*'Vibeapp\s+(\d+)'/);
 const releaseMatch = files.main.match(/vibeappReleaseLabel\s*=\s*'([^']+)'/);
-const buildMatch = files.pubspec.match(/^version:\s*0\.1\.0\+(\d+)/m);
+const buildMatch = files.pubspec.match(/^version:\s*\d+\.\d+\.\d+\+(\d+)/m);
 check(Boolean(labelMatch), "Vibeapp build label is missing.");
 check(Boolean(releaseMatch), "Vibeapp release label is missing.");
 check(Boolean(buildMatch), "pubspec must expose iOS/Android build number.");
@@ -221,9 +221,7 @@ function runFlutter(args, label) {
 }
 
 runFlutter(["--version"], "version");
-if (!existsSync(path.join(appDir, ".dart_tool", "package_config.json"))) {
-  runFlutter(["pub", "get"], "pub get");
-}
+runFlutter(["pub", "get"], "pub get");
 runFlutter(["analyze", "--no-pub"], "analyze");
 runFlutter(["test", "--no-pub"], "test");
 

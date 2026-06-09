@@ -1,7 +1,7 @@
 name: vibeapp
 description: Native companion app for Vibe human experience capture.
 publish_to: "none"
-version: 0.1.0+1
+version: 0.4.0+561
 
 environment:
   sdk: ">=3.4.0 <4.0.0"
@@ -9,17 +9,44 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   cupertino_icons: ^1.0.8
   image_picker: ^1.1.2
   record: ^6.2.1
   path_provider: ^2.1.5
   geolocator: ^14.0.2
   file_picker: ^11.0.2
+  speech_to_text: ^7.4.0
+  flutter_tts: ^4.2.0
+  health: ^13.3.1
+  flutter_secure_storage: ^9.2.4
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.14.1
+  flutter_native_splash: ^2.4.1
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/branding/vibe_logo.png
+    - assets/branding/app_icon.png
+
+# Icono de app de marca (best-effort desde el logo).
+flutter_launcher_icons:
+  image_path: "assets/branding/app_icon.png"
+  android: true
+  ios: true
+  remove_alpha_ios: true
+  min_sdk_android: 26
+
+# Splash con el logo sobre el color de marca.
+flutter_native_splash:
+  color: "#0D7C66"
+  image: assets/branding/vibe_logo.png
+  android: true
+  ios: true
+  fullscreen: true

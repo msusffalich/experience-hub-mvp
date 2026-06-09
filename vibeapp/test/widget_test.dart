@@ -10,11 +10,31 @@ import 'package:vibeapp/main.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  test('Persisted Vibe session restores sync without saving password', () {
+    final session = PersistedVibeSession(
+      apiBaseUrl: 'https://vibe.test',
+      email: 'miguel@example.com',
+      accessToken: 'token-123',
+      savedAt: DateTime.utc(2026, 6, 4, 12),
+    );
+
+    final json = session.toJson();
+    expect(json['apiBaseUrl'], 'https://vibe.test');
+    expect(json['email'], 'miguel@example.com');
+    expect(json['accessToken'], 'token-123');
+    expect(json.containsKey('password'), isFalse);
+
+    final restored = PersistedVibeSession.fromJson(json);
+    expect(restored.isUsable, isTrue);
+    expect(restored.email, 'miguel@example.com');
+    expect(restored.accessToken, 'token-123');
+  });
+
   test('Native quick commands parse note, agenda, and experience actions', () {
     final note = NativeQuickCommand.parse(
-        'Hola V, toma nota que el parque está hermoso');
+        'Hola V, toma nota que el parque esta hermoso');
     expect(note.type, NativeQuickCommandType.note);
-    expect(note.cleanedText, 'el parque está hermoso');
+    expect(note.cleanedText, 'el parque esta hermoso');
 
     final agenda = NativeQuickCommand.parse(
       'V, agenda cena con Ana hoy a las 8 pm en Casa',
@@ -31,6 +51,35 @@ void main() {
 
     final close = NativeQuickCommand.parse('V, cerrar experiencia');
     expect(close.type, NativeQuickCommandType.closeExperience);
+
+    final listening = NativeQuickCommand.parse('V');
+    expect(listening.type, NativeQuickCommandType.listen);
+    expect(listening.previewTitle, 'Vibe en linea');
+    expect(listening.primaryActionLabel, 'Confirmar V en linea');
+
+    final greetedListening = NativeQuickCommand.parse('Hola V');
+    expect(greetedListening.type, NativeQuickCommandType.listen);
+
+    final englishListening = NativeQuickCommand.parse('Hi V');
+    expect(englishListening.type, NativeQuickCommandType.listen);
+
+    final englishNote = NativeQuickCommand.parse(
+      'Hi V, take note that the museum was excellent',
+    );
+    expect(englishNote.type, NativeQuickCommandType.note);
+    expect(englishNote.cleanedText, 'that the museum was excellent');
+
+    final misheardAgenda = NativeQuickCommand.parse(
+      'Bye agenda cena con Ana hoy a las 8 pm en Casa',
+    );
+    expect(misheardAgenda.type, NativeQuickCommandType.agenda);
+
+    final misheardStart = NativeQuickCommand.parse(
+      'Vai inicia experiencia caminata por el centro',
+    );
+    expect(misheardStart.type, NativeQuickCommandType.startExperience);
+
+    expect(stripNativeWakePhrase('bye'), 'bye');
   });
 
   test('Native payloads preserve event, media, location, and biometric context',
@@ -48,6 +97,9 @@ void main() {
             'startDate,steps,heart_rate\n'
             '2026-05-27T08:00:00Z,1200,72\n',
           );
+    final appleHealthZip =
+        File('${tempDir.path}${Platform.pathSeparator}export.zip')
+          ..writeAsBytesSync([80, 75, 3, 4, 1, 2, 3, 4]);
 
     final session = ActiveExperienceSession.start('Paseo de prueba');
     session.addTextEvent('Llegada al parque.');
@@ -79,8 +131,7 @@ void main() {
       accuracy: 12,
     ));
     final locationPayload = locationItem.toExperiencePayload();
-    expect(
-        locationPayload['objective'], 'Ubicaci\u00f3n capturada desde Vibeapp');
+    expect(locationPayload['objective'], 'Ubicacion capturada desde Vibeapp');
     expect(locationPayload['metadata']['payloadType'], 'location');
     expect(locationPayload['metadata']['accuracyMeters'], 12);
 
@@ -103,9 +154,42 @@ void main() {
         'vibeapp-biometric-file-v1');
     expect(biometricPayload['metadata']['biometricImport']['recordCount'], 1);
     expect(
+      biometricPayload['metadata']['biometricImport']['userSummary'],
+      contains('Biometria lista'),
+    );
+    expect(
+      biometricPayload['metadata']['biometricImport']['suggestedAction'],
+      contains('Vibe usara estas senales'),
+    );
+    expect(
       (biometricPayload['attachments'] as List).single['sourceType'],
       'vibeapp-native-biometric',
     );
+
+    final zipSummary = BiometricImportSummary.fromOriginalArchive(
+      fileName: 'export.zip',
+      size: appleHealthZip.lengthSync(),
+    );
+    final zipAttachment = NativeAttachmentDraft.fromFilePath(
+      appleHealthZip.path,
+      sourceType: 'biometric',
+      previewText: zipSummary.summaryText,
+      analysisText: zipSummary.analysisText,
+      metadataExtras: {
+        'payloadType': 'biometric_archive',
+        'originalArchive': true,
+        'biometricImport': zipSummary.toJson(),
+      },
+    );
+    final zipItem = CaptureQueueItem.biometric(zipAttachment, zipSummary);
+    final zipPayload = zipItem.toExperiencePayload();
+    final zipPayloadAttachment =
+        (zipPayload['attachments'] as List).single as Map<String, dynamic>;
+    expect(zipPayload['metadata']['biometricImport']['recordCount'], 0);
+    expect(zipPayload['metadata']['biometricImport']['userSummary'],
+        contains('ZIP biometrico guardado'));
+    expect(zipPayloadAttachment['type'], 'application/zip');
+    expect(zipPayloadAttachment['metadata']['originalArchive'], isTrue);
   });
 
   test('External session import profiles Meta and biometric sources correctly',
@@ -486,7 +570,8 @@ void main() {
     expect(summary.operatorMessage, contains('requieren accion'));
   });
 
-  test('Native pilot checklist scores backend, session, and queue blockers',
+  test(
+      'Native mobile compatibility gate scores backend, session, and queue blockers',
       () {
     final clearQueue = CaptureQueueSummary.fromItems(const []);
     final ready = NativePilotChecklist.fromState(
@@ -512,42 +597,78 @@ void main() {
     expect(blocked.canRunPilot, isFalse);
     expect(blocked.blockers.map((item) => item.id),
         containsAll(['backend', 'session']));
-    expect(blocked.summary, contains('Antes del piloto'));
+    expect(blocked.summary, contains('Antes de usar en produccion'));
   });
 
   testWidgets('Vibeapp quick capture smoke test', (WidgetTester tester) async {
     await tester.pumpWidget(const VibeApp());
 
-    expect(find.text('Vibe'), findsOneWidget);
-    expect(find.text('Captura al paso'), findsOneWidget);
-    expect(find.text('Para ti'), findsOneWidget);
-    expect(find.text('Audio'), findsOneWidget);
-    expect(find.text('Foto'), findsOneWidget);
-    expect(find.text('Video'), findsOneWidget);
-    expect(find.text('Agenda'), findsWidgets);
-    expect(find.text('Biometría'), findsOneWidget);
-    expect(find.text('Lugar'), findsOneWidget);
-    expect(find.text('Inicio'), findsOneWidget);
-    expect(find.text('Captura'), findsWidgets);
-    expect(find.text('Libreria'), findsWidgets);
-    expect(find.text('Activos'), findsOneWidget);
-    expect(find.text('Agenda'), findsWidgets);
-    expect(find.text('Estado'), findsOneWidget);
-    expect(find.text('Ajustes'), findsOneWidget);
+    // Primer uso: el onboarding aparece tras cargar ajustes. Lo descartamos.
+    await tester.pumpAndSettle(const Duration(seconds: 1));
+    final skip = find.text('Saltar');
+    if (skip.evaluate().isNotEmpty) {
+      await tester.tap(skip);
+      await tester.pumpAndSettle();
+    }
 
+    expect(find.image(const AssetImage('assets/branding/vibe_logo.png')),
+        findsOneWidget);
+    expect(find.text('V por voz'), findsOneWidget);
+    expect(find.text('Hablar con V'), findsOneWidget);
+    expect(find.text('ES · OFF'), findsOneWidget);
+    expect(find.text('ES'), findsOneWidget);
+    expect(find.text('EN'), findsOneWidget);
+    expect(find.text('FR'), findsOneWidget);
+    expect(find.text('Nota'), findsOneWidget);
+    expect(find.text('Audio'), findsWidgets);
+    expect(find.text('Foto'), findsOneWidget);
+    expect(find.text('Vídeo'), findsOneWidget);
+    expect(find.text('Biometria'), findsOneWidget);
+    expect(find.text('Crear agenda'), findsOneWidget);
+    expect(find.text('Ver agenda'), findsOneWidget);
+    expect(find.text('Experiencia'), findsOneWidget);
+    expect(find.text('Capturar'), findsWidgets);
+    expect(find.text('Guardados'), findsWidgets);
+    expect(find.text('Archivos'), findsWidgets);
+    expect(find.text('Estado'), findsWidgets);
+    expect(find.text('Cuenta'), findsWidgets);
     await tester.scrollUntilVisible(
-      find.text('Guardar captura'),
+      find.text('Flujo simple'),
       300,
       scrollable: find.byType(Scrollable).first,
     );
+    expect(find.text('Flujo simple'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Que quieres hacer ahora?'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('Que quieres hacer ahora?'), findsOneWidget);
+    expect(find.text('Escribir'), findsOneWidget);
+    expect(find.text('Guardados'), findsWidgets);
+    expect(find.text('Audio'), findsOneWidget);
+    expect(find.text('Foto'), findsOneWidget);
+    expect(find.text('Inicio'), findsOneWidget);
+    expect(find.text('Capturar'), findsWidgets);
+    expect(find.text('Archivos'), findsWidgets);
+    expect(find.text('Agenda'), findsWidgets);
+    expect(find.text('Estado'), findsOneWidget);
+    expect(find.text('Cuenta'), findsWidgets);
+
+    await tester.tap(find.text('Capturar').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Vídeo'), findsOneWidget);
+    expect(find.text('Biometria'), findsOneWidget);
+    expect(find.text('Lugar'), findsOneWidget);
+
     expect(find.text('Guardar captura'), findsOneWidget);
 
     await tester.enterText(
-      find.widgetWithText(TextField, 'Cuenta lo que está pasando'),
+      find.widgetWithText(TextField, 'Cuenta lo que esta pasando'),
       'V, toma nota de prueba.',
     );
     await tester.pump();
-    expect(find.text('Vibe entendió: guardar nota'), findsOneWidget);
+    expect(find.text('Vibe entendio: guardar nota'), findsOneWidget);
     expect(find.text('Guardar nota'), findsOneWidget);
     await tester
         .ensureVisible(find.widgetWithText(FilledButton, 'Guardar nota'));
@@ -557,36 +678,56 @@ void main() {
     await tester.tap(find.text('Estado'));
     await tester.pumpAndSettle();
     expect(find.text('Cola local'), findsOneWidget);
+    expect(find.text('Limpieza de pruebas'), findsOneWidget);
+    expect(find.text('Borrar pruebas locales'), findsOneWidget);
+    expect(find.text('Reset local'), findsOneWidget);
     await tester.pump(const Duration(seconds: 4));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Libreria').last);
-    await tester.pumpAndSettle();
-    expect(
-        find.text('Experiencias y capturas recientes disponibles en el movil.'),
-        findsOneWidget);
-
-    await tester.tap(find.text('Activos'));
+    await tester.tap(find.text('Guardados').last);
     await tester.pumpAndSettle();
     expect(
         find.text(
-            'Fotos, videos, audio, documentos y biometria listos para sincronizar.'),
+            'Tus notas, experiencias y capturas recientes en este teléfono.'),
+        findsOneWidget);
+
+    await tester.tap(find.text('Archivos'));
+    await tester.pumpAndSettle();
+    expect(
+        find.text(
+            'Fotos, vídeos, audios, documentos y biometría vinculados a tus experiencias.'),
         findsOneWidget);
 
     await tester.tap(find.text('Agenda').last);
     await tester.pumpAndSettle();
     expect(
         find.text(
-            'Eventos creados por comando, captura rapida o experiencia abierta.'),
+            'Eventos creados por comando de voz, nota rápida o experiencia abierta.'),
         findsOneWidget);
 
-    await tester.tap(find.text('Ajustes'));
+    await tester.tap(find.text('Cuenta').last);
     await tester.pumpAndSettle();
-    expect(find.text('Cuenta'), findsOneWidget);
+    expect(find.text('Cuenta'), findsWidgets);
+    // La cuenta ahora incluye la tarjeta del asistente V y el manual; cada
+    // objetivo se hace visible antes de verificarlo (ListView perezoso).
+    await tester.scrollUntilVisible(
+      find.text(
+          'Entra con tu cuenta Vibe para guardar tus capturas y verlas en tus otros dispositivos.'),
+      400,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(
         find.text(
             'Entra con tu cuenta Vibe para guardar tus capturas y verlas en tus otros dispositivos.'),
         findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text(vibeappBuildLabel),
+      400,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text(vibeappBuildLabel), findsOneWidget);
+    await tester.tap(find.text('Estado').last);
+    await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
       find.text('Configuración y fuentes avanzadas'),
       500,
@@ -596,16 +737,16 @@ void main() {
     await tester.tap(find.text('Configuración y fuentes avanzadas'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Compuerta piloto móvil'), findsWidgets);
+    expect(find.text('Compuerta de compatibilidad movil'), findsWidgets);
     expect(find.text('Verificar backend Vibe'), findsWidgets);
 
     await tester.scrollUntilVisible(
-      find.text('Importar sesion externa'),
+      find.text('Importar sesión externa'),
       500,
       scrollable: find.byType(Scrollable).first,
     );
     expect(find.text('Sesiones externas'), findsOneWidget);
-    expect(find.text('Importar sesion externa'), findsOneWidget);
+    expect(find.text('Importar sesión externa'), findsOneWidget);
     await tester.scrollUntilVisible(
       find.text('Health Connect / Samsung'),
       500,
@@ -613,6 +754,79 @@ void main() {
     );
     expect(find.text('Health Connect / Samsung'), findsOneWidget);
     expect(find.text('Preparar prueba Health Connect'), findsOneWidget);
+  });
+
+  group('IntentEngine tolerante', () {
+    final engine = IntentEngine();
+
+    test('reconoce variaciones de comando con sinonimos y difuso', () {
+      expect(engine.classify('saca una foto', AppLanguage.spanish).intent,
+          VibeIntent.photo);
+      expect(engine.classify('abre la camara', AppLanguage.spanish).intent,
+          VibeIntent.photo);
+      expect(engine.classify('open the camera', AppLanguage.english).intent,
+          VibeIntent.photo);
+      expect(engine.classify('ve a la agenda', AppLanguage.spanish).intent,
+          VibeIntent.navAgenda);
+      expect(engine.classify('toma nota de la reunion', AppLanguage.spanish)
+          .intent, VibeIntent.takeNote);
+    });
+
+    test('desactivar siempre tiene prioridad', () {
+      expect(engine.classify('desactivar v', AppLanguage.spanish).intent,
+          VibeIntent.deactivate);
+      expect(engine.classify('stop v', AppLanguage.english).intent,
+          VibeIntent.deactivate);
+    });
+
+    test('preguntas se enrutan a la IA', () {
+      expect(engine.classify('que hora es', AppLanguage.spanish).intent,
+          VibeIntent.askQuestion);
+      expect(engine.classify('how does this work?', AppLanguage.english).intent,
+          VibeIntent.askQuestion);
+    });
+
+    test('frases ininteligibles devuelven unknown para pedir aclaracion', () {
+      expect(engine.classify('xyzzy plugh blorp', AppLanguage.spanish).intent,
+          VibeIntent.unknown);
+    });
+  });
+
+  group('AppStrings localizacion', () {
+    test('todas las claves tienen texto no vacio en los tres idiomas', () {
+      for (final lang in AppLanguage.values) {
+        final s = AppStrings(lang);
+        final values = <String>[
+          s.homeTab, s.captureTab, s.savedTab, s.assetsTab, s.agendaTab,
+          s.statusTab, s.accountTab, s.captureTitle, s.captureSubtitle,
+          s.statusTitle, s.statusSubtitle, s.accountTitle, s.accountSubtitle,
+          s.save, s.saveAndContinue, s.retry, s.cancel, s.close, s.done,
+          s.assistantSettingsTitle, s.assistantSettingsSubtitle,
+          s.languageLabel, s.voiceLabel, s.voiceFemale, s.voiceMale,
+          s.testVoice, s.testVoicePhrase, s.claudeKeyLabel, s.claudeKeyHint,
+          s.claudeKeySaved, s.wakeLabel, s.wakeHint, s.saveAssistantSettings,
+          s.assistantSettingsSaved, s.vListening, s.vThinking, s.vNoKey,
+          s.vAiError, s.micPermissionNeeded, s.manualButton, s.manualTitle,
+          s.manualIntro, s.manualSectionsTitle, s.manualSectionsBody,
+          s.manualAssistantTitle, s.manualAssistantBody, s.manualVoiceTitle,
+          s.manualVoiceBody, s.manualPermissionsTitle, s.manualPermissionsBody,
+          s.manualSyncTitle, s.manualSyncBody, s.manualTroubleTitle,
+          s.manualTroubleBody,
+          s.vAnswering('x'), s.vClarify('x'),
+        ];
+        for (final v in values) {
+          expect(v.trim(), isNotEmpty,
+              reason: 'Cadena vacia en ${lang.code}');
+        }
+      }
+    });
+
+    test('el codigo de idioma resuelve y por defecto es espanol', () {
+      expect(AppLanguage.fromCode('en'), AppLanguage.english);
+      expect(AppLanguage.fromCode('fr'), AppLanguage.french);
+      expect(AppLanguage.fromCode(null), AppLanguage.spanish);
+      expect(AppLanguage.fromCode('zz'), AppLanguage.spanish);
+    });
   });
 }
 
