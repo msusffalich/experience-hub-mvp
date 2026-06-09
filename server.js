@@ -267,6 +267,26 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (url.pathname === "/api/mobile/ai/messages" && req.method === "POST") {
+    const user = await getRequestUser(req);
+    const body = await readJson(req);
+    sendJson(res, 200, await proxyMobileAnthropicMessages(body, user));
+    return;
+  }
+
+  if (url.pathname === "/api/mobile/ai/transcribe" && req.method === "POST") {
+    const user = await getRequestUser(req);
+    sendJson(res, 200, await proxyMobileTranscription(req, req.headers["content-type"] || "", user));
+    return;
+  }
+
+  if (url.pathname.startsWith("/api/mobile/oura/") && req.method === "GET") {
+    const user = await getRequestUser(req);
+    const collection = decodeURIComponent(url.pathname.replace("/api/mobile/oura/", "")).trim();
+    sendJson(res, 200, await proxyMobileOuraCollection(collection, url.searchParams, user));
+    return;
+  }
+
   if (url.pathname === "/api/mobile/participants" && req.method === "GET") {
     const user = await getRequestUser(req);
     sendJson(res, 200, await listMobileParticipants(user));
@@ -3182,6 +3202,123 @@ async function handleMobileAssistantVision(body = {}, user = {}) {
     model: result.model,
   });
   return { ok: true, text: result.text, model: result.model };
+}
+
+async function proxyMobileAnthropicMessages(body = {}, user = {}) {
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    throw new HttpError(400, "ai_messages_payload_invalid", "La solicitud de IA no tiene un formato válido.");
+  }
+  if (!Array.isArray(body.messages) || !body.messages.length) {
+    throw new HttpError(400, "ai_messages_missing_messages", "Faltan mensajes para consultar a V.");
+  }
+  if (!ANTHROPIC_API_KEY) {
+    throw new HttpError(503, "assistant_not_configured", "La IA de V no esta configurada en Railway. Define ANTHROPIC_API_KEY.");
+  }
+  const payload = {
+    ...body,
+    model: String(body.model || ANTHROPIC_MODEL),
+    max_tokens: Math.max(1, Math.min(Number(body.max_tokens || body.maxTokens || 700), 2000)),
+  };
+  delete payload.maxTokens;
+  const response = await fetch(`${ANTHROPIC_API_BASE_URL}/v1/messages`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": ANTHROPIC_API_KEY,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify(payload),
+  });
+  const text = await response.text();
+  let decoded = {};
+  try {
+    decoded = text ? JSON.parse(text) : {};
+  } catch {
+    decoded = { raw: text };
+  }
+  if (!response.ok) {
+    throw new HttpError(response.status, "assistant_provider_failed", decoded);
+  }
+  await appendLog("info", "mobile_ai_messages_proxy", {
+    userId: user.id,
+    model: decoded.model || payload.model,
+    messageCount: body.messages.length,
+  });
+  return decoded;
+}
+
+async function proxyMobileTranscription(req, contentType = "", user = {}) {
+  if (activeTranscriptionProvider() !== "openai" || !OPENAI_API_KEY) {
+    throw new HttpError(503, "transcription_not_configured", "La transcripción de V no esta configurada en Railway.");
+  }
+  const boundaryMatch = String(contentType).match(/boundary=(?:"([^"]+)"|([^;]+))/i);
+  const boundary = boundaryMatch?.[1] || boundaryMatch?.[2];
+  if (!boundary) throw new HttpError(400, "missing_multipart_boundary", "La transcripción requiere multipart/form-data.");
+  const body = await readRawBody(req, MAX_MEDIA_BODY_LENGTH);
+  const parts = parseMultipartParts(body, boundary);
+  const filePart = parts.find((part) => part.name === "file");
+  if (!filePart?.content?.length) throw new HttpError(400, "missing_audio_file", "Falta el archivo de audio para transcribir.");
+  const modelPart = parts.find((part) => part.name === "model");
+  const model = String(modelPart?.content?.toString("utf8") || OPENAI_TRANSCRIPTION_MODEL).trim() || OPENAI_TRANSCRIPTION_MODEL;
+  const audioType = filePart.contentType || "audio/webm";
+  const form = new FormData();
+  form.append("model", model);
+  form.append("file", new Blob([filePart.content], { type: audioType }), filePart.filename || "audio.webm");
+  const response = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${OPENAI_API_KEY}` },
+    body: form,
+  });
+  const text = await response.text();
+  let payload = {};
+  try {
+    payload = text ? JSON.parse(text) : {};
+  } catch {
+    payload = { raw: text };
+  }
+  if (!response.ok) {
+    throw new HttpError(response.status, "transcription_provider_failed", payload);
+  }
+  await appendLog("info", "mobile_ai_transcribe_proxy", {
+    userId: user.id,
+    model,
+    mediaType: audioType,
+    bytes: filePart.content.length,
+  });
+  return { text: String(payload.text || ""), ...payload };
+}
+
+async function proxyMobileOuraCollection(collection = "", searchParams = new URLSearchParams(), user = {}) {
+  const normalizedCollection = String(collection || "").trim();
+  const allowed = new Set(["daily_readiness", "daily_sleep", "sleep"]);
+  if (!allowed.has(normalizedCollection)) {
+    throw new HttpError(404, "oura_collection_not_supported", {
+      collection: normalizedCollection,
+      allowed: [...allowed],
+    });
+  }
+  const dataTypeConfig = buildOuraConnectorManifest().dataTypes.find((item) => item.dataType === normalizedCollection);
+  if (!dataTypeConfig) throw new HttpError(404, "oura_collection_not_configured");
+  const storedTokens = await getStoredOuraTokens(user.id);
+  if (!storedTokens?.access_token) {
+    throw new HttpError(409, "oura_not_connected", {
+      message: "Conecta Oura en VibePWA antes de leer datos desde Vibeapp.",
+    });
+  }
+  const tokens = await refreshOuraTokensIfNeeded(user.id, storedTokens);
+  const result = await fetchOuraCollection(dataTypeConfig, tokens, {
+    start_date: searchParams.get("start_date") || "",
+    end_date: searchParams.get("end_date") || "",
+    start_datetime: searchParams.get("start_datetime") || "",
+    end_datetime: searchParams.get("end_datetime") || "",
+    maxPages: Number(searchParams.get("max_pages") || 12),
+  });
+  await appendLog("info", "mobile_oura_collection_proxy", {
+    userId: user.id,
+    collection: normalizedCollection,
+    count: result.documents.length,
+  });
+  return { data: result.documents, pages: result.pages };
 }
 
 function normalizeAssistantHistory(history = []) {
