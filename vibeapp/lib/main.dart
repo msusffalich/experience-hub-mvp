@@ -17,8 +17,8 @@ import 'package:speech_to_text/speech_recognition_error.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
-const String vibeappBuildLabel = 'Vibeapp 561';
-const String vibeappReleaseLabel = '20260608-vibeapp-darkmode-561';
+const String vibeappBuildLabel = 'Vibeapp 563';
+const String vibeappReleaseLabel = '20260609-vibeapp-vfixes-sync-563';
 
 /// Notificador global del idioma de la app. Es la unica fuente de verdad para
 /// el idioma activo: al cambiarlo se reconstruye todo el arbol (incluido el
@@ -840,6 +840,17 @@ class AppStrings {
       'Write or dictate a note first.', 'Écrivez ou dictez une note d\'abord.');
   String get improveNoteDone => _s('Nota mejorada.', 'Note improved.',
       'Note améliorée.');
+  // --- Vision: V analiza una foto (cámara/galería) ---
+  String get visionBtn =>
+      _s('Analizar foto con V', 'Analyze photo with V', 'Analyser photo avec V');
+  String get visionTakePhoto =>
+      _s('Tomar una foto', 'Take a photo', 'Prendre une photo');
+  String get visionFromGallery =>
+      _s('Elegir de la galería', 'Choose from gallery', 'Choisir depuis la galerie');
+  String get visionBusy =>
+      _s('V analizando la foto…', 'V analyzing the photo…', 'V analyse la photo…');
+  String get visionFail => _s('No se pudo analizar la foto:',
+      'Could not analyze the photo:', 'Impossible d\'analyser la photo:');
   // --- Tema (claro / oscuro) ---
   String get themeLabel => _s('Tema', 'Theme', 'Thème');
   String get themeSystem => _s('Sistema', 'System', 'Système');
@@ -1116,6 +1127,27 @@ class AppStrings {
       'Position enregistrée.');
   String get confSynced => _s('Sincronización lista.', 'Sync done.',
       'Synchronisation terminée.');
+  // --- Sincronización con mensajes claros ---
+  String get syncInProgress => _s('Sincronizando con el servidor…',
+      'Syncing with the server…', 'Synchronisation avec le serveur…');
+  String get syncNeedsSignIn => _s(
+        'Para sincronizar primero inicia sesión en Cuenta.',
+        'To sync, sign in first in Account.',
+        'Pour synchroniser, connectez-vous d\'abord dans Compte.',
+      );
+  String get syncNothingPending => _s('No hay nada pendiente; todo está sincronizado.',
+      'Nothing pending; everything is synced.',
+      'Rien en attente; tout est synchronisé.');
+  String syncDoneAll(int sent) => _s(
+        'Listo: $sent ${sent == 1 ? 'captura enviada' : 'capturas enviadas'} al servidor. Todo sincronizado.',
+        'Done: $sent ${sent == 1 ? 'capture' : 'captures'} sent. Everything synced.',
+        'Terminé: $sent ${sent == 1 ? 'capture envoyée' : 'captures envoyées'}. Tout synchronisé.',
+      );
+  String syncDonePartial(int sent, int pending) => _s(
+        'Envié $sent; quedan $pending pendientes (reintento automático).',
+        'Sent $sent; $pending still pending (will retry automatically).',
+        'Envoyé $sent; $pending en attente (nouvelle tentative auto).',
+      );
   String get confBackend => _s('Backend verificado.', 'Backend checked.',
       'Backend vérifié.');
   String get confCleaned =>
@@ -1123,9 +1155,9 @@ class AppStrings {
   String get confOpeningManual => _s('Abriendo el manual.',
       'Opening the manual.', 'Ouverture du manuel.');
   String get helpSpoken => _s(
-        'Puedo abrir secciones (inicio, capturar, guardados, agenda, estado, cuenta), tomar fotos, vídeo, audio y notas, guardar tu ubicación, contarte tu salud y pasos, darte un resumen del día, sincronizar, abrir el manual y responder tus preguntas. Recuerdo el hilo de la conversación, así que puedes encadenar peticiones. Solo dime qué necesitas.',
-        'I can open sections (home, capture, saved, agenda, status, account), take photos, video, audio and notes, save your location, tell you your health and steps, give you a daily briefing, sync, open the manual and answer your questions. I remember the conversation, so you can chain requests. Just tell me what you need.',
-        'Je peux ouvrir des sections (accueil, capture, enregistrés, agenda, état, compte), prendre photos, vidéo, audio et notes, enregistrer votre position, vous donner votre santé et vos pas, un résumé de la journée, synchroniser, ouvrir le manuel et répondre à vos questions. Je me souviens de la conversation, vous pouvez enchaîner les demandes. Dites-moi ce qu\'il vous faut.',
+        'Puedo abrir secciones, tomar fotos, vídeo, audio y notas, guardar tu ubicación, analizar una foto (leer y traducir texto, identificar objetos, comida, lugares u obras), crear experiencias y eventos de agenda por voz, contarte tu salud y pasos, darte un resumen del día, sincronizar y confirmar el backend, abrir el manual y responder tus preguntas. Recuerdo el hilo de la conversación, así que puedes encadenar peticiones. Solo dime qué necesitas.',
+        'I can open sections, take photos, video, audio and notes, save your location, analyze a photo (read and translate text, identify objects, food, places or artwork), create experiences and calendar events by voice, tell you your health and steps, give you a daily briefing, sync and check the backend, open the manual and answer your questions. I remember the conversation, so you can chain requests. Just tell me what you need.',
+        'Je peux ouvrir des sections, prendre photos, vidéo, audio et notes, enregistrer votre position, analyser une photo (lire et traduire du texte, identifier objets, nourriture, lieux ou œuvres), créer des expériences et des événements d\'agenda par la voix, vous donner votre santé et vos pas, un résumé de la journée, synchroniser et vérifier le backend, ouvrir le manuel et répondre à vos questions. Je me souviens de la conversation. Dites-moi ce qu\'il vous faut.',
       );
   String get confCanceled => _s('Acción cancelada.', 'Action canceled.',
       'Action annulée.');
@@ -1171,6 +1203,42 @@ class AppStrings {
       );
   String experienceActive(String title) => _s('Experiencia activa: $title',
       'Experience active: $title', 'Experience active: $title');
+  // --- V: experiencias y agenda por voz ---
+  String experienceStartedSpoken(String title) => _s(
+        'Experiencia "$title" iniciada. Lo que captures se guardará en ella.',
+        'Experience "$title" started. What you capture will be saved in it.',
+        'Expérience "$title" démarrée. Vos captures y seront enregistrées.',
+      );
+  String experienceStartedWithDurationSpoken(String title, int minutes) {
+    final h = minutes ~/ 60;
+    final m = minutes % 60;
+    final dur = h > 0 ? (m > 0 ? '$h h $m min' : '$h h') : '$m min';
+    return _s(
+      'Experiencia "$title" iniciada y agendada por $dur.',
+      'Experience "$title" started and scheduled for $dur.',
+      'Expérience "$title" démarrée et planifiée pour $dur.',
+    );
+  }
+  String experienceClosedSpoken(String title) => _s(
+        'Experiencia "$title" cerrada y sincronizada.',
+        'Experience "$title" closed and synced.',
+        'Expérience "$title" fermée et synchronisée.',
+      );
+  String get noActiveExperience => _s(
+        'No hay ninguna experiencia abierta.',
+        'There is no open experience.',
+        'Aucune expérience ouverte.',
+      );
+  String agendaCreatedSpoken(String title, int minutes) {
+    final h = minutes ~/ 60;
+    final m = minutes % 60;
+    final dur = h > 0
+        ? (m > 0 ? '$h h $m min' : '$h h')
+        : '$m min';
+    return _s('Evento "$title" agendado por $dur.',
+        'Event "$title" scheduled for $dur.',
+        'Événement "$title" planifié pour $dur.');
+  }
   String get signInFailedDetailed => _s(
         'No se pudo entrar. Revisa correo, clave o conexión.',
         'Could not sign in. Check email, password or connection.',
@@ -1593,6 +1661,10 @@ enum VibeIntent {
   help,
   dailyBriefing,
   queryCaptures,
+  startExperience,
+  closeExperience,
+  createAgenda,
+  visionPhoto,
   takeNote,
   askQuestion,
   unknown,
@@ -1724,6 +1796,35 @@ class IntentEngine {
       'what did i note', 'what did i capture', 'how many notes', 'my captures',
       'my notes', 'what did i save',
       'qu\'ai je note', 'mes captures', 'mes notes', 'combien de notes'
+    ],
+    VibeIntent.startExperience: [
+      'crea una experiencia', 'crear experiencia', 'inicia una experiencia',
+      'iniciar experiencia', 'nueva experiencia', 'abre una experiencia',
+      'empezar experiencia', 'start experience', 'create experience',
+      'new experience', 'begin experience',
+      'creer une experience', 'nouvelle experience', 'demarrer experience'
+    ],
+    VibeIntent.closeExperience: [
+      'cierra la experiencia', 'cerrar experiencia', 'termina la experiencia',
+      'terminar experiencia', 'finaliza experiencia', 'close experience',
+      'end experience', 'finish experience', 'fermer experience',
+      'terminer experience'
+    ],
+    VibeIntent.createAgenda: [
+      'crea un evento', 'crear evento', 'agenda un evento', 'agenda esto',
+      'agendar', 'nuevo evento', 'pon en la agenda', 'create event',
+      'add event', 'schedule', 'new event', 'creer un evenement',
+      'planifier', 'ajouter evenement'
+    ],
+    VibeIntent.visionPhoto: [
+      'analiza esta foto', 'analiza la foto', 'analiza la imagen',
+      'interpreta la foto', 'interpreta la imagen', 'describe la foto',
+      'describe la imagen', 'que dice la foto', 'que dice el letrero',
+      'lee el letrero', 'lee la imagen', 'traduce el letrero', 'traduce la foto',
+      'toma una foto y dime', 'toma una foto y traduce', 'foto del letrero',
+      'analyze this photo', 'describe this photo', 'what does the sign say',
+      'translate the sign', 'read the sign', 'take a photo and tell me',
+      'analyse cette photo', 'decris la photo', 'traduis le panneau'
     ],
     VibeIntent.takeNote: [
       'toma nota', 'tomar nota', 'anota', 'nota que', 'guarda esto', 'apunta',
@@ -1960,13 +2061,16 @@ class ClaudeAssistantClient {
         'verifyBackend, navHome, navCapture, navSaved, navAssets, navAgenda, '
         'navStatus, navAccount, deactivate, clearSynced, clearLocalTests, '
         'resetLocal, importExternal, healthConnect, health, openManual, '
-        'help, dailyBriefing, queryCaptures, answer';
+        'help, dailyBriefing, queryCaptures, startExperience, closeExperience, '
+        'createAgenda, visionPhoto, answer';
     final system =
         'Eres el enrutador de intenciones de V, el asistente de la app Vibeapp. '
         'Dada la frase del usuario, elige UNA accion de esta lista: $actions. '
         'Usa "takeNote" si el usuario quiere guardar/anotar algo (pon el texto en '
-        '"note"). Usa "answer" si es una pregunta o charla general (pon la '
-        'respuesta, en ${_langName(lang)} y breve, en "answer"). '
+        '"note"). Para "startExperience" pon en "note" SOLO el nombre de la '
+        'experiencia (p.ej. "Paseo a la playa"). Para "createAgenda" pon en '
+        '"note" el titulo del evento. Usa "answer" si es una pregunta o charla '
+        'general (pon la respuesta, en ${_langName(lang)} y breve, en "answer"). '
         'La fecha y hora local es ${_nowIso()}. '
         'Responde SOLO con un objeto JSON valido, sin texto extra, con las '
         'claves: action, note, answer. Si no aplican note/answer, usa "". '
@@ -1974,6 +2078,86 @@ class ClaudeAssistantClient {
         'referencias (p.ej. "y mis pasos", "ponle de titulo lo anterior").';
     final raw = await _post(system, utterance, maxTok: 700, history: history);
     return _extractJson(raw);
+  }
+
+  /// Vision: describe/interpreta una imagen (p.ej. una foto tomada con las gafas
+  /// e importada desde Fotos). Devuelve texto breve y util en el idioma activo.
+  Future<String> describeImage(
+    List<int> bytes,
+    String mediaType, {
+    required AppLanguage lang,
+    String? question,
+  }) async {
+    final client = HttpClient();
+    client.connectionTimeout = const Duration(seconds: 10);
+    try {
+      final uri = Uri.parse('$baseUrl/v1/messages');
+      final request = await client.postUrl(uri);
+      request.headers.set('content-type', 'application/json');
+      request.headers.set('x-api-key', apiKey.trim());
+      request.headers.set('anthropic-version', '2023-06-01');
+      final system =
+          'Eres V, un asistente visual dentro de Vibeapp. Analiza la imagen y '
+          'responde de forma breve, clara y util en ${_langName(lang)}. '
+          'Si el usuario hace una pregunta, respondela; si no, ofrece lo mas util '
+          'segun lo que veas. Puedes: leer y traducir texto/letreros; estimar el '
+          'contenido o aporte nutricional de una comida; explicar la historia o el '
+          'contexto de un lugar, monumento u obra de arte; identificar objetos, '
+          'plantas o productos; resolver o explicar problemas (p.ej. matematicas); '
+          'y describir escenas. No inventes lo que no se ve; si no estas seguro, '
+          'dilo.';
+      final userText = (question != null && question.trim().isNotEmpty)
+          ? question.trim()
+          : 'Describe esta imagen de forma breve y util.';
+      final payload = <String, dynamic>{
+        'model': model,
+        'max_tokens': 600,
+        'system': system,
+        'messages': [
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'image',
+                'source': {
+                  'type': 'base64',
+                  'media_type': mediaType,
+                  'data': base64Encode(bytes),
+                },
+              },
+              {'type': 'text', 'text': userText},
+            ],
+          },
+        ],
+      };
+      request.add(utf8.encode(jsonEncode(payload)));
+      final response =
+          await request.close().timeout(const Duration(seconds: 45));
+      final body = await response.transform(utf8.decoder).join();
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        String detail = body;
+        try {
+          final err = jsonDecode(body);
+          if (err is Map &&
+              err['error'] is Map &&
+              err['error']['message'] is String) {
+            detail = err['error']['message'] as String;
+          }
+        } catch (_) {}
+        throw HttpException('${response.statusCode}: $detail');
+      }
+      final decoded = jsonDecode(body);
+      final content = decoded is Map ? decoded['content'] : null;
+      if (content is List && content.isNotEmpty) {
+        final first = content.first;
+        if (first is Map && first['text'] is String) {
+          return (first['text'] as String).trim();
+        }
+      }
+      throw const HttpException('Respuesta de vision sin texto.');
+    } finally {
+      client.close(force: true);
+    }
   }
 
   /// Mejora una nota dictada: corrige ortografia/puntuacion, la estructura
@@ -3067,6 +3251,11 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
   String _claudeApiKey = '';
   bool _vibeAnswering = false;
   bool _improvingNote = false;
+  bool _interpretingPhoto = false;
+  bool _vibeBusyProcessing = false; // un comando en curso (evita encimar/colgar)
+  // Vision tipo CLIO: ultima imagen analizada (para preguntas de seguimiento).
+  List<int>? _lastVisionImage;
+  String _lastVisionType = 'image/jpeg';
   // Memoria de conversacion de V (turnos {role,text}) para dar contexto multi-turno
   // a la IA. Se limpia al desactivar V. NO se persiste ni toca el backend.
   final List<Map<String, String>> _vibeHistory = [];
@@ -3594,6 +3783,127 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
     );
   }
 
+  /// V inicia una experiencia (sesion) con el nombre dado. Si ya hay una activa,
+  /// la mantiene. La duracion se mide al cerrarla.
+  Future<void> _vibeStartExperience(String? rawName, [String? transcript]) async {
+    final name = _cleanExperienceName(rawName);
+    final title = name.isEmpty ? _t.experienceFromV : name;
+    final minutes = _parseDurationMinutes(transcript ?? rawName ?? '');
+    setState(() {
+      _activeSession = ActiveExperienceSession.start(title);
+      _sessionTitleController.text = title;
+      _syncState = SyncState.ready;
+    });
+    // #3: si la frase trae duracion ("de 6 horas"), ademas creamos un evento de
+    // agenda con ese titulo+duracion DENTRO de la experiencia (quedan ligados).
+    if (minutes != null) {
+      final now = DateTime.now();
+      _queueAgendaEvent(AgendaEventDraft(
+        title: title,
+        description: '',
+        location: '',
+        startAt: now.toUtc(),
+        endAt: now.add(Duration(minutes: minutes)).toUtc(),
+      ));
+      await _syncPendingQueue(showSnackBar: false);
+      await _vibeConfirmAndResume(
+          _t.experienceStartedWithDurationSpoken(title, minutes));
+    } else {
+      await _vibeConfirmAndResume(_t.experienceStartedSpoken(title));
+    }
+  }
+
+  /// V cierra la experiencia activa (se sincroniza con su duracion).
+  Future<void> _vibeCloseExperienceByVoice() async {
+    final session = _activeSession;
+    if (session == null) {
+      await _vibeConfirmAndResume(_t.noActiveExperience);
+      return;
+    }
+    final title = session.title;
+    await _closeExperienceSession();
+    await _vibeConfirmAndResume(_t.experienceClosedSpoken(title));
+  }
+
+  /// V crea un evento de agenda con titulo + duracion (parseada de la frase,
+  /// p.ej. "de 6 horas"; por defecto 60 min). Empieza ahora.
+  Future<void> _vibeCreateAgendaByVoice(String? title, String transcript) async {
+    final clean = _cleanExperienceName(title ?? transcript);
+    final minutes = _parseDurationMinutes(transcript) ?? 60;
+    final now = DateTime.now();
+    final draft = AgendaEventDraft(
+      title: clean.isEmpty ? _t.experienceFromV : clean,
+      description: '',
+      location: '',
+      startAt: now.toUtc(),
+      endAt: now.add(Duration(minutes: minutes)).toUtc(),
+    );
+    _queueAgendaEvent(draft);
+    await _syncPendingQueue(showSnackBar: false);
+    await _vibeConfirmAndResume(_t.agendaCreatedSpoken(draft.title, minutes));
+  }
+
+  /// Limpia un nombre dictado (quita el prefijo "V," y muletillas comunes).
+  String _cleanExperienceName(String? raw) {
+    var t = (raw ?? '').trim();
+    if (t.isEmpty) return '';
+    t = stripNativeWakePhrase(t).trim();
+    // Quita verbos/conectores iniciales tipico de la orden.
+    final lead = RegExp(
+        r'^(crea|crear|inicia|iniciar|abre|abrir|empieza|empezar|nueva|nuevo|agenda|agendar|crea un evento|una experiencia|la experiencia|experiencia|un evento|evento|de)\s+',
+        caseSensitive: false);
+    var prev = '';
+    while (prev != t) {
+      prev = t;
+      t = t.replaceFirst(lead, '').trim();
+    }
+    // Corta la parte de duracion ("de 6 horas", "por 30 minutos").
+    t = t
+        .replaceAll(
+            RegExp(r'\b(de|por|durante)?\s*\d+\s*(horas?|minutos?|hours?|minutes?|h|min)\b',
+                caseSensitive: false),
+            '')
+        .trim();
+    return t;
+  }
+
+  /// Extrae minutos de duracion de una frase ("6 horas", "30 min", "1 hora 30").
+  int? _parseDurationMinutes(String text) {
+    final t = text.toLowerCase();
+    int total = 0;
+    final h = RegExp(r'(\d+)\s*(horas?|hours?|\bh\b)').firstMatch(t);
+    final m = RegExp(r'(\d+)\s*(minutos?|minutes?|\bmin\b)').firstMatch(t);
+    if (h != null) total += (int.tryParse(h.group(1)!) ?? 0) * 60;
+    if (m != null) total += int.tryParse(m.group(1)!) ?? 0;
+    return total > 0 ? total : null;
+  }
+
+  /// Fix B: sincroniza con mensajes claros de vuelta (sin sesion / nada
+  /// pendiente / enviadas / quedan pendientes).
+  Future<void> _vibeSyncWithFeedback() async {
+    if (_signedInEmail.isEmpty || _accessToken.isEmpty) {
+      await _vibeConfirmAndResume(_t.syncNeedsSignIn);
+      return;
+    }
+    final before = CaptureQueueSummary.fromItems(_queue).pending;
+    if (before == 0) {
+      await _vibeConfirmAndResume(_t.syncNothingPending);
+      return;
+    }
+    if (mounted) {
+      setState(() {
+        _vibeCommandOnline = true;
+        _vibeCommandStatusMessage = _t.syncInProgress;
+      });
+    }
+    await _syncPendingQueue(showSnackBar: false, force: true);
+    final after = CaptureQueueSummary.fromItems(_queue).pending;
+    final sent = (before - after).clamp(0, before);
+    await _vibeConfirmAndResume(
+      after == 0 ? _t.syncDoneAll(sent) : _t.syncDonePartial(sent, after),
+    );
+  }
+
   /// V responde sobre tus capturas leyendo la cola LOCAL (solo lectura, sin
   /// backend): conteo por tipo + tus notas de hoy.
   Future<void> _vibeAnswerCaptures() async {
@@ -3730,6 +4040,143 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
 
   /// Prueba real de la IA: hace una llamada minima y muestra el resultado o el
   /// error exacto (clave invalida, sin saldo, sin conexion, modelo, ...).
+  String _imageMediaType(String name) {
+    final n = name.toLowerCase();
+    if (n.endsWith('.png')) return 'image/png';
+    if (n.endsWith('.webp')) return 'image/webp';
+    if (n.endsWith('.gif')) return 'image/gif';
+    return 'image/jpeg';
+  }
+
+  /// Vision tipo CLIO por voz: abre la CAMARA (foto en vivo) y V analiza/traduce
+  /// al momento. Si la frase menciona galeria/ultima/esta foto (p.ej. una de las
+  /// gafas ya importada), usa la galeria en su lugar.
+  Future<void> _vibeVisionFromGallery({String? question}) {
+    final q = (question ?? '').toLowerCase();
+    final wantsGallery = RegExp(
+            r'galeri|ultima foto|esta foto|la foto|guardad|importad|gallery|last photo|this photo')
+        .hasMatch(q);
+    return _visionCapture(
+        wantsGallery ? ImageSource.gallery : ImageSource.camera,
+        question: question,
+        viaVoice: true);
+  }
+
+  Future<void> _visionCapture(ImageSource source,
+      {String? question, bool viaVoice = false}) async {
+    final client = _claude;
+    if (client == null || !client.isConfigured) {
+      if (viaVoice) {
+        await _vibeConfirmAndResume(_t.vNoKey);
+      } else if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(_t.vNoKey)));
+      }
+      return;
+    }
+    XFile? picked;
+    try {
+      picked = await _imagePicker.pickImage(
+          source: source, imageQuality: 90, maxWidth: 1600);
+    } catch (_) {
+      picked = null;
+    }
+    if (picked == null) return;
+    setState(() => _interpretingPhoto = true);
+    final resumed =
+        viaVoice ? await _pauseVibeVoiceForExternalAction(_t.visionBusy) : false;
+    try {
+      final bytes = await File(picked.path).readAsBytes();
+      final mt = _imageMediaType(picked.name);
+      final q = (question != null && question.trim().isNotEmpty)
+          ? question.trim()
+          : null;
+      final desc =
+          await client.describeImage(bytes, mt, lang: _appLanguage, question: q);
+      _lastVisionImage = bytes;
+      _lastVisionType = mt;
+      _recordVibeTurn('user', (q != null && q.isNotEmpty) ? q : '[imagen]');
+      _recordVibeTurn('assistant', desc);
+      // #1: guarda la FOTO + el analisis como UN solo registro (ligados). El
+      // analisis viaja en previewText/analysisText del adjunto; si hay una
+      // experiencia activa, se adjunta a ella. Reutiliza el flujo de adjuntos
+      // existente (no toca el backend).
+      final attachment = NativeAttachmentDraft.fromFilePath(
+        picked.path,
+        sourceType: 'image',
+        previewText: desc,
+        analysisText: desc,
+        metadataExtras: {
+          'analysisMethod': 'vibeapp-claude-vision',
+          'visionQuestion': q ?? '',
+          'visionAnswer': desc,
+        },
+      );
+      final session = _activeSession;
+      if (!mounted) return;
+      setState(() {
+        _interpretingPhoto = false;
+        _vibeCommandStatusMessage = desc;
+        _vibeCommandOnline = true;
+        if (session == null) {
+          _queue.insert(0, CaptureQueueItem.media(attachment));
+        } else {
+          session.addAttachmentEvent(attachment);
+          _upsertSessionQueueItem(session);
+        }
+        _syncState = SyncState.syncing;
+      });
+      await _tts.speak(desc, lang: _appLanguage, gender: _voiceGender);
+      await _syncPendingQueue(showSnackBar: false);
+      // #2: tras analizar por boton, deja a V escuchando para que el usuario
+      // pueda hacer preguntas de seguimiento por voz (si ya hay permiso de micro).
+      if (!viaVoice && _wakeEnabled && !_vibeVoiceArmed && mounted) {
+        var granted = false;
+        try {
+          granted = await _speechToText.hasPermission;
+        } catch (_) {}
+        if (granted) await _startVibeVoiceCommand(resetUi: false);
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(() => _interpretingPhoto = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content:
+                Text('${_t.visionFail} ${shorten(error.toString(), 140)}')));
+      }
+    } finally {
+      if (viaVoice) {
+        await _resumeVibeVoiceAfterExternalAction(resumed, _t.visionBusy);
+      }
+    }
+  }
+
+  /// Hoja para elegir camara o galeria, luego V analiza (paso 1 del flujo CLIO).
+  Future<void> _openVisionSheet() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_camera_outlined),
+              title: Text(_t.visionTakePhoto),
+              onTap: () => Navigator.of(context).pop(ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: Text(_t.visionFromGallery),
+              onTap: () => Navigator.of(context).pop(ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null) return;
+    await _visionCapture(source);
+  }
+
   /// Mejora la nota actual con la IA (titulo + limpieza) y reemplaza el texto.
   /// Solo lectura/escritura local del campo de nota; no toca el backend.
   Future<void> _improveNote() async {
@@ -4607,6 +5054,7 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
   Future<void> _deactivateVibeVoice(String message) async {
     await _speechToText.stop();
     _vibeHistory.clear(); // nueva sesion de V => memoria limpia
+    _lastVisionImage = null; // olvida la imagen analizada
     if (!mounted) return;
     setState(() {
       _isListeningForVibe = false;
@@ -4687,6 +5135,7 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
   void _handleVibeSpeechResult(SpeechRecognitionResult result) {
     final words = result.recognizedWords.trim();
     if (!mounted || words.isEmpty) return;
+    if (_vibeBusyProcessing) return; // V esta procesando; no encimar comandos
     _vibeBenignErrorStreak = 0;
     setState(() {
       _vibeVoiceTranscript = words;
@@ -4764,30 +5213,53 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
   Future<void> _executeVibeVoiceTranscript(String rawTranscript) async {
     final transcript = rawTranscript.trim();
     if (transcript.isEmpty) return;
-    // Quita la frase de activacion ("V", "hola V", ...) antes de interpretar.
-    final stripped = stripNativeWakePhrase(transcript).trim();
-    final effective = stripped.isEmpty ? transcript : stripped;
-    final lower = stripDiacritics(effective.toLowerCase());
+    // Fix A: si V ya esta procesando un comando, ignora el nuevo (no encimar ni
+    // colgar). El watchdog/loop reanudara la escucha al terminar.
+    if (_vibeBusyProcessing) return;
+    _vibeBusyProcessing = true;
+    try {
+      // Quita la frase de activacion ("V", "hola V", ...) antes de interpretar.
+      final stripped = stripNativeWakePhrase(transcript).trim();
+      final effective = stripped.isEmpty ? transcript : stripped;
+      final lower = stripDiacritics(effective.toLowerCase());
 
-    setState(() {
-      _vibeCommandOnline = true;
-      _vibeCommandStatusMessage = '${_t.vListening}: $effective';
-    });
+      setState(() {
+        _vibeCommandOnline = true;
+        _vibeCommandStatusMessage = '${_t.vListening}: $effective';
+      });
 
-    // Capa 1 (rapida, local): interpretacion tolerante por sinonimos/difuso.
-    final match = _intentEngine.classify(lower, _appLanguage);
-    if (match.intent != VibeIntent.unknown &&
-        match.intent != VibeIntent.askQuestion) {
-      await _runIntent(match.intent, transcript: transcript, effective: effective);
-      return;
-    }
-    // Capa 2 (LLM tool-calling): si hay IA, deja que decida la accion o responda.
-    if (_claude != null && _claude!.isConfigured) {
-      await _smartVibeRoute(effective, transcript);
-    } else {
-      // Sin IA: responde (avisa que falta la clave).
-      await _answerWithClaude(effective);
-      await _restartVibeListeningLoop();
+      // Capa 1 (rapida, local): interpretacion tolerante por sinonimos/difuso.
+      var match = _intentEngine.classify(lower, _appLanguage);
+      // Caso compuesto: "toma una foto ... y dime/traduce/lee que dice" -> en vez
+      // de solo capturar (photo), V analiza la imagen con vision (traduce/lee).
+      if (match.intent == VibeIntent.photo &&
+          RegExp(r'\b(dime|dice|que dice|traduce|traducir|lee|leer|significa|explica|que es)\b')
+              .hasMatch(lower)) {
+        match = const IntentMatch(VibeIntent.visionPhoto, 1.0);
+      }
+      final hasAi = _claude != null && _claude!.isConfigured;
+      // Fix C: la ruta local rapida es SOLO para comandos claros (alta confianza)
+      // o "desactivar". Lo dudoso/natural va a la IA (entiende lenguaje amplio,
+      // no se limita a verbos exactos).
+      final localCommand = match.intent != VibeIntent.unknown &&
+          match.intent != VibeIntent.askQuestion &&
+          (match.intent == VibeIntent.deactivate ||
+              match.score >= 0.70 ||
+              !hasAi);
+      if (localCommand) {
+        await _runIntent(match.intent,
+            transcript: transcript, effective: effective);
+        return;
+      }
+      // Capa 2 (LLM tool-calling): la IA decide la accion o responde.
+      if (hasAi) {
+        await _smartVibeRoute(effective, transcript);
+      } else {
+        await _answerWithClaude(effective);
+        await _restartVibeListeningLoop();
+      }
+    } finally {
+      _vibeBusyProcessing = false;
     }
   }
 
@@ -4850,8 +5322,7 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
         await _vibeConfirmAndResume(_t.confLocation);
         return;
       case VibeIntent.sync:
-        await _syncPendingQueue(showSnackBar: true, force: true);
-        await _vibeConfirmAndResume(_t.confSynced);
+        await _vibeSyncWithFeedback();
         return;
       case VibeIntent.verifyBackend:
         await _verifyBackendHealth();
@@ -4896,6 +5367,18 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
         return;
       case VibeIntent.queryCaptures:
         await _vibeAnswerCaptures();
+        return;
+      case VibeIntent.startExperience:
+        await _vibeStartExperience(noteOverride ?? transcript, transcript);
+        return;
+      case VibeIntent.closeExperience:
+        await _vibeCloseExperienceByVoice();
+        return;
+      case VibeIntent.createAgenda:
+        await _vibeCreateAgendaByVoice(noteOverride, transcript);
+        return;
+      case VibeIntent.visionPhoto:
+        await _vibeVisionFromGallery(question: transcript);
         return;
       case VibeIntent.takeNote:
         final body = (noteOverride != null && noteOverride.trim().isNotEmpty)
@@ -5044,8 +5527,15 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
     String answer;
     String spoken;
     try {
-      answer = await client.ask(question,
-          lang: _appLanguage, history: _vibeContextForApi());
+      // Seguimiento sobre una imagen recien analizada (paso 4 del flujo CLIO):
+      // si hay una foto reciente, V responde VIENDOLA (traduce texto, compara...).
+      if (_lastVisionImage != null) {
+        answer = await client.describeImage(_lastVisionImage!, _lastVisionType,
+            lang: _appLanguage, question: question);
+      } else {
+        answer = await client.ask(question,
+            lang: _appLanguage, history: _vibeContextForApi());
+      }
       spoken = answer;
       _recordVibeTurn('user', question);
       _recordVibeTurn('assistant', spoken);
@@ -6663,6 +7153,8 @@ class _QuickCaptureScreenState extends State<QuickCaptureScreen> {
       improving: _improvingNote,
       isRecordingAudio: _isRecordingAudio,
       audioLevels: _audioLevels,
+      onVision: _openVisionSheet,
+      analyzingPhoto: _interpretingPhoto,
     );
 
     final captureActions = CaptureActionGrid(
@@ -8202,6 +8694,8 @@ class QuickNoteComposer extends StatelessWidget {
     required this.improving,
     required this.isRecordingAudio,
     required this.audioLevels,
+    required this.onVision,
+    required this.analyzingPhoto,
     super.key,
   });
 
@@ -8217,6 +8711,8 @@ class QuickNoteComposer extends StatelessWidget {
   final bool improving;
   final bool isRecordingAudio;
   final List<double> audioLevels;
+  final Future<void> Function() onVision;
+  final bool analyzingPhoto;
 
   @override
   Widget build(BuildContext context) {
@@ -8272,6 +8768,23 @@ class QuickNoteComposer extends StatelessWidget {
                 ),
               ],
             ),
+            if (commandPreview == null) ...[
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed:
+                      analyzingPhoto ? null : () => unawaited(onVision()),
+                  icon: analyzingPhoto
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.center_focus_strong_outlined),
+                  label: Text(analyzingPhoto ? tr.visionBusy : tr.visionBtn),
+                ),
+              ),
+            ],
             if (isRecordingAudio) ...[
               const SizedBox(height: 12),
               AudioWaveform(levels: audioLevels),

@@ -1,7 +1,7 @@
 name: vibeapp
 description: Native companion app for Vibe human experience capture.
 publish_to: "none"
-version: 0.4.0+561
+version: 0.4.2+563
 
 environment:
   sdk: ">=3.4.0 <4.0.0"
