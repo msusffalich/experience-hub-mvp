@@ -271,6 +271,16 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (url.pathname === "/api/integration/oura/preflight" && req.method === "GET") {
+    sendJson(res, 200, await buildOuraPublicPreflight(url));
+    return;
+  }
+
+  if (url.pathname === "/api/integration/oura/diagnostic-connect" && req.method === "GET") {
+    await startOuraDiagnosticFlow(req, res, url);
+    return;
+  }
+
   if (url.pathname === "/api/integration/oura/connect" && req.method === "GET") {
     const user = await getRequestUser(req);
     await startOuraOAuthFlow(req, res, url, user);
@@ -1452,6 +1462,33 @@ async function startOuraOAuthFlow(req, res, url, user) {
   res.end();
 }
 
+async function startOuraDiagnosticFlow(req, res, url) {
+  const payload = await createOuraDiagnosticOAuthUrl(url);
+  res.writeHead(302, { Location: payload.authUrl });
+  res.end();
+}
+
+async function buildOuraPublicPreflight(url) {
+  const missingConfig = getOuraMissingConfig();
+  const oauthDiagnostics = buildOuraOAuthDiagnostics();
+  const payload = {
+    ok: missingConfig.length === 0 && oauthDiagnostics.redirectValid,
+    configured: missingConfig.length === 0,
+    missingConfig,
+    oauthDiagnostics,
+    tokenExchange: "not_run_without_vibe_session",
+    nextAction: missingConfig.length
+      ? `Define ${missingConfig.join(", ")} en Railway.`
+      : "Abre diagnosticConnectUrl para probar Oura sin sesion Supabase. Esto no conecta la cuenta.",
+  };
+  if (payload.ok) {
+    const diagnostic = await createOuraDiagnosticOAuthUrl(url);
+    payload.diagnosticConnectUrl = diagnostic.diagnosticConnectUrl;
+    payload.authUrlHost = new URL(diagnostic.authUrl).host;
+  }
+  return payload;
+}
+
 async function createOuraOAuthUrl(url, user) {
   const missingConfig = getOuraMissingConfig();
   if (missingConfig.length) {
@@ -1490,6 +1527,31 @@ async function createOuraOAuthUrl(url, user) {
   };
 }
 
+async function createOuraDiagnosticOAuthUrl(url) {
+  const user = {
+    id: "oura-diagnostic",
+    email: "diagnostic@vibe.local",
+  };
+  const returnTo = url.searchParams.get("returnTo") || "/index.html?view=dashboard";
+  const payload = await createOuraOAuthUrl(url, user);
+  const state = new URL(payload.authUrl).searchParams.get("state") || "";
+  const store = await readOuraTokenStore();
+  if (store.states?.[state]) {
+    store.states[state].returnTo = returnTo;
+    store.states[state].metadata = {
+      ...(store.states[state].metadata || {}),
+      diagnostic: true,
+    };
+    await writeOuraTokenStore(store);
+  }
+  return {
+    ...payload,
+    diagnostic: true,
+    diagnosticConnectUrl: `/api/integration/oura/diagnostic-connect?returnTo=${encodeURIComponent(returnTo)}`,
+    message: "Diagnostico Oura sin sesion Supabase. No conecta ni guarda tokens.",
+  };
+}
+
 async function completeOuraOAuthFlow(req, res, url) {
   const error = url.searchParams.get("error");
   const state = url.searchParams.get("state");
@@ -1521,6 +1583,18 @@ async function completeOuraOAuthFlow(req, res, url) {
     return;
   }
   const savedState = await consumeOuraOAuthState(state);
+  if (savedState.metadata?.diagnostic) {
+    await appendLog("info", "oura_oauth_diagnostic_return", {
+      stateUser: savedState.userId,
+      email: savedState.email,
+    });
+    redirectOuraConnectionResult(req, res, savedState.returnTo, "diagnostic-ok", {
+      ok: true,
+      detailCode: "diagnostic_redirect_ok",
+      message: "Oura abrio y regreso correctamente. Diagnostico externo OK; no se conecto la cuenta.",
+    });
+    return;
+  }
   const tokenRequest = {
     grant_type: "authorization_code",
     code,

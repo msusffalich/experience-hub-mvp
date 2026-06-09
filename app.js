@@ -1,4 +1,4 @@
-const APP_VERSION = "20260608-oura-session-safe-561";
+const APP_VERSION = "20260608-oura-isolated-connect-562";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -29406,15 +29406,8 @@ async function connectOuraAccount() {
     if (!state.session?.access_token) {
       state.pendingAuthReturn = "oura";
       notify(state.language === "en"
-        ? "Sign in first, then connect Oura."
-        : "Primero inicia sesion; luego conecta Oura.", "warn");
-      showAuthView();
-      const message = document.getElementById("authMessage");
-      if (message) {
-        message.textContent = state.language === "en"
-          ? "After signing in, return to Panel and connect Oura again."
-          : "Despues de iniciar sesion, vuelve al Panel y conecta Oura nuevamente.";
-      }
+        ? "Oura needs an active Vibe session. Your data and sync state were not changed."
+        : "Oura necesita una sesion activa de Vibe. Tus datos y sincronizacion no fueron modificados.", "warn");
       return;
     }
     notify(state.language === "en" ? "Opening Oura authorization..." : "Abriendo autorizacion Oura...");
@@ -29431,9 +29424,23 @@ async function connectOuraAccount() {
     renderDashboardIntegrationHandoff();
     renderDeviceIntegrationPanel();
     const returnTo = `/index.html?v=${encodeURIComponent(APP_VERSION)}&view=dashboard`;
-    const payload = await apiRequest(`/integration/oura/connect-url?returnTo=${encodeURIComponent(returnTo)}`, {
+    const response = await fetchApi(`/integration/oura/connect-url?returnTo=${encodeURIComponent(returnTo)}`, {
       preserveSessionOnAuthFailure: true,
     });
+    let payload = {};
+    try {
+      payload = await response.json();
+    } catch {
+      payload = {};
+    }
+    if (response.status === 401) {
+      throw new Error(state.language === "en"
+        ? "Your Vibe session needs confirmation before connecting Oura. Your data and sync state were not changed."
+        : "Tu sesion de Vibe necesita confirmacion antes de conectar Oura. Tus datos y sincronizacion no fueron modificados.");
+    }
+    if (!response.ok) {
+      throw new Error(payload?.message || payload?.error || `API ${response.status}`);
+    }
     if (!payload?.authUrl) {
       throw new Error(state.language === "en" ? "Oura authorization URL was not received." : "No se recibio la URL de autorizacion Oura.");
     }
@@ -29451,16 +29458,6 @@ async function connectOuraAccount() {
     notify(state.language === "en"
       ? `Could not connect Oura: ${error.message}`
       : `No se pudo conectar Oura: ${error.message}`, "warn");
-    if (error.status === 401 || /auth_required|invalid_auth/i.test(error.message || "")) {
-      state.pendingAuthReturn = "oura";
-      showAuthView();
-      const message = document.getElementById("authMessage");
-      if (message) {
-        message.textContent = state.language === "en"
-          ? "Your Vibe session needs confirmation before connecting Oura. Sign in again; your local data was not deleted."
-          : "Tu sesion de Vibe necesita confirmacion antes de conectar Oura. Inicia sesion de nuevo; tus datos locales no se borraron.";
-      }
-    }
     renderDashboardIntegrationHandoff();
     renderDeviceIntegrationPanel();
   }
