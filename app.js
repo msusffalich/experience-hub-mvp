@@ -1,4 +1,4 @@
-const APP_VERSION = "20260610-groups-account-data-567";
+const APP_VERSION = "20260610-nav-admin-map-568";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -395,7 +395,7 @@ const i18n = {
       insights: "Hallazgos",
       automation: "Automatizaciones",
       manual: "Ayuda",
-      admin: "Operación",
+      admin: "Administracion",
     },
     viewTitles: {
       auth: "Acceso seguro",
@@ -411,7 +411,7 @@ const i18n = {
       insights: "Hallazgos accionables",
       automation: "Capacidades, rutinas y MCP",
       manual: "Manual del Usuario",
-      admin: "Operación",
+      admin: "Administracion",
     },
     buttons: {
       reset: "Cargar ejemplo",
@@ -1226,7 +1226,7 @@ const i18n = {
       insights: "Insights",
       automation: "Automations",
       manual: "Help",
-      admin: "Operation",
+      admin: "Administration",
     },
     viewTitles: {
       auth: "Secure access",
@@ -1242,7 +1242,7 @@ const i18n = {
       insights: "Actionable insights",
       automation: "Skills, Routines and MCPs",
       manual: "Help",
-      admin: "Operation",
+      admin: "Administration",
     },
     buttons: {
       reset: "Load example",
@@ -4938,11 +4938,12 @@ function productNavLabel(view) {
         library: "Library",
         assetLibrary: "Files",
         agenda: "Agenda",
+        experienceMap: "Map",
         report: "Reports",
         publications: "Publish",
         insights: "Insights",
         manual: "Help",
-        admin: "Diagnostics",
+        admin: "Administration",
       }
     : {
         dashboard: "Inicio",
@@ -4950,11 +4951,12 @@ function productNavLabel(view) {
         library: "Biblioteca",
         assetLibrary: "Archivos",
         agenda: "Agenda",
+        experienceMap: "Mapa",
         report: "Reportes",
         publications: "Publicar",
         insights: "Hallazgos",
         manual: "Ayuda",
-        admin: "Diagnóstico",
+        admin: "Administracion",
       };
   return labels[view] || t(`nav.${view}`);
 }
@@ -4967,11 +4969,12 @@ function productViewTitle(view) {
         library: "Library",
         assetLibrary: "Files",
         agenda: "Agenda",
+        experienceMap: "Map",
         report: "Reports",
         publications: "Publish",
         insights: "Insights",
         manual: "Help",
-        admin: "Diagnostics",
+        admin: "Administration",
       }
     : {
         dashboard: "Inicio",
@@ -4979,11 +4982,12 @@ function productViewTitle(view) {
         library: "Biblioteca",
         assetLibrary: "Archivos",
         agenda: "Agenda",
+        experienceMap: "Mapa",
         report: "Reportes",
         publications: "Publicar",
         insights: "Hallazgos",
         manual: "Ayuda",
-        admin: "Diagnóstico",
+        admin: "Administracion",
       };
   return labels[view] || t(`viewTitles.${view}`);
 }
@@ -6724,6 +6728,7 @@ function applyLanguage() {
   document.getElementById("refreshOpsButton").textContent = t("buttons.refreshOps");
   document.getElementById("supabaseDiagnosticsButton").textContent = t("buttons.verifySupabase");
   document.getElementById("supabaseSelfTestButton").textContent = t("buttons.testSupabaseFlow");
+  document.getElementById("openAdvancedDiagnosticsButton").textContent = state.language === "en" ? "Advanced diagnostics" : "Diagnostico avanzado";
   document.getElementById("syncOfflineButton").textContent = t("buttons.syncOffline");
   if (document.getElementById("adminExportBackupButton")) document.getElementById("adminExportBackupButton").textContent = t("buttons.export");
   if (document.getElementById("adminRestoreBackupButton")) document.getElementById("adminRestoreBackupButton").textContent = t("buttons.restoreBackup");
@@ -7537,6 +7542,7 @@ function setupActions() {
   document.getElementById("refreshOpsButton").addEventListener("click", refreshOps);
   document.getElementById("supabaseDiagnosticsButton").addEventListener("click", runSupabaseDiagnostics);
   document.getElementById("supabaseSelfTestButton").addEventListener("click", runSupabaseSelfTest);
+  document.getElementById("openAdvancedDiagnosticsButton").addEventListener("click", openAdvancedDiagnostics);
   document.getElementById("syncOfflineButton").addEventListener("click", syncOfflineQueue);
   document.getElementById("clearLocalDataButton")?.addEventListener("click", clearLocalData);
   document.getElementById("unlockLocalButton").addEventListener("click", unlockLocalData);
@@ -10666,6 +10672,19 @@ async function deleteExperience(id) {
   await deleteExperienceFromApi(id);
   renderAll();
   notify(state.language === "en" ? "Experience deleted." : "Experiencia eliminada.", "success");
+}
+
+function openAdvancedDiagnostics() {
+  const drawer = document.getElementById("adminAdvancedDrawer");
+  if (!drawer) return;
+  if (!document.getElementById("adminView")?.classList.contains("active-view")) {
+    showView("admin");
+  }
+  drawer.open = true;
+  requestAnimationFrame(() => {
+    drawer.scrollIntoView({ behavior: "smooth", block: "start" });
+    drawer.focus?.({ preventScroll: true });
+  });
 }
 
 function showView(view) {

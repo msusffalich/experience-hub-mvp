@@ -9,10 +9,10 @@
     <meta name="apple-mobile-web-app-title" content="Vibe" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>Vibe</title>
-    <link rel="manifest" href="manifest.webmanifest?v=20260610-groups-account-data-567" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260610-nav-admin-map-568" />
     <link rel="icon" href="icons/vibe-icon-192.png" type="image/png" />
     <link rel="apple-touch-icon" href="icons/vibe-apple-touch.png" />
-    <link rel="stylesheet" href="styles.css?v=20260610-groups-account-data-567" />
+    <link rel="stylesheet" href="styles.css?v=20260610-nav-admin-map-568" />
   </head>
   <body>
     <noscript>
@@ -37,11 +37,12 @@
           <button class="nav-item" data-view="library" type="button">Librería</button>
           <button class="nav-item" data-view="assetLibrary" type="button">Archivos</button>
           <button class="nav-item" data-view="agenda" type="button">Agenda</button>
+          <button class="nav-item" data-view="experienceMap" type="button">Mapa</button>
           <button class="nav-item" data-view="report" type="button">Reportes</button>
           <button class="nav-item" data-view="publications" type="button">Publicar</button>
           <button class="nav-item" data-view="insights" type="button">Hallazgos</button>
           <button class="nav-item" data-view="manual" type="button">Ayuda</button>
-          <button class="nav-item" data-view="admin" type="button">Operación</button>
+          <button class="nav-item" data-view="admin" type="button">Administracion</button>
         </nav>
 
 
@@ -943,7 +944,7 @@
             <div class="manual-version-card">
               <div>
                 <span id="manualVersionEyebrow">Versión vigente</span>
-                <strong id="manualVersionValue">20260610-groups-account-data-567</strong>
+                <strong id="manualVersionValue">20260610-nav-admin-map-568</strong>
                 <p id="manualVersionSummary">Guía práctica organizada por temas para entender el flujo de la app sin leer todo de corrido.</p>
               </div>
               <div class="manual-guide-grid" aria-label="Estructura del manual">
@@ -1002,6 +1003,7 @@
               <button id="syncOfflineButton" class="ghost-button" type="button">Sincronizar sin conexión</button>
               <button id="supabaseDiagnosticsButton" class="ghost-button" type="button">Verificar nube</button>
               <button id="supabaseSelfTestButton" class="ghost-button" type="button">Probar flujo completo</button>
+              <button id="openAdvancedDiagnosticsButton" class="ghost-button" type="button">Diagnostico avanzado</button>
               <span id="embeddingStatus" class="card-meta">Búsqueda vectorial lista para Supabase</span>
             </div>
 
@@ -1168,7 +1170,7 @@
                 <div id="uiQualityPanel" class="ui-quality-panel"></div>
               </details>
 
-              <details class="admin-section-drawer">
+              <details id="adminAdvancedDrawer" class="admin-section-drawer" tabindex="-1">
                 <summary>
                   <span id="adminAdvancedTitle">Diagnóstico avanzado</span>
                   <small id="adminAdvancedHelp">Servidor, datos de prueba, integraciones y registros</small>
@@ -1190,7 +1192,7 @@
       </main>
     </div>
 
-    <script src="app.js?v=20260610-groups-account-data-567"></script>
+    <script src="app.js?v=20260610-nav-admin-map-568"></script>
 </body>
 </html>
 
