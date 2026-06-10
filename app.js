@@ -1,4 +1,4 @@
-const APP_VERSION = "20260610-mobile-daily-context-569";
+const APP_VERSION = "20260610-admin-boot-guard-570";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -4020,33 +4020,57 @@ function authHeaders() {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  registerServiceWorker();
-  setupNavigation();
-  setupForm();
-  setupAgenda();
-  setupFilters();
-  setupActions();
-  setupAuth();
-  setupAudioCapture();
-  populateStaticControls();
-  setupLanguage();
-  applyLanguage();
-  normalizeVisibleVersionUrl();
-  await loadRemoteConfig();
-  renderAuthStatus();
-  await hydrateFromApi();
-  ensurePrimaryParticipant();
-  ensurePilotClosureCompleted();
-  await refreshOuraConnectionStatus({ silent: true });
-  renderAllAndScheduleAutomation();
-  await handleIntegrationReturnFromUrl();
-  applyInitialViewFromUrl();
-  setupOpsPolling();
-  setupServerSyncPolling();
-  setupDailyBriefingRefresh();
-  setupDashboardClock();
-  startAttachmentSyncSupervisor();
-  scheduleAttachmentRetry({ delayMs: 1500 });
+  try {
+    registerServiceWorker();
+    setupNavigation();
+    setupForm();
+    setupAgenda();
+    setupFilters();
+    setupActions();
+    setupAuth();
+    setupAudioCapture();
+    populateStaticControls();
+    setupLanguage();
+    applyLanguage();
+    normalizeVisibleVersionUrl();
+    try {
+      await handleIntegrationReturnFromUrl();
+    } catch (error) {
+      console.warn("Integration return handling failed", error);
+    }
+    applyInitialViewFromUrl();
+
+    await loadRemoteConfig().catch((error) => {
+      console.warn("Remote config unavailable during startup", error);
+    });
+    renderAuthStatus();
+    await hydrateFromApi().catch((error) => {
+      markApiConnectivityFailure(error);
+      console.warn("Remote hydration unavailable during startup", error);
+    });
+    ensurePrimaryParticipant();
+    ensurePilotClosureCompleted();
+    refreshOuraConnectionStatus({ silent: true }).catch((error) => {
+      state.ouraConnectionStatus = {
+        connected: false,
+        lastConnection: {
+          ok: false,
+          message: error.message,
+          checkedAt: new Date().toISOString(),
+        },
+      };
+    });
+    renderAllAndScheduleAutomation();
+    applyInitialViewFromUrl();
+    setupOpsPolling();
+    setupServerSyncPolling();
+    setupDailyBriefingRefresh();
+    setupDashboardClock();
+    startAttachmentSyncSupervisor();
+    scheduleAttachmentRetry({ delayMs: 1500 });
+  } catch (error) {
+    renderStartupRecovery(error);
+  }
 });
 
 function registerServiceWorker() {
@@ -6008,8 +6032,9 @@ function saveDailyBriefing() {
 
 function setupNavigation() {
   document.querySelectorAll(".nav-item").forEach((button) => {
-    button.addEventListener("click", () => {
-      showView(button.dataset.view);
+    button.addEventListener("click", (event) => {
+      event.preventDefault();
+      safeShowView(button.dataset.view);
     });
   });
 }
@@ -10678,13 +10703,30 @@ function openAdvancedDiagnostics() {
   const drawer = document.getElementById("adminAdvancedDrawer");
   if (!drawer) return;
   if (!document.getElementById("adminView")?.classList.contains("active-view")) {
-    showView("admin");
+    safeShowView("admin");
   }
   drawer.open = true;
   requestAnimationFrame(() => {
     drawer.scrollIntoView({ behavior: "smooth", block: "start" });
     drawer.focus?.({ preventScroll: true });
   });
+}
+
+function safeShowView(view) {
+  try {
+    showView(view);
+  } catch (error) {
+    console.error("View navigation failed", view, error);
+    if (view === "admin") {
+      renderAdminRecovery(error);
+    }
+    notify(
+      state.language === "en"
+        ? "The section opened with a recoverable warning. Navigation remains available."
+        : "La sección abrió con una advertencia recuperable. La navegación sigue disponible.",
+      "warn",
+    );
+  }
 }
 
 function showView(view) {
@@ -10702,7 +10744,7 @@ function showView(view) {
     loadBackendRoutines().then(renderAutomations).catch(() => renderAutomations());
   }
   if (view === "admin") {
-    renderAdmin();
+    renderAdminSafe();
   }
   if (view === "dashboard") {
     renderDashboardScopedPanels();
@@ -10717,7 +10759,7 @@ function showView(view) {
 function applyInitialViewFromUrl() {
   const params = new URLSearchParams(window.location.search);
   const view = params.get("view") || (window.location.hash || "").replace("#", "");
-  if (view && document.querySelector(`[data-view="${view}"]`)) showView(view);
+  if (view && document.querySelector(`[data-view="${view}"]`)) safeShowView(view);
 }
 
 async function handleIntegrationReturnFromUrl() {
@@ -29847,7 +29889,59 @@ function handleProductSettingsAction(event) {
   window.setTimeout(renderProductSettingsPanel, 50);
 }
 
+function renderAdminRecovery(error) {
+  const status = document.getElementById("adminHubStatus");
+  if (status) status.textContent = state.language === "en" ? "Admin available" : "Administración disponible";
+  const container = document.getElementById("adminGlobalProgressPanel") || document.getElementById("adminView");
+  if (!container) return;
+  const detail = error?.message || String(error || "");
+  container.innerHTML = `
+    <article class="data-status-card is-warning">
+      <strong>${escapeHtml(state.language === "en" ? "Administration opened in recovery mode" : "Administración abierta en modo recuperación")}</strong>
+      <p>${escapeHtml(state.language === "en"
+        ? "Your administrator access is not blocked. One internal panel did not finish rendering, but navigation and core controls remain available."
+        : "Tu acceso de administrador no está bloqueado. Un panel interno no terminó de renderizar, pero la navegación y los controles principales siguen disponibles.")}</p>
+      ${detail ? `<small>${escapeHtml(detail)}</small>` : ""}
+    </article>
+  `;
+}
+
+function renderStartupRecovery(error) {
+  console.error("Startup failed", error);
+  const detail = error?.message || String(error || "");
+  const dashboard = document.getElementById("dashboardView");
+  if (dashboard) dashboard.classList.add("active-view");
+  document.querySelector('[data-view="dashboard"]')?.classList.add("active");
+  const panel = document.getElementById("dashboardDataStatusPanel") || document.getElementById("dashboardView");
+  if (panel) {
+    panel.innerHTML = `
+      <article class="data-status-card is-warning">
+        <strong>${escapeHtml(state.language === "en" ? "App recovered with limited startup" : "App recuperada con inicio limitado")}</strong>
+        <p>${escapeHtml(state.language === "en"
+          ? "Navigation remains available. Open Administration if you need to review the detail."
+          : "La navegación sigue disponible. Abre Administración si necesitas revisar el detalle.")}</p>
+        ${detail ? `<small>${escapeHtml(detail)}</small>` : ""}
+      </article>
+    `;
+  }
+  renderAuthStatus();
+  renderNotifications();
+}
+
+function renderAdminSafe() {
+  renderAdmin();
+}
+
 function renderAdmin() {
+  try {
+    renderAdminUnsafe();
+  } catch (error) {
+    console.error("Admin render failed", error);
+    renderAdminRecovery(error);
+  }
+}
+
+function renderAdminUnsafe() {
   refreshOps({ silent: true });
   renderProfileSettings();
   const readiness = calculateDevelopmentReadiness();
