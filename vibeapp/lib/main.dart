@@ -1514,25 +1514,25 @@ class AppStrings {
   String get onbHealthTitle =>
       _s('Salud y wearables', 'Health and wearables', 'Santé et wearables');
   String get onbHealthBody => _s(
-        'Conecta Apple Salud y tu anillo Oura para ver pasos, sueño y preparación, y pregúntaselo a V.',
-        'Connect Apple Health and your Oura ring to see steps, sleep and readiness, and ask V about them.',
+        'Conecta Apple Salud, Oura o Health Connect. Vibeapp envía salud, ubicación, clima y noticias a tu cuenta para que VibePWA los analice.',
+        'Connect Apple Health, Oura, or Health Connect. Vibeapp sends health, location, weather, and news to your account so VibePWA can analyze them.',
         'Connectez Apple Santé et votre anneau Oura pour voir pas, sommeil et préparation, et demandez à V.',
       );
   String get manualTitle =>
       _s('Manual de uso de Vibeapp', 'Vibeapp user manual',
           'Mode d\'emploi de Vibeapp');
   String get manualIntro => _s(
-        'Vibeapp captura tus experiencias y las sincroniza con tu cuenta. '
-            'Esta guía explica cada sección y cómo sacar el máximo a V.',
-        'Vibeapp captures your experiences and syncs them with your account. '
-            'This guide explains each section and how to get the most from V.',
+        'Vibeapp captura tus experiencias, sensores y contexto móvil, y los sincroniza con tu cuenta. '
+            'VibePWA los usa después para librería, activos, reportes, hallazgos y publicaciones.',
+        'Vibeapp captures your experiences, sensors, and mobile context, then syncs them with your account. '
+            'VibePWA uses them later for library, assets, reports, findings, and publications.',
         'Vibeapp capture vos expériences et les synchronise avec votre compte. '
             'Ce guide explique chaque section et comment tirer le meilleur de V.',
       );
   String get manualOverviewTitle =>
       _s('¿Qué es Vibeapp?', 'What is Vibeapp?', 'Qu\'est-ce que Vibeapp?');
   String get manualOverviewBody => _s(
-        'Vibeapp es tu compañero para capturar experiencias —notas, fotos, vídeo, audio, ubicación y salud— y organizarlas. Su centro es V, un asistente de voz que controla la app y responde con inteligencia. Captura sin manos, pregunta lo que quieras y todo se sincroniza con tu cuenta.\n\nAbajo tienes guías paso a paso por función.',
+        'Vibeapp es tu compañero nativo para capturar experiencias —notas, fotos, vídeo, audio, ubicación, salud, clima y noticias del entorno— y enviarlas al servidor. Su centro es V, un asistente de voz que controla la app y responde con inteligencia. VibePWA no duplica esta captura: la revisa, analiza y convierte en reportes, hallazgos y publicaciones.\n\nAbajo tienes guías paso a paso por función.',
         'Vibeapp is your companion to capture experiences —notes, photos, video, audio, location and health— and organize them. At its center is V, a voice assistant that controls the app and answers intelligently. Capture hands-free, ask anything, and everything syncs to your account.\n\nBelow are step-by-step guides by function.',
         'Vibeapp est votre compagnon pour capturer des expériences —notes, photos, vidéo, audio, position et santé— et les organiser. Au centre, V, un assistant vocal qui pilote l\'app et répond intelligemment. Capturez mains libres, demandez tout, et tout se synchronise avec votre compte.\n\nCi-dessous, des guides pas à pas par fonction.',
       );
@@ -1603,14 +1603,14 @@ class AppStrings {
           _s('Cuenta → Salud → "Conectar salud" (acepta Apple Salud una sola vez).',
               'Account → Health → "Connect health" (grant Apple Health once).',
               'Compte → Santé → "Connecter la santé" (autorisez Apple Santé une fois).'),
-          _s('Pega tu token de Oura para añadir sueño, preparación y HRV del anillo.',
-              'Paste your Oura token to add sleep, readiness and HRV from the ring.',
+          _s('Conecta Oura desde el servidor o pega tu token solo como respaldo de prueba para añadir sueño, preparación y HRV.',
+              'Connect Oura through the server, or paste your token only as a test backup to add sleep, readiness and HRV.',
               'Collez votre jeton Oura pour ajouter sommeil, préparation et VFC.'),
           _s('Pregunta a V "¿cuántos pasos llevo?" o "¿cómo dormí?".',
               'Ask V "how many steps?" or "how did I sleep?".',
               'Demandez à V "combien de pas?" ou "comment ai-je dormi?".'),
-          _s('Se envía a tu cuenta una vez al día (para VibePWA).',
-              'It is sent to your account once a day (for VibePWA).',
+          _s('Se envía a tu cuenta como contexto normalizado para que VibePWA actualice Panel, Reportes y Hallazgos.',
+              'It is sent to your account as normalized context so VibePWA can update Dashboard, Reports, and Findings.',
               'Envoyé à votre compte une fois par jour (pour VibePWA).'),
         ]),
         ManualGuide(Icons.cloud_sync_outlined,
@@ -1707,8 +1707,8 @@ class AppStrings {
   String get manualHealthTitle =>
       _s('Salud y wearables', 'Health and wearables', 'Santé et wearables');
   String get manualHealthBody => _s(
-        'En Cuenta > Salud toca "Conectar salud" y acepta el permiso de Apple Salud (en iOS) una sola vez. Verás tus pasos, ritmo, energía y sueño de hoy. Si pegas tu token de Oura, se añaden preparación, puntaje de sueño, HRV y ritmo en reposo del anillo. Los datos se leen en vivo, se cargan solos al abrir y se envían una vez al día a tu cuenta para actualizar VibePWA. Pregúntale a V "cuántos pasos llevo" o "cómo dormí".',
-        'In Account > Health tap "Connect health" and grant the Apple Health permission (on iOS) once. You will see today\'s steps, heart rate, energy and sleep. If you paste your Oura token, the ring adds readiness, sleep score, HRV and resting heart rate. Data is read live, loads on open and is sent once a day to your account to update VibePWA. Ask V "how many steps" or "how did I sleep".',
+        'En Cuenta > Salud toca "Conectar salud" y acepta el permiso de Apple Salud (en iOS) una sola vez. Verás tus pasos, ritmo, energía y sueño de hoy. Oura y Health Connect complementan esos datos cuando están disponibles. Vibeapp lee la información en vivo, la normaliza y la envía al servidor; VibePWA solo la interpreta para Panel, Reportes, Hallazgos y contexto de experiencias. Pregúntale a V "cuántos pasos llevo" o "cómo dormí".',
+        'In Account > Health tap "Connect health" and grant the Apple Health permission (on iOS) once. You will see today\'s steps, heart rate, energy and sleep. Oura and Health Connect complement those data when available. Vibeapp reads them live, normalizes them, and sends them to the server; VibePWA only interprets them for Dashboard, Reports, Findings, and experience context. Ask V "how many steps" or "how did I sleep".',
         'Dans Compte > Santé, touchez "Connecter la santé" et accordez l\'autorisation Apple Santé (sur iOS) une fois. Vous verrez pas, rythme, énergie et sommeil du jour. Avec votre jeton Oura, l\'anneau ajoute préparation, score de sommeil, VFC et rythme au repos. Les données sont lues en direct, chargées à l\'ouverture et envoyées une fois par jour à votre compte pour mettre à jour VibePWA. Demandez à V "combien de pas" ou "comment ai-je dormi".',
       );
   String get manualPermissionsTitle =>
@@ -1729,11 +1729,10 @@ class AppStrings {
           'Synchronisation et compte');
   String get manualSyncBody => _s(
         'Entra con tu cuenta para sincronizar. Lo que capturas se guarda primero '
-            'en el dispositivo y se envía cuando hay sesión y conexión. En Estado '
-            'puedes reintentar o limpiar pruebas locales.',
+            'en el dispositivo y se envía cuando hay sesión y conexión. El servidor '
+            'queda como fuente única para que VibePWA muestre la misma librería, contexto, reportes y publicaciones. En Estado puedes reintentar.',
         'Sign in to sync. What you capture is saved on the device first and sent '
-            'when there is a session and connection. In Status you can retry or '
-            'clear local tests.',
+            'when there is a session and connection. The server becomes the single source so VibePWA shows the same library, context, reports, and publications. In Status you can retry.',
         'Connectez-vous pour synchroniser. Vos captures sont d\'abord '
             'enregistrées sur l\'appareil puis envoyées quand une session et une '
             'connexion existent. Dans État vous pouvez relancer ou nettoyer.',

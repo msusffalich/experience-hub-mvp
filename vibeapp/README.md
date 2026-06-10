@@ -66,6 +66,7 @@ The first Mac session should not redesign the app. Its goal is to confirm build/
 - When an active experience is open, biometric imports attach to that same experience instead of creating a duplicate standalone capture.
 - External session import for Meta/Oakley/Ray-Ban, Oura, Apple Health, Samsung Health/Galaxy Watch, Health Connect, phone gallery, or other sources. Multiple files are grouped into one experience with internal events and normalized metadata.
 - Source-specific import profiles: Meta photos/videos are treated as visual memories, Meta JSON/HTML exports as account references, Oura/Apple/Samsung/Health Connect CSV/JSON as biometric context, and ZIP files as transport-only bundles.
+- Product contract with VibePWA: Vibeapp is the primary capture and mobile context surface for camera, audio, video, location, weather, news, Apple Health, Health Connect, Oura, Samsung/Galaxy, Meta/Oakley, and voice commands. VibePWA consumes the synchronized server data for review, analysis, reports, findings, publications, administration, and manual backup imports only.
 - Local payload validation before sync: Vibeapp now checks title, text, events, file existence, empty files, MIME type, linked events, and source-specific expectations before sending a capture to Vibe.
 - Local queue persistence: pending, failed, and synced queue items are saved to a device JSON cache so captures survive closing and reopening the app.
 - Retry policy: failed sync attempts keep attempt count, last attempt time, and next retry time; manual retry can override the wait.

@@ -1,4 +1,4 @@
-const APP_VERSION = "20260609-vibepwa-logo-564";
+const APP_VERSION = "20260610-native-context-contract-565";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -436,7 +436,7 @@ const i18n = {
       suggestFilteredAssetText: "Sugerir texto filtrados",
       clearAssetFilters: "Limpiar filtros",
       importAssetMetadata: "Importar metadatos",
-      importBiometricAsset: "Importar biometria",
+      importBiometricAsset: "Importar historico",
       exportAgendaIcs: "Exportar calendario",
       exportAgendaEvent: "Exportar evento",
       importAgendaIcs: "Importar .ics",
@@ -610,8 +610,8 @@ const i18n = {
       assetMetadataImportSummary: "Última importación: {count} actualizados, {cleared} limpiados, {empty} vacíos ignorados, {missing} no encontrados.",
       assetMetadataImportNone: "Aún no hay importaciones de metadatos registradas.",
       assetMetadataImportFailed: "No se pudieron importar los metadatos. Revisa que el archivo sea JSON o CSV de inventario válido.",
-      biometricAssetPanelTitle: "Biometria transversal",
-      biometricAssetPanelHelp: "Importa CSV, JSON o export.xml de Apple Health u otro wearable desde Activos. La app lo interpreta, lo sincroniza con el servidor y lo usa como contexto por fecha/hora.",
+      biometricAssetPanelTitle: "Respaldo biometrico",
+      biometricAssetPanelHelp: "Vibeapp es la fuente normal de biometria, ubicacion, clima, noticias y contexto movil. Usa esta importacion solo para historicos, respaldos o recuperacion desde CSV, JSON o export.xml.",
       biometricAssetImported: "Biometria importada: {count} registros, {metrics} senales detectadas.",
       biometricAssetImportFailed: "No se pudo importar la biometria. Usa CSV, JSON o export.xml legible; si Apple Health entrega un ZIP, descomprímelo y carga export.xml.",
       biometricAssetExperienceTitle: "Contexto biometrico",
@@ -927,7 +927,7 @@ const i18n = {
       dailyFlowVoice: "Comando de voz",
       dailyFlowVoiceHelp: "Navegación rápida",
       dailyFlowIntro: "Este bloque es el mando del Diario. No duplica las noticias: sirve para leer, consultar cartelera/multimedia o usar voz.",
-      dailyLocationManualHelp: "Ubicación manual para este dispositivo. Hasta tener app nativa, noticias, clima y cartelera usan esta ciudad como referencia; en otro dispositivo debes confirmar la misma ciudad.",
+      dailyLocationManualHelp: "Ubicacion manual de respaldo. En uso normal, Vibeapp envia ubicacion, clima, noticias y contexto diario al servidor; esta ciudad solo se usa si no hay contexto movil reciente.",
       dailyLocationSaved: "Ubicación del Diario guardada. Actualizando contenido de esa ciudad...",
       dailyFlowReadDetail: "Leer Diario es una guía de lectura. Las noticias reales aparecen abajo, separadas en Locales y Mundiales. Usa Ver detalle en una noticia para leerla, escucharla o guardarla como experiencia.",
       dailyExploreTitle: "Cartelera y multimedia",
@@ -1267,7 +1267,7 @@ const i18n = {
       suggestFilteredAssetText: "Suggest filtered text",
       clearAssetFilters: "Clear filters",
       importAssetMetadata: "Import metadata",
-      importBiometricAsset: "Import biometrics",
+      importBiometricAsset: "Import history",
       exportAgendaIcs: "Export calendar",
       exportAgendaEvent: "Export event",
       importAgendaIcs: "Import .ics",
@@ -1441,8 +1441,8 @@ const i18n = {
       assetMetadataImportSummary: "Last import: {count} updated, {cleared} cleared, {empty} empty ignored, {missing} not found.",
       assetMetadataImportNone: "No metadata imports have been recorded yet.",
       assetMetadataImportFailed: "Metadata could not be imported. Check that the file is a valid inventory JSON or CSV.",
-      biometricAssetPanelTitle: "Cross-experience biometrics",
-      biometricAssetPanelHelp: "Import Apple Health or wearable CSV, JSON, or export.xml from Assets. The app interprets it, syncs it with the server, and uses it as time-based context.",
+      biometricAssetPanelTitle: "Biometric backup",
+      biometricAssetPanelHelp: "Vibeapp is the normal source for biometrics, location, weather, news, and mobile context. Use this import only for history, backup, or recovery from CSV, JSON, or export.xml.",
       biometricAssetImported: "Biometrics imported: {count} records, {metrics} detected signals.",
       biometricAssetImportFailed: "Biometrics could not be imported. Use readable CSV, JSON, or export.xml; if Apple Health gives you a ZIP, unzip it and upload export.xml.",
       biometricAssetExperienceTitle: "Biometric context",
@@ -1758,7 +1758,7 @@ const i18n = {
       dailyFlowVoice: "Voice command",
       dailyFlowVoiceHelp: "Quick navigation",
       dailyFlowIntro: "This block is the Daily control area. It does not duplicate the news: use it to read, check listings/multimedia, or use voice.",
-      dailyLocationManualHelp: "Manual location for this device. Until the native app exists, news, weather, and listings use this city as reference; confirm the same city on each device.",
+      dailyLocationManualHelp: "Backup manual location. In normal use, Vibeapp sends location, weather, news, and daily context to the server; this city is used only when no recent mobile context exists.",
       dailyLocationSaved: "Daily location saved. Updating content for that city...",
       dailyFlowReadDetail: "Read Daily is a reading guide. The actual stories appear below, separated into Local and World. Use View detail on a story to read it, listen to it, or save it as an experience.",
       dailyExploreTitle: "Listings and multimedia",
@@ -2370,7 +2370,7 @@ const manualContent = {
         "El OpenAPI de Oura v2 queda incorporado como conector biométrico backend: /api/integration/oura/manifest describe endpoints, scopes y métricas; /api/integration/oura/normalize transforma documentos Oura en señales Vibe sensibles para contexto, reportes y hallazgos. Falta OAuth/token productivo para sincronización real automática.",
         "Apple Health, Samsung/Android Health Connect y Meta Wearables quedan incorporados como conectores nativos planificados: /api/integration/apple-health/manifest, /api/integration/health-connect/manifest y /api/integration/meta-wearables/manifest explican rutas, permisos y normalizadores. Apple Health no tiene REST directo; Samsung debe priorizar Health Connect; Meta debe usar Vibeapp o importación desde Meta AI/Galería hasta tener SDK aprobado.",
         "Administración incluye Prueba de conectores para validar en una sola acción Oura, Apple Health, Health Connect/Samsung y Meta contra el contrato Vibe. Esta prueba confirma destino, payload e idempotencia antes de conectar OAuth, HealthKit, Health Connect o SDKs reales.",
-        "Vibeapp nativa se planifica como complemento de la PWA: la PWA queda para análisis, reportes, hallazgos, publicaciones y administración; Vibeapp cubre captura real con cámara, audio, video, ubicación, sensores, biometría, notificaciones y sincronización transparente con Supabase.",
+        "Vibeapp nativa es la fuente normal de captura y contexto: cámara, audio, video, ubicación, clima, noticias, sensores, biometría, notificaciones y sincronización transparente con Supabase. VibePWA queda como centro de análisis, librería, activos, reportes, hallazgos, publicaciones, administración y respaldo manual.",
         "El blueprint inicial de Vibeapp está documentado en docs/vibeapp-native-blueprint.md. Ese documento define contrato de sincronización, pantallas iniciales, flujo offline, permisos, privacidad y los primeros incrementos Flutter.",
         "Vibeapp ya tiene captura nativa real para texto, foto, video, audio, agenda, lugar y archivos biométricos CSV/JSON. Texto, Agenda, ubicación y señales Health Connect usan /api/integration/ingest; foto, video, audio y documentos suben a Storage privado mediante /api/media; sesiones con adjuntos se consolidan como experiencia compartida.",
         "Vibeapp incluye contrato de sincronización: guarda en cola local, permite entrar con el mismo usuario Supabase de la PWA y usa una ingesta validada para señales no binarias antes de crear datos reales. El usuario ya no necesita copiar tokens manualmente ni elegir rutas técnicas.",
@@ -2533,7 +2533,7 @@ const manualContent = {
         "Hallazgos accionables permite convertir cada recomendación en un evento de Agenda con fecha sugerida, prioridad, descripción y recordatorio.",
         "La Proyección inicial del Reporte también permite programar su siguiente acción sugerida en Agenda.",
         "Diario muestra un resumen informativo independiente de las experiencias: noticias políticas, economía y finanzas, tecnología e IA, deportes, entretenimiento/eventos y noticias del mundo.",
-        "Diario usa una ubicación manual por dispositivo, compartida con Contexto. En PWA no se detecta ubicación física persistente; confirma la misma ciudad en cada dispositivo si quieres ver el mismo Diario en todos.",
+        "Diario usa primero el contexto enviado por Vibeapp: ubicación móvil, clima, noticias y señales del día. La ubicación manual de VibePWA queda como respaldo si no hay contexto móvil reciente.",
         "Diario se refresca cada 6 horas si la rutina del servidor está activa o cuando la app está abierta y detecta contenido vencido. Si la PWA está cerrada, el refresco de fondo depende del backend, no del navegador.",
         "Diario se persiste por usuario, lugar e idioma. Con Supabase activo usa la tabla daily_briefings; si la tabla aún no existe, la app mantiene un respaldo local y sigue mostrando el resumen.",
         "La matriz de Confiabilidad del Diario separa contenido real de interacción: noticias, separación local/mundial, clima, cartelera, multimedia, voz/comandos y vigencia de 6 horas.",
@@ -2930,7 +2930,7 @@ const manualContent = {
         "Las funciones avanzadas de administración, reportes y publicaciones siguen siendo más cómodas en tablet o escritorio.",
         "Alcance recomendado: la PWA es el centro de análisis, revisión, administración, reportes, publicaciones y trabajo asincrónico en PC, Mac, tablets y móviles.",
         "La captura completa en PWA es viable cuando el usuario carga manualmente fotos, audios, videos o documentos. La captura rápida en PWA debe entenderse como captura asistida, no como control nativo completo del dispositivo.",
-        "Para control real de cámara, video, audio continuo, wake word, sensores, ubicación avanzada o tareas en segundo plano, el producto necesitará una app móvil nativa o híbrida complementaria.",
+        "Para control real de cámara, video, audio continuo, wake word, sensores, ubicación avanzada o tareas en segundo plano, el producto usa Vibeapp como app móvil nativa. VibePWA no debe duplicar esos conectores; los consume desde el servidor.",
         "La app móvil recomendada sería una sola base Flutter o React Native para iPhone, iPad y Android. Wearables, lentes y servicios externos se integrarían por conectores graduales, no por una app distinta para cada dispositivo.",
         "La integración entre PWA, app móvil y conectores debe hacerse por Supabase/API usando el mismo contrato de datos: workspace, usuario, participante, experiencia, evento, activo, dispositivo, fecha de captura, permisos, ruta Storage y estado de procesamiento.",
       ],
@@ -3162,7 +3162,7 @@ const manualContent = {
         "Actionable Insights can turn each recommendation into an Agenda event with a suggested date, priority, description, and reminder.",
         "The Report's Initial outlook can also schedule its suggested next action in Agenda.",
         "Daily shows an informational briefing independent from experiences: politics, economy and finance, technology and AI, sports, entertainment/events, and world headlines.",
-        "Daily uses a manual location per device shared with Context. In the PWA, persistent physical location is not detected; confirm the same city on each device if you want the same Daily briefing everywhere.",
+        "Daily first uses context sent by Vibeapp: mobile location, weather, news, and daily signals. The manual VibePWA city is only a backup when no recent mobile context exists.",
         "Daily refreshes every 6 hours if the backend routine is active, or when the app is open and detects stale content. If the PWA is closed, background refresh depends on the backend, not the browser.",
         "Daily is persisted by user, place, and language. With Supabase active it uses the daily_briefings table; if that table is not applied yet, the app keeps a local fallback and still shows the briefing.",
         "The Daily Reliability matrix separates real content from interaction: news, local/world split, weather, listings, multimedia, voice/commands, and six-hour freshness.",
@@ -3559,7 +3559,7 @@ const manualContent = {
         "Advanced admin, reporting, and publishing workflows remain more comfortable on tablet or desktop.",
         "Recommended scope: the PWA is the center for analysis, review, administration, reports, publications, and asynchronous work on PC, Mac, tablets, and mobile devices.",
         "Full PWA capture is viable when the user manually attaches photos, audio, video, or documents. Quick capture in the PWA should be understood as assisted capture, not full native device control.",
-        "Real control of camera, video, continuous audio, wake word, sensors, advanced location, or background tasks requires a complementary native or hybrid mobile app.",
+        "Real control of camera, video, continuous audio, wake word, sensors, advanced location, or background tasks belongs to Vibeapp as the native mobile app. VibePWA should not duplicate those connectors; it consumes them from the server.",
         "The recommended mobile app would use one Flutter or React Native codebase for iPhone, iPad, and Android. Wearables, smart glasses, and external services should be integrated through gradual connectors, not a separate full app for every device.",
         "PWA, mobile app, and connectors should integrate through Supabase/API using the same data contract: workspace, user, participant, experience, event, asset, device, capture time, permissions, Storage path, and processing status.",
       ],
@@ -6514,6 +6514,18 @@ function applyLanguage() {
   document.getElementById("manualGuideAdminTitle").textContent = state.language === "en" ? "Administration" : "Administración";
   document.getElementById("manualGuideAdminText").textContent = state.language === "en" ? "Quality, diagnostics, and publishing." : "Calidad, diagnóstico y publicación.";
   document.getElementById("manualSearchLabel").textContent = state.language === "en" ? "Search the manual" : "Buscar en el manual";
+  document.getElementById("manualVersionSummary").textContent = state.language === "en"
+    ? "Practical guide organized by topic. Vibeapp captures native context; VibePWA reviews, analyzes, reports, publishes, and administers."
+    : "Guia practica organizada por temas. Vibeapp captura el contexto nativo; VibePWA revisa, analiza, reporta, publica y administra.";
+  document.getElementById("manualGuideStartText").textContent = state.language === "en"
+    ? "Use Vibeapp to capture; use VibePWA to review Library, Assets, Reports, Findings, and Publications."
+    : "Usa Vibeapp para capturar; usa VibePWA para revisar Libreria, Activos, Reportes, Hallazgos y Publicaciones.";
+  document.getElementById("manualGuideOperateText").textContent = state.language === "en"
+    ? "Server sync, privacy, backups, and multi-device continuity."
+    : "Sincronizacion de servidor, privacidad, respaldos y continuidad multidispositivo.";
+  document.getElementById("manualGuideAdminText").textContent = state.language === "en"
+    ? "Connectors, diagnostics, quality, and publishing controls."
+    : "Conectores, diagnostico, calidad y controles de publicacion.";
   document.getElementById("manualSearchInput").placeholder =
     state.language === "en" ? "Search section, feature, or keyword" : "Buscar sección, función o palabra clave";
   document.getElementById("manualReviewFilterLabel").textContent = state.language === "en" ? "Review status" : "Estado de revisión";
@@ -15691,7 +15703,7 @@ function renderDashboardIntegrationHandoff() {
   const labels = state.language === "en"
     ? {
         clear: "No native or connector signals in this scope yet.",
-        clearDetail: "When Vibeapp, Health Connect, Oura, Apple Health, Samsung, or Meta imports send data, this panel will show where it landed.",
+        clearDetail: "Vibeapp is the normal source for mobile location, weather, news, biometrics, media, and voice captures. When it sends data, this panel shows where it landed.",
         active: "Native handoff visible",
         detail: "Signals are grouped by source so you can confirm if they became experiences, assets, agenda items, or biometric context.",
         experiences: "Experiences/context",
@@ -15700,14 +15712,14 @@ function renderDashboardIntegrationHandoff() {
         sources: "Sources",
         payloads: "Payloads",
         recent: "Recent incoming data",
-        connectOura: "Connect Oura",
+        openConnectors: "Configure connectors",
         openAssets: "Open Assets",
         openAdmin: "Open connector tests",
         ouraResult: "Oura",
       }
     : {
         clear: "Aun no hay señales nativas o de conectores en este alcance.",
-        clearDetail: "Cuando Vibeapp, Health Connect, Oura, Apple Health, Samsung o Meta importen datos, este panel mostrara donde quedaron.",
+        clearDetail: "Vibeapp es la fuente normal de ubicacion movil, clima, noticias, biometria, multimedia y voz. Cuando envia datos, este panel muestra donde quedaron.",
         active: "Entrada nativa visible",
         detail: "Las señales se agrupan por origen para confirmar si quedaron como experiencias, activos, agenda o contexto biometrico.",
         experiences: "Experiencias/contexto",
@@ -15716,7 +15728,7 @@ function renderDashboardIntegrationHandoff() {
         sources: "Fuentes",
         payloads: "Tipos",
         recent: "Entradas recientes",
-        connectOura: "Conectar Oura",
+        openConnectors: "Configurar conectores",
         openAssets: "Abrir Activos",
         openAdmin: "Probar conectores",
         ouraResult: "Oura",
@@ -15731,7 +15743,7 @@ function renderDashboardIntegrationHandoff() {
         <p>${escapeHtml(summary.total ? labels.detail : labels.clearDetail)}</p>
       </div>
       <div class="dashboard-integration-actions">
-        <button class="primary-button" type="button" data-dashboard-connect-oura="1">${escapeHtml(labels.connectOura)}</button>
+        <button class="ghost-button" type="button" data-backlog-view="admin" data-backlog-focus="deviceList">${escapeHtml(labels.openConnectors)}</button>
         <button class="ghost-button" type="button" data-backlog-view="assetLibrary">${escapeHtml(labels.openAssets)}</button>
         <button class="ghost-button" type="button" data-backlog-view="admin" data-backlog-focus="deviceList">${escapeHtml(labels.openAdmin)}</button>
       </div>
@@ -19843,7 +19855,7 @@ function renderDashboardBiometricContext() {
   const summary = buildBiometricIntelligenceSummary(getDashboardExperiences());
   const labels = state.language === "en"
     ? {
-        import: "Import biometrics",
+        import: "Import history",
         report: "Open report",
         coverage: "Coverage",
         energy: "Suggested energy",
@@ -19852,13 +19864,13 @@ function renderDashboardBiometricContext() {
         sources: "Sources",
         matches: "Recent matches",
         noMatches: "No recent matches in this dashboard scope.",
-        method: "Used by Panel, Capture, Reports and Insights. It is context, not a medical diagnosis.",
+        method: "Vibeapp is the primary source. VibePWA reviews this context and imports historical files only as backup. It is not a medical diagnosis.",
         heart: "Heart",
         steps: "Steps",
         sleep: "Sleep",
       }
     : {
-        import: "Importar biometría",
+        import: "Importar historico",
         report: "Abrir reporte",
         coverage: "Cobertura",
         energy: "Energía sugerida",
@@ -19867,7 +19879,7 @@ function renderDashboardBiometricContext() {
         sources: "Fuentes",
         matches: "Coincidencias recientes",
         noMatches: "No hay coincidencias recientes en este alcance del panel.",
-        method: "Usado por Panel, Captura, Reportes y Hallazgos. Es contexto, no diagnóstico médico.",
+        method: "Vibeapp es la fuente principal. VibePWA revisa este contexto e importa historicos solo como respaldo. No es diagnostico medico.",
         heart: "Frecuencia",
         steps: "Pasos",
         sleep: "Sueño",
@@ -28368,7 +28380,7 @@ function renderAdminOperationalFocusPanel() {
         liveFlow: "Live draft refresh",
         liveFlowDetail: "When Capture syncs an open draft, the same device refreshes Dashboard, Library, Assets, Agenda, Timeline, Map, Reports, Publications, Insights, persistence state, and Admin.",
         biometricAssets: "Biometric files in Assets",
-        biometricAssetsDetail: "Apple Health export.xml, CSV, or JSON from wearables can enter through Assets or Vibeapp. The PWA syncs and hydrates biometric files and structured Health Connect signals as cross-experience context, then uses them in Dashboard, Capture, Reports, and Findings through date/time matching.",
+        biometricAssetsDetail: "Vibeapp is the primary route for Apple Health, Health Connect, Oura, Samsung/Galaxy, location, weather, and news context. VibePWA only imports biometric files from Assets for historical backfill, backup, or recovery, then uses the normalized server context in Dashboard, Reports, and Findings.",
         scopeFilters: "Unified analytical scope",
         scopeFiltersDetail: "Reports, Findings, and Publications now share group/person, category, origin/connector, from-date, and to-date filters so the user can analyze a coherent group of experiences.",
         sharedAnalyticalScope: "Shared analytical scope",
@@ -28394,7 +28406,7 @@ function renderAdminOperationalFocusPanel() {
         insightPlan: "Findings action plan",
         insightPlanDetail: "Findings now turns the current scope into a 7-day plan with evidence, human wording, and Agenda scheduling for each action.",
         nativeSync: "Vibeapp real queue",
-        nativeSyncDetail: "Vibeapp now has real native contracts for text, photo, video, audio, agenda, location, and biometric export.xml/CSV/JSON files. Text, agenda, location, Apple Health, and Health Connect signals use /api/integration/ingest; binary media uses /api/media; rich sessions with attachments still consolidate through /api/experiences. The native queue validates each payload, persists locally across app restarts, tracks attempts, retries eligible items automatically, separates real states, exposes a pilot checklist, and sends stable idempotency keys so retries update the same target instead of creating duplicates.",
+        nativeSyncDetail: "Vibeapp is the normal capture surface for text, photo, video, audio, agenda, location, weather, news, Apple Health, Health Connect, Oura, Samsung/Galaxy, and Meta/Oakley imports. Text, agenda, location, context, weather/news summaries, and health signals use /api/integration/ingest; binary media uses /api/media; rich sessions consolidate through /api/experiences. The native queue validates each payload, persists locally across app restarts, tracks attempts, retries automatically, and sends stable idempotency keys so retries update the same target instead of creating duplicates.",
         nativeSimulator: "Native sync simulator",
         nativeSimulatorDetail: "npm run simulate:vibeapp validates note, agenda, photo, video, audio, biometrics, location, and Meta imports against the PWA signal contract without needing a physical phone.",
         integrationIngest: "Validated integration ingest",
@@ -28450,8 +28462,8 @@ function renderAdminOperationalFocusPanel() {
     labels.assetProcessingDetail = "Las tarjetas, b\u00fasqueda, inventario, importaci\u00f3n de metadatos, procesamiento autom\u00e1tico, recuperaci\u00f3n de pendientes y reintento manual conservan texto extra\u00eddo, m\u00e9todo, estado, fecha y sincronizaci\u00f3n en Supabase.";
     labels.liveFlow = "Refresco de borrador vivo";
     labels.liveFlowDetail = "Cuando Captura sincroniza una experiencia abierta, el mismo dispositivo refresca Panel, Librer\u00eda, Activos, Agenda, L\u00ednea de tiempo, Mapa, Reportes, Publicaciones, Hallazgos, persistencia y Administraci\u00f3n.";
-    labels.biometricAssets = "Biometr\u00eda desde Activos";
-    labels.biometricAssetsDetail = "export.xml de Apple Health, CSV o JSON de wearables puede entrar por Activos o Vibeapp. La PWA sincroniza e hidrata archivos biom\u00e9tricos y se\u00f1ales estructuradas de Health Connect como contexto transversal, y luego las usa en Panel, Captura, Reportes y Hallazgos por cruce de fecha/hora.";
+    labels.biometricAssets = "Biometria y contexto desde Vibeapp";
+    labels.biometricAssetsDetail = "Vibeapp es la ruta principal para Apple Health, Health Connect, Oura, Samsung/Galaxy, ubicacion, clima y noticias. VibePWA solo importa archivos biometricos desde Activos para historicos, respaldo o recuperacion; luego usa el contexto normalizado del servidor en Panel, Reportes y Hallazgos.";
     labels.scopeFilters = "Alcance anal\u00edtico uniforme";
     labels.scopeFiltersDetail = "Reportes, Hallazgos y Publicaciones comparten filtros de grupo/persona, categoria, origen/conector, fecha desde y fecha hasta para analizar grupos coherentes de experiencias.";
     labels.sharedAnalyticalScope = "Alcance analitico compartido";
@@ -28477,7 +28489,7 @@ function renderAdminOperationalFocusPanel() {
     labels.insightPlan = "Plan de acción de Hallazgos";
     labels.insightPlanDetail = "Hallazgos convierte el alcance actual en un plan de 7 días con evidencia, redacción humana y envío directo de cada acción a Agenda.";
     labels.nativeSync = "Vibeapp con cola real";
-    labels.nativeSyncDetail = "Vibeapp ya tiene contratos nativos reales para texto, foto, video, audio, agenda, lugar, biometr\u00eda export.xml/CSV/JSON e importaci\u00f3n de sesiones externas. Texto, agenda, lugar, Apple Health y Health Connect usan /api/integration/ingest; multimedia binaria usa /api/media; sesiones ricas con adjuntos siguen consolid\u00e1ndose por /api/experiences. La cola nativa valida cada payload, conserva intentos, reintenta autom\u00e1ticamente, separa estados reales, muestra una compuerta m\u00f3vil y usa llaves de idempotencia para que un reintento actualice el mismo destino sin crear duplicados.";
+    labels.nativeSyncDetail = "Vibeapp es la superficie normal de captura para texto, foto, video, audio, agenda, ubicacion, clima, noticias, Apple Health, Health Connect, Oura, Samsung/Galaxy e importaciones Meta/Oakley. Texto, agenda, ubicacion, contexto, resumen de clima/noticias y salud usan /api/integration/ingest; multimedia binaria usa /api/media; sesiones ricas se consolidan por /api/experiences. La cola nativa valida cada payload, persiste localmente entre reinicios, registra intentos, reintenta automaticamente y envia idempotency keys estables para actualizar el mismo destino sin duplicar.";
     labels.nativeSimulator = "Simulador de sincronizaci\u00f3n nativa";
     labels.nativeSimulatorDetail = "npm run simulate:vibeapp valida nota, agenda, foto, video, audio, biometr\u00eda, ubicaci\u00f3n e importaciones Meta contra el contrato de se\u00f1ales PWA sin necesitar un tel\u00e9fono f\u00edsico.";
     labels.integrationIngest = "Ingesta validada de integraciones";
