@@ -1,4 +1,4 @@
-const APP_VERSION = "20260610-nav-admin-map-568";
+const APP_VERSION = "20260610-mobile-daily-context-569";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";

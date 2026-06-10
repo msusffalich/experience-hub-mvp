@@ -296,6 +296,12 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (url.pathname === "/api/mobile/context/daily" && req.method === "GET") {
+    const user = await getRequestUser(req);
+    sendJson(res, 200, await getMobileDailyContext(url.searchParams, user));
+    return;
+  }
+
   if (url.pathname === "/api/integration/contract" && req.method === "GET") {
     sendJson(res, 200, buildIntegrationContract());
     return;
@@ -2675,7 +2681,17 @@ function buildContextExperienceFromIntegrationSignal(normalized, signal = {}, us
   const payload = isPlainObject(normalized.payload) ? normalized.payload : {};
   const idempotencyKey = normalized.idempotencyKey || normalized.sourceId;
   const label = integrationPayloadLabel(normalized);
-  const metrics = payload.metrics && typeof payload.metrics === "object" ? payload.metrics : {};
+  const weather = normalizeIntegrationWeather(payload.weather || signal.weather || signal.metadata?.weather);
+  const metrics = {
+    ...(payload.metrics && typeof payload.metrics === "object" ? payload.metrics : {}),
+    ...(weather ? {
+      weatherTemperatureC: weather.temperatureC,
+      weatherApparentC: weather.apparentC,
+      weatherHumidity: weather.humidity,
+      weatherWindKph: weather.windKph,
+      weatherCode: weather.weatherCode,
+    } : {}),
+  };
   const dataType = payload.dataType || payload.recordType || normalized.payloadType;
   const rows = Array.isArray(payload.records)
     ? payload.records
@@ -2709,6 +2725,7 @@ function buildContextExperienceFromIntegrationSignal(normalized, signal = {}, us
         dataType,
         summary: buildContextSignalSummary(normalized),
         metrics,
+        weather,
         signals: rows,
       },
     },
@@ -2759,8 +2776,34 @@ function buildContextSignalSummary(normalized) {
   const metrics = payload.metrics && typeof payload.metrics === "object"
     ? Object.entries(payload.metrics).slice(0, 4).map(([key, value]) => `${key}: ${value}`).join(", ")
     : "";
+  const weather = normalizeIntegrationWeather(payload.weather);
+  const weatherText = weather
+    ? ` Clima: ${weather.description || "observado"}${Number.isFinite(Number(weather.temperatureC)) ? `, ${weather.temperatureC}C` : ""}.`
+    : "";
   const dataType = payload.dataType || payload.recordType || normalized.payloadType;
-  return `Señal ${dataType} recibida desde ${normalized.sourceType}. ${metrics || "Disponible para cruce por fecha/hora."}`.trim();
+  return `Señal ${dataType} recibida desde ${normalized.sourceType}. ${metrics || "Disponible para cruce por fecha/hora."}${weatherText}`.trim();
+}
+
+function normalizeIntegrationWeather(weather = null) {
+  if (!isPlainObject(weather)) return null;
+  const normalized = {
+    source: String(weather.source || "device").trim() || "device",
+    time: weather.time || weather.observedAt || null,
+    temperatureC: normalizeOptionalNumber(weather.temperatureC ?? weather.temperature_c ?? weather.temperature),
+    apparentC: normalizeOptionalNumber(weather.apparentC ?? weather.apparent_c ?? weather.apparentTemperature),
+    humidity: normalizeOptionalNumber(weather.humidity ?? weather.humidityPct ?? weather.relativeHumidity),
+    windKph: normalizeOptionalNumber(weather.windKph ?? weather.wind_kph ?? weather.windSpeed),
+    isDay: typeof weather.isDay === "boolean" ? weather.isDay : null,
+    weatherCode: normalizeOptionalNumber(weather.weatherCode ?? weather.weather_code),
+    description: String(weather.description || "").trim(),
+  };
+  return Object.values(normalized).some((value) => value !== null && value !== "") ? normalized : null;
+}
+
+function normalizeOptionalNumber(value) {
+  if (value === null || value === undefined || value === "") return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
 }
 
 function inferEnergyFromIntegrationPayload(normalized) {
@@ -7436,7 +7479,7 @@ async function getNewsImpact(place) {
 }
 
 async function getDailyBriefing(location, locale = "es", options = {}) {
-  const language = String(locale).startsWith("en") ? "en" : "es";
+  const language = normalizeDailyLanguage(locale);
   const user = options.user || { id: LOCAL_USER_ID };
   if (!options.force) {
     const cached = await getStoredDailyBriefing(user, location, language);
@@ -7463,19 +7506,164 @@ async function getDailyBriefing(location, locale = "es", options = {}) {
   }
 }
 
+async function getMobileDailyContext(searchParams = new URLSearchParams(), user = { id: LOCAL_USER_ID }) {
+  const rawLat = searchParams.get("lat");
+  const rawLon = searchParams.get("lon");
+  const lat = Number(rawLat);
+  const lon = Number(rawLon);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+    throw new HttpError(400, "invalid_location", "lat y lon son obligatorios para contexto movil.");
+  }
+  if (rawLat === null || rawLon === null || rawLat === "" || rawLon === "" || Math.abs(lat) > 90 || Math.abs(lon) > 180) {
+    throw new HttpError(400, "invalid_location", "lat y lon son obligatorios para contexto movil.");
+  }
+  const language = normalizeDailyLanguage(searchParams.get("lang") || searchParams.get("locale") || "es");
+  const force = ["1", "true", "yes"].includes(String(searchParams.get("force") || "").toLowerCase());
+  const place = await reverseGeocodeCoordinates(lat, lon, language);
+  const locationLabel = place.name || `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+  let briefing = null;
+  if (!force) {
+    briefing = await getStoredDailyBriefing(user, locationLabel, language);
+  }
+  if (!briefing || isStoredDailyBriefingStale(briefing)) {
+    briefing = await buildLiveDailyBriefingForPlace(place, language);
+    await saveStoredDailyBriefing(user, briefing);
+    briefing.cached = false;
+    briefing.cacheSource = "live";
+  } else {
+    briefing.cached = true;
+  }
+  return buildMobileDailyContextResponse(briefing, place);
+}
+
+async function reverseGeocodeCoordinates(lat, lon, language = "es") {
+  const fallback = {
+    name: `${lat.toFixed(4)}, ${lon.toFixed(4)}`,
+    country: "",
+    countryCode: "",
+    latitude: lat,
+    longitude: lon,
+    timezone: "auto",
+  };
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), CONTEXT_TIMEOUT_MS);
+  try {
+    const url = new URL("https://nominatim.openstreetmap.org/reverse");
+    url.searchParams.set("format", "jsonv2");
+    url.searchParams.set("lat", String(lat));
+    url.searchParams.set("lon", String(lon));
+    url.searchParams.set("zoom", "10");
+    url.searchParams.set("addressdetails", "1");
+    url.searchParams.set("accept-language", language);
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        "User-Agent": "VibePWA/1.0 daily-context",
+        Accept: "application/json",
+      },
+    });
+    if (!response.ok) return fallback;
+    const payload = await response.json();
+    const address = payload.address || {};
+    const name = address.city || address.town || address.village || address.municipality || address.county || payload.name || fallback.name;
+    return {
+      name,
+      country: address.country || "",
+      countryCode: String(address.country_code || "").toUpperCase(),
+      latitude: lat,
+      longitude: lon,
+      timezone: "auto",
+      displayName: payload.display_name || "",
+    };
+  } catch {
+    return fallback;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function buildMobileDailyContextResponse(briefing = {}, place = {}) {
+  const localSections = (briefing.sections || []).filter((section) => section.scope === "local");
+  const worldSections = (briefing.sections || []).filter((section) => section.scope === "world");
+  return {
+    ok: true,
+    schemaVersion: "vibe-mobile-daily-context-v1",
+    generatedAt: briefing.generatedAt || new Date().toISOString(),
+    nextRefreshAt: briefing.nextRefreshAt || null,
+    cached: Boolean(briefing.cached),
+    cacheSource: briefing.cacheSource || "",
+    location: {
+      lat: place.latitude ?? null,
+      lon: place.longitude ?? null,
+      city: place.name || briefing.location || "",
+      country: place.country || briefing.country || "",
+      countryCode: place.countryCode || briefing.countryCode || "",
+      label: [place.name || briefing.location, place.country || briefing.country || place.countryCode || briefing.countryCode].filter(Boolean).join(", "),
+    },
+    weather: briefing.weather || unavailableWeatherImpact("weather_unavailable"),
+    news: {
+      local: flattenMobileNewsSections(localSections),
+      global: flattenMobileNewsSections(worldSections),
+    },
+    entertainment: buildMobileEntertainmentItems(briefing, localSections, place),
+  };
+}
+
+function flattenMobileNewsSections(sections = []) {
+  return sections.flatMap((section) => (section.articles || []).slice(0, 4).map((article) => ({
+    title: article.title || section.title || "",
+    summary: section.summary || article.title || "",
+    url: article.url || "",
+    image: article.image || null,
+    video: null,
+    source: article.domain || article.source || section.source || "",
+    section: section.title || "",
+    seenAt: article.seenAt || null,
+    media: article.image ? [{ type: "image", url: article.image, title: article.title || section.title || "", articleSpecific: true }] : [],
+  }))).slice(0, 12);
+}
+
+function buildMobileEntertainmentItems(briefing = {}, localSections = [], place = {}) {
+  const entertainmentSection = localSections.find((section) => /entertainment|entretenimiento|event/i.test(section.id || section.title || ""));
+  const articleItems = (entertainmentSection?.articles || []).slice(0, 4).map((article) => ({
+    title: article.title || entertainmentSection.title || "",
+    type: "event",
+    venue: place.name || briefing.location || "",
+    time: article.seenAt || null,
+    image: article.image || null,
+    url: article.url || "",
+    source: article.domain || article.source || entertainmentSection.source || "",
+  }));
+  const linkItems = (briefing.agendaLinks || []).slice(0, 5).map((link) => ({
+    title: link.label || link.query || "",
+    type: /cine|movie|showtime/i.test(`${link.label} ${link.query}`) ? "movie" : "event",
+    venue: place.name || briefing.location || "",
+    time: null,
+    image: null,
+    url: link.url || "",
+    source: "search",
+  }));
+  return [...articleItems, ...linkItems].slice(0, 8);
+}
+
 async function buildLiveDailyBriefing(location, language = "es") {
   const place = await geocodeLocation(location);
-  const worldLabel = language === "en" ? "World" : "Mundo";
+  return buildLiveDailyBriefingForPlace(place, language);
+}
+
+async function buildLiveDailyBriefingForPlace(place, language = "es") {
+  const normalizedLanguage = normalizeDailyLanguage(language);
+  const worldLabel = normalizedLanguage === "en" ? "World" : normalizedLanguage === "fr" ? "Monde" : "Mundo";
   const placeLabel = [place.name, place.country || place.countryCode].filter(Boolean).join(", ");
-  const queryPlace = [place.name, place.country || place.countryCode].filter(Boolean).join(" ");
-  const sections = buildBriefingSections(queryPlace, language);
+  const queryPlace = [place.name, place.country || place.countryCode].filter(Boolean).join(" ") || `${place.latitude},${place.longitude}`;
+  const sections = buildBriefingSections(queryPlace, normalizedLanguage);
   const [sectionResults, weatherResult] = await Promise.all([
-    Promise.allSettled(sections.map((section) => fetchBriefingSection(section, language))),
+    Promise.allSettled(sections.map((section) => fetchBriefingSection(section, normalizedLanguage))),
     Promise.allSettled([getWeatherImpact(place)]),
   ]);
   const resolvedSections = sections.map((section, index) => {
     const result = sectionResults[index];
-    return result.status === "fulfilled" ? result.value : enrichBriefingSection({ ...section, summary: unavailableBriefingSummary(language), articles: [] }, language);
+    return result.status === "fulfilled" ? result.value : enrichBriefingSection({ ...section, summary: unavailableBriefingSummary(normalizedLanguage), articles: [] }, normalizedLanguage);
   });
   const weather = weatherResult[0]?.status === "fulfilled" ? weatherResult[0].value : unavailableWeatherImpact(weatherResult[0]?.reason);
   return {
@@ -7485,16 +7673,23 @@ async function buildLiveDailyBriefing(location, language = "es") {
     country: place.country || place.countryCode || "",
     countryCode: place.countryCode,
     scope: `${placeLabel || location} + ${worldLabel}`,
-    locale: language,
+    locale: normalizedLanguage,
     generatedAt: new Date().toISOString(),
     refreshEveryHours: 6,
     nextRefreshAt: addMinutes(new Date(), 360).toISOString(),
-    agendaLinks: buildAgendaLinks(place, language),
+    agendaLinks: buildAgendaLinks(place, normalizedLanguage),
     weather,
-    groups: buildBriefingGroups(resolvedSections, language),
+    groups: buildBriefingGroups(resolvedSections, normalizedLanguage),
     sections: resolvedSections,
-    horoscope: await getDailyHoroscope(language),
+    horoscope: await getDailyHoroscope(normalizedLanguage),
   };
+}
+
+function normalizeDailyLanguage(locale = "es") {
+  const value = String(locale || "es").trim().toLowerCase();
+  if (value.startsWith("fr")) return "fr";
+  if (value.startsWith("en")) return "en";
+  return "es";
 }
 
 async function getStoredDailyBriefing(user, location, language) {
@@ -7616,6 +7811,19 @@ function buildBriefingSections(queryPlace, language) {
       { id: "world-culture-sports", scope: "world", title: "World sports and entertainment", query: "world sports entertainment cinema concerts music events", mediaQuery: "world sports entertainment events" },
     ];
   }
+  if (language === "fr") {
+    return [
+      { id: "local-politics", scope: "local", title: "Politique locale", query: `${queryPlace} politique elections gouvernement securite publique`, mediaQuery: `${queryPlace} politics government` },
+      { id: "local-economy", scope: "local", title: "Economie et finances locales", query: `${queryPlace} economie finance marches inflation entreprises`, mediaQuery: `${queryPlace} economy business` },
+      { id: "local-technology-ai", scope: "local", title: "Technologie et IA locale", query: `${queryPlace} technologie intelligence artificielle startups innovation transformation numerique`, mediaQuery: `${queryPlace} technology artificial intelligence innovation` },
+      { id: "local-sports", scope: "local", title: "Sports locaux", query: `${queryPlace} sports football baseball basketball tennis`, mediaQuery: `${queryPlace} sports` },
+      { id: "local-entertainment", scope: "local", title: "Divertissement et evenements locaux", query: `${queryPlace} cinema concerts theatre festival evenements musique`, mediaQuery: `${queryPlace} concerts theater events` },
+      { id: "world-politics", scope: "world", title: "Politique mondiale", query: "monde politique elections gouvernement diplomatie securite", mediaQuery: "world politics diplomacy security" },
+      { id: "world-economy", scope: "world", title: "Economie et finances mondiales", query: "economie mondiale finance marches inflation entreprises", mediaQuery: "global economy markets finance" },
+      { id: "world-technology-ai", scope: "world", title: "Technologie et IA mondiale", query: "technologie intelligence artificielle IA puces robotique cybersecurite startups innovation", mediaQuery: "technology artificial intelligence AI innovation" },
+      { id: "world-culture-sports", scope: "world", title: "Sports et divertissement mondial", query: "monde sports divertissement cinema concerts musique evenements", mediaQuery: "world sports entertainment events" },
+    ];
+  }
   return [
     { id: "local-politics", scope: "local", title: "Política local", query: `${queryPlace} política elecciones gobierno seguridad pública`, mediaQuery: `${queryPlace} politics government` },
     { id: "local-economy", scope: "local", title: "Economía y finanzas locales", query: `${queryPlace} economía finanzas mercados inflación negocios`, mediaQuery: `${queryPlace} economy business` },
@@ -7633,12 +7841,12 @@ function buildBriefingGroups(sections, language) {
   return [
     {
       id: "local",
-      title: language === "en" ? "Local news" : "Noticias locales",
+      title: language === "en" ? "Local news" : language === "fr" ? "Actualites locales" : "Noticias locales",
       sections: sections.filter((section) => section.scope === "local"),
     },
     {
       id: "world",
-      title: language === "en" ? "World news" : "Noticias mundiales",
+      title: language === "en" ? "World news" : language === "fr" ? "Actualites mondiales" : "Noticias mundiales",
       sections: sections.filter((section) => section.scope === "world"),
     },
   ];
@@ -7655,6 +7863,14 @@ function buildAgendaLinks(place, language) {
           ["Events today", `events today ${placeLabel}`],
           ["Exhibitions", `exhibitions museums ${placeLabel}`],
         ]
+      : language === "fr"
+        ? [
+            ["Cinema", `cinema seances ${placeLabel}`],
+            ["Concerts", `concerts ${placeLabel}`],
+            ["Theatre", `theatre spectacles ${placeLabel}`],
+            ["Evenements aujourd'hui", `evenements aujourd'hui ${placeLabel}`],
+            ["Expositions", `expositions musees ${placeLabel}`],
+          ]
       : [
           ["Cartelera de cine", `cartelera cine ${placeLabel}`],
           ["Conciertos", `conciertos ${placeLabel}`],
@@ -7705,7 +7921,7 @@ function enrichBriefingSection(section, language) {
       sourceUrl: article.url,
       articleSpecific: true,
     }));
-  const searchQuery = `${section.title} ${language === "en" ? "news" : "noticias"}`;
+  const searchQuery = `${section.title} ${language === "en" ? "news" : language === "fr" ? "actualites" : "noticias"}`;
   return {
     ...section,
     media,
@@ -7829,6 +8045,10 @@ async function fetchGoogleNewsRss(section, language) {
     url.searchParams.set("hl", "en-US");
     url.searchParams.set("gl", "US");
     url.searchParams.set("ceid", "US:en");
+  } else if (language === "fr") {
+    url.searchParams.set("hl", "fr-FR");
+    url.searchParams.set("gl", "FR");
+    url.searchParams.set("ceid", "FR:fr");
   } else {
     url.searchParams.set("hl", "es-419");
     url.searchParams.set("gl", "US");
@@ -7918,10 +8138,14 @@ function buildBriefingSummary(articles, language) {
   if (language === "en") {
     return `${articles.length} recent items found. Lead: ${lead}${domains.length ? ` Sources: ${domains.join(", ")}.` : ""}`;
   }
+  if (language === "fr") {
+    return `${articles.length} elements recents trouves. Principal: ${lead}${domains.length ? ` Sources: ${domains.join(", ")}.` : ""}`;
+  }
   return `${articles.length} notas recientes encontradas. Principal: ${lead}${domains.length ? ` Fuentes: ${domains.join(", ")}.` : ""}`;
 }
 
 function unavailableBriefingSummary(language) {
+  if (language === "fr") return "Aucun element recent disponible pour cette section.";
   return language === "en" ? "No recent items available for this section." : "Sin notas recientes disponibles para esta sección.";
 }
 
@@ -7929,10 +8153,14 @@ function buildDailyHoroscope(language) {
   const signs =
     language === "en"
       ? ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"]
+      : language === "fr"
+        ? ["Belier", "Taureau", "Gemeaux", "Cancer", "Lion", "Vierge", "Balance", "Scorpion", "Sagittaire", "Capricorne", "Verseau", "Poissons"]
       : ["Aries", "Tauro", "Géminis", "Cáncer", "Leo", "Virgo", "Libra", "Escorpio", "Sagitario", "Capricornio", "Acuario", "Piscis"];
   const themes =
     language === "en"
       ? ["focus", "patience", "movement", "dialogue", "care", "planning", "creativity", "rest", "clarity", "discipline", "connection", "learning"]
+      : language === "fr"
+        ? ["attention", "patience", "mouvement", "dialogue", "soin", "planification", "creativite", "repos", "clarte", "discipline", "connexion", "apprentissage"]
       : ["foco", "paciencia", "movimiento", "diálogo", "cuidado", "planificación", "creatividad", "descanso", "claridad", "disciplina", "conexión", "aprendizaje"];
   const today = formatLocalDateKey(new Date());
   return signs.map((sign, index) => {
@@ -7943,6 +8171,8 @@ function buildDailyHoroscope(language) {
       text:
         language === "en"
           ? `Good day to practice ${theme}. Keep one clear priority and avoid scattering attention.`
+          : language === "fr"
+            ? `Bonne journee pour pratiquer ${theme}. Garde une priorite claire et evite de disperser ton attention.`
           : `Buen día para practicar ${theme}. Mantén una prioridad clara y evita dispersar la atención.`,
     };
   });
