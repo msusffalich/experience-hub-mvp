@@ -45,6 +45,7 @@ Supabase and the backend are the single source of truth. Both apps must converge
   - Server-side audio transcription for Vibeapp.
 - `POST /api/mobile/ai/vision`
   - Server-side image interpretation for Vibeapp.
+  - Canonical route for new Vibeapp builds. The backend also accepts legacy `POST /api/mobile/assistant/vision` temporarily so installed builds do not break during the transition.
 - `GET /api/mobile/oura/{collection}`
   - Server-side Oura proxy, when OAuth/token storage is active.
 
@@ -74,4 +75,3 @@ For each mobile/native source:
 5. Reports/Findings/Publications can use it without manual reprocessing.
 6. Retry does not create duplicates.
 7. Offline capture syncs after reconnect.
-

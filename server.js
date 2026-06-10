@@ -260,7 +260,10 @@ async function handleApi(req, res, url) {
     return;
   }
 
-  if (url.pathname === "/api/mobile/assistant/vision" && req.method === "POST") {
+  if (
+    (url.pathname === "/api/mobile/ai/vision" || url.pathname === "/api/mobile/assistant/vision") &&
+    req.method === "POST"
+  ) {
     const user = await getRequestUser(req);
     const body = await readJson(req);
     sendJson(res, 200, await handleMobileAssistantVision(body, user));

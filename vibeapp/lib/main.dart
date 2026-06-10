@@ -2202,7 +2202,7 @@ class ClaudeAssistantClient {
     client.connectionTimeout = const Duration(seconds: 10);
     try {
       final uri = Uri.parse(settings.apiBaseUrl)
-          .resolve('/api/mobile/assistant/vision');
+          .resolve('/api/mobile/ai/vision');
       final request = await client.postUrl(uri);
       request.headers.set('content-type', 'application/json');
       request.headers

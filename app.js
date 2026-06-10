@@ -1,4 +1,4 @@
-const APP_VERSION = "20260610-native-context-contract-565";
+const APP_VERSION = "20260610-vibepwa-stability-566";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -395,7 +395,7 @@ const i18n = {
       insights: "Hallazgos",
       automation: "Automatizaciones",
       manual: "Ayuda",
-      admin: "Diagnóstico",
+      admin: "Operación",
     },
     viewTitles: {
       auth: "Acceso seguro",
@@ -411,7 +411,7 @@ const i18n = {
       insights: "Hallazgos accionables",
       automation: "Capacidades, rutinas y MCP",
       manual: "Manual del Usuario",
-      admin: "Diagnóstico",
+      admin: "Operación",
     },
     buttons: {
       reset: "Cargar ejemplo",
@@ -1226,7 +1226,7 @@ const i18n = {
       insights: "Insights",
       automation: "Automations",
       manual: "Help",
-      admin: "Diagnostics",
+      admin: "Operation",
     },
     viewTitles: {
       auth: "Secure access",
@@ -1242,7 +1242,7 @@ const i18n = {
       insights: "Actionable insights",
       automation: "Skills, Routines and MCPs",
       manual: "Help",
-      admin: "Diagnostics",
+      admin: "Operation",
     },
     buttons: {
       reset: "Load example",
@@ -2286,13 +2286,15 @@ const manualContent = {
       body: [
         "VibePWA es la versión web de Vibe para capturar, organizar, analizar y resguardar experiencias personales o profesionales. Convierte momentos, notas, energía, contexto, multimedia y aprendizajes en una memoria consultable.",
         "La app usa la nube como servidor de datos cuando hay sesión activa, y conserva capacidades locales y sin conexión para que no pierdas trabajo si la conexión no está disponible.",
+        "Inicio queda reservado para uso diario: datos disponibles, acciones principales, grupos/personas, agenda, señales y lectura rápida. Los porcentajes de avance, conectores, pruebas técnicas, colas y diagnósticos viven en Operación.",
+        "El indicador superior de sincronización solo muestra alertas cuando existe una acción real: iniciar sesión o resolver cambios pendientes. Los chequeos breves del servidor se manejan en silencio para no confundir al usuario.",
         "Este Manual del Usuario tiene búsqueda, contador de resultados y filtros por sección para consultar rápidamente una función específica sin recorrer todo el documento.",
         "El manual puede exportarse como Markdown o HTML imprimible usando el filtro actual, útil para compartir instrucciones, llevarlo a Obsidian/Notion o revisarlo fuera de la aplicación.",
         "Cada sección del manual puede copiarse de forma individual en formato Markdown para compartir instrucciones puntuales sin exportar todo el documento.",
         "Las secciones del manual pueden marcarse como revisadas para acompañar el onboarding y saber qué partes ya fueron leídas.",
         "El progreso del manual incluye acciones rápidas para marcar todas las secciones como revisadas o reiniciar la revisión del idioma activo.",
         "También puedes filtrar el manual para ver todas las secciones, solo las pendientes o solo las revisadas.",
-        "Diagnóstico usa el avance de revisión del manual como señal de onboarding y salud operativa.",
+        "Operación usa el avance de revisión del manual como señal de onboarding y salud operativa.",
         "Inicio muestra el estado de datos, acciones principales, grupos/personas, señales recientes y próximos eventos sin exponer controles técnicos innecesarios.",
         "Inicio también muestra la siguiente acción recomendada y permite retomar rápidamente captura, librería, activos o diario.",
         "Hallazgos es la salida principal de lectura humana: organiza las experiencias en 8 ejes de análisis y luego muestra hallazgos priorizados con evidencia, confianza y próxima acción.",
@@ -2948,8 +2950,10 @@ const manualContent = {
     {
       title: "What Experience Hub Is",
       body: [
-        "Experience Hub is an MVP for capturing, organizing, analyzing, and protecting personal or professional experiences. It turns moments, notes, energy, context, media, and learnings into a searchable library.",
+        "VibePWA is the web product for capturing, organizing, analyzing, and protecting personal or professional experiences. It turns moments, notes, energy, context, media, and learnings into a searchable library.",
         "The app uses Supabase as the backend when signed in, while keeping local/offline capabilities so work is not lost if the API is unavailable.",
+        "Home is reserved for daily use: available data, main actions, groups/people, Agenda, signals, and quick reading. Progress percentages, connectors, technical tests, queues, and diagnostics live in Operation.",
+        "The top sync indicator only warns when there is a real action: sign in or resolve pending changes. Short server checks are handled quietly so the user is not confused by technical polling.",
         "This User Manual has search, a result counter, and section filters so you can find a specific feature without reading the whole document.",
         "The manual can be exported as Markdown or printable HTML using the current filter, useful for sharing instructions, moving it into Obsidian/Notion, or reviewing it outside the app.",
         "Each manual section can be copied individually as Markdown so you can share focused instructions without exporting the whole document.",
@@ -4775,7 +4779,8 @@ function t(path) {
   return value ?? path;
 }
 
-const API_FAILURES_BEFORE_OFFLINE = 2;
+const API_FAILURES_BEFORE_OFFLINE = 3;
+const API_RECENT_SUCCESS_GRACE_MS = 2 * 60 * 1000;
 
 function markApiOnline(details = {}) {
   state.apiOnline = true;
@@ -4794,8 +4799,14 @@ function markApiOnline(details = {}) {
 function markApiConnectivityFailure(error, options = {}) {
   const consecutiveFailures = Number(state.connectivity?.consecutiveFailures || 0) + 1;
   const lastFailureMessage = String(error?.message || error || "").trim();
-  const hadRecentSuccess = Boolean(state.connectivity?.lastOkAt);
-  const shouldDeclareOffline = options.immediate || !hadRecentSuccess || consecutiveFailures >= API_FAILURES_BEFORE_OFFLINE;
+  const lastOkMs = Date.parse(state.connectivity?.lastOkAt || "");
+  const hasFreshSuccess = Number.isFinite(lastOkMs) && Date.now() - lastOkMs < API_RECENT_SUCCESS_GRACE_MS;
+  const hadAnySuccess = Boolean(state.connectivity?.lastOkAt);
+  const shouldDeclareOffline =
+    options.forceOffline ||
+    (options.immediate && !hasFreshSuccess) ||
+    (!hadAnySuccess && !hasFreshSuccess) ||
+    consecutiveFailures >= API_FAILURES_BEFORE_OFFLINE;
   state.connectivity = {
     ...(state.connectivity || {}),
     status: shouldDeclareOffline ? "offline" : "slow",
@@ -4838,8 +4849,9 @@ function getConnectivitySummary() {
   if (state.attachmentRetryInProgress || state.serverSync?.inProgress) {
     return { text: labels.syncing, tone: "neutral", action: "status" };
   }
-  if (state.connectivity?.status === "slow") return { text: labels.slow, tone: "warn-soft", action: "status" };
-  if (!state.apiOnline || state.connectivity?.status === "offline") return { text: labels.offline, tone: "warn", action: "status" };
+  if (state.connectivity?.status === "slow") return { text: labels.synced, tone: "ok", action: "status" };
+  if ((!state.apiOnline || state.connectivity?.status === "offline") && pending) return { text: labels.offline, tone: "warn", action: "sync" };
+  if (!state.apiOnline || state.connectivity?.status === "offline") return { text: labels.synced, tone: "neutral", action: "status" };
   return { text: labels.synced, tone: "ok", action: "status" };
 }
 
@@ -5934,7 +5946,13 @@ function renderPersistenceGateBanner() {
   const queueCount = state.offlineQueue.length;
   const missingSession = !state.session?.access_token;
   const apiDown = !state.apiOnline;
+  const shouldWarnApiDown = apiDown && queueCount > 0;
   if (!missingSession && !apiDown && !queueCount) {
+    banner.hidden = true;
+    banner.innerHTML = "";
+    return;
+  }
+  if (!missingSession && apiDown && !shouldWarnApiDown) {
     banner.hidden = true;
     banner.innerHTML = "";
     return;
@@ -6337,7 +6355,7 @@ function renderAuthStatus() {
         : labels.synced;
   const connectivitySummary = getConnectivitySummary();
   const statusClass = connectivitySummary.tone === "ok" ? "is-ok" : connectivitySummary.tone === "neutral" ? "is-neutral" : "is-warn";
-  const statusAction = connectivitySummary.action === "sync" ? "syncOfflineQueue()" : connectivitySummary.action === "auth" ? "showAuthView()" : "renderPersistenceGateBanner()";
+  const statusAction = connectivitySummary.action === "sync" ? "syncOfflineQueue()" : connectivitySummary.action === "auth" ? "showAuthView()" : "refreshUserSyncStatus()";
   const statusChip = `<button class="sync-status-chip ${statusClass}" type="button" onclick="${statusAction}">${escapeHtml(connectivitySummary.text || statusText)}</button>`;
   if (state.session?.access_token && state.session?.user?.email) {
     node.innerHTML = `${statusChip}<span>${escapeHtml(state.session.user.email)}</span><button class="ghost-button" type="button" onclick="signOut()">${t("buttons.signOut")}</button>`;
@@ -6347,6 +6365,23 @@ function renderAuthStatus() {
     node.innerHTML = `${statusChip}<button class="ghost-button" type="button" onclick="showAuthView()">${t("buttons.signIn")}</button>`;
   }
   renderPersistenceGateBanner();
+}
+
+async function refreshUserSyncStatus() {
+  try {
+    await ensureApiOnlineForExport();
+    if (state.session?.access_token) {
+      await pollServerSyncState({ reason: "status-chip" });
+    }
+    if (state.offlineQueue?.length) {
+      await syncOfflineQueue({ silent: true });
+    }
+  } catch {
+    // Keep the status calm; detailed connectivity checks live in Operation.
+  } finally {
+    renderAuthStatus();
+    renderDashboardDataStatusPanel();
+  }
 }
 
 function renderAuthStatePanel() {
@@ -7457,7 +7492,6 @@ function setupActions() {
   document.getElementById("apiStatusPanel").addEventListener("click", handleApiStatusClick);
   document.getElementById("uiQualityPanel").addEventListener("click", handleUiQualityClick);
   document.querySelector(".dashboard-primary-panel")?.addEventListener("click", handleParallelBacklogClick);
-  document.getElementById("dashboardOuraConnectButton")?.addEventListener("click", connectOuraAccount);
   document.getElementById("dashboardAttachmentBox")?.addEventListener("click", handleDashboardAttachmentAction);
   document.getElementById("dashboardIntegrationBox")?.addEventListener("click", handleDashboardIntegrationAction);
   document.getElementById("dashboardPilotBox")?.addEventListener("click", handleDashboardPilotAction);
@@ -7482,7 +7516,8 @@ function setupActions() {
   document.getElementById("captureCoachBox")?.addEventListener("click", handleCaptureCoachClick);
   window.addEventListener("online", () => syncOfflineQueue({ silent: true }).then(renderAll).catch(() => renderAll()));
   window.setInterval(() => {
-    if (!state.offlineQueue.length || !state.session?.access_token || !state.apiOnline) {
+    if (!state.offlineQueue.length) return;
+    if (!state.session?.access_token || !state.apiOnline) {
       renderPersistenceGateBanner();
       return;
     }
@@ -9151,10 +9186,10 @@ function renderDashboardStateAndProgressPanels({ compact = true } = {}) {
   } catch (error) {
     renderDashboardDataStatusFallback(error);
   }
-  try {
-    renderGlobalProgressPanel("dashboardGlobalProgressPanel", { compact });
-  } catch (error) {
-    renderGlobalProgressFallback(error);
+  const progressPanel = document.getElementById("dashboardGlobalProgressPanel");
+  if (progressPanel) {
+    progressPanel.hidden = true;
+    progressPanel.innerHTML = "";
   }
 }
 
@@ -9214,15 +9249,19 @@ function renderDashboardDataStatusPanel() {
   const isRemote = state.persistence === "supabase" || state.apiStatus?.mode === "supabase" || state.config?.persistence === "supabase";
   const hasSession = Boolean(state.session?.access_token);
   const statusText = isRemote && hasSession
-    ? state.language === "en" ? "Cloud data active" : "Datos en la nube activos"
+    ? state.language === "en" ? "Your data is available" : "Tus datos estan disponibles"
     : hasSession
-      ? state.language === "en" ? "Session active, checking cloud" : "Sesión activa, revisando nube"
-      : state.language === "en" ? "Sign in to see shared data" : "Inicia sesión para ver datos compartidos";
+      ? state.language === "en" ? "Working with available data" : "Trabajando con datos disponibles"
+      : state.language === "en" ? "Sign in to see shared data" : "Inicia sesion para ver datos compartidos";
   const syncText = pendingQueue || pendingAssets
     ? state.language === "en"
       ? `${pendingQueue + pendingAssets} item(s) need sync`
-      : `${pendingQueue + pendingAssets} elemento(s) requieren sincronización`
-    : state.language === "en" ? "No pending sync" : "Sin pendientes de sincronización";
+      : `${pendingQueue + pendingAssets} elemento(s) requieren sincronizacion`
+    : state.language === "en" ? "No pending sync" : "Sin pendientes de sincronizacion";
+  const lastSyncAt = state.serverSync?.checkedAt || state.connectivity?.lastOkAt || state.apiStatus?.checkedAt || "";
+  const lastSyncText = lastSyncAt
+    ? formatDate(lastSyncAt)
+    : state.language === "en" ? "Not confirmed yet" : "Aun no confirmado";
   const modeText = isRemote
     ? state.language === "en" ? "Supabase" : "Supabase"
     : state.language === "en" ? "Local fallback" : "Respaldo local";
@@ -9234,7 +9273,7 @@ function renderDashboardDataStatusPanel() {
       <div>
         <span>${escapeHtml(state.language === "en" ? "Current data" : "Datos actuales")}</span>
         <strong>${escapeHtml(statusText)}</strong>
-        <p>${escapeHtml(state.language === "en" ? "This panel confirms that previous data is loaded, filtered, or waiting for session/sync." : "Este panel confirma si la data previa está cargada, filtrada o esperando sesión/sincronización.")}</p>
+        <p>${escapeHtml(state.language === "en" ? "Daily work stays here. Technical checks and connector setup live in Operation." : "El trabajo diario queda aqui. Las pruebas tecnicas y conectores viven en Operacion.")}</p>
       </div>
       <dl>
         <div><dt>${escapeHtml(state.language === "en" ? "Scope" : "Vista")}</dt><dd>${escapeHtml(scopeText || "-")}</dd></div>
@@ -9243,6 +9282,7 @@ function renderDashboardDataStatusPanel() {
         <div><dt>${escapeHtml(state.language === "en" ? "Groups" : "Grupos")}</dt><dd>${escapeHtml(String(state.pilotParticipants.length || 0))}</dd></div>
         <div><dt>${escapeHtml(state.language === "en" ? "Mode" : "Modo")}</dt><dd>${escapeHtml(modeText)}</dd></div>
         <div><dt>${escapeHtml(state.language === "en" ? "Sync" : "Sync")}</dt><dd>${escapeHtml(syncText)}</dd></div>
+        <div><dt>${escapeHtml(state.language === "en" ? "Last check" : "Ultima revision")}</dt><dd>${escapeHtml(lastSyncText)}</dd></div>
       </dl>
     </article>
   `;
@@ -15788,11 +15828,6 @@ function renderDashboardIntegrationHandoff() {
 }
 
 function handleDashboardIntegrationAction(event) {
-  const ouraButton = event.target.closest("[data-dashboard-connect-oura]");
-  if (ouraButton) {
-    connectOuraAccount();
-    return;
-  }
   handleParallelBacklogClick(event);
 }
 
