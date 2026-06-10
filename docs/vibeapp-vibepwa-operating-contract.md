@@ -39,6 +39,14 @@ Supabase and the backend are the single source of truth. Both apps must converge
   - Rich experiences with multiple events and already-linked assets.
 - `GET /api/mobile/participants`
   - Groups/persons visible to the signed-in account so Vibeapp can attach every capture to the correct group/person.
+- `POST /api/participants`
+  - VibePWA creates or updates a group/person for the signed-in account.
+- `PATCH /api/participants/{participantId}`
+  - VibePWA archives or reactivates a group/person.
+  - Archiving removes the group from new captures and normal filters, but does not delete saved experiences, assets, reports, or audit history.
+- `POST /api/account/closure-request`
+  - VibePWA records a user-requested account closure request.
+  - This is not immediate destructive deletion; backup, identity confirmation, and server-side review are required before final deletion.
 - `POST /api/mobile/assistant/message`
   - Server-side assistant calls for Vibeapp.
 - `POST /api/mobile/ai/transcribe`
@@ -62,6 +70,8 @@ Supabase and the backend are the single source of truth. Both apps must converge
 - End users should not see connector complexity in normal daily panels.
 - VibePWA may show connector health in Administration and Data Origins.
 - Vibeapp should show clear capture actions, group/person selector, sync status, and retry state, without exposing backend mechanics.
+- VibePWA owns group/person creation, archive/reactivation, and account-closure requests.
+- Vibeapp reads active groups/persons and may select the active group, but it must not delete groups, users, or historical records.
 - Any action that changes data must confirm success, pending state, or actionable failure in plain language.
 
 ## Acceptance Checks

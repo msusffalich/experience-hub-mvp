@@ -439,6 +439,31 @@ async function handleApi(req, res, url) {
     }
   }
 
+  if (url.pathname === "/api/participants" && req.method === "POST") {
+    const user = await getRequestUser(req);
+    const body = await readJson(req);
+    sendJson(res, 201, await upsertParticipantRecord(body, user));
+    return;
+  }
+
+  const participantMatch = url.pathname.match(/^\/api\/participants\/([^/]+)$/);
+  if (participantMatch) {
+    const user = await getRequestUser(req);
+    const participantId = decodeURIComponent(participantMatch[1]);
+    if (req.method === "PATCH") {
+      const body = await readJson(req);
+      sendJson(res, 200, await updateParticipantLifecycle(participantId, body, user));
+      return;
+    }
+  }
+
+  if (url.pathname === "/api/account/closure-request" && req.method === "POST") {
+    const user = await getRequestUser(req);
+    const body = await readJson(req);
+    sendJson(res, 201, await recordAccountClosureRequest(body, user));
+    return;
+  }
+
   if (url.pathname === "/api/experiences") {
     const user = await getRequestUser(req);
     if (req.method === "GET") {
@@ -3687,6 +3712,110 @@ async function listMobileParticipants(user = { id: LOCAL_USER_ID, email: "local-
       warning: sanitizeDiagnosticError(error),
     };
   }
+}
+
+function normalizeParticipantPayload(participant = {}, user = { id: LOCAL_USER_ID }) {
+  const participantId = String(participant.id || participant.participantId || "").trim();
+  const displayName = String(participant.name || participant.displayName || participant.display_name || participantId).trim();
+  const status = String(participant.status || "active").trim().toLowerCase() || "active";
+  return {
+    participantId,
+    displayName,
+    email: String(participant.email || "").trim() || null,
+    segment: String(participant.role || participant.segment || "").trim() || null,
+    status,
+    metadata: {
+      source: "vibepwa-group-management-v1",
+      ownerUserId: user.id || null,
+      syncedAt: new Date().toISOString(),
+      archivedAt: status === "archived" ? (participant.archivedAt || new Date().toISOString()) : null,
+      reactivatedAt: status === "active" && participant.reactivatedAt ? participant.reactivatedAt : null,
+    },
+  };
+}
+
+async function upsertParticipantRecord(participant, user = { id: LOCAL_USER_ID }) {
+  const workspace = await getWorkspaceContext(user);
+  if (!workspace?.id) throw new HttpError(409, "workspace_unavailable", "No se encontro workspace activo para sincronizar el grupo.");
+  const normalized = normalizeParticipantPayload(participant, user);
+  if (!normalized.participantId || !normalized.displayName) {
+    throw new HttpError(400, "participant_required", "Falta nombre o identificador del grupo/persona.");
+  }
+  await supabaseRest("participants", {
+    method: "POST",
+    searchParams: { on_conflict: "workspace_id,participant_id" },
+    headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+    body: JSON.stringify({
+      participant_id: normalized.participantId,
+      workspace_id: workspace.id,
+      display_name: normalized.displayName,
+      email: normalized.email,
+      segment: normalized.segment,
+      status: normalized.status,
+      metadata: normalized.metadata,
+      updated_at: new Date().toISOString(),
+    }),
+    accessToken: user.accessToken,
+  });
+  return { ok: true, participantId: normalized.participantId, status: normalized.status, workspaceId: workspace.id };
+}
+
+async function updateParticipantLifecycle(participantId, body = {}, user = { id: LOCAL_USER_ID }) {
+  const workspace = await getWorkspaceContext(user);
+  if (!workspace?.id) throw new HttpError(409, "workspace_unavailable", "No se encontro workspace activo para actualizar el grupo.");
+  const action = String(body.action || body.status || "").trim().toLowerCase();
+  const status = action === "reactivate" || action === "active" ? "active" : "archived";
+  const now = new Date().toISOString();
+  await supabaseRest("participants", {
+    method: "PATCH",
+    searchParams: {
+      workspace_id: `eq.${workspace.id}`,
+      participant_id: `eq.${participantId}`,
+    },
+    headers: { Prefer: "return=representation" },
+    body: JSON.stringify({
+      status,
+      updated_at: now,
+      metadata: {
+        source: "vibepwa-group-lifecycle-v1",
+        ownerUserId: user.id || null,
+        archivedAt: status === "archived" ? now : null,
+        reactivatedAt: status === "active" ? now : null,
+        note: String(body.note || "").trim() || null,
+      },
+    }),
+    accessToken: user.accessToken,
+  });
+  return { ok: true, participantId, status, workspaceId: workspace.id };
+}
+
+async function recordAccountClosureRequest(body = {}, user = { id: LOCAL_USER_ID, email: "local-user@example.com" }) {
+  const now = new Date().toISOString();
+  const request = {
+    id: `closure-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    userId: user.id || LOCAL_USER_ID,
+    email: user.email || body.email || "",
+    requestedAt: now,
+    reason: String(body.reason || "").trim(),
+    appVersion: String(body.appVersion || ""),
+    status: "requested",
+    dataPolicy: "account_review_required_before_destructive_delete",
+  };
+  const filePath = path.join(DATA_DIR, "account-closure-requests.json");
+  let existing = [];
+  try {
+    existing = JSON.parse(await readFile(filePath, "utf-8"));
+    if (!Array.isArray(existing)) existing = [];
+  } catch {
+    existing = [];
+  }
+  await writeFile(filePath, JSON.stringify([request, ...existing].slice(0, 250), null, 2));
+  return {
+    ok: true,
+    requestId: request.id,
+    requestedAt: now,
+    message: "Solicitud registrada. La cuenta no fue eliminada automaticamente; requiere respaldo, revision y confirmacion final.",
+  };
 }
 
 async function ensureExperienceParticipant(experience, workspaceId, user = { id: LOCAL_USER_ID }) {

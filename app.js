@@ -1,4 +1,4 @@
-const APP_VERSION = "20260610-vibepwa-stability-566";
+const APP_VERSION = "20260610-groups-account-data-567";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2288,6 +2288,8 @@ const manualContent = {
         "La app usa la nube como servidor de datos cuando hay sesión activa, y conserva capacidades locales y sin conexión para que no pierdas trabajo si la conexión no está disponible.",
         "Inicio queda reservado para uso diario: datos disponibles, acciones principales, grupos/personas, agenda, señales y lectura rápida. Los porcentajes de avance, conectores, pruebas técnicas, colas y diagnósticos viven en Operación.",
         "El indicador superior de sincronización solo muestra alertas cuando existe una acción real: iniciar sesión o resolver cambios pendientes. Los chequeos breves del servidor se manejan en silencio para no confundir al usuario.",
+        "Los grupos/personas se crean en Inicio o Captura y se administran en Operacion. Archivar un grupo no borra experiencias: solo lo oculta de nuevas capturas y filtros normales. El historial se conserva hasta que borres registros concretos o solicites baja de cuenta.",
+        "La baja de cuenta es una accion separada de privacidad. Antes de pedirla descarga un respaldo; el borrado definitivo requiere confirmacion de identidad y revision del servidor.",
         "Este Manual del Usuario tiene búsqueda, contador de resultados y filtros por sección para consultar rápidamente una función específica sin recorrer todo el documento.",
         "El manual puede exportarse como Markdown o HTML imprimible usando el filtro actual, útil para compartir instrucciones, llevarlo a Obsidian/Notion o revisarlo fuera de la aplicación.",
         "Cada sección del manual puede copiarse de forma individual en formato Markdown para compartir instrucciones puntuales sin exportar todo el documento.",
@@ -2954,6 +2956,8 @@ const manualContent = {
         "The app uses Supabase as the backend when signed in, while keeping local/offline capabilities so work is not lost if the API is unavailable.",
         "Home is reserved for daily use: available data, main actions, groups/people, Agenda, signals, and quick reading. Progress percentages, connectors, technical tests, queues, and diagnostics live in Operation.",
         "The top sync indicator only warns when there is a real action: sign in or resolve pending changes. Short server checks are handled quietly so the user is not confused by technical polling.",
+        "Groups/people are created from Home or Capture and managed in Operation. Archiving a group does not delete experiences: it only hides the group from new captures and normal filters. History remains until specific records are deleted or account closure is requested.",
+        "Account closure is a separate privacy action. Download a backup first; final destructive deletion requires identity confirmation and server-side review.",
         "This User Manual has search, a result counter, and section filters so you can find a specific feature without reading the whole document.",
         "The manual can be exported as Markdown or printable HTML using the current filter, useful for sharing instructions, moving it into Obsidian/Notion, or reviewing it outside the app.",
         "Each manual section can be copied individually as Markdown so you can share focused instructions without exporting the whole document.",
@@ -4524,6 +4528,19 @@ function savePilotParticipants() {
   }
 }
 
+function isArchivedPilotParticipant(item = {}) {
+  const status = String(item.status || "").trim().toLowerCase();
+  return Boolean(item.archivedAt) || status === "archived" || status === "archivado";
+}
+
+function getActivePilotParticipants({ includePrimary = true } = {}) {
+  return state.pilotParticipants.filter((item) => item?.id && item?.name && !isArchivedPilotParticipant(item) && (includePrimary || !item.isPrimaryUser));
+}
+
+function getArchivedPilotParticipants() {
+  return state.pilotParticipants.filter((item) => item?.id && item?.name && isArchivedPilotParticipant(item));
+}
+
 function findPilotGroupByName(name = "") {
   const normalized = String(name || "").trim().toLowerCase();
   if (!normalized) return null;
@@ -4534,7 +4551,16 @@ function createOrSelectPilotGroup({ name = "", role = "", email = "", status = "
   const cleanName = String(name || "").trim();
   if (!cleanName) return { ok: false, reason: "missing_name" };
   const existing = findPilotGroupByName(cleanName);
-  if (existing) return { ok: true, participant: existing, existed: true };
+  if (existing) {
+    if (isArchivedPilotParticipant(existing)) {
+      existing.status = status || (state.language === "en" ? "active" : "activo");
+      existing.archivedAt = "";
+      existing.reactivatedAt = new Date().toISOString();
+      savePilotParticipants();
+      return { ok: true, participant: existing, existed: true, reactivated: true };
+    }
+    return { ok: true, participant: existing, existed: true };
+  }
   const participant = {
     id: createId(),
     createdAt: new Date().toISOString(),
@@ -4549,6 +4575,50 @@ function createOrSelectPilotGroup({ name = "", role = "", email = "", status = "
   state.pilotParticipants.unshift(participant);
   savePilotParticipants();
   return { ok: true, participant, existed: false };
+}
+
+async function syncPilotParticipantToApi(participant = {}) {
+  if (!participant?.id || !state.apiOnline || !state.session?.access_token) return { ok: false, skipped: true };
+  try {
+    return await apiRequest("/participants", {
+      method: "POST",
+      body: JSON.stringify({
+        id: participant.id,
+        name: participant.name,
+        email: participant.email || "",
+        role: participant.role || "",
+        status: isArchivedPilotParticipant(participant) ? "archived" : "active",
+        archivedAt: participant.archivedAt || "",
+        reactivatedAt: participant.reactivatedAt || "",
+      }),
+    });
+  } catch (error) {
+    return { ok: false, error };
+  }
+}
+
+async function updatePilotParticipantLifecycle(participantId = "", action = "archive") {
+  const participant = state.pilotParticipants.find((item) => item.id === participantId);
+  if (!participant || participant.isPrimaryUser) return { ok: false, reason: "not_allowed" };
+  const archive = action !== "reactivate";
+  const now = new Date().toISOString();
+  participant.status = archive ? "archived" : (state.language === "en" ? "active" : "activo");
+  participant.archivedAt = archive ? now : "";
+  participant.reactivatedAt = archive ? "" : now;
+  savePilotParticipants();
+  const remote = state.apiOnline && state.session?.access_token
+    ? await apiRequest(`/participants/${encodeURIComponent(participant.id)}`, {
+        method: "PATCH",
+        body: JSON.stringify({ action: archive ? "archive" : "reactivate" }),
+      }).then((result) => ({ ok: true, result })).catch((error) => ({ ok: false, error }))
+    : { ok: false, skipped: true };
+  if (archive && [state.dashboardFilters, state.libraryFilters, state.reportFilters, state.insightsFilters, state.publicationFilters, state.agendaFilters].some((filters) => filters?.pilotParticipantId === participant.id)) {
+    state.dashboardFilters.pilotParticipantId = "all";
+    state.libraryFilters.pilotParticipantId = "all";
+    setAnalyticalParticipantScope("all", "group-lifecycle");
+    state.agendaFilters.pilotParticipantId = "all";
+  }
+  return { ok: true, participant, remote, action: archive ? "archive" : "reactivate" };
 }
 
 function selectPilotGroupAcrossMainFlows(participantId = "") {
@@ -4581,6 +4651,11 @@ function getPilotGroupMessage(result) {
   }
   const name = result.participant?.name || "";
   if (result.existed) {
+    if (result.reactivated) {
+      return state.language === "en"
+        ? `${name} was reactivated and selected. Historical experiences were preserved.`
+        : `${name} fue reactivado y quedo seleccionado. Sus experiencias historicas se conservaron.`;
+    }
     return state.language === "en"
       ? `${name} already existed and is now selected.`
       : `${name} ya existia y quedo seleccionado.`;
@@ -6632,18 +6707,18 @@ function applyLanguage() {
   document.getElementById("embeddingBackfillButton").textContent = t("buttons.updateEmbeddings");
   document.getElementById("adminHubStatus").textContent = state.language === "en" ? "Operations center" : "Centro operativo";
   document.getElementById("adminExecutiveTitle").textContent = state.language === "en" ? "Executive summary" : "Resumen ejecutivo";
-  document.getElementById("adminExecutiveHelp").textContent = state.language === "en" ? "Status, priorities, and publishing" : "Estado, prioridades y publicación";
-  document.getElementById("adminPersistenceTitle").textContent = state.language === "en" ? "Sync and cloud" : "Sincronización y nube";
-  document.getElementById("adminPersistenceHelp").textContent = state.language === "en" ? "Multi-device, backup, and verification" : "Multidispositivo, respaldo y verificación";
-  document.getElementById("adminPeopleTitle").textContent = state.language === "en" ? "Groups and validation" : "Grupos y validación";
-  document.getElementById("adminPeopleHelp").textContent = state.language === "en" ? "Groups, feedback, review, and closure" : "Grupos, feedback, revisión y cierre";
+  document.getElementById("adminExecutiveHelp").textContent = state.language === "en" ? "Status, priorities, and publishing" : "Estado, prioridades y publicacion";
+  document.getElementById("adminPersistenceTitle").textContent = state.language === "en" ? "Sync and cloud" : "Sincronizacion y nube";
+  document.getElementById("adminPersistenceHelp").textContent = state.language === "en" ? "Multi-device, backup, and verification" : "Multidispositivo, respaldo y verificacion";
+  document.getElementById("adminPeopleTitle").textContent = state.language === "en" ? "Groups, account and data" : "Grupos, cuenta y datos";
+  document.getElementById("adminPeopleHelp").textContent = state.language === "en" ? "Create, archive, reactivate and clarify history retention" : "Alta, archivo, reactivacion y politica de historial";
   document.getElementById("adminAssetsTitle").textContent = state.language === "en" ? "Assets and media" : "Activos y multimedia";
-  document.getElementById("adminAssetsHelp").textContent = state.language === "en" ? "Inventory, import, review, and processing" : "Inventario, importación, revisión y procesamiento";
+  document.getElementById("adminAssetsHelp").textContent = state.language === "en" ? "Inventory, import, review, and processing" : "Inventario, importacion, revision y procesamiento";
   document.getElementById("adminProfileDevicesTitle").textContent = state.language === "en" ? "Profile and devices" : "Perfil y dispositivos";
   document.getElementById("adminProfileDevicesHelp").textContent = state.language === "en" ? "Account, preferences, and capture sources" : "Cuenta, preferencias y fuentes de captura";
   document.getElementById("adminQualityTitle").textContent = state.language === "en" ? "Quality and evidence" : "Calidad y evidencias";
   document.getElementById("adminQualityHelp").textContent = state.language === "en" ? "Rules, tests, traceability, and records" : "Reglas, pruebas, trazabilidad y registros";
-  document.getElementById("adminAdvancedTitle").textContent = state.language === "en" ? "Advanced diagnostics" : "Diagnóstico avanzado";
+  document.getElementById("adminAdvancedTitle").textContent = state.language === "en" ? "Advanced diagnostics" : "Diagnostico avanzado";
   document.getElementById("adminAdvancedHelp").textContent = state.language === "en" ? "Server, test data, integrations, and logs" : "Servidor, datos de prueba, integraciones y registros";
   document.getElementById("workspaceBackfillButton").textContent = t("buttons.syncWorkspaceStructure");
   document.getElementById("refreshOpsButton").textContent = t("buttons.refreshOps");
@@ -7525,7 +7600,7 @@ function setupActions() {
   }, 30 * 1000);
 }
 
-function handleDashboardGroupSubmit(event) {
+async function handleDashboardGroupSubmit(event) {
   event.preventDefault();
   const form = event.target.closest("form");
   if (!form) return;
@@ -7537,12 +7612,32 @@ function handleDashboardGroupSubmit(event) {
   const message = document.getElementById("dashboardGroupMessage");
   if (message) message.textContent = getPilotGroupMessage(result);
   if (!result.ok) return;
+  const remote = await syncPilotParticipantToApi(result.participant);
   form.reset();
   refreshPilotGroupSurfaces({ selectedId: result.participant.id, renderAdminPanel: true });
-  notify(getPilotGroupMessage(result), result.existed ? "info" : "success");
+  const suffix = remote.ok || remote.skipped ? "" : state.language === "en" ? " Server sync will need review." : " La sincronizacion con servidor requiere revision.";
+  notify(`${getPilotGroupMessage(result)}${suffix}`, remote.ok ? "success" : result.existed ? "info" : "success");
 }
 
-function handleDashboardGroupListClick(event) {
+async function handleDashboardGroupListClick(event) {
+  const archiveButton = event.target.closest("[data-dashboard-group-archive]");
+  if (archiveButton) {
+    const participantId = archiveButton.dataset.dashboardGroupArchive || "";
+    const name = getPilotParticipantName(participantId);
+    const confirmText = state.language === "en"
+      ? `Archive ${name}? It will no longer appear for new captures, but its saved experiences will remain in your history.`
+      : `Archivar ${name}? Ya no aparecera para nuevas capturas, pero sus experiencias guardadas se conservaran en el historial.`;
+    if (!confirm(confirmText)) return;
+    const result = await updatePilotParticipantLifecycle(participantId, "archive");
+    refreshPilotGroupSurfaces({ renderAdminPanel: true });
+    notify(
+      result.remote?.ok || result.remote?.skipped
+        ? (state.language === "en" ? `${name} archived. Historical data was preserved.` : `${name} archivado. La data historica se conservo.`)
+        : (state.language === "en" ? `${name} archived locally. Server sync needs review.` : `${name} archivado localmente. La sincronizacion del servidor requiere revision.`),
+      result.remote?.ok || result.remote?.skipped ? "success" : "warning",
+    );
+    return;
+  }
   const button = event.target.closest("[data-dashboard-group-select]");
   if (!button) return;
   const participantId = button.dataset.dashboardGroupSelect || "";
@@ -7556,7 +7651,7 @@ function handleDashboardGroupListClick(event) {
   );
 }
 
-function handleCaptureQuickGroupAdd() {
+async function handleCaptureQuickGroupAdd() {
   const nameInput = document.getElementById("captureGroupNameInput");
   const roleInput = document.getElementById("captureGroupRoleInput");
   const result = createOrSelectPilotGroup({
@@ -7566,10 +7661,12 @@ function handleCaptureQuickGroupAdd() {
   const message = document.getElementById("captureGroupMessage");
   if (message) message.textContent = getPilotGroupMessage(result);
   if (!result.ok) return;
+  const remote = await syncPilotParticipantToApi(result.participant);
   if (nameInput) nameInput.value = "";
   if (roleInput) roleInput.value = "";
   refreshPilotGroupSurfaces({ selectedId: result.participant.id, renderAdminPanel: true });
-  notify(getPilotGroupMessage(result), result.existed ? "info" : "success");
+  const suffix = remote.ok || remote.skipped ? "" : state.language === "en" ? " Server sync will need review." : " La sincronizacion con servidor requiere revision.";
+  notify(`${getPilotGroupMessage(result)}${suffix}`, remote.ok ? "success" : result.existed ? "info" : "success");
 }
 
 function handleOfflineQueueAction(event) {
@@ -8672,7 +8769,7 @@ function experienceMatchesPilotParticipant(experience = {}, participantId = "all
 function normalizePilotParticipantId(value = "") {
   const id = String(value || "").trim();
   if (!id || id === "all") return "";
-  return state.pilotParticipants.some((item) => item.id === id) ? id : "";
+  return state.pilotParticipants.some((item) => item.id === id && !isArchivedPilotParticipant(item)) ? id : "";
 }
 
 function getActivePilotParticipantId(preferredScopes = []) {
@@ -9279,7 +9376,7 @@ function renderDashboardDataStatusPanel() {
         <div><dt>${escapeHtml(state.language === "en" ? "Scope" : "Vista")}</dt><dd>${escapeHtml(scopeText || "-")}</dd></div>
         <div><dt>${escapeHtml(state.language === "en" ? "Experiences" : "Experiencias")}</dt><dd>${escapeHtml(String(scopedExperiences.length))}</dd></div>
         <div><dt>${escapeHtml(state.language === "en" ? "Assets" : "Activos")}</dt><dd>${escapeHtml(String(scopedAssets.length))}</dd></div>
-        <div><dt>${escapeHtml(state.language === "en" ? "Groups" : "Grupos")}</dt><dd>${escapeHtml(String(state.pilotParticipants.length || 0))}</dd></div>
+        <div><dt>${escapeHtml(state.language === "en" ? "Active groups" : "Grupos activos")}</dt><dd>${escapeHtml(String(getActivePilotParticipants().length || 0))}</dd></div>
         <div><dt>${escapeHtml(state.language === "en" ? "Mode" : "Modo")}</dt><dd>${escapeHtml(modeText)}</dd></div>
         <div><dt>${escapeHtml(state.language === "en" ? "Sync" : "Sync")}</dt><dd>${escapeHtml(syncText)}</dd></div>
         <div><dt>${escapeHtml(state.language === "en" ? "Last check" : "Ultima revision")}</dt><dd>${escapeHtml(lastSyncText)}</dd></div>
@@ -9369,8 +9466,7 @@ function renderDashboardGroupOnboarding() {
   const list = document.getElementById("dashboardGroupList");
   const status = document.getElementById("dashboardGroupStatus");
   if (!list) return;
-  const groups = state.pilotParticipants
-    .filter((item) => item && item.id && item.name)
+  const groups = getActivePilotParticipants()
     .slice()
     .sort((a, b) => (a.isPrimaryUser ? -1 : b.isPrimaryUser ? 1 : new Date(b.createdAt || 0) - new Date(a.createdAt || 0)))
     .slice(0, 8);
@@ -9391,7 +9487,10 @@ function renderDashboardGroupOnboarding() {
                 <strong>${escapeHtml(item.name)}</strong>
                 <p>${escapeHtml(detail || (state.language === "en" ? "Private account group" : "Grupo privado de la cuenta"))}</p>
               </div>
-              <button class="ghost-button" type="button" data-dashboard-group-select="${escapeHtml(item.id)}">${escapeHtml(selected ? (state.language === "en" ? "In use" : "En uso") : (state.language === "en" ? "Use" : "Usar"))}</button>
+              <div class="participant-card-actions">
+                <button class="ghost-button" type="button" data-dashboard-group-select="${escapeHtml(item.id)}">${escapeHtml(selected ? (state.language === "en" ? "In use" : "En uso") : (state.language === "en" ? "Use" : "Usar"))}</button>
+                ${item.isPrimaryUser ? "" : `<button class="ghost-button subtle-danger" type="button" data-dashboard-group-archive="${escapeHtml(item.id)}">${escapeHtml(state.language === "en" ? "Archive" : "Archivar")}</button>`}
+              </div>
             </article>
           `;
         })
@@ -9404,7 +9503,7 @@ function updateDashboardParticipantControl() {
   if (!select) return;
   const current = state.dashboardFilters?.pilotParticipantId || select.value || "all";
   const allLabel = state.language === "en" ? "All groups/people" : "Todos los grupos/personas";
-  const options = state.pilotParticipants
+  const options = getActivePilotParticipants()
     .map((item) => ({ value: item.id, label: item.name || item.role || item.id }))
     .filter((item) => item.value && item.label);
   select.innerHTML = [`<option value="all">${escapeHtml(allLabel)}</option>`, ...options.map((item) => `<option value="${escapeHtml(item.value)}">${escapeHtml(item.label)}</option>`)].join("");
@@ -9471,7 +9570,7 @@ function updatePilotParticipantControls() {
       statusId: "",
     },
   ];
-  const participantOptions = state.pilotParticipants
+  const participantOptions = getActivePilotParticipants()
     .map((item) => ({ value: item.id, label: item.name || item.role || item.id }))
     .filter((item) => item.value && item.label);
   if (captureSelect) {
@@ -31505,35 +31604,51 @@ function buildPilotInviteMarkdown(kit = buildPilotInviteKit()) {
 function getPilotParticipantLabels() {
   return state.language === "en"
     ? {
-        title: "Groups / people",
-        subtitle: "Private subgroups inside the same account.",
+        title: "Groups, account and data",
+        subtitle: "Private subgroups inside the same user account.",
         name: "Name",
         email: "Email (optional)",
-        emailHelp: "Not required for the local pilot.",
+        emailHelp: "Optional. Groups do not need app access.",
         role: "Note or segment",
         status: "Status",
         add: "Add group/person",
         export: "Export CSV",
         empty: "No groups/people registered yet.",
-        statuses: ["invited", "active", "paused", "completed"],
-        onboarding: "Onboarding",
+        activeTitle: "Active groups",
+        archivedTitle: "Archived groups",
+        archive: "Archive",
+        reactivate: "Reactivate",
+        statusActive: "active",
+        statusArchived: "archived",
+        dataPolicy: "Archiving only removes the group from new captures and normal filters. Saved experiences, assets, reports, and audit history remain available until you delete records one by one or request account closure.",
+        accountPolicy: "Closing the account is a separate privacy action. Download a backup first; final destructive deletion requires identity confirmation and server-side review.",
+        statuses: ["active", "paused", "completed"],
+        onboarding: "Readiness",
         accessOk: "Access",
         manualOk: "Manual",
         testOk: "First test",
       }
     : {
-        title: "Grupos / personas",
-        subtitle: "Subgrupos privados dentro de la misma cuenta.",
+        title: "Grupos, cuenta y datos",
+        subtitle: "Subgrupos privados dentro de la misma cuenta de usuario.",
         name: "Nombre",
         email: "Correo opcional",
-        emailHelp: "No es necesario para el piloto local.",
+        emailHelp: "Opcional. Los grupos no necesitan acceso a la app.",
         role: "Nota o segmento",
         status: "Estado",
         add: "Agregar grupo/persona",
         export: "Exportar CSV",
-        empty: "Aún no hay grupos/personas registrados.",
-        statuses: ["invitado", "activo", "pausado", "completado"],
-        onboarding: "Onboarding",
+        empty: "Aun no hay grupos/personas registrados.",
+        activeTitle: "Grupos activos",
+        archivedTitle: "Grupos archivados",
+        archive: "Archivar",
+        reactivate: "Reactivar",
+        statusActive: "activo",
+        statusArchived: "archivado",
+        dataPolicy: "Archivar solo retira el grupo de nuevas capturas y filtros normales. Las experiencias, activos, reportes e historial guardado se conservan hasta que borres registros uno por uno o solicites cierre de cuenta.",
+        accountPolicy: "Cerrar la cuenta es una accion de privacidad separada. Descarga un respaldo primero; el borrado destructivo final requiere confirmar identidad y revision del servidor.",
+        statuses: ["activo", "pausado", "completado"],
+        onboarding: "Preparacion",
         accessOk: "Acceso",
         manualOk: "Manual",
         testOk: "Prueba inicial",
@@ -31541,18 +31656,53 @@ function getPilotParticipantLabels() {
 }
 
 function calculatePilotParticipantSummary() {
-  const pilotParticipants = state.pilotParticipants.filter((item) => !item.isPrimaryUser);
-  const total = pilotParticipants.length;
+  const activeParticipants = state.pilotParticipants.filter((item) => !item.isPrimaryUser && !isArchivedPilotParticipant(item));
+  const archivedParticipants = getArchivedPilotParticipants();
+  const total = activeParticipants.length;
   const statusText = (item) => String(item.status || "").toLowerCase();
   return {
     total,
+    archived: archivedParticipants.length,
     primaryUsers: state.pilotParticipants.filter((item) => item.isPrimaryUser).length,
-    invited: pilotParticipants.filter((item) => ["invited", "invitado"].includes(statusText(item))).length,
-    active: pilotParticipants.filter((item) => ["active", "activo"].includes(statusText(item))).length,
-    completed: pilotParticipants.filter((item) => ["completed", "completado"].includes(statusText(item))).length,
-    onboarded: pilotParticipants.filter((item) => item.accessOk && item.manualOk && item.testOk).length,
-    needsOnboarding: pilotParticipants.filter((item) => !(item.accessOk && item.manualOk && item.testOk)).length,
+    invited: activeParticipants.filter((item) => ["invited", "invitado"].includes(statusText(item))).length,
+    active: activeParticipants.filter((item) => ["active", "activo"].includes(statusText(item))).length,
+    completed: activeParticipants.filter((item) => ["completed", "completado"].includes(statusText(item))).length,
+    onboarded: activeParticipants.filter((item) => item.accessOk && item.manualOk && item.testOk).length,
+    needsOnboarding: activeParticipants.filter((item) => !(item.accessOk && item.manualOk && item.testOk)).length,
   };
+}
+
+function renderParticipantAdminRow(item, labels, archived = false) {
+  const status = archived ? labels.statusArchived : String(item.status || labels.statusActive);
+  return `
+    <article class="${archived ? "is-archived" : ""}">
+      <div>
+        <strong>${escapeHtml(item.name)}</strong>
+        <p>${escapeHtml([item.email, item.role].filter(Boolean).join(" - ") || (state.language === "en" ? "Private group" : "Grupo privado"))}</p>
+        <small>${escapeHtml(status)} - ${escapeHtml(formatDate(item.archivedAt || item.createdAt))}</small>
+        ${archived ? "" : `<div class="pilot-participant-checks" aria-label="${escapeHtml(labels.onboarding)}">
+          ${["accessOk", "manualOk", "testOk"]
+            .map(
+              (field) => `
+                <label>
+                  <input type="checkbox" data-pilot-participant-check="${escapeHtml(item.id)}" data-field="${escapeHtml(field)}" ${item[field] ? "checked" : ""} />
+                  <span>${escapeHtml(labels[field])}</span>
+                </label>
+              `,
+            )
+            .join("")}
+        </div>`}
+      </div>
+      <div class="participant-card-actions">
+        ${archived
+          ? `<button class="ghost-button" type="button" data-pilot-participant-reactivate="${escapeHtml(item.id)}">${escapeHtml(labels.reactivate)}</button>`
+          : item.isPrimaryUser
+            ? `<span class="pill">${escapeHtml(state.language === "en" ? "Main account" : "Cuenta principal")}</span>`
+            : `<button class="ghost-button subtle-danger" type="button" data-pilot-participant-archive="${escapeHtml(item.id)}">${escapeHtml(labels.archive)}</button>`}
+        ${archived ? "" : `<button class="ghost-button" type="button" data-pilot-participant-complete="${escapeHtml(item.id)}">${escapeHtml(labels.statuses[2])}</button>`}
+      </div>
+    </article>
+  `;
 }
 
 function renderPilotParticipantsPanel() {
@@ -31560,16 +31710,17 @@ function renderPilotParticipantsPanel() {
   if (!container) return;
   const labels = getPilotParticipantLabels();
   const summary = calculatePilotParticipantSummary();
-  const summaryLabel = `${summary.total}/${PILOT_TARGET_USERS} ${state.language === "en" ? "pilot guests" : "invitados piloto"}${summary.primaryUsers ? ` · ${state.language === "en" ? "main user included" : "usuario principal incluido"}` : ""}`;
-  const rows = [...state.pilotParticipants].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 10);
+  const activeRows = getActivePilotParticipants().sort((a, b) => (a.isPrimaryUser ? -1 : b.isPrimaryUser ? 1 : new Date(b.createdAt || 0) - new Date(a.createdAt || 0))).slice(0, 20);
+  const archivedRows = getArchivedPilotParticipants().sort((a, b) => new Date(b.archivedAt || 0) - new Date(a.archivedAt || 0)).slice(0, 20);
   container.innerHTML = `
     <div class="pilot-participants-heading">
       <div>
         <h3>${escapeHtml(labels.title)}</h3>
-        <p class="card-meta">${escapeHtml(labels.subtitle)} · ${escapeHtml(`${summary.total}/${PILOT_TARGET_USERS}`)}</p>
+        <p class="card-meta">${escapeHtml(labels.subtitle)} - ${escapeHtml(`${summary.total} ${labels.activeTitle.toLowerCase()} / ${summary.archived} ${labels.archivedTitle.toLowerCase()}`)}</p>
       </div>
       <button class="ghost-button" type="button" data-pilot-participants-export="csv">${escapeHtml(labels.export)}</button>
     </div>
+    <p class="section-note">${escapeHtml(labels.dataPolicy)}</p>
     <form class="pilot-participants-form">
       <input name="name" type="text" placeholder="${escapeHtml(labels.name)}" required />
       <label class="pilot-optional-email">
@@ -31580,42 +31731,21 @@ function renderPilotParticipantsPanel() {
       <select name="status">${labels.statuses.map((item) => `<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`).join("")}</select>
       <button class="primary-button" type="submit">${escapeHtml(labels.add)}</button>
     </form>
-    <div class="pilot-participants-list">
-      ${
-        rows.length
-          ? rows
-              .map(
-                (item) => `
-                  <article>
-                    <div>
-                      <strong>${escapeHtml(item.name)}</strong>
-                      <p>${escapeHtml([item.email, item.role].filter(Boolean).join(" · "))}</p>
-                      <small>${escapeHtml(item.status)} · ${escapeHtml(formatDate(item.createdAt))}</small>
-                      <div class="pilot-participant-checks" aria-label="${escapeHtml(labels.onboarding)}">
-                        ${["accessOk", "manualOk", "testOk"]
-                          .map(
-                            (field) => `
-                              <label>
-                                <input type="checkbox" data-pilot-participant-check="${escapeHtml(item.id)}" data-field="${escapeHtml(field)}" ${item[field] ? "checked" : ""} />
-                                <span>${escapeHtml(labels[field])}</span>
-                              </label>
-                            `,
-                          )
-                          .join("")}
-                      </div>
-                    </div>
-                    <button class="ghost-button" type="button" data-pilot-participant-complete="${escapeHtml(item.id)}">${escapeHtml(labels.statuses[3])}</button>
-                  </article>
-                `,
-              )
-              .join("")
-          : `<p class="card-meta">${escapeHtml(labels.empty)}</p>`
-      }
+    <div class="pilot-participants-list grouped-participant-list">
+      <h4>${escapeHtml(labels.activeTitle)}</h4>
+      ${activeRows.length ? activeRows.map((item) => renderParticipantAdminRow(item, labels, false)).join("") : `<p class="card-meta">${escapeHtml(labels.empty)}</p>`}
+      <h4>${escapeHtml(labels.archivedTitle)}</h4>
+      ${archivedRows.length ? archivedRows.map((item) => renderParticipantAdminRow(item, labels, true)).join("") : `<p class="card-meta">${escapeHtml(state.language === "en" ? "No archived groups." : "No hay grupos archivados.")}</p>`}
+    </div>
+    <div class="account-closure-info">
+      <strong>${escapeHtml(state.language === "en" ? "Account closure" : "Baja de cuenta")}</strong>
+      <p>${escapeHtml(labels.accountPolicy)}</p>
+      <button class="ghost-button subtle-danger" type="button" data-account-closure-request>${escapeHtml(state.language === "en" ? "Request account closure" : "Solicitar baja de cuenta")}</button>
     </div>
   `;
 }
 
-function handlePilotParticipantSubmit(event) {
+async function handlePilotParticipantSubmit(event) {
   event.preventDefault();
   const form = event.target.closest("form");
   if (!form) return;
@@ -31633,13 +31763,41 @@ function handlePilotParticipantSubmit(event) {
     result.participant.testOk = false;
     savePilotParticipants();
   }
+  await syncPilotParticipantToApi(result.participant);
   renderAdmin();
+  refreshPilotGroupSurfaces({ selectedId: result.participant.id });
 }
 
-function handlePilotParticipantClick(event) {
+async function handlePilotParticipantClick(event) {
   const exportButton = event.target.closest("[data-pilot-participants-export]");
   if (exportButton) {
     exportPilotParticipantsCsv();
+    return;
+  }
+  const archiveButton = event.target.closest("[data-pilot-participant-archive]");
+  if (archiveButton) {
+    const id = archiveButton.dataset.pilotParticipantArchive;
+    const name = getPilotParticipantName(id);
+    const message = state.language === "en"
+      ? `Archive ${name}? It will stop appearing for new captures, but saved experiences and assets will remain.`
+      : `Archivar ${name}? Dejara de aparecer para nuevas capturas, pero sus experiencias y activos guardados se conservaran.`;
+    if (!confirm(message)) return;
+    await updatePilotParticipantLifecycle(id, "archive");
+    refreshPilotGroupSurfaces({ renderAdminPanel: true });
+    notify(state.language === "en" ? `${name} archived. Historical data was preserved.` : `${name} archivado. La data historica se conservo.`, "success");
+    return;
+  }
+  const reactivateButton = event.target.closest("[data-pilot-participant-reactivate]");
+  if (reactivateButton) {
+    const id = reactivateButton.dataset.pilotParticipantReactivate;
+    await updatePilotParticipantLifecycle(id, "reactivate");
+    refreshPilotGroupSurfaces({ selectedId: id, renderAdminPanel: true });
+    notify(state.language === "en" ? `${getPilotParticipantName(id)} reactivated.` : `${getPilotParticipantName(id)} reactivado.`, "success");
+    return;
+  }
+  const closureButton = event.target.closest("[data-account-closure-request]");
+  if (closureButton) {
+    requestAccountClosure();
     return;
   }
   const checkInput = event.target.closest("[data-pilot-participant-check]");
@@ -31660,17 +31818,38 @@ function handlePilotParticipantClick(event) {
       item.status = state.language === "en" ? "completed" : "completado";
       item.completedAt = new Date().toISOString();
       savePilotParticipants();
+      await syncPilotParticipantToApi(item);
       renderAdmin();
     }
   }
 }
 
 function exportPilotParticipantsCsv() {
-  const headers = ["createdAt", "name", "email", "role", "status", "accessOk", "manualOk", "testOk"];
+  const headers = ["createdAt", "name", "email", "role", "status", "archivedAt", "reactivatedAt", "accessOk", "manualOk", "testOk"];
   const csv = [headers.join(","), ...state.pilotParticipants.map((row) => headers.map((header) => csvCell(row[header] || "")).join(","))].join("\n");
-  downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), `participantes-piloto-${PILOT_TARGET_USERS}-usuarios.csv`);
+  downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), `grupos-personas-vibe.csv`);
 }
 
+async function requestAccountClosure() {
+  const firstConfirm = state.language === "en"
+    ? "Request account closure? This does not delete data immediately. Download a backup first."
+    : "Solicitar baja de cuenta? Esto no borra datos de inmediato. Descarga un respaldo primero.";
+  if (!confirm(firstConfirm)) return;
+  const secondConfirm = state.language === "en"
+    ? "Confirm that you understand: saved experiences remain until final server-side deletion is approved."
+    : "Confirma que entiendes: las experiencias guardadas se conservan hasta aprobar el borrado final en servidor.";
+  if (!confirm(secondConfirm)) return;
+  const reason = prompt(state.language === "en" ? "Optional reason for the request" : "Motivo opcional de la solicitud") || "";
+  try {
+    const result = await apiRequest("/account/closure-request", {
+      method: "POST",
+      body: JSON.stringify({ reason, appVersion: APP_VERSION }),
+    });
+    notify(result.message || (state.language === "en" ? "Account closure request registered." : "Solicitud de baja registrada."), "success");
+  } catch (error) {
+    notify(state.language === "en" ? `Could not register closure request: ${error.message || error}` : `No se pudo registrar la baja: ${error.message || error}`, "warning");
+  }
+}
 function getPilotFeedbackLabels() {
   return state.language === "en"
     ? {
