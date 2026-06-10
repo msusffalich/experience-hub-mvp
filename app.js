@@ -1,4 +1,4 @@
-const APP_VERSION = "20260610-admin-boot-guard-570";
+const APP_VERSION = "20260610-mobile-context-panel-571";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -4020,6 +4020,7 @@ function authHeaders() {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
+  state.deferViewRender = true;
   try {
     registerServiceWorker();
     setupNavigation();
@@ -4060,6 +4061,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         },
       };
     });
+    state.deferViewRender = false;
     renderAllAndScheduleAutomation();
     applyInitialViewFromUrl();
     setupOpsPolling();
@@ -4069,6 +4071,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     startAttachmentSyncSupervisor();
     scheduleAttachmentRetry({ delayMs: 1500 });
   } catch (error) {
+    state.deferViewRender = false;
     renderStartupRecovery(error);
   }
 });
@@ -5042,10 +5045,11 @@ async function hydrateFromApi() {
       return;
     }
 
-    const [profile, experiences, agendaEvents] = await Promise.all([
+    const [profile, experiences, agendaEvents, latestDailyBriefing] = await Promise.all([
       apiRequest("/profile"),
       apiRequest("/experiences"),
       apiRequest("/agenda").catch(() => null),
+      apiRequest(`/daily-briefing/latest?locale=${encodeURIComponent(state.language)}`).catch(() => null),
     ]);
     state.profile = profile;
     saveLocalProfile(profile);
@@ -5074,6 +5078,7 @@ async function hydrateFromApi() {
       const localOnly = mergedAgenda.filter((item) => item.id && !remoteIds.has(item.id) && !item.isDemo);
       await Promise.all(localOnly.slice(0, 50).map((item) => saveAgendaEventToApi(item, { silent: true })));
     }
+    applyLatestServerDailyBriefing(latestDailyBriefing?.briefing);
     await syncOfflineQueue({ silent: true });
     await loadBackendRoutines();
     await updateServerSyncStateBaseline({ silent: true });
@@ -6028,6 +6033,24 @@ function saveDailyBriefing() {
   } catch {
     // Ignore local briefing persistence restrictions.
   }
+}
+
+function applyLatestServerDailyBriefing(briefing) {
+  if (!briefing || typeof briefing !== "object" || Array.isArray(briefing)) return false;
+  const incomingTime = new Date(briefing.generatedAt || briefing.updatedAt || 0).getTime();
+  const currentTime = new Date(state.dailyBriefing?.generatedAt || state.dailyBriefing?.updatedAt || 0).getTime();
+  if (!incomingTime || (!Number.isNaN(currentTime) && currentTime >= incomingTime)) return false;
+  state.dailyBriefing = {
+    ...briefing,
+    cacheSource: briefing.cacheSource || "server-latest",
+  };
+  saveDailyBriefing();
+  const label = state.dailyBriefing.location || state.dailyBriefing.scope || "";
+  if (label) {
+    saveDailyLocationPreference(label);
+    syncDailyLocationInputs(label);
+  }
+  return true;
 }
 
 function setupNavigation() {
@@ -10739,21 +10762,120 @@ function showView(view) {
   section.classList.add("active-view");
   document.getElementById("viewTitle").textContent = productViewTitle(view);
   updateUrlForView(view);
+  if (!state.deferViewRender) scheduleActiveViewRender(view);
+  renderCoreMvpReturnBanner(view);
+}
+
+function scheduleActiveViewRender(view = getActiveView()) {
+  const token = Date.now() + Math.random();
+  state.activeViewRenderToken = token;
+  requestAnimationFrame(() => {
+    if (state.activeViewRenderToken !== token || getActiveView() !== view) return;
+    renderActiveView(view);
+  });
+}
+
+function getActiveView() {
+  return document.querySelector(".nav-item.active")?.dataset.view
+    || document.querySelector(".active-view")?.id?.replace("View", "")
+    || "dashboard";
+}
+
+function renderActiveView(view = getActiveView()) {
+  try {
+    renderVisibleView(view);
+  } catch (error) {
+    console.error("Active view render failed", view, error);
+    if (view === "admin") {
+      renderAdminRecovery(error);
+    } else {
+      renderViewRecovery(view, error);
+    }
+  }
+}
+
+function renderVisibleView(view = getActiveView()) {
   if (view === "automation") {
     refreshOps({ silent: true });
     loadBackendRoutines().then(renderAutomations).catch(() => renderAutomations());
   }
   if (view === "admin") {
+    renderAdminLoading();
     renderAdminSafe();
-  }
-  if (view === "dashboard") {
-    renderDashboardScopedPanels();
-    renderDashboardAnalyticalScope();
   }
   if (view === "auth") {
     renderAuthStatePanel();
   }
-  renderCoreMvpReturnBanner(view);
+  if (view === "dashboard") renderDashboardView();
+  if (view === "capture") renderCaptureView();
+  if (view === "library") renderLibrary();
+  if (view === "assetLibrary") renderAssetLibrary();
+  if (view === "agenda") renderAgenda();
+  if (view === "timeline") renderTimeline();
+  if (view === "experienceMap") renderExperienceMap();
+  if (view === "report") renderReport();
+  if (view === "publications") renderPublications();
+  if (view === "insights") renderInsights();
+  if (view === "manual") renderManual();
+}
+
+function renderViewRecovery(view = getActiveView(), error = null) {
+  const section = document.getElementById(`${view}View`);
+  if (!section) return;
+  const message = state.language === "en"
+    ? "This section opened, but one panel could not finish loading. Navigation remains available."
+    : "Esta seccion abrio, pero un panel no termino de cargar. La navegacion sigue disponible.";
+  const detail = error?.message || String(error || "");
+  section.querySelector(".view-recovery-panel")?.remove();
+  section.insertAdjacentHTML("afterbegin", `
+    <section class="status-panel view-recovery-panel">
+      <strong>${escapeHtml(message)}</strong>
+      ${detail ? `<p>${escapeHtml(detail)}</p>` : ""}
+    </section>
+  `);
+}
+
+function renderAdminLoading() {
+  const status = document.getElementById("adminHubStatus");
+  if (status) status.textContent = state.language === "en" ? "Loading" : "Cargando";
+  const box = document.getElementById("productSettingsPanel");
+  if (!box) return;
+  box.innerHTML = `
+    <article class="status-panel">
+      <strong>${escapeHtml(state.language === "en" ? "Loading Administration..." : "Cargando Administracion...")}</strong>
+      <p>${escapeHtml(state.language === "en"
+        ? "Operational controls are loaded only when this section is opened."
+        : "Los controles operativos se cargan solo al entrar en esta seccion.")}</p>
+    </article>
+  `;
+}
+
+function renderDashboardView() {
+  updateDashboardParticipantControl();
+  renderDashboardScopedPanels();
+  renderDashboardTimeContext();
+  renderDashboardStateAndProgressPanels({ compact: true });
+  renderDashboardAnalyticalScope();
+  renderMetrics();
+  renderDashboardBiometricContext();
+  renderDashboardIntegrationHandoff();
+  renderDashboardAttachmentStatus();
+  renderDashboardAgenda();
+  renderDashboardPilotReadiness();
+  renderCategoryChart();
+  renderRecentSignals();
+  renderDataQuality();
+  renderDailyBriefing();
+  renderContextImpact();
+}
+
+function renderCaptureView() {
+  updatePilotParticipantControls();
+  renderCaptureCoach();
+  renderBiometricCaptureContext();
+  renderCaptureEventPreview();
+  renderCaptureSaveStatus();
+  renderAttachmentPreview();
 }
 
 function applyInitialViewFromUrl() {
@@ -10826,37 +10948,8 @@ async function refreshOuraConnectionStatus(options = {}) {
 
 function renderAll() {
   updateDashboardParticipantControl();
-  renderDashboardTimeContext();
-  renderDashboardStateAndProgressPanels({ compact: true });
-  renderDashboardAnalyticalScope();
-  renderMetrics();
-  renderDashboardBiometricContext();
-  renderDashboardIntegrationHandoff();
   updatePilotParticipantControls();
-  renderDashboardAttachmentStatus();
-  renderDashboardAgenda();
-  renderDashboardPilotReadiness();
-  renderCategoryChart();
-  renderRecentSignals();
-  renderDataQuality();
-  renderCaptureCoach();
-  renderBiometricCaptureContext();
-  renderCaptureEventPreview();
-  renderCaptureSaveStatus();
-  renderAttachmentPreview();
-  renderDailyBriefing();
-  renderContextImpact();
-  renderLibrary();
-  renderAssetLibrary();
-  renderAgenda();
-  renderTimeline();
-  renderExperienceMap();
-  renderReport();
-  renderPublications();
-  renderInsights();
-  renderAutomations();
-  renderManual();
-  renderAdmin();
+  renderActiveView();
   renderCoreMvpReturnBanner();
   renderPersistenceGateBanner();
 }
@@ -14262,10 +14355,18 @@ function hydrateBiometricImportsFromExperiences(experiences = state.experiences)
   (experiences || []).forEach((experience) => {
     const structuredContext = experience.metadata?.structuredContext || {};
     const structuredSignals = Array.isArray(structuredContext.signals) ? structuredContext.signals : [];
-    if (structuredSignals.length) {
+    const metricSignals = structuredSignals.length
+      ? structuredSignals
+      : Object.entries(structuredContext.metrics || {}).map(([type, value]) => ({
+          type,
+          value,
+          date: structuredContext.capturedAt || experience.metadata?.capturedAt || experience.timestamp,
+          source: structuredContext.connector || experience.sourceType || "Vibeapp",
+        }));
+    if (metricSignals.length) {
       const id = structuredContext.id || `structured-biometric-${simpleHash(`${experience.id}:${structuredContext.connector || "context"}`)}`;
       if (!existingIds.has(id)) {
-        const rows = structuredSignals.map(normalizeBiometricRow).filter((row) => row.date || row.type || row.value);
+        const rows = metricSignals.map(normalizeBiometricRow).filter((row) => row.date || row.type || row.value);
         const metricNames = detectBiometricMetricNames(rows);
         const dates = rows
           .map((row) => row.date)
@@ -15892,6 +15993,50 @@ function buildDashboardIntegrationHandoffSummary() {
   };
 }
 
+function collectStructuredMobileContexts(experiences = getDashboardExperiences()) {
+  return (experiences || [])
+    .map((experience) => {
+      const context = experience.metadata?.structuredContext || null;
+      if (!context || typeof context !== "object" || Array.isArray(context)) return null;
+      return {
+        experience,
+        context,
+        timestamp: context.capturedAt || experience.metadata?.capturedAt || experience.timestamp || context.weather?.time || "",
+        source: context.connector || experience.sourceType || experience.metadata?.sourceType || "Vibeapp",
+        payloadType: context.payloadType || experience.metadata?.payloadType || "",
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+}
+
+function buildDashboardMobileContextSummary() {
+  const contexts = collectStructuredMobileContexts();
+  const latestWeatherContext = contexts.find((item) => item.context.weather);
+  const latestNewsContext = contexts.find((item) => item.context.news?.local?.length || item.context.news?.global?.length);
+  const latestHealthContext = contexts.find((item) =>
+    /biometric|health|sleep|activity|readiness|heart|oura/i.test(`${item.payloadType} ${item.source}`) ||
+    (Array.isArray(item.context.signals) && item.context.signals.length),
+  );
+  const briefing = state.dailyBriefing || null;
+  const briefingArticles = (briefing?.sections || []).reduce((count, section) => count + (Array.isArray(section.articles) ? section.articles.length : 0), 0);
+  const briefingEntertainment = (briefing?.agendaLinks || []).length;
+  const newsLocal = latestNewsContext?.context.news?.local?.length || 0;
+  const newsGlobal = latestNewsContext?.context.news?.global?.length || 0;
+  return {
+    totalContexts: contexts.length,
+    latestAt: contexts[0]?.timestamp || briefing?.generatedAt || "",
+    source: contexts[0]?.source || briefing?.cacheSource || "",
+    location: briefing?.location || latestWeatherContext?.experience?.location || contexts[0]?.experience?.location || "",
+    weather: latestWeatherContext?.context.weather || briefing?.weather?.current || briefing?.weather || null,
+    newsCount: newsLocal + newsGlobal + briefingArticles,
+    entertainmentCount: (latestNewsContext?.context.entertainment || []).length + briefingEntertainment,
+    healthCount: latestHealthContext
+      ? (latestHealthContext.context?.signals?.length || Object.keys(latestHealthContext.context?.metrics || {}).length || 1)
+      : 0,
+  };
+}
+
 function renderDashboardIntegrationHandoff() {
   const box = document.getElementById("dashboardIntegrationBox");
   if (!box) return;
@@ -15916,6 +16061,13 @@ function renderDashboardIntegrationHandoff() {
         openAssets: "Open Assets",
         openAdmin: "Open connector tests",
         ouraResult: "Oura",
+        mobileContext: "Current mobile context",
+        lastUpdate: "Last update",
+        weather: "Weather",
+        news: "News",
+        entertainment: "Events",
+        health: "Health signals",
+        waitingMobile: "Waiting for Vibeapp context.",
       }
     : {
         clear: "Aun no hay señales nativas o de conectores en este alcance.",
@@ -15932,11 +16084,39 @@ function renderDashboardIntegrationHandoff() {
         openAssets: "Abrir Activos",
         openAdmin: "Probar conectores",
         ouraResult: "Oura",
+        mobileContext: "Contexto movil actual",
+        lastUpdate: "Ultima actualizacion",
+        weather: "Clima",
+        news: "Noticias",
+        entertainment: "Eventos",
+        health: "Senales de salud",
+        waitingMobile: "Esperando contexto de Vibeapp.",
       };
   const sourceEntries = Object.entries(summary.families).sort((a, b) => b[1] - a[1]).slice(0, 6);
   const payloadEntries = Object.entries(summary.payloads).sort((a, b) => b[1] - a[1]).slice(0, 6);
   const ouraLastConnection = state.ouraConnectionStatus?.lastConnection || null;
+  const mobileContext = buildDashboardMobileContextSummary();
+  const weatherTemp = mobileContext.weather && Number.isFinite(Number(mobileContext.weather.temperatureC))
+    ? `${Number(mobileContext.weather.temperatureC).toFixed(0)} C`
+    : "";
+  const weatherText = mobileContext.weather?.description || mobileContext.weather?.summary || weatherTemp || "-";
+  const mobileDetail = [
+    mobileContext.location,
+    mobileContext.latestAt ? `${labels.lastUpdate}: ${formatDate(mobileContext.latestAt)}` : "",
+  ].filter(Boolean).join(" - ") || labels.waitingMobile;
   box.innerHTML = `
+    <div class="dashboard-integration-summary ${mobileContext.totalContexts || state.dailyBriefing ? "is-active" : "needs-data"}">
+      <div>
+        <strong>${escapeHtml(labels.mobileContext)}</strong>
+        <p>${escapeHtml(mobileDetail)}</p>
+      </div>
+    </div>
+    <div class="dashboard-integration-metrics">
+      <article><span>${escapeHtml(labels.weather)}</span><strong>${escapeHtml(weatherText)}</strong></article>
+      <article><span>${escapeHtml(labels.news)}</span><strong>${escapeHtml(String(mobileContext.newsCount || 0))}</strong></article>
+      <article><span>${escapeHtml(labels.entertainment)}</span><strong>${escapeHtml(String(mobileContext.entertainmentCount || 0))}</strong></article>
+      <article><span>${escapeHtml(labels.health)}</span><strong>${escapeHtml(String(mobileContext.healthCount || 0))}</strong></article>
+    </div>
     <div class="dashboard-integration-summary ${summary.total ? "is-active" : "needs-data"}">
       <div>
         <strong>${escapeHtml(summary.total ? labels.active : labels.clear)}</strong>

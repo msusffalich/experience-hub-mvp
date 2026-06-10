@@ -688,6 +688,13 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (url.pathname === "/api/daily-briefing/latest" && req.method === "GET") {
+    const locale = url.searchParams.get("locale") || "";
+    const user = await getRequestUser(req);
+    sendJson(res, 200, await getLatestStoredDailyBriefing(user, locale));
+    return;
+  }
+
   const match = url.pathname.match(/^\/api\/experiences\/([^/]+)$/);
   if (match) {
     const id = decodeURIComponent(match[1]);
@@ -2682,6 +2689,8 @@ function buildContextExperienceFromIntegrationSignal(normalized, signal = {}, us
   const idempotencyKey = normalized.idempotencyKey || normalized.sourceId;
   const label = integrationPayloadLabel(normalized);
   const weather = normalizeIntegrationWeather(payload.weather || signal.weather || signal.metadata?.weather);
+  const news = normalizeIntegrationNews(payload.news || payload.dailyContext?.news || signal.news || signal.metadata?.news);
+  const entertainment = normalizeIntegrationEntertainment(payload.entertainment || payload.dailyContext?.entertainment || signal.entertainment || signal.metadata?.entertainment);
   const metrics = {
     ...(payload.metrics && typeof payload.metrics === "object" ? payload.metrics : {}),
     ...(weather ? {
@@ -2723,9 +2732,12 @@ function buildContextExperienceFromIntegrationSignal(normalized, signal = {}, us
         idempotencyKey,
         payloadType: normalized.payloadType,
         dataType,
+        capturedAt: normalized.capturedAt,
         summary: buildContextSignalSummary(normalized),
         metrics,
         weather,
+        news,
+        entertainment,
         signals: rows,
       },
     },
@@ -2798,6 +2810,39 @@ function normalizeIntegrationWeather(weather = null) {
     description: String(weather.description || "").trim(),
   };
   return Object.values(normalized).some((value) => value !== null && value !== "") ? normalized : null;
+}
+
+function normalizeIntegrationNews(news = null) {
+  if (!isPlainObject(news)) return null;
+  const normalizeItems = (items = []) => Array.isArray(items)
+    ? items.slice(0, 12).map((item) => ({
+        title: String(item?.title || "").trim(),
+        summary: String(item?.summary || item?.description || "").trim(),
+        url: String(item?.url || "").trim(),
+        source: String(item?.source || item?.domain || "").trim(),
+        section: String(item?.section || "").trim(),
+        image: item?.image || null,
+        seenAt: item?.seenAt || item?.publishedAt || null,
+      })).filter((item) => item.title || item.summary || item.url)
+    : [];
+  const normalized = {
+    local: normalizeItems(news.local),
+    global: normalizeItems(news.global || news.world),
+  };
+  return normalized.local.length || normalized.global.length ? normalized : null;
+}
+
+function normalizeIntegrationEntertainment(items = null) {
+  if (!Array.isArray(items)) return [];
+  return items.slice(0, 12).map((item) => ({
+    title: String(item?.title || "").trim(),
+    type: String(item?.type || "event").trim(),
+    venue: String(item?.venue || "").trim(),
+    time: item?.time || null,
+    image: item?.image || null,
+    url: String(item?.url || "").trim(),
+    source: String(item?.source || "").trim(),
+  })).filter((item) => item.title || item.url);
 }
 
 function normalizeOptionalNumber(value) {
@@ -7690,6 +7735,37 @@ function normalizeDailyLanguage(locale = "es") {
   if (value.startsWith("fr")) return "fr";
   if (value.startsWith("en")) return "en";
   return "es";
+}
+
+async function getLatestStoredDailyBriefing(user, locale = "") {
+  const userId = user?.id || LOCAL_USER_ID;
+  const normalizedLocale = locale ? normalizeDailyLanguage(locale) : "";
+  if (activePersistence() === "supabase") {
+    try {
+      const searchParams = {
+        user_id: `eq.${userId}`,
+        order: "generated_at.desc",
+        limit: "1",
+      };
+      if (normalizedLocale) searchParams.locale = `eq.${normalizedLocale}`;
+      const rows = await supabaseRest("daily_briefings", {
+        searchParams,
+        accessToken: user?.accessToken,
+      });
+      const payload = rows[0]?.payload || null;
+      return payload ? { ok: true, briefing: { ...payload, cacheSource: "supabase-latest" } } : { ok: true, briefing: null };
+    } catch (error) {
+      await appendLog("warn", "Latest daily briefing Supabase read skipped", { userId, error: sanitizeDiagnosticError(error) });
+    }
+  }
+  const store = await readDailyBriefingStore();
+  const candidates = Object.values(store)
+    .filter((row) => row?.user_id === userId)
+    .filter((row) => !normalizedLocale || row.locale === normalizedLocale)
+    .map((row) => row.payload ? { ...row.payload, cacheSource: "local-file-latest" } : null)
+    .filter(Boolean)
+    .sort((a, b) => new Date(b.generatedAt || 0) - new Date(a.generatedAt || 0));
+  return { ok: true, briefing: candidates[0] || null };
 }
 
 async function getStoredDailyBriefing(user, location, language) {
