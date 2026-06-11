@@ -1,4 +1,4 @@
-const APP_VERSION = "20260610-mobile-context-panel-571";
+const APP_VERSION = "20260611-access-allowlist-manual-572";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2466,6 +2466,10 @@ const manualContent = {
       items: [
         "El acceso ahora aparece como sección fija del menú principal. Entra por Acceso antes de capturar datos reales en varios dispositivos.",
         "Usa un usuario de Supabase Auth. Las claves publishable/service_role no son contraseñas.",
+        "Iniciar sesión con Google o correo solo confirma identidad; no concede acceso al producto por sí solo. En modo privado, el correo debe estar autorizado por invitación, lista aprobada o membresía activa del workspace.",
+        "Si alguien inicia sesión sin invitación o aprobación, la app debe mostrar acceso pendiente y no cargar experiencias, activos, agenda, reportes ni publicaciones hasta que un administrador lo active.",
+        "VibePWA y Vibeapp deben usar el mismo protocolo: login, token de sesión, verificación de estado en el servidor, workspace autorizado y rol activo. Si el servidor responde pendiente o bloqueado, la app móvil tampoco debe sincronizar datos.",
+        "Para piloto y beta privada, el filtro recomendado es una lista autorizada por correo. Más adelante puede existir registro abierto, pero cada nuevo usuario debe entrar primero como solicitud pendiente hasta ser aceptado.",
         "Si es tu primer acceso, escribe tu correo electrónico, crea una contraseña de al menos 6 caracteres y pulsa Crear cuenta.",
         "Si Supabase requiere confirmación, revisa tu correo y luego pulsa Entrar.",
         "Si olvidaste la contraseña, usa Recuperar contraseña. Si no llega la confirmación, usa Reenviar confirmación.",
@@ -2503,6 +2507,9 @@ const manualContent = {
         "Cada guardado de decisión queda en un historial breve del acta, útil para revisar cambios de criterio durante el piloto.",
         "Grupos/personas permite registrar un nombre y una nota opcional para separar experiencias dentro de la misma cuenta. Puede ser una persona, familia, viaje, cliente, equipo, proyecto o tema.",
         "El login identifica al dueño de la cuenta y de los datos. El grupo/persona no es otro usuario del sistema: es un subgrupo interno dentro de esa cuenta para separar experiencias, agenda, reportes, hallazgos y publicaciones.",
+        "Invitar a una persona real es distinto de crear un grupo/persona interno. La invitación crea una membresía con correo y rol; el grupo/persona interno solo organiza datos dentro de una cuenta o workspace.",
+        "El administrador o dueño del workspace puede aprobar, suspender o dar de baja miembros. Dar de baja revoca acceso futuro; las experiencias ya guardadas se conservan según la política del workspace hasta borrado explícito o cierre de cuenta.",
+        "Los idiomas del producto deben liberarse completos. Español, inglés y francés no deben quedar mezclados: si un idioma no tiene cobertura completa de interfaz, manual, mensajes y exportaciones, no debe exponerse como opción final al usuario.",
         "Captura incluye un selector de Grupo/persona. El usuario puede crear sus propios grupos desde Panel o Captura sin entrar a Administración; cada grupo puede representar una persona, familia, viaje, proyecto, cliente o contexto privado de la cuenta.",
         "Captura puede actualizar Agenda/Calendario solo si activas la casilla correspondiente al guardar. La app crea o actualiza un evento vinculado con fecha, duración, ubicación y grupo/persona.",
         "Agenda permite asignar cada evento a un grupo/persona y filtrar el calendario por ese subgrupo. Si un evento se deja como general, aparece solo en la vista general; si se asigna, aparece en su Panel y en su Agenda filtrada.",
@@ -2900,6 +2907,8 @@ const manualContent = {
       title: "Supabase y seguridad",
       items: [
         "Supabase Auth identifica al usuario. RLS limita perfiles y experiencias a auth.uid().",
+        "La autorización del producto debe vivir en servidor y base de datos, no solo en la interfaz. Una sesión válida no basta: el usuario también debe tener invitación, membresía o correo aprobado.",
+        "El servidor debe validar autorización en cada flujo sensible: lectura de datos, guardado, archivos, contexto de Vibeapp, biometría, agenda, reportes, publicaciones y administración.",
         "Las tablas profiles, experiences y daily_briefings requieren GRANT explícito para authenticated/service_role además de RLS; esto protege compatibilidad con proyectos Supabase nuevos donde la Data API no expone tablas automáticamente.",
         "El bucket experience-media es privado; el servidor genera URLs firmadas para previews.",
         "Las políticas de Storage separan archivos por carpeta de usuario. La prueba real valida subida privada, URL firmada funcional, acceso público bloqueado y limpieza del archivo temporal.",
@@ -3107,6 +3116,10 @@ const manualContent = {
       items: [
         "Access now appears as a fixed section in the main menu. Open Access before capturing real data across devices.",
         "Use a Supabase Auth user. Publishable/service_role keys are not passwords.",
+        "Signing in with Google or email only confirms identity; it does not grant product access by itself. In private mode, the email must match an invitation, approved allowlist, or active workspace membership.",
+        "If someone signs in without an invitation or approval, the app should show access pending and keep experiences, assets, agenda, reports, and publications unavailable until an administrator activates access.",
+        "VibePWA and Vibeapp must use the same protocol: sign in, session token, server status check, authorized workspace, and active role. If the server returns pending or blocked, the mobile app must not sync data either.",
+        "For pilot and private beta, the recommended filter is an email allowlist. A later public mode can allow self-registration, but new users should start as pending requests until accepted.",
         "For first access, enter your email, create a password with at least 6 characters, and click Create account.",
         "If Supabase requires confirmation, check your email and then sign in.",
         "If you forgot your password, use Reset password. If confirmation does not arrive, use Resend confirmation.",
@@ -3142,6 +3155,10 @@ const manualContent = {
         "For the current pilot, the Closure Record is marked as completed by user decision. It no longer blocks MVP progress.",
         "Each saved decision is kept in a short record history, useful for reviewing decision changes during the pilot.",
         "Groups/people lets you record a name and optional note to separate experiences inside the same account. A group can be a person, family, trip, client, team, project, or topic.",
+        "Signing in identifies the account or workspace owner. A group/person is not automatically another system user; it is an internal scope used to separate experiences, agenda, reports, insights, and publications.",
+        "Inviting a real person is different from creating an internal group/person. An invitation creates an email-based membership and role; an internal group/person only organizes data inside an account or workspace.",
+        "The owner or administrator can approve, suspend, or remove members. Removing a member blocks future access; existing experiences remain under the workspace data policy until explicit deletion or account closure.",
+        "Product languages must be released completely. Spanish, English, and French should not be mixed: if a language does not fully cover the interface, manual, messages, and exports, it should not be exposed as a final user option.",
         "Capture includes a Group/person selector. Users can create their own groups from Dashboard or Capture without opening Admin; each group can represent a person, family, trip, project, client, or private account context.",
         "Capture updates Agenda/Calendar only when you enable that checkbox while saving. The app creates or updates a linked event with date, duration, location, and group/person.",
         "Agenda lets you assign each event to a group/person and filter the calendar by that subgroup. A general event appears only in the general view; an assigned event appears in that subgroup's Dashboard and filtered Agenda.",
@@ -3527,6 +3544,8 @@ const manualContent = {
       title: "Supabase And Security",
       items: [
         "Supabase Auth identifies the user. RLS limits profiles and experiences to auth.uid().",
+        "Product authorization must live on the server and database, not only in the interface. A valid session is not enough: the user must also have an invitation, membership, or approved email.",
+        "The server must validate authorization for every sensitive flow: reading data, saving, files, Vibeapp context, biometrics, agenda, reports, publications, and administration.",
         "The profiles, experiences, and daily_briefings tables require explicit GRANTs for authenticated/service_role in addition to RLS; this keeps compatibility with newer Supabase projects where the Data API does not expose tables automatically.",
         "The experience-media bucket is private; the server generates signed URLs for previews.",
         "Storage policies separate files by user folder. The real test validates private upload, reachable signed URL, blocked public access, and temporary file cleanup.",
