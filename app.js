@@ -1,4 +1,4 @@
-const APP_VERSION = "20260611-access-allowlist-manual-572";
+const APP_VERSION = "20260611-french-language-complete-573";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2043,6 +2043,210 @@ const i18n = {
   },
 };
 
+function mergeLocale(base, overrides) {
+  if (!overrides || typeof overrides !== "object") return base;
+  const merged = Array.isArray(base) ? [...base] : { ...(base || {}) };
+  Object.entries(overrides).forEach(([key, value]) => {
+    if (value && typeof value === "object" && !Array.isArray(value) && typeof merged[key] === "object" && !Array.isArray(merged[key])) {
+      merged[key] = mergeLocale(merged[key], value);
+    } else {
+      merged[key] = value;
+    }
+  });
+  return merged;
+}
+
+i18n.fr = mergeLocale(i18n.en, {
+  languageLabel: "Langue",
+  nav: {
+    auth: "Acces",
+    dashboard: "Accueil",
+    capture: "Capturer",
+    library: "Bibliotheque",
+    assetLibrary: "Fichiers",
+    agenda: "Agenda",
+    timeline: "Chronologie",
+    experienceMap: "Carte",
+    report: "Rapports",
+    publications: "Publier",
+    insights: "Enseignements",
+    automation: "Automatisations",
+    manual: "Aide",
+    admin: "Administration",
+  },
+  viewTitles: {
+    auth: "Acces securise",
+    dashboard: "Accueil",
+    capture: "Capture rapide",
+    library: "Bibliotheque d'experiences",
+    assetLibrary: "Fichiers multimodaux",
+    agenda: "Agenda intelligent",
+    timeline: "Chronologie contextuelle",
+    experienceMap: "Carte des relations",
+    report: "Rapport d'experiences",
+    publications: "Publications intelligentes",
+    insights: "Enseignements actionnables",
+    automation: "Capacites, routines et MCP",
+    manual: "Aide",
+    admin: "Administration",
+  },
+  buttons: {
+    reset: "Charger un exemple",
+    clearDemo: "Supprimer l'exemple",
+    voiceCommand: "Commande vocale",
+    reloadApp: "Actualiser l'app",
+    refreshDaily: "Actualiser le quotidien",
+    clearLocalData: "Vider les donnees locales",
+    export: "Sauvegarde des donnees",
+    restoreBackup: "Restaurer une sauvegarde",
+    applyRecommendedPrivacy: "Appliquer le recommande",
+    save: "Enregistrer l'experience",
+    clear: "Effacer",
+    downloadReport: "Telecharger le rapport",
+    exportAssetInventory: "Exporter l'inventaire",
+    exportAssetInventoryCsv: "CSV inventaire",
+    exportAssetProcessingBacklog: "Exporter les traitements",
+    exportAssetProcessingBacklogCsv: "CSV traitements",
+    exportAssetProcessingChecklist: "Checklist de revision",
+    exportAssetMetadataTemplate: "Modele CSV",
+    exportAssetEditableMetadataCsv: "CSV edition",
+    suggestFilteredAssetText: "Suggérer le texte",
+    clearAssetFilters: "Effacer les filtres",
+    importAssetMetadata: "Importer les metadonnees",
+    importBiometricAsset: "Importer historique",
+    exportAgendaIcs: "Exporter calendrier",
+    exportAgendaEvent: "Exporter evenement",
+    importAgendaIcs: "Importer .ics",
+    saveBlockedDates: "Enregistrer blocages",
+    downloadCsv: "CSV",
+    printReport: "HTML imprimable",
+    previewPublication: "Apercu imprimable",
+    copyPublicationText: "Copier le texte",
+    copyPublicationHtml: "Copier HTML",
+    exportPublicationPackage: "Paquet editorial",
+    downloadPdf: "PDF",
+    edit: "Modifier",
+    delete: "Supprimer",
+    viewTimeline: "Voir chronologie",
+    ask: "Consulter",
+    exportObsidian: "Exporter Markdown",
+    remove: "Retirer",
+    signIn: "Entrer",
+    signUp: "Creer un compte",
+    signOut: "Sortir",
+    resetPassword: "Recuperer le mot de passe",
+    resendConfirmation: "Renvoyer confirmation",
+    showPassword: "Afficher",
+    hidePassword: "Masquer",
+    updateEmbeddings: "Mettre a jour embeddings",
+    syncWorkspaceStructure: "Synchroniser structure",
+    refreshOps: "Actualiser operation",
+    verifySupabase: "Verifier cloud",
+    testSupabaseFlow: "Tester flux complet",
+    syncOffline: "Synchroniser hors ligne",
+    unlockLocal: "Deverrouiller local",
+    showLocalKey: "Afficher cle",
+    hideLocalKey: "Masquer cle",
+    applyLocalKey: "Appliquer cle",
+    saveProfile: "Enregistrer profil",
+    enable: "Activer",
+    runNow: "Executer",
+  },
+  metrics: {
+    experiences: "Experiences",
+    hours: "Heures enregistrees",
+    avgEnergy: "Energie moyenne",
+    topCategory: "Categorie principale",
+    media: "Pieces multimedia",
+    total: "Total experiences",
+    capturedHours: "Heures capturees",
+  },
+  labels: {
+    categoryAll: "Toutes les categories",
+    categoryLabels: {
+      Trabajo: "Travail",
+      "Viajes / Paseos": "Voyages / sorties",
+      Salud: "Sante",
+      Social: "Social",
+      Entretenimiento: "Divertissement",
+      Aprendizaje: "Apprentissage",
+      Compras: "Achats",
+      Creatividad: "Creativite",
+      Hogar: "Maison",
+      Espiritualidad: "Spiritualite",
+    },
+    noMedia: "Sans pieces jointes",
+    energyDefinition: "L'energie est une auto-evaluation de 1 a 10 du niveau percu de vitalite, concentration ou disponibilite pendant l'experience.",
+    mediaDefinition: "Les pieces multimedia sont les images, videos ou audios lies a une experience. Ce n'est pas une moyenne.",
+    attachments: "pieces jointes",
+    results: "resultats",
+    items: "elements",
+    noLibrary: "Aucune experience pour ces filtres.",
+    noTimeline: "Aucune experience pour ces filtres.",
+    noAttachments: "Aucune piece multimedia pour le moment.",
+    assetLibraryIntro: "Inventaire des images, videos, audios et documents associes aux experiences.",
+    assetLibraryEmpty: "Aucun fichier multimodal pour ces filtres.",
+    assetLinkedExperience: "Experience liee",
+    assetStorage: "Stockage",
+    assetStorageStatus: "Etat du stockage",
+    assetStorageRemote: "Serveur/Supabase",
+    assetStorageLocal: "Local temporaire",
+    assetStorageCached: "Apercu local",
+    assetStorageNeedsSync: "Synchronisation requise",
+    assetReady: "Pret a reutiliser",
+    assetNeedsReview: "A revoir avant usage",
+    assetProcessingStatus: "Etat d'analyse",
+    assetProcessingReady: "Texte analytique disponible",
+    assetProcessingPendingFilter: "Traitement en attente",
+    assetDownloadFile: "Telecharger le fichier",
+    assetArchiveOnly: "Archive compressee",
+    assetArchiveOnlyDetail: "Conservee et telechargeable, mais non interpretee automatiquement.",
+    assetTags: "Etiquettes",
+    assetTagsEmpty: "Sans etiquettes",
+    assetManualMetadata: "Metadonnees manuelles",
+    assetAnalyticalText: "Texte analytique",
+    assetOriginalLanguage: "Langue originale",
+    assetTranslatedText: "Traduction dans la langue utilisateur",
+    assetTranslationLanguage: "Langue de traduction",
+    authStateTitle: "Etat d'acces",
+    authNextStep: "Prochaine etape",
+    authConfigReady: "Configuration Supabase disponible",
+    authConfigMissing: "Configuration Supabase manquante",
+    authTokenReady: "Session active",
+    authTokenMissing: "Connexion requise",
+    authRefreshReady: "Jeton de renouvellement disponible",
+    authRefreshMissing: "Sans jeton de renouvellement",
+    authReturnNone: "Aucun retour en attente",
+    authReturnDiagnostics: "Retour aux diagnostics apres connexion",
+    authReturnSelfTest: "Retour au test reel apres connexion",
+    authReturnQuickQa: "Retour a la verification apres connexion",
+    authNextConfig: "Verifier la configuration du serveur",
+    authNextVerify: "Verifier la synchronisation",
+    authNextSignIn: "Connecte-toi pour activer la synchronisation",
+    authSessionExpired: "Session expiree. Connecte-toi a nouveau.",
+    authSessionIncomplete: "Session incomplete",
+    privacyLocalTitle: "Traitement local",
+    privacyLocalHelp: "Conserve le travail dans ce navigateur lorsque c'est possible.",
+    privacyAnalyticsTitle: "Analytique anonyme",
+    privacyAnalyticsHelp: "Utilise uniquement des metriques generales, pas le contenu personnel.",
+    appVersion: "Version",
+    appVersionMismatch: "Version differente",
+    appVersionNoticeTitle: "Nouvelle version disponible",
+    appVersionNoticeDetail: "Actualise l'app pour eviter une copie ancienne du cache.",
+    appVersionNoticeAction: "Actualiser maintenant",
+    manualUpdated: "Manuel actualise",
+    dailySearchGoogle: "Rechercher dans Google",
+    contextFallbackSource: "Source de secours",
+    noNotifications: "Sans alertes",
+    scheduledRoutineNotice: "Routine programmee executee",
+  },
+  report: {
+    narrative: (count, media, category, energy) =>
+      `La bibliotheque contient ${count} experiences avec ${media} images ou videos enregistrees. La categorie dominante est ${category}, et l'energie moyenne est ${energy}/10.`,
+    next: "La prochaine etape naturelle est l'export PDF, la recherche semantique et les rapports par semaine, objectif ou personne.",
+  },
+});
+
 const templates = [
   {
     title: "Revisión diaria",
@@ -3602,6 +3806,151 @@ const manualContent = {
   ],
 };
 
+manualContent.fr = [
+  {
+    title: "Ce qu'est VibePWA",
+    body: [
+      "VibePWA est le centre web de Vibe pour organiser, analyser et publier des experiences humaines. Il est concu pour le travail profond sur ordinateur, Mac, tablette ou navigateur mobile.",
+      "Vibeapp est l'app mobile native pour capturer le contexte du telephone: notes rapides, audio, photo, video, localisation, biometrie et signaux de l'environnement. VibePWA consomme ces donnees depuis le serveur au lieu de dupliquer les connecteurs mobiles.",
+      "Le produit separe clairement l'usage quotidien et l'operation avancee: l'utilisateur voit Accueil, Capture, Bibliotheque, Fichiers, Agenda, Rapports, Publications, Enseignements et Aide; les diagnostics et controles techniques restent dans Administration.",
+      "La regle de conception est simple: interface claire pour l'utilisateur final, logique robuste a l'interieur, synchronisation transparente et messages comprehensibles.",
+    ],
+  },
+  {
+    title: "Acces, invitation et securite",
+    items: [
+      "Se connecter avec Google ou par email confirme seulement l'identite. Cela ne donne pas automatiquement le droit d'utiliser le produit.",
+      "En mode prive, le serveur doit verifier une invitation, une liste d'emails autorises ou une appartenance active au workspace.",
+      "Si une personne se connecte sans approbation, l'app doit afficher Acces en attente et bloquer experiences, fichiers, agenda, rapports, publications et synchronisation mobile.",
+      "VibePWA et Vibeapp utilisent le meme protocole: connexion, jeton de session, verification du statut serveur, workspace autorise et role actif.",
+      "Si le serveur repond pending, blocked ou revoked, Vibeapp peut afficher un ecran local minimal, mais ne doit pas lire ni envoyer de donnees au serveur.",
+      "Pour un pilote ou une beta privee, le filtre recommande est une liste d'emails autorises. Le mode public pourra exister plus tard, mais les nouveaux comptes devront commencer comme demandes en attente.",
+    ],
+  },
+  {
+    title: "Utilisateurs, membres et groupes/personnes",
+    items: [
+      "Le login identifie le proprietaire du compte ou du workspace.",
+      "Un groupe/personne n'est pas forcement un autre utilisateur du systeme. C'est un sous-espace interne pour separer experiences, agenda, rapports, enseignements et publications.",
+      "Un groupe peut representer une personne, une famille, un voyage, un client, une equipe, un projet ou un contexte prive.",
+      "Inviter une vraie personne est different: l'invitation cree une adhesion avec email, role et statut d'acces.",
+      "Le proprietaire ou l'administrateur peut approuver, suspendre ou retirer un membre. Le retrait bloque l'acces futur; les donnees deja enregistrees restent selon la politique du workspace jusqu'a suppression explicite ou fermeture du compte.",
+      "L'utilisateur normal cree et selectionne ses groupes depuis Accueil ou Capture; Administration reste reservee au controle operationnel.",
+    ],
+  },
+  {
+    title: "Accueil",
+    items: [
+      "Accueil montre l'etat utile du jour: date, heure, prochain evenement, groupe actif, actions principales, signaux recents, donnees disponibles et contexte mobile.",
+      "Le contexte mobile vient prioritairement de Vibeapp: climat, actualites, localisation, signaux de sante et donnees journalieres. La ville manuelle de VibePWA sert seulement de secours.",
+      "Le panneau Origine des donnees indique ce qui est arrive depuis Vibeapp, Oura, Apple Health, Health Connect, Samsung ou Meta, et si cela sert a une experience, un fichier, un evenement ou un contexte biometrique.",
+      "Si un panneau ne peut pas se rendre, l'app doit afficher une action claire, sans effacer les experiences ni les fichiers.",
+    ],
+  },
+  {
+    title: "Capture",
+    items: [
+      "Capture sert a enregistrer une experience courte ou longue avec titre, categorie, objectif, date, duree, lieu, personnes, energie, notes et pieces jointes.",
+      "Une experience longue peut contenir plusieurs evenements internes. Chaque photo, audio, video ou document peut etre lie a toute l'experience ou a un evenement precis.",
+      "Quand Supabase et la session sont actifs, la capture fonctionne comme brouillon vivant: les changements importants se synchronisent en arriere-plan et Enregistrer confirme l'etat final.",
+      "La PWA peut charger des fichiers et enregistrer de l'audio selon les capacites du navigateur, mais le controle natif de camera, video continu, wake word, capteurs et taches en arriere-plan appartient a Vibeapp.",
+      "Si une piece jointe ne monte pas encore vers Storage, l'experience conserve le texte et signale le fichier comme en attente. Le flux n'est complet que lorsque le fichier a une route distante ou une URL signee.",
+    ],
+  },
+  {
+    title: "Fichiers multimodaux",
+    items: [
+      "Fichiers organise images, videos, audios, documents, textes, PDF, Word, CSV, JSON et ZIP.",
+      "Les images peuvent etre previsualisees; les videos et audios doivent rester lisibles ou telechargeables; les documents sont extraits quand le serveur peut les interpreter.",
+      "Les ZIP sont transportes et telechargeables, mais ne sont pas interpretes automatiquement.",
+      "Le traitement produit un texte analytique utilise par recherche, rapports, enseignements et publications.",
+      "Les fichiers biometriques historiques peuvent etre importes ici, mais la source normale de biometrie en production doit etre Vibeapp ou les connecteurs natifs.",
+    ],
+  },
+  {
+    title: "Agenda",
+    items: [
+      "Agenda gere les evenements manuels, importes ou crees depuis Capture, Vibeapp et les actions recommandees.",
+      "Chaque evenement peut appartenir a un groupe/personne. Les vues et exports respectent ce filtre.",
+      "Les imports et exports .ics restent disponibles comme options avancees, mais l'usage normal doit rester simple: creer, consulter, modifier ou transformer un evenement en experience.",
+    ],
+  },
+  {
+    title: "Rapports",
+    items: [
+      "Rapports transforme les experiences filtrees en lecture structuree: resume executif, tendances, categories, fiabilite, biometrie, timeline et evidence multimodale.",
+      "Les filtres doivent permettre periode, categorie, groupe/personne, source/connecteur et experience specifique.",
+      "Le PDF edite est la sortie principale pour lire, imprimer ou envoyer. JSON, CSV, HTML et Markdown restent utiles pour sauvegarde, audit ou edition avancee.",
+      "Les legendes, axes et couleurs doivent etre visibles dans les graphiques pour que le rapport soit comprehensible sans explication externe.",
+    ],
+  },
+  {
+    title: "Enseignements",
+    items: [
+      "Enseignements est la sortie principale pour comprendre le comportement de l'utilisateur.",
+      "Les huit axes humains organisent les experiences: sante et bien-etre, travail et productivite, voyages et mobilite, maison et vie quotidienne, social et relations, apprentissage et croissance, finances et achats, loisirs et sens.",
+      "Chaque enseignement doit indiquer diagnostic, evidence, confiance et prochaine action dans un ton humain, pas mecanique.",
+      "Les recommandations ne sont pas des diagnostics medicaux; elles aident a observer, planifier et agir.",
+    ],
+  },
+  {
+    title: "Publications intelligentes",
+    items: [
+      "Publications ne sert pas a refaire un rapport technique. Son objectif est de transformer des experiences en contenu partageable: souvenir de voyage, album familial, recapitulatif d'apprentissage, note de sante, email ou publication sociale.",
+      "L'utilisateur choisit le groupe, la periode, les experiences, le canal, le style, le type de document et les medias a inclure.",
+      "Les images peuvent devenir couverture ou galerie. Les audios, videos et documents doivent apparaitre comme resumes, preuves, annexes ou liens de telechargement selon le format.",
+      "WhatsApp, email et reseaux sociaux sont des sorties assistees: l'app prepare le contenu, mais l'utilisateur revise et publie. Les APIs directes viendront seulement avec connecteurs approuves.",
+      "Avant export, l'utilisateur valide texte, medias, confidentialite, canal et version PDF finale.",
+    ],
+  },
+  {
+    title: "Vibeapp et connecteurs",
+    items: [
+      "Vibeapp est la source recommandee pour mobile: camera, video, audio, localisation, contexte journalier, Oura, Apple Health, Health Connect/Samsung et futurs accessoires.",
+      "Oura doit utiliser l'API officielle quand l'utilisateur connecte son compte; les CSV restent utiles pour historique ou secours.",
+      "Apple Health n'a pas de REST API directe universelle: Vibeapp lit HealthKit sur iOS avec autorisation utilisateur.",
+      "Samsung et Android doivent passer par Health Connect quand c'est possible.",
+      "Meta Ray-Ban/Oakley passe par import de medias, app Meta AI ou connecteur approuve selon disponibilite officielle.",
+    ],
+  },
+  {
+    title: "Confidentialite et mode sensible",
+    items: [
+      "Le traitement local permet de continuer a travailler si le serveur est indisponible.",
+      "Le mode sensible chiffre les donnees locales et sauvegardes avec une cle locale que l'app ne stocke pas.",
+      "Si tu oublies cette cle, les donnees chiffrees localement ne peuvent pas etre recuperees.",
+      "Avant de partager une publication, il faut reviser noms, visages, lieux sensibles, sante, documents et toute information privee.",
+      "La cle service_role reste uniquement sur serveur. Elle ne doit jamais etre dans le navigateur ni dans Vibeapp.",
+    ],
+  },
+  {
+    title: "Administration",
+    items: [
+      "Administration doit rester organisee par themes et panneaux deployables, sans sabana infinie.",
+      "Elle regroupe persistance, Supabase, membres, profils, appareils, qualite, sauvegardes, diagnostics et tests avances.",
+      "Les controles techniques ne doivent pas envahir Accueil, Capture, Rapports ou Publications.",
+      "L'administrateur peut verifier la sante du systeme, lancer diagnostics, gerer membres, sauvegarder, restaurer et voir l'historique operationnel.",
+    ],
+  },
+  {
+    title: "Langues",
+    items: [
+      "Les langues disponibles sont espagnol, anglais et francais.",
+      "Une langue ne doit pas etre publiee a moitie: interface, manuel, messages, erreurs, rapports et exports doivent rester coherents.",
+      "Si une traduction specialisee manque encore dans un panneau avance, l'app doit utiliser un fallback controle et l'equipe doit le fermer avant publication commerciale large.",
+    ],
+  },
+  {
+    title: "Limites actuelles et regle produit",
+    items: [
+      "La PWA est le centre de revue, analyse, administration, rapports et publications.",
+      "La capture native complete appartient a Vibeapp.",
+      "Les fonctions avancees doivent etre automatisees par serveur ou connecteurs; l'utilisateur final ne doit pas gerer des commandes techniques.",
+      "Le produit n'est pret que si le flux complet est stable: capture, synchronisation, fichiers, agenda, contexte, rapports, enseignements, publications, sauvegarde et recuperation.",
+    ],
+  },
+];
+
 const demoExperiences = [
   {
     id: createId(),
@@ -4475,16 +4824,16 @@ function ensurePrimaryParticipant() {
   if (existingPrimary) {
     existingPrimary.id = PRIMARY_PARTICIPANT_ID;
     existingPrimary.name = existingPrimary.name || primaryName;
-    existingPrimary.role = existingPrimary.role || (state.language === "en" ? "Main user" : "Usuario principal");
-    existingPrimary.status = existingPrimary.status || (state.language === "en" ? "completed" : "completado");
+    existingPrimary.role = existingPrimary.role || (state.language !== "es" ? "Main user" : "Usuario principal");
+    existingPrimary.status = existingPrimary.status || (state.language !== "es" ? "completed" : "completado");
     existingPrimary.isPrimaryUser = true;
     existingPrimary.accessOk = true;
     existingPrimary.manualOk = true;
     existingPrimary.testOk = true;
   } else if (duplicateMiguel) {
     duplicateMiguel.id = PRIMARY_PARTICIPANT_ID;
-    duplicateMiguel.role = duplicateMiguel.role || (state.language === "en" ? "Main user" : "Usuario principal");
-    duplicateMiguel.status = duplicateMiguel.status || (state.language === "en" ? "completed" : "completado");
+    duplicateMiguel.role = duplicateMiguel.role || (state.language !== "es" ? "Main user" : "Usuario principal");
+    duplicateMiguel.status = duplicateMiguel.status || (state.language !== "es" ? "completed" : "completado");
     duplicateMiguel.isPrimaryUser = true;
     duplicateMiguel.accessOk = true;
     duplicateMiguel.manualOk = true;
@@ -4495,8 +4844,8 @@ function ensurePrimaryParticipant() {
       createdAt: new Date().toISOString(),
       name: primaryName,
       email: state.profile?.email || "",
-      role: state.language === "en" ? "Main user" : "Usuario principal",
-      status: state.language === "en" ? "completed" : "completado",
+      role: state.language !== "es" ? "Main user" : "Usuario principal",
+      status: state.language !== "es" ? "completed" : "completado",
       isPrimaryUser: true,
       accessOk: true,
       manualOk: true,
@@ -4599,7 +4948,7 @@ function createOrSelectPilotGroup({ name = "", role = "", email = "", status = "
   const existing = findPilotGroupByName(cleanName);
   if (existing) {
     if (isArchivedPilotParticipant(existing)) {
-      existing.status = status || (state.language === "en" ? "active" : "activo");
+      existing.status = status || (state.language !== "es" ? "active" : "activo");
       existing.archivedAt = "";
       existing.reactivatedAt = new Date().toISOString();
       savePilotParticipants();
@@ -4613,7 +4962,7 @@ function createOrSelectPilotGroup({ name = "", role = "", email = "", status = "
     name: cleanName,
     email: String(email || "").trim(),
     role: String(role || "").trim(),
-    status: status || (state.language === "en" ? "active" : "activo"),
+    status: status || (state.language !== "es" ? "active" : "activo"),
     accessOk: true,
     manualOk: false,
     testOk: false,
@@ -4648,7 +4997,7 @@ async function updatePilotParticipantLifecycle(participantId = "", action = "arc
   if (!participant || participant.isPrimaryUser) return { ok: false, reason: "not_allowed" };
   const archive = action !== "reactivate";
   const now = new Date().toISOString();
-  participant.status = archive ? "archived" : (state.language === "en" ? "active" : "activo");
+  participant.status = archive ? "archived" : (state.language !== "es" ? "active" : "activo");
   participant.archivedAt = archive ? now : "";
   participant.reactivatedAt = archive ? "" : now;
   savePilotParticipants();
@@ -4693,20 +5042,20 @@ function refreshPilotGroupSurfaces({ selectedId = "", renderAdminPanel = false }
 
 function getPilotGroupMessage(result) {
   if (!result?.ok) {
-    return state.language === "en" ? "Write a group or person name first." : "Escribe primero un nombre de grupo o persona.";
+    return state.language !== "es" ? "Write a group or person name first." : "Escribe primero un nombre de grupo o persona.";
   }
   const name = result.participant?.name || "";
   if (result.existed) {
     if (result.reactivated) {
-      return state.language === "en"
+      return state.language !== "es"
         ? `${name} was reactivated and selected. Historical experiences were preserved.`
         : `${name} fue reactivado y quedo seleccionado. Sus experiencias historicas se conservaron.`;
     }
-    return state.language === "en"
+    return state.language !== "es"
       ? `${name} already existed and is now selected.`
       : `${name} ya existia y quedo seleccionado.`;
   }
-  return state.language === "en"
+  return state.language !== "es"
     ? `${name} was created and selected for this account.`
     : `${name} fue creado y seleccionado para esta cuenta.`;
 }
@@ -4774,10 +5123,14 @@ function savePilotFeedback() {
 
 function loadLanguage() {
   try {
-    return localStorage.getItem("experience-hub-language") || "es";
+    return normalizeLanguage(localStorage.getItem("experience-hub-language") || "es");
   } catch {
     return "es";
   }
+}
+
+function normalizeLanguage(language) {
+  return ["es", "en", "fr"].includes(language) ? language : "es";
 }
 
 function loadSession() {
@@ -4895,9 +5248,23 @@ function saveSession(session) {
 
 function t(path) {
   const parts = path.split(".");
-  let value = i18n[state.language] || i18n.es;
+  const language = normalizeLanguage(state.language);
+  let value = i18n[language] || i18n.es;
   for (const part of parts) value = value?.[part];
+  if (value === undefined && language === "fr") {
+    value = i18n.en;
+    for (const part of parts) value = value?.[part];
+  }
+  if (value === undefined && language !== "es") {
+    value = i18n.es;
+    for (const part of parts) value = value?.[part];
+  }
   return value ?? path;
+}
+
+function languageText(es, en, fr = en) {
+  if (state.language === "fr") return fr;
+  return state.language === "es" ? es : en;
 }
 
 const API_FAILURES_BEFORE_OFFLINE = 3;
@@ -4943,7 +5310,7 @@ function markApiConnectivityFailure(error, options = {}) {
 function getConnectivitySummary() {
   const pending = state.offlineQueue?.length || 0;
   const hasSession = Boolean(state.session?.access_token);
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         synced: "Synced",
         syncing: "Syncing",
@@ -4977,65 +5344,13 @@ function getConnectivitySummary() {
 }
 
 function productNavLabel(view) {
-  const labels = state.language === "en"
-    ? {
-        dashboard: "Home",
-        capture: "Capture",
-        library: "Library",
-        assetLibrary: "Files",
-        agenda: "Agenda",
-        experienceMap: "Map",
-        report: "Reports",
-        publications: "Publish",
-        insights: "Insights",
-        manual: "Help",
-        admin: "Administration",
-      }
-    : {
-        dashboard: "Inicio",
-        capture: "Capturar",
-        library: "Biblioteca",
-        assetLibrary: "Archivos",
-        agenda: "Agenda",
-        experienceMap: "Mapa",
-        report: "Reportes",
-        publications: "Publicar",
-        insights: "Hallazgos",
-        manual: "Ayuda",
-        admin: "Administracion",
-      };
-  return labels[view] || t(`nav.${view}`);
+  const label = t(`nav.${view}`);
+  return label === `nav.${view}` ? view : label;
 }
 
 function productViewTitle(view) {
-  const labels = state.language === "en"
-    ? {
-        dashboard: "Home",
-        capture: "Capture",
-        library: "Library",
-        assetLibrary: "Files",
-        agenda: "Agenda",
-        experienceMap: "Map",
-        report: "Reports",
-        publications: "Publish",
-        insights: "Insights",
-        manual: "Help",
-        admin: "Administration",
-      }
-    : {
-        dashboard: "Inicio",
-        capture: "Capturar",
-        library: "Biblioteca",
-        assetLibrary: "Archivos",
-        agenda: "Agenda",
-        experienceMap: "Mapa",
-        report: "Reportes",
-        publications: "Publicar",
-        insights: "Hallazgos",
-        manual: "Ayuda",
-        admin: "Administracion",
-      };
-  return labels[view] || t(`viewTitles.${view}`);
+  const label = t(`viewTitles.${view}`);
+  return label === `viewTitles.${view}` ? productNavLabel(view) : label;
 }
 
 async function hydrateFromApi() {
@@ -5049,7 +5364,7 @@ async function hydrateFromApi() {
       ok: true,
       checkedAt: new Date().toISOString(),
       latencyMs: Math.round(performance.now() - startedAt),
-      message: state.language === "en" ? "Local API responded correctly." : "La API local respondió correctamente.",
+      message: state.language !== "es" ? "Local API responded correctly." : "La API local respondió correctamente.",
       service: health.service || "experience-hub-api",
       mode: health.persistence || "json-file",
     };
@@ -5110,7 +5425,7 @@ async function hydrateFromApi() {
       ok: false,
       checkedAt: new Date().toISOString(),
       latencyMs: Math.round(performance.now() - startedAt),
-      message: state.language === "en"
+      message: state.language !== "es"
         ? `Local API did not respond. The app keeps working with local data. ${error.message || ""}`.trim()
         : `La API local no respondió. La app sigue funcionando con datos locales. ${error.message || ""}`.trim(),
       service: "",
@@ -5167,7 +5482,7 @@ async function pollServerSyncState(options = {}) {
       state.serverSync.token = nextToken;
       renderAll();
       notify(
-        state.language === "en"
+        state.language !== "es"
           ? "Updated with changes from another device."
           : "Actualizado con cambios de otro dispositivo.",
         "success",
@@ -5284,13 +5599,13 @@ function normalizeAgendaEvents(events = []) {
     .map((event) => ({
       ...event,
       id: event.id || event.eventId || createId(),
-      title: String(event.title || "").trim() || (state.language === "en" ? "Event" : "Evento"),
+      title: String(event.title || "").trim() || (state.language !== "es" ? "Event" : "Evento"),
       type: event.type || "Personal",
       description: event.description || "",
       startAt: event.startAt || event.start_at || new Date().toISOString(),
       endAt: event.endAt || event.end_at || new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-      location: event.location || (state.language === "en" ? "No location" : "Sin ubicación"),
-      participants: event.participants || (state.language === "en" ? "No participants" : "Sin participantes"),
+      location: event.location || (state.language !== "es" ? "No location" : "Sin ubicación"),
+      participants: event.participants || (state.language !== "es" ? "No participants" : "Sin participantes"),
       priority: event.priority || "normal",
       status: event.status || "Planificado",
       reminders: event.reminders || "",
@@ -5383,7 +5698,7 @@ function getCaptureEventOptions(experienceId = document.getElementById("editingI
     .map((event) => ({
       ...event,
       ref: `event-${event.order}`,
-      label: event.title || event.description || `${state.language === "en" ? "Event" : "Evento"} ${event.order}`,
+      label: event.title || event.description || `${state.language !== "es" ? "Event" : "Evento"} ${event.order}`,
     }));
 }
 
@@ -5484,7 +5799,7 @@ async function saveAgendaEventToApi(agendaEvent, options = {}) {
     if (isApiConnectivityError(error)) markApiConnectivityFailure(error);
     if (!options.silent) {
       const status = document.getElementById("agendaFormStatus");
-      if (status) status.textContent = state.language === "en"
+      if (status) status.textContent = state.language !== "es"
         ? "Event saved on this device. It will sync when the connection is ready."
         : "Evento guardado en este dispositivo. Se sincronizará cuando la conexión esté lista.";
     }
@@ -5499,7 +5814,7 @@ async function deleteAgendaEventFromApi(id, options = {}) {
     return true;
   } catch (error) {
     if (isApiConnectivityError(error)) markApiConnectivityFailure(error);
-    if (!options.silent) notify(state.language === "en" ? "Event deleted locally; cloud delete will need retry." : "Evento eliminado localmente; el borrado en la nube requerirá reintento.", "warn");
+    if (!options.silent) notify(state.language !== "es" ? "Event deleted locally; cloud delete will need retry." : "Evento eliminado localmente; el borrado en la nube requerirá reintento.", "warn");
     return false;
   }
 }
@@ -5904,14 +6219,14 @@ async function reconcileOfflineQueueFromSupabase(options = {}) {
 
 async function syncOfflineQueue(options = {}) {
   if (!state.offlineQueue.length) {
-    if (!options.silent) document.getElementById("embeddingStatus").textContent = state.language === "en" ? "No pending changes." : "No hay cambios pendientes.";
+    if (!options.silent) document.getElementById("embeddingStatus").textContent = state.language !== "es" ? "No pending changes." : "No hay cambios pendientes.";
     renderPersistenceGateBanner();
     renderAuthStatus();
     renderAdmin();
     return;
   }
   if (!state.session?.access_token && state.config?.persistence === "supabase") {
-    if (!options.silent) document.getElementById("embeddingStatus").textContent = state.language === "en" ? "Sign in to save pending changes on your other devices." : "Entra para guardar los cambios pendientes en tus otros dispositivos.";
+    if (!options.silent) document.getElementById("embeddingStatus").textContent = state.language !== "es" ? "Sign in to save pending changes on your other devices." : "Entra para guardar los cambios pendientes en tus otros dispositivos.";
     state.offlineQueue = state.offlineQueue.map((item) => ({ ...item, reason: item.reason || "auth_required" }));
     saveOfflineQueue();
     renderPersistenceGateBanner();
@@ -5919,7 +6234,7 @@ async function syncOfflineQueue(options = {}) {
     renderOfflineQueuePanel();
     return;
   }
-  if (!options.silent) document.getElementById("embeddingStatus").textContent = state.language === "en" ? "Saving pending changes..." : "Guardando cambios pendientes...";
+  if (!options.silent) document.getElementById("embeddingStatus").textContent = state.language !== "es" ? "Saving pending changes..." : "Guardando cambios pendientes...";
   try {
     await apiRequest("/health", { skipAuth: true });
     markApiOnline();
@@ -5928,7 +6243,7 @@ async function syncOfflineQueue(options = {}) {
         const resolved = await reconcileOfflineQueueFromSupabase({ silent: true });
         if (!state.offlineQueue.length) {
           if (!options.silent) {
-            document.getElementById("embeddingStatus").textContent = state.language === "en"
+            document.getElementById("embeddingStatus").textContent = state.language !== "es"
               ? `${resolved} pending changes were already available in the cloud.`
               : `${resolved} pendientes ya estaban disponibles en la nube.`;
           }
@@ -5944,7 +6259,7 @@ async function syncOfflineQueue(options = {}) {
     }
   } catch (error) {
     markApiConnectivityFailure(error);
-    if (!options.silent) document.getElementById("embeddingStatus").textContent = state.language === "en" ? "Connection is not ready to save pending changes." : "La conexión no está lista para guardar pendientes.";
+    if (!options.silent) document.getElementById("embeddingStatus").textContent = state.language !== "es" ? "Connection is not ready to save pending changes." : "La conexión no está lista para guardar pendientes.";
     renderPersistenceGateBanner();
     renderAuthStatus();
     renderAdmin();
@@ -5966,8 +6281,8 @@ async function syncOfflineQueue(options = {}) {
   renderOfflineQueuePanel();
   if (!options.silent) {
     document.getElementById("embeddingStatus").textContent = remaining.length
-      ? state.language === "en" ? `${remaining.length} changes are still pending.` : `${remaining.length} cambios siguen pendientes.`
-      : state.language === "en" ? "Pending changes saved." : "Cambios pendientes guardados.";
+      ? state.language !== "es" ? `${remaining.length} changes are still pending.` : `${remaining.length} cambios siguen pendientes.`
+      : state.language !== "es" ? "Pending changes saved." : "Cambios pendientes guardados.";
   }
   renderAdmin();
   scheduleAutomaticAssetBacklogProcessing({ reason: "offline-sync", delayMs: 1200, silent: true });
@@ -6103,7 +6418,7 @@ function renderPersistenceGateBanner() {
     banner.innerHTML = "";
     return;
   }
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         authTitle: "Sign in to save on all your devices",
         authDetail: "Before capturing, sign in with the same user you will use on mobile, tablet, and desktop.",
@@ -6172,14 +6487,14 @@ function clearOfflineQueueFromBanner() {
     renderPersistenceGateBanner();
     return;
   }
-  const message = state.language === "en"
+  const message = state.language !== "es"
     ? "This clears only this browser's pending local queue. It does not delete experiences already saved in Supabase or local Library. Continue?"
     : "Esto limpia solo la cola local pendiente de este navegador. No borra experiencias ya guardadas en Supabase ni en la Librería local. ¿Continuar?";
   if (!confirm(message)) return;
   const cleared = state.offlineQueue.length;
   state.offlineQueue = [];
   saveOfflineQueue();
-  document.getElementById("embeddingStatus").textContent = state.language === "en"
+  document.getElementById("embeddingStatus").textContent = state.language !== "es"
     ? `${cleared} local pending items cleared.`
     : `${cleared} pendientes locales limpiados.`;
   renderPersistenceGateBanner();
@@ -6203,7 +6518,7 @@ function renderCoreMvpReturnBanner(activeView = document.querySelector(".active-
     banner.hidden = true;
     return;
   }
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         title: "MVP closure action in progress",
         detail: "Complete this step, then return to Admin to save evidence and continue the real test.",
@@ -6258,7 +6573,7 @@ function handleCoreMvpReturnBannerClick(event) {
     const stepKey = state.coreMvpReturn?.stepKey || "";
     const note = String(document.querySelector("[data-mvp-return-note]")?.value || "").trim();
     if (!stepKey || !note) {
-      notify(state.language === "en" ? "Add evidence before returning to closure." : "Agrega evidencia antes de volver al cierre.", "warn");
+      notify(state.language !== "es" ? "Add evidence before returning to closure." : "Agrega evidencia antes de volver al cierre.", "warn");
       return;
     }
     const now = new Date().toISOString();
@@ -6271,7 +6586,7 @@ function handleCoreMvpReturnBannerClick(event) {
       noteUpdatedAt: now,
     };
     saveCoreMvpManualTest();
-    notify(state.language === "en" ? "Evidence saved and step completed." : "Evidencia guardada y paso completado.", "success");
+    notify(state.language !== "es" ? "Evidence saved and step completed." : "Evidencia guardada y paso completado.", "success");
   }
   showView("admin");
   requestAnimationFrame(() => {
@@ -6477,7 +6792,7 @@ function renderAuthStatus() {
     return;
   }
   const pending = state.offlineQueue?.length || 0;
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         synced: "Synced",
         pending: "Pending save",
@@ -6561,7 +6876,7 @@ function renderAuthStatePanel() {
         .map(
           ([ok, label]) => `
             <article>
-              <span class="${ok ? "status-ok" : "status-warn"}">${ok ? (state.language === "en" ? "OK" : "Correcto") : (state.language === "en" ? "Attention" : "Atención")}</span>
+              <span class="${ok ? "status-ok" : "status-warn"}">${ok ? (state.language !== "es" ? "OK" : "Correcto") : (state.language !== "es" ? "Attention" : "Atención")}</span>
               <p>${escapeHtml(label)}</p>
             </article>
           `,
@@ -6578,7 +6893,7 @@ function showAuthView() {
   document.querySelectorAll(".view").forEach((section) => section.classList.remove("active-view"));
   document.querySelector('[data-view="auth"]')?.classList.add("active");
   document.getElementById("authView").classList.add("active-view");
-  document.getElementById("viewTitle").textContent = state.language === "en" ? "Secure access" : "Acceso seguro";
+  document.getElementById("viewTitle").textContent = state.language !== "es" ? "Secure access" : "Acceso seguro";
   renderAuthStatePanel();
 }
 
@@ -6588,7 +6903,8 @@ function setupLanguage() {
   const select = document.getElementById("languageSelect");
   select.value = state.language;
   select.addEventListener("change", async (event) => {
-    state.language = event.target.value;
+    state.language = normalizeLanguage(event.target.value);
+    select.value = state.language;
     try {
       localStorage.setItem("experience-hub-language", state.language);
     } catch {
@@ -6623,7 +6939,7 @@ function applyLanguage() {
   if (document.getElementById("clearDemoButton")) document.getElementById("clearDemoButton").textContent = t("buttons.clearDemo");
   if (document.getElementById("voiceCommandButton")) document.getElementById("voiceCommandButton").textContent = t("buttons.voiceCommand");
   if (document.getElementById("reloadAppButton")) document.getElementById("reloadAppButton").textContent = t("buttons.reloadApp");
-  document.getElementById("privacy-title").textContent = state.language === "en" ? "Privacy" : "Privacidad";
+  document.getElementById("privacy-title").textContent = languageText("Privacidad", "Privacy", "Confidentialite");
   document.getElementById("privacyLocalTitle").textContent = t("labels.privacyLocalTitle");
   document.getElementById("privacyLocalHelp").textContent = t("labels.privacyLocalHelp");
   document.getElementById("privacyAnalyticsTitle").textContent = t("labels.privacyAnalyticsTitle");
@@ -6659,19 +6975,19 @@ function applyLanguage() {
   document.getElementById("experienceMapScope").textContent = t("labels.experienceMapScope");
   document.getElementById("experienceMapQuestionHeading").textContent = t("labels.experienceMapQuestions");
   document.getElementById("experienceMapSearchInput").placeholder =
-    state.language === "en" ? "Search experience, person, place, or goal" : "Buscar experiencia, persona, lugar u objetivo";
+    state.language !== "es" ? "Search experience, person, place, or goal" : "Buscar experiencia, persona, lugar u objetivo";
   document.getElementById("experienceMapQuestionInput").placeholder =
-    state.language === "en" ? "Example: which places relate to higher energy?" : "Ej: ¿qué lugares se relacionan con mayor energía?";
+    state.language !== "es" ? "Example: which places relate to higher energy?" : "Ej: ¿qué lugares se relacionan con mayor energía?";
   document.querySelector(".obsidian-bridge-card strong").textContent = t("labels.experienceMapBridgeTitle");
   document.querySelector(".obsidian-bridge-card p").textContent = t("labels.experienceMapBridgeText");
   renderExperienceMapQuestionSuggestions();
   updateExperienceMapRelationOptions();
   document.getElementById("contextPrimaryButton").textContent = t("labels.contextUsePrimary");
-  document.getElementById("auth-heading").textContent = state.language === "en" ? "Sign in" : "Iniciar sesión";
+  document.getElementById("auth-heading").textContent = state.language !== "es" ? "Sign in" : "Iniciar sesión";
   const authHelp = document.querySelector(".auth-help");
   if (authHelp) {
-    authHelp.querySelector("strong").textContent = state.language === "en" ? "First access" : "Primer acceso";
-    authHelp.querySelector("p").textContent = state.language === "en"
+    authHelp.querySelector("strong").textContent = state.language !== "es" ? "First access" : "Primer acceso";
+    authHelp.querySelector("p").textContent = state.language !== "es"
       ? "If you do not have a user yet, enter your email, create a password, and click Create account. Technical project keys are not passwords."
       : "Si aún no tienes usuario, escribe tu correo electrónico, crea una contraseña y pulsa Crear cuenta. Las claves técnicas del proyecto no sirven como contraseña.";
   }
@@ -6683,51 +6999,51 @@ function applyLanguage() {
     document.getElementById("authPasswordInput").type === "password" ? t("buttons.showPassword") : t("buttons.hidePassword");
   document.getElementById("manual-heading").textContent = t("viewTitles.manual");
   document.getElementById("manualUpdatedLabel").textContent = t("labels.manualUpdated");
-  document.getElementById("manualVersionEyebrow").textContent = state.language === "en" ? "Current version" : "Versión vigente";
+  document.getElementById("manualVersionEyebrow").textContent = state.language !== "es" ? "Current version" : "Versión vigente";
   document.getElementById("manualVersionValue").textContent = APP_VERSION;
-  document.getElementById("manualVersionSummary").textContent = state.language === "en"
+  document.getElementById("manualVersionSummary").textContent = state.language !== "es"
     ? "Practical guide organized by topic so you can understand the app flow without reading everything line by line."
     : "Guía práctica organizada por temas para entender el flujo de la app sin leer todo de corrido.";
-  document.getElementById("manualGuideStartTitle").textContent = state.language === "en" ? "Quick start" : "Inicio rápido";
-  document.getElementById("manualGuideStartText").textContent = state.language === "en" ? "Capture, Library, Assets, and Reports." : "Captura, Librería, Activos y Reportes.";
-  document.getElementById("manualGuideOperateTitle").textContent = state.language === "en" ? "Operations" : "Operación";
-  document.getElementById("manualGuideOperateText").textContent = state.language === "en" ? "Privacy, Supabase, backup, and multi-device use." : "Privacidad, Supabase, respaldo y multidispositivo.";
-  document.getElementById("manualGuideAdminTitle").textContent = state.language === "en" ? "Administration" : "Administración";
-  document.getElementById("manualGuideAdminText").textContent = state.language === "en" ? "Quality, diagnostics, and publishing." : "Calidad, diagnóstico y publicación.";
-  document.getElementById("manualSearchLabel").textContent = state.language === "en" ? "Search the manual" : "Buscar en el manual";
-  document.getElementById("manualVersionSummary").textContent = state.language === "en"
+  document.getElementById("manualGuideStartTitle").textContent = state.language !== "es" ? "Quick start" : "Inicio rápido";
+  document.getElementById("manualGuideStartText").textContent = state.language !== "es" ? "Capture, Library, Assets, and Reports." : "Captura, Librería, Activos y Reportes.";
+  document.getElementById("manualGuideOperateTitle").textContent = state.language !== "es" ? "Operations" : "Operación";
+  document.getElementById("manualGuideOperateText").textContent = state.language !== "es" ? "Privacy, Supabase, backup, and multi-device use." : "Privacidad, Supabase, respaldo y multidispositivo.";
+  document.getElementById("manualGuideAdminTitle").textContent = state.language !== "es" ? "Administration" : "Administración";
+  document.getElementById("manualGuideAdminText").textContent = state.language !== "es" ? "Quality, diagnostics, and publishing." : "Calidad, diagnóstico y publicación.";
+  document.getElementById("manualSearchLabel").textContent = state.language !== "es" ? "Search the manual" : "Buscar en el manual";
+  document.getElementById("manualVersionSummary").textContent = state.language !== "es"
     ? "Practical guide organized by topic. Vibeapp captures native context; VibePWA reviews, analyzes, reports, publishes, and administers."
     : "Guia practica organizada por temas. Vibeapp captura el contexto nativo; VibePWA revisa, analiza, reporta, publica y administra.";
-  document.getElementById("manualGuideStartText").textContent = state.language === "en"
+  document.getElementById("manualGuideStartText").textContent = state.language !== "es"
     ? "Use Vibeapp to capture; use VibePWA to review Library, Assets, Reports, Findings, and Publications."
     : "Usa Vibeapp para capturar; usa VibePWA para revisar Libreria, Activos, Reportes, Hallazgos y Publicaciones.";
-  document.getElementById("manualGuideOperateText").textContent = state.language === "en"
+  document.getElementById("manualGuideOperateText").textContent = state.language !== "es"
     ? "Server sync, privacy, backups, and multi-device continuity."
     : "Sincronizacion de servidor, privacidad, respaldos y continuidad multidispositivo.";
-  document.getElementById("manualGuideAdminText").textContent = state.language === "en"
+  document.getElementById("manualGuideAdminText").textContent = state.language !== "es"
     ? "Connectors, diagnostics, quality, and publishing controls."
     : "Conectores, diagnostico, calidad y controles de publicacion.";
   document.getElementById("manualSearchInput").placeholder =
-    state.language === "en" ? "Search section, feature, or keyword" : "Buscar sección, función o palabra clave";
-  document.getElementById("manualReviewFilterLabel").textContent = state.language === "en" ? "Review status" : "Estado de revisión";
+    state.language !== "es" ? "Search section, feature, or keyword" : "Buscar sección, función o palabra clave";
+  document.getElementById("manualReviewFilterLabel").textContent = state.language !== "es" ? "Review status" : "Estado de revisión";
   const manualReviewFilter = document.getElementById("manualReviewFilter");
-  manualReviewFilter.options[0].textContent = state.language === "en" ? "All" : "Todas";
-  manualReviewFilter.options[1].textContent = state.language === "en" ? "Pending" : "Pendientes";
-  manualReviewFilter.options[2].textContent = state.language === "en" ? "Reviewed" : "Revisadas";
-  document.getElementById("manualClearSearchButton").textContent = state.language === "en" ? "Clear search" : "Limpiar búsqueda";
-  document.getElementById("manualExportMarkdownButton").textContent = state.language === "en" ? "Export Markdown" : "Exportar Markdown";
-  document.getElementById("manualExportPdfButton").textContent = state.language === "en" ? "Download edited ReportLab PDF" : "Descargar PDF editado ReportLab";
-  document.getElementById("manualExportHtmlButton").textContent = state.language === "en" ? "Printable HTML" : "HTML imprimible";
-  document.getElementById("manualMarkAllButton").textContent = state.language === "en" ? "Mark all" : "Marcar todo";
-  document.getElementById("manualResetReviewButton").textContent = state.language === "en" ? "Reset review" : "Reiniciar revisión";
+  manualReviewFilter.options[0].textContent = state.language !== "es" ? "All" : "Todas";
+  manualReviewFilter.options[1].textContent = state.language !== "es" ? "Pending" : "Pendientes";
+  manualReviewFilter.options[2].textContent = state.language !== "es" ? "Reviewed" : "Revisadas";
+  document.getElementById("manualClearSearchButton").textContent = state.language !== "es" ? "Clear search" : "Limpiar búsqueda";
+  document.getElementById("manualExportMarkdownButton").textContent = state.language !== "es" ? "Export Markdown" : "Exportar Markdown";
+  document.getElementById("manualExportPdfButton").textContent = state.language !== "es" ? "Download edited ReportLab PDF" : "Descargar PDF editado ReportLab";
+  document.getElementById("manualExportHtmlButton").textContent = state.language !== "es" ? "Printable HTML" : "HTML imprimible";
+  document.getElementById("manualMarkAllButton").textContent = state.language !== "es" ? "Mark all" : "Marcar todo";
+  document.getElementById("manualResetReviewButton").textContent = state.language !== "es" ? "Reset review" : "Reiniciar revisión";
   document.getElementById("asset-library-heading").textContent = t("viewTitles.assetLibrary");
   document.getElementById("assetLibraryIntro").textContent = t("labels.assetLibraryIntro");
   document.getElementById("dashboardAgendaTitle").textContent = t("labels.dashboardAgendaTitle");
   document.getElementById("dashboardAgendaStatus").textContent = t("labels.dashboardAgendaStatus");
   const dashboardPilotTitle = document.getElementById("dashboardPilotTitle");
   const dashboardPilotStatus = document.getElementById("dashboardPilotStatus");
-  if (dashboardPilotTitle) dashboardPilotTitle.textContent = state.language === "en" ? "Pilot readiness" : "Preparación del piloto";
-  if (dashboardPilotStatus) dashboardPilotStatus.textContent = state.language === "en" ? "Operational follow-up" : "Seguimiento operativo";
+  if (dashboardPilotTitle) dashboardPilotTitle.textContent = state.language !== "es" ? "Pilot readiness" : "Preparación del piloto";
+  if (dashboardPilotStatus) dashboardPilotStatus.textContent = state.language !== "es" ? "Operational follow-up" : "Seguimiento operativo";
   document.getElementById("exportAssetInventoryButton").textContent = t("buttons.exportAssetInventory");
   document.getElementById("exportAssetInventoryCsvButton").textContent = t("buttons.exportAssetInventoryCsv");
   document.getElementById("exportAssetProcessingBacklogButton").textContent = t("buttons.exportAssetProcessingBacklog");
@@ -6739,18 +7055,18 @@ function applyLanguage() {
   document.getElementById("clearAssetFiltersButton").textContent = t("buttons.clearAssetFilters");
   document.getElementById("importAssetMetadataButton").textContent = t("buttons.importAssetMetadata");
   document.getElementById("assetSearchInput").placeholder =
-    state.language === "en" ? "Search asset, experience, place, person, format, or date" : "Buscar activo, experiencia, lugar, persona, formato o fecha";
+    state.language !== "es" ? "Search asset, experience, place, person, format, or date" : "Buscar activo, experiencia, lugar, persona, formato o fecha";
   updateLibraryFilterOptions();
   const assetDateFromLabel = document.querySelector("#assetDateFromFilter")?.closest("label")?.querySelector("span");
   const assetDateToLabel = document.querySelector("#assetDateToFilter")?.closest("label")?.querySelector("span");
   if (assetDateFromLabel) assetDateFromLabel.textContent = t("labels.assetDateFrom");
   if (assetDateToLabel) assetDateToLabel.textContent = t("labels.assetDateTo");
   document.getElementById("agenda-heading").textContent = t("viewTitles.agenda");
-  document.getElementById("agendaAdvancedTitle").textContent = state.language === "en" ? "Advanced calendar options" : "Opciones avanzadas de calendario";
-  document.getElementById("agendaAdvancedHelp").textContent = state.language === "en" ? "Import, export, and blocked days" : "Importar, exportar y bloquear días";
+  document.getElementById("agendaAdvancedTitle").textContent = state.language !== "es" ? "Advanced calendar options" : "Opciones avanzadas de calendario";
+  document.getElementById("agendaAdvancedHelp").textContent = state.language !== "es" ? "Import, export, and blocked days" : "Importar, exportar y bloquear días";
   document.getElementById("agendaFormStatus").textContent = t("labels.agendaLocalStatus");
-  document.getElementById("agendaPilotParticipantLabel").textContent = state.language === "en" ? "Linked group/person" : "Grupo/persona vinculado";
-  document.getElementById("agendaSaveButton").textContent = state.language === "en" ? "Save event" : "Guardar evento";
+  document.getElementById("agendaPilotParticipantLabel").textContent = state.language !== "es" ? "Linked group/person" : "Grupo/persona vinculado";
+  document.getElementById("agendaSaveButton").textContent = state.language !== "es" ? "Save event" : "Guardar evento";
   document.getElementById("agendaClearButton").textContent = t("buttons.clear");
   document.getElementById("exportAgendaIcsButton").textContent = t("buttons.exportAgendaIcs");
   document.getElementById("importAgendaIcsButton").textContent = t("buttons.importAgendaIcs");
@@ -6759,43 +7075,43 @@ function applyLanguage() {
   document.getElementById("agendaSaveBlockedDatesButton").textContent = t("buttons.saveBlockedDates");
   document.getElementById("publications-heading").textContent = t("viewTitles.publications");
   document.getElementById("publicationStatus").textContent = t("labels.publicationStatus");
-  document.getElementById("reportExportTitle").textContent = state.language === "en" ? "Technical report options" : "Opciones técnicas del reporte";
-  document.getElementById("reportExportHelp").textContent = state.language === "en" ? "JSON, CSV, HTML, and acceptance evidence" : "JSON, CSV, HTML y evidencia de aceptación";
-  document.getElementById("publicationMoreTitle").textContent = state.language === "en" ? "Technical options" : "Opciones técnicas";
-  document.getElementById("publicationMoreHelp").textContent = state.language === "en" ? "HTML, Markdown, copies, and editorial package" : "HTML, Markdown, copias y paquete editorial";
-  document.getElementById("reportParticipantLabel").textContent = state.language === "en" ? "Group/person in this report" : "Grupo/persona de este reporte";
-  document.getElementById("insightsParticipantLabel").textContent = state.language === "en" ? "Group / person" : "Grupo / persona";
-  document.getElementById("publicationParticipantLabel").textContent = state.language === "en" ? "Source group / person" : "Grupo / persona fuente";
-  document.getElementById("generatePublicationButton").textContent = state.language === "en" ? "Generate draft" : "Generar borrador";
+  document.getElementById("reportExportTitle").textContent = state.language !== "es" ? "Technical report options" : "Opciones técnicas del reporte";
+  document.getElementById("reportExportHelp").textContent = state.language !== "es" ? "JSON, CSV, HTML, and acceptance evidence" : "JSON, CSV, HTML y evidencia de aceptación";
+  document.getElementById("publicationMoreTitle").textContent = state.language !== "es" ? "Technical options" : "Opciones técnicas";
+  document.getElementById("publicationMoreHelp").textContent = state.language !== "es" ? "HTML, Markdown, copies, and editorial package" : "HTML, Markdown, copias y paquete editorial";
+  document.getElementById("reportParticipantLabel").textContent = state.language !== "es" ? "Group/person in this report" : "Grupo/persona de este reporte";
+  document.getElementById("insightsParticipantLabel").textContent = state.language !== "es" ? "Group / person" : "Grupo / persona";
+  document.getElementById("publicationParticipantLabel").textContent = state.language !== "es" ? "Source group / person" : "Grupo / persona fuente";
+  document.getElementById("generatePublicationButton").textContent = state.language !== "es" ? "Generate draft" : "Generar borrador";
   document.getElementById("previewPublicationHtmlButton").textContent = t("buttons.previewPublication");
   document.getElementById("copyPublicationTextButton").textContent = t("buttons.copyPublicationText");
   document.getElementById("copyPublicationHtmlButton").textContent = t("buttons.copyPublicationHtml");
-  document.getElementById("exportPublicationHtmlButton").textContent = state.language === "en" ? "Export HTML" : "Exportar HTML";
-  document.getElementById("exportPublicationMarkdownButton").textContent = state.language === "en" ? "Export Markdown" : "Exportar Markdown";
+  document.getElementById("exportPublicationHtmlButton").textContent = state.language !== "es" ? "Export HTML" : "Exportar HTML";
+  document.getElementById("exportPublicationMarkdownButton").textContent = state.language !== "es" ? "Export Markdown" : "Exportar Markdown";
   document.getElementById("exportPublicationPackageButton").textContent = t("buttons.exportPublicationPackage");
-  document.getElementById("publicationHistoryHeading").textContent = state.language === "en" ? "Drafts" : "Borradores";
+  document.getElementById("publicationHistoryHeading").textContent = state.language !== "es" ? "Drafts" : "Borradores";
   document.getElementById("automation-heading").textContent = t("viewTitles.automation");
   document.getElementById("embeddingBackfillButton").textContent = t("buttons.updateEmbeddings");
-  document.getElementById("adminHubStatus").textContent = state.language === "en" ? "Operations center" : "Centro operativo";
-  document.getElementById("adminExecutiveTitle").textContent = state.language === "en" ? "Executive summary" : "Resumen ejecutivo";
-  document.getElementById("adminExecutiveHelp").textContent = state.language === "en" ? "Status, priorities, and publishing" : "Estado, prioridades y publicacion";
-  document.getElementById("adminPersistenceTitle").textContent = state.language === "en" ? "Sync and cloud" : "Sincronizacion y nube";
-  document.getElementById("adminPersistenceHelp").textContent = state.language === "en" ? "Multi-device, backup, and verification" : "Multidispositivo, respaldo y verificacion";
-  document.getElementById("adminPeopleTitle").textContent = state.language === "en" ? "Groups, account and data" : "Grupos, cuenta y datos";
-  document.getElementById("adminPeopleHelp").textContent = state.language === "en" ? "Create, archive, reactivate and clarify history retention" : "Alta, archivo, reactivacion y politica de historial";
-  document.getElementById("adminAssetsTitle").textContent = state.language === "en" ? "Assets and media" : "Activos y multimedia";
-  document.getElementById("adminAssetsHelp").textContent = state.language === "en" ? "Inventory, import, review, and processing" : "Inventario, importacion, revision y procesamiento";
-  document.getElementById("adminProfileDevicesTitle").textContent = state.language === "en" ? "Profile and devices" : "Perfil y dispositivos";
-  document.getElementById("adminProfileDevicesHelp").textContent = state.language === "en" ? "Account, preferences, and capture sources" : "Cuenta, preferencias y fuentes de captura";
-  document.getElementById("adminQualityTitle").textContent = state.language === "en" ? "Quality and evidence" : "Calidad y evidencias";
-  document.getElementById("adminQualityHelp").textContent = state.language === "en" ? "Rules, tests, traceability, and records" : "Reglas, pruebas, trazabilidad y registros";
-  document.getElementById("adminAdvancedTitle").textContent = state.language === "en" ? "Advanced diagnostics" : "Diagnostico avanzado";
-  document.getElementById("adminAdvancedHelp").textContent = state.language === "en" ? "Server, test data, integrations, and logs" : "Servidor, datos de prueba, integraciones y registros";
+  document.getElementById("adminHubStatus").textContent = state.language !== "es" ? "Operations center" : "Centro operativo";
+  document.getElementById("adminExecutiveTitle").textContent = state.language !== "es" ? "Executive summary" : "Resumen ejecutivo";
+  document.getElementById("adminExecutiveHelp").textContent = state.language !== "es" ? "Status, priorities, and publishing" : "Estado, prioridades y publicacion";
+  document.getElementById("adminPersistenceTitle").textContent = state.language !== "es" ? "Sync and cloud" : "Sincronizacion y nube";
+  document.getElementById("adminPersistenceHelp").textContent = state.language !== "es" ? "Multi-device, backup, and verification" : "Multidispositivo, respaldo y verificacion";
+  document.getElementById("adminPeopleTitle").textContent = state.language !== "es" ? "Groups, account and data" : "Grupos, cuenta y datos";
+  document.getElementById("adminPeopleHelp").textContent = state.language !== "es" ? "Create, archive, reactivate and clarify history retention" : "Alta, archivo, reactivacion y politica de historial";
+  document.getElementById("adminAssetsTitle").textContent = state.language !== "es" ? "Assets and media" : "Activos y multimedia";
+  document.getElementById("adminAssetsHelp").textContent = state.language !== "es" ? "Inventory, import, review, and processing" : "Inventario, importacion, revision y procesamiento";
+  document.getElementById("adminProfileDevicesTitle").textContent = state.language !== "es" ? "Profile and devices" : "Perfil y dispositivos";
+  document.getElementById("adminProfileDevicesHelp").textContent = state.language !== "es" ? "Account, preferences, and capture sources" : "Cuenta, preferencias y fuentes de captura";
+  document.getElementById("adminQualityTitle").textContent = state.language !== "es" ? "Quality and evidence" : "Calidad y evidencias";
+  document.getElementById("adminQualityHelp").textContent = state.language !== "es" ? "Rules, tests, traceability, and records" : "Reglas, pruebas, trazabilidad y registros";
+  document.getElementById("adminAdvancedTitle").textContent = state.language !== "es" ? "Advanced diagnostics" : "Diagnostico avanzado";
+  document.getElementById("adminAdvancedHelp").textContent = state.language !== "es" ? "Server, test data, integrations, and logs" : "Servidor, datos de prueba, integraciones y registros";
   document.getElementById("workspaceBackfillButton").textContent = t("buttons.syncWorkspaceStructure");
   document.getElementById("refreshOpsButton").textContent = t("buttons.refreshOps");
   document.getElementById("supabaseDiagnosticsButton").textContent = t("buttons.verifySupabase");
   document.getElementById("supabaseSelfTestButton").textContent = t("buttons.testSupabaseFlow");
-  document.getElementById("openAdvancedDiagnosticsButton").textContent = state.language === "en" ? "Advanced diagnostics" : "Diagnostico avanzado";
+  document.getElementById("openAdvancedDiagnosticsButton").textContent = state.language !== "es" ? "Advanced diagnostics" : "Diagnostico avanzado";
   document.getElementById("syncOfflineButton").textContent = t("buttons.syncOffline");
   if (document.getElementById("adminExportBackupButton")) document.getElementById("adminExportBackupButton").textContent = t("buttons.export");
   if (document.getElementById("adminRestoreBackupButton")) document.getElementById("adminRestoreBackupButton").textContent = t("buttons.restoreBackup");
@@ -6811,8 +7127,86 @@ function applyLanguage() {
   populateExperienceTypeControl();
   updateDashboardParticipantControl();
   updatePilotParticipantControls();
+  applyFrenchStaticTextOverrides();
   renderNotifications();
   renderAuthStatus();
+}
+
+function applyFrenchStaticTextOverrides() {
+  if (state.language !== "fr") return;
+  const setText = (id, text) => {
+    const node = document.getElementById(id);
+    if (node) node.textContent = text;
+  };
+  const setPlaceholder = (id, text) => {
+    const node = document.getElementById(id);
+    if (node) node.placeholder = text;
+  };
+  setText("auth-heading", "Connexion");
+  const authHelp = document.querySelector(".auth-help");
+  if (authHelp) {
+    authHelp.querySelector("strong").textContent = "Premier acces";
+    authHelp.querySelector("p").textContent = "Si tu n'as pas encore d'utilisateur, saisis ton email, cree un mot de passe et clique sur Creer un compte. Les cles techniques du projet ne sont pas des mots de passe.";
+  }
+  setText("manualVersionEyebrow", "Version active");
+  setText("manualVersionSummary", "Guide pratique organise par theme. Vibeapp capture le contexte natif; VibePWA revise, analyse, rapporte, publie et administre.");
+  setText("manualGuideStartTitle", "Demarrage rapide");
+  setText("manualGuideStartText", "Utilise Vibeapp pour capturer; utilise VibePWA pour revoir Bibliotheque, Fichiers, Rapports, Enseignements et Publications.");
+  setText("manualGuideOperateTitle", "Operations");
+  setText("manualGuideOperateText", "Synchronisation serveur, confidentialite, sauvegardes et continuite multi-appareils.");
+  setText("manualGuideAdminTitle", "Administration");
+  setText("manualGuideAdminText", "Connecteurs, diagnostics, qualite et controles de publication.");
+  setText("manualSearchLabel", "Rechercher dans l'aide");
+  setPlaceholder("manualSearchInput", "Rechercher section, fonction ou mot-cle");
+  setText("manualReviewFilterLabel", "Etat de revision");
+  const manualReviewFilter = document.getElementById("manualReviewFilter");
+  if (manualReviewFilter) {
+    manualReviewFilter.options[0].textContent = "Toutes";
+    manualReviewFilter.options[1].textContent = "En attente";
+    manualReviewFilter.options[2].textContent = "Revues";
+  }
+  setText("manualClearSearchButton", "Effacer recherche");
+  setText("manualExportMarkdownButton", "Exporter Markdown");
+  setText("manualExportPdfButton", "Telecharger PDF edite ReportLab");
+  setText("manualExportHtmlButton", "HTML imprimable");
+  setText("manualMarkAllButton", "Tout marquer");
+  setText("manualResetReviewButton", "Reinitialiser revision");
+  setPlaceholder("experienceMapSearchInput", "Rechercher experience, personne, lieu ou objectif");
+  setPlaceholder("experienceMapQuestionInput", "Exemple : quels lieux sont lies a une energie plus elevee ?");
+  setPlaceholder("assetSearchInput", "Rechercher fichier, experience, lieu, personne, format ou date");
+  setText("dashboardPilotTitle", "Preparation du pilote");
+  setText("dashboardPilotStatus", "Suivi operationnel");
+  setText("agendaAdvancedTitle", "Options avancees de calendrier");
+  setText("agendaAdvancedHelp", "Importer, exporter et bloquer des jours");
+  setText("agendaPilotParticipantLabel", "Groupe/personne lie");
+  setText("agendaSaveButton", "Enregistrer evenement");
+  setText("reportExportTitle", "Options techniques du rapport");
+  setText("reportExportHelp", "JSON, CSV, HTML et preuves d'acceptation");
+  setText("publicationMoreTitle", "Options techniques");
+  setText("publicationMoreHelp", "HTML, Markdown, copies et paquet editorial");
+  setText("reportParticipantLabel", "Groupe/personne dans ce rapport");
+  setText("insightsParticipantLabel", "Groupe / personne");
+  setText("publicationParticipantLabel", "Groupe / personne source");
+  setText("generatePublicationButton", "Generer brouillon");
+  setText("exportPublicationHtmlButton", "Exporter HTML");
+  setText("exportPublicationMarkdownButton", "Exporter Markdown");
+  setText("publicationHistoryHeading", "Brouillons");
+  setText("adminHubStatus", "Centre operationnel");
+  setText("adminExecutiveTitle", "Resume executif");
+  setText("adminExecutiveHelp", "Etat, priorites et publication");
+  setText("adminPersistenceTitle", "Synchronisation et cloud");
+  setText("adminPersistenceHelp", "Multi-appareils, sauvegarde et verification");
+  setText("adminPeopleTitle", "Groupes, compte et donnees");
+  setText("adminPeopleHelp", "Creation, archivage, reactivation et conservation de l'historique");
+  setText("adminAssetsTitle", "Fichiers et medias");
+  setText("adminAssetsHelp", "Inventaire, import, revision et traitement");
+  setText("adminProfileDevicesTitle", "Profil et appareils");
+  setText("adminProfileDevicesHelp", "Compte, preferences et sources de capture");
+  setText("adminQualityTitle", "Qualite et preuves");
+  setText("adminQualityHelp", "Regles, tests, tracabilite et registres");
+  setText("adminAdvancedTitle", "Diagnostics avances");
+  setText("adminAdvancedHelp", "Serveur, donnees de test, integrations et journaux");
+  setText("openAdvancedDiagnosticsButton", "Diagnostics avances");
 }
 
 function setupForm() {
@@ -6872,7 +7266,7 @@ function setupForm() {
       savePhase = "agenda_optional";
       const agendaSynced = agendaRequested ? syncExperienceToAgenda(experience) : false;
       if (agendaSynced) {
-        state.captureSaveStatus.detail += state.language === "en" ? " Agenda was updated because you selected it." : " Agenda/Calendario fue actualizado porque lo seleccionaste.";
+        state.captureSaveStatus.detail += state.language !== "es" ? " Agenda was updated because you selected it." : " Agenda/Calendario fue actualizado porque lo seleccionaste.";
       }
       notify(state.captureSaveStatus.detail, apiResult?.queued || !localSaved ? "warn" : "success");
       if (apiResult?.remote || localSaved) {
@@ -6890,7 +7284,7 @@ function setupForm() {
     } catch (error) {
       if (savedCommitted && state.captureSaveStatus) {
         const detail = agendaRequested
-          ? state.language === "en"
+          ? state.language !== "es"
             ? "The experience was saved. Agenda could not be updated; review it only if you intended to create a calendar event."
             : "La experiencia fue guardada. Agenda no pudo actualizarse; revísala solo si querías crear un evento de calendario."
           : state.captureSaveStatus.detail;
@@ -6905,7 +7299,7 @@ function setupForm() {
       const detail = getCaptureSaveErrorDetailActionable(error, savePhase);
       state.captureSaveStatus = {
         type: "warn",
-        title: state.language === "en" ? "Save failed" : "Guardado no completado",
+        title: state.language !== "es" ? "Save failed" : "Guardado no completado",
         detail,
         experienceId: "",
         experienceTitle: "",
@@ -6938,9 +7332,9 @@ function setupForm() {
 
 function validateCaptureFormBeforeRead() {
   const requiredFields = [
-    ["titleInput", state.language === "en" ? "title" : "título"],
-    ["timestampInput", state.language === "en" ? "date and time" : "fecha y hora"],
-    ["durationInput", state.language === "en" ? "duration" : "duración"],
+    ["titleInput", state.language !== "es" ? "title" : "título"],
+    ["timestampInput", state.language !== "es" ? "date and time" : "fecha y hora"],
+    ["durationInput", state.language !== "es" ? "duration" : "duración"],
   ];
   const missing = requiredFields
     .filter(([id]) => !String(document.getElementById(id)?.value || "").trim())
@@ -6968,33 +7362,33 @@ function validateCaptureFormBeforeRead() {
 function getCaptureSaveErrorDetail(error) {
   const reason = error?.reason || error?.message || "";
   if (reason === "required_fields") {
-    const fields = Array.isArray(error.fields) && error.fields.length ? error.fields.join(", ") : (state.language === "en" ? "required fields" : "campos obligatorios");
-    return state.language === "en"
+    const fields = Array.isArray(error.fields) && error.fields.length ? error.fields.join(", ") : (state.language !== "es" ? "required fields" : "campos obligatorios");
+    return state.language !== "es"
       ? `Missing required fields: ${fields}. Complete them and save again.`
       : `Faltan campos obligatorios: ${fields}. Complétalos y guarda de nuevo.`;
   }
   if (reason === "invalid_timestamp") {
-    return state.language === "en"
+    return state.language !== "es"
       ? "The date and time are not valid. Select them again and save."
       : "La fecha y hora no son válidas. Selecciónalas de nuevo y guarda.";
   }
   if (reason === "invalid_duration") {
-    return state.language === "en"
+    return state.language !== "es"
       ? "Duration must be at least 1 minute. Correct it and save again."
       : "La duración debe ser de al menos 1 minuto. Corrígela y guarda de nuevo.";
   }
   if (String(reason).includes("Invalid time value")) {
-    return state.language === "en"
+    return state.language !== "es"
       ? "The date and time could not be interpreted. Select them again and save."
       : "La fecha y hora no se pudieron interpretar. Selecciónalas de nuevo y guarda.";
   }
-  return state.language === "en"
+  return state.language !== "es"
     ? "The experience could not be saved. Check the session, required fields, and connection; then try again."
     : "No se pudo guardar la experiencia. Revisa sesión, campos obligatorios y conexión; luego inténtalo de nuevo.";
 }
 
 function getCaptureSavePhaseLabel(phase = "") {
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         starting: "start",
         validation: "field validation",
@@ -7023,23 +7417,23 @@ function getCaptureSavePhaseLabel(phase = "") {
 function getCaptureSaveErrorDetailActionable(error, phase = "") {
   const reason = error?.reason || error?.message || "";
   if (reason === "required_fields") {
-    const fields = Array.isArray(error.fields) && error.fields.length ? error.fields.join(", ") : (state.language === "en" ? "required fields" : "campos obligatorios");
-    return state.language === "en"
+    const fields = Array.isArray(error.fields) && error.fields.length ? error.fields.join(", ") : (state.language !== "es" ? "required fields" : "campos obligatorios");
+    return state.language !== "es"
       ? `Missing required fields: ${fields}. Complete them and save again.`
       : `Faltan campos obligatorios: ${fields}. Compl\u00e9talos y guarda de nuevo.`;
   }
   if (reason === "invalid_timestamp") {
-    return state.language === "en"
+    return state.language !== "es"
       ? "The date and time are not valid. Select them again and save."
       : "La fecha y hora no son v\u00e1lidas. Selecci\u00f3nalas de nuevo y guarda.";
   }
   if (reason === "invalid_duration") {
-    return state.language === "en"
+    return state.language !== "es"
       ? "Duration must be at least 1 minute. Correct it and save again."
       : "La duraci\u00f3n debe ser de al menos 1 minuto. Corr\u00edgela y guarda de nuevo.";
   }
   if (String(reason).includes("Invalid time value")) {
-    return state.language === "en"
+    return state.language !== "es"
       ? "The date and time could not be interpreted. Select them again and save."
       : "La fecha y hora no se pudieron interpretar. Selecci\u00f3nalas de nuevo y guarda.";
   }
@@ -7048,7 +7442,7 @@ function getCaptureSaveErrorDetailActionable(error, phase = "") {
   const technicalDetail = rawMessage && !["capture_required_fields", "capture_invalid_timestamp", "capture_invalid_duration"].includes(rawMessage)
     ? rawMessage.slice(0, 180)
     : "";
-  return state.language === "en"
+  return state.language !== "es"
     ? `The save stopped during: ${phaseLabel}. ${technicalDetail ? `Detail: ${technicalDetail}. ` : ""}The form was kept so you can retry.`
     : `El guardado se detuvo en: ${phaseLabel}. ${technicalDetail ? `Detalle: ${technicalDetail}. ` : ""}El formulario se conserv\u00f3 para que puedas reintentar.`;
 }
@@ -7245,7 +7639,7 @@ function setupFilters() {
     }
     syncReportFilterInputs();
     renderReport();
-    setReportFlowStatus(state.language === "en" ? "Scope changed. Press Generate / update report to confirm the reading." : "Alcance cambiado. Pulsa Generar / actualizar reporte para confirmar la lectura.");
+    setReportFlowStatus(state.language !== "es" ? "Scope changed. Press Generate / update report to confirm the reading." : "Alcance cambiado. Pulsa Generar / actualizar reporte para confirmar la lectura.");
   });
   document.getElementById("resetReportScopeInlineButton").addEventListener("click", resetReportScope);
   document.getElementById("reportExperienceFilter").addEventListener("change", (event) => {
@@ -7253,7 +7647,7 @@ function setupFilters() {
     state.reportFilters.scope = "single";
     syncReportFilterInputs();
     renderReport();
-    setReportFlowStatus(state.language === "en" ? "Specific experience selected. The report is ready to generate." : "Experiencia específica seleccionada. El reporte está listo para generar.");
+    setReportFlowStatus(state.language !== "es" ? "Specific experience selected. The report is ready to generate." : "Experiencia específica seleccionada. El reporte está listo para generar.");
   });
   document.getElementById("reportPeriodFilter").addEventListener("change", (event) => {
     state.reportFilters.period = event.target.value;
@@ -7363,8 +7757,8 @@ function updateAnalyticalScopeStatus(statusId, filters = {}, count = 0) {
   const status = statusId ? document.getElementById(statusId) : null;
   if (!status) return;
   const parts = buildAnalyticalScopeParts(filters);
-  const base = parts.length ? parts.join(" · ") : state.language === "en" ? "General source" : "Fuente general";
-  status.textContent = `${base} · ${count} ${state.language === "en" ? "items" : "experiencias"}`;
+  const base = parts.length ? parts.join(" · ") : state.language !== "es" ? "General source" : "Fuente general";
+  status.textContent = `${base} · ${count} ${state.language !== "es" ? "items" : "experiencias"}`;
 }
 
 function buildAnalyticalScopeParts(filters = {}) {
@@ -7380,7 +7774,7 @@ function buildAnalyticalScopeParts(filters = {}) {
 function renderSharedScopeContext(containerId, filters = {}, count = 0, outputLabel = "", extraParts = []) {
   const container = document.getElementById(containerId);
   if (!container) return;
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         title: "Scope used in this output",
         fallback: "Full view",
@@ -7416,12 +7810,12 @@ function generateReportFromScope() {
   const scope = state.reportFilters.scope || "all";
   const scopeText = getReportScopeLabel(scope);
   setReportFlowStatus(
-    state.language === "en"
+    state.language !== "es"
       ? `Report generated for ${count} experience(s). Scope: ${scopeText}. Continue with the acceptance pack.`
       : `Reporte generado para ${count} experiencia(s). Alcance: ${scopeText}. Lee la síntesis principal y luego usa el paquete de aceptación.`,
   );
   document.getElementById("reportSummary")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  notify(state.language === "en" ? "Report generated." : "Reporte generado.", "success");
+  notify(state.language !== "es" ? "Report generated." : "Reporte generado.", "success");
 }
 
 function resetReportScope() {
@@ -7440,13 +7834,13 @@ function resetReportScope() {
   };
   syncReportFilterInputs();
   renderReport();
-  setReportFlowStatus(state.language === "en" ? "Scope cleared. The report now uses all saved experiences." : "Alcance limpiado. El reporte ahora usa todas las experiencias guardadas.");
+  setReportFlowStatus(state.language !== "es" ? "Scope cleared. The report now uses all saved experiences." : "Alcance limpiado. El reporte ahora usa todas las experiencias guardadas.");
 }
 
 function scrollToReportAcceptance() {
   renderReportAcceptancePanel();
   document.getElementById("reportAcceptancePanel")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  setReportFlowStatus(state.language === "en" ? "Review the acceptance pack and run the needed export buttons." : "Revisa el paquete de aceptación y ejecuta los botones de exportación necesarios.");
+  setReportFlowStatus(state.language !== "es" ? "Review the acceptance pack and run the needed export buttons." : "Revisa el paquete de aceptación y ejecuta los botones de exportación necesarios.");
 }
 
 function setReportFlowStatus(message) {
@@ -7462,7 +7856,7 @@ function handleReportScopeAction(event) {
 
 function getReportScopeLabel(scope = state.reportFilters.scope) {
   const labels =
-    state.language === "en"
+    state.language !== "es"
       ? {
           all: "all experiences",
           period: "quick range",
@@ -7688,7 +8082,7 @@ async function handleDashboardGroupSubmit(event) {
   const remote = await syncPilotParticipantToApi(result.participant);
   form.reset();
   refreshPilotGroupSurfaces({ selectedId: result.participant.id, renderAdminPanel: true });
-  const suffix = remote.ok || remote.skipped ? "" : state.language === "en" ? " Server sync will need review." : " La sincronizacion con servidor requiere revision.";
+  const suffix = remote.ok || remote.skipped ? "" : state.language !== "es" ? " Server sync will need review." : " La sincronizacion con servidor requiere revision.";
   notify(`${getPilotGroupMessage(result)}${suffix}`, remote.ok ? "success" : result.existed ? "info" : "success");
 }
 
@@ -7697,7 +8091,7 @@ async function handleDashboardGroupListClick(event) {
   if (archiveButton) {
     const participantId = archiveButton.dataset.dashboardGroupArchive || "";
     const name = getPilotParticipantName(participantId);
-    const confirmText = state.language === "en"
+    const confirmText = state.language !== "es"
       ? `Archive ${name}? It will no longer appear for new captures, but its saved experiences will remain in your history.`
       : `Archivar ${name}? Ya no aparecera para nuevas capturas, pero sus experiencias guardadas se conservaran en el historial.`;
     if (!confirm(confirmText)) return;
@@ -7705,8 +8099,8 @@ async function handleDashboardGroupListClick(event) {
     refreshPilotGroupSurfaces({ renderAdminPanel: true });
     notify(
       result.remote?.ok || result.remote?.skipped
-        ? (state.language === "en" ? `${name} archived. Historical data was preserved.` : `${name} archivado. La data historica se conservo.`)
-        : (state.language === "en" ? `${name} archived locally. Server sync needs review.` : `${name} archivado localmente. La sincronizacion del servidor requiere revision.`),
+        ? (state.language !== "es" ? `${name} archived. Historical data was preserved.` : `${name} archivado. La data historica se conservo.`)
+        : (state.language !== "es" ? `${name} archived locally. Server sync needs review.` : `${name} archivado localmente. La sincronizacion del servidor requiere revision.`),
       result.remote?.ok || result.remote?.skipped ? "success" : "warning",
     );
     return;
@@ -7717,7 +8111,7 @@ async function handleDashboardGroupListClick(event) {
   if (!normalizePilotParticipantId(participantId)) return;
   refreshPilotGroupSurfaces({ selectedId: participantId });
   notify(
-    state.language === "en"
+    state.language !== "es"
       ? `${getPilotParticipantName(participantId)} is now the active group/person.`
       : `${getPilotParticipantName(participantId)} queda como grupo/persona activo.`,
     "success",
@@ -7738,7 +8132,7 @@ async function handleCaptureQuickGroupAdd() {
   if (nameInput) nameInput.value = "";
   if (roleInput) roleInput.value = "";
   refreshPilotGroupSurfaces({ selectedId: result.participant.id, renderAdminPanel: true });
-  const suffix = remote.ok || remote.skipped ? "" : state.language === "en" ? " Server sync will need review." : " La sincronizacion con servidor requiere revision.";
+  const suffix = remote.ok || remote.skipped ? "" : state.language !== "es" ? " Server sync will need review." : " La sincronizacion con servidor requiere revision.";
   notify(`${getPilotGroupMessage(result)}${suffix}`, remote.ok ? "success" : result.existed ? "info" : "success");
 }
 
@@ -8214,7 +8608,7 @@ function applyDailyStaticActionsLanguage() {
 }
 
 function getVoiceCommandExamples() {
-  return state.language === "en"
+  return state.language !== "es"
     ? ["Hi V, take note: this park is beautiful", "V, schedule dinner today at 8 pm", "V, save this: great service", "V, open report"]
     : ["Hola V, toma nota: este parque es hermoso", "V, agenda cena hoy a las 8 pm", "V, guarda esto: excelente atención", "V, abrir reporte"];
 }
@@ -8258,7 +8652,7 @@ function populateStaticControls() {
   const assetTypeSelect = document.getElementById("assetTypeFilter");
   const selectedAssetType = assetTypeSelect.value || "all";
   const assetTypeOptions =
-    state.language === "en"
+    state.language !== "es"
       ? [
           ["all", "All types"],
           ["image", "Images"],
@@ -8335,7 +8729,7 @@ function populateStaticControls() {
 
   const assetEventLinkSelect = document.getElementById("assetEventLinkFilter");
   const selectedAssetEventLink = assetEventLinkSelect?.value || state.assetFilters.eventLink || "all";
-  const assetEventLinkOptions = state.language === "en"
+  const assetEventLinkOptions = state.language !== "es"
     ? [
         ["all", "All links"],
         ["linked", "Linked to event"],
@@ -8378,7 +8772,7 @@ function populateStaticControls() {
   agendaTypeSelects.forEach((select) => {
     const selectedValue = select.value || (select.id === "agendaTypeFilter" ? "all" : "Personal");
     select.innerHTML = "";
-    if (select.id === "agendaTypeFilter") select.append(new Option(state.language === "en" ? "All types" : "Todos los tipos", "all"));
+    if (select.id === "agendaTypeFilter") select.append(new Option(state.language !== "es" ? "All types" : "Todos los tipos", "all"));
     agendaTypes.forEach((type) => select.append(new Option(displayAgendaType(type), type)));
     if ([...select.options].some((option) => option.value === selectedValue)) select.value = selectedValue;
   });
@@ -8430,17 +8824,17 @@ function updatePublicationTypeHelp() {
   const channel = document.getElementById("publicationChannelInput")?.value || "PDF/HTML";
   const style = document.getElementById("publicationStyleInput")?.value || "Profesional";
   const guide = getPublicationTypeGuide(type);
-  const title = state.language === "en" ? displayPublicationType(type) : type;
-  const purpose = state.language === "en" ? translatePublicationGuideText(guide.purpose) : guide.purpose;
-  const bestFor = state.language === "en" ? translatePublicationGuideText(guide.bestFor) : guide.bestFor;
-  const mediaPolicy = state.language === "en" ? translatePublicationGuideText(guide.mediaPolicy) : guide.mediaPolicy;
-  const channelLabel = state.language === "en" ? "Recommended channels" : "Canales recomendados";
-  const mediaLabel = state.language === "en" ? "How media is used" : "Cómo usa la multimedia";
-  const structure = (guide.structure || []).map((item) => state.language === "en" ? translatePublicationGuideText(item) : item);
+  const title = state.language !== "es" ? displayPublicationType(type) : type;
+  const purpose = state.language !== "es" ? translatePublicationGuideText(guide.purpose) : guide.purpose;
+  const bestFor = state.language !== "es" ? translatePublicationGuideText(guide.bestFor) : guide.bestFor;
+  const mediaPolicy = state.language !== "es" ? translatePublicationGuideText(guide.mediaPolicy) : guide.mediaPolicy;
+  const channelLabel = state.language !== "es" ? "Recommended channels" : "Canales recomendados";
+  const mediaLabel = state.language !== "es" ? "How media is used" : "Cómo usa la multimedia";
+  const structure = (guide.structure || []).map((item) => state.language !== "es" ? translatePublicationGuideText(item) : item);
   box.innerHTML = `
     <strong>${escapeHtml(title)}</strong>
     <p>${escapeHtml(purpose)}</p>
-    <p><b>${escapeHtml(state.language === "en" ? "Best for" : "Sirve para")}:</b> ${escapeHtml(bestFor)}</p>
+    <p><b>${escapeHtml(state.language !== "es" ? "Best for" : "Sirve para")}:</b> ${escapeHtml(bestFor)}</p>
     <p><b>${escapeHtml(mediaLabel)}:</b> ${escapeHtml(mediaPolicy || "")}</p>
     <p><b>${escapeHtml(channelLabel)}:</b> ${(guide.channels || []).map((item) => `<span class="publication-guide-chip">${escapeHtml(item)}</span>`).join(" ")}</p>
     ${renderPublicationTypeChannelFit(type, channel)}
@@ -8502,11 +8896,11 @@ function getPublicationChannelPlaybook(channel) {
 
 function renderPublicationChannelPlaybook(channel, currentType) {
   const profile = getPublicationChannelPlaybook(channel);
-  const title = state.language === "en" ? "Channel playbook" : "Playbook del canal";
-  const subtitle = state.language === "en"
+  const title = state.language !== "es" ? "Channel playbook" : "Playbook del canal";
+  const subtitle = state.language !== "es"
     ? "Use this to choose the right format before generating the draft."
     : "Úsalo para elegir el formato correcto antes de generar el borrador.";
-  const items = state.language === "en"
+  const items = state.language !== "es"
     ? [
         ["Audience", translatePublicationGuideText(profile.audience)],
         ["Rhythm", translatePublicationGuideText(profile.rhythm)],
@@ -8542,7 +8936,7 @@ function renderPublicationChannelPlaybook(channel, currentType) {
           <button type="button" data-publication-preset="${escapeHtml(template.id)}">
             <span>${escapeHtml(displayPublicationType(template.type))}</span>
             <b>${escapeHtml(displayPublicationStyle(template.style))}</b>
-            <small>${escapeHtml(state.language === "en" ? "Apply recipe" : "Aplicar receta")}</small>
+            <small>${escapeHtml(state.language !== "es" ? "Apply recipe" : "Aplicar receta")}</small>
           </button>
         `).join("")}
       </div>
@@ -8557,8 +8951,8 @@ function renderPublicationPresetSuggestions(type, channel) {
     .filter((template, index, list) => list.findIndex((item) => item.id === template.id) === index)
     .slice(0, 4);
   if (!suggestions.length) return "";
-  const title = state.language === "en" ? "Suggested formats before generating" : "Formatos sugeridos antes de generar";
-  const help = state.language === "en"
+  const title = state.language !== "es" ? "Suggested formats before generating" : "Formatos sugeridos antes de generar";
+  const help = state.language !== "es"
     ? "Choose one to align type, style, and channel before creating the draft."
     : "Elige uno para alinear tipo, estilo y canal antes de crear el borrador.";
   return `
@@ -8610,11 +9004,11 @@ function getPublicationCompositionProfile(type, channel, style) {
 
 function renderPublicationCompositionPlan(type, channel, style) {
   const profile = getPublicationCompositionProfile(type, channel, style);
-  const title = state.language === "en" ? "Composition recipe" : "Receta de composición";
-  const help = state.language === "en"
+  const title = state.language !== "es" ? "Composition recipe" : "Receta de composición";
+  const help = state.language !== "es"
     ? "This is the structure the draft will follow before export."
     : "Esta es la estructura que seguirá el borrador antes de exportar.";
-  const items = state.language === "en"
+  const items = state.language !== "es"
     ? [
         ["Layout", translatePublicationGuideText(profile.layout)],
         ["Media", translatePublicationGuideText(profile.media)],
@@ -8652,7 +9046,7 @@ function renderPublicationTypeChannelFit(type, channel) {
   const exact = recommended.includes(channel);
   const indirect = channel === "PDF/HTML" || channel === "Blog/Web";
   const status = exact || indirect ? "ok" : "review";
-  const label = state.language === "en"
+  const label = state.language !== "es"
     ? exact
       ? "Strong fit"
       : indirect
@@ -8663,7 +9057,7 @@ function renderPublicationTypeChannelFit(type, channel) {
       : indirect
         ? "Buen documento maestro"
         : "Revisar encaje del canal";
-  const detail = state.language === "en"
+  const detail = state.language !== "es"
     ? exact
       ? `${displayPublicationType(type)} is naturally suited for ${channel}.`
       : indirect
@@ -8691,7 +9085,7 @@ function handlePublicationPresetClick(event) {
   document.getElementById("publicationStyleInput").value = template.style;
   document.getElementById("publicationChannelInput").value = template.channel;
   updatePublicationTypeHelp();
-  document.getElementById("publicationStatus").textContent = state.language === "en"
+  document.getElementById("publicationStatus").textContent = state.language !== "es"
     ? "Suggested publication format applied."
     : "Formato sugerido aplicado.";
 }
@@ -8924,15 +9318,15 @@ function getPublicationExperiences() {
 
 function getIntegrationSourceFilterOptions() {
   return [
-    ["all", state.language === "en" ? "All origins" : "Todos los origenes"],
-    ["pwa", state.language === "en" ? "PWA / manual capture" : "PWA / captura manual"],
+    ["all", state.language !== "es" ? "All origins" : "Todos los origenes"],
+    ["pwa", state.language !== "es" ? "PWA / manual capture" : "PWA / captura manual"],
     ["vibeapp", "Vibeapp"],
     ["health-connect", "Health Connect / Samsung"],
     ["oura", "Oura"],
     ["apple-health", "Apple Health"],
     ["meta-oakley", "Meta/Oakley"],
-    ["wearable", state.language === "en" ? "Wearables / biometrics" : "Wearables / biometria"],
-    ["external", state.language === "en" ? "Other external sources" : "Otras fuentes externas"],
+    ["wearable", state.language !== "es" ? "Wearables / biometrics" : "Wearables / biometria"],
+    ["external", state.language !== "es" ? "Other external sources" : "Otras fuentes externas"],
   ];
 }
 
@@ -9072,7 +9466,7 @@ function buildGlobalProgressSnapshot() {
       connectorReadiness.score * 0.18 +
       total.full * 0.14,
   );
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         title: "Global Progress",
         subtitle: "Implemented product capability. Current browser data is audited separately in Current data.",
@@ -9157,7 +9551,7 @@ function buildGlobalProgressSnapshot() {
     { key: "connectors", title: labels.connectors, score: connectorReadiness.score, detail: labels.connectorsDetail, view: "admin", focus: "externalIntegrationPanel" },
     { key: "full", title: labels.full, score: fullAmbitionOverall, detail: labels.fullDetail, view: "admin", focus: "publishPlanPanel" },
   ];
-  const routeLabels = state.language === "en"
+  const routeLabels = state.language !== "es"
     ? {
         ownerOps: "Technical ops",
         ownerContent: "Content/product",
@@ -9369,12 +9763,12 @@ function renderDashboardDataStatusFallback(error) {
   container.innerHTML = `
     <article class="is-review">
       <div>
-        <span>${escapeHtml(state.language === "en" ? "Current data" : "Datos actuales")}</span>
-        <strong>${escapeHtml(state.language === "en" ? "Data status needs refresh" : "Estado de datos requiere refresco")}</strong>
-        <p>${escapeHtml(state.language === "en" ? "The app is loaded, but the data panel could not finish rendering. Press Update app; your experiences and assets are not deleted." : "La app cargó, pero el panel de datos no terminó de renderizar. Pulsa Actualizar app; no se borran tus experiencias ni activos.")}</p>
+        <span>${escapeHtml(state.language !== "es" ? "Current data" : "Datos actuales")}</span>
+        <strong>${escapeHtml(state.language !== "es" ? "Data status needs refresh" : "Estado de datos requiere refresco")}</strong>
+        <p>${escapeHtml(state.language !== "es" ? "The app is loaded, but the data panel could not finish rendering. Press Update app; your experiences and assets are not deleted." : "La app cargó, pero el panel de datos no terminó de renderizar. Pulsa Actualizar app; no se borran tus experiencias ni activos.")}</p>
       </div>
       <dl>
-        <div><dt>${escapeHtml(state.language === "en" ? "Version" : "Versión")}</dt><dd>${escapeHtml(APP_VERSION)}</dd></div>
+        <div><dt>${escapeHtml(state.language !== "es" ? "Version" : "Versión")}</dt><dd>${escapeHtml(APP_VERSION)}</dd></div>
         <div><dt>${escapeHtml("Detalle")}</dt><dd>${escapeHtml(error?.message || "render_data_status")}</dd></div>
       </dl>
     </article>
@@ -9388,20 +9782,20 @@ function renderGlobalProgressFallback(error) {
   container.innerHTML = `
     <div class="global-progress-heading">
       <div>
-        <h2>${escapeHtml(state.language === "en" ? "Global Progress" : "Estado global de avance")}</h2>
-        <p>${escapeHtml(state.language === "en" ? "The progress panel did not finish rendering. The app keeps the operational flow available." : "El panel de avance no terminó de renderizar. La app mantiene disponible el flujo operativo.")}</p>
+        <h2>${escapeHtml(state.language !== "es" ? "Global Progress" : "Estado global de avance")}</h2>
+        <p>${escapeHtml(state.language !== "es" ? "The progress panel did not finish rendering. The app keeps the operational flow available." : "El panel de avance no terminó de renderizar. La app mantiene disponible el flujo operativo.")}</p>
       </div>
       <div class="global-progress-score">
-        <span>${escapeHtml(state.language === "en" ? "Version" : "Versión")}</span>
+        <span>${escapeHtml(state.language !== "es" ? "Version" : "Versión")}</span>
         <strong>${escapeHtml(APP_VERSION.slice(-3))}</strong>
       </div>
     </div>
     <div class="global-progress-next">
       <div>
-        <strong>${escapeHtml(state.language === "en" ? "Action required" : "Acción requerida")}</strong>
-        <p>${escapeHtml(state.language === "en" ? "Press Update app. If the warning remains, open Administration and run the control audit." : "Pulsa Actualizar app. Si el aviso sigue, abre Administración y ejecuta la auditoría de control.")}</p>
+        <strong>${escapeHtml(state.language !== "es" ? "Action required" : "Acción requerida")}</strong>
+        <p>${escapeHtml(state.language !== "es" ? "Press Update app. If the warning remains, open Administration and run the control audit." : "Pulsa Actualizar app. Si el aviso sigue, abre Administración y ejecuta la auditoría de control.")}</p>
       </div>
-      <button class="ghost-button" type="button" data-backlog-view="admin" data-backlog-focus="adminGlobalProgressPanel">${escapeHtml(state.language === "en" ? "Open Admin" : "Abrir Administración")}</button>
+      <button class="ghost-button" type="button" data-backlog-view="admin" data-backlog-focus="adminGlobalProgressPanel">${escapeHtml(state.language !== "es" ? "Open Admin" : "Abrir Administración")}</button>
     </div>
     <p class="card-meta">${escapeHtml(error?.message || "render_global_progress")} · ${escapeHtml(APP_VERSION)}</p>
   `;
@@ -9419,40 +9813,40 @@ function renderDashboardDataStatusPanel() {
   const isRemote = state.persistence === "supabase" || state.apiStatus?.mode === "supabase" || state.config?.persistence === "supabase";
   const hasSession = Boolean(state.session?.access_token);
   const statusText = isRemote && hasSession
-    ? state.language === "en" ? "Your data is available" : "Tus datos estan disponibles"
+    ? state.language !== "es" ? "Your data is available" : "Tus datos estan disponibles"
     : hasSession
-      ? state.language === "en" ? "Working with available data" : "Trabajando con datos disponibles"
-      : state.language === "en" ? "Sign in to see shared data" : "Inicia sesion para ver datos compartidos";
+      ? state.language !== "es" ? "Working with available data" : "Trabajando con datos disponibles"
+      : state.language !== "es" ? "Sign in to see shared data" : "Inicia sesion para ver datos compartidos";
   const syncText = pendingQueue || pendingAssets
-    ? state.language === "en"
+    ? state.language !== "es"
       ? `${pendingQueue + pendingAssets} item(s) need sync`
       : `${pendingQueue + pendingAssets} elemento(s) requieren sincronizacion`
-    : state.language === "en" ? "No pending sync" : "Sin pendientes de sincronizacion";
+    : state.language !== "es" ? "No pending sync" : "Sin pendientes de sincronizacion";
   const lastSyncAt = state.serverSync?.checkedAt || state.connectivity?.lastOkAt || state.apiStatus?.checkedAt || "";
   const lastSyncText = lastSyncAt
     ? formatDate(lastSyncAt)
-    : state.language === "en" ? "Not confirmed yet" : "Aun no confirmado";
+    : state.language !== "es" ? "Not confirmed yet" : "Aun no confirmado";
   const modeText = isRemote
-    ? state.language === "en" ? "Supabase" : "Supabase"
-    : state.language === "en" ? "Local fallback" : "Respaldo local";
+    ? state.language !== "es" ? "Supabase" : "Supabase"
+    : state.language !== "es" ? "Local fallback" : "Respaldo local";
   const scopeText = state.dashboardFilters?.pilotParticipantId && state.dashboardFilters.pilotParticipantId !== "all"
     ? getPilotParticipantName(state.dashboardFilters.pilotParticipantId)
-    : state.language === "en" ? "All groups" : "Todos los grupos";
+    : state.language !== "es" ? "All groups" : "Todos los grupos";
   container.innerHTML = `
     <article class="${isRemote && hasSession ? "is-ok" : "is-review"}">
       <div>
-        <span>${escapeHtml(state.language === "en" ? "Current data" : "Datos actuales")}</span>
+        <span>${escapeHtml(state.language !== "es" ? "Current data" : "Datos actuales")}</span>
         <strong>${escapeHtml(statusText)}</strong>
-        <p>${escapeHtml(state.language === "en" ? "Daily work stays here. Technical checks and connector setup live in Operation." : "El trabajo diario queda aqui. Las pruebas tecnicas y conectores viven en Operacion.")}</p>
+        <p>${escapeHtml(state.language !== "es" ? "Daily work stays here. Technical checks and connector setup live in Operation." : "El trabajo diario queda aqui. Las pruebas tecnicas y conectores viven en Operacion.")}</p>
       </div>
       <dl>
-        <div><dt>${escapeHtml(state.language === "en" ? "Scope" : "Vista")}</dt><dd>${escapeHtml(scopeText || "-")}</dd></div>
-        <div><dt>${escapeHtml(state.language === "en" ? "Experiences" : "Experiencias")}</dt><dd>${escapeHtml(String(scopedExperiences.length))}</dd></div>
-        <div><dt>${escapeHtml(state.language === "en" ? "Assets" : "Activos")}</dt><dd>${escapeHtml(String(scopedAssets.length))}</dd></div>
-        <div><dt>${escapeHtml(state.language === "en" ? "Active groups" : "Grupos activos")}</dt><dd>${escapeHtml(String(getActivePilotParticipants().length || 0))}</dd></div>
-        <div><dt>${escapeHtml(state.language === "en" ? "Mode" : "Modo")}</dt><dd>${escapeHtml(modeText)}</dd></div>
-        <div><dt>${escapeHtml(state.language === "en" ? "Sync" : "Sync")}</dt><dd>${escapeHtml(syncText)}</dd></div>
-        <div><dt>${escapeHtml(state.language === "en" ? "Last check" : "Ultima revision")}</dt><dd>${escapeHtml(lastSyncText)}</dd></div>
+        <div><dt>${escapeHtml(state.language !== "es" ? "Scope" : "Vista")}</dt><dd>${escapeHtml(scopeText || "-")}</dd></div>
+        <div><dt>${escapeHtml(state.language !== "es" ? "Experiences" : "Experiencias")}</dt><dd>${escapeHtml(String(scopedExperiences.length))}</dd></div>
+        <div><dt>${escapeHtml(state.language !== "es" ? "Assets" : "Activos")}</dt><dd>${escapeHtml(String(scopedAssets.length))}</dd></div>
+        <div><dt>${escapeHtml(state.language !== "es" ? "Active groups" : "Grupos activos")}</dt><dd>${escapeHtml(String(getActivePilotParticipants().length || 0))}</dd></div>
+        <div><dt>${escapeHtml(state.language !== "es" ? "Mode" : "Modo")}</dt><dd>${escapeHtml(modeText)}</dd></div>
+        <div><dt>${escapeHtml(state.language !== "es" ? "Sync" : "Sync")}</dt><dd>${escapeHtml(syncText)}</dd></div>
+        <div><dt>${escapeHtml(state.language !== "es" ? "Last check" : "Ultima revision")}</dt><dd>${escapeHtml(lastSyncText)}</dd></div>
       </dl>
     </article>
   `;
@@ -9471,42 +9865,42 @@ function analyzePublicationScopeRecommendation() {
   let type = "Reporte narrativo";
   let style = "Revista Premium";
   let channel = "PDF/HTML";
-  let reason = state.language === "en"
+  let reason = state.language !== "es"
     ? "Good default for turning several experiences into a readable memory."
     : "Buen punto de partida para convertir varias experiencias en una memoria legible.";
   if (hasHealth || topCategory === "Salud") {
     type = "Ficha de salud";
     style = "Clínico claro";
     channel = "PDF/HTML";
-    reason = state.language === "en"
+    reason = state.language !== "es"
       ? "Health or biometric evidence benefits from clear language, evidence, and careful privacy."
       : "La evidencia de salud o biometría necesita lenguaje claro, evidencia y privacidad cuidadosa.";
   } else if (imageCount + videoCount >= 4) {
     type = "Álbum experiencial";
     style = topCategory === "Viajes / Paseos" ? "Turístico" : "Bitácora Viva";
     channel = "PDF/HTML";
-    reason = state.language === "en"
+    reason = state.language !== "es"
       ? "The selected scope has enough visual material for a memory-style publication."
       : "El alcance seleccionado tiene suficiente material visual para una publicación tipo memoria.";
   } else if (documentCount >= 2 || experiences.length >= 8) {
     type = "Dossier PDF";
     style = "Revista Premium";
     channel = "PDF/HTML";
-    reason = state.language === "en"
+    reason = state.language !== "es"
       ? "Several records or documents need a structured document, not a short post."
       : "Varios registros o documentos necesitan un documento estructurado, no una publicación breve.";
   } else if (experiences.length <= 2 && imageCount + videoCount >= 1) {
     type = "Publicación social rápida";
     style = "Social cálido";
     channel = "WhatsApp";
-    reason = state.language === "en"
+    reason = state.language !== "es"
       ? "A small scope with media is better as a short, reviewable message."
       : "Un alcance corto con multimedia funciona mejor como mensaje breve y revisable.";
   } else if (audioCount > 0 && imageCount + videoCount < 2) {
     type = "Carta / email largo";
     style = "Social cálido";
     channel = "Email";
-    reason = state.language === "en"
+    reason = state.language !== "es"
       ? "Audio-heavy material usually works better as edited narration or a message."
       : "El material con mucho audio suele funcionar mejor como narración editada o mensaje.";
   }
@@ -9545,7 +9939,7 @@ function renderDashboardGroupOnboarding() {
     .slice(0, 8);
   const activeId = state.dashboardFilters?.pilotParticipantId || "all";
   if (status) {
-    status.textContent = state.language === "en"
+    status.textContent = state.language !== "es"
       ? `${groups.length} groups/people available`
       : `${groups.length} grupos/personas disponibles`;
   }
@@ -9553,29 +9947,29 @@ function renderDashboardGroupOnboarding() {
     ? groups
         .map((item) => {
           const selected = item.id === activeId;
-          const detail = [item.role, item.isPrimaryUser ? (state.language === "en" ? "Main account" : "Cuenta principal") : ""].filter(Boolean).join(" · ");
+          const detail = [item.role, item.isPrimaryUser ? (state.language !== "es" ? "Main account" : "Cuenta principal") : ""].filter(Boolean).join(" · ");
           return `
             <article class="${selected ? "is-selected" : ""}">
               <div>
                 <strong>${escapeHtml(item.name)}</strong>
-                <p>${escapeHtml(detail || (state.language === "en" ? "Private account group" : "Grupo privado de la cuenta"))}</p>
+                <p>${escapeHtml(detail || (state.language !== "es" ? "Private account group" : "Grupo privado de la cuenta"))}</p>
               </div>
               <div class="participant-card-actions">
-                <button class="ghost-button" type="button" data-dashboard-group-select="${escapeHtml(item.id)}">${escapeHtml(selected ? (state.language === "en" ? "In use" : "En uso") : (state.language === "en" ? "Use" : "Usar"))}</button>
-                ${item.isPrimaryUser ? "" : `<button class="ghost-button subtle-danger" type="button" data-dashboard-group-archive="${escapeHtml(item.id)}">${escapeHtml(state.language === "en" ? "Archive" : "Archivar")}</button>`}
+                <button class="ghost-button" type="button" data-dashboard-group-select="${escapeHtml(item.id)}">${escapeHtml(selected ? (state.language !== "es" ? "In use" : "En uso") : (state.language !== "es" ? "Use" : "Usar"))}</button>
+                ${item.isPrimaryUser ? "" : `<button class="ghost-button subtle-danger" type="button" data-dashboard-group-archive="${escapeHtml(item.id)}">${escapeHtml(state.language !== "es" ? "Archive" : "Archivar")}</button>`}
               </div>
             </article>
           `;
         })
         .join("")
-    : `<p class="card-meta">${escapeHtml(state.language === "en" ? "Create your first group/person to organize experiences." : "Crea tu primer grupo/persona para ordenar experiencias.")}</p>`;
+    : `<p class="card-meta">${escapeHtml(state.language !== "es" ? "Create your first group/person to organize experiences." : "Crea tu primer grupo/persona para ordenar experiencias.")}</p>`;
 }
 
 function updateDashboardParticipantControl() {
   const select = document.getElementById("dashboardPilotParticipantFilter");
   if (!select) return;
   const current = state.dashboardFilters?.pilotParticipantId || select.value || "all";
-  const allLabel = state.language === "en" ? "All groups/people" : "Todos los grupos/personas";
+  const allLabel = state.language !== "es" ? "All groups/people" : "Todos los grupos/personas";
   const options = getActivePilotParticipants()
     .map((item) => ({ value: item.id, label: item.name || item.role || item.id }))
     .filter((item) => item.value && item.label);
@@ -9586,8 +9980,8 @@ function updateDashboardParticipantControl() {
   if (status) {
     const name = select.value === "all" ? "" : getPilotParticipantName(select.value);
     status.textContent = name
-      ? state.language === "en" ? `Viewing ${name}` : `Vista de ${name}`
-      : state.language === "en" ? "General view" : "Vista general";
+      ? state.language !== "es" ? `Viewing ${name}` : `Vista de ${name}`
+      : state.language !== "es" ? "General view" : "Vista general";
   }
 }
 
@@ -9648,14 +10042,14 @@ function updatePilotParticipantControls() {
     .filter((item) => item.value && item.label);
   if (captureSelect) {
     const current = captureSelect.value || "";
-    const emptyLabel = state.language === "en" ? "No group / main user" : "Sin grupo / usuario principal";
+    const emptyLabel = state.language !== "es" ? "No group / main user" : "Sin grupo / usuario principal";
     captureSelect.innerHTML = [`<option value="">${escapeHtml(emptyLabel)}</option>`, ...participantOptions.map((item) => `<option value="${escapeHtml(item.value)}">${escapeHtml(item.label)}</option>`)].join("");
     captureSelect.value = participantOptions.some((item) => item.value === current) ? current : "";
   }
   const agendaParticipantInput = document.getElementById("agendaPilotParticipantInput");
   if (agendaParticipantInput) {
     const current = agendaParticipantInput.value || "";
-    const emptyLabel = state.language === "en" ? "General event / no group" : "Evento general / sin grupo";
+    const emptyLabel = state.language !== "es" ? "General event / no group" : "Evento general / sin grupo";
     agendaParticipantInput.innerHTML = [`<option value="">${escapeHtml(emptyLabel)}</option>`, ...participantOptions.map((item) => `<option value="${escapeHtml(item.value)}">${escapeHtml(item.label)}</option>`)].join("");
     agendaParticipantInput.value = participantOptions.some((item) => item.value === current) ? current : "";
   }
@@ -9663,7 +10057,7 @@ function updatePilotParticipantControls() {
     const select = config.element;
     if (!select) return;
     const current = config.value || select.value || "all";
-    const allLabel = state.language === "en" ? config.allEn : config.allEs;
+    const allLabel = state.language !== "es" ? config.allEn : config.allEs;
     select.innerHTML = [`<option value="all">${escapeHtml(allLabel)}</option>`, ...participantOptions.map((item) => `<option value="${escapeHtml(item.value)}">${escapeHtml(item.label)}</option>`)].join("");
     select.value = participantOptions.some((item) => item.value === current) ? current : "all";
     config.value = select.value;
@@ -9684,8 +10078,8 @@ function updatePilotParticipantScopeStatus(statusId, participantId) {
   }
   const name = participantId === "all" ? "" : getPilotParticipantName(participantId);
   status.textContent = name
-    ? state.language === "en" ? `Using ${name}` : `Usando ${name}`
-    : state.language === "en" ? "General source" : "Fuente general";
+    ? state.language !== "es" ? `Using ${name}` : `Usando ${name}`
+    : state.language !== "es" ? "General source" : "Fuente general";
 }
 
 function setAnalyticalParticipantScope(participantId, source = "") {
@@ -9720,17 +10114,17 @@ function syncExperienceToAgenda(experience = {}) {
   const participant = getExperiencePilotParticipantLabel(experience);
   const agendaEvent = {
     id: `agenda-exp-${experience.id}`,
-    title: experience.title || (state.language === "en" ? "Experience" : "Experiencia"),
+    title: experience.title || (state.language !== "es" ? "Experience" : "Experiencia"),
     type: "Experiencia",
     description: [
-      experience.objective ? `${state.language === "en" ? "Objective" : "Objetivo"}: ${experience.objective}` : "",
-      participant ? `${state.language === "en" ? "Group/person" : "Grupo/persona"}: ${participant}` : "",
+      experience.objective ? `${state.language !== "es" ? "Objective" : "Objetivo"}: ${experience.objective}` : "",
+      participant ? `${state.language !== "es" ? "Group/person" : "Grupo/persona"}: ${participant}` : "",
       experience.notes || "",
     ].filter(Boolean).join("\n\n"),
     startAt: start.toISOString(),
     endAt: end.toISOString(),
-    location: experience.location || (state.language === "en" ? "No location" : "Sin ubicación"),
-    participants: participant || experience.people || (state.language === "en" ? "Unassigned" : "Sin asignar"),
+    location: experience.location || (state.language !== "es" ? "No location" : "Sin ubicación"),
+    participants: participant || experience.people || (state.language !== "es" ? "Unassigned" : "Sin asignar"),
     priority: "normal",
     status: new Date(experience.timestamp).getTime() <= Date.now() ? "Completado" : "Planificado",
     reminders: "",
@@ -9802,7 +10196,7 @@ function requiresRemotePersistence() {
 }
 
 function buildCaptureBlockedStatus(reason = "auth_required") {
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         title: "Sign in before saving",
         auth: "Sign in first so the experience is saved on all your devices. The form will stay available.",
@@ -9828,7 +10222,7 @@ function buildCaptureBlockedStatus(reason = "auth_required") {
 }
 
 function buildCaptureSaveStatus(experience, apiResult = {}, edited = false) {
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         title: edited ? "Experience updated" : "Experience saved",
         localOnlyTitle: "Saved only on this device",
@@ -9979,10 +10373,10 @@ async function autosaveCaptureDraft(reason = "input") {
       state.captureDraftAutosave.lastSignature = signature;
       state.captureDraftAutosave.lastSavedAt = Date.now();
       state.lastSavedExperienceId = experience.id;
-      const message = state.language === "en" ? "Draft synced across devices." : "Borrador sincronizado en tus dispositivos.";
+      const message = state.language !== "es" ? "Draft synced across devices." : "Borrador sincronizado en tus dispositivos.";
       state.captureSaveStatus = {
         type: "success",
-        title: state.language === "en" ? "Live sync active" : "Sincronización activa",
+        title: state.language !== "es" ? "Live sync active" : "Sincronización activa",
         detail: message,
         experienceId: experience.id,
         experienceTitle: experience.title,
@@ -10044,7 +10438,7 @@ function refreshLiveCaptureDependentViews() {
 function setCaptureLiveSyncStatus(status = "pending", reason = "") {
   const hasContent = canLiveSyncCaptureDraft();
   if (!hasContent) return;
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         pending: "Preparing live sync...",
         syncing: "Syncing draft across devices...",
@@ -10080,7 +10474,7 @@ async function readAutosaveCaptureDraft() {
   const notes = String(experience.notes || "").trim();
   const objective = String(experience.objective || "").trim();
   if (!experience.title) experience.title = buildAutosaveDraftTitle(notes || objective || experience.attachments?.[0]?.name || "");
-  if (!experience.objective) experience.objective = state.language === "en" ? "Live capture in progress" : "Captura en curso";
+  if (!experience.objective) experience.objective = state.language !== "es" ? "Live capture in progress" : "Captura en curso";
   experience.sourceType = experience.sourceType || "live_capture";
   experience.updatedAt = new Date().toISOString();
   return experience.title || notes || objective || experience.attachments?.length ? experience : null;
@@ -10089,7 +10483,7 @@ async function readAutosaveCaptureDraft() {
 function buildAutosaveDraftTitle(seed = "") {
   const text = String(seed || "").replace(/\s+/g, " ").trim();
   if (text) return buildAudioDraftTitle(text);
-  return state.language === "en" ? "Experience draft" : "Borrador de experiencia";
+  return state.language !== "es" ? "Experience draft" : "Borrador de experiencia";
 }
 
 function applyTemplate(template) {
@@ -10128,7 +10522,7 @@ function readSelectedFiles() {
   });
   if (accepted.length !== files.length) {
     notify(
-      state.language === "en"
+      state.language !== "es"
         ? `Some files were skipped. Vibe accepts supported image, audio, video, document, and compressed-file formats up to ${canUploadBinary ? 75 : 25} MB per file.`
         : `Algunos archivos se omitieron. Vibe acepta formatos compatibles de imagen, audio, video, documentos y comprimidos de hasta ${canUploadBinary ? 75 : 25} MB por archivo.`,
       "warn",
@@ -10315,7 +10709,7 @@ function renderCaptureEventPreview() {
   if (!box) return;
   const events = getCaptureEventOptions();
   const attachments = state.pendingAttachments || [];
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         title: "Internal events",
         empty: "If the experience has several moments, write one event per line. If not, leave this empty and the record will stay as one complete experience.",
@@ -10347,7 +10741,7 @@ function renderCaptureEventPreview() {
       <article class="capture-event-card">
         <span class="capture-event-number">${escapeHtml(String(event.order))}</span>
         <div>
-          <strong>${escapeHtml(event.title || `${state.language === "en" ? "Event" : "Evento"} ${event.order}`)}</strong>
+          <strong>${escapeHtml(event.title || `${state.language !== "es" ? "Event" : "Evento"} ${event.order}`)}</strong>
           ${event.description ? `<p>${escapeHtml(event.description)}</p>` : ""}
           <small>${escapeHtml(linkedCount ? `${linkedCount} ${labels.evidence}` : labels.none)}</small>
         </div>
@@ -10374,7 +10768,7 @@ function renderPendingAttachmentCard(attachment) {
   const eventOptions = getCaptureEventOptions();
   const selectedEventRef = getAttachmentEventRef(attachment, eventOptions);
   const eventSelectOptions = [
-    `<option value="">${escapeHtml(state.language === "en" ? "Whole experience" : "Toda la experiencia")}</option>`,
+    `<option value="">${escapeHtml(state.language !== "es" ? "Whole experience" : "Toda la experiencia")}</option>`,
     ...eventOptions.map((event) => `<option value="${escapeHtml(event.ref)}" ${event.ref === selectedEventRef ? "selected" : ""}>${escapeHtml(`${event.order}. ${event.label}`)}</option>`),
   ].join("");
   const previewMarkup =
@@ -10405,7 +10799,7 @@ function renderPendingAttachmentCard(attachment) {
         <p class="card-meta">${escapeHtml(formatFileSize(attachment.size))} · ${escapeHtml(t("labels.attachmentStoredInline"))} · ${escapeHtml(t("labels.attachmentReady"))}</p>
         <p>${escapeHtml(t("labels.attachmentProcessingHint"))}</p>
         <label class="attachment-event-link">
-          <span>${escapeHtml(state.language === "en" ? "Evidence belongs to" : "Evidencia de")}</span>
+          <span>${escapeHtml(state.language !== "es" ? "Evidence belongs to" : "Evidencia de")}</span>
           <select data-attachment-event-select="${escapeHtml(attachment.id)}">
             ${eventSelectOptions}
           </select>
@@ -10429,8 +10823,8 @@ function buildPendingMediaDetail(experience, apiResult = {}, label = "") {
   const pending = attachments
     .filter((attachment) => attachment?.remoteSyncFailed || (!attachment?.path && !attachment?.url && !attachment?.dataUrl))
     .map((attachment) => {
-      const fallbackName = state.language === "en" ? "unnamed file" : "archivo sin nombre";
-      const fallbackReason = state.language === "en" ? "upload did not complete" : "la subida no se completó";
+      const fallbackName = state.language !== "es" ? "unnamed file" : "archivo sin nombre";
+      const fallbackReason = state.language !== "es" ? "upload did not complete" : "la subida no se completó";
       const name = attachment.name || fallbackName;
       const reason = attachment.remoteSyncError || attachment.uploadError || fallbackReason;
       return `${name}: ${reason}`;
@@ -10564,7 +10958,7 @@ function startSpeechTranscription() {
   const recognition = new SpeechRecognition();
   recognition.continuous = true;
   recognition.interimResults = true;
-  recognition.lang = state.language === "en" ? "en-US" : "es-ES";
+  recognition.lang = state.language !== "es" ? "en-US" : "es-ES";
   recognition.addEventListener("result", (event) => {
     const transcript = Array.from(event.results)
       .map((result) => result[0]?.transcript || "")
@@ -10572,7 +10966,7 @@ function startSpeechTranscription() {
       .trim();
     state.liveTranscript = transcript;
     if (transcript) {
-      updateAudioCaptureStatus("recording", `${state.language === "en" ? "Recording" : "Grabando"}: ${transcript.slice(-70)}`);
+      updateAudioCaptureStatus("recording", `${state.language !== "es" ? "Recording" : "Grabando"}: ${transcript.slice(-70)}`);
     }
   });
   recognition.addEventListener("error", () => {
@@ -10633,9 +11027,9 @@ function renderAudioCaptureGuide() {
       <p>${escapeHtml(t("labels.audioCaptureGuideText"))}</p>
     </div>
     <ol>
-      <li>${escapeHtml(state.language === "en" ? "Press Record audio." : "Pulsa Grabar audio.")}</li>
-      <li>${escapeHtml(state.language === "en" ? "Speak naturally and press Stop." : "Habla con naturalidad y pulsa Detener.")}</li>
-      <li>${escapeHtml(state.language === "en" ? "Review the draft fields, attach more files if needed, and save." : "Revisa el borrador, adjunta más archivos si hace falta y guarda.")}</li>
+      <li>${escapeHtml(state.language !== "es" ? "Press Record audio." : "Pulsa Grabar audio.")}</li>
+      <li>${escapeHtml(state.language !== "es" ? "Speak naturally and press Stop." : "Habla con naturalidad y pulsa Detener.")}</li>
+      <li>${escapeHtml(state.language !== "es" ? "Review the draft fields, attach more files if needed, and save." : "Revisa el borrador, adjunta más archivos si hace falta y guarda.")}</li>
     </ol>
   `;
 }
@@ -10650,7 +11044,7 @@ function applyAudioTranscriptToCapture(transcript, options = {}) {
   const notesInput = document.getElementById("notesInput");
   if (titleInput && !titleInput.value.trim()) titleInput.value = buildAudioDraftTitle(text);
   if (objectiveInput && !objectiveInput.value.trim()) {
-    objectiveInput.value = state.language === "en" ? "Record and understand this experience" : "Registrar y comprender esta experiencia";
+    objectiveInput.value = state.language !== "es" ? "Record and understand this experience" : "Registrar y comprender esta experiencia";
   }
   if (durationInput && !String(durationInput.value || "").trim()) durationInput.value = inferDurationFromTranscript(text);
   if (categoryInput && (!categoryInput.value || categoryInput.value === "Trabajo")) {
@@ -10729,8 +11123,8 @@ function loadExperienceIntoForm(experience) {
 
 async function deleteExperience(id) {
   const experience = state.experiences.find((item) => item.id === id);
-  const title = experience?.title || (state.language === "en" ? "this experience" : "esta experiencia");
-  const message = state.language === "en"
+  const title = experience?.title || (state.language !== "es" ? "this experience" : "esta experiencia");
+  const message = state.language !== "es"
     ? `Delete "${title}"? This removes it from Library, Timeline, reports, and local assets linked to it.`
     : `¿Eliminar "${title}"? Se quitará de Librería, Línea de tiempo, reportes y activos locales vinculados.`;
   if (!confirm(message)) return;
@@ -10738,7 +11132,7 @@ async function deleteExperience(id) {
   saveExperiences();
   await deleteExperienceFromApi(id);
   renderAll();
-  notify(state.language === "en" ? "Experience deleted." : "Experiencia eliminada.", "success");
+  notify(state.language !== "es" ? "Experience deleted." : "Experiencia eliminada.", "success");
 }
 
 function openAdvancedDiagnostics() {
@@ -10763,7 +11157,7 @@ function safeShowView(view) {
       renderAdminRecovery(error);
     }
     notify(
-      state.language === "en"
+      state.language !== "es"
         ? "The section opened with a recoverable warning. Navigation remains available."
         : "La sección abrió con una advertencia recuperable. La navegación sigue disponible.",
       "warn",
@@ -10841,7 +11235,7 @@ function renderVisibleView(view = getActiveView()) {
 function renderViewRecovery(view = getActiveView(), error = null) {
   const section = document.getElementById(`${view}View`);
   if (!section) return;
-  const message = state.language === "en"
+  const message = state.language !== "es"
     ? "This section opened, but one panel could not finish loading. Navigation remains available."
     : "Esta seccion abrio, pero un panel no termino de cargar. La navegacion sigue disponible.";
   const detail = error?.message || String(error || "");
@@ -10856,13 +11250,13 @@ function renderViewRecovery(view = getActiveView(), error = null) {
 
 function renderAdminLoading() {
   const status = document.getElementById("adminHubStatus");
-  if (status) status.textContent = state.language === "en" ? "Loading" : "Cargando";
+  if (status) status.textContent = state.language !== "es" ? "Loading" : "Cargando";
   const box = document.getElementById("productSettingsPanel");
   if (!box) return;
   box.innerHTML = `
     <article class="status-panel">
-      <strong>${escapeHtml(state.language === "en" ? "Loading Administration..." : "Cargando Administracion...")}</strong>
-      <p>${escapeHtml(state.language === "en"
+      <strong>${escapeHtml(state.language !== "es" ? "Loading Administration..." : "Cargando Administracion...")}</strong>
+      <p>${escapeHtml(state.language !== "es"
         ? "Operational controls are loaded only when this section is opened."
         : "Los controles operativos se cargan solo al entrar en esta seccion.")}</p>
     </article>
@@ -10911,8 +11305,8 @@ async function handleIntegrationReturnFromUrl() {
   const detail = url.searchParams.get("detail") || "";
   const message = url.searchParams.get("message")
     || (status === "connected" || status === "diagnostic-ok"
-      ? state.language === "en" ? "Oura connected successfully." : "Oura quedo conectado correctamente."
-      : state.language === "en" ? "Oura did not finish connecting." : "Oura no termino de conectarse.");
+      ? state.language !== "es" ? "Oura connected successfully." : "Oura quedo conectado correctamente."
+      : state.language !== "es" ? "Oura did not finish connecting." : "Oura no termino de conectarse.");
   const callbackResult = {
     ok: status === "connected" || status === "diagnostic-ok",
     status,
@@ -10991,17 +11385,17 @@ function renderDashboardTimeContext() {
   const nextEvent = agendaEvents
     .filter((event) => event.status !== "Cancelado" && new Date(event.endAt) >= now)
     .sort((a, b) => new Date(a.startAt) - new Date(b.startAt))[0];
-  const locale = state.language === "en" ? "en-US" : "es";
+  const locale = state.language !== "es" ? "en-US" : "es";
   const dayName = now.toLocaleDateString(locale, { weekday: "long" });
   const fullDate = now.toLocaleDateString(locale, { day: "2-digit", month: "long", year: "numeric" });
   const time = now.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
   const nextText = nextEvent
     ? `${nextEvent.title} · ${formatDate(nextEvent.startAt)}`
-    : state.language === "en"
+    : state.language !== "es"
       ? "No upcoming linked event"
       : "Sin próximo evento vinculado";
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? { today: "Today", time: "Current time", zone: "Timezone", next: "Next event" }
     : { today: "Hoy", time: "Hora actual", zone: "Zona horaria", next: "Próximo evento" };
   box.innerHTML = `
@@ -11093,10 +11487,10 @@ function renderDashboardAttachmentStatus() {
   if (!box) return;
   const title = document.getElementById("dashboardAttachmentTitle");
   const status = document.getElementById("dashboardAttachmentStatus");
-  if (title) title.textContent = state.language === "en" ? "Attachment status" : "Estado de adjuntos";
-  if (status) status.textContent = state.language === "en" ? "Media and documents" : "Multimedia y documentos";
+  if (title) title.textContent = state.language !== "es" ? "Attachment status" : "Estado de adjuntos";
+  if (status) status.textContent = state.language !== "es" ? "Media and documents" : "Multimedia y documentos";
   const summary = summarizeAttachmentSyncState();
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         clearTitle: "All attachments are ready",
         clearDetail: summary.total
@@ -11154,7 +11548,7 @@ function renderDashboardAttachmentStatus() {
             ${visiblePending.map(({ experience, attachment }) => `
               <article>
                 <strong>${escapeHtml(attachment.name || t("labels.attachmentNeedsSync"))}</strong>
-                <span>${escapeHtml(experience.title || (state.language === "en" ? "Untitled experience" : "Experiencia sin título"))}</span>
+                <span>${escapeHtml(experience.title || (state.language !== "es" ? "Untitled experience" : "Experiencia sin título"))}</span>
               </article>
             `).join("")}
           </div>`
@@ -11171,7 +11565,7 @@ async function repairDashboardAttachments() {
   if (!summary.pending) {
     state.dashboardAttachmentFeedback = {
       type: "ok",
-      message: state.language === "en" ? "All attachments are ready." : "Todos los adjuntos están listos.",
+      message: state.language !== "es" ? "All attachments are ready." : "Todos los adjuntos están listos.",
     };
     renderDashboardAttachmentStatus();
     return;
@@ -11179,7 +11573,7 @@ async function repairDashboardAttachments() {
   if (!summary.retryable) {
     state.dashboardAttachmentFeedback = {
       type: "warn",
-      message: state.language === "en"
+      message: state.language !== "es"
         ? "Some files need to be selected again from the device where they exist."
         : "Algunos archivos deben volver a seleccionarse desde el dispositivo donde existen.",
     };
@@ -11193,14 +11587,14 @@ async function repairDashboardAttachments() {
     showAuthView();
     requestAnimationFrame(() => {
       const message = document.getElementById("authMessage");
-      if (message) message.textContent = state.language === "en"
+      if (message) message.textContent = state.language !== "es"
         ? "Sign in to repair attachments across your devices."
         : "Inicia sesión para reparar adjuntos en todos tus dispositivos.";
     });
     return;
   }
   if (status) {
-    status.textContent = state.language === "en" ? "Repairing attachments..." : "Reparando adjuntos...";
+    status.textContent = state.language !== "es" ? "Repairing attachments..." : "Reparando adjuntos...";
   }
   const experienceIds = new Set(summary.retryableItems.map((item) => item.experience.id));
   let repaired = 0;
@@ -11219,10 +11613,10 @@ async function repairDashboardAttachments() {
   await syncOfflineQueue({ silent: true });
   renderAll();
   const next = summarizeAttachmentSyncState();
-  const pendingText = state.language === "en"
+  const pendingText = state.language !== "es"
     ? `${next.pending} ${next.pending === 1 ? "attachment remains" : "attachments remain"} pending.`
     : `${next.pending} ${next.pending === 1 ? "adjunto sigue" : "adjuntos siguen"} pendiente${next.pending === 1 ? "" : "s"}.`;
-  const message = state.language === "en"
+  const message = state.language !== "es"
     ? `${repaired} ${repaired === 1 ? "attachment repaired" : "attachments repaired"}. ${pendingText}`
     : `${repaired} ${repaired === 1 ? "adjunto reparado" : "adjuntos reparados"}. ${pendingText}`;
   if (status) status.textContent = message;
@@ -11253,7 +11647,7 @@ function renderDashboardPilotReadiness() {
   const feedback = calculatePilotFeedbackSummary();
   const readiness = calculatePilotReadiness();
   const pendingChecks = getDashboardPilotPendingChecks(readiness);
-  const cards = state.language === "en"
+  const cards = state.language !== "es"
     ? [
         { label: "Manual", value: `${manual.score}%`, detail: `${manual.reviewed}/${manual.total} reviewed`, view: "manual", ok: manual.score >= 80 },
         { label: "Tests", value: `${tests.score}%`, detail: `${tests.completed}/${tests.total} complete`, view: "admin", focus: "pilotTestPlanPanel", ok: tests.score >= 80 },
@@ -11270,7 +11664,7 @@ function renderDashboardPilotReadiness() {
     <div class="dashboard-pilot-heading">
       <div>
         <strong>${escapeHtml(readiness.recommendation)}</strong>
-        <span>${escapeHtml(state.language === "en" ? `${readiness.ready}/${readiness.total} checks ready` : `${readiness.ready}/${readiness.total} controles listos`)}</span>
+        <span>${escapeHtml(state.language !== "es" ? `${readiness.ready}/${readiness.total} checks ready` : `${readiness.ready}/${readiness.total} controles listos`)}</span>
       </div>
       <span class="${readiness.score >= 80 ? "status-ok" : "status-warn"}">${escapeHtml(`${readiness.score}%`)}</span>
     </div>
@@ -11289,19 +11683,19 @@ function renderDashboardPilotReadiness() {
     </div>
     <div class="dashboard-pilot-next">
       <div>
-        <strong>${escapeHtml(state.language === "en" ? "Next action" : "Siguiente acción")}</strong>
+        <strong>${escapeHtml(state.language !== "es" ? "Next action" : "Siguiente acción")}</strong>
         <p>${escapeHtml(getDashboardPilotNextAction(readiness, manual, tests, participants, feedback))}</p>
       </div>
       <div class="dashboard-pilot-actions">
-        <button class="ghost-button" type="button" data-dashboard-pilot-action="copy">${escapeHtml(state.language === "en" ? "Copy summary" : "Copiar resumen")}</button>
-        <button class="ghost-button" type="button" data-backlog-view="admin" data-backlog-focus="pilotFeedbackPanel">${escapeHtml(state.language === "en" ? "Register feedback" : "Registrar feedback")}</button>
-        <button class="primary-button" type="button" data-backlog-view="admin" data-backlog-focus="pilotClosureRecordPanel">${escapeHtml(state.language === "en" ? "Open record" : "Abrir acta")}</button>
+        <button class="ghost-button" type="button" data-dashboard-pilot-action="copy">${escapeHtml(state.language !== "es" ? "Copy summary" : "Copiar resumen")}</button>
+        <button class="ghost-button" type="button" data-backlog-view="admin" data-backlog-focus="pilotFeedbackPanel">${escapeHtml(state.language !== "es" ? "Register feedback" : "Registrar feedback")}</button>
+        <button class="primary-button" type="button" data-backlog-view="admin" data-backlog-focus="pilotClosureRecordPanel">${escapeHtml(state.language !== "es" ? "Open record" : "Abrir acta")}</button>
       </div>
     </div>
     ${
       pendingChecks.length
         ? `<div class="dashboard-pilot-pending">
-            <strong>${escapeHtml(state.language === "en" ? "Pending now" : "Pendiente ahora")}</strong>
+            <strong>${escapeHtml(state.language !== "es" ? "Pending now" : "Pendiente ahora")}</strong>
             ${pendingChecks
               .map(
                 (check) => `
@@ -11313,7 +11707,7 @@ function renderDashboardPilotReadiness() {
               )
               .join("")}
           </div>`
-        : `<p class="dashboard-pilot-clear">${escapeHtml(state.language === "en" ? "No critical pilot pending items detected." : "No se detectan pendientes críticos del piloto.")}</p>`
+        : `<p class="dashboard-pilot-clear">${escapeHtml(state.language !== "es" ? "No critical pilot pending items detected." : "No se detectan pendientes críticos del piloto.")}</p>`
     }
   `;
 }
@@ -11324,19 +11718,19 @@ function getDashboardPilotPendingChecks(readiness = calculatePilotReadiness()) {
 
 function getDashboardPilotNextAction(readiness, manual, tests, participants, feedback) {
   if (manual.score < 80) {
-    return state.language === "en" ? "Review the user manual until onboarding reaches at least 80%." : "Revisar el manual hasta que el onboarding alcance al menos 80%.";
+    return state.language !== "es" ? "Review the user manual until onboarding reaches at least 80%." : "Revisar el manual hasta que el onboarding alcance al menos 80%.";
   }
   if (tests.score < 80) {
-    return state.language === "en" ? "Complete the minimum pilot test scenarios before expanding usage." : "Completar los escenarios mínimos de prueba antes de ampliar el uso.";
+    return state.language !== "es" ? "Complete the minimum pilot test scenarios before expanding usage." : "Completar los escenarios mínimos de prueba antes de ampliar el uso.";
   }
   if (participants.total > 50 || participants.needsOnboarding > 0) {
-    return state.language === "en" ? `Confirm participant onboarding and keep the cohort within ${PILOT_TARGET_USERS} users.` : `Confirmar onboarding de participantes y mantener el grupo dentro de ${PILOT_TARGET_USERS} usuarios.`;
+    return state.language !== "es" ? `Confirm participant onboarding and keep the cohort within ${PILOT_TARGET_USERS} users.` : `Confirmar onboarding de participantes y mantener el grupo dentro de ${PILOT_TARGET_USERS} usuarios.`;
   }
   if (feedback.blockingOpen > 0) {
-    return state.language === "en" ? "Resolve high or blocker feedback before inviting more users." : "Resolver feedback alto o bloqueante antes de invitar más usuarios.";
+    return state.language !== "es" ? "Resolve high or blocker feedback before inviting more users." : "Resolver feedback alto o bloqueante antes de invitar más usuarios.";
   }
   return readiness.score >= 90
-    ? state.language === "en" ? "Prepare the closure record and proceed with the controlled pilot." : "Preparar el acta de cierre y proceder con el piloto controlado."
+    ? state.language !== "es" ? "Prepare the closure record and proceed with the controlled pilot." : "Preparar el acta de cierre y proceder con el piloto controlado."
     : readiness.recommendation;
 }
 
@@ -11345,7 +11739,7 @@ async function handleDashboardPilotAction(event) {
   if (action === "copy") {
     const copied = await copyTextToClipboard(buildDashboardPilotSummary());
     const status = document.getElementById("dashboardPilotStatus");
-    if (status) status.textContent = copied ? (state.language === "en" ? "Pilot summary copied" : "Resumen del piloto copiado") : (state.language === "en" ? "Could not copy summary" : "No se pudo copiar el resumen");
+    if (status) status.textContent = copied ? (state.language !== "es" ? "Pilot summary copied" : "Resumen del piloto copiado") : (state.language !== "es" ? "Could not copy summary" : "No se pudo copiar el resumen");
     return;
   }
   handleParallelBacklogClick(event);
@@ -11359,7 +11753,7 @@ function buildDashboardPilotSummary() {
   const readiness = calculatePilotReadiness();
   const next = getDashboardPilotNextAction(readiness, manual, tests, participants, feedback);
   const pending = getDashboardPilotPendingChecks(readiness);
-  return state.language === "en"
+  return state.language !== "es"
     ? [
         "# Pilot readiness summary",
         `Readiness: ${readiness.score}% (${readiness.ready}/${readiness.total})`,
@@ -11415,7 +11809,7 @@ function renderDashboardAgenda() {
       ].filter(Boolean);
       const relative =
         minutesUntil < 0
-          ? state.language === "en"
+          ? state.language !== "es"
             ? "In progress"
             : "En curso"
           : formatRelativeAgendaTime(minutesUntil);
@@ -11424,7 +11818,7 @@ function renderDashboardAgenda() {
           <div>
             <span class="card-meta">${escapeHtml(relative)} · ${escapeHtml(formatDate(event.startAt))}</span>
             <h3>${escapeHtml(event.title)}</h3>
-            <p>${escapeHtml(event.location || (state.language === "en" ? "No location" : "Sin ubicación"))} · ${escapeHtml(displayAgendaType(event.type))}</p>
+            <p>${escapeHtml(event.location || (state.language !== "es" ? "No location" : "Sin ubicación"))} · ${escapeHtml(displayAgendaType(event.type))}</p>
           </div>
           <div class="pill-row">
             <span class="pill">${escapeHtml(displayAgendaStatus(event.status))}</span>
@@ -11439,11 +11833,11 @@ function renderDashboardAgenda() {
 }
 
 function formatRelativeAgendaTime(minutes) {
-  if (minutes < 60) return state.language === "en" ? `In ${minutes} min` : `En ${minutes} min`;
+  if (minutes < 60) return state.language !== "es" ? `In ${minutes} min` : `En ${minutes} min`;
   const hours = Math.round(minutes / 60);
-  if (hours < 24) return state.language === "en" ? `In ${hours} h` : `En ${hours} h`;
+  if (hours < 24) return state.language !== "es" ? `In ${hours} h` : `En ${hours} h`;
   const days = Math.round(hours / 24);
-  return state.language === "en" ? `In ${days} days` : `En ${days} días`;
+  return state.language !== "es" ? `In ${days} days` : `En ${days} días`;
 }
 
 function renderCategoryChart() {
@@ -11582,29 +11976,29 @@ function renderBiometricCaptureContext() {
   const signal = buildBiometricSignalForTimestamp(timestamp, duration);
   if (!state.biometricImports?.length) {
     box.innerHTML = `
-      <span>${escapeHtml(state.language === "en" ? "Biometrics: no cross-experience file imported yet." : "Biometría: aún no hay archivo transversal importado.")}</span>
-      <button type="button" class="ghost-button small-button" data-biometric-open-assets="1">${escapeHtml(state.language === "en" ? "Import in Assets" : "Importar en Activos")}</button>
+      <span>${escapeHtml(state.language !== "es" ? "Biometrics: no cross-experience file imported yet." : "Biometría: aún no hay archivo transversal importado.")}</span>
+      <button type="button" class="ghost-button small-button" data-biometric-open-assets="1">${escapeHtml(state.language !== "es" ? "Import in Assets" : "Importar en Activos")}</button>
     `;
     return;
   }
   if (!signal.matched) {
     box.innerHTML = `
-      <span>${escapeHtml(state.language === "en" ? "Biometrics imported, but no nearby signal was found for this date/time." : "Biometría importada, pero no se encontró señal cercana para esta fecha/hora.")}</span>
-      <button type="button" class="ghost-button small-button" data-biometric-open-assets="1">${escapeHtml(state.language === "en" ? "Review assets" : "Revisar activos")}</button>
+      <span>${escapeHtml(state.language !== "es" ? "Biometrics imported, but no nearby signal was found for this date/time." : "Biometría importada, pero no se encontró señal cercana para esta fecha/hora.")}</span>
+      <button type="button" class="ghost-button small-button" data-biometric-open-assets="1">${escapeHtml(state.language !== "es" ? "Review assets" : "Revisar activos")}</button>
     `;
     return;
   }
   const difference = signal.energySuggestion ? Math.abs(signal.energySuggestion - energy) : 0;
   const diffText = difference >= 3
-    ? (state.language === "en" ? "Your perceived energy differs from the biometric suggestion; keep both as context." : "Tu energía percibida difiere de la sugerencia biométrica; conviene conservar ambas señales.")
-    : (state.language === "en" ? "Biometric signal is consistent with the current energy value." : "La señal biométrica es consistente con el valor actual de energía.");
+    ? (state.language !== "es" ? "Your perceived energy differs from the biometric suggestion; keep both as context." : "Tu energía percibida difiere de la sugerencia biométrica; conviene conservar ambas señales.")
+    : (state.language !== "es" ? "Biometric signal is consistent with the current energy value." : "La señal biométrica es consistente con el valor actual de energía.");
   box.innerHTML = `
     <div>
-      <strong>${escapeHtml(state.language === "en" ? "Biometric context" : "Contexto biométrico")}: ${escapeHtml(signal.label)}</strong>
+      <strong>${escapeHtml(state.language !== "es" ? "Biometric context" : "Contexto biométrico")}: ${escapeHtml(signal.label)}</strong>
       <p>${escapeHtml(signal.detail)} ${escapeHtml(diffText)}</p>
     </div>
     <button type="button" class="ghost-button small-button" data-biometric-apply-energy="${escapeHtml(String(signal.energySuggestion || ""))}">
-      ${escapeHtml(state.language === "en" ? `Use ${signal.energySuggestion}/10` : `Usar ${signal.energySuggestion}/10`)}
+      ${escapeHtml(state.language !== "es" ? `Use ${signal.energySuggestion}/10` : `Usar ${signal.energySuggestion}/10`)}
     </button>
   `;
 }
@@ -11645,7 +12039,7 @@ function buildCaptureWritingSuggestions(draft) {
     const value = String(text || "").trim();
     return value.length > 12 && value === value.toUpperCase() && /[A-ZÁÉÍÓÚÜÑ]/.test(value);
   };
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         ready: "The draft is clear enough for the MVP test.",
         titleShort: "Make the title more specific: include action, place, or result.",
@@ -11686,7 +12080,7 @@ function buildCaptureWritingSuggestions(draft) {
 }
 
 function renderCaptureWritingCoachMarkup(suggestions) {
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         title: "Grammar and clarity review",
         intro: "Local suggestions before saving. They improve analysis quality but do not block the save.",
@@ -11744,7 +12138,7 @@ function buildCaptureWritingSuggestionsActionable(draft) {
     return value.length > 12 && value === value.toUpperCase() && /[A-Z]/.test(value);
   };
   const cleaned = buildCleanCaptureDraft(draft);
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         ready: "The draft is clear enough for the MVP test.",
         titleShort: "Make the title more specific: include action, place, or result.",
@@ -11795,7 +12189,7 @@ function buildCaptureWritingSuggestionsActionable(draft) {
 }
 
 function renderCaptureWritingCoachMarkupActionable(suggestions) {
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         title: "Grammar and clarity review",
         intro: "Apply the proposed rewrite or open Copilot with a prepared prompt. These suggestions do not block saving.",
@@ -11852,12 +12246,12 @@ function applyCaptureWritingSuggestion(index) {
   field.value = value;
   field.focus();
   renderCaptureWritingCoach();
-  notify(state.language === "en" ? "Suggested rewrite applied." : "Reescritura sugerida aplicada.", "success");
+  notify(state.language !== "es" ? "Suggested rewrite applied." : "Reescritura sugerida aplicada.", "success");
 }
 
 function openCaptureWritingCopilot(index) {
   const suggestion = state.captureWritingSuggestions[index];
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         prompt: "Rewrite this experience field with correct grammar, natural wording, and concise style. Keep the meaning and return only the improved text.",
         opened: "Copilot opened with a rewrite prompt.",
@@ -11889,7 +12283,7 @@ function renderCaptureSaveStatus() {
     box.innerHTML = "";
     return;
   }
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? { saved: "Saved", synced: "Synced", syncing: "Sync", viewLibrary: "Open Library", keepCapturing: "Keep capturing", signIn: "Sign in", sync: "Save pending" }
     : { saved: "Guardado", synced: "Sincronizado", syncing: "Sync", viewLibrary: "Abrir Libreria", keepCapturing: "Seguir capturando", signIn: "Entrar", sync: "Guardar pendientes" };
   const isAutosave = String(status.reason || "").startsWith("autosave_");
@@ -12025,7 +12419,7 @@ function buildDailyReliabilityChecks(briefing = state.dailyBriefing) {
   const generatedAt = briefing?.generatedAt ? new Date(briefing.generatedAt).getTime() : NaN;
   const fresh = Number.isFinite(generatedAt) && Date.now() - generatedAt <= 6 * 60 * 60 * 1000;
   const labels =
-    state.language === "en"
+    state.language !== "es"
       ? {
           news: "News content",
           split: "Local/world separation",
@@ -12056,28 +12450,28 @@ function buildDailyReliabilityChecks(briefing = state.dailyBriefing) {
       label: labels.news,
       ok: sections.length > 0,
       content: true,
-      detail: sections.length ? `${sections.length} ${state.language === "en" ? "sections loaded" : "secciones cargadas"}` : state.language === "en" ? "Refresh Daily to load real news." : "Actualiza Diario para cargar noticias reales.",
+      detail: sections.length ? `${sections.length} ${state.language !== "es" ? "sections loaded" : "secciones cargadas"}` : state.language !== "es" ? "Refresh Daily to load real news." : "Actualiza Diario para cargar noticias reales.",
     },
     {
       key: "split",
       label: labels.split,
       ok: hasLocalGroup && hasWorldGroup,
       content: true,
-      detail: hasLocalGroup && hasWorldGroup ? state.language === "en" ? "Local and world blocks are separated." : "Bloques locales y mundiales separados." : state.language === "en" ? "Needs both local and world news." : "Requiere noticias locales y mundiales.",
+      detail: hasLocalGroup && hasWorldGroup ? state.language !== "es" ? "Local and world blocks are separated." : "Bloques locales y mundiales separados." : state.language !== "es" ? "Needs both local and world news." : "Requiere noticias locales y mundiales.",
     },
     {
       key: "weather",
       label: labels.weather,
       ok: hasWeather,
       content: true,
-      detail: hasWeather ? `${briefing.weather?.source || "Open-Meteo"}` : state.language === "en" ? "Weather is unavailable or pending refresh." : "El clima no está disponible o falta refrescar.",
+      detail: hasWeather ? `${briefing.weather?.source || "Open-Meteo"}` : state.language !== "es" ? "Weather is unavailable or pending refresh." : "El clima no está disponible o falta refrescar.",
     },
     {
       key: "listings",
       label: labels.listings,
       ok: agendaLinks.length >= 5,
       interactive: true,
-      detail: state.language === "en" ? `${agendaLinks.length} concrete search actions available.` : `${agendaLinks.length} acciones concretas de búsqueda disponibles.`,
+      detail: state.language !== "es" ? `${agendaLinks.length} concrete search actions available.` : `${agendaLinks.length} acciones concretas de búsqueda disponibles.`,
     },
     {
       key: "multimedia",
@@ -12086,8 +12480,8 @@ function buildDailyReliabilityChecks(briefing = state.dailyBriefing) {
       interactive: true,
       fallback: mediaPreviews.length === 0,
       detail: mediaPreviews.length
-        ? state.language === "en" ? `${mediaPreviews.length} real media previews plus fallback searches.` : `${mediaPreviews.length} vistas multimedia reales más búsquedas de respaldo.`
-        : state.language === "en" ? `${mediaLinks.length} fallback paths for image, video, and audio.` : `${mediaLinks.length} rutas de respaldo para imagen, video y audio.`,
+        ? state.language !== "es" ? `${mediaPreviews.length} real media previews plus fallback searches.` : `${mediaPreviews.length} vistas multimedia reales más búsquedas de respaldo.`
+        : state.language !== "es" ? `${mediaLinks.length} fallback paths for image, video, and audio.` : `${mediaLinks.length} rutas de respaldo para imagen, video y audio.`,
     },
     {
       key: "voice",
@@ -12095,14 +12489,14 @@ function buildDailyReliabilityChecks(briefing = state.dailyBriefing) {
       ok: voiceSupported || manualCommands,
       interactive: true,
       fallback: !voiceSupported && manualCommands,
-      detail: voiceSupported ? state.language === "en" ? "Browser voice commands available." : "Comandos de voz disponibles en el navegador." : state.language === "en" ? "Voice unavailable; manual command examples are active." : "Voz no disponible; los ejemplos manuales están activos.",
+      detail: voiceSupported ? state.language !== "es" ? "Browser voice commands available." : "Comandos de voz disponibles en el navegador." : state.language !== "es" ? "Voice unavailable; manual command examples are active." : "Voz no disponible; los ejemplos manuales están activos.",
     },
     {
       key: "freshness",
       label: labels.freshness,
       ok: fresh,
       content: true,
-      detail: fresh ? `${state.language === "en" ? "Generated" : "Generado"}: ${formatDate(briefing.generatedAt)}` : state.language === "en" ? "Refresh Daily for current content." : "Actualiza Diario para contenido vigente.",
+      detail: fresh ? `${state.language !== "es" ? "Generated" : "Generado"}: ${formatDate(briefing.generatedAt)}` : state.language !== "es" ? "Refresh Daily for current content." : "Actualiza Diario para contenido vigente.",
     },
   ];
 }
@@ -12113,9 +12507,9 @@ function renderDailyReliabilityPanel(briefing = state.dailyBriefing) {
   const score = Math.round((ready / Math.max(1, checks.length)) * 100);
   const contentReady = checks.filter((check) => check.content).every((check) => check.ok);
   const interactiveReady = checks.filter((check) => check.interactive).every((check) => check.ok);
-  const title = state.language === "en" ? "Daily Reliability" : "Confiabilidad del Diario";
+  const title = state.language !== "es" ? "Daily Reliability" : "Confiabilidad del Diario";
   const summary =
-    state.language === "en"
+    state.language !== "es"
       ? `${ready}/${checks.length} controls ready. Content: ${contentReady ? "current" : "needs refresh"}. Interaction: ${interactiveReady ? "available" : "needs review"}.`
       : `${ready}/${checks.length} controles listos. Contenido: ${contentReady ? "vigente" : "requiere refresco"}. Interacción: ${interactiveReady ? "disponible" : "requiere revisión"}.`;
   return `
@@ -12132,7 +12526,7 @@ function renderDailyReliabilityPanel(briefing = state.dailyBriefing) {
           .map(
             (check) => `
               <article class="${check.ok ? "is-ready" : "is-review"}">
-                <span class="${check.ok ? "status-ok" : "status-warn"}">${escapeHtml(check.ok ? (state.language === "en" ? "Ready" : "Listo") : (state.language === "en" ? "Review" : "Revisar"))}${check.fallback ? ` · ${escapeHtml(state.language === "en" ? "Fallback" : "Respaldo")}` : ""}</span>
+                <span class="${check.ok ? "status-ok" : "status-warn"}">${escapeHtml(check.ok ? (state.language !== "es" ? "Ready" : "Listo") : (state.language !== "es" ? "Review" : "Revisar"))}${check.fallback ? ` · ${escapeHtml(state.language !== "es" ? "Fallback" : "Respaldo")}` : ""}</span>
                 <strong>${escapeHtml(check.label)}</strong>
                 <p>${escapeHtml(check.detail)}</p>
               </article>
@@ -12158,7 +12552,7 @@ function renderDailyWeather(weather) {
     `;
   }
   const current = weather.current || {};
-  const signals = weather.riskSignals?.length ? weather.riskSignals.join(", ") : (state.language === "en" ? "No relevant alerts" : "Sin alertas relevantes");
+  const signals = weather.riskSignals?.length ? weather.riskSignals.join(", ") : (state.language !== "es" ? "No relevant alerts" : "Sin alertas relevantes");
   return `
     <section class="daily-weather-card">
       <div class="daily-news-group-heading">
@@ -12287,7 +12681,7 @@ function renderDailyActionButton(link) {
 function buildClientAgendaLinks(location) {
   const place = String(location || inferPrimaryLocation() || "San Juan").trim();
   const labels =
-    state.language === "en"
+    state.language !== "es"
       ? [
           ["Movie showtimes", `movie showtimes ${place}`],
           ["Concerts", `concerts ${place}`],
@@ -12311,7 +12705,7 @@ function buildClientAgendaLinks(location) {
 
 function buildClientDailyMediaLinks(location) {
   const place = String(location || inferPrimaryLocation() || "San Juan").trim();
-  const query = state.language === "en" ? `${place} news events today` : `${place} noticias eventos hoy`;
+  const query = state.language !== "es" ? `${place} news events today` : `${place} noticias eventos hoy`;
   return [
     { type: "image", label: t("labels.dailyImageSearch"), query, url: `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}` },
     { type: "video", label: t("labels.dailyVideoSearch"), query, url: `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}` },
@@ -12321,11 +12715,11 @@ function buildClientDailyMediaLinks(location) {
 
 function buildClientDailyHoroscope() {
   const signs =
-    state.language === "en"
+    state.language !== "es"
       ? ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"]
       : ["Aries", "Tauro", "Géminis", "Cáncer", "Leo", "Virgo", "Libra", "Escorpio", "Sagitario", "Capricornio", "Acuario", "Piscis"];
   const themes =
-    state.language === "en"
+    state.language !== "es"
       ? ["focus", "patience", "movement", "dialogue", "care", "planning", "creativity", "rest", "clarity", "discipline", "connection", "learning"]
       : ["foco", "paciencia", "movimiento", "diálogo", "cuidado", "planificación", "creatividad", "descanso", "claridad", "disciplina", "conexión", "aprendizaje"];
   const today = new Date().toISOString().slice(0, 10);
@@ -12335,7 +12729,7 @@ function buildClientDailyHoroscope() {
       sign,
       source: t("labels.dailySourceLocalFallback"),
       text:
-        state.language === "en"
+        state.language !== "es"
           ? `Good day to practice ${theme}. Keep one clear priority and avoid scattering attention.`
           : `Buen día para practicar ${theme}. Mantén una prioridad clara y evita dispersar la atención.`,
     };
@@ -12790,7 +13184,7 @@ function buildStaticDailySearchUrl(query) {
 
 function buildStaticDailyMediaUrl(type) {
   const location = document.getElementById("dailyLocationInput")?.value?.trim() || inferPrimaryLocation() || "San Juan";
-  const query = state.language === "en" ? `${location} news events today` : `${location} noticias eventos hoy`;
+  const query = state.language !== "es" ? `${location} news events today` : `${location} noticias eventos hoy`;
   if (type === "image") return `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}`;
   if (type === "video") return `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
   return `https://www.google.com/search?q=${encodeURIComponent(`${query} podcast audio`)}`;
@@ -12810,7 +13204,7 @@ function buildDailyActionOptions(kind) {
   const baseQuery = buildDailyActionQuery(kind, location);
   const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(baseQuery)}`;
   const mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(baseQuery)}`;
-  const ticketsQuery = state.language === "en" ? `${baseQuery} tickets` : `${baseQuery} entradas`;
+  const ticketsQuery = state.language !== "es" ? `${baseQuery} tickets` : `${baseQuery} entradas`;
   const common = [{ label: t("labels.dailySearchGoogle"), url: googleUrl }];
   if (kind === "image") {
     return [
@@ -12853,12 +13247,12 @@ function buildDailyActionOptions(kind) {
 function buildDailyActionQuery(kind, location) {
   const place = location || "San Juan";
   const queries = {
-    "cartelera cine": state.language === "en" ? `movie showtimes ${place}` : `cartelera cine ${place}`,
-    conciertos: state.language === "en" ? `concerts ${place}` : `conciertos ${place}`,
-    "teatro eventos": state.language === "en" ? `theater events ${place}` : `teatro eventos ${place}`,
-    image: state.language === "en" ? `${place} news events today images` : `${place} noticias eventos hoy imágenes`,
-    video: state.language === "en" ? `${place} news events today videos` : `${place} noticias eventos hoy videos`,
-    audio: state.language === "en" ? `${place} news events today podcast audio` : `${place} noticias eventos hoy podcast audio`,
+    "cartelera cine": state.language !== "es" ? `movie showtimes ${place}` : `cartelera cine ${place}`,
+    conciertos: state.language !== "es" ? `concerts ${place}` : `conciertos ${place}`,
+    "teatro eventos": state.language !== "es" ? `theater events ${place}` : `teatro eventos ${place}`,
+    image: state.language !== "es" ? `${place} news events today images` : `${place} noticias eventos hoy imágenes`,
+    video: state.language !== "es" ? `${place} news events today videos` : `${place} noticias eventos hoy videos`,
+    audio: state.language !== "es" ? `${place} news events today podcast audio` : `${place} noticias eventos hoy podcast audio`,
   };
   return queries[kind] || `${kind} ${place}`;
 }
@@ -12913,12 +13307,12 @@ function getStaticDailyActionTitle(button) {
 function buildStaticDailyActionDetail(kind) {
   const location = document.getElementById("dailyLocationInput")?.value?.trim() || inferPrimaryLocation() || "San Juan";
   const map = {
-    "cartelera cine": state.language === "en" ? `Choose how to check current movie showtimes for ${location}.` : `Elige cómo consultar la cartelera de cine vigente para ${location}.`,
-    conciertos: state.language === "en" ? `Choose how to check current concerts for ${location}.` : `Elige cómo consultar conciertos vigentes para ${location}.`,
-    "teatro eventos": state.language === "en" ? `Choose how to check theater and events for ${location}.` : `Elige cómo consultar teatro y eventos vigentes para ${location}.`,
-    image: state.language === "en" ? `Choose an image search related to ${location}.` : `Elige una búsqueda de imágenes relacionada con ${location}.`,
-    video: state.language === "en" ? `Choose where to view related videos for ${location}.` : `Elige dónde ver videos relacionados con ${location}.`,
-    audio: state.language === "en" ? `Choose where to search podcasts or audio related to ${location}.` : `Elige dónde buscar podcasts o audio relacionados con ${location}.`,
+    "cartelera cine": state.language !== "es" ? `Choose how to check current movie showtimes for ${location}.` : `Elige cómo consultar la cartelera de cine vigente para ${location}.`,
+    conciertos: state.language !== "es" ? `Choose how to check current concerts for ${location}.` : `Elige cómo consultar conciertos vigentes para ${location}.`,
+    "teatro eventos": state.language !== "es" ? `Choose how to check theater and events for ${location}.` : `Elige cómo consultar teatro y eventos vigentes para ${location}.`,
+    image: state.language !== "es" ? `Choose an image search related to ${location}.` : `Elige una búsqueda de imágenes relacionada con ${location}.`,
+    video: state.language !== "es" ? `Choose where to view related videos for ${location}.` : `Elige dónde ver videos relacionados con ${location}.`,
+    audio: state.language !== "es" ? `Choose where to search podcasts or audio related to ${location}.` : `Elige dónde buscar podcasts o audio relacionados con ${location}.`,
   };
   return map[kind] || t("labels.dailyActionResultHelp");
 }
@@ -12940,25 +13334,25 @@ async function saveDailyArticleAsExperience() {
   const analysis = buildDailyStoryAnalysis(section, article);
   const image = article.image || "";
   const sourceLine = article.url
-    ? `${state.language === "en" ? "Original story" : "Noticia original"}: ${article.url}`
+    ? `${state.language !== "es" ? "Original story" : "Noticia original"}: ${article.url}`
     : "";
   const experience = {
     id: createId(),
-    title: article.title || section.title || (state.language === "en" ? "Daily story" : "Noticia del Diario"),
+    title: article.title || section.title || (state.language !== "es" ? "Daily story" : "Noticia del Diario"),
     category: mapDailySectionToExperienceCategory(section),
-    objective: state.language === "en" ? "informational context" : "contexto informativo",
+    objective: state.language !== "es" ? "informational context" : "contexto informativo",
     timestamp: article.seenAt ? new Date(article.seenAt).toISOString() : new Date().toISOString(),
     duration: 10,
-    mood: state.language === "en" ? "Reflective" : "Reflexivo",
+    mood: state.language !== "es" ? "Reflective" : "Reflexivo",
     energy: 5,
     location: state.dailyBriefing?.location || inferPrimaryLocation() || "Sin ubicación",
-    people: state.language === "en" ? "Public context" : "Contexto público",
+    people: state.language !== "es" ? "Public context" : "Contexto público",
     notes: [
       `${t("labels.dailyWhatHappens")}: ${analysis.what}`,
       `${t("labels.dailyWhyMatters")}: ${analysis.why}`,
       `${t("labels.dailyWatch")}: ${analysis.watch}`,
-      `${state.language === "en" ? "Section" : "Sección"}: ${section.title || ""}`,
-      `${state.language === "en" ? "Source" : "Fuente"}: ${article.domain || section.source || ""}`,
+      `${state.language !== "es" ? "Section" : "Sección"}: ${section.title || ""}`,
+      `${state.language !== "es" ? "Source" : "Fuente"}: ${article.domain || section.source || ""}`,
       sourceLine,
     ]
       .filter(Boolean)
@@ -12967,7 +13361,7 @@ async function saveDailyArticleAsExperience() {
       ? [
           {
             id: createId(),
-            name: state.language === "en" ? "Daily editorial image" : "Imagen editorial del Diario",
+            name: state.language !== "es" ? "Daily editorial image" : "Imagen editorial del Diario",
             type: "image/external",
             originalType: "image/external",
             extension: "external",
@@ -13031,26 +13425,26 @@ function scheduleDailyListingsReview(query = "") {
   const end = new Date(start.getTime() + 45 * 60 * 1000);
   const searchHint =
     query ||
-    (state.language === "en"
+    (state.language !== "es"
       ? `movies, concerts, theater, events, and exhibitions in ${location}`
       : `cartelera, conciertos, teatro, eventos y exposiciones en ${location}`);
   const participantFields = buildPilotParticipantFields(getActivePilotParticipantId(["dashboard", "agenda"]));
   const agendaEvent = {
     id: createId(),
-    title: state.language === "en" ? `Review listings and events in ${location}` : `Revisar cartelera y eventos en ${location}`,
+    title: state.language !== "es" ? `Review listings and events in ${location}` : `Revisar cartelera y eventos en ${location}`,
     type: "Personal",
     description:
-      state.language === "en"
+      state.language !== "es"
         ? `Daily action created from the Dashboard. Review current listings and decide whether to add a concrete plan.\n\nSearch focus: ${searchHint}`
         : `Acción creada desde el Panel del Diario. Revisa la cartelera vigente y decide si conviene agregar un plan concreto.\n\nFoco de búsqueda: ${searchHint}`,
     startAt: start.toISOString(),
     endAt: end.toISOString(),
     location,
-    participants: participantFields.pilotParticipantName || (state.language === "en" ? "Personal follow-up" : "Seguimiento personal"),
+    participants: participantFields.pilotParticipantName || (state.language !== "es" ? "Personal follow-up" : "Seguimiento personal"),
     ...participantFields,
     priority: "normal",
     status: "Planificado",
-    reminders: state.language === "en" ? "30 min before" : "30 min antes",
+    reminders: state.language !== "es" ? "30 min before" : "30 min antes",
     createdAt: new Date().toISOString(),
     source: "daily-briefing",
   };
@@ -13085,7 +13479,7 @@ function speakSelectedDailyArticle() {
   ].filter(Boolean).join(". ");
   window.speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = state.language === "en" ? "en-US" : "es-ES";
+  utterance.lang = state.language !== "es" ? "en-US" : "es-ES";
   utterance.rate = 0.95;
   window.speechSynthesis.speak(utterance);
 }
@@ -13112,7 +13506,7 @@ function startVoiceCommand() {
   }
   state.voiceWakeActive = true;
   const recognition = new SpeechRecognition();
-  recognition.lang = state.language === "en" ? "en-US" : "es-ES";
+  recognition.lang = state.language !== "es" ? "en-US" : "es-ES";
   recognition.continuous = true;
   recognition.interimResults = false;
   recognition.maxAlternatives = 1;
@@ -13238,9 +13632,9 @@ function openMediaCaptureFromVoice(kind = "image", originalTranscript = "") {
   const input = document.getElementById("mediaInput");
   if (!input) return;
   const config = {
-    image: { accept: "image/*", capture: "environment", label: state.language === "en" ? "Choose or take a photo." : "Elige o toma una foto." },
-    video: { accept: "video/*", capture: "environment", label: state.language === "en" ? "Choose or record a video." : "Elige o graba un video." },
-    audio: { accept: "audio/*", capture: "microphone", label: state.language === "en" ? "Choose or record audio." : "Elige o graba un audio." },
+    image: { accept: "image/*", capture: "environment", label: state.language !== "es" ? "Choose or take a photo." : "Elige o toma una foto." },
+    video: { accept: "video/*", capture: "environment", label: state.language !== "es" ? "Choose or record a video." : "Elige o graba un video." },
+    audio: { accept: "audio/*", capture: "microphone", label: state.language !== "es" ? "Choose or record audio." : "Elige o graba un audio." },
   }[kind] || {};
   input.setAttribute("accept", config.accept || "image/*,video/*,audio/*");
   if (config.capture) input.setAttribute("capture", config.capture);
@@ -13273,7 +13667,7 @@ function appendVoiceNoteToCapture(note, originalTranscript = "") {
   showView("capture");
   const notesInput = document.getElementById("notesInput");
   const prefix = notesInput?.value.trim() ? "\n\n" : "";
-  const label = state.language === "en" ? "V note" : "Nota de V";
+  const label = state.language !== "es" ? "V note" : "Nota de V";
   if (notesInput) notesInput.value = `${notesInput.value}${prefix}${label} (${formatDate(new Date().toISOString())}):\n${note}`;
   if (!document.getElementById("titleInput")?.value.trim()) {
     document.getElementById("titleInput").value = buildAudioDraftTitle(note);
@@ -13294,7 +13688,7 @@ async function saveVoiceQuickExperience(note, originalTranscript = "") {
     category: inferCategoryFromTranscript(note) || "Social",
     timestamp: now.toISOString(),
     duration: inferDurationFromTranscript(note),
-    objective: state.language === "en" ? "Quick voice capture" : "Captura rápida por voz",
+    objective: state.language !== "es" ? "Quick voice capture" : "Captura rápida por voz",
     mood: "",
     energy: 5,
     location: "",
@@ -13332,7 +13726,7 @@ function createVoiceAgendaEvent(command, originalTranscript = command, options =
     ...participantFields,
     priority: "normal",
     status: "Planificado",
-    reminders: state.language === "en" ? "30 min before" : "30 min antes",
+    reminders: state.language !== "es" ? "30 min before" : "30 min antes",
     sourceType: "voice_command",
     createdAt: new Date().toISOString(),
   };
@@ -13384,7 +13778,7 @@ function buildVoiceAgendaTitle(command = "") {
     .replace(/\b\d{1,2}(?::\d{2})?\b/g, "")
     .replace(/\s+/g, " ")
     .trim();
-  return buildAudioDraftTitle(cleaned || (state.language === "en" ? "Voice agenda event" : "Evento de voz"));
+  return buildAudioDraftTitle(cleaned || (state.language !== "es" ? "Voice agenda event" : "Evento de voz"));
 }
 
 function inferAgendaTypeFromVoice(command = "") {
@@ -13599,7 +13993,7 @@ function getSelectedDailyArticle() {
 }
 
 function buildDailyStoryAnalysis(section, article = {}) {
-  const language = state.language === "en" ? "en" : "es";
+  const language = state.language !== "es" ? "en" : "es";
   const title = article?.title || section?.title || "";
   const cleanTitle = stripNewsSource(title);
   const source = article?.domain || section?.source || "";
@@ -13889,11 +14283,11 @@ function renderContextNewsCard(article) {
 function buildContextArticleTakeaway(article, news) {
   const domain = article.domain || article.source || "la fuente consultada";
   if (news?.fallbackReason) {
-    return state.language === "en"
+    return state.language !== "es"
       ? `This item is shown from a fallback source because the primary geopolitical feed did not return enough coverage. Use it as a context signal, not as a final assessment.`
       : `Esta noticia se muestra desde una fuente de respaldo porque la fuente geopolítica primaria no entregó cobertura suficiente. Úsala como señal de contexto, no como conclusión final.`;
   }
-  return state.language === "en"
+  return state.language !== "es"
     ? `Reported by ${domain}. It helps explain what public, political, security, or economic topics may affect the experience context.`
     : `Reportado por ${domain}. Ayuda a entender qué temas públicos, políticos, de seguridad o económicos pueden influir en el contexto de la experiencia.`;
 }
@@ -13986,13 +14380,13 @@ function renderLibrary() {
                   <div class="pill-row">
                     <span class="pill">${displayCategory(item.category)}</span>
                     <span class="pill">${escapeHtml(getExperienceSourceLabel(item))}</span>
-                    ${getExperiencePilotParticipantLabel(item) ? `<span class="pill">${escapeHtml(state.language === "en" ? "Pilot" : "Piloto")}: ${escapeHtml(getExperiencePilotParticipantLabel(item))}</span>` : ""}
+                    ${getExperiencePilotParticipantLabel(item) ? `<span class="pill">${escapeHtml(state.language !== "es" ? "Pilot" : "Piloto")}: ${escapeHtml(getExperiencePilotParticipantLabel(item))}</span>` : ""}
                     ${item.objective ? `<span class="pill">${escapeHtml(item.objective)}</span>` : ""}
-                    <span class="pill">${normalizeExperienceEvents(item.events || [], item.id).length} ${state.language === "en" ? "events" : "eventos"}</span>
+                    <span class="pill">${normalizeExperienceEvents(item.events || [], item.id).length} ${state.language !== "es" ? "events" : "eventos"}</span>
                     <span class="pill">${item.attachments?.length || 0} ${t("labels.attachments")}</span>
                     <span class="pill">${escapeHtml(item.mood)}</span>
                   </div>
-                  <p>${escapeHtml(item.notes || (state.language === "en" ? "No notes." : "Sin notas."))}</p>
+                  <p>${escapeHtml(item.notes || (state.language !== "es" ? "No notes." : "Sin notas."))}</p>
                   ${renderLibraryEventPreview(item)}
                 </div>
                 <div class="timeline-actions">
@@ -14019,7 +14413,7 @@ function areLibraryFiltersActive() {
 function buildLibraryVisibilityNotice(items, filtersActive, lastSaved) {
   const savedVisible = lastSaved && items.some((item) => item.id === lastSaved.id);
   if (lastSaved && savedVisible) {
-    const labels = state.language === "en"
+    const labels = state.language !== "es"
       ? { title: "Last saved experience is visible", detail: "This is the record you just saved from Capture." }
       : { title: "La última experiencia guardada está visible", detail: "Este es el registro que acabas de guardar desde Captura." };
     return `
@@ -14030,7 +14424,7 @@ function buildLibraryVisibilityNotice(items, filtersActive, lastSaved) {
     `;
   }
   if (lastSaved && filtersActive) {
-    const labels = state.language === "en"
+    const labels = state.language !== "es"
       ? { title: "Saved, but hidden by filters", detail: "The experience exists, but the current Library filters are hiding it.", action: "Show all experiences" }
       : { title: "Guardada, pero oculta por filtros", detail: "La experiencia existe, pero los filtros actuales de Librería la están ocultando.", action: "Ver todas las experiencias" };
     return `
@@ -14044,7 +14438,7 @@ function buildLibraryVisibilityNotice(items, filtersActive, lastSaved) {
     `;
   }
   if (!items.length && state.experiences.length && filtersActive) {
-    const labels = state.language === "en"
+    const labels = state.language !== "es"
       ? { title: "No results with active filters", detail: "There are saved experiences, but none match the current filters.", action: "Clear filters" }
       : { title: "Sin resultados con filtros activos", detail: "Hay experiencias guardadas, pero ninguna coincide con los filtros actuales.", action: "Limpiar filtros" };
     return `
@@ -14072,21 +14466,21 @@ function renderLibraryEventPreview(item) {
   const visibleEvents = events.slice(0, 3);
   const remaining = events.length - visibleEvents.length;
   return `
-    <div class="library-event-preview" aria-label="${escapeHtml(state.language === "en" ? "Experience events" : "Eventos de la experiencia")}">
+    <div class="library-event-preview" aria-label="${escapeHtml(state.language !== "es" ? "Experience events" : "Eventos de la experiencia")}">
       ${visibleEvents
         .map(
           (event) => `
             <div class="library-event-item">
               <span>${escapeHtml(String(event.order).padStart(2, "0"))}</span>
               <div>
-                <strong>${escapeHtml(event.title || (state.language === "en" ? "Untitled event" : "Evento sin título"))}</strong>
+                <strong>${escapeHtml(event.title || (state.language !== "es" ? "Untitled event" : "Evento sin título"))}</strong>
                 ${event.description ? `<small>${escapeHtml(event.description)}</small>` : ""}
               </div>
             </div>
           `,
         )
         .join("")}
-      ${remaining > 0 ? `<small class="card-meta">${escapeHtml(state.language === "en" ? `+${remaining} more event(s)` : `+${remaining} evento(s) más`)}</small>` : ""}
+      ${remaining > 0 ? `<small class="card-meta">${escapeHtml(state.language !== "es" ? `+${remaining} more event(s)` : `+${remaining} evento(s) más`)}</small>` : ""}
     </div>
   `;
 }
@@ -14152,7 +14546,7 @@ function updateLibraryFilterOptions() {
   const participantSelect = document.getElementById("libraryPilotParticipantFilter");
   if (participantSelect) {
     const current = state.libraryFilters.pilotParticipantId || participantSelect.value || "all";
-    const allLabel = state.language === "en" ? "All groups/people" : "Todos los grupos/personas";
+    const allLabel = state.language !== "es" ? "All groups/people" : "Todos los grupos/personas";
     const options = state.pilotParticipants
       .map((item) => ({ value: item.id, label: item.name || item.role || item.id }))
       .filter((item) => item.value && item.label);
@@ -14326,7 +14720,7 @@ function toBiometricAsset(item = {}) {
     contextOnly: true,
     isDemo: false,
     category: "Salud",
-    objective: state.language === "en" ? "Biometric context" : "Contexto biometrico",
+    objective: state.language !== "es" ? "Biometric context" : "Contexto biometrico",
     eventId: "",
     eventTitle: "",
     timestamp: item.startAt || item.importedAt || new Date().toISOString(),
@@ -14354,7 +14748,7 @@ function toBiometricAsset(item = {}) {
     processingStatusRaw: "processed",
     permissions: "private",
     metadataFingerprint: item.fingerprint || item.id,
-    storageLabel: state.language === "en" ? "Local biometric file" : "Archivo biometrico local",
+    storageLabel: state.language !== "es" ? "Local biometric file" : "Archivo biometrico local",
     manualTags: Array.isArray(manual.tags) ? manual.tags : ["biometria", ...metricNames.slice(0, 3)],
     manualNote: Object.hasOwn(manual, "note") ? manual.note : item.summaryText || "",
     analysisText,
@@ -14408,10 +14802,10 @@ function hydrateBiometricImportsFromExperiences(experiences = state.experiences)
           endAt,
           recordCount: rows.length,
           metricNames,
-          summaryText: state.language === "en"
+          summaryText: state.language !== "es"
             ? `Native biometric context from ${sourceDevice}. ${rows.length} records. Signals: ${metricText}.`
             : `Contexto biométrico nativo desde ${sourceDevice}. ${rows.length} registros. Señales: ${metricText}.`,
-          analysisText: state.language === "en"
+          analysisText: state.language !== "es"
             ? `Native biometric context linked to ${experience.title || "experience"}. It informs energy, recovery, sleep, activity, and risk by date/time.`
             : `Contexto biométrico nativo vinculado a ${experience.title || "la experiencia"}. Informa energía, recuperación, sueño, actividad y riesgo por fecha/hora.`,
           extractedText: JSON.stringify(structuredContext, null, 2),
@@ -14531,7 +14925,7 @@ function getExternalAssetProfile(asset = {}) {
 }
 
 function buildExternalAssetProfileLabel(profile = {}) {
-  if (profile.transportOnly) return state.language === "en" ? "Transport only" : "Solo transporte";
+  if (profile.transportOnly) return state.language !== "es" ? "Transport only" : "Solo transporte";
   const payload = String(profile.payloadType || "").replace(/_/g, " ").trim();
   if (payload) return sentenceCase(payload);
   return profile.source || "";
@@ -14596,8 +14990,8 @@ function renderBiometricAssetPanel() {
   if (summary) {
     const latest = (state.biometricImports || [])[0];
     summary.textContent = latest
-      ? `${latest.name} · ${latest.recordCount || 0} ${state.language === "en" ? "records" : "registros"} · ${(latest.metricNames || []).slice(0, 4).join(", ") || t("labels.biometricAssetNoMetrics")}`
-      : state.language === "en"
+      ? `${latest.name} · ${latest.recordCount || 0} ${state.language !== "es" ? "records" : "registros"} · ${(latest.metricNames || []).slice(0, 4).join(", ") || t("labels.biometricAssetNoMetrics")}`
+      : state.language !== "es"
         ? "No biometric file imported yet."
         : "Aun no hay archivo biometrico importado.";
   }
@@ -14640,7 +15034,7 @@ function buildAssetWorkflowChecks(assets = collectMultimodalAssets()) {
   const visibleReviewAssetIds = Array.isArray(audit.visibleReviewAssetIds) ? audit.visibleReviewAssetIds : [];
   const visibleKeys = new Set(assets.map((asset) => asset.assetKey));
   const visibleReviewStillApplies = visibleReviewAssetIds.length > 0 && visibleReviewAssetIds.some((key) => visibleKeys.has(key));
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         inventory: "Inventory has assets",
         ids: "Stable asset IDs",
@@ -14665,19 +15059,19 @@ function buildAssetWorkflowChecks(assets = collectMultimodalAssets()) {
       };
   return [
     { key: "inventory", label: labels.inventory, ok: assets.length > 0, detail: `${assets.length} ${t("labels.items")}` },
-    { key: "ids", label: labels.ids, ok: hasStableIds, detail: hasStableIds ? `${assets.length} assetId` : state.language === "en" ? "No assets to identify." : "No hay activos para identificar." },
+    { key: "ids", label: labels.ids, ok: hasStableIds, detail: hasStableIds ? `${assets.length} assetId` : state.language !== "es" ? "No assets to identify." : "No hay activos para identificar." },
     {
       key: "exports",
       label: labels.exports,
       ok: Boolean(audit.inventoryExportedAt && audit.inventoryCsvExportedAt && audit.backlogCsvExportedAt),
-      detail: state.language === "en" ? "Requires inventory JSON, inventory CSV, and backlog CSV." : "Requiere inventario JSON, inventario CSV y CSV de pendientes.",
+      detail: state.language !== "es" ? "Requires inventory JSON, inventory CSV, and backlog CSV." : "Requiere inventario JSON, inventario CSV y CSV de pendientes.",
     },
-    { key: "checklist", label: labels.checklist, ok: Boolean(audit.checklistExportedAt), detail: audit.checklistExportedAt ? formatDate(audit.checklistExportedAt) : state.language === "en" ? "Export review checklist." : "Exporta el checklist de revisión." },
-    { key: "import", label: labels.import, ok: Boolean(state.assetMetadataImportSummary || audit.metadataImportedAt), detail: state.assetMetadataImportSummary ? renderAssetImportSummaryText(state.assetMetadataImportSummary) : state.language === "en" ? "Import or review metadata audit." : "Importa o revisa la auditoría de metadatos." },
-    { key: "metadata", label: labels.metadata, ok: withMetadata > 0 || Boolean(audit.metadataSavedAt), detail: `${withMetadata}/${assets.length} ${state.language === "en" ? "assets with metadata/text" : "activos con metadatos/texto"}` },
-    { key: "suggestions", label: labels.suggestions, ok: analysis.suggested > 0 || Boolean(audit.suggestionGeneratedAt), detail: `${analysis.suggested} ${state.language === "en" ? "suggested locally" : "sugeridos localmente"}` },
-    { key: "humanReview", label: labels.humanReview, ok: Boolean(audit.visibleReviewAt && visibleReviewStillApplies), detail: audit.visibleReviewAt ? formatDate(audit.visibleReviewAt) : state.language === "en" ? "Mark visible assets reviewed." : "Marca los activos visibles como revisados." },
-    { key: "pending", label: labels.pending, ok: assets.length > 0 && analysis.processingPending < assets.length, detail: `${analysis.processingPending} ${state.language === "en" ? "pending" : "pendientes"}` },
+    { key: "checklist", label: labels.checklist, ok: Boolean(audit.checklistExportedAt), detail: audit.checklistExportedAt ? formatDate(audit.checklistExportedAt) : state.language !== "es" ? "Export review checklist." : "Exporta el checklist de revisión." },
+    { key: "import", label: labels.import, ok: Boolean(state.assetMetadataImportSummary || audit.metadataImportedAt), detail: state.assetMetadataImportSummary ? renderAssetImportSummaryText(state.assetMetadataImportSummary) : state.language !== "es" ? "Import or review metadata audit." : "Importa o revisa la auditoría de metadatos." },
+    { key: "metadata", label: labels.metadata, ok: withMetadata > 0 || Boolean(audit.metadataSavedAt), detail: `${withMetadata}/${assets.length} ${state.language !== "es" ? "assets with metadata/text" : "activos con metadatos/texto"}` },
+    { key: "suggestions", label: labels.suggestions, ok: analysis.suggested > 0 || Boolean(audit.suggestionGeneratedAt), detail: `${analysis.suggested} ${state.language !== "es" ? "suggested locally" : "sugeridos localmente"}` },
+    { key: "humanReview", label: labels.humanReview, ok: Boolean(audit.visibleReviewAt && visibleReviewStillApplies), detail: audit.visibleReviewAt ? formatDate(audit.visibleReviewAt) : state.language !== "es" ? "Mark visible assets reviewed." : "Marca los activos visibles como revisados." },
+    { key: "pending", label: labels.pending, ok: assets.length > 0 && analysis.processingPending < assets.length, detail: `${analysis.processingPending} ${state.language !== "es" ? "pending" : "pendientes"}` },
   ];
 }
 
@@ -14691,20 +15085,20 @@ function renderAssetWorkflowReadinessPanel(assets = collectMultimodalAssets()) {
     <section>
       <div class="asset-workflow-readiness-heading">
         <div>
-          <strong>${escapeHtml(state.language === "en" ? "Multimodal Workflow Readiness" : "Preparación real del flujo multimodal")}</strong>
-          <p>${escapeHtml(state.language === "en" ? `${ready}/${checks.length} verifiable controls ready.` : `${ready}/${checks.length} controles verificables listos.`)}</p>
+          <strong>${escapeHtml(state.language !== "es" ? "Multimodal Workflow Readiness" : "Preparación real del flujo multimodal")}</strong>
+          <p>${escapeHtml(state.language !== "es" ? `${ready}/${checks.length} verifiable controls ready.` : `${ready}/${checks.length} controles verificables listos.`)}</p>
         </div>
         <b class="${score >= 80 ? "status-ok" : "status-warn"}">${escapeHtml(`${score}%`)}</b>
       </div>
       <div class="asset-workflow-readiness-actions">
-        <button class="ghost-button" type="button" data-asset-workflow-action="mark-visible-reviewed">${escapeHtml(state.language === "en" ? "Mark visible reviewed" : "Marcar visibles revisados")}</button>
+        <button class="ghost-button" type="button" data-asset-workflow-action="mark-visible-reviewed">${escapeHtml(state.language !== "es" ? "Mark visible reviewed" : "Marcar visibles revisados")}</button>
       </div>
       <div class="asset-workflow-readiness-grid">
         ${checks
           .map(
             (check) => `
               <article class="${check.ok ? "is-ready" : "is-review"}">
-                <span class="${check.ok ? "status-ok" : "status-warn"}">${escapeHtml(check.ok ? (state.language === "en" ? "Ready" : "Listo") : (state.language === "en" ? "Review" : "Revisar"))}</span>
+                <span class="${check.ok ? "status-ok" : "status-warn"}">${escapeHtml(check.ok ? (state.language !== "es" ? "Ready" : "Listo") : (state.language !== "es" ? "Review" : "Revisar"))}</span>
                 <strong>${escapeHtml(check.label)}</strong>
                 <p>${escapeHtml(check.detail)}</p>
               </article>
@@ -14726,14 +15120,14 @@ function handleAssetWorkflowReadinessClick(event) {
   state.assetWorkflowAudit.visibleReviewAssetIds = visibleAssets.map((asset) => asset.assetKey);
   saveAssetWorkflowAudit();
   renderAssetLibrary();
-  notify(state.language === "en" ? "Visible assets marked as reviewed." : "Activos visibles marcados como revisados.");
+  notify(state.language !== "es" ? "Visible assets marked as reviewed." : "Activos visibles marcados como revisados.");
 }
 
 function renderAssetImportSummaryText(summary = {}) {
   const updated = Number(summary.updated || 0);
   const cleared = Number(summary.cleared || 0);
   const ignored = Number(summary.ignored || 0);
-  if (state.language === "en") {
+  if (state.language !== "es") {
     return `${updated} updated, ${cleared} cleared, ${ignored} ignored.`;
   }
   return `${updated} actualizados, ${cleared} limpiados, ${ignored} ignorados.`;
@@ -14768,9 +15162,9 @@ function renderAssetActiveFilters() {
 function buildAssetActiveFilterChips() {
   const filters = state.assetFilters;
   const chips = [];
-  if (filters.query) chips.push({ key: "query", label: `${state.language === "en" ? "Search" : "Búsqueda"}: ${filters.query}` });
-  if (filters.type !== "all") chips.push({ key: "type", label: `${state.language === "en" ? "Type" : "Tipo"}: ${getAssetKindLabel(filters.type)}` });
-  if (filters.category !== "all") chips.push({ key: "category", label: `${state.language === "en" ? "Category" : "Categoría"}: ${displayCategory(filters.category)}` });
+  if (filters.query) chips.push({ key: "query", label: `${state.language !== "es" ? "Search" : "Búsqueda"}: ${filters.query}` });
+  if (filters.type !== "all") chips.push({ key: "type", label: `${state.language !== "es" ? "Type" : "Tipo"}: ${getAssetKindLabel(filters.type)}` });
+  if (filters.category !== "all") chips.push({ key: "category", label: `${state.language !== "es" ? "Category" : "Categoría"}: ${displayCategory(filters.category)}` });
   if (filters.readiness !== "all") {
     chips.push({
       key: "readiness",
@@ -14783,13 +15177,13 @@ function buildAssetActiveFilterChips() {
   if (filters.provenance !== "all") {
     chips.push({
       key: "provenance",
-      label: `${state.language === "en" ? "Origin" : "Origen"}: ${filters.provenance === "demo" ? t("labels.provenanceDemo") : t("labels.provenanceUser")}`,
+      label: `${state.language !== "es" ? "Origin" : "Origen"}: ${filters.provenance === "demo" ? t("labels.provenanceDemo") : t("labels.provenanceUser")}`,
     });
   }
   if (filters.eventLink !== "all") {
     chips.push({
       key: "eventLink",
-      label: `${state.language === "en" ? "Event link" : "Vínculo de evento"}: ${filters.eventLink === "linked" ? (state.language === "en" ? "Linked to event" : "Con evento interno") : (state.language === "en" ? "Whole experience" : "Toda la experiencia")}`,
+      label: `${state.language !== "es" ? "Event link" : "Vínculo de evento"}: ${filters.eventLink === "linked" ? (state.language !== "es" ? "Linked to event" : "Con evento interno") : (state.language !== "es" ? "Whole experience" : "Toda la experiencia")}`,
     });
   }
   if (filters.analysis !== "all") {
@@ -14799,7 +15193,7 @@ function buildAssetActiveFilterChips() {
     });
   }
   if ((filters.sort || "newest") !== "newest") {
-    chips.push({ key: "sort", label: `${state.language === "en" ? "Sort" : "Orden"}: ${getAssetSortLabel(filters.sort)}` });
+    chips.push({ key: "sort", label: `${state.language !== "es" ? "Sort" : "Orden"}: ${getAssetSortLabel(filters.sort)}` });
   }
   if (filters.dateFrom) chips.push({ key: "dateFrom", label: `${t("labels.assetDateFrom")}: ${filters.dateFrom}` });
   if (filters.dateTo) chips.push({ key: "dateTo", label: `${t("labels.assetDateTo")}: ${filters.dateTo}` });
@@ -14858,7 +15252,7 @@ function buildAssetMetrics(assets) {
   const remoteAssets = assets.filter((asset) => isRemoteAsset(asset)).length;
   const syncPending = assets.filter((asset) => buildAssetStorageStatus(asset).needsSync).length;
   const processingPending = assets.filter((asset) => !buildAssetProcessingStatus(asset).ready).length;
-  return state.language === "en"
+  return state.language !== "es"
     ? [
         ["Assets", assets.length],
         ["User assets", userAssets],
@@ -14897,7 +15291,7 @@ function renderAssetProcessingSummary(assets) {
   container.innerHTML = `
     <section class="asset-processing-summary-heading">
       <strong>${escapeHtml(t("labels.assetProcessingSummaryTitle"))}</strong>
-      <span>${escapeHtml(`${groups.reduce((sum, group) => sum + group.count, 0)} ${state.language === "en" ? "pending assets" : "activos pendientes"}`)}</span>
+      <span>${escapeHtml(`${groups.reduce((sum, group) => sum + group.count, 0)} ${state.language !== "es" ? "pending assets" : "activos pendientes"}`)}</span>
     </section>
     <div class="asset-processing-summary-grid">
       ${groups
@@ -14924,7 +15318,7 @@ function renderAudioReadinessPanel(assets = collectMultimodalAssets()) {
   const playable = audioAssets.filter((asset) => Boolean(asset.url || asset.dataUrl)).length;
   const transcriptReady = audioAssets.filter((asset) => Boolean(String(asset.analysisText || asset.extractedText || asset.previewText || "").trim())).length;
   const providerReady = state.config?.transcriptionProvider === "openai" || state.health?.transcriptionProvider === "openai";
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         title: "Audio readiness",
         detail: audioAssets.length
@@ -14984,8 +15378,8 @@ function renderAssetProcessingActionPlan(assets) {
           <p>${escapeHtml(t("labels.assetProcessingActionPlanHelp"))}</p>
         </div>
         <div class="asset-processing-action-head-actions">
-          <span>${escapeHtml(`${rows.length} ${state.language === "en" ? "pending" : "pendientes"}`)}</span>
-          <button class="primary-button" type="button" data-asset-processing-run="visible">${escapeHtml(state.language === "en" ? "Process visible" : "Procesar visibles")}</button>
+          <span>${escapeHtml(`${rows.length} ${state.language !== "es" ? "pending" : "pendientes"}`)}</span>
+          <button class="primary-button" type="button" data-asset-processing-run="visible">${escapeHtml(state.language !== "es" ? "Process visible" : "Procesar visibles")}</button>
         </div>
       </div>
       <div class="asset-processing-action-list">
@@ -15000,7 +15394,7 @@ function renderAssetProcessingActionPlan(assets) {
                   <small>${escapeHtml(row.experienceTitle || "")} · ${escapeHtml(formatDate(row.date))}</small>
                 </div>
                 <div class="asset-processing-action-buttons">
-                  <button class="primary-button" type="button" data-asset-process="${escapeHtml(row.assetId)}">${escapeHtml(state.language === "en" ? "Process now" : "Procesar ahora")}</button>
+                  <button class="primary-button" type="button" data-asset-process="${escapeHtml(row.assetId)}">${escapeHtml(state.language !== "es" ? "Process now" : "Procesar ahora")}</button>
                   <button class="ghost-button" type="button" data-asset-plan-suggest="${escapeHtml(row.assetId)}">${escapeHtml(t("labels.assetSuggestAnalysisText"))}</button>
                   <button class="ghost-button" type="button" data-asset-processing-filter="${escapeHtml(row.processingCode)}">${escapeHtml(t("labels.assetProcessingSummaryAction"))}</button>
                   <button class="ghost-button" type="button" data-copy-asset-id="${escapeHtml(row.assetId)}">${escapeHtml(t("labels.assetCopyId"))}</button>
@@ -15027,7 +15421,7 @@ function buildAssetProcessingGroups(assets) {
     "video-review": t("labels.assetProcessingNeedsVideoReview"),
   };
   const details =
-    state.language === "en"
+    state.language !== "es"
       ? {
           extraction: "Documents that need text extraction or manual analytical text.",
           transcription: "Audio assets that need transcription or human notes.",
@@ -15129,10 +15523,10 @@ function filterMultimodalAssets() {
 function compareAssetsForCurrentSort(a, b) {
   const sort = state.assetFilters.sort || "newest";
   if (sort === "oldest") return new Date(a.timestamp) - new Date(b.timestamp);
-  if (sort === "name") return String(a.name || "").localeCompare(String(b.name || ""), state.language === "en" ? "en" : "es");
-  if (sort === "type") return getAssetKindLabel(a.kind).localeCompare(getAssetKindLabel(b.kind), state.language === "en" ? "en" : "es");
+  if (sort === "name") return String(a.name || "").localeCompare(String(b.name || ""), state.language !== "es" ? "en" : "es");
+  if (sort === "type") return getAssetKindLabel(a.kind).localeCompare(getAssetKindLabel(b.kind), state.language !== "es" ? "en" : "es");
   if (sort === "processing") {
-    return buildAssetProcessingStatus(a).label.localeCompare(buildAssetProcessingStatus(b).label, state.language === "en" ? "en" : "es");
+    return buildAssetProcessingStatus(a).label.localeCompare(buildAssetProcessingStatus(b).label, state.language !== "es" ? "en" : "es");
   }
   return new Date(b.timestamp) - new Date(a.timestamp);
 }
@@ -15145,8 +15539,8 @@ function buildAssetDateTokens(timestamp) {
     iso.slice(0, 10),
     iso.slice(0, 7),
     String(date.getFullYear()),
-    new Intl.DateTimeFormat(state.language === "en" ? "en" : "es", { month: "long" }).format(date),
-    new Intl.DateTimeFormat(state.language === "en" ? "en" : "es", { dateStyle: "medium" }).format(date),
+    new Intl.DateTimeFormat(state.language !== "es" ? "en" : "es", { month: "long" }).format(date),
+    new Intl.DateTimeFormat(state.language !== "es" ? "en" : "es", { dateStyle: "medium" }).format(date),
   ];
 }
 
@@ -15251,8 +15645,8 @@ function exportAssetProcessingBacklogCsv() {
 
 function exportAssetProcessingChecklistMarkdown() {
   const rows = buildAssetProcessingBacklogRows(filterMultimodalAssets());
-  const title = state.language === "en" ? "Multimodal Review Checklist" : "Checklist de revisión multimodal";
-  const empty = state.language === "en" ? "No pending assets in the current view." : "No hay activos pendientes en la vista actual.";
+  const title = state.language !== "es" ? "Multimodal Review Checklist" : "Checklist de revisión multimodal";
+  const empty = state.language !== "es" ? "No pending assets in the current view." : "No hay activos pendientes en la vista actual.";
   const grouped = rows.reduce((acc, row) => {
     if (!acc[row.processingCode]) acc[row.processingCode] = [];
     acc[row.processingCode].push(row);
@@ -15261,8 +15655,8 @@ function exportAssetProcessingChecklistMarkdown() {
   const lines = [
     `# ${title}`,
     "",
-    `${state.language === "en" ? "Generated" : "Generado"}: ${new Date().toISOString()}`,
-    `${state.language === "en" ? "Visible pending assets" : "Activos visibles pendientes"}: ${rows.length}`,
+    `${state.language !== "es" ? "Generated" : "Generado"}: ${new Date().toISOString()}`,
+    `${state.language !== "es" ? "Visible pending assets" : "Activos visibles pendientes"}: ${rows.length}`,
     "",
   ];
   if (!rows.length) {
@@ -15274,9 +15668,9 @@ function exportAssetProcessingChecklistMarkdown() {
       groupRows.forEach((row) => {
         lines.push(`- [ ] ${row.name || row.kind}`);
         lines.push(`  - assetId: ${row.assetId}`);
-        lines.push(`  - ${state.language === "en" ? "Experience" : "Experiencia"}: ${row.experienceTitle || ""}`);
-        lines.push(`  - ${state.language === "en" ? "Date" : "Fecha"}: ${row.date || ""}`);
-        lines.push(`  - ${state.language === "en" ? "Action" : "Acción"}: ${row.suggestedNextAction}`);
+        lines.push(`  - ${state.language !== "es" ? "Experience" : "Experiencia"}: ${row.experienceTitle || ""}`);
+        lines.push(`  - ${state.language !== "es" ? "Date" : "Fecha"}: ${row.date || ""}`);
+        lines.push(`  - ${state.language !== "es" ? "Action" : "Acción"}: ${row.suggestedNextAction}`);
       });
       lines.push("");
     });
@@ -15289,7 +15683,7 @@ function exportAssetProcessingChecklistMarkdown() {
 function exportAssetMetadataTemplateCsv() {
   const headers = ["assetId", "analyticalText", "extractedText", "detectedLanguage", "translatedText", "translationLanguage", "manualNote", "manualTags", "clearMetadata"];
   const example =
-    state.language === "en"
+    state.language !== "es"
       ? {
           assetId: "",
           analyticalText: "Example: write transcript, OCR, visual description, or analytical reading here.",
@@ -15367,7 +15761,7 @@ function buildAssetProcessingBacklogRows(assets) {
 
 function getAssetProcessingNextAction(code) {
   const actions =
-    state.language === "en"
+    state.language !== "es"
       ? {
           extraction: "Extract text or add manual analytical text.",
           transcription: "Transcribe audio or add a human summary.",
@@ -15380,7 +15774,7 @@ function getAssetProcessingNextAction(code) {
           description: "Agregar OCR, descripción visual o contexto relevante.",
           "video-review": "Agregar notas de escena, transcripción o resumen audiovisual.",
         };
-  return actions[code] || (state.language === "en" ? "Review before final use." : "Revisar antes de uso final.");
+  return actions[code] || (state.language !== "es" ? "Review before final use." : "Revisar antes de uso final.");
 }
 
 function buildAssetInventoryRows(assets) {
@@ -15536,11 +15930,11 @@ async function importBiometricAssetFromFile(event) {
       imported.serverSyncStatus = syncResult?.ok ? "synced" : "attention";
       imported.serverContextId = syncResult?.results?.find((item) => item.target === "context")?.id || "";
       imported.serverAutomation = syncResult?.automation || null;
-      imported.analysisText = `${imported.analysisText} ${state.language === "en" ? "Server context updated automatically." : "El contexto del servidor se actualizo automaticamente."}`;
+      imported.analysisText = `${imported.analysisText} ${state.language !== "es" ? "Server context updated automatically." : "El contexto del servidor se actualizo automaticamente."}`;
     } catch (syncError) {
       imported.serverSyncStatus = "pending";
       imported.serverSyncError = cleanClientError(syncError);
-      imported.analysisText = `${imported.analysisText} ${state.language === "en" ? "Server sync is pending; local analysis remains available." : "La sincronizacion con servidor quedo pendiente; el analisis local sigue disponible."}`;
+      imported.analysisText = `${imported.analysisText} ${state.language !== "es" ? "Server sync is pending; local analysis remains available." : "La sincronizacion con servidor quedo pendiente; el analisis local sigue disponible."}`;
     }
     state.biometricImports.unshift(imported);
     saveBiometricImports();
@@ -15549,8 +15943,8 @@ async function importBiometricAssetFromFile(event) {
     renderAll();
     showView("assetLibrary");
     const serverLabel = imported.serverSyncStatus === "synced"
-      ? (state.language === "en" ? " Server context updated." : " Contexto del servidor actualizado.")
-      : (state.language === "en" ? " Server sync pending." : " Sincronizacion del servidor pendiente.");
+      ? (state.language !== "es" ? " Server context updated." : " Contexto del servidor actualizado.")
+      : (state.language !== "es" ? " Server sync pending." : " Sincronizacion del servidor pendiente.");
     document.getElementById("assetLibraryIntro").textContent = t("labels.biometricAssetImported")
       .replace("{count}", String(parsed.recordCount))
       .replace("{metrics}", String(parsed.metricNames.length)) + serverLabel;
@@ -15582,11 +15976,11 @@ function parseBiometricFile(rawText, file = {}) {
   const endAt = dates[dates.length - 1]?.toISOString() || "";
   const sourceDevice = detectBiometricSource(normalizedRows) || "Apple Health export";
   const metricText = metricNames.length ? metricNames.join(", ") : t("labels.biometricAssetNoMetrics");
-  const rangeText = startAt && endAt ? `${formatDate(startAt)} - ${formatDate(endAt)}` : state.language === "en" ? "No date range detected" : "Sin rango de fechas detectado";
-  const summaryText = state.language === "en"
+  const rangeText = startAt && endAt ? `${formatDate(startAt)} - ${formatDate(endAt)}` : state.language !== "es" ? "No date range detected" : "Sin rango de fechas detectado";
+  const summaryText = state.language !== "es"
     ? `Biometric import from ${sourceDevice}. ${normalizedRows.length} records. Signals: ${metricText}. Range: ${rangeText}.`
     : `Importacion biometrica desde ${sourceDevice}. ${normalizedRows.length} registros. Senales: ${metricText}. Rango: ${rangeText}.`;
-  const analysisText = state.language === "en"
+  const analysisText = state.language !== "es"
     ? `${summaryText} This asset is cross-experience context and should be matched by date/time before adjusting energy, recovery, stress, sleep, or activity indicators.`
     : `${summaryText} Este activo es contexto transversal y debe vincularse por fecha/hora antes de ajustar energia, recuperacion, estres, sueno o actividad.`;
   return { rows: normalizedRows, recordCount: normalizedRows.length, metricNames, startAt, endAt, sourceDevice, summaryText, analysisText };
@@ -15737,8 +16131,8 @@ function buildBiometricSignalForTimestamp(timestampValue, durationMinutes = 0) {
   if (!timestamp || Number.isNaN(timestamp.getTime())) {
     return {
       matched: false,
-      label: state.language === "en" ? "missing date" : "fecha pendiente",
-      detail: state.language === "en" ? "Set date and time to match biometrics." : "Define fecha y hora para cruzar biometría.",
+      label: state.language !== "es" ? "missing date" : "fecha pendiente",
+      detail: state.language !== "es" ? "Set date and time to match biometrics." : "Define fecha y hora para cruzar biometría.",
     };
   }
   const rows = getAllBiometricRows();
@@ -15765,7 +16159,7 @@ function buildBiometricSignalForTimestamp(timestampValue, durationMinutes = 0) {
     rows: matchedRows,
     metrics,
     energySuggestion,
-    label: state.language === "en" ? `${matchedRows.length} records near this experience` : `${matchedRows.length} registros cercanos a esta experiencia`,
+    label: state.language !== "es" ? `${matchedRows.length} records near this experience` : `${matchedRows.length} registros cercanos a esta experiencia`,
     detail,
   };
 }
@@ -15821,13 +16215,13 @@ function estimateBiometricEnergy(metrics = {}) {
 
 function formatBiometricSignalDetail(metrics = {}, count = 0) {
   const parts = [];
-  if (metrics.heartAvg) parts.push(state.language === "en" ? `heart rate ${Math.round(metrics.heartAvg)} avg` : `frecuencia ${Math.round(metrics.heartAvg)} prom.`);
-  if (metrics.steps) parts.push(state.language === "en" ? `${Math.round(metrics.steps)} steps` : `${Math.round(metrics.steps)} pasos`);
-  if (metrics.activeEnergy) parts.push(state.language === "en" ? `${Math.round(metrics.activeEnergy)} kcal/energy` : `${Math.round(metrics.activeEnergy)} kcal/energía`);
-  if (metrics.sleepMinutes) parts.push(state.language === "en" ? `${(metrics.sleepMinutes / 60).toFixed(1)} h sleep` : `${(metrics.sleepMinutes / 60).toFixed(1)} h sueño`);
-  if (metrics.activityCount) parts.push(state.language === "en" ? `${metrics.activityCount} activity records` : `${metrics.activityCount} registros de actividad`);
-  const summary = parts.length ? parts.join(" · ") : (state.language === "en" ? `${count} biometric records` : `${count} registros biométricos`);
-  return state.language === "en" ? `${summary}. Suggested energy: ${estimateBiometricEnergy(metrics)}/10.` : `${summary}. Energía sugerida: ${estimateBiometricEnergy(metrics)}/10.`;
+  if (metrics.heartAvg) parts.push(state.language !== "es" ? `heart rate ${Math.round(metrics.heartAvg)} avg` : `frecuencia ${Math.round(metrics.heartAvg)} prom.`);
+  if (metrics.steps) parts.push(state.language !== "es" ? `${Math.round(metrics.steps)} steps` : `${Math.round(metrics.steps)} pasos`);
+  if (metrics.activeEnergy) parts.push(state.language !== "es" ? `${Math.round(metrics.activeEnergy)} kcal/energy` : `${Math.round(metrics.activeEnergy)} kcal/energía`);
+  if (metrics.sleepMinutes) parts.push(state.language !== "es" ? `${(metrics.sleepMinutes / 60).toFixed(1)} h sleep` : `${(metrics.sleepMinutes / 60).toFixed(1)} h sueño`);
+  if (metrics.activityCount) parts.push(state.language !== "es" ? `${metrics.activityCount} activity records` : `${metrics.activityCount} registros de actividad`);
+  const summary = parts.length ? parts.join(" · ") : (state.language !== "es" ? `${count} biometric records` : `${count} registros biométricos`);
+  return state.language !== "es" ? `${summary}. Suggested energy: ${estimateBiometricEnergy(metrics)}/10.` : `${summary}. Energía sugerida: ${estimateBiometricEnergy(metrics)}/10.`;
 }
 
 function extractJsonBiometricRows(payload) {
@@ -15871,13 +16265,13 @@ function detectBiometricMetricNames(rows = []) {
   rows.forEach((row) => {
     const raw = String(row.type || "").toLowerCase();
     if (!raw) return;
-    if (/heart|hr|cardio|pulse|ritmo|frecuencia/.test(raw)) names.add(state.language === "en" ? "heart rate" : "frecuencia cardiaca");
-    else if (/step|paso/.test(raw)) names.add(state.language === "en" ? "steps" : "pasos");
-    else if (/sleep|sueno/.test(raw)) names.add(state.language === "en" ? "sleep" : "sueno");
-    else if (/energy|calorie|kcal|energia/.test(raw)) names.add(state.language === "en" ? "energy/calories" : "energia/calorias");
-    else if (/distance|distancia/.test(raw)) names.add(state.language === "en" ? "distance" : "distancia");
-    else if (/oxygen|spo2|respiratory|respiracion/.test(raw)) names.add(state.language === "en" ? "oxygen/respiration" : "oxigeno/respiracion");
-    else if (/workout|exercise|active|actividad|entreno/.test(raw)) names.add(state.language === "en" ? "activity" : "actividad");
+    if (/heart|hr|cardio|pulse|ritmo|frecuencia/.test(raw)) names.add(state.language !== "es" ? "heart rate" : "frecuencia cardiaca");
+    else if (/step|paso/.test(raw)) names.add(state.language !== "es" ? "steps" : "pasos");
+    else if (/sleep|sueno/.test(raw)) names.add(state.language !== "es" ? "sleep" : "sueno");
+    else if (/energy|calorie|kcal|energia/.test(raw)) names.add(state.language !== "es" ? "energy/calories" : "energia/calorias");
+    else if (/distance|distancia/.test(raw)) names.add(state.language !== "es" ? "distance" : "distancia");
+    else if (/oxygen|spo2|respiratory|respiracion/.test(raw)) names.add(state.language !== "es" ? "oxygen/respiration" : "oxigeno/respiracion");
+    else if (/workout|exercise|active|actividad|entreno/.test(raw)) names.add(state.language !== "es" ? "activity" : "actividad");
     else names.add(raw.replace(/^hkquantitytypeidentifier/i, "").replace(/^hkcategorytypeidentifier/i, "").slice(0, 34));
   });
   return Array.from(names).filter(Boolean).slice(0, 12);
@@ -15943,8 +16337,8 @@ function classifyIntegrationSourceFamily(lower = "", fallback = "") {
   if (/samsung|galaxy|health connect|android-health/.test(lower)) return "Health Connect / Samsung";
   if (/apple health|healthkit/.test(lower)) return "Apple Health";
   if (/vibeapp|vibeapp-native/.test(lower)) return "Vibeapp";
-  if (/biometric|wearable/.test(lower)) return state.language === "en" ? "Wearable" : "Wearable";
-  return fallback || (state.language === "en" ? "External source" : "Fuente externa");
+  if (/biometric|wearable/.test(lower)) return state.language !== "es" ? "Wearable" : "Wearable";
+  return fallback || (state.language !== "es" ? "External source" : "Fuente externa");
 }
 
 function buildDashboardIntegrationHandoffSummary() {
@@ -15957,7 +16351,7 @@ function buildDashboardIntegrationHandoffSummary() {
     const profile = getIntegrationSourceProfile(experience);
     if (profile.active) {
       rows.push({
-        type: state.language === "en" ? "Experience/context" : "Experiencia/contexto",
+        type: state.language !== "es" ? "Experience/context" : "Experiencia/contexto",
         title: experience.title || profile.family,
         detail: [profile.payloadType, experience.category, experience.location].filter(Boolean).join(" · "),
         timestamp: profile.capturedAt || experience.timestamp,
@@ -15969,7 +16363,7 @@ function buildDashboardIntegrationHandoffSummary() {
     const profile = getIntegrationSourceProfile(asset);
     if (profile.active) {
       rows.push({
-        type: state.language === "en" ? "Asset" : "Activo",
+        type: state.language !== "es" ? "Asset" : "Activo",
         title: asset.name || asset.experienceTitle || profile.family,
         detail: [profile.payloadType, asset.kind, asset.experienceTitle].filter(Boolean).join(" · "),
         timestamp: profile.capturedAt || asset.timestamp || asset.uploadedAt,
@@ -15980,7 +16374,7 @@ function buildDashboardIntegrationHandoffSummary() {
   agendaEvents.forEach((event) => {
     const profile = getIntegrationSourceProfile(event);
     rows.push({
-      type: state.language === "en" ? "Agenda" : "Agenda",
+      type: state.language !== "es" ? "Agenda" : "Agenda",
       title: event.title || profile.family,
       detail: [profile.payloadType || "calendar", event.location].filter(Boolean).join(" · "),
       timestamp: profile.capturedAt || event.startAt,
@@ -16061,10 +16455,10 @@ function renderDashboardIntegrationHandoff() {
   if (!box) return;
   const title = document.getElementById("dashboardIntegrationTitle");
   const status = document.getElementById("dashboardIntegrationStatus");
-  if (title) title.textContent = state.language === "en" ? "Data origins" : "Origen de datos";
-  if (status) status.textContent = state.language === "en" ? "Vibeapp and connectors" : "Vibeapp y conectores";
+  if (title) title.textContent = state.language !== "es" ? "Data origins" : "Origen de datos";
+  if (status) status.textContent = state.language !== "es" ? "Vibeapp and connectors" : "Vibeapp y conectores";
   const summary = buildDashboardIntegrationHandoffSummary();
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         clear: "No native or connector signals in this scope yet.",
         clearDetail: "Vibeapp is the normal source for mobile location, weather, news, biometrics, media, and voice captures. When it sends data, this panel shows where it landed.",
@@ -16275,7 +16669,7 @@ function renderAssetCard(asset) {
           <span class="pill ${processing.ready ? "pill-approved" : "pill-review"}">${escapeHtml(processing.label)}</span>
         </div>
         <h3>${escapeHtml(asset.name || getAssetKindLabel(asset.kind))}</h3>
-        <p class="card-meta">${escapeHtml(formatDate(asset.timestamp))} · ${escapeHtml(asset.location || (state.language === "en" ? "No location" : "Sin ubicación"))}</p>
+        <p class="card-meta">${escapeHtml(formatDate(asset.timestamp))} · ${escapeHtml(asset.location || (state.language !== "es" ? "No location" : "Sin ubicación"))}</p>
         <section class="asset-readiness-panel">
           <strong>${escapeHtml(t("labels.assetReadiness"))}: ${escapeHtml(readiness.label)}</strong>
           <p>${escapeHtml(readiness.detail)}</p>
@@ -16314,13 +16708,13 @@ function renderAssetCard(asset) {
         ${
           externalProfile.hasProfile
             ? `<section class="asset-readiness-panel asset-external-profile-panel">
-                <strong>${escapeHtml(state.language === "en" ? "Device/source profile" : "Perfil de dispositivo/origen")}: ${escapeHtml(externalProfile.source || externalProfile.label)}</strong>
-                <p>${escapeHtml(externalProfile.treatment || (state.language === "en" ? "Imported with normalized source metadata." : "Importado con metadatos de origen normalizados."))}</p>
+                <strong>${escapeHtml(state.language !== "es" ? "Device/source profile" : "Perfil de dispositivo/origen")}: ${escapeHtml(externalProfile.source || externalProfile.label)}</strong>
+                <p>${escapeHtml(externalProfile.treatment || (state.language !== "es" ? "Imported with normalized source metadata." : "Importado con metadatos de origen normalizados."))}</p>
                 <div class="pill-row">
                   ${externalProfile.payloadType ? `<span class="pill">${escapeHtml(externalProfile.payloadType.replace(/_/g, " "))}</span>` : ""}
                   ${externalProfile.intent ? `<span class="pill">${escapeHtml(externalProfile.intent.replace(/_/g, " "))}</span>` : ""}
                   ${externalProfile.consumer ? `<span class="pill">${escapeHtml(externalProfile.consumer)}</span>` : ""}
-                  <span class="pill ${externalProfile.autoInterpret ? "pill-approved" : "pill-review"}">${escapeHtml(externalProfile.autoInterpret ? (state.language === "en" ? "Automatic processing allowed" : "Procesamiento automatico permitido") : (state.language === "en" ? "Review before interpreting" : "Revisar antes de interpretar"))}</span>
+                  <span class="pill ${externalProfile.autoInterpret ? "pill-approved" : "pill-review"}">${escapeHtml(externalProfile.autoInterpret ? (state.language !== "es" ? "Automatic processing allowed" : "Procesamiento automatico permitido") : (state.language !== "es" ? "Review before interpreting" : "Revisar antes de interpretar"))}</span>
                 </div>
                 ${externalProfile.privacy ? `<small>${escapeHtml(externalProfile.privacy)}</small>` : ""}
               </section>`
@@ -16368,26 +16762,26 @@ function renderAssetCard(asset) {
             <small>${escapeHtml(t("labels.assetTranslationHelp"))}</small>
           </label>
           <div class="asset-metadata-actions">
-            <button class="primary-button" type="button" data-asset-process="${escapeHtml(asset.assetKey)}">${escapeHtml(state.language === "en" ? "Process now" : "Procesar ahora")}</button>
+            <button class="primary-button" type="button" data-asset-process="${escapeHtml(asset.assetKey)}">${escapeHtml(state.language !== "es" ? "Process now" : "Procesar ahora")}</button>
             <button class="ghost-button" type="button" data-asset-translate="${escapeHtml(asset.assetKey)}">${escapeHtml(t("labels.assetTranslateText"))}</button>
             <button class="ghost-button" type="button" data-asset-suggest-analysis="${escapeHtml(asset.assetKey)}">${escapeHtml(t("labels.assetSuggestAnalysisText"))}</button>
-            <button class="ghost-button" type="submit">${state.language === "en" ? "Save metadata" : "Guardar metadatos"}</button>
+            <button class="ghost-button" type="submit">${state.language !== "es" ? "Save metadata" : "Guardar metadatos"}</button>
           </div>
         </form>
         <dl class="asset-meta-list">
           <div><dt>${t("labels.assetId")}</dt><dd>${escapeHtml(asset.assetKey)}</dd></div>
           <div><dt>${t("labels.assetLinkedExperience")}</dt><dd>${escapeHtml(asset.experienceTitle)}</dd></div>
-          <div><dt>${escapeHtml(state.language === "en" ? "Linked event" : "Evento vinculado")}</dt><dd>${escapeHtml(asset.eventTitle || (state.language === "en" ? "Whole experience" : "Toda la experiencia"))}</dd></div>
+          <div><dt>${escapeHtml(state.language !== "es" ? "Linked event" : "Evento vinculado")}</dt><dd>${escapeHtml(asset.eventTitle || (state.language !== "es" ? "Whole experience" : "Toda la experiencia"))}</dd></div>
           <div><dt>${t("labels.assetStorage")}</dt><dd>${escapeHtml(asset.storageLabel)}</dd></div>
           <div><dt>${t("labels.assetLanguage")}</dt><dd>${escapeHtml(String(detectedLanguage || asset.language || "-").toUpperCase())}</dd></div>
           <div><dt>${t("labels.assetDevice")}</dt><dd>${escapeHtml(asset.device)}</dd></div>
-          <div><dt>${escapeHtml(state.language === "en" ? "Source type" : "Tipo de origen")}</dt><dd>${escapeHtml(asset.sourceType || "-")}</dd></div>
-          <div><dt>${escapeHtml(state.language === "en" ? "External profile" : "Perfil externo")}</dt><dd>${escapeHtml(externalProfile.hasProfile ? `${externalProfile.source || "-"} / ${externalProfile.payloadType || "-"}` : "-")}</dd></div>
-          <div><dt>${escapeHtml(state.language === "en" ? "Captured" : "Capturado")}</dt><dd>${escapeHtml(asset.capturedAt ? formatDate(asset.capturedAt) : "-")}</dd></div>
-          <div><dt>${escapeHtml(state.language === "en" ? "Trace" : "Trazabilidad")}</dt><dd>${escapeHtml(asset.metadataFingerprint || "-")}</dd></div>
+          <div><dt>${escapeHtml(state.language !== "es" ? "Source type" : "Tipo de origen")}</dt><dd>${escapeHtml(asset.sourceType || "-")}</dd></div>
+          <div><dt>${escapeHtml(state.language !== "es" ? "External profile" : "Perfil externo")}</dt><dd>${escapeHtml(externalProfile.hasProfile ? `${externalProfile.source || "-"} / ${externalProfile.payloadType || "-"}` : "-")}</dd></div>
+          <div><dt>${escapeHtml(state.language !== "es" ? "Captured" : "Capturado")}</dt><dd>${escapeHtml(asset.capturedAt ? formatDate(asset.capturedAt) : "-")}</dd></div>
+          <div><dt>${escapeHtml(state.language !== "es" ? "Trace" : "Trazabilidad")}</dt><dd>${escapeHtml(asset.metadataFingerprint || "-")}</dd></div>
         </dl>
         <button class="ghost-button asset-open-link" type="button" data-copy-asset-id="${escapeHtml(asset.assetKey)}">${escapeHtml(t("labels.assetCopyId"))}</button>
-        ${asset.url || asset.dataUrl ? `<a class="ghost-button asset-open-link" href="${asset.url || asset.dataUrl}" target="_blank" rel="noreferrer">${state.language === "en" ? "Open file" : "Abrir archivo"}</a>` : ""}
+        ${asset.url || asset.dataUrl ? `<a class="ghost-button asset-open-link" href="${asset.url || asset.dataUrl}" target="_blank" rel="noreferrer">${state.language !== "es" ? "Open file" : "Abrir archivo"}</a>` : ""}
         ${asset.url || asset.dataUrl ? `<a class="ghost-button asset-open-link" href="${asset.url || asset.dataUrl}" download="${escapeHtml(asset.name || "asset")}" target="_blank" rel="noreferrer">${escapeHtml(t("labels.assetDownloadFile"))}</a>` : ""}
         ${asset.contextOnly ? "" : `<button class="ghost-button" type="button" onclick="editExperience('${escapeHtml(asset.experienceId)}')">${t("buttons.edit")}</button>`}
       </div>
@@ -16503,7 +16897,7 @@ async function processVisibleAssetBacklog() {
     if (ok) processed += 1;
   }
   renderAssetLibrary();
-  const message = state.language === "en"
+  const message = state.language !== "es"
     ? `${processed}/${pending.length} visible assets processed.`
     : `${processed}/${pending.length} activos visibles procesados.`;
   notify(message, processed ? "ok" : "warn");
@@ -16520,7 +16914,7 @@ function scheduleAutomaticAssetProcessing(experience = {}) {
     .map((asset) => asset.assetKey)
     .filter(Boolean);
   if (!pendingAssetKeys.length) return;
-  const startMessage = state.language === "en"
+  const startMessage = state.language !== "es"
     ? `Processing ${pendingAssetKeys.length} attachment(s) in the background.`
     : `Procesando ${pendingAssetKeys.length} adjunto(s) en segundo plano.`;
   notify(startMessage, "ok");
@@ -16574,7 +16968,7 @@ async function processAssetKeysInBackground(assetKeys = [], contextId = "", opti
   }
   renderAssetLibrary();
   renderAdmin();
-  const message = state.language === "en"
+  const message = state.language !== "es"
     ? `${processed}/${uniqueKeys.length} attachment(s) processed and synced automatically.`
     : `${processed}/${uniqueKeys.length} adjunto(s) procesados y sincronizados automáticamente.`;
   if (!options.silent || processed) notify(message, processed === uniqueKeys.length ? "ok" : "warn");
@@ -16620,10 +17014,10 @@ async function processAssetNow(key, options = {}) {
   if (!options.silent) {
     renderAssetLibrary();
     const message = remoteSync.synced
-      ? state.language === "en"
+      ? state.language !== "es"
         ? `Asset processed and synced: ${asset.name || key}.`
         : `Activo procesado y sincronizado: ${asset.name || key}.`
-      : state.language === "en"
+      : state.language !== "es"
         ? `Asset processed locally. It will sync when the cloud is available: ${asset.name || key}.`
         : `Activo procesado en este dispositivo. Se sincronizará cuando la nube esté disponible: ${asset.name || key}.`;
     notify(message, remoteSync.synced ? "ok" : "warn");
@@ -16748,7 +17142,7 @@ async function buildProcessedAssetAnalysis(asset, manual = {}) {
         ...manual,
         note: [
           manual.note,
-          state.language === "en"
+          state.language !== "es"
             ? "Archive files are stored for transport and download only; they are not interpreted automatically."
             : "Los archivos comprimidos se guardan solo para transporte y descarga; no se interpretan automáticamente.",
         ]
@@ -16810,7 +17204,7 @@ async function buildProcessedAssetAnalysis(asset, manual = {}) {
           extractedText: "",
           analysisText: buildGuidedProcessingAnalysis(asset, {
             ...manual,
-            note: [manual.note, state.language === "en" ? "OCR found no readable text." : "El OCR no encontró texto legible."].filter(Boolean).join(" "),
+            note: [manual.note, state.language !== "es" ? "OCR found no readable text." : "El OCR no encontró texto legible."].filter(Boolean).join(" "),
           }),
         };
       }
@@ -16879,11 +17273,11 @@ async function translateAssetNow(key, options = {}) {
   const existing = state.assetMetadata[key] || {};
   const sourceText = String(existing.extractedText || asset.extractedText || asset.previewText || asset.analysisText || "").trim();
   if (!sourceText) {
-    if (!options.silent) notify(state.language === "en" ? "No extracted text available to translate." : "No hay texto extraído para traducir.", "warn");
+    if (!options.silent) notify(state.language !== "es" ? "No extracted text available to translate." : "No hay texto extraído para traducir.", "warn");
     return false;
   }
   const detectedLanguage = String(existing.detectedLanguage || asset.detectedLanguage || detectAssetTextLanguage(sourceText)).trim();
-  const targetLanguage = state.language === "en" ? "en" : "es";
+  const targetLanguage = state.language !== "es" ? "en" : "es";
   let translatedText = "";
   try {
     const payload = await apiRequest("/translate-text", {
@@ -16915,7 +17309,7 @@ async function translateAssetNow(key, options = {}) {
   markAssetWorkflowAudit("assetTranslatedAt", { assetId: key, sourceLanguage: detectedLanguage, targetLanguage });
   if (!options.silent) {
     renderAssetLibrary();
-    notify(state.language === "en" ? `Asset translated: ${asset.name || key}.` : `Activo traducido: ${asset.name || key}.`);
+    notify(state.language !== "es" ? `Asset translated: ${asset.name || key}.` : `Activo traducido: ${asset.name || key}.`);
   }
   return true;
 }
@@ -16951,7 +17345,7 @@ function detectAssetTextLanguage(text = "") {
 
 function buildLocalTranslationPlaceholder(text, sourceLanguage, targetLanguage) {
   if (normalizeAssetLanguageCode(sourceLanguage) === normalizeAssetLanguageCode(targetLanguage)) return text;
-  return state.language === "en"
+  return state.language !== "es"
     ? `[Translation pending from ${(sourceLanguage || "original").toUpperCase()}]\n${text}`
     : `[Traducción pendiente desde ${(sourceLanguage || "original").toUpperCase()}]\n${text}`;
 }
@@ -16977,10 +17371,10 @@ function extractReadableAssetText(asset) {
 
 function buildExtractedTextAssetAnalysis(asset, extractedText, manual = {}) {
   const clipped = String(extractedText || "").replace(/\s+/g, " ").trim().slice(0, 900);
-  const title = asset.experienceTitle || asset.name || (state.language === "en" ? "linked experience" : "experiencia vinculada");
+  const title = asset.experienceTitle || asset.name || (state.language !== "es" ? "linked experience" : "experiencia vinculada");
   const manualTags = (manual.tags || []).slice(0, 5).join(", ");
   const manualNote = manual.note || asset.manualNote || "";
-  if (state.language === "en") {
+  if (state.language !== "es") {
     return [
       `Automatic local extraction for "${title}".`,
       `Extracted content: ${clipped}`,
@@ -17004,11 +17398,11 @@ function buildExtractedTextAssetAnalysis(asset, extractedText, manual = {}) {
 
 function buildGuidedProcessingAnalysis(asset, manual = {}) {
   const kind = getAssetKindLabel(asset.kind).toLowerCase();
-  const title = asset.experienceTitle || asset.name || (state.language === "en" ? "linked experience" : "experiencia vinculada");
-  const location = asset.location || (state.language === "en" ? "unspecified location" : "ubicación no especificada");
+  const title = asset.experienceTitle || asset.name || (state.language !== "es" ? "linked experience" : "experiencia vinculada");
+  const location = asset.location || (state.language !== "es" ? "unspecified location" : "ubicación no especificada");
   const manualTags = (manual.tags || []).slice(0, 5).join(", ");
   const manualNote = manual.note || asset.manualNote || "";
-  if (state.language === "en") {
+  if (state.language !== "es") {
     return [
       `Guided multimodal review: this ${kind} is linked to "${title}" at ${location}.`,
       `Current MVP status: the file is stored and classified, but deep OCR, visual recognition, or transcription must be confirmed by a human or an external processor.`,
@@ -17032,14 +17426,14 @@ function buildGuidedProcessingAnalysis(asset, manual = {}) {
 
 function buildSuggestedAssetAnalysisText(asset, manual = {}) {
   const kind = getAssetKindLabel(asset.kind).toLowerCase();
-  const title = asset.experienceTitle || asset.name || (state.language === "en" ? "the linked experience" : "la experiencia vinculada");
+  const title = asset.experienceTitle || asset.name || (state.language !== "es" ? "the linked experience" : "la experiencia vinculada");
   const category = displayCategory(asset.category || "");
-  const location = asset.location || (state.language === "en" ? "unspecified location" : "ubicación no especificada");
+  const location = asset.location || (state.language !== "es" ? "unspecified location" : "ubicación no especificada");
   const people = splitListField(asset.people).slice(0, 3).join(", ");
   const manualTags = (manual.tags || []).slice(0, 5).join(", ");
   const manualNote = manual.note || asset.manualNote || "";
-  const source = asset.isDemo ? getAssetProvenanceLabel(asset) : (state.language === "en" ? "user asset" : "activo del usuario");
-  if (state.language === "en") {
+  const source = asset.isDemo ? getAssetProvenanceLabel(asset) : (state.language !== "es" ? "user asset" : "activo del usuario");
+  if (state.language !== "es") {
     return [
       `Initial analytical reading: this ${kind} is linked to "${title}" in the ${category || "uncategorized"} category.`,
       `Context: ${location}${people ? `, with ${people}` : ""}. Source: ${source}.`,
@@ -17072,7 +17466,7 @@ function buildAssetProcessingStatus(asset) {
       code: "ready",
       label: t("labels.assetProcessingReady"),
       detail:
-        state.language === "en"
+        state.language !== "es"
           ? "This asset already has analytical text for search, reports, memory, and publications."
           : "Este activo ya tiene texto analítico para búsqueda, reportes, memoria y publicaciones.",
     };
@@ -17081,9 +17475,9 @@ function buildAssetProcessingStatus(asset) {
     return {
       ready: true,
       code: "external-review",
-      label: state.language === "en" ? "Review before interpreting" : "Revisar antes de interpretar",
+      label: state.language !== "es" ? "Review before interpreting" : "Revisar antes de interpretar",
       detail:
-        state.language === "en"
+        state.language !== "es"
           ? "This external file is preserved with source metadata, but the user should review it before automatic interpretation."
           : "Este archivo externo se conserva con metadatos de origen, pero el usuario debe revisarlo antes de interpretarlo automáticamente.",
     };
@@ -17094,7 +17488,7 @@ function buildAssetProcessingStatus(asset) {
       code: "base-text",
       label: t("labels.assetProcessingTextAvailable"),
       detail:
-        state.language === "en"
+        state.language !== "es"
           ? "The document has a readable text preview. Add or suggest analytical text to use it more deeply in reports."
           : "El documento tiene una vista textual legible. Agrega o sugiere texto analítico para usarlo mejor en reportes.",
     };
@@ -17103,9 +17497,9 @@ function buildAssetProcessingStatus(asset) {
     return {
       ready: true,
       code: "external-transport",
-      label: state.language === "en" ? "Transport only" : "Solo transporte",
+      label: state.language !== "es" ? "Transport only" : "Solo transporte",
       detail:
-        state.language === "en"
+        state.language !== "es"
           ? "This imported bundle is preserved for traceability or download. It is not interpreted automatically."
           : "Este paquete importado se conserva para trazabilidad o descarga. No se interpreta automáticamente.",
     };
@@ -17124,7 +17518,7 @@ function buildAssetProcessingStatus(asset) {
       code: "extraction",
       label: t("labels.assetProcessingNeedsExtraction"),
       detail:
-        state.language === "en"
+        state.language !== "es"
           ? `${(extension || "Document").toUpperCase()} is stored and traceable, but needs later text extraction or manual analytical text.`
           : `${(extension || "Documento").toUpperCase()} está guardado y trazable, pero requiere extracción posterior o texto analítico manual.`,
     };
@@ -17135,7 +17529,7 @@ function buildAssetProcessingStatus(asset) {
       code: "transcription",
       label: t("labels.assetProcessingNeedsTranscription"),
       detail:
-        state.language === "en"
+        state.language !== "es"
           ? "The audio is stored and playable when supported, but needs transcription or manual notes for deeper analysis."
           : "El audio está guardado y se reproduce si el navegador lo permite, pero requiere transcripción o notas manuales para análisis profundo.",
     };
@@ -17146,7 +17540,7 @@ function buildAssetProcessingStatus(asset) {
       code: "video-review",
       label: t("labels.assetProcessingNeedsVideoReview"),
       detail:
-        state.language === "en"
+        state.language !== "es"
           ? "The video is stored and playable when supported, but needs transcription, scene description, or manual context."
           : "El video está guardado y se reproduce si el navegador lo permite, pero requiere transcripción, descripción de escenas o contexto manual.",
     };
@@ -17157,7 +17551,7 @@ function buildAssetProcessingStatus(asset) {
       code: "description",
       label: t("labels.assetProcessingNeedsDescription"),
       detail:
-        state.language === "en"
+        state.language !== "es"
           ? "The image is stored and previewable when supported, but needs OCR, visual description, or manual context."
           : "La imagen está guardada y se previsualiza si el navegador lo permite, pero requiere OCR, descripción visual o contexto manual.",
     };
@@ -17166,7 +17560,7 @@ function buildAssetProcessingStatus(asset) {
     ready: false,
     code: "review",
     label: t("labels.assetNeedsReview"),
-    detail: state.language === "en" ? "Review this file before using it in final outputs." : "Revisa este archivo antes de usarlo en salidas finales.",
+    detail: state.language !== "es" ? "Review this file before using it in final outputs." : "Revisa este archivo antes de usarlo en salidas finales.",
   };
 }
 
@@ -17180,20 +17574,20 @@ function buildAssetReadiness(asset) {
       ready: true,
       label: t("labels.assetReady"),
       detail:
-        state.language === "en"
+        state.language !== "es"
           ? "Has source, context, and preview support for reuse."
           : "Tiene fuente, contexto y soporte de vista previa para reutilización.",
     };
   }
   const missing = [];
-  if (!hasSource) missing.push(state.language === "en" ? "source" : "fuente");
-  if (!hasContext) missing.push(state.language === "en" ? "context" : "contexto");
-  if (!previewable) missing.push(state.language === "en" ? "browser preview" : "vista previa del navegador");
+  if (!hasSource) missing.push(state.language !== "es" ? "source" : "fuente");
+  if (!hasContext) missing.push(state.language !== "es" ? "context" : "contexto");
+  if (!previewable) missing.push(state.language !== "es" ? "browser preview" : "vista previa del navegador");
   return {
     ready: false,
     label: t("labels.assetNeedsReview"),
     detail:
-      state.language === "en"
+      state.language !== "es"
         ? `Review ${missing.join(", ")} before using it in final outputs.`
         : `Revisa ${missing.join(", ")} antes de usarlo en salidas finales.`,
   };
@@ -17205,11 +17599,11 @@ function buildAssetStorageStatus(asset) {
       remote: false,
       localPreview: true,
       needsSync: false,
-      label: state.language === "en" ? "Context asset" : "Activo de contexto",
-      detail: state.language === "en"
+      label: state.language !== "es" ? "Context asset" : "Activo de contexto",
+      detail: state.language !== "es"
         ? "This biometric file is stored as cross-experience context and linked by date/time."
         : "Este archivo biometrico se guarda como contexto transversal y se vincula por fecha/hora.",
-      badges: [state.language === "en" ? "Biometrics" : "Biometria", state.language === "en" ? "Time-based context" : "Contexto por fecha/hora"],
+      badges: [state.language !== "es" ? "Biometrics" : "Biometria", state.language !== "es" ? "Time-based context" : "Contexto por fecha/hora"],
     };
   }
   const remote = isRemoteAsset(asset);
@@ -17249,19 +17643,19 @@ function buildAssetTags(asset) {
     asset.objective,
     asset.location,
     ...(Array.isArray(asset.manualTags) ? asset.manualTags : []),
-    asset.manualNote ? (state.language === "en" ? "Manual context" : "Contexto manual") : "",
-    asset.analysisText ? (state.language === "en" ? "Analytical text" : "Texto analítico") : "",
+    asset.manualNote ? (state.language !== "es" ? "Manual context" : "Contexto manual") : "",
+    asset.analysisText ? (state.language !== "es" ? "Analytical text" : "Texto analítico") : "",
     processing.label,
     ...(splitListField(asset.people).slice(0, 3)),
     asset.storageLabel,
-    asset.previewable === false ? (state.language === "en" ? "Needs preview review" : "Revisar vista previa") : "",
-    asset.kind === "document" ? (state.language === "en" ? "Document" : "Documento") : "",
-    asset.kind === "audio" ? (state.language === "en" ? "Audio for transcription" : "Audio para transcripción") : "",
-    asset.kind === "image" ? (state.language === "en" ? "Visual evidence" : "Evidencia visual") : "",
+    asset.previewable === false ? (state.language !== "es" ? "Needs preview review" : "Revisar vista previa") : "",
+    asset.kind === "document" ? (state.language !== "es" ? "Document" : "Documento") : "",
+    asset.kind === "audio" ? (state.language !== "es" ? "Audio for transcription" : "Audio para transcripción") : "",
+    asset.kind === "image" ? (state.language !== "es" ? "Visual evidence" : "Evidencia visual") : "",
     asset.externalSource,
     asset.externalProfileLabel,
     asset.externalPayloadType ? asset.externalPayloadType.replace(/_/g, " ") : "",
-    asset.externalTransportOnly ? (state.language === "en" ? "Transport only" : "Solo transporte") : "",
+    asset.externalTransportOnly ? (state.language !== "es" ? "Transport only" : "Solo transporte") : "",
   ];
   return [...new Set(rawTags.map((tag) => String(tag || "").trim()).filter(Boolean))].slice(0, 8);
 }
@@ -17310,7 +17704,7 @@ function renderAssetPreview(asset) {
   if (asset.kind === "document") {
     const text = asset.previewText || decodeTextDataUrl(source);
     const pdfFrame = isPdfAsset(asset) ? `<iframe src="${escapeHtml(source)}" title="${escapeHtml(asset.name || "PDF")}" loading="lazy"></iframe>` : "";
-    return `<div class="asset-preview asset-preview-document">${pdfFrame}<strong>${escapeHtml(asset.name || getAssetKindLabel(asset.kind))}</strong><pre>${escapeHtml(text || (state.language === "en" ? "Document ready for extraction or download." : "Documento listo para extracción o descarga."))}</pre></div>`;
+    return `<div class="asset-preview asset-preview-document">${pdfFrame}<strong>${escapeHtml(asset.name || getAssetKindLabel(asset.kind))}</strong><pre>${escapeHtml(text || (state.language !== "es" ? "Document ready for extraction or download." : "Documento listo para extracción o descarga."))}</pre></div>`;
   }
   return `<div class="asset-preview asset-preview-empty">${escapeHtml(asset.name || getAssetKindLabel(asset.kind))}</div>`;
 }
@@ -17337,7 +17731,7 @@ function renderAssetNeedsSync(asset) {
 
 function renderUnsupportedMediaPreview(asset) {
   const format = (asset.extension || getFileExtension(asset.name) || asset.type || "formato").toUpperCase();
-  const message = state.language === "en"
+  const message = state.language !== "es"
     ? "Stored and classified. Browser preview depends on local codec support."
     : "Guardado y clasificado. La vista previa depende del soporte del navegador.";
   return `
@@ -17379,7 +17773,7 @@ async function handleAgendaSubmit(event) {
   const agendaEvent = readAgendaForm();
   if (new Date(agendaEvent.endAt) <= new Date(agendaEvent.startAt)) {
     document.getElementById("agendaFormStatus").textContent =
-      state.language === "en" ? "End time must be after start time." : "La hora de fin debe ser posterior al inicio.";
+      state.language !== "es" ? "End time must be after start time." : "La hora de fin debe ser posterior al inicio.";
     return;
   }
   const existingIndex = state.agendaEvents.findIndex((item) => item.id === agendaEvent.id);
@@ -17392,8 +17786,8 @@ async function handleAgendaSubmit(event) {
   renderAgenda();
   updatePilotParticipantControls();
   document.getElementById("agendaFormStatus").textContent = syncResult.remote
-    ? state.language === "en" ? "Event saved and synced." : "Evento guardado y sincronizado."
-    : state.language === "en" ? "Event saved on this device. It will sync when the connection is ready." : "Evento guardado en este dispositivo. Se sincronizará cuando la conexión esté lista.";
+    ? state.language !== "es" ? "Event saved and synced." : "Evento guardado y sincronizado."
+    : state.language !== "es" ? "Event saved on this device. It will sync when the connection is ready." : "Evento guardado en este dispositivo. Se sincronizará cuando la conexión esté lista.";
 }
 
 function readAgendaForm() {
@@ -17430,7 +17824,7 @@ function clearAgendaForm() {
   if (agendaParticipantInput) {
     agendaParticipantInput.value = getActivePilotParticipantId(["agenda", "dashboard"]);
   }
-  document.getElementById("agendaFormHeading").textContent = state.language === "en" ? "New event" : "Nuevo evento";
+  document.getElementById("agendaFormHeading").textContent = state.language !== "es" ? "New event" : "Nuevo evento";
   document.getElementById("agendaFormStatus").textContent = t("labels.agendaLocalStatus");
 }
 
@@ -17543,13 +17937,13 @@ function buildAgendaEventFromIcs(item) {
   const importedType = normalizeAgendaImportedType(item.CATEGORIES);
   return {
     id: createId(),
-    title: item.SUMMARY || (state.language === "en" ? "Imported event" : "Evento importado"),
+    title: item.SUMMARY || (state.language !== "es" ? "Imported event" : "Evento importado"),
     type: importedType,
     description: item.DESCRIPTION || "",
     startAt,
     endAt,
-    location: item.LOCATION || (state.language === "en" ? "No location" : "Sin ubicación"),
-    participants: state.language === "en" ? "Imported calendar" : "Calendario importado",
+    location: item.LOCATION || (state.language !== "es" ? "No location" : "Sin ubicación"),
+    participants: state.language !== "es" ? "Imported calendar" : "Calendario importado",
     priority: "normal",
     status: item.STATUS === "CANCELLED" ? "Cancelado" : "Confirmado",
     reminders: "",
@@ -17598,10 +17992,10 @@ function buildAgendaIcs(events) {
   events.forEach((event) => {
     const description = [
       event.description || "",
-      event.participants ? `${state.language === "en" ? "Participants" : "Participantes"}: ${event.participants}` : "",
-      event.reminders ? `${state.language === "en" ? "Reminders" : "Recordatorios"}: ${event.reminders}` : "",
-      `${state.language === "en" ? "Status" : "Estado"}: ${displayAgendaStatus(event.status)}`,
-      `${state.language === "en" ? "Priority" : "Prioridad"}: ${displayAgendaPriority(event.priority)}`,
+      event.participants ? `${state.language !== "es" ? "Participants" : "Participantes"}: ${event.participants}` : "",
+      event.reminders ? `${state.language !== "es" ? "Reminders" : "Recordatorios"}: ${event.reminders}` : "",
+      `${state.language !== "es" ? "Status" : "Estado"}: ${displayAgendaStatus(event.status)}`,
+      `${state.language !== "es" ? "Priority" : "Prioridad"}: ${displayAgendaPriority(event.priority)}`,
     ]
       .filter(Boolean)
       .join("\\n");
@@ -17679,7 +18073,7 @@ function renderAgendaCalendar(events, conflicts, blockedEvents = []) {
   const conflictIds = new Set(conflicts.flat().map((item) => item.id));
   const blockedEventIds = new Set(blockedEvents.map((item) => item.id));
   const blockedDates = new Set(state.agendaBlockedDates);
-  const locale = state.language === "en" ? "en-US" : "es";
+  const locale = state.language !== "es" ? "en-US" : "es";
   const rangeNote = state.agendaFilters.range === "all" ? t("labels.agendaAllRangeNote") : "";
   const notes = [rangeNote, t("labels.agendaBlockedGuidance")].filter(Boolean);
   return `
@@ -17688,7 +18082,7 @@ function renderAgendaCalendar(events, conflicts, blockedEvents = []) {
         <strong>${t("labels.agendaCalendarTitle")}</strong>
         ${notes.map((note) => `<p class="card-meta">${escapeHtml(note)}</p>`).join("")}
       </div>
-      <span>${visibleDays.length} ${visibleDays.length === 1 ? (state.language === "en" ? "day" : "día") : (state.language === "en" ? "days" : "días")}</span>
+      <span>${visibleDays.length} ${visibleDays.length === 1 ? (state.language !== "es" ? "day" : "día") : (state.language !== "es" ? "days" : "días")}</span>
     </div>
     <div class="agenda-calendar-grid" style="--agenda-days: ${visibleDays.length}">
       ${visibleDays
@@ -17753,7 +18147,7 @@ function renderAgendaCalendarEvent(event, hasConflict, isBlocked = false) {
 }
 
 function formatAgendaTime(value) {
-  const locale = state.language === "en" ? "en-US" : "es";
+  const locale = state.language !== "es" ? "en-US" : "es";
   return new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit" }).format(new Date(value));
 }
 
@@ -17839,7 +18233,7 @@ function renderAgendaEventCard(event) {
           <span class="pill">${escapeHtml(displayAgendaPriority(event.priority))}</span>
           ${participant ? `<span class="pill">${escapeHtml(participant)}</span>` : ""}
         </div>
-        <p>${escapeHtml(event.description || (state.language === "en" ? "No description." : "Sin descripción."))}</p>
+        <p>${escapeHtml(event.description || (state.language !== "es" ? "No description." : "Sin descripción."))}</p>
         <p class="card-meta">${escapeHtml(event.location)} · ${escapeHtml(event.participants)}</p>
         <div class="agenda-prep">
           <strong>${t("labels.agendaPrepare")}</strong>
@@ -17858,10 +18252,10 @@ function renderAgendaEventCard(event) {
 
 function buildAgendaPreparation(event) {
   const parts = [];
-  if (event.location && event.location !== "Sin ubicación") parts.push(state.language === "en" ? "review travel time" : "revisar traslado");
-  if (event.reminders) parts.push(state.language === "en" ? `reminders: ${event.reminders}` : `recordatorios: ${event.reminders}`);
-  if (event.participants && event.participants !== "Sin participantes") parts.push(state.language === "en" ? "confirm participants" : "confirmar participantes");
-  parts.push(state.language === "en" ? "capture notes after completion" : "capturar notas al finalizar");
+  if (event.location && event.location !== "Sin ubicación") parts.push(state.language !== "es" ? "review travel time" : "revisar traslado");
+  if (event.reminders) parts.push(state.language !== "es" ? `reminders: ${event.reminders}` : `recordatorios: ${event.reminders}`);
+  if (event.participants && event.participants !== "Sin participantes") parts.push(state.language !== "es" ? "confirm participants" : "confirmar participantes");
+  parts.push(state.language !== "es" ? "capture notes after completion" : "capturar notas al finalizar");
   return parts.join(" · ");
 }
 
@@ -17898,7 +18292,7 @@ function loadAgendaEventIntoForm(event) {
   document.getElementById("agendaPriorityInput").value = event.priority || "normal";
   document.getElementById("agendaStatusInput").value = event.status || "Planificado";
   document.getElementById("agendaRemindersInput").value = event.reminders || "";
-  document.getElementById("agendaFormHeading").textContent = state.language === "en" ? "Edit event" : "Editar evento";
+  document.getElementById("agendaFormHeading").textContent = state.language !== "es" ? "Edit event" : "Editar evento";
 }
 
 async function convertAgendaEventToExperience(event) {
@@ -17906,14 +18300,14 @@ async function convertAgendaEventToExperience(event) {
     id: createId(),
     title: event.title,
     category: mapAgendaTypeToCategory(event.type),
-    objective: state.language === "en" ? "agenda follow-up" : "seguimiento de agenda",
+    objective: state.language !== "es" ? "agenda follow-up" : "seguimiento de agenda",
     timestamp: event.endAt,
     duration: Math.max(1, Math.round((new Date(event.endAt) - new Date(event.startAt)) / 60000)),
     mood: "Enfocado",
     energy: 6,
     location: event.location || "Sin ubicación",
     people: event.participants || "Sin personas",
-    notes: `${event.description || ""}\n\n${state.language === "en" ? "Source event" : "Evento de origen"}: ${event.type} · ${event.status}`.trim(),
+    notes: `${event.description || ""}\n\n${state.language !== "es" ? "Source event" : "Evento de origen"}: ${event.type} · ${event.status}`.trim(),
     attachments: [],
     source: "agenda",
     sourceEventId: event.id,
@@ -17945,13 +18339,13 @@ function mapAgendaTypeToCategory(type) {
 }
 
 function displayAgendaType(type) {
-  if (state.language !== "en") return type;
+  if (state.language === "es") return type;
   const map = { Personal: "Personal", Médica: "Medical", Laboral: "Work", Viajes: "Travel", Bienestar: "Wellness" };
   return map[type] || type;
 }
 
 function displayAgendaStatus(status) {
-  if (state.language !== "en") return status;
+  if (state.language === "es") return status;
   const map = {
     Planificado: "Planned",
     Confirmado: "Confirmed",
@@ -17965,7 +18359,7 @@ function displayAgendaStatus(status) {
 }
 
 function displayAgendaPriority(priority) {
-  if (state.language !== "en") return priority;
+  if (state.language === "es") return priority;
   const map = { normal: "normal", alta: "high", baja: "low" };
   return map[priority] || priority;
 }
@@ -17988,13 +18382,13 @@ function renderTimeline() {
                 <span class="pill">${escapeHtml(getExperienceSourceLabel(item))}</span>
                 ${item.objective ? `<span class="pill">${escapeHtml(item.objective)}</span>` : ""}
                 <span class="pill">${escapeHtml(item.mood)}</span>
-                <span class="pill">${state.language === "en" ? "energy" : "energía"} ${item.energy}/10</span>
+                <span class="pill">${state.language !== "es" ? "energy" : "energía"} ${item.energy}/10</span>
                 <span class="pill">${escapeHtml(item.location)}</span>
               </div>
               ${renderMediaStrip(item)}
-              <p>${escapeHtml(item.notes || (state.language === "en" ? "No notes." : "Sin notas."))}</p>
+              <p>${escapeHtml(item.notes || (state.language !== "es" ? "No notes." : "Sin notas."))}</p>
               ${renderLibraryEventPreview(item)}
-              <p class="card-meta">${state.language === "en" ? "Context" : "Contexto"}: ${escapeHtml(item.people)}${item.objective ? ` · ${state.language === "en" ? "Goal" : "Objetivo"}: ${escapeHtml(item.objective)}` : ""}</p>
+              <p class="card-meta">${state.language !== "es" ? "Context" : "Contexto"}: ${escapeHtml(item.people)}${item.objective ? ` · ${state.language !== "es" ? "Goal" : "Objetivo"}: ${escapeHtml(item.objective)}` : ""}</p>
             </div>
             <div class="timeline-actions">
               <button class="ghost-button" type="button" onclick="editExperience('${item.id}')">${t("buttons.edit")}</button>
@@ -18150,7 +18544,7 @@ function getEnergyBand(energy) {
 
 function getEnergyBandLabel(energy) {
   const band = getEnergyBand(energy);
-  if (state.language === "en") return band === "high" ? "High energy" : band === "medium" ? "Stable energy" : "Low energy";
+  if (state.language !== "es") return band === "high" ? "High energy" : band === "medium" ? "Stable energy" : "Low energy";
   return band === "high" ? "Energía alta" : band === "medium" ? "Energía estable" : "Energía baja";
 }
 
@@ -18270,7 +18664,7 @@ function buildExperienceMapRoutes(graph) {
       tone: "energy",
       matcher: (item) => Number(item.energy || 0) >= 8,
       description:
-        state.language === "en"
+        state.language !== "es"
           ? "Experiences where vitality, focus, or personal availability was strongest."
           : "Experiencias donde la vitalidad, el foco o la disponibilidad personal fueron más altos.",
     },
@@ -18280,7 +18674,7 @@ function buildExperienceMapRoutes(graph) {
       tone: "saturation",
       matcher: (item) => Number(item.energy || 0) <= 4 || normalizeComparableText(item.mood).includes("satur"),
       description:
-        state.language === "en"
+        state.language !== "es"
           ? "Moments that may need recovery, pacing, or a lighter routine."
           : "Momentos que pueden requerir recuperación, pausa o una rutina más liviana.",
     },
@@ -18293,7 +18687,7 @@ function buildExperienceMapRoutes(graph) {
         return text.includes("aprendiz") || text.includes("learn") || text.includes("insight") || text.includes("reflex");
       },
       description:
-        state.language === "en"
+        state.language !== "es"
           ? "Experiences that appear to create learning, reflection, or reusable knowledge."
           : "Experiencias que parecen generar aprendizaje, reflexión o conocimiento reutilizable.",
     },
@@ -18306,7 +18700,7 @@ function buildExperienceMapRoutes(graph) {
         return people.length > 0 || Boolean(item.location && item.location !== "Sin ubicación");
       },
       description:
-        state.language === "en"
+        state.language !== "es"
           ? "Relationships shaped by recurring people, places, or shared contexts."
           : "Relaciones marcadas por personas, lugares o contextos compartidos.",
     },
@@ -18539,7 +18933,7 @@ function buildExperienceMapQuestionAnalysis(graph, questionText) {
       linkCount: 0,
       items: [],
       summary: t("labels.experienceMapEmpty"),
-      action: state.language === "en" ? "Add experiences with objective, place, people, notes, and energy." : "Carga experiencias con objetivo, lugar, personas, notas y energía.",
+      action: state.language !== "es" ? "Add experiences with objective, place, people, notes, and energy." : "Carga experiencias con objetivo, lugar, personas, notas y energía.",
     };
   }
   const normalized = normalizeComparableText(questionText);
@@ -18557,7 +18951,7 @@ function buildExperienceMapQuestionAnalysis(graph, questionText) {
         : [...graph.experiences].sort((a, b) => Number(b.energy || 0) - Number(a.energy || 0)).slice(0, 4);
   const items = selectedItems.slice(0, 5);
   const avgEnergy = items.length ? average(items.map((item) => Number(item.energy || 0))).toFixed(1) : "0.0";
-  const focus = routeMatch?.title || factorIntent.label || (state.language === "en" ? "General relationship reading" : "Lectura general de relaciones");
+  const focus = routeMatch?.title || factorIntent.label || (state.language !== "es" ? "General relationship reading" : "Lectura general de relaciones");
   const factorText = topFactors.map((factor) => `${factor.label} (${factor.count})`).join(", ");
   const summary = buildExperienceMapQuestionSummary({ graph, routeMatch, factorIntent, items, factorText, avgEnergy });
   return {
@@ -18608,9 +19002,9 @@ function findQuestionTokenMatches(graph, normalizedQuestion) {
 }
 
 function buildExperienceMapQuestionSummary({ graph, routeMatch, factorIntent, items, factorText, avgEnergy }) {
-  if (!items.length) return state.language === "en" ? "The map has no matching experiences for this question yet." : "El mapa todavía no tiene experiencias que coincidan con esta pregunta.";
+  if (!items.length) return state.language !== "es" ? "The map has no matching experiences for this question yet." : "El mapa todavía no tiene experiencias que coincidan con esta pregunta.";
   const names = items.slice(0, 3).map((item) => item.label).join(", ");
-  if (state.language === "en") {
+  if (state.language !== "es") {
     if (routeMatch) return `${routeMatch.title} includes ${items.length} related experiences, with average energy ${avgEnergy}/10. Key examples: ${names}.`;
     if (factorIntent.label) return `${factorIntent.label} connects ${items.length} experiences. This suggests a repeated context worth observing.`;
     return factorText
@@ -18625,7 +19019,7 @@ function buildExperienceMapQuestionSummary({ graph, routeMatch, factorIntent, it
 }
 
 function buildExperienceMapQuestionAction(routeMatch, factorIntent, avgEnergy) {
-  if (state.language === "en") {
+  if (state.language !== "es") {
     if (routeMatch?.id === "high-energy") return "Repeat the conditions of these experiences and compare the next captures against this route.";
     if (routeMatch?.id === "saturation") return "Plan recovery or reduce load around similar contexts, then capture whether energy improves.";
     if (routeMatch?.id === "learning") return "Turn the repeated learning into a concrete next action or reusable note.";
@@ -18642,7 +19036,7 @@ function buildExperienceMapQuestionAction(routeMatch, factorIntent, avgEnergy) {
 function buildExperienceMapAnswerText(graph, topFactors) {
   if (!graph.experiences.length) return t("labels.experienceMapEmpty");
   const factorText = topFactors.map((factor) => `${factor.label} (${factor.count})`).join(", ");
-  if (state.language === "en") {
+  if (state.language !== "es") {
     return factorText
       ? `The strongest relationship clusters are ${factorText}. This suggests recurring bridges between experiences across ${graph.relationFilter === "all" ? "multiple factors" : graph.relationFilter}.`
       : "The map has experiences but needs more repeated factors to form clear clusters.";
@@ -18668,7 +19062,7 @@ function exportExperienceMapMarkdown() {
   ];
   const exportedAt = new Date().toISOString();
   const lines = [
-    state.language === "en" ? "# Experience Map" : "# Mapa de Experiencias",
+    state.language !== "es" ? "# Experience Map" : "# Mapa de Experiencias",
     "",
     "---",
     `generated: ${exportedAt}`,
@@ -18679,40 +19073,40 @@ function exportExperienceMapMarkdown() {
     `routes: ${routes.length}`,
     "---",
     "",
-    state.language === "en" ? "## Summary" : "## Resumen",
+    state.language !== "es" ? "## Summary" : "## Resumen",
     "",
     `- ${t("labels.experienceMapNodes")}: ${graph.nodes.length}`,
     `- ${t("labels.experienceMapLinks")}: ${graph.links.length}`,
     `- ${t("labels.experienceMapClusters")}: ${graph.factors.length}`,
     `- ${t("labels.experienceMapRoutes")}: ${routes.length}`,
     "",
-    state.language === "en" ? "## Suggested Questions" : "## Preguntas sugeridas",
+    state.language !== "es" ? "## Suggested Questions" : "## Preguntas sugeridas",
     "",
     ...questions.map((question) => `- ${question}`),
     "",
-    state.language === "en" ? "## Detected Routes" : "## Rutas detectadas",
+    state.language !== "es" ? "## Detected Routes" : "## Rutas detectadas",
     "",
     ...(routes.length
       ? routes.flatMap((route) => [
           `### ${route.title}`,
           "",
           `- ${t("metrics.avgEnergy")}: ${route.avgEnergy}/10`,
-          route.dominant ? `- ${state.language === "en" ? "Dominant category" : "Categoría dominante"}: ${route.dominant}` : "",
-          `- ${state.language === "en" ? "Experiences" : "Experiencias"}: ${route.items.map((item) => `[[${item.label}]]`).join(" · ")}`,
+          route.dominant ? `- ${state.language !== "es" ? "Dominant category" : "Categoría dominante"}: ${route.dominant}` : "",
+          `- ${state.language !== "es" ? "Experiences" : "Experiencias"}: ${route.items.map((item) => `[[${item.label}]]`).join(" · ")}`,
           "",
         ])
       : [`- ${t("labels.experienceMapRouteEmpty")}`, ""]),
-    state.language === "en" ? "## Top Factors" : "## Factores principales",
+    state.language !== "es" ? "## Top Factors" : "## Factores principales",
     "",
     ...(topFactors.length
       ? topFactors.map((factor) => `- [[${factor.label}]] · ${getRelationTypeLabel(factor.type)} · ${factor.count} ${t("labels.experienceMapLinks").toLowerCase()}`)
       : [`- ${t("labels.experienceMapEmpty")}`]),
     "",
-    state.language === "en" ? "## Nodes" : "## Nodos",
+    state.language !== "es" ? "## Nodes" : "## Nodos",
     "",
     ...graph.nodes.map((node) => formatExperienceMapNodeMarkdown(node)),
     "",
-    state.language === "en" ? "## Relationships" : "## Relaciones",
+    state.language !== "es" ? "## Relationships" : "## Relaciones",
     "",
     ...graph.links.map((link) => {
       const source = graph.nodes.find((node) => node.id === link.source)?.label || link.source;
@@ -18782,13 +19176,13 @@ function getReportScopeForSharedFilters(filters = {}) {
 
 function describeSharedAnalyticalScope(filters = {}) {
   const parts = buildAnalyticalScopeParts(filters);
-  return parts.length ? parts.join(" / ") : (state.language === "en" ? "Full view" : "Vista completa");
+  return parts.length ? parts.join(" / ") : (state.language !== "es" ? "Full view" : "Vista completa");
 }
 
 function renderDashboardAnalyticalScope() {
   const box = document.getElementById("dashboardAnalyticalScopeBox");
   if (!box) return;
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         title: "Shared analytical scope",
         status: "Reports, Findings, and Publications",
@@ -18829,8 +19223,8 @@ function renderDashboardAnalyticalScope() {
         const filters = buildSharedAnalyticalScopeFilters(preset);
         const count = filterExperiencesByAnalyticalFilters(state.experiences, filters).length;
         const active = preset.id === state.dashboardAnalyticalScopePresetId || sharedAnalyticalScopeMatchesCurrentFilters(preset);
-        const label = state.language === "en" ? preset.labelEn : preset.labelEs;
-        const detail = state.language === "en" ? preset.detailEn : preset.detailEs;
+        const label = state.language !== "es" ? preset.labelEn : preset.labelEs;
+        const detail = state.language !== "es" ? preset.detailEn : preset.detailEs;
         return `
           <button class="${active ? "is-active" : ""}" type="button" data-dashboard-scope-preset="${escapeHtml(preset.id)}">
             <strong>${escapeHtml(label)}</strong>
@@ -18880,8 +19274,8 @@ function handleDashboardAnalyticalScopeClick(event) {
     renderInsights();
     renderPublications();
     const preset = analyticalScopePresets.find((item) => item.id === state.dashboardAnalyticalScopePresetId) || analyticalScopePresets[0];
-    const label = state.language === "en" ? preset.labelEn : preset.labelEs;
-    notify(state.language === "en" ? `Scope applied: ${label}` : `Alcance aplicado: ${label}`, "success");
+    const label = state.language !== "es" ? preset.labelEn : preset.labelEs;
+    notify(state.language !== "es" ? `Scope applied: ${label}` : `Alcance aplicado: ${label}`, "success");
     return;
   }
   const openButton = event.target.closest("[data-dashboard-scope-open]");
@@ -18894,24 +19288,24 @@ function handleDashboardAnalyticalScopeClick(event) {
 }
 
 function renderReportQuickStart(experiences = getReportExperiences()) {
-  const title = state.language === "en" ? "Start report by purpose" : "Iniciar reporte por objetivo";
-  const help = state.language === "en"
+  const title = state.language !== "es" ? "Start report by purpose" : "Iniciar reporte por objetivo";
+  const help = state.language !== "es"
     ? "Choose the reading you need. Vibe applies the scope and rebuilds the report while keeping the edited ReportLab PDF as the main output."
     : "Elige la lectura que necesitas. Vibe aplica el alcance y reconstruye el reporte, dejando el PDF editado ReportLab como salida principal.";
   return `
     <section class="report-quick-panel">
       <div class="section-heading compact">
         <div>
-          <span class="eyebrow">${escapeHtml(state.language === "en" ? "Quick report" : "Reporte rapido")}</span>
+          <span class="eyebrow">${escapeHtml(state.language !== "es" ? "Quick report" : "Reporte rapido")}</span>
           <h3>${escapeHtml(title)}</h3>
           <p>${escapeHtml(help)}</p>
         </div>
-        <span class="pill">${experiences.length} ${escapeHtml(state.language === "en" ? "items" : "experiencias")}</span>
+        <span class="pill">${experiences.length} ${escapeHtml(state.language !== "es" ? "items" : "experiencias")}</span>
       </div>
       <div class="report-quick-grid">
         ${reportQuickStarts.map((item) => {
-          const label = state.language === "en" ? item.labelEn : item.labelEs;
-          const detail = state.language === "en" ? item.detailEn : item.detailEs;
+          const label = state.language !== "es" ? item.labelEn : item.labelEs;
+          const detail = state.language !== "es" ? item.detailEn : item.detailEs;
           const active = reportQuickStartMatchesCurrentFilters(item);
           return `
             <button class="${active ? "is-active" : ""}" type="button" data-report-quick="${escapeHtml(item.id)}">
@@ -18928,7 +19322,7 @@ function renderReportQuickStart(experiences = getReportExperiences()) {
 
 function describeReportQuickStart(item) {
   const filters = item?.filters || {};
-  if (state.language === "en") {
+  if (state.language !== "es") {
     if (filters.mode === "all") return "Baseline";
     if (filters.period) return `Range: ${filters.period} days`;
     if (filters.category) return `Theme: ${displayCategory(filters.category)}`;
@@ -18995,21 +19389,21 @@ function handleReportQuickStart(event) {
   state.reportFilters = buildReportQuickStartFilters(quick);
   syncReportFilterInputs();
   renderReport();
-  const label = state.language === "en" ? quick.labelEn : quick.labelEs;
+  const label = state.language !== "es" ? quick.labelEn : quick.labelEs;
   const count = getReportExperiences().length;
   setReportFlowStatus(
-    state.language === "en"
+    state.language !== "es"
       ? `Quick report applied: ${label}. ${count} experience(s) in scope. Read it or download the edited ReportLab PDF.`
       : `Reporte rapido aplicado: ${label}. ${count} experiencia(s) en alcance. Lee el reporte o descarga el PDF editado ReportLab.`,
   );
-  notify(state.language === "en" ? `Quick report applied: ${label}` : `Reporte rapido aplicado: ${label}`, "success");
+  notify(state.language !== "es" ? `Quick report applied: ${label}` : `Reporte rapido aplicado: ${label}`, "success");
 }
 
 function formatExperienceMapNodeMarkdown(node) {
   if (node.kind !== "experience") {
     return `- [[${node.label}]] (${getRelationTypeLabel(node.type)})`;
   }
-  const energyLabel = state.language === "en" ? "Energy" : "Energía";
+  const energyLabel = state.language !== "es" ? "Energy" : "Energía";
   const details = [
     `${displayCategory(node.category)}`,
     `${energyLabel}: ${node.energy}/10`,
@@ -19029,7 +19423,7 @@ function renderReport() {
   const lastDate = experiences[experiences.length - 1]?.timestamp;
   renderReportAcceptancePanel();
   document.getElementById("reportRangeLabel").textContent =
-    firstDate && lastDate ? `${formatShortDate(firstDate)} - ${formatShortDate(lastDate)}` : state.language === "en" ? "No range" : "Sin rango";
+    firstDate && lastDate ? `${formatShortDate(firstDate)} - ${formatShortDate(lastDate)}` : state.language !== "es" ? "No range" : "Sin rango";
   renderReportScopeSummary(experiences);
   const reportQuickStart = document.getElementById("reportQuickStart");
   if (reportQuickStart) reportQuickStart.innerHTML = renderReportQuickStart(experiences);
@@ -19043,15 +19437,15 @@ function renderReport() {
       dateTo: state.reportFilters.dateTo || "",
     },
     experiences.length,
-    state.language === "en" ? "Report" : "Reporte",
+    state.language !== "es" ? "Report" : "Reporte",
     [
       getReportScopeLabel(state.reportFilters.scope),
       state.reportFilters.period && state.reportFilters.period !== "all"
-        ? state.language === "en" ? `${state.reportFilters.period} days` : `${state.reportFilters.period} dias`
+        ? state.language !== "es" ? `${state.reportFilters.period} days` : `${state.reportFilters.period} dias`
         : "",
-      state.reportFilters.people ? `${state.language === "en" ? "People" : "Personas"}: ${state.reportFilters.people}` : "",
-      state.reportFilters.objective ? `${state.language === "en" ? "Goal" : "Objetivo"}: ${state.reportFilters.objective}` : "",
-      state.reportFilters.eventQuery ? `${state.language === "en" ? "Event" : "Evento"}: ${state.reportFilters.eventQuery}` : "",
+      state.reportFilters.people ? `${state.language !== "es" ? "People" : "Personas"}: ${state.reportFilters.people}` : "",
+      state.reportFilters.objective ? `${state.language !== "es" ? "Goal" : "Objetivo"}: ${state.reportFilters.objective}` : "",
+      state.reportFilters.eventQuery ? `${state.language !== "es" ? "Event" : "Evento"}: ${state.reportFilters.eventQuery}` : "",
     ],
   );
 
@@ -19126,7 +19520,7 @@ function renderReport() {
     ${
       state.contextImpact
         ? `<section class="report-external-signal">
-            <span>${state.language === "en" ? "External context" : "Contexto externo"}</span>
+            <span>${state.language !== "es" ? "External context" : "Contexto externo"}</span>
             <strong>${state.contextImpact.impactScore}/100</strong>
             <p>${escapeHtml(state.contextImpact.summary)}</p>
           </section>`
@@ -19156,7 +19550,7 @@ function updateReportScopeControls() {
   if (!scopeSelect || !experienceSelect) return;
   const activeScope = state.reportFilters.scope || "all";
   const scopeOptions =
-    state.language === "en"
+    state.language !== "es"
       ? [
           ["all", "All experiences"],
           ["period", "Quick range"],
@@ -19175,7 +19569,7 @@ function updateReportScopeControls() {
   const selected = state.reportFilters.experienceId || "";
   const ordered = [...state.experiences].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
   experienceSelect.innerHTML = [
-    `<option value="">${escapeHtml(state.language === "en" ? "Select an experience" : "Selecciona una experiencia")}</option>`,
+    `<option value="">${escapeHtml(state.language !== "es" ? "Select an experience" : "Selecciona una experiencia")}</option>`,
     ...ordered.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(`${formatShortDate(item.timestamp)} · ${item.title}`)}</option>`),
   ].join("");
   experienceSelect.value = ordered.some((item) => item.id === selected) ? selected : "";
@@ -19202,20 +19596,20 @@ function updateReportScopeControls() {
   const detailSummary = document.querySelector(".report-detail-drawer summary");
   if (flowSteps) {
     const steps =
-      state.language === "en"
+      state.language !== "es"
         ? ["Prepare scope", "Generate and read", "Accept and export"]
         : ["Preparar alcance", "Generar y leer", "Aceptar y exportar"];
     flowSteps.innerHTML = steps.map((step, index) => `<li><strong>${index + 1}</strong><span>${escapeHtml(step)}</span></li>`).join("");
   }
-  if (generateButton) generateButton.textContent = state.language === "en" ? "Generate / update report" : "Generar / actualizar reporte";
-  if (editedPdfButton) editedPdfButton.textContent = state.language === "en" ? "Download edited ReportLab PDF" : "Descargar PDF editado ReportLab";
-  if (jumpButton) jumpButton.textContent = state.language === "en" ? "Go to acceptance" : "Ir a aceptación";
-  if (resetButton) resetButton.textContent = state.language === "en" ? "Clear scope" : "Limpiar alcance";
-  if (resetInlineButton) resetInlineButton.textContent = state.language === "en" ? "Clear filters" : "Limpiar filtros";
-  if (detailSummary) detailSummary.textContent = state.language === "en" ? "View technical detail, charts, and table" : "Ver detalle técnico, gráficas y tabla";
+  if (generateButton) generateButton.textContent = state.language !== "es" ? "Generate / update report" : "Generar / actualizar reporte";
+  if (editedPdfButton) editedPdfButton.textContent = state.language !== "es" ? "Download edited ReportLab PDF" : "Descargar PDF editado ReportLab";
+  if (jumpButton) jumpButton.textContent = state.language !== "es" ? "Go to acceptance" : "Ir a aceptación";
+  if (resetButton) resetButton.textContent = state.language !== "es" ? "Clear scope" : "Limpiar alcance";
+  if (resetInlineButton) resetInlineButton.textContent = state.language !== "es" ? "Clear filters" : "Limpiar filtros";
+  if (detailSummary) detailSummary.textContent = state.language !== "es" ? "View technical detail, charts, and table" : "Ver detalle técnico, gráficas y tabla";
   if (flowStatus && /^(El reporte|The report|Prepara|Prepare)/.test(flowStatus.textContent || "")) {
     flowStatus.textContent =
-      state.language === "en"
+      state.language !== "es"
         ? "Prepare the scope, generate the report, then use the acceptance pack to export evidence."
         : "Prepara el alcance, genera el reporte y usa el paquete de aceptación para exportar evidencia.";
   }
@@ -19225,8 +19619,8 @@ function renderReportScopeSummary(experiences) {
   const summary = document.getElementById("reportScopeSummary");
   const title = document.getElementById("reportScopeTitle");
   if (!summary || !title) return;
-  title.textContent = state.language === "en" ? "Report scope" : "Alcance del reporte";
-  const labels = state.language === "en"
+  title.textContent = state.language !== "es" ? "Report scope" : "Alcance del reporte";
+  const labels = state.language !== "es"
     ? {
         all: "all saved experiences. Filters are off, so the report is a complete baseline.",
         period: `quick range: ${state.reportFilters.period === "all" ? "all history" : `last ${state.reportFilters.period} days`}.`,
@@ -19241,7 +19635,7 @@ function renderReportScopeSummary(experiences) {
         single: "una experiencia específica. Se ignoran los demás filtros.",
         empty: "No hay experiencias que coincidan con este alcance.",
       };
-  if (state.language !== "en") {
+  if (state.language === "es") {
     labels.all = "todas las experiencias guardadas. Los filtros estan apagados, asi que sirve como linea base completa.";
     labels.period = `rango rapido: ${state.reportFilters.period === "all" ? "todo el historial" : `ultimos ${state.reportFilters.period} dias`}.`;
     labels.filters = "filtros activos por categoria, grupo/persona, origen/conector, texto de persona, objetivo o evento interno.";
@@ -19253,22 +19647,22 @@ function renderReportScopeSummary(experiences) {
     : labels.empty;
   const participantName = state.reportFilters.pilotParticipantId === "all" ? "" : getPilotParticipantName(state.reportFilters.pilotParticipantId);
   const participantText = participantName
-    ? state.language === "en" ? ` Participant: ${participantName}.` : ` Participante: ${participantName}.`
+    ? state.language !== "es" ? ` Participant: ${participantName}.` : ` Participante: ${participantName}.`
     : "";
   const sourceText = state.reportFilters.source && state.reportFilters.source !== "all"
-    ? state.language === "en"
+    ? state.language !== "es"
       ? ` Origin: ${getIntegrationSourceFilterLabel(state.reportFilters.source)}.`
       : ` Origen: ${getIntegrationSourceFilterLabel(state.reportFilters.source)}.`
     : "";
   const eventText = state.reportFilters.eventQuery
-    ? state.language === "en" ? ` Internal event: ${state.reportFilters.eventQuery}.` : ` Evento interno: ${state.reportFilters.eventQuery}.`
+    ? state.language !== "es" ? ` Internal event: ${state.reportFilters.eventQuery}.` : ` Evento interno: ${state.reportFilters.eventQuery}.`
     : "";
   const customDateText = state.reportFilters.dateFrom || state.reportFilters.dateTo
-    ? state.language === "en"
+    ? state.language !== "es"
       ? ` Selected dates: ${state.reportFilters.dateFrom || "start"} to ${state.reportFilters.dateTo || "today"}.`
       : ` Fechas seleccionadas: ${state.reportFilters.dateFrom || "inicio"} a ${state.reportFilters.dateTo || "hoy"}.`
     : "";
-  summary.textContent = state.language === "en"
+  summary.textContent = state.language !== "es"
     ? `This report analyzes ${experiences.length} experience(s): ${scopeLabel}. Range: ${dateText}.${participantText}${sourceText}${eventText}${customDateText}`
     : `Este reporte analiza ${experiences.length} experiencia(s): ${scopeLabel}. Rango: ${dateText}.${participantText}${sourceText}${eventText}${customDateText}`;
 }
@@ -19333,8 +19727,8 @@ function renderReportEventTimeline(experiences) {
   return `
     <section class="report-event-timeline">
       <div class="report-section-heading">
-        <h3>${escapeHtml(state.language === "en" ? "Event timeline" : "Línea de eventos")}</h3>
-        <span class="pill">${events.length} ${escapeHtml(state.language === "en" ? "events" : "eventos")}</span>
+        <h3>${escapeHtml(state.language !== "es" ? "Event timeline" : "Línea de eventos")}</h3>
+        <span class="pill">${events.length} ${escapeHtml(state.language !== "es" ? "events" : "eventos")}</span>
       </div>
       ${
         visibleEvents.length
@@ -19344,7 +19738,7 @@ function renderReportEventTimeline(experiences) {
                   (event) => `
                     <article>
                       <span>${escapeHtml(formatShortDate(event.experienceTimestamp))} · ${escapeHtml(String(event.order).padStart(2, "0"))}</span>
-                      <strong>${escapeHtml(event.title || (state.language === "en" ? "Untitled event" : "Evento sin título"))}</strong>
+                      <strong>${escapeHtml(event.title || (state.language !== "es" ? "Untitled event" : "Evento sin título"))}</strong>
                       <p>${escapeHtml(event.description || event.experienceTitle)}</p>
                       <small>${escapeHtml(event.experienceTitle)} · ${escapeHtml(event.category)}${event.participantName ? ` · ${escapeHtml(event.participantName)}` : ""}</small>
                     </article>
@@ -19352,11 +19746,11 @@ function renderReportEventTimeline(experiences) {
                 )
                 .join("")}
             </div>`
-          : `<p class="card-meta">${escapeHtml(state.language === "en" ? "No internal events are available for the current report scope." : "No hay eventos internos disponibles para el alcance actual del reporte.")}</p>`
+          : `<p class="card-meta">${escapeHtml(state.language !== "es" ? "No internal events are available for the current report scope." : "No hay eventos internos disponibles para el alcance actual del reporte.")}</p>`
       }
       ${
         events.length > visibleEvents.length
-          ? `<p class="card-meta">${escapeHtml(state.language === "en" ? `Showing first ${visibleEvents.length} events. Export JSON/HTML for the full set.` : `Se muestran los primeros ${visibleEvents.length} eventos. Exporta JSON/HTML para ver el conjunto completo.`)}</p>`
+          ? `<p class="card-meta">${escapeHtml(state.language !== "es" ? `Showing first ${visibleEvents.length} events. Export JSON/HTML for the full set.` : `Se muestran los primeros ${visibleEvents.length} eventos. Exporta JSON/HTML para ver el conjunto completo.`)}</p>`
           : ""
       }
     </section>
@@ -19410,7 +19804,7 @@ function schedulePredictiveOutlookAction() {
   const participantFields = buildPilotParticipantFields(getActivePilotParticipantId(["report", "dashboard"]));
   const agendaEvent = {
     id: createId(),
-    title: `${state.language === "en" ? "Predictive action" : "Acción predictiva"}: ${outlook.title}`,
+    title: `${state.language !== "es" ? "Predictive action" : "Acción predictiva"}: ${outlook.title}`,
     type: outlook.tone === "strong" || String(outlook.hypothesis || "").toLowerCase().includes("riesgo") ? "Bienestar" : "Personal",
     description: [
       `${t("labels.reportPredictiveHypothesis")}: ${outlook.hypothesis}`,
@@ -19419,12 +19813,12 @@ function schedulePredictiveOutlookAction() {
     ].join("\n\n"),
     startAt: start.toISOString(),
     endAt: end.toISOString(),
-    location: state.language === "en" ? "To be defined" : "Por definir",
-    participants: participantFields.pilotParticipantName || (state.language === "en" ? "Personal follow-up" : "Seguimiento personal"),
+    location: state.language !== "es" ? "To be defined" : "Por definir",
+    participants: participantFields.pilotParticipantName || (state.language !== "es" ? "Personal follow-up" : "Seguimiento personal"),
     ...participantFields,
     priority: outlook.confidence >= 70 ? "alta" : "normal",
     status: "Planificado",
-    reminders: state.language === "en" ? "15 min before" : "15 min antes",
+    reminders: state.language !== "es" ? "15 min before" : "15 min antes",
     createdAt: new Date().toISOString(),
     source: "predictive-outlook",
   };
@@ -19446,15 +19840,15 @@ function buildPredictiveOutlook(experiences, analysis, quality) {
     return {
       tone: "low",
       confidence: Math.min(35, Math.max(10, experiences.length * 8)),
-      title: state.language === "en" ? "Not enough signal for a stable outlook" : "Señal insuficiente para una proyección estable",
-      hypothesis: state.language === "en"
+      title: state.language !== "es" ? "Not enough signal for a stable outlook" : "Señal insuficiente para una proyección estable",
+      hypothesis: state.language !== "es"
         ? "The report can describe the current moment, but it still needs more experiences to estimate a near-term tendency."
         : "El reporte puede describir el momento actual, pero aún necesita más experiencias para estimar una tendencia cercana.",
       drivers: [
-        state.language === "en" ? `${experiences.length} experiences available` : `${experiences.length} experiencias disponibles`,
-        state.language === "en" ? `Capture quality: ${quality.score}%` : `Calidad de captura: ${quality.score}%`,
+        state.language !== "es" ? `${experiences.length} experiences available` : `${experiences.length} experiencias disponibles`,
+        state.language !== "es" ? `Capture quality: ${quality.score}%` : `Calidad de captura: ${quality.score}%`,
       ],
-      nextStep: state.language === "en"
+      nextStep: state.language !== "es"
         ? "Capture at least four more experiences with objective, energy, mood, location, and notes."
         : "Captura al menos cuatro experiencias más con objetivo, energía, estado emocional, ubicación y notas.",
     };
@@ -19476,58 +19870,58 @@ function buildPredictiveOutlook(experiences, analysis, quality) {
   const tone = confidence >= 72 ? "strong" : confidence >= 48 ? "medium" : "low";
   const direction =
     energyDelta >= 0.45
-      ? state.language === "en" ? "upward" : "al alza"
+      ? state.language !== "es" ? "upward" : "al alza"
       : energyDelta <= -0.45
-        ? state.language === "en" ? "downward" : "a la baja"
-        : state.language === "en" ? "stable" : "estable";
+        ? state.language !== "es" ? "downward" : "a la baja"
+        : state.language !== "es" ? "stable" : "estable";
   const riskLabel =
     riskScore >= 64
-      ? state.language === "en" ? "high saturation risk" : "riesgo alto de saturación"
+      ? state.language !== "es" ? "high saturation risk" : "riesgo alto de saturación"
       : riskScore >= 38
-        ? state.language === "en" ? "moderate saturation risk" : "riesgo moderado de saturación"
-        : state.language === "en" ? "low saturation risk" : "riesgo bajo de saturación";
+        ? state.language !== "es" ? "moderate saturation risk" : "riesgo moderado de saturación"
+        : state.language !== "es" ? "low saturation risk" : "riesgo bajo de saturación";
   return {
     tone,
     confidence,
-    title: state.language === "en" ? `Near-term tendency: ${direction}` : `Tendencia cercana: ${direction}`,
-    hypothesis: state.language === "en"
+    title: state.language !== "es" ? `Near-term tendency: ${direction}` : `Tendencia cercana: ${direction}`,
+    hypothesis: state.language !== "es"
       ? `Based on recent records, energy looks ${direction} and the next period shows ${riskLabel}.`
       : `Según los registros recientes, la energía luce ${direction} y el siguiente periodo muestra ${riskLabel}.`,
     drivers: [
-      state.language === "en"
+      state.language !== "es"
         ? `Recent energy ${recentEnergy.toFixed(1)}/10 vs. previous ${previousEnergy.toFixed(1)}/10`
         : `Energía reciente ${recentEnergy.toFixed(1)}/10 vs. previa ${previousEnergy.toFixed(1)}/10`,
-      state.language === "en"
+      state.language !== "es"
         ? `Recent saturation or low energy: ${Math.round(recentSaturationPct)}%`
         : `Saturación o baja energía reciente: ${Math.round(recentSaturationPct)}%`,
-      state.language === "en"
+      state.language !== "es"
         ? `Work/recovery balance: ${Math.round(workPct)}% work · ${Math.round(recoveryPct)}% recovery`
         : `Balance trabajo/recuperación: ${Math.round(workPct)}% trabajo · ${Math.round(recoveryPct)}% recuperación`,
       state.contextImpact
-        ? state.language === "en"
+        ? state.language !== "es"
           ? `External context impact: ${contextImpact}/100`
           : `Impacto del contexto externo: ${contextImpact}/100`
-        : state.language === "en"
+        : state.language !== "es"
           ? "External context not analyzed in this report"
           : "Contexto externo no analizado en este reporte",
       biometricSummary.matched
-        ? state.language === "en"
+        ? state.language !== "es"
           ? `Biometric context: ${biometricSummary.matched} matched experiences, suggested energy ${(biometricSummary.averageSuggestedEnergy || 0).toFixed(1)}/10`
           : `Contexto biométrico: ${biometricSummary.matched} experiencias vinculadas, energía sugerida ${(biometricSummary.averageSuggestedEnergy || 0).toFixed(1)}/10`
-        : state.language === "en"
+        : state.language !== "es"
           ? "No biometric context matched this report yet"
           : "Aún no hay contexto biométrico vinculado a este reporte",
     ],
     nextStep:
       riskScore >= 64
-        ? state.language === "en"
+        ? state.language !== "es"
           ? "Plan a recovery block before adding dense work or travel commitments."
           : "Planifica un bloque de recuperación antes de sumar compromisos densos de trabajo o viaje."
         : energyDelta <= -0.45
-          ? state.language === "en"
+          ? state.language !== "es"
             ? "Repeat the conditions from the highest-energy experiences and reduce the most saturated category."
             : "Repite condiciones de las experiencias con mayor energía y reduce la categoría más saturada."
-          : state.language === "en"
+          : state.language !== "es"
             ? "Keep the current rhythm and capture the next outcomes to validate whether the tendency holds."
             : "Mantén el ritmo actual y captura los próximos resultados para validar si la tendencia se sostiene.",
   };
@@ -19535,10 +19929,10 @@ function buildPredictiveOutlook(experiences, analysis, quality) {
 
 function renderReportEvidenceCard(item) {
   const eventLabel = item.eventTitle
-    ? state.language === "en"
+    ? state.language !== "es"
       ? `Event: ${item.eventTitle}`
       : `Evento: ${item.eventTitle}`
-    : state.language === "en"
+    : state.language !== "es"
       ? "Whole experience"
       : "Toda la experiencia";
   return `
@@ -19563,7 +19957,7 @@ function renderReportEvidenceCard(item) {
           : ""
       }
       ${item.manualNote ? `<p>${escapeHtml(item.manualNote)}</p>` : ""}
-      ${item.externalTreatment ? `<p><strong>${escapeHtml(state.language === "en" ? "Source profile" : "Perfil de origen")}:</strong> ${escapeHtml([item.externalSource, item.externalTreatment].filter(Boolean).join(" - "))}</p>` : ""}
+      ${item.externalTreatment ? `<p><strong>${escapeHtml(state.language !== "es" ? "Source profile" : "Perfil de origen")}:</strong> ${escapeHtml([item.externalSource, item.externalTreatment].filter(Boolean).join(" - "))}</p>` : ""}
       <div class="pill-row">${item.tags.slice(0, 6).map((tag) => `<span class="pill">${escapeHtml(tag)}</span>`).join("")}</div>
     </article>
   `;
@@ -19626,45 +20020,45 @@ function buildIntegratedReportCards(experiences, analysis, quality, routes) {
   const cards = [
     {
       tone: avgEnergy >= 7 ? "strong" : avgEnergy >= 5 ? "medium" : "risk",
-      title: state.language === "en" ? "Energy and recovery" : "Energía y recuperación",
+      title: state.language !== "es" ? "Energy and recovery" : "Energía y recuperación",
       priority: avgEnergy >= 7 ? localizedPriority("medium") : localizedPriority("high"),
       evidence: highEnergyRoute
-        ? `${highEnergyRoute.items.length} ${state.language === "en" ? "experiences in the high-energy route" : "experiencias en la ruta de energía alta"}`
+        ? `${highEnergyRoute.items.length} ${state.language !== "es" ? "experiences in the high-energy route" : "experiencias en la ruta de energía alta"}`
         : `${t("metrics.avgEnergy")}: ${avgEnergy.toFixed(1)}/10`,
       action: avgEnergy >= 7
-        ? (state.language === "en" ? "Repeat high-energy conditions and turn them into routines." : "Repite las condiciones de energía alta y conviértelas en rutinas.")
-        : (state.language === "en" ? "Reduce load and capture recovery conditions for the next week." : "Reduce carga y captura condiciones de recuperación durante la próxima semana."),
+        ? (state.language !== "es" ? "Repeat high-energy conditions and turn them into routines." : "Repite las condiciones de energía alta y conviértelas en rutinas.")
+        : (state.language !== "es" ? "Reduce load and capture recovery conditions for the next week." : "Reduce carga y captura condiciones de recuperación durante la próxima semana."),
     },
     {
       tone: saturationRate >= 25 ? "risk" : "strong",
-      title: state.language === "en" ? "Saturation control" : "Control de saturación",
+      title: state.language !== "es" ? "Saturation control" : "Control de saturación",
       priority: saturationRate >= 25 ? localizedPriority("high") : localizedPriority("low"),
       evidence: saturationRoute
-        ? `${saturationRoute.items.length} ${state.language === "en" ? "experiences in the saturation route" : "experiencias en la ruta de saturación"}`
-        : `${analysis.saturated.length} ${state.language === "en" ? "saturated experiences" : "experiencias saturadas"}`,
+        ? `${saturationRoute.items.length} ${state.language !== "es" ? "experiences in the saturation route" : "experiencias en la ruta de saturación"}`
+        : `${analysis.saturated.length} ${state.language !== "es" ? "saturated experiences" : "experiencias saturadas"}`,
       action: saturationRate >= 25
-        ? (state.language === "en" ? "Schedule recovery before adding more demanding experiences." : "Programa recuperación antes de agregar experiencias más exigentes.")
-        : (state.language === "en" ? "Keep observing saturation while maintaining the current rhythm." : "Sigue observando la saturación mientras mantienes el ritmo actual."),
+        ? (state.language !== "es" ? "Schedule recovery before adding more demanding experiences." : "Programa recuperación antes de agregar experiencias más exigentes.")
+        : (state.language !== "es" ? "Keep observing saturation while maintaining the current rhythm." : "Sigue observando la saturación mientras mantienes el ritmo actual."),
     },
     {
       tone: learningRoute ? "context" : "medium",
-      title: state.language === "en" ? "Learning loop" : "Ciclo de aprendizaje",
+      title: state.language !== "es" ? "Learning loop" : "Ciclo de aprendizaje",
       priority: learningRoute ? localizedPriority("medium") : localizedPriority("low"),
       evidence: learningRoute
-        ? `${learningRoute.items.length} ${state.language === "en" ? "learning-linked experiences" : "experiencias vinculadas a aprendizaje"}`
-        : `${analysis.learnings.length} ${state.language === "en" ? "learning signals" : "señales de aprendizaje"}`,
-      action: state.language === "en"
+        ? `${learningRoute.items.length} ${state.language !== "es" ? "learning-linked experiences" : "experiencias vinculadas a aprendizaje"}`
+        : `${analysis.learnings.length} ${state.language !== "es" ? "learning signals" : "señales de aprendizaje"}`,
+      action: state.language !== "es"
         ? "Convert repeated learnings into one next action and one reusable note."
         : "Convierte aprendizajes repetidos en una acción próxima y una nota reutilizable.",
     },
     {
       tone: socialRoute ? "context" : "medium",
-      title: state.language === "en" ? "People and places" : "Personas y lugares",
+      title: state.language !== "es" ? "People and places" : "Personas y lugares",
       priority: socialRoute ? localizedPriority("medium") : localizedPriority("low"),
       evidence: socialRoute
-        ? `${socialRoute.items.length} ${state.language === "en" ? "experiences connected by people or places" : "experiencias conectadas por personas o lugares"}`
-        : (state.language === "en" ? "More participant/place data will improve this reading." : "Más datos de personas y lugares mejorarán esta lectura."),
-      action: state.language === "en"
+        ? `${socialRoute.items.length} ${state.language !== "es" ? "experiences connected by people or places" : "experiencias conectadas por personas o lugares"}`
+        : (state.language !== "es" ? "More participant/place data will improve this reading." : "Más datos de personas y lugares mejorarán esta lectura."),
+      action: state.language !== "es"
         ? "Review whether repeated people or places raise energy, create saturation, or support learning."
         : "Revisa si las personas o lugares repetidos elevan energía, generan saturación o sostienen aprendizaje.",
     },
@@ -19672,9 +20066,9 @@ function buildIntegratedReportCards(experiences, analysis, quality, routes) {
   if (quality.score < 70) {
     cards.push({
       tone: "risk",
-      title: state.language === "en" ? "Data confidence" : "Confianza de datos",
+      title: state.language !== "es" ? "Data confidence" : "Confianza de datos",
       priority: localizedPriority("high"),
-      evidence: `${quality.score}% ${state.language === "en" ? "capture completeness" : "de completitud de captura"}`,
+      evidence: `${quality.score}% ${state.language !== "es" ? "capture completeness" : "de completitud de captura"}`,
       action: t("labels.dataQualityActionText"),
     });
   }
@@ -19799,7 +20193,7 @@ function buildLivingMemoryLog(experiences, analysis) {
       label: t("labels.livingMemoryMoment"),
       title: highEnergy.title || topCategory,
       detail:
-        state.language === "en"
+        state.language !== "es"
           ? `Energy reached ${highEnergy.energy}/10 in ${displayCategory(highEnergy.category)}. Preserve the context: ${highEnergy.location || "no location"}${highEnergy.people ? `, with ${highEnergy.people}` : ""}.`
           : `La energía llegó a ${highEnergy.energy}/10 en ${displayCategory(highEnergy.category)}. Conviene preservar el contexto: ${highEnergy.location || "sin ubicación"}${highEnergy.people ? `, con ${highEnergy.people}` : ""}.`,
     });
@@ -19809,7 +20203,7 @@ function buildLivingMemoryLog(experiences, analysis) {
       label: t("labels.livingMemoryLearning"),
       title: learning.title || displayCategory(learning.category),
       detail:
-        state.language === "en"
+        state.language !== "es"
           ? summarizeNote(learning.notes, "This experience contains a reusable learning signal.")
           : summarizeNote(learning.notes, "Esta experiencia contiene una señal de aprendizaje reutilizable."),
     });
@@ -19817,9 +20211,9 @@ function buildLivingMemoryLog(experiences, analysis) {
   if (recent) {
     cards.push({
       label: t("labels.livingMemoryContinuity"),
-      title: state.language === "en" ? "Next thread to continue" : "Siguiente hilo para continuar",
+      title: state.language !== "es" ? "Next thread to continue" : "Siguiente hilo para continuar",
       detail:
-        state.language === "en"
+        state.language !== "es"
           ? `The most recent experience belongs to ${displayCategory(recent.category)}. Continue by documenting the next action, result, or emotional after-effect.`
           : `La experiencia más reciente pertenece a ${displayCategory(recent.category)}. Continúa documentando la siguiente acción, resultado o efecto emocional posterior.`,
     });
@@ -19992,7 +20386,7 @@ function getKpiTone(kpi) {
 }
 
 function getKpiToneLabel(kpi, tone) {
-  if (state.language === "en") {
+  if (state.language !== "es") {
     if (kpi.id === "stress-load") return tone === "high" ? "Needs care" : tone === "medium" ? "Watch" : "Stable";
     return tone === "strong" ? "Strong" : tone === "medium" ? "Developing" : "Needs data";
   }
@@ -20034,7 +20428,7 @@ function renderHumanCorrelationCard(item) {
         <span class="card-meta">${escapeHtml(item.source)}</span>
         <h4>${escapeHtml(item.title)}</h4>
         <p>${escapeHtml(item.detail)}</p>
-        <small><b>${state.language === "en" ? "Next action" : "Siguiente acción"}:</b> ${escapeHtml(item.action)}</small>
+        <small><b>${state.language !== "es" ? "Next action" : "Siguiente acción"}:</b> ${escapeHtml(item.action)}</small>
       </div>
     </article>
   `;
@@ -20062,43 +20456,43 @@ function buildHumanKpis(experiences, analysis, quality) {
       id: "human-wellness",
       label: localizedHumanKpiLabel("human-wellness"),
       score: Math.round(wellnessScore),
-      detail: state.language === "en" ? "Balance between energy, emotional stability, recovery contexts, and capture quality." : "Equilibrio entre energía, estabilidad emocional, contextos de recuperación y calidad de captura.",
+      detail: state.language !== "es" ? "Balance between energy, emotional stability, recovery contexts, and capture quality." : "Equilibrio entre energía, estabilidad emocional, contextos de recuperación y calidad de captura.",
     },
     {
       id: "emotional-stability",
       label: localizedHumanKpiLabel("emotional-stability"),
       score: Math.round(stabilityScore),
-      detail: state.language === "en" ? "Lower saturation and low-energy frequency increase this estimate." : "Menor saturación y menor frecuencia de baja energía elevan esta estimación.",
+      detail: state.language !== "es" ? "Lower saturation and low-energy frequency increase this estimate." : "Menor saturación y menor frecuencia de baja energía elevan esta estimación.",
     },
     {
       id: "stress-load",
       label: localizedHumanKpiLabel("stress-load"),
       score: Math.round(stressLoad),
-      detail: state.language === "en" ? "Higher values indicate more saturation, low energy, or work pressure." : "Valores más altos indican más saturación, baja energía o presión de trabajo.",
+      detail: state.language !== "es" ? "Higher values indicate more saturation, low energy, or work pressure." : "Valores más altos indican más saturación, baja energía o presión de trabajo.",
     },
     {
       id: "social-connectivity",
       label: localizedHumanKpiLabel("social-connectivity"),
       score: Math.round(clampScore(socialPct)),
-      detail: state.language === "en" ? "Estimated from social categories and meaningful participant data." : "Estimado desde categorías sociales y participantes registrados.",
+      detail: state.language !== "es" ? "Estimated from social categories and meaningful participant data." : "Estimado desde categorías sociales y participantes registrados.",
     },
     {
       id: "work-life-balance",
       label: localizedHumanKpiLabel("work-life-balance"),
       score: Math.round(balanceScore),
-      detail: state.language === "en" ? "Compares work load against recovery, home, health, and travel/walk contexts." : "Compara carga de trabajo contra recuperación, hogar, salud y viajes/paseos.",
+      detail: state.language !== "es" ? "Compares work load against recovery, home, health, and travel/walk contexts." : "Compara carga de trabajo contra recuperación, hogar, salud y viajes/paseos.",
     },
     {
       id: "resilience",
       label: localizedHumanKpiLabel("resilience"),
       score: Math.round(resilience),
-      detail: state.language === "en" ? "Uses high-energy moments, stability, learning signals, and data quality." : "Usa momentos de alta energía, estabilidad, aprendizaje y calidad de datos.",
+      detail: state.language !== "es" ? "Uses high-energy moments, stability, learning signals, and data quality." : "Usa momentos de alta energía, estabilidad, aprendizaje y calidad de datos.",
     },
     {
       id: "daily-energy",
       label: localizedHumanKpiLabel("daily-energy"),
       score: Math.round(clampScore((avgEnergy * 10 * 0.7) + (biometricEnergyScore * 0.3))),
-      detail: state.language === "en"
+      detail: state.language !== "es"
         ? `Perceived energy is ${avgEnergy.toFixed(1)}/10; biometrics cover ${Math.round(biometricSummary.coveragePct)}% of the filtered set.`
         : `La energía percibida es ${avgEnergy.toFixed(1)}/10; la biometría cubre ${Math.round(biometricSummary.coveragePct)}% del conjunto filtrado.`,
     },
@@ -20106,7 +20500,7 @@ function buildHumanKpis(experiences, analysis, quality) {
       id: "life-satisfaction",
       label: localizedHumanKpiLabel("life-satisfaction"),
       score: Math.round(clampScore((highEnergyPct * 0.45) + (recoveryPct * 0.25) + (socialPct * 0.15) + (quality.score * 0.15))),
-      detail: state.language === "en" ? "Proxy based on high energy, recovery, social connection, and capture depth." : "Proxy basado en alta energía, recuperación, conexión social y profundidad de captura.",
+      detail: state.language !== "es" ? "Proxy based on high energy, recovery, social connection, and capture depth." : "Proxy basado en alta energía, recuperación, conexión social y profundidad de captura.",
     },
   ];
 }
@@ -20191,7 +20585,7 @@ function buildBiometricIntelligenceSummary(experiences = state.experiences) {
       : signals.length
         ? "active"
         : "unmatched";
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         missing: "No biometric source has been imported yet.",
         needsProcessing: "Biometric sources exist, but no readable rows were detected.",
@@ -20244,10 +20638,10 @@ function renderDashboardBiometricContext() {
   if (!box) return;
   const title = document.getElementById("dashboardBiometricTitle");
   const status = document.getElementById("dashboardBiometricStatus");
-  if (title) title.textContent = state.language === "en" ? "Biometric context" : "Contexto biométrico";
-  if (status) status.textContent = state.language === "en" ? "Wearables and health" : "Wearables y salud";
+  if (title) title.textContent = state.language !== "es" ? "Biometric context" : "Contexto biométrico";
+  if (status) status.textContent = state.language !== "es" ? "Wearables and health" : "Wearables y salud";
   const summary = buildBiometricIntelligenceSummary(getDashboardExperiences());
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         import: "Import history",
         report: "Open report",
@@ -20318,7 +20712,7 @@ function renderDashboardBiometricContext() {
 }
 
 function renderReportBiometricImpact(experiences = []) {
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         title: "Biometric impact",
         noImports: "No biometric file has been imported yet. Import Apple Health export.xml, CSV, or JSON from Assets to compare body signals with experiences.",
@@ -20409,62 +20803,62 @@ function buildHumanCorrelations(experiences, analysis) {
   const biometricSummary = summarizeBiometricSignalsForExperiences(experiences);
   const correlations = [
     buildCorrelationResult({
-      source: state.language === "en" ? "Work -> saturation" : "Trabajo -> saturación",
-      title: state.language === "en" ? "Work pressure and saturation" : "Presión de trabajo y saturación",
+      source: state.language !== "es" ? "Work -> saturation" : "Trabajo -> saturación",
+      title: state.language !== "es" ? "Work pressure and saturation" : "Presión de trabajo y saturación",
       score: workItems.length ? Math.round((pct(workItems.filter((item) => item.mood === "Saturado" || Number(item.energy || 0) <= 4).length, workItems.length) * 0.8) + Math.min(20, workItems.length * 2)) : 0,
-      detail: state.language === "en"
+      detail: state.language !== "es"
         ? `${workItems.length} work experiences compared against saturation and low energy.`
         : `${workItems.length} experiencias de trabajo comparadas contra saturación y baja energía.`,
-      action: state.language === "en" ? "If signal is high, schedule recovery after dense work blocks." : "Si la señal es alta, programa recuperación después de bloques densos de trabajo.",
+      action: state.language !== "es" ? "If signal is high, schedule recovery after dense work blocks." : "Si la señal es alta, programa recuperación después de bloques densos de trabajo.",
     }),
     buildCorrelationResult({
-      source: state.language === "en" ? "Socialization -> wellbeing" : "Socialización -> bienestar",
-      title: state.language === "en" ? "Social connection and energy" : "Conexión social y energía",
+      source: state.language !== "es" ? "Socialization -> wellbeing" : "Socialización -> bienestar",
+      title: state.language !== "es" ? "Social connection and energy" : "Conexión social y energía",
       score: socialItems.length ? Math.round(average(socialItems.map((item) => Number(item.energy || 0))) * 10) : 0,
-      detail: state.language === "en"
+      detail: state.language !== "es"
         ? `${socialItems.length} experiences include people or social context.`
         : `${socialItems.length} experiencias incluyen personas o contexto social.`,
-      action: state.language === "en" ? "Compare recurring people with high-energy moments." : "Compara personas recurrentes con momentos de energía alta.",
+      action: state.language !== "es" ? "Compare recurring people with high-energy moments." : "Compara personas recurrentes con momentos de energía alta.",
       inverseTone: false,
     }),
     buildCorrelationResult({
-      source: state.language === "en" ? "Travel/recovery -> energy" : "Viajes/recuperación -> energía",
-      title: state.language === "en" ? "Recovery contexts and energy" : "Contextos de recuperación y energía",
+      source: state.language !== "es" ? "Travel/recovery -> energy" : "Viajes/recuperación -> energía",
+      title: state.language !== "es" ? "Recovery contexts and energy" : "Contextos de recuperación y energía",
       score: recoveryItems.length ? Math.round(average(recoveryItems.map((item) => Number(item.energy || 0))) * 10) : 0,
-      detail: state.language === "en"
+      detail: state.language !== "es"
         ? `${recoveryItems.length} recovery, health, home, spirituality, or travel/walk experiences analyzed.`
         : `${recoveryItems.length} experiencias de recuperación, salud, hogar, espiritualidad o viajes/paseos analizadas.`,
-      action: state.language === "en" ? "Repeat the contexts that raise energy and reduce saturation." : "Repite los contextos que elevan energía y reducen saturación.",
+      action: state.language !== "es" ? "Repeat the contexts that raise energy and reduce saturation." : "Repite los contextos que elevan energía y reducen saturación.",
       inverseTone: false,
     }),
     buildCorrelationResult({
-      source: state.language === "en" ? "Learning -> resilience" : "Aprendizaje -> resiliencia",
-      title: state.language === "en" ? "Learning and resilience" : "Aprendizaje y resiliencia",
+      source: state.language !== "es" ? "Learning -> resilience" : "Aprendizaje -> resiliencia",
+      title: state.language !== "es" ? "Learning and resilience" : "Aprendizaje y resiliencia",
       score: learningItems.length ? Math.round((pct(learningItems.length, experiences.length) * 0.5) + (average(learningItems.map((item) => Number(item.energy || 0))) * 5)) : 0,
-      detail: state.language === "en"
+      detail: state.language !== "es"
         ? `${learningItems.length} learning signals appear in categories or notes.`
         : `${learningItems.length} señales de aprendizaje aparecen en categorías o notas.`,
-      action: state.language === "en" ? "Turn repeated learnings into explicit routines or experiments." : "Convierte aprendizajes repetidos en rutinas o experimentos explícitos.",
+      action: state.language !== "es" ? "Turn repeated learnings into explicit routines or experiments." : "Convierte aprendizajes repetidos en rutinas o experimentos explícitos.",
       inverseTone: false,
     }),
     buildCorrelationResult({
-      source: state.language === "en" ? "Biometrics -> energy" : "Biometría -> energía",
-      title: state.language === "en" ? "Biometric coverage and perceived energy" : "Cobertura biométrica y energía percibida",
+      source: state.language !== "es" ? "Biometrics -> energy" : "Biometría -> energía",
+      title: state.language !== "es" ? "Biometric coverage and perceived energy" : "Cobertura biométrica y energía percibida",
       score: biometricSummary.coveragePct ? Math.round((biometricSummary.coveragePct * 0.45) + ((biometricSummary.averageSuggestedEnergy || 0) * 5.5)) : 0,
-      detail: state.language === "en"
+      detail: state.language !== "es"
         ? `${biometricSummary.matched} experiences have nearby biometric context; suggested energy average is ${(biometricSummary.averageSuggestedEnergy || 0).toFixed(1)}/10.`
         : `${biometricSummary.matched} experiencias tienen contexto biométrico cercano; la energía biométrica sugerida promedia ${(biometricSummary.averageSuggestedEnergy || 0).toFixed(1)}/10.`,
-      action: state.language === "en" ? "Compare perceived energy against biometric signals before changing routines." : "Compara energía percibida contra señales biométricas antes de cambiar rutinas.",
+      action: state.language !== "es" ? "Compare perceived energy against biometric signals before changing routines." : "Compara energía percibida contra señales biométricas antes de cambiar rutinas.",
       inverseTone: false,
     }),
     buildCorrelationResult({
-      source: state.language === "en" ? "Weather/context -> emotion" : "Clima/contexto -> emoción",
-      title: state.language === "en" ? "External context and emotional load" : "Contexto externo y carga emocional",
+      source: state.language !== "es" ? "Weather/context -> emotion" : "Clima/contexto -> emoción",
+      title: state.language !== "es" ? "External context and emotional load" : "Contexto externo y carga emocional",
       score: Math.round(Math.max(contextScore, weatherItems.length ? pct(weatherItems.length, experiences.length) : 0, saturatedPct * 0.7 + lowEnergyPct * 0.3)),
-      detail: state.language === "en"
+      detail: state.language !== "es"
         ? `${weatherItems.length} experiences mention weather-like cues; active context impact is ${contextScore}/100.`
         : `${weatherItems.length} experiencias mencionan señales climáticas; el impacto contextual activo es ${contextScore}/100.`,
-      action: state.language === "en" ? "Run context analysis for the main location before planning dense days." : "Ejecuta análisis de contexto para la ubicación principal antes de planificar días densos.",
+      action: state.language !== "es" ? "Run context analysis for the main location before planning dense days." : "Ejecuta análisis de contexto para la ubicación principal antes de planificar días densos.",
     }),
   ];
   return correlations.filter((item) => item.score > 0).sort((a, b) => b.score - a.score);
@@ -20478,7 +20872,7 @@ function buildCorrelationResult({ source, title, score, detail, action, inverseT
     source,
     title,
     score: normalizedScore,
-    signal: high ? (state.language === "en" ? "High signal" : "Señal alta") : medium ? (state.language === "en" ? "Medium signal" : "Señal media") : (state.language === "en" ? "Low signal" : "Señal baja"),
+    signal: high ? (state.language !== "es" ? "High signal" : "Señal alta") : medium ? (state.language !== "es" ? "Medium signal" : "Señal media") : (state.language !== "es" ? "Low signal" : "Señal baja"),
     tone: high ? "high" : medium ? "medium" : "low",
     detail,
     action,
@@ -20665,7 +21059,7 @@ function buildBlueprintCategoryReading(row) {
     },
   };
   const fallback =
-    state.language === "en"
+    state.language !== "es"
       ? {
           focus: "Experience pattern, energy, saturation, context, and learning.",
           risk: highSaturation || lowEnergy ? "This category needs closer review." : "No strong risk signal in this category.",
@@ -20680,7 +21074,7 @@ function buildBlueprintCategoryReading(row) {
     ...row,
     ...(templates[state.language]?.[category] || fallback),
     focus: highEnergy && category !== "Trabajo"
-      ? `${(templates[state.language]?.[category] || fallback).focus} ${state.language === "en" ? "Current energy is favorable." : "La energía actual es favorable."}`
+      ? `${(templates[state.language]?.[category] || fallback).focus} ${state.language !== "es" ? "Current energy is favorable." : "La energía actual es favorable."}`
       : (templates[state.language]?.[category] || fallback).focus,
   };
 }
@@ -20692,7 +21086,7 @@ function downloadReport() {
   downloadBlob(blob, "reporte-experiencias.json", content);
   markReportExport("json", payload, "ok");
   renderReportAcceptancePanel();
-  notify(state.language === "en" ? "Report JSON exported." : "JSON del reporte exportado.", "success");
+  notify(state.language !== "es" ? "Report JSON exported." : "JSON del reporte exportado.", "success");
 }
 
 function markReportExport(format, payload = buildReportExportPayload(), status = "ok") {
@@ -20732,14 +21126,14 @@ function markReportAcceptanceReview() {
   };
   saveReportExportAudit();
   renderReportAcceptancePanel();
-  notify(state.language === "en" ? "Report review registered." : "Revisión del reporte registrada.", "success");
+  notify(state.language !== "es" ? "Report review registered." : "Revisión del reporte registrada.", "success");
 }
 
 function handleReportAcceptanceClick(event) {
   const action = event.target.closest("[data-report-acceptance-action]")?.dataset.reportAcceptanceAction;
   if (!action) return;
   if (event.target.closest("[onclick]")) return;
-  setReportAcceptanceStatus(state.language === "en" ? "Processing action..." : "Procesando acción...");
+  setReportAcceptanceStatus(state.language !== "es" ? "Processing action..." : "Procesando acción...");
   if (action === "json") downloadReport();
   if (action === "csv") downloadCsvReport();
   if (action === "html") downloadPrintableReport();
@@ -20758,10 +21152,10 @@ function renderReportDownloadFallback() {
   if (!item?.url || !item?.filename) return "";
   const isReportFile = /reporte|aceptacion|experiencias/i.test(item.filename);
   if (!isReportFile) return "";
-  const label = state.language === "en" ? "Manual download available" : "Descarga manual disponible";
-  const action = state.language === "en" ? "Download again" : "Descargar de nuevo";
+  const label = state.language !== "es" ? "Manual download available" : "Descarga manual disponible";
+  const action = state.language !== "es" ? "Download again" : "Descargar de nuevo";
   const detail =
-    state.language === "en"
+    state.language !== "es"
       ? "If the browser did not open the download automatically, use this link."
       : "Si el navegador no abrio la descarga automaticamente, usa este enlace.";
   return `
@@ -20781,14 +21175,14 @@ function renderReportProjectExportLocation() {
   if (!item.ok) {
     return `
       <div class="report-export-location is-warning">
-        <strong>${escapeHtml(state.language === "en" ? "Project folder save failed" : "No se guardo en la carpeta del proyecto")}</strong>
+        <strong>${escapeHtml(state.language !== "es" ? "Project folder save failed" : "No se guardo en la carpeta del proyecto")}</strong>
         <p>${escapeHtml(item.message || item.error || "")}</p>
       </div>
     `;
   }
-  const title = state.language === "en" ? "Saved in project folder" : "Guardado en carpeta del proyecto";
+  const title = state.language !== "es" ? "Saved in project folder" : "Guardado en carpeta del proyecto";
   const detail =
-    state.language === "en"
+    state.language !== "es"
       ? "This is the exact local path, independent from the browser download folder."
       : "Esta es la ruta local exacta, independiente de la carpeta de descargas del navegador.";
   return `
@@ -20829,19 +21223,19 @@ function exportReportAcceptancePackage() {
   };
   saveReportExportAudit();
   renderReportAcceptancePanel();
-  notify(state.language === "en" ? "Report acceptance package exported." : "Paquete de aceptación del reporte exportado.", "success");
+  notify(state.language !== "es" ? "Report acceptance package exported." : "Paquete de aceptación del reporte exportado.", "success");
 }
 
 function buildReportAcceptanceChecksLegacy() {
   const audit = state.reportExportAudit || {};
   if (!audit.lastAt) {
-    return state.language === "en" ? "No acceptance action has been run yet." : "Aun no se ha ejecutado ninguna accion de aceptacion.";
+    return state.language !== "es" ? "No acceptance action has been run yet." : "Aun no se ha ejecutado ninguna accion de aceptacion.";
   }
-  const lastFormat = audit.lastFormat || (state.language === "en" ? "action" : "accion");
+  const lastFormat = audit.lastFormat || (state.language !== "es" ? "action" : "accion");
   const label = getReportAcceptanceActionLabel(lastFormat);
   const fileName = getReportExportFileName(lastFormat, audit.lastStatus);
   const purpose = getReportAcceptanceActionPurpose(lastFormat === "package" ? "all" : lastFormat);
-  return state.language === "en"
+  return state.language !== "es"
     ? `Last action: ${label} · ${formatDate(audit.lastAt)} · ${audit.lastStatus || "ok"}. ${fileName ? `Generated file: ${fileName}. ` : ""}${purpose}`
     : `Ultima accion: ${label} · ${formatDate(audit.lastAt)} · ${audit.lastStatus || "ok"}. ${fileName ? `Archivo generado: ${fileName}. ` : ""}${purpose}`;
   const reportExperiences = getReportExperiences();
@@ -20850,7 +21244,7 @@ function buildReportAcceptanceChecksLegacy() {
   const hasCharts = Boolean(payload.energyTrend?.length || payload.categoryBreakdown?.length);
   const hasEvidence = reportExperiences.length >= 3;
   const labels =
-    state.language === "en"
+    state.language !== "es"
       ? {
           data: "Reportable data",
           narrative: "Narrative and insights",
@@ -20875,28 +21269,28 @@ function buildReportAcceptanceChecksLegacy() {
         };
   const formatDetail = (format) => {
     const item = audit[format];
-    if (!item?.at) return state.language === "en" ? "Not exported in this browser." : "No exportado en este navegador.";
-    const status = item.status === "ok" ? (state.language === "en" ? "successful" : "correcto") : item.status;
-    return `${formatDate(item.at)} · ${status} · ${item.experiences || 0} ${state.language === "en" ? "experiences" : "experiencias"}`;
+    if (!item?.at) return state.language !== "es" ? "Not exported in this browser." : "No exportado en este navegador.";
+    const status = item.status === "ok" ? (state.language !== "es" ? "successful" : "correcto") : item.status;
+    return `${formatDate(item.at)} · ${status} · ${item.experiences || 0} ${state.language !== "es" ? "experiences" : "experiencias"}`;
   };
   return [
     {
       key: "data",
       label: labels.data,
       ok: hasEvidence,
-      detail: state.language === "en" ? `${reportExperiences.length} experiences in current report filter.` : `${reportExperiences.length} experiencias en el filtro actual.`,
+      detail: state.language !== "es" ? `${reportExperiences.length} experiences in current report filter.` : `${reportExperiences.length} experiencias en el filtro actual.`,
     },
     {
       key: "narrative",
       label: labels.narrative,
       ok: hasNarrative,
-      detail: state.language === "en" ? `${payload.integratedReading?.length || 0} integrated readings.` : `${payload.integratedReading?.length || 0} lecturas integradas.`,
+      detail: state.language !== "es" ? `${payload.integratedReading?.length || 0} integrated readings.` : `${payload.integratedReading?.length || 0} lecturas integradas.`,
     },
     {
       key: "charts",
       label: labels.charts,
       ok: hasCharts,
-      detail: state.language === "en" ? `${payload.categoryBreakdown?.length || 0} categories and ${payload.energyTrend?.length || 0} trend points.` : `${payload.categoryBreakdown?.length || 0} categorías y ${payload.energyTrend?.length || 0} puntos de tendencia.`,
+      detail: state.language !== "es" ? `${payload.categoryBreakdown?.length || 0} categories and ${payload.energyTrend?.length || 0} trend points.` : `${payload.categoryBreakdown?.length || 0} categorías y ${payload.energyTrend?.length || 0} puntos de tendencia.`,
     },
     { key: "pdf", label: labels.pdf, ok: Boolean(audit.pdf?.at), detail: formatDetail("pdf") },
     { key: "review", label: labels.review, ok: audit.review?.status === "ok", detail: formatDetail("review") },
@@ -20912,7 +21306,7 @@ function buildReportAcceptanceChecks() {
   const hasCharts = Boolean(payload.energyTrend?.length || payload.categoryBreakdown?.length);
   const hasEvidence = reportExperiences.length >= 3;
   const labels =
-    state.language === "en"
+    state.language !== "es"
       ? {
           data: "Reportable data",
           narrative: "Narrative and insights",
@@ -20937,14 +21331,14 @@ function buildReportAcceptanceChecks() {
         };
   const formatDetail = (format) => {
     const item = audit[format];
-    if (!item?.at) return state.language === "en" ? "Not exported in this browser." : "No exportado en este navegador.";
-    const status = item.status === "ok" ? (state.language === "en" ? "successful" : "correcto") : item.status;
-    return `${formatDate(item.at)} · ${status} · ${item.experiences || 0} ${state.language === "en" ? "experiences" : "experiencias"}`;
+    if (!item?.at) return state.language !== "es" ? "Not exported in this browser." : "No exportado en este navegador.";
+    const status = item.status === "ok" ? (state.language !== "es" ? "successful" : "correcto") : item.status;
+    return `${formatDate(item.at)} · ${status} · ${item.experiences || 0} ${state.language !== "es" ? "experiences" : "experiencias"}`;
   };
   return [
-    { key: "data", label: labels.data, ok: hasEvidence, detail: state.language === "en" ? `${reportExperiences.length} experiences in current report filter.` : `${reportExperiences.length} experiencias en el filtro actual.` },
-    { key: "narrative", label: labels.narrative, ok: hasNarrative, detail: state.language === "en" ? `${payload.integratedReading?.length || 0} integrated readings.` : `${payload.integratedReading?.length || 0} lecturas integradas.` },
-    { key: "charts", label: labels.charts, ok: hasCharts, detail: state.language === "en" ? `${payload.categoryBreakdown?.length || 0} categories and ${payload.energyTrend?.length || 0} trend points.` : `${payload.categoryBreakdown?.length || 0} categorias y ${payload.energyTrend?.length || 0} puntos de tendencia.` },
+    { key: "data", label: labels.data, ok: hasEvidence, detail: state.language !== "es" ? `${reportExperiences.length} experiences in current report filter.` : `${reportExperiences.length} experiencias en el filtro actual.` },
+    { key: "narrative", label: labels.narrative, ok: hasNarrative, detail: state.language !== "es" ? `${payload.integratedReading?.length || 0} integrated readings.` : `${payload.integratedReading?.length || 0} lecturas integradas.` },
+    { key: "charts", label: labels.charts, ok: hasCharts, detail: state.language !== "es" ? `${payload.categoryBreakdown?.length || 0} categories and ${payload.energyTrend?.length || 0} trend points.` : `${payload.categoryBreakdown?.length || 0} categorias y ${payload.energyTrend?.length || 0} puntos de tendencia.` },
     { key: "json", label: labels.json, ok: audit.json?.status === "ok", detail: formatDetail("json") },
     { key: "csv", label: labels.csv, ok: audit.csv?.status === "ok", detail: formatDetail("csv") },
     { key: "html", label: labels.html, ok: audit.html?.status === "ok", detail: formatDetail("html") },
@@ -20963,12 +21357,12 @@ function renderReportAcceptancePanel() {
   if (!container) return;
   const checks = buildReportAcceptanceChecks();
   const readiness = summarizeReadiness(checks.map((check) => check.ok));
-  const title = state.language === "en" ? "Report Acceptance Pack" : "Paquete de aceptación del reporte";
+  const title = state.language !== "es" ? "Report Acceptance Pack" : "Paquete de aceptación del reporte";
   const detail =
-    state.language === "en"
+    state.language !== "es"
       ? `${readiness.ready}/${readiness.total} controls ready. The pilot should test exports before considering Reports closed.`
       : `${readiness.ready}/${readiness.total} controles listos. El piloto debe probar exportaciones antes de considerar Reportes cerrado.`;
-  const actions = state.language === "en"
+  const actions = state.language !== "es"
     ? {
         review: "Register human review",
         json: "Download report JSON",
@@ -21005,7 +21399,7 @@ function renderReportAcceptancePanel() {
         <button class="ghost-button" type="button" data-report-acceptance-action="pdf" title="${escapeHtml(getReportAcceptanceActionPurpose("pdf"))}" onclick="downloadPdfReport()">${escapeHtml(actions.pdf)}</button>
         <button class="ghost-button" type="button" data-report-acceptance-action="all" title="${escapeHtml(getReportAcceptanceActionPurpose("all"))}" onclick="exportReportAcceptancePackage()">${escapeHtml(actions.all)}</button>
       </div>
-      <div class="report-acceptance-help" aria-label="${escapeHtml(state.language === "en" ? "What each acceptance button does" : "Para que sirve cada boton de aceptacion")}">
+      <div class="report-acceptance-help" aria-label="${escapeHtml(state.language !== "es" ? "What each acceptance button does" : "Para que sirve cada boton de aceptacion")}">
         ${actionHelp
           .map(
             (item) => `
@@ -21025,7 +21419,7 @@ function renderReportAcceptancePanel() {
           .map(
             (check) => `
               <article class="${check.ok ? "is-ready" : "is-review"}">
-                <span class="${check.ok ? "status-ok" : "status-warn"}">${escapeHtml(check.ok ? (state.language === "en" ? "Ready" : "Listo") : (state.language === "en" ? "Review" : "Revisar"))}</span>
+                <span class="${check.ok ? "status-ok" : "status-warn"}">${escapeHtml(check.ok ? (state.language !== "es" ? "Ready" : "Listo") : (state.language !== "es" ? "Review" : "Revisar"))}</span>
                 <strong>${escapeHtml(check.label)}</strong>
                 <p>${escapeHtml(check.detail)}</p>
               </article>
@@ -21040,17 +21434,17 @@ function renderReportAcceptancePanel() {
 function formatReportAcceptanceLastActionLegacy() {
   const audit = state.reportExportAudit || {};
   if (!audit.lastAt) {
-    return state.language === "en" ? "No acceptance action has been run yet." : "Aún no se ha ejecutado ninguna acción de aceptación.";
+    return state.language !== "es" ? "No acceptance action has been run yet." : "Aún no se ha ejecutado ninguna acción de aceptación.";
   }
-  const format = audit.lastFormat || (state.language === "en" ? "action" : "acción");
-  return state.language === "en"
+  const format = audit.lastFormat || (state.language !== "es" ? "action" : "acción");
+  return state.language !== "es"
     ? `Last action: ${format} · ${formatDate(audit.lastAt)} · ${audit.lastStatus || "ok"}.`
     : `Última acción: ${format} · ${formatDate(audit.lastAt)} · ${audit.lastStatus || "ok"}.`;
 }
 
 function getReportAcceptanceActionLabel(format) {
   const labels =
-    state.language === "en"
+    state.language !== "es"
       ? {
           review: "human review",
           json: "report JSON",
@@ -21074,7 +21468,7 @@ function getReportAcceptanceActionLabel(format) {
 
 function getReportAcceptanceActionPurpose(action) {
   const purposes =
-    state.language === "en"
+    state.language !== "es"
       ? {
           review: "Marks that a person reviewed the report on screen; it does not download a file.",
           json: "Exports the complete structured report for backup, audit, or later processing.",
@@ -21108,13 +21502,13 @@ function getReportExportFileName(format, status = "ok") {
 function formatReportAcceptanceLastAction() {
   const audit = state.reportExportAudit || {};
   if (!audit.lastAt) {
-    return state.language === "en" ? "No acceptance action has been run yet." : "Aun no se ha ejecutado ninguna accion de aceptacion.";
+    return state.language !== "es" ? "No acceptance action has been run yet." : "Aun no se ha ejecutado ninguna accion de aceptacion.";
   }
-  const format = audit.lastFormat || (state.language === "en" ? "action" : "accion");
+  const format = audit.lastFormat || (state.language !== "es" ? "action" : "accion");
   const label = getReportAcceptanceActionLabel(format);
   const fileName = getReportExportFileName(format, audit.lastStatus);
   const purpose = getReportAcceptanceActionPurpose(format === "package" ? "all" : format);
-  return state.language === "en"
+  return state.language !== "es"
     ? `Last action: ${label} · ${formatDate(audit.lastAt)} · ${audit.lastStatus || "ok"}. ${fileName ? `Generated file: ${fileName}. ` : ""}${purpose}`
     : `Ultima accion: ${label} · ${formatDate(audit.lastAt)} · ${audit.lastStatus || "ok"}. ${fileName ? `Archivo generado: ${fileName}. ` : ""}${purpose}`;
 }
@@ -21191,7 +21585,7 @@ function downloadCsvReport() {
   downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), "reporte-experiencias.csv", csv);
   markReportExport("csv", buildReportExportPayload(), "ok");
   renderReportAcceptancePanel();
-  notify(state.language === "en" ? "Report CSV exported." : "CSV del reporte exportado.", "success");
+  notify(state.language !== "es" ? "Report CSV exported." : "CSV del reporte exportado.", "success");
 }
 
 function downloadPrintableReport() {
@@ -21271,7 +21665,7 @@ function downloadPrintableReport() {
               <article class="reading">
                 ${item.previewUrl ? `<img class="report-evidence-image" src="${escapeHtml(item.previewUrl)}" alt="" />` : ""}
                 <h3>${escapeHtml(item.experienceTitle)}</h3>
-                <p><strong>${escapeHtml(state.language === "en" ? "Linked event" : "Evento vinculado")}:</strong> ${escapeHtml(item.eventTitle || (state.language === "en" ? "Whole experience" : "Toda la experiencia"))}</p>
+                <p><strong>${escapeHtml(state.language !== "es" ? "Linked event" : "Evento vinculado")}:</strong> ${escapeHtml(item.eventTitle || (state.language !== "es" ? "Whole experience" : "Toda la experiencia"))}</p>
                 <p><strong>${escapeHtml(t("labels.reportAssetSource"))}:</strong> ${escapeHtml(item.name)} · ${escapeHtml(item.kind)} · ${escapeHtml(item.category)} · ${escapeHtml(item.provenance || "")}</p>
                 ${item.analyticalText ? `<p><strong>${escapeHtml(t("labels.reportAssetAnalyticalText"))}:</strong> ${escapeHtml(item.analyticalText)}</p>` : ""}
                 ${item.manualNote ? `<p>${escapeHtml(item.manualNote)}</p>` : ""}
@@ -21283,14 +21677,14 @@ function downloadPrintableReport() {
     : "";
   const eventTimeline = payload.eventTimeline?.length
     ? `<section>
-        <h2>${escapeHtml(state.language === "en" ? "Event timeline" : "Línea de eventos")}</h2>
+        <h2>${escapeHtml(state.language !== "es" ? "Event timeline" : "Línea de eventos")}</h2>
         ${payload.eventTimeline
           .map(
             (event) => `
               <article class="reading">
-                <h3>${escapeHtml(`${formatShortDate(event.experienceTimestamp)} · ${String(event.order).padStart(2, "0")} · ${event.title || (state.language === "en" ? "Untitled event" : "Evento sin título")}`)}</h3>
+                <h3>${escapeHtml(`${formatShortDate(event.experienceTimestamp)} · ${String(event.order).padStart(2, "0")} · ${event.title || (state.language !== "es" ? "Untitled event" : "Evento sin título")}`)}</h3>
                 <p>${escapeHtml(event.description || event.experienceTitle || "")}</p>
-                <p><strong>${escapeHtml(state.language === "en" ? "Experience" : "Experiencia")}:</strong> ${escapeHtml(event.experienceTitle || "")} · ${escapeHtml(event.category || "")}${event.participantName ? ` · ${escapeHtml(event.participantName)}` : ""}</p>
+                <p><strong>${escapeHtml(state.language !== "es" ? "Experience" : "Experiencia")}:</strong> ${escapeHtml(event.experienceTitle || "")} · ${escapeHtml(event.category || "")}${event.participantName ? ` · ${escapeHtml(event.participantName)}` : ""}</p>
               </article>
             `,
           )
@@ -21365,11 +21759,11 @@ function downloadPrintableReport() {
   downloadBlob(new Blob([html], { type: "text/html;charset=utf-8" }), "reporte-experiencias.html", html);
   markReportExport("html", payload, "ok");
   renderReportAcceptancePanel();
-  notify(state.language === "en" ? "Printable report exported." : "HTML imprimible del reporte exportado.", "success");
+  notify(state.language !== "es" ? "Printable report exported." : "HTML imprimible del reporte exportado.", "success");
 }
 
 async function downloadPdfReport() {
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         start: "Generating executive PDF",
         startDetail: "Validating scope, charts, findings, and ReportLab payload.",
@@ -21434,7 +21828,7 @@ async function downloadPdfReport() {
     const detail = getExportErrorDetail(error);
     markReportExport("pdf", payload, "error");
     renderReportAcceptancePanel();
-    const message = state.language === "en" ? `ReportLab PDF failed. Detail: ${detail}` : `Fallo el PDF ReportLab. Detalle: ${detail}`;
+    const message = state.language !== "es" ? `ReportLab PDF failed. Detail: ${detail}` : `Fallo el PDF ReportLab. Detalle: ${detail}`;
     setReportFlowStatus(message);
     setReportProgress({ title: labels.error, detail: message, percent: 100, stateName: "error" });
     notify(message, "error");
@@ -21577,15 +21971,15 @@ function buildPublicationPages({ title, type, style, channel, experiences, analy
   const guide = getPublicationTypeGuide(type);
   const typeLabel = displayPublicationType(type);
   const styleLabel = displayPublicationStyle(style);
-  const peopleText = people.length ? people.join(", ") : (state.language === "en" ? "not specified" : "sin personas indicadas");
-  const locationText = locations.length ? locations.join(", ") : (state.language === "en" ? "no location specified" : "sin ubicacion indicada");
+  const peopleText = people.length ? people.join(", ") : (state.language !== "es" ? "not specified" : "sin personas indicadas");
+  const locationText = locations.length ? locations.join(", ") : (state.language !== "es" ? "no location specified" : "sin ubicacion indicada");
   const momentLines = highlights
-    .map((item, index) => `${index + 1}. ${item.title} - ${item.category}. ${item.note || item.location || (state.language === "en" ? "Experience recorded." : "Experiencia registrada.")}`)
+    .map((item, index) => `${index + 1}. ${item.title} - ${item.category}. ${item.note || item.location || (state.language !== "es" ? "Experience recorded." : "Experiencia registrada.")}`)
     .join("\n");
   const mediaLines = selectedMedia.length
     ? selectedMedia.slice(0, 8).map((item, index) => `${index + 1}. ${getPublicationMediaKindLabel(item)} - ${item.name}: ${shortPublicationText([item.translatedText, item.analyticalText, item.manualNote, item.originalText, item.experienceTitle].filter(Boolean).join(" "), 240) || getPublicationMediaActionLabel(item)}`).join("\n")
-    : (state.language === "en" ? "No media selected for this version." : "No hay multimedia seleccionada para esta version.");
-  const channelBody = state.language === "en"
+    : (state.language !== "es" ? "No media selected for this version." : "No hay multimedia seleccionada para esta version.");
+  const channelBody = state.language !== "es"
     ? `Recommended channel: ${channel}. Use this version as ${typeLabel.toLowerCase()} with a ${styleLabel.toLowerCase()} tone. ${translatePublicationGuideText(guide.mediaPolicy || "")}`
     : `Canal recomendado: ${channel}. Usa esta version como ${typeLabel.toLowerCase()} con tono ${styleLabel.toLowerCase()}. ${guide.mediaPolicy || ""}`;
   const basePageSpecs = [
@@ -21594,7 +21988,7 @@ function buildPublicationPages({ title, type, style, channel, experiences, analy
       layoutTemplate: firstImage ? "cover-visual" : "cover-typographic",
       title,
       subtitle: `${typeLabel} - ${styleLabel} - ${channel}`,
-      body: state.language === "en"
+      body: state.language !== "es"
         ? `A publication prepared from ${experiences.length} experience(s), ${dateRange}. Main focus: ${category}.`
         : `Publicacion preparada a partir de ${experiences.length} experiencia(s), ${dateRange}. Foco principal: ${category}.`,
       mediaIds: firstImage ? [firstImage.id] : [],
@@ -21602,57 +21996,57 @@ function buildPublicationPages({ title, type, style, channel, experiences, analy
     {
       pageType: "summary",
       layoutTemplate: "executive-summary",
-      title: state.language === "en" ? "Editorial summary" : "Resumen editorial",
-      subtitle: state.language === "en" ? "What this piece should communicate" : "Lo que esta pieza debe comunicar",
-      body: `${summary}\n\n${state.language === "en" ? "People" : "Personas"}: ${peopleText}\n${state.language === "en" ? "Places" : "Lugares"}: ${locationText}\n${state.language === "en" ? "Average energy" : "Energia media"}: ${avgEnergy}/10`,
+      title: state.language !== "es" ? "Editorial summary" : "Resumen editorial",
+      subtitle: state.language !== "es" ? "What this piece should communicate" : "Lo que esta pieza debe comunicar",
+      body: `${summary}\n\n${state.language !== "es" ? "People" : "Personas"}: ${peopleText}\n${state.language !== "es" ? "Places" : "Lugares"}: ${locationText}\n${state.language !== "es" ? "Average energy" : "Energia media"}: ${avgEnergy}/10`,
       mediaIds: [],
     },
     {
       pageType: "story",
       layoutTemplate: type === "Carrusel visual" ? "slide-sequence" : "narrative",
-      title: state.language === "en" ? "Story" : "Historia",
-      subtitle: state.language === "en" ? "Edited narrative for the reader" : "Narrativa editada para el lector",
+      title: state.language !== "es" ? "Story" : "Historia",
+      subtitle: state.language !== "es" ? "Edited narrative for the reader" : "Narrativa editada para el lector",
       body: buildPublicationPageStory(body, analysis),
       mediaIds: [],
     },
     {
       pageType: "timeline",
       layoutTemplate: "moments",
-      title: state.language === "en" ? "Key moments" : "Momentos clave",
-      subtitle: state.language === "en" ? "Sequence selected from the source experiences" : "Secuencia seleccionada desde las experiencias fuente",
-      body: momentLines || (state.language === "en" ? "No key moments were selected." : "No hay momentos clave seleccionados."),
+      title: state.language !== "es" ? "Key moments" : "Momentos clave",
+      subtitle: state.language !== "es" ? "Sequence selected from the source experiences" : "Secuencia seleccionada desde las experiencias fuente",
+      body: momentLines || (state.language !== "es" ? "No key moments were selected." : "No hay momentos clave seleccionados."),
       mediaIds: [],
     },
     {
       pageType: "media",
       layoutTemplate: selectedMedia.some((item) => String(item.type || "").startsWith("image/")) ? "gallery" : "evidence-list",
-      title: state.language === "en" ? "Selected media" : "Multimedia seleccionada",
-      subtitle: state.language === "en" ? "Images are shown; audio, video and documents are summarized" : "Las imagenes se muestran; audio, video y documentos se resumen",
+      title: state.language !== "es" ? "Selected media" : "Multimedia seleccionada",
+      subtitle: state.language !== "es" ? "Images are shown; audio, video and documents are summarized" : "Las imagenes se muestran; audio, video y documentos se resumen",
       body: mediaLines,
       mediaIds,
     },
     {
       pageType: "evidence",
       layoutTemplate: "plain-language-evidence",
-      title: state.language === "en" ? "Plain-language evidence" : "Evidencia en lenguaje claro",
-      subtitle: state.language === "en" ? "Interpretation before sharing" : "Interpretacion antes de compartir",
+      title: state.language !== "es" ? "Plain-language evidence" : "Evidencia en lenguaje claro",
+      subtitle: state.language !== "es" ? "Interpretation before sharing" : "Interpretacion antes de compartir",
       body: buildPublicationInterpretationSummary(selectedMedia),
       mediaIds: [],
     },
     {
       pageType: "channel",
       layoutTemplate: "channel-plan",
-      title: state.language === "en" ? "Publication plan" : "Plan de publicacion",
-      subtitle: state.language === "en" ? "How to use this output" : "Como usar esta salida",
+      title: state.language !== "es" ? "Publication plan" : "Plan de publicacion",
+      subtitle: state.language !== "es" ? "How to use this output" : "Como usar esta salida",
       body: channelBody,
       mediaIds: [],
     },
     {
       pageType: "closing",
       layoutTemplate: "closing",
-      title: state.language === "en" ? "Closing note" : "Cierre",
-      subtitle: state.language === "en" ? "Human review before publishing" : "Revision humana antes de publicar",
-      body: state.language === "en"
+      title: state.language !== "es" ? "Closing note" : "Cierre",
+      subtitle: state.language !== "es" ? "Human review before publishing" : "Revision humana antes de publicar",
+      body: state.language !== "es"
         ? `${analysis.action}\n\nFinal check: review privacy, names, faces, sensitive information and media rights before sharing.`
         : `${analysis.action}\n\nChequeo final: revisa privacidad, nombres, rostros, informacion sensible y derechos de medios antes de compartir.`,
       mediaIds: [],
@@ -21710,8 +22104,8 @@ function applyPublicationPageProfile(basePages, context) {
   if (isQuick) {
     return [
       { ...cover, layoutTemplate: "social-cover" },
-      make("story", "short-message", state.language === "en" ? "Post text" : "Texto para publicar", state.language === "en" ? "Short, direct and ready to copy" : "Breve, directo y listo para copiar", `${context.summary}\n\n${context.analysis.action}`),
-      make("media", "hero-media", state.language === "en" ? "Main media" : "Multimedia principal", state.language === "en" ? "Use one strong image/video when available" : "Usa una imagen/video fuerte si esta disponible", context.mediaLines, context.selectedMedia.slice(0, 3).map((item) => item.id)),
+      make("story", "short-message", state.language !== "es" ? "Post text" : "Texto para publicar", state.language !== "es" ? "Short, direct and ready to copy" : "Breve, directo y listo para copiar", `${context.summary}\n\n${context.analysis.action}`),
+      make("media", "hero-media", state.language !== "es" ? "Main media" : "Multimedia principal", state.language !== "es" ? "Use one strong image/video when available" : "Usa una imagen/video fuerte si esta disponible", context.mediaLines, context.selectedMedia.slice(0, 3).map((item) => item.id)),
       channel,
       closing,
     ];
@@ -21719,36 +22113,36 @@ function applyPublicationPageProfile(basePages, context) {
   if (isCarousel) {
     return [
       { ...cover, layoutTemplate: "carousel-cover" },
-      make("slides", "carousel-sequence", state.language === "en" ? "Carousel sequence" : "Secuencia del carrusel", state.language === "en" ? "One idea per slide" : "Una idea por lamina", buildPublicationCarouselSlides(context)),
-      make("media", "visual-grid", state.language === "en" ? "Visual assets" : "Activos visuales", state.language === "en" ? "Images first; other media become notes" : "Imagenes primero; otros medios quedan como notas", context.mediaLines, context.mediaIds),
-      make("captions", "caption-bank", state.language === "en" ? "Caption bank" : "Textos para copiar", state.language === "en" ? "Short texts for social channels" : "Textos breves para canales sociales", buildPublicationCaptionBank(context)),
+      make("slides", "carousel-sequence", state.language !== "es" ? "Carousel sequence" : "Secuencia del carrusel", state.language !== "es" ? "One idea per slide" : "Una idea por lamina", buildPublicationCarouselSlides(context)),
+      make("media", "visual-grid", state.language !== "es" ? "Visual assets" : "Activos visuales", state.language !== "es" ? "Images first; other media become notes" : "Imagenes primero; otros medios quedan como notas", context.mediaLines, context.mediaIds),
+      make("captions", "caption-bank", state.language !== "es" ? "Caption bank" : "Textos para copiar", state.language !== "es" ? "Short texts for social channels" : "Textos breves para canales sociales", buildPublicationCaptionBank(context)),
       channel,
     ];
   }
   if (isAlbum) {
     return [
       { ...cover, layoutTemplate: "memory-cover" },
-      { ...media, layoutTemplate: "memory-gallery", title: state.language === "en" ? "Living gallery" : "Galeria viva" },
+      { ...media, layoutTemplate: "memory-gallery", title: state.language !== "es" ? "Living gallery" : "Galeria viva" },
       timeline,
-      make("people_places", "memory-context", state.language === "en" ? "People and places" : "Personas y lugares", state.language === "en" ? "Context that makes the memory reusable" : "Contexto que hace reutilizable el recuerdo", `${state.language === "en" ? "People" : "Personas"}: ${context.peopleText}\n${state.language === "en" ? "Places" : "Lugares"}: ${context.locationText}`),
-      make("memory", "emotional-closing", state.language === "en" ? "Memory to keep" : "Recuerdo para conservar", state.language === "en" ? "Human reading, not just a log" : "Lectura humana, no solo bitacora", buildPublicationPageStory(context.body, context.analysis)),
+      make("people_places", "memory-context", state.language !== "es" ? "People and places" : "Personas y lugares", state.language !== "es" ? "Context that makes the memory reusable" : "Contexto que hace reutilizable el recuerdo", `${state.language !== "es" ? "People" : "Personas"}: ${context.peopleText}\n${state.language !== "es" ? "Places" : "Lugares"}: ${context.locationText}`),
+      make("memory", "emotional-closing", state.language !== "es" ? "Memory to keep" : "Recuerdo para conservar", state.language !== "es" ? "Human reading, not just a log" : "Lectura humana, no solo bitacora", buildPublicationPageStory(context.body, context.analysis)),
       closing,
     ];
   }
   if (isStoryScript) {
     return [
       { ...cover, layoutTemplate: "reel-cover" },
-      make("scenes", "scene-board", state.language === "en" ? "Scene board" : "Guion de escenas", state.language === "en" ? "Suggested sequence for video/story" : "Secuencia sugerida para video/story", buildPublicationSceneBoard(context)),
-      { ...media, layoutTemplate: "shot-list", title: state.language === "en" ? "Shots and source media" : "Tomas y medios fuente" },
-      make("voiceover", "voice-script", state.language === "en" ? "Voice or text overlay" : "Voz o texto en pantalla", state.language === "en" ? "Copy-ready script" : "Guion listo para copiar", buildPublicationCaptionBank(context)),
+      make("scenes", "scene-board", state.language !== "es" ? "Scene board" : "Guion de escenas", state.language !== "es" ? "Suggested sequence for video/story" : "Secuencia sugerida para video/story", buildPublicationSceneBoard(context)),
+      { ...media, layoutTemplate: "shot-list", title: state.language !== "es" ? "Shots and source media" : "Tomas y medios fuente" },
+      make("voiceover", "voice-script", state.language !== "es" ? "Voice or text overlay" : "Voz o texto en pantalla", state.language !== "es" ? "Copy-ready script" : "Guion listo para copiar", buildPublicationCaptionBank(context)),
       channel,
     ];
   }
   if (isLetter) {
     return [
-      make("letter", "letter-cover", context.title, state.language === "en" ? "Personal message" : "Mensaje personal", state.language === "en" ? "Suggested greeting: edit recipient and tone before sending." : "Saludo sugerido: edita destinatario y tono antes de enviar."),
-      make("letter", "letter-body", state.language === "en" ? "Main message" : "Mensaje principal", state.language === "en" ? "Editable letter body" : "Cuerpo editable de la carta", `${context.summary}\n\n${buildPublicationPageStory(context.body, context.analysis)}`),
-      make("annex", "annex-list", state.language === "en" ? "Relevant annexes" : "Anexos relevantes", state.language === "en" ? "Media or files to mention" : "Medios o archivos para mencionar", context.mediaLines, context.mediaIds),
+      make("letter", "letter-cover", context.title, state.language !== "es" ? "Personal message" : "Mensaje personal", state.language !== "es" ? "Suggested greeting: edit recipient and tone before sending." : "Saludo sugerido: edita destinatario y tono antes de enviar."),
+      make("letter", "letter-body", state.language !== "es" ? "Main message" : "Mensaje principal", state.language !== "es" ? "Editable letter body" : "Cuerpo editable de la carta", `${context.summary}\n\n${buildPublicationPageStory(context.body, context.analysis)}`),
+      make("annex", "annex-list", state.language !== "es" ? "Relevant annexes" : "Anexos relevantes", state.language !== "es" ? "Media or files to mention" : "Medios o archivos para mencionar", context.mediaLines, context.mediaIds),
       closing,
     ];
   }
@@ -21756,11 +22150,11 @@ function applyPublicationPageProfile(basePages, context) {
     return [
       { ...cover, layoutTemplate: "dossier-cover" },
       summary,
-      make("chapters", "chapter-plan", state.language === "en" ? "Chapters" : "Capitulos", state.language === "en" ? "Readable structure for a longer document" : "Estructura legible para un documento largo", buildPublicationDossierChapters(context)),
+      make("chapters", "chapter-plan", state.language !== "es" ? "Chapters" : "Capitulos", state.language !== "es" ? "Readable structure for a longer document" : "Estructura legible para un documento largo", buildPublicationDossierChapters(context)),
       timeline,
       evidence,
       media,
-      make("actions", "recommendations", state.language === "en" ? "Recommendations" : "Recomendaciones", state.language === "en" ? "What to do with this material" : "Que hacer con este material", context.analysis.action),
+      make("actions", "recommendations", state.language !== "es" ? "Recommendations" : "Recomendaciones", state.language !== "es" ? "What to do with this material" : "Que hacer con este material", context.analysis.action),
       channel,
       closing,
     ];
@@ -21768,9 +22162,9 @@ function applyPublicationPageProfile(basePages, context) {
   if (isHealth) {
     return [
       { ...cover, layoutTemplate: "health-cover" },
-      make("summary", "health-purpose", state.language === "en" ? "Reason for sharing" : "Motivo para compartir", state.language === "en" ? "Plain-language context, not a diagnosis" : "Contexto en lenguaje claro, no diagnostico", context.summary),
-      make("evidence", "health-evidence", state.language === "en" ? "Observed data" : "Datos observados", state.language === "en" ? "Documents, biometrics or user notes" : "Documentos, biometria o notas del usuario", context.mediaLines || context.body, context.mediaIds),
-      make("questions", "clinical-questions", state.language === "en" ? "Questions to review" : "Preguntas para revisar", state.language === "en" ? "For a professional or for the next check" : "Para un profesional o para el proximo control", buildPublicationHealthQuestions(context)),
+      make("summary", "health-purpose", state.language !== "es" ? "Reason for sharing" : "Motivo para compartir", state.language !== "es" ? "Plain-language context, not a diagnosis" : "Contexto en lenguaje claro, no diagnostico", context.summary),
+      make("evidence", "health-evidence", state.language !== "es" ? "Observed data" : "Datos observados", state.language !== "es" ? "Documents, biometrics or user notes" : "Documentos, biometria o notas del usuario", context.mediaLines || context.body, context.mediaIds),
+      make("questions", "clinical-questions", state.language !== "es" ? "Questions to review" : "Preguntas para revisar", state.language !== "es" ? "For a professional or for the next check" : "Para un profesional o para el proximo control", buildPublicationHealthQuestions(context)),
       closing,
     ];
   }
@@ -21778,9 +22172,9 @@ function applyPublicationPageProfile(basePages, context) {
     return [
       { ...cover, layoutTemplate: "executive-cover" },
       summary,
-      make("findings", "finding-cards", state.language === "en" ? "Main findings" : "Hallazgos principales", state.language === "en" ? "What matters most" : "Lo mas importante", `${context.analysis.focus}\n\n${context.momentLines}`),
+      make("findings", "finding-cards", state.language !== "es" ? "Main findings" : "Hallazgos principales", state.language !== "es" ? "What matters most" : "Lo mas importante", `${context.analysis.focus}\n\n${context.momentLines}`),
       evidence,
-      make("actions", "next-actions", state.language === "en" ? "Next actions" : "Proximas acciones", state.language === "en" ? "Decision-ready output" : "Salida lista para decidir", context.analysis.action),
+      make("actions", "next-actions", state.language !== "es" ? "Next actions" : "Proximas acciones", state.language !== "es" ? "Decision-ready output" : "Salida lista para decidir", context.analysis.action),
       channel,
     ];
   }
@@ -21834,7 +22228,7 @@ function buildPublicationPageStory(body, analysis) {
     .map((part) => part.trim())
     .filter((part) => part && !part.startsWith("- ") && !/^(Direccion editorial|Interpretacion clara|Contexto|Momentos seleccionados|Evidencia|Plan de diseno|Editorial direction|Readable interpretation|Context|Selected moments|Evidence|Design)/i.test(part));
   const narrative = paragraphs.slice(0, 3).join("\n\n");
-  return narrative || analysis.focus || (state.language === "en" ? "Edit this story page before exporting." : "Edita esta pagina de historia antes de exportar.");
+  return narrative || analysis.focus || (state.language !== "es" ? "Edit this story page before exporting." : "Edita esta pagina de historia antes de exportar.");
 }
 
 function normalizePublicationPages(draft) {
@@ -21844,7 +22238,7 @@ function normalizePublicationPages(draft) {
       pageNumber: page.pageNumber || index + 1,
       pageType: page.pageType || "story",
       layoutTemplate: page.layoutTemplate || "narrative",
-      title: page.title || (state.language === "en" ? `Page ${index + 1}` : `Pagina ${index + 1}`),
+      title: page.title || (state.language !== "es" ? `Page ${index + 1}` : `Pagina ${index + 1}`),
       subtitle: page.subtitle || "",
       body: page.body || "",
       mediaIds: Array.isArray(page.mediaIds) ? page.mediaIds : [],
@@ -21854,7 +22248,7 @@ function normalizePublicationPages(draft) {
   const body = draft?.body || "";
   return [
     { id: createId(), pageNumber: 1, pageType: "cover", layoutTemplate: "cover-typographic", title: draft?.title || "Publicacion", subtitle: `${displayPublicationType(draft?.type || "")} - ${draft?.channel || ""}`, body: draft?.summary || "", mediaIds: [] },
-    { id: createId(), pageNumber: 2, pageType: "story", layoutTemplate: "narrative", title: state.language === "en" ? "Story" : "Historia", subtitle: "", body, mediaIds: [] },
+    { id: createId(), pageNumber: 2, pageType: "story", layoutTemplate: "narrative", title: state.language !== "es" ? "Story" : "Historia", subtitle: "", body, mediaIds: [] },
   ];
 }
 
@@ -21963,7 +22357,7 @@ function getPublicationMediaRole(item = {}, draft = {}, index = 0) {
   }
   if ((isQuick || isCarousel) && !isImage && !isVideo) include = false;
   if (isCarousel && index > 7) include = false;
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         cover: "Cover candidate",
         gallery: "Gallery asset",
@@ -21988,7 +22382,7 @@ function getPublicationMediaRole(item = {}, draft = {}, index = 0) {
         transport: "Solo transporte",
         support: "Activo de apoyo",
       };
-  const detail = state.language === "en"
+  const detail = state.language !== "es"
     ? `${labels[role] || labels.support}. Recommendation score ${score}/100 for ${displayPublicationType(draft.type || "Reporte narrativo")} on ${draft.channel || "PDF/HTML"}.`
     : `${labels[role] || labels.support}. Puntaje recomendado ${score}/100 para ${displayPublicationType(draft.type || "Reporte narrativo")} en ${draft.channel || "PDF/HTML"}.`;
   return { role, label: labels[role] || labels.support, detail, score: Math.max(0, Math.min(100, score)), include };
@@ -22060,7 +22454,7 @@ function collectPublicationMedia(experiences) {
 
 function buildPublicationTitle(type, experiences) {
   const category = displayCategory(getTopCategory(experiences));
-  if (state.language === "en") {
+  if (state.language !== "es") {
     if (type === "Resumen ejecutivo") return `Executive summary: ${category}`;
     if (type === "Álbum experiencial") return `Experience album: ${category}`;
     if (type === "Guion de story/reel") return `Story script: ${category}`;
@@ -22075,13 +22469,13 @@ function buildPublicationTitle(type, experiences) {
 }
 
 function buildPublicationSummary(experiences, analysis, category, avgEnergy) {
-  return state.language === "en"
+  return state.language !== "es"
     ? `${experiences.length} experiences centered on ${category}, with average energy of ${avgEnergy}/10. Main reading: ${analysis.focus}`
     : `${experiences.length} experiencias centradas en ${category}, con energía media de ${avgEnergy}/10. Lectura principal: ${analysis.focus}`;
 }
 
 function buildPublicationPurpose(type, channel) {
-  if (state.language === "en") {
+  if (state.language !== "es") {
     if (type === "Álbum experiencial") return `Living memory for ${channel}: places, people, media, and key moments.`;
     if (type === "Guion de story/reel") return `Short visual sequence for ${channel}: hook, moments, and closing line.`;
     if (type === "Publicación social rápida") return `Shareable update for ${channel}: concise story with selected media.`;
@@ -22099,26 +22493,26 @@ function buildPublicationBodyLegacy({ title, type, style, channel, experiences, 
   const people = topValues(experiences.flatMap((item) => splitPeople(item.people)), 4);
   const locations = topValues(experiences.map((item) => item.location).filter(Boolean), 4);
   const dateRange = formatPublicationDateRange(experiences);
-  const intro = state.language === "en"
+  const intro = state.language !== "es"
     ? `This ${displayPublicationType(type).toLowerCase()} is prepared for ${channel}, with a ${displayPublicationStyle(style).toLowerCase()} tone. It turns ${experiences.length} experiences from ${dateRange} into a shareable memory with ${mediaCount} media attachments and a dominant focus on ${category}.`
     : `Esta pieza de tipo ${displayPublicationType(type).toLowerCase()} está preparada para ${channel}, con tono ${displayPublicationStyle(style).toLowerCase()}. Convierte ${experiences.length} experiencias de ${dateRange} en una memoria compartible con ${mediaCount} adjuntos multimedia y foco dominante en ${category}.`;
-  const narrative = state.language === "en"
+  const narrative = state.language !== "es"
     ? `What should remain: ${analysis.focus} Average energy was ${avgEnergy}/10. The point is not to publish every detail, but to preserve the moments that explain the experience.`
     : `Lo que debería quedar en la memoria: ${analysis.focus} La energía media fue ${avgEnergy}/10. La idea no es publicar todo, sino preservar los momentos que explican la experiencia.`;
-  const context = state.language === "en"
+  const context = state.language !== "es"
     ? `People and places: ${people.length ? people.join(", ") : "not specified"} · ${locations.length ? locations.join(", ") : "no location specified"}.`
     : `Personas y lugares: ${people.length ? people.join(", ") : "sin personas indicadas"} · ${locations.length ? locations.join(", ") : "sin ubicación indicada"}.`;
-  const action = state.language === "en" ? `Suggested closing: ${analysis.action}` : `Cierre sugerido: ${analysis.action}`;
+  const action = state.language !== "es" ? `Suggested closing: ${analysis.action}` : `Cierre sugerido: ${analysis.action}`;
   const bullets = highlights
-    .map((item) => `- ${item.title} (${formatDate(item.date)} · ${item.category}): ${item.note || (state.language === "en" ? "experience recorded" : "experiencia registrada")}`)
+    .map((item) => `- ${item.title} (${formatDate(item.date)} · ${item.category}): ${item.note || (state.language !== "es" ? "experience recorded" : "experiencia registrada")}`)
     .join("\n");
   const evidence = buildPublicationEvidenceText(media);
-  return `${title}\n\n${intro}\n\n${narrative}\n\n${context}\n\n${state.language === "en" ? "Selected moments" : "Momentos seleccionados"}:\n${bullets}${evidence ? `\n\n${evidence}` : ""}\n\n${action}`;
+  return `${title}\n\n${intro}\n\n${narrative}\n\n${context}\n\n${state.language !== "es" ? "Selected moments" : "Momentos seleccionados"}:\n${bullets}${evidence ? `\n\n${evidence}` : ""}\n\n${action}`;
 }
 
 function formatPublicationDateRange(experiences) {
   const dates = experiences.map((item) => new Date(item.timestamp)).filter((date) => !Number.isNaN(date.getTime())).sort((a, b) => a - b);
-  if (!dates.length) return state.language === "en" ? "the selected period" : "el periodo seleccionado";
+  if (!dates.length) return state.language !== "es" ? "the selected period" : "el periodo seleccionado";
   const first = formatDate(dates[0].toISOString());
   const last = formatDate(dates[dates.length - 1].toISOString());
   return first === last ? first : `${first} - ${last}`;
@@ -22142,39 +22536,39 @@ function buildPublicationBody({ title, type, style, channel, experiences, analys
   const dateRange = formatPublicationDateRange(experiences);
   const editorialGuide = buildPublicationEditorialGuide({ type, channel, media });
   const interpretation = buildPublicationInterpretationSummary(media);
-  const intro = state.language === "en"
+  const intro = state.language !== "es"
     ? `This ${displayPublicationType(type).toLowerCase()} is prepared for ${channel}, with a ${displayPublicationStyle(style).toLowerCase()} tone. It turns ${experiences.length} experiences from ${dateRange} into a shareable memory, with an editorial focus on ${category} and ${mediaCount} selected media item(s).`
     : `Esta pieza de tipo ${displayPublicationType(type).toLowerCase()} esta preparada para ${channel}, con tono ${displayPublicationStyle(style).toLowerCase()}. Convierte ${experiences.length} experiencias de ${dateRange} en una memoria compartible, con foco editorial en ${category} y ${mediaCount} elemento(s) multimedia seleccionados.`;
-  const narrative = state.language === "en"
+  const narrative = state.language !== "es"
     ? `What should remain: ${analysis.focus} Average energy was ${avgEnergy}/10. The piece should not publish every detail; it should select what helps another person understand the lived experience, its evidence, and its practical meaning.`
     : `Lo que debe quedar en la memoria: ${analysis.focus} La energia media fue ${avgEnergy}/10. La pieza no debe publicar todo; debe seleccionar lo que ayuda a otra persona a entender la experiencia vivida, su evidencia y su significado practico.`;
-  const context = state.language === "en"
+  const context = state.language !== "es"
     ? `People and places: ${people.length ? people.join(", ") : "not specified"} - ${locations.length ? locations.join(", ") : "no location specified"}.`
     : `Personas y lugares: ${people.length ? people.join(", ") : "sin personas indicadas"} - ${locations.length ? locations.join(", ") : "sin ubicacion indicada"}.`;
-  const action = state.language === "en" ? `Suggested closing: ${analysis.action}` : `Cierre sugerido: ${analysis.action}`;
+  const action = state.language !== "es" ? `Suggested closing: ${analysis.action}` : `Cierre sugerido: ${analysis.action}`;
   const bullets = highlights
-    .map((item) => `- ${item.title} (${formatDate(item.date)} - ${item.category}): ${item.note || (state.language === "en" ? "experience recorded" : "experiencia registrada")}`)
+    .map((item) => `- ${item.title} (${formatDate(item.date)} - ${item.category}): ${item.note || (state.language !== "es" ? "experience recorded" : "experiencia registrada")}`)
     .join("\n");
   const evidence = buildPublicationEvidenceText(media);
   return `${title}
 
-${state.language === "en" ? "Editorial direction" : "Direccion editorial"}
+${state.language !== "es" ? "Editorial direction" : "Direccion editorial"}
 ${intro}
 
-${state.language === "en" ? "Readable interpretation" : "Interpretacion clara"}
+${state.language !== "es" ? "Readable interpretation" : "Interpretacion clara"}
 ${narrative}
 
-${state.language === "en" ? "Context" : "Contexto"}
+${state.language !== "es" ? "Context" : "Contexto"}
 ${context}
 
-${state.language === "en" ? "Selected moments" : "Momentos seleccionados"}:
-${bullets || (state.language === "en" ? "- No specific moments selected yet." : "- Aun no hay momentos especificos seleccionados.")}
+${state.language !== "es" ? "Selected moments" : "Momentos seleccionados"}:
+${bullets || (state.language !== "es" ? "- No specific moments selected yet." : "- Aun no hay momentos especificos seleccionados.")}
 
-${state.language === "en" ? "Evidence and media interpretation" : "Evidencia e interpretacion multimedia"}
+${state.language !== "es" ? "Evidence and media interpretation" : "Evidencia e interpretacion multimedia"}
 ${interpretation}
 ${evidence ? `\n\n${evidence}` : ""}
 
-${state.language === "en" ? "Design and publication plan" : "Plan de diseno y publicacion"}
+${state.language !== "es" ? "Design and publication plan" : "Plan de diseno y publicacion"}
 ${editorialGuide}
 
 ${action}`;
@@ -22183,23 +22577,23 @@ ${action}`;
 function buildPublicationEditorialGuide({ type, channel, media = [] }) {
   const included = media.filter((item) => item.included !== false).length;
   const mediaMode = included === media.length && media.length
-    ? (state.language === "en" ? "use the complete media set" : "usar todo el conjunto multimedia")
+    ? (state.language !== "es" ? "use the complete media set" : "usar todo el conjunto multimedia")
     : included === 0
-      ? (state.language === "en" ? "publish as text only" : "publicar solo como texto")
-      : (state.language === "en" ? `use ${included} curated media items` : `usar ${included} activos multimedia curados`);
-  const cover = state.language === "en"
+      ? (state.language !== "es" ? "publish as text only" : "publicar solo como texto")
+      : (state.language !== "es" ? `use ${included} curated media items` : `usar ${included} activos multimedia curados`);
+  const cover = state.language !== "es"
     ? `Create a cover aligned with ${displayPublicationType(type).toLowerCase()}: one main visual, a short title, and a human subtitle.`
     : `Crear una portada alineada con ${displayPublicationType(type).toLowerCase()}: una imagen principal, titulo breve y subtitulo humano.`;
-  const structure = state.language === "en"
+  const structure = state.language !== "es"
     ? `For ${channel}, keep the first screen clear, then sequence context, evidence, memory, and next action.`
     : `Para ${channel}, mantener clara la primera pantalla y luego ordenar contexto, evidencia, memoria y accion siguiente.`;
-  return `${cover}\n${structure}\n${state.language === "en" ? "Media policy" : "Politica multimedia"}: ${mediaMode}.`;
+  return `${cover}\n${structure}\n${state.language !== "es" ? "Media policy" : "Politica multimedia"}: ${mediaMode}.`;
 }
 
 function buildPublicationInterpretationSummary(media = []) {
   const included = media.filter((item) => item.included !== false).slice(0, 5);
   if (!included.length) {
-    return state.language === "en"
+    return state.language !== "es"
       ? "No media was selected for this version. The publication should rely on edited text, context, and the user's final review."
       : "No se selecciono multimedia para esta version. La publicacion debe apoyarse en el texto editado, el contexto y la revision final del usuario.";
   }
@@ -22211,24 +22605,24 @@ function summarizePublicationEvidenceItem(item) {
     .filter(Boolean)
     .join(" ");
   const cleanText = shortPublicationText(sourceText, 240);
-  const name = item.name || (state.language === "en" ? "media item" : "activo");
+  const name = item.name || (state.language !== "es" ? "media item" : "activo");
   const isHealth = /salud|medic|doctor|examen|laboratorio|diagnost|glucosa|colesterol|presion|sangre|health|medical|lab/i.test(`${sourceText} ${name}`);
   if (isHealth) {
-    return state.language === "en"
+    return state.language !== "es"
       ? `- ${name}: health-related evidence. Explain it in plain language, avoid diagnosis, and separate observed data from recommendations.${cleanText ? ` Summary: ${cleanText}` : ""}`
       : `- ${name}: evidencia relacionada con salud. Explicarla en lenguaje claro, sin diagnosticar, separando datos observados de recomendaciones.${cleanText ? ` Resumen: ${cleanText}` : ""}`;
   }
   if (String(item.type || "").startsWith("image/")) {
-    return state.language === "en"
+    return state.language !== "es"
       ? `- ${name}: visual evidence for the cover or gallery.${cleanText ? ` Interpreted context: ${cleanText}` : ""}`
       : `- ${name}: evidencia visual para portada o galeria.${cleanText ? ` Contexto interpretado: ${cleanText}` : ""}`;
   }
   if (String(item.type || "").startsWith("audio/") || String(item.type || "").startsWith("video/")) {
-    return state.language === "en"
+    return state.language !== "es"
       ? `- ${name}: spoken or audiovisual memory.${cleanText ? ` Transcript/reading: ${cleanText}` : ""}`
       : `- ${name}: memoria hablada o audiovisual.${cleanText ? ` Transcripcion/lectura: ${cleanText}` : ""}`;
   }
-  return state.language === "en"
+  return state.language !== "es"
     ? `- ${name}: document or supporting file.${cleanText ? ` Plain summary: ${cleanText}` : ""}`
     : `- ${name}: documento o archivo de soporte.${cleanText ? ` Resumen claro: ${cleanText}` : ""}`;
 }
@@ -22246,8 +22640,8 @@ function redactSensitiveText(value) {
 }
 
 function renderInsightsQuickStart() {
-  const title = state.language === "en" ? "Start findings by theme" : "Iniciar hallazgos por eje";
-  const help = state.language === "en"
+  const title = state.language !== "es" ? "Start findings by theme" : "Iniciar hallazgos por eje";
+  const help = state.language !== "es"
     ? "Pick the reading you need. Vibe applies the filters and rebuilds findings, action plan, and exports from the same scope."
     : "Elige la lectura que necesitas. Vibe aplica filtros y reconstruye hallazgos, plan de accion y exportaciones con el mismo alcance.";
   return `
@@ -22257,12 +22651,12 @@ function renderInsightsQuickStart() {
           <h3>${escapeHtml(title)}</h3>
           <p class="card-meta">${escapeHtml(help)}</p>
         </div>
-        <span>${escapeHtml(state.language === "en" ? "Fast analysis" : "Analisis rapido")}</span>
+        <span>${escapeHtml(state.language !== "es" ? "Fast analysis" : "Analisis rapido")}</span>
       </div>
       <div class="insights-quick-grid">
         ${insightQuickStarts.map((item) => {
-          const label = state.language === "en" ? item.labelEn : item.labelEs;
-          const detail = state.language === "en" ? item.detailEn : item.detailEs;
+          const label = state.language !== "es" ? item.labelEn : item.labelEs;
+          const detail = state.language !== "es" ? item.detailEn : item.detailEs;
           const active = insightQuickStartMatchesCurrentFilters(item);
           return `
             <button class="${active ? "is-active" : ""}" type="button" data-insight-quick="${escapeHtml(item.id)}">
@@ -22279,15 +22673,15 @@ function renderInsightsQuickStart() {
 
 function describeInsightQuickStart(item) {
   if (item.filters?.range === "last7") {
-    return state.language === "en" ? "Date range: last 7 days" : "Rango: ultimos 7 dias";
+    return state.language !== "es" ? "Date range: last 7 days" : "Rango: ultimos 7 dias";
   }
   if (item.filters?.source) {
-    return state.language === "en" ? "Origin: devices and connectors" : "Origen: dispositivos y conectores";
+    return state.language !== "es" ? "Origin: devices and connectors" : "Origen: dispositivos y conectores";
   }
   if (item.filters?.category) {
-    return `${state.language === "en" ? "Category" : "Categoria"}: ${displayCategory(item.filters.category)}`;
+    return `${state.language !== "es" ? "Category" : "Categoria"}: ${displayCategory(item.filters.category)}`;
   }
-  return state.language === "en" ? "General findings" : "Hallazgos generales";
+  return state.language !== "es" ? "General findings" : "Hallazgos generales";
 }
 
 function insightQuickStartMatchesCurrentFilters(item) {
@@ -22333,9 +22727,9 @@ function handleInsightsQuickStart(event) {
   state.insightsFilters = buildInsightQuickStartFilters(quick);
   syncAnalyticalScopeInputs();
   renderInsights();
-  const label = state.language === "en" ? quick.labelEn : quick.labelEs;
+  const label = state.language !== "es" ? quick.labelEn : quick.labelEs;
   notify(
-    state.language === "en"
+    state.language !== "es"
       ? `Findings updated: ${label}.`
       : `Hallazgos actualizados: ${label}.`,
     "success",
@@ -22349,7 +22743,7 @@ function renderPublications() {
     "publicationSharedScopeContext",
     state.publicationFilters,
     getPublicationExperiences().length,
-    state.language === "en" ? "Publications" : "Publicaciones",
+    state.language !== "es" ? "Publications" : "Publicaciones",
   );
   document.getElementById("publicationCount").textContent = `${state.publicationDrafts.length} ${t("labels.items")}`;
   const quickStart = document.getElementById("publicationQuickStart");
@@ -22409,8 +22803,8 @@ function setInsightsProgress({ title = "", detail = "", percent = 0, stateName =
 }
 
 function renderPublicationQuickStart() {
-  const title = state.language === "en" ? "Create by channel or purpose" : "Crear por canal o proposito";
-  const help = state.language === "en"
+  const title = state.language !== "es" ? "Create by channel or purpose" : "Crear por canal o proposito";
+  const help = state.language !== "es"
     ? "Choose the closest output. Vibe applies type, style, channel, source, and the editorial recipe before generating."
     : "Elige la salida mas cercana. Vibe aplica tipo, estilo, canal, fuente y receta editorial antes de generar.";
   return `
@@ -22420,13 +22814,13 @@ function renderPublicationQuickStart() {
           <h3>${escapeHtml(title)}</h3>
           <p class="card-meta">${escapeHtml(help)}</p>
         </div>
-        <span>${escapeHtml(state.language === "en" ? "Fast mode" : "Modo rapido")}</span>
+        <span>${escapeHtml(state.language !== "es" ? "Fast mode" : "Modo rapido")}</span>
       </div>
       <div class="publication-quick-grid">
         ${publicationQuickStarts.map((item) => {
           const template = publicationTemplates.find((candidate) => candidate.id === item.templateId) || publicationTemplates[0];
-          const label = state.language === "en" ? item.labelEn : item.labelEs;
-          const detail = state.language === "en" ? item.detailEn : item.detailEs;
+          const label = state.language !== "es" ? item.labelEn : item.labelEs;
+          const detail = state.language !== "es" ? item.detailEn : item.detailEs;
           return `
             <button type="button" data-publication-quick="${escapeHtml(item.id)}">
               <strong>${escapeHtml(label)}</strong>
@@ -22442,8 +22836,8 @@ function renderPublicationQuickStart() {
 }
 
 function renderPublicationChannelFormatPicker() {
-  const title = state.language === "en" ? "Choose a format by channel" : "Elegir formato por canal";
-  const help = state.language === "en"
+  const title = state.language !== "es" ? "Choose a format by channel" : "Elegir formato por canal";
+  const help = state.language !== "es"
     ? "Start from the channel first. Each option applies the format, style, and channel before you generate or regenerate the publication."
     : "Empieza por el canal. Cada opcion aplica formato, estilo y canal antes de generar o regenerar la publicacion.";
   return `
@@ -22453,7 +22847,7 @@ function renderPublicationChannelFormatPicker() {
           <h3>${escapeHtml(title)}</h3>
           <p class="card-meta">${escapeHtml(help)}</p>
         </div>
-        <span>${escapeHtml(state.language === "en" ? "By channel" : "Por canal")}</span>
+        <span>${escapeHtml(state.language !== "es" ? "By channel" : "Por canal")}</span>
       </div>
       <div class="publication-format-channel-grid">
         ${publicationChannelFormatPicker.map((group) => {
@@ -22481,8 +22875,8 @@ function renderPublicationChannelFormatPicker() {
 
 function renderPublicationScopeRecommendation() {
   const recommendation = analyzePublicationScopeRecommendation();
-  const title = state.language === "en" ? "Recommended publication setup" : "Configuración recomendada";
-  const empty = state.language === "en"
+  const title = state.language !== "es" ? "Recommended publication setup" : "Configuración recomendada";
+  const empty = state.language !== "es"
     ? "Select a date range, group, category, or experience set to receive a useful recommendation."
     : "Selecciona rango de fechas, grupo, categoría o conjunto de experiencias para recibir una recomendación útil.";
   if (!recommendation.experiences.length) {
@@ -22495,7 +22889,7 @@ function renderPublicationScopeRecommendation() {
       </section>
     `;
   }
-  const mediaLabel = state.language === "en"
+  const mediaLabel = state.language !== "es"
     ? `${recommendation.media.length} media item(s): ${recommendation.stats.imageCount} images, ${recommendation.stats.videoCount} videos, ${recommendation.stats.audioCount} audio, ${recommendation.stats.documentCount} documents`
     : `${recommendation.media.length} activo(s): ${recommendation.stats.imageCount} imágenes, ${recommendation.stats.videoCount} videos, ${recommendation.stats.audioCount} audios, ${recommendation.stats.documentCount} documentos`;
   return `
@@ -22505,15 +22899,15 @@ function renderPublicationScopeRecommendation() {
         <p>${escapeHtml(recommendation.reason)}</p>
       </div>
       <div class="publication-recommendation-grid">
-        <article><span>${escapeHtml(state.language === "en" ? "Scope" : "Alcance")}</span><b>${recommendation.experiences.length}</b><small>${escapeHtml(state.language === "en" ? "experiences" : "experiencias")}</small></article>
-        <article><span>${escapeHtml(state.language === "en" ? "Media" : "Multimedia")}</span><b>${recommendation.media.length}</b><small>${escapeHtml(mediaLabel)}</small></article>
-        <article><span>${escapeHtml(state.language === "en" ? "Format" : "Formato")}</span><b>${escapeHtml(displayPublicationType(recommendation.type))}</b><small>${escapeHtml(displayPublicationStyle(recommendation.style))} · ${escapeHtml(recommendation.channel)}</small></article>
+        <article><span>${escapeHtml(state.language !== "es" ? "Scope" : "Alcance")}</span><b>${recommendation.experiences.length}</b><small>${escapeHtml(state.language !== "es" ? "experiences" : "experiencias")}</small></article>
+        <article><span>${escapeHtml(state.language !== "es" ? "Media" : "Multimedia")}</span><b>${recommendation.media.length}</b><small>${escapeHtml(mediaLabel)}</small></article>
+        <article><span>${escapeHtml(state.language !== "es" ? "Format" : "Formato")}</span><b>${escapeHtml(displayPublicationType(recommendation.type))}</b><small>${escapeHtml(displayPublicationStyle(recommendation.style))} · ${escapeHtml(recommendation.channel)}</small></article>
       </div>
       <button class="ghost-button" type="button"
         data-publication-recommend-type="${escapeHtml(recommendation.type)}"
         data-publication-recommend-style="${escapeHtml(recommendation.style)}"
         data-publication-recommend-channel="${escapeHtml(recommendation.channel)}">
-        ${escapeHtml(state.language === "en" ? "Apply recommendation" : "Aplicar recomendación")}
+        ${escapeHtml(state.language !== "es" ? "Apply recommendation" : "Aplicar recomendación")}
       </button>
     </section>
   `;
@@ -22527,7 +22921,7 @@ function handlePublicationRecommendationClick(event) {
   document.getElementById("publicationChannelInput").value = button.dataset.publicationRecommendChannel || "PDF/HTML";
   updatePublicationTypeHelp();
   renderPublications();
-  document.getElementById("publicationStatus").textContent = state.language === "en"
+  document.getElementById("publicationStatus").textContent = state.language !== "es"
     ? "Recommended setup applied. Generate the draft when ready."
     : "Configuración recomendada aplicada. Genera el borrador cuando esté listo.";
 }
@@ -22553,7 +22947,7 @@ function handlePublicationQuickStart(event) {
     if (!template) return;
     applyPublicationTemplateToInputs(template, "report");
     renderPublications();
-    document.getElementById("publicationStatus").textContent = state.language === "en"
+    document.getElementById("publicationStatus").textContent = state.language !== "es"
       ? `Format selected: ${displayPublicationType(template.type)} for ${template.channel}. Generate when ready.`
       : `Formato seleccionado: ${displayPublicationType(template.type)} para ${template.channel}. Genera cuando este listo.`;
     return;
@@ -22566,14 +22960,14 @@ function handlePublicationQuickStart(event) {
   applyPublicationTemplateToInputs(template, quick.source || "report");
   const count = getPublicationExperiences().length || getReportExperiences().length;
   if (!count) {
-    document.getElementById("publicationStatus").textContent = state.language === "en"
+    document.getElementById("publicationStatus").textContent = state.language !== "es"
       ? "Quick setup applied. Add or select source experiences before generating."
       : "Receta rapida aplicada. Agrega o selecciona experiencias fuente antes de generar.";
     renderPublications();
     return;
   }
   generatePublicationDraft();
-  document.getElementById("publicationStatus").textContent = state.language === "en"
+  document.getElementById("publicationStatus").textContent = state.language !== "es"
     ? `Quick publication created: ${displayPublicationType(template.type)} for ${template.channel}.`
     : `Publicacion rapida creada: ${displayPublicationType(template.type)} para ${template.channel}.`;
 }
@@ -22608,8 +23002,8 @@ function renderPublicationPreview(draft) {
         </div>
         <details class="user-advanced-drawer publication-review-drawer">
           <summary>
-            <span>${escapeHtml(state.language === "en" ? "Editorial checks" : "Controles editoriales")}</span>
-            <small>${escapeHtml(state.language === "en" ? "Readiness, export guide and history" : "Preparación, guía de salida e historial")}</small>
+            <span>${escapeHtml(state.language !== "es" ? "Editorial checks" : "Controles editoriales")}</span>
+            <small>${escapeHtml(state.language !== "es" ? "Readiness, export guide and history" : "Preparación, guía de salida e historial")}</small>
           </summary>
           ${renderPublicationExportGuide(draft)}
           ${renderPublicationReadiness(draft)}
@@ -22624,34 +23018,34 @@ function renderPublicationPreview(draft) {
 
 function renderPublicationUseGuide(draft) {
   const guide = getPublicationTypeGuide(draft.type);
-  const mediaPolicy = state.language === "en" ? translatePublicationGuideText(guide.mediaPolicy) : guide.mediaPolicy;
-  const bestFor = state.language === "en" ? translatePublicationGuideText(guide.bestFor) : guide.bestFor;
-  const textSource = state.language === "en"
+  const mediaPolicy = state.language !== "es" ? translatePublicationGuideText(guide.mediaPolicy) : guide.mediaPolicy;
+  const bestFor = state.language !== "es" ? translatePublicationGuideText(guide.bestFor) : guide.bestFor;
+  const textSource = state.language !== "es"
     ? "Text source: the PDF uses the edited title, summary, and body shown below. If the source data is sparse or test-only, the draft will be short until you enrich it in the editor."
     : "Fuente del texto: el PDF usa el título, resumen y cuerpo editados abajo. Si los datos fuente son escasos o de prueba, el borrador será breve hasta que lo enriquezcas en el editor.";
-  const mediaUse = state.language === "en"
+  const mediaUse = state.language !== "es"
     ? "Media rule: images are embedded when possible. Audio, video, documents, and ZIP files keep controls or download/open actions in the app/HTML; the PDF summarizes their meaning and preserves the reference."
     : "Regla multimedia: las imágenes se incrustan cuando es posible. Audio, video, documentos y ZIP conservan controles o acciones de abrir/descargar en la app/HTML; el PDF resume su significado y conserva la referencia.";
   return `
     <section class="publication-use-guide">
       <div class="publication-section-heading">
         <div>
-          <h3>${escapeHtml(state.language === "en" ? "How this publication works" : "Cómo funciona esta publicación")}</h3>
+          <h3>${escapeHtml(state.language !== "es" ? "How this publication works" : "Cómo funciona esta publicación")}</h3>
           <p class="card-meta">${escapeHtml(bestFor)}</p>
         </div>
         <span>${escapeHtml(displayPublicationType(draft.type))}</span>
       </div>
       <div class="publication-use-grid">
         <article>
-          <strong>${escapeHtml(state.language === "en" ? "Format fit" : "Uso del formato")}</strong>
+          <strong>${escapeHtml(state.language !== "es" ? "Format fit" : "Uso del formato")}</strong>
           <p>${escapeHtml(mediaPolicy || "")}</p>
         </article>
         <article>
-          <strong>${escapeHtml(state.language === "en" ? "Edited text" : "Texto editado")}</strong>
+          <strong>${escapeHtml(state.language !== "es" ? "Edited text" : "Texto editado")}</strong>
           <p>${escapeHtml(textSource)}</p>
         </article>
         <article>
-          <strong>${escapeHtml(state.language === "en" ? "Non-image media" : "Medios que no son imagen")}</strong>
+          <strong>${escapeHtml(state.language !== "es" ? "Non-image media" : "Medios que no son imagen")}</strong>
           <p>${escapeHtml(mediaUse)}</p>
         </article>
       </div>
@@ -22671,24 +23065,24 @@ function buildPublicationChannelStudio(draft) {
   const documentCount = selectedMedia.filter((item) => !String(item.type || "").startsWith("image/") && !String(item.type || "").startsWith("video/") && !String(item.type || "").startsWith("audio/")).length;
   const socialChannel = ["WhatsApp", "Instagram", "Facebook", "LinkedIn"].includes(draft?.channel);
   const outputAction = socialChannel
-    ? state.language === "en"
+    ? state.language !== "es"
       ? "Assisted output: the app prepares copy, media guidance, and a final PDF; posting remains manual until a channel connector exists."
       : "Salida asistida: la app prepara texto, guía de medios y PDF final; publicar sigue siendo manual hasta tener un conector del canal."
-    : state.language === "en"
+    : state.language !== "es"
       ? "Document output: use the ReportLab PDF as the master version and HTML/Markdown only as support formats."
       : "Salida documental: usa el PDF ReportLab como versión maestra y deja HTML/Markdown como formatos de apoyo.";
   const mediaDecision = selectedMedia.length
-    ? state.language === "en"
+    ? state.language !== "es"
       ? `${selectedMedia.length} of ${allMedia.length} media asset(s) selected: ${imageCount} images, ${videoCount} videos, ${audioCount} audio, ${documentCount} support files.`
       : `${selectedMedia.length} de ${allMedia.length} activo(s) seleccionados: ${imageCount} imágenes, ${videoCount} videos, ${audioCount} audios, ${documentCount} archivos de apoyo.`
-    : state.language === "en"
+    : state.language !== "es"
       ? "No media selected. This can work for a text publication, but a memory, album, carousel, or dossier should usually include selected assets."
       : "No hay multimedia seleccionada. Puede servir para una publicación de texto, pero una memoria, álbum, carrusel o dossier normalmente debería incluir activos seleccionados.";
-  const editorFocus = state.language === "en"
+  const editorFocus = state.language !== "es"
     ? "Review title, summary, body, page text, and media captions. The PDF uses the edited text shown in this screen."
     : "Revisa título, resumen, cuerpo, textos de página y leyendas. El PDF usa el texto editado que ves en esta pantalla.";
   const structure = (guide?.structure || []).join(" → ");
-  const checklist = state.language === "en"
+  const checklist = state.language !== "es"
     ? [
         "Confirm that the selected format matches the audience.",
         "Keep only media that improves the story or evidence.",
@@ -22707,11 +23101,11 @@ function buildPublicationChannelStudio(draft) {
     style: displayPublicationStyle(draft?.style || "Revista Premium"),
     format: profile.format,
     reason: profile.reason,
-    purpose: state.language === "en" ? translatePublicationGuideText(guide?.purpose || "") : guide?.purpose || "",
+    purpose: state.language !== "es" ? translatePublicationGuideText(guide?.purpose || "") : guide?.purpose || "",
     structure,
-    audience: state.language === "en" ? translatePublicationGuideText(playbook.audience) : playbook.audience,
-    rhythm: state.language === "en" ? translatePublicationGuideText(playbook.rhythm) : playbook.rhythm,
-    playbookOutput: state.language === "en" ? translatePublicationGuideText(playbook.output) : playbook.output,
+    audience: state.language !== "es" ? translatePublicationGuideText(playbook.audience) : playbook.audience,
+    rhythm: state.language !== "es" ? translatePublicationGuideText(playbook.rhythm) : playbook.rhythm,
+    playbookOutput: state.language !== "es" ? translatePublicationGuideText(playbook.output) : playbook.output,
     mediaDecision,
     editorFocus,
     outputAction,
@@ -22725,39 +23119,39 @@ function renderPublicationChannelStudio(draft) {
     <section class="publication-channel-studio">
       <div class="publication-section-heading">
         <div>
-          <h3>${escapeHtml(state.language === "en" ? "Channel publication studio" : "Estudio de publicación por canal")}</h3>
-          <p class="card-meta">${escapeHtml(state.language === "en" ? "A practical guide for deciding what this piece is, what media it uses, and how it should leave the app." : "Guía práctica para decidir qué pieza estás creando, qué multimedia usa y cómo debe salir de la app.")}</p>
+          <h3>${escapeHtml(state.language !== "es" ? "Channel publication studio" : "Estudio de publicación por canal")}</h3>
+          <p class="card-meta">${escapeHtml(state.language !== "es" ? "A practical guide for deciding what this piece is, what media it uses, and how it should leave the app." : "Guía práctica para decidir qué pieza estás creando, qué multimedia usa y cómo debe salir de la app.")}</p>
         </div>
         <span>${escapeHtml(studio.channel)}</span>
       </div>
       <div class="publication-channel-studio-grid">
         <article>
-          <span>${escapeHtml(state.language === "en" ? "Format" : "Formato")}</span>
+          <span>${escapeHtml(state.language !== "es" ? "Format" : "Formato")}</span>
           <strong>${escapeHtml(studio.format)}</strong>
           <p>${escapeHtml(studio.reason)}</p>
         </article>
         <article>
-          <span>${escapeHtml(state.language === "en" ? "Purpose" : "Propósito")}</span>
+          <span>${escapeHtml(state.language !== "es" ? "Purpose" : "Propósito")}</span>
           <strong>${escapeHtml(studio.type)} · ${escapeHtml(studio.style)}</strong>
           <p>${escapeHtml(studio.purpose || studio.structure)}</p>
         </article>
         <article>
-          <span>${escapeHtml(state.language === "en" ? "Media" : "Multimedia")}</span>
-          <strong>${escapeHtml(state.language === "en" ? "Selection rule" : "Regla de selección")}</strong>
+          <span>${escapeHtml(state.language !== "es" ? "Media" : "Multimedia")}</span>
+          <strong>${escapeHtml(state.language !== "es" ? "Selection rule" : "Regla de selección")}</strong>
           <p>${escapeHtml(studio.mediaDecision)}</p>
         </article>
         <article>
-          <span>${escapeHtml(state.language === "en" ? "Output" : "Salida")}</span>
-          <strong>${escapeHtml(state.language === "en" ? "What happens next" : "Qué pasa después")}</strong>
+          <span>${escapeHtml(state.language !== "es" ? "Output" : "Salida")}</span>
+          <strong>${escapeHtml(state.language !== "es" ? "What happens next" : "Qué pasa después")}</strong>
           <p>${escapeHtml(studio.outputAction)}</p>
         </article>
       </div>
       <div class="publication-channel-studio-flow">
-        <strong>${escapeHtml(state.language === "en" ? "Editorial sequence" : "Secuencia editorial")}</strong>
+        <strong>${escapeHtml(state.language !== "es" ? "Editorial sequence" : "Secuencia editorial")}</strong>
         <span>${escapeHtml(studio.structure || studio.editorFocus)}</span>
       </div>
       <div class="publication-channel-studio-flow">
-        <strong>${escapeHtml(state.language === "en" ? "Channel rhythm" : "Ritmo del canal")}</strong>
+        <strong>${escapeHtml(state.language !== "es" ? "Channel rhythm" : "Ritmo del canal")}</strong>
         <span>${escapeHtml(`${studio.audience} ${studio.rhythm}`)}</span>
       </div>
       <ol class="publication-channel-studio-checklist">
@@ -22774,7 +23168,7 @@ function renderPublicationHistory(draft) {
       <div class="publication-section-heading">
         <div>
           <h3>${escapeHtml(t("labels.publicationHistoryTitle"))}</h3>
-          <p class="card-meta">${escapeHtml(state.language === "en" ? "Recent actions for this draft." : "Acciones recientes de este borrador.")}</p>
+          <p class="card-meta">${escapeHtml(state.language !== "es" ? "Recent actions for this draft." : "Acciones recientes de este borrador.")}</p>
         </div>
       </div>
       ${
@@ -22809,7 +23203,7 @@ function renderPublicationExportGuide(draft) {
       <div class="publication-export-grid">
         <article>
           <strong>PDF</strong>
-          <p>${escapeHtml(state.language === "en" ? "Final reading, printing, approval, and sharing as a stable document." : "Lectura final, impresión, aprobación y envío como documento estable.")}</p>
+          <p>${escapeHtml(state.language !== "es" ? "Final reading, printing, approval, and sharing as a stable document." : "Lectura final, impresión, aprobación y envío como documento estable.")}</p>
         </article>
         <article>
           <strong>HTML</strong>
@@ -22821,22 +23215,22 @@ function renderPublicationExportGuide(draft) {
         </article>
         <article>
           <strong>JSON</strong>
-          <p>${escapeHtml(state.language === "en" ? "Editorial package for backup, API integration, audit, or migration to another tool." : "Paquete editorial para respaldo, integración API, auditoría o migración a otra herramienta.")}</p>
+          <p>${escapeHtml(state.language !== "es" ? "Editorial package for backup, API integration, audit, or migration to another tool." : "Paquete editorial para respaldo, integración API, auditoría o migración a otra herramienta.")}</p>
         </article>
         <article>
-          <strong>${escapeHtml(state.language === "en" ? "Channel launch" : "Lanzamiento por canal")}</strong>
+          <strong>${escapeHtml(state.language !== "es" ? "Channel launch" : "Lanzamiento por canal")}</strong>
           <p>${escapeHtml(direct.detail)}</p>
         </article>
       </div>
       ${renderPublicationChannelMatrix(draft)}
       <p class="card-meta">${escapeHtml(getPublicationFormatHelpText())}</p>
-      <p class="card-meta">${escapeHtml(state.language === "en" ? "Direct posting to Facebook and Instagram is planned for a later connector. For now, use Prepare channel, review, and paste." : "La publicación directa en Facebook e Instagram queda para un conector futuro. Por ahora usa Preparar canal, revisa y pega.")}</p>
+      <p class="card-meta">${escapeHtml(state.language !== "es" ? "Direct posting to Facebook and Instagram is planned for a later connector. For now, use Prepare channel, review, and paste." : "La publicación directa en Facebook e Instagram queda para un conector futuro. Por ahora usa Preparar canal, revisa y pega.")}</p>
     </section>
   `;
 }
 
 function renderPublicationChannelMatrix(draft) {
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         title: "Channel fit",
         channel: "Channel",
@@ -22890,24 +23284,24 @@ function renderPublicationDistributionKit(draft) {
     <section class="publication-distribution-kit">
       <div class="publication-section-heading">
         <div>
-          <h3>${escapeHtml(state.language === "en" ? "3. Channel distribution kit" : "3. Kit de salida por canal")}</h3>
+          <h3>${escapeHtml(state.language !== "es" ? "3. Channel distribution kit" : "3. Kit de salida por canal")}</h3>
           <p class="card-meta">${escapeHtml(kit.brief)}</p>
         </div>
         <span>${escapeHtml(draft.channel || "Canal")}</span>
       </div>
       <div class="publication-channel-brief">
         <article>
-          <span>${escapeHtml(state.language === "en" ? "Recommended format" : "Formato recomendado")}</span>
+          <span>${escapeHtml(state.language !== "es" ? "Recommended format" : "Formato recomendado")}</span>
           <strong>${escapeHtml(kit.format)}</strong>
           <p>${escapeHtml(kit.reason)}</p>
         </article>
         <article>
-          <span>${escapeHtml(state.language === "en" ? "Media handling" : "Manejo multimedia")}</span>
+          <span>${escapeHtml(state.language !== "es" ? "Media handling" : "Manejo multimedia")}</span>
           <strong>${escapeHtml(kit.mediaMode)}</strong>
           <p>${escapeHtml(kit.mediaInstruction)}</p>
         </article>
         <article>
-          <span>${escapeHtml(state.language === "en" ? "User action" : "Accion del usuario")}</span>
+          <span>${escapeHtml(state.language !== "es" ? "User action" : "Accion del usuario")}</span>
           <strong>${escapeHtml(kit.action)}</strong>
           <p>${escapeHtml(kit.actionDetail)}</p>
         </article>
@@ -22915,10 +23309,10 @@ function renderPublicationDistributionKit(draft) {
       ${renderPublicationChannelRecommendation(draft, kit)}
       ${renderPublicationChannelDeliverables(kit)}
       <div class="publication-copy-grid">
-        ${renderPublicationCopyBlock("subject", state.language === "en" ? "Subject / title" : "Asunto / titulo", kit.subject)}
-        ${renderPublicationCopyBlock("short", state.language === "en" ? "Short copy" : "Texto corto", kit.shortCopy)}
-        ${renderPublicationCopyBlock("long", state.language === "en" ? "Long copy" : "Texto ampliado", kit.longCopy)}
-        ${renderPublicationCopyBlock("caption", state.language === "en" ? "Caption / hook" : "Leyenda / gancho", kit.caption)}
+        ${renderPublicationCopyBlock("subject", state.language !== "es" ? "Subject / title" : "Asunto / titulo", kit.subject)}
+        ${renderPublicationCopyBlock("short", state.language !== "es" ? "Short copy" : "Texto corto", kit.shortCopy)}
+        ${renderPublicationCopyBlock("long", state.language !== "es" ? "Long copy" : "Texto ampliado", kit.longCopy)}
+        ${renderPublicationCopyBlock("caption", state.language !== "es" ? "Caption / hook" : "Leyenda / gancho", kit.caption)}
       </div>
       <div class="publication-checklist-strip">
         ${kit.checklist.map((item) => `<span>${escapeHtml(item)}</span>`).join("")}
@@ -22933,8 +23327,8 @@ function renderPublicationChannelDeliverables(kit) {
   return `
     <div class="publication-channel-deliverables">
       <div>
-        <strong>${escapeHtml(state.language === "en" ? "Deliverables for this channel" : "Entregables para este canal")}</strong>
-        <p>${escapeHtml(state.language === "en" ? "What the user gets, what can be copied, and what still requires manual review." : "Qué recibe el usuario, qué puede copiar y qué todavía requiere revisión manual.")}</p>
+        <strong>${escapeHtml(state.language !== "es" ? "Deliverables for this channel" : "Entregables para este canal")}</strong>
+        <p>${escapeHtml(state.language !== "es" ? "What the user gets, what can be copied, and what still requires manual review." : "Qué recibe el usuario, qué puede copiar y qué todavía requiere revisión manual.")}</p>
       </div>
       <div class="publication-channel-deliverables-grid">
         ${rows.map((row) => `
@@ -22954,33 +23348,33 @@ function renderPublicationChannelRecommendation(draft, kit) {
   const selectedType = displayPublicationType(draft?.type || "");
   const selectedStyle = displayPublicationStyle(draft?.style || "");
   const master = draft?.channel === "PDF/HTML" || draft?.channel === "Blog/Web"
-    ? (state.language === "en" ? "Use the edited PDF/HTML as the final piece." : "Usa el PDF/HTML editado como pieza final.")
-    : (state.language === "en" ? "Use the edited PDF as the master record and the channel copy as the post." : "Usa el PDF editado como registro maestro y el texto de canal como publicacion.");
+    ? (state.language !== "es" ? "Use the edited PDF/HTML as the final piece." : "Usa el PDF/HTML editado como pieza final.")
+    : (state.language !== "es" ? "Use the edited PDF as the master record and the channel copy as the post." : "Usa el PDF editado como registro maestro y el texto de canal como publicacion.");
   return `
     <div class="publication-channel-recommendation">
       <article>
-        <span>${escapeHtml(state.language === "en" ? "Selected shape" : "Forma seleccionada")}</span>
+        <span>${escapeHtml(state.language !== "es" ? "Selected shape" : "Forma seleccionada")}</span>
         <strong>${escapeHtml(selectedType)} · ${escapeHtml(selectedStyle)}</strong>
         <p>${escapeHtml(master)}</p>
       </article>
       <article>
-        <span>${escapeHtml(state.language === "en" ? "Best fits this channel" : "Mejor encaje para este canal")}</span>
+        <span>${escapeHtml(state.language !== "es" ? "Best fits this channel" : "Mejor encaje para este canal")}</span>
         <div class="publication-recommendation-chips">
           ${recommendations.types.map((item) => `<b>${escapeHtml(item)}</b>`).join("")}
         </div>
         <p>${escapeHtml(recommendations.note)}</p>
       </article>
       <article>
-        <span>${escapeHtml(state.language === "en" ? "Before sharing" : "Antes de compartir")}</span>
+        <span>${escapeHtml(state.language !== "es" ? "Before sharing" : "Antes de compartir")}</span>
         <strong>${escapeHtml(kit.action)}</strong>
-        <p>${escapeHtml(state.language === "en" ? "Review text, privacy, media rights, and whether every selected asset adds value." : "Revisa texto, privacidad, derechos de medios y si cada activo seleccionado aporta valor.")}</p>
+        <p>${escapeHtml(state.language !== "es" ? "Review text, privacy, media rights, and whether every selected asset adds value." : "Revisa texto, privacidad, derechos de medios y si cada activo seleccionado aporta valor.")}</p>
       </article>
     </div>
   `;
 }
 
 function getPublicationChannelTypeRecommendation(channel) {
-  const profiles = state.language === "en"
+  const profiles = state.language !== "es"
     ? {
         WhatsApp: {
           types: ["Quick social post", "Personal letter", "Experience album"],
@@ -23050,7 +23444,7 @@ function renderPublicationCopyBlock(key, label, value) {
       <div>
         <strong>${escapeHtml(label)}</strong>
         <button class="ghost-button" type="button" data-publication-copy-kit="${escapeHtml(key)}">
-          ${escapeHtml(state.language === "en" ? "Copy" : "Copiar")}
+          ${escapeHtml(state.language !== "es" ? "Copy" : "Copiar")}
         </button>
       </div>
       <p>${escapeHtml(value)}</p>
@@ -23071,10 +23465,10 @@ function buildPublicationDistributionKit(draft) {
   const longCopy = buildPublicationChannelCopy(draft, profile, "long", summary, action);
   const caption = buildPublicationChannelCopy(draft, profile, "caption", summary, action);
   const mediaInstruction = includedMedia.length
-    ? state.language === "en"
+    ? state.language !== "es"
       ? `${includedMedia.length} selected asset(s): ${visualCount} visual and ${supportCount} support file(s). Use only the assets that reinforce the story.`
       : `${includedMedia.length} activo(s) seleccionados: ${visualCount} visuales y ${supportCount} de apoyo. Usa solo los activos que refuerzan la historia.`
-    : state.language === "en"
+    : state.language !== "es"
       ? "No media selected. Publish as text or return to Multimedia selection."
       : "No hay multimedia seleccionada. Publica como texto o vuelve a la seleccion multimedia.";
   return {
@@ -23094,7 +23488,7 @@ function buildPublicationChannelDeliverables(draft, profile, media = []) {
   const mediaCount = media.length;
   const visualCount = media.filter((item) => String(item.type || "").startsWith("image/") || String(item.type || "").startsWith("video/")).length;
   const supportCount = Math.max(0, mediaCount - visualCount);
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         master: "Master piece",
         copy: "Copy-ready text",
@@ -23109,46 +23503,46 @@ function buildPublicationChannelDeliverables(draft, profile, media = []) {
       };
   const rowsByChannel = {
     WhatsApp: [
-      [labels.master, state.language === "en" ? "Edited PDF as backup" : "PDF editado como respaldo", state.language === "en" ? "Use it when the story is too long for chat." : "Úsalo cuando la historia sea demasiado larga para el chat."],
-      [labels.copy, state.language === "en" ? "Short message + optional long text" : "Mensaje breve + texto ampliado opcional", state.language === "en" ? "The app opens WhatsApp when the browser allows it." : "La app abre WhatsApp cuando el navegador lo permite."],
-      [labels.media, `${mediaCount} ${state.language === "en" ? "selected asset(s)" : "activo(s) seleccionado(s)"}`, state.language === "en" ? "Send only one or two strong assets in chat." : "Envía solo uno o dos activos fuertes en el chat."],
-      [labels.limit, state.language === "en" ? "User sends manually" : "El usuario envía manualmente", state.language === "en" ? "No automatic posting without a native connector." : "No hay publicación automática sin conector nativo."],
+      [labels.master, state.language !== "es" ? "Edited PDF as backup" : "PDF editado como respaldo", state.language !== "es" ? "Use it when the story is too long for chat." : "Úsalo cuando la historia sea demasiado larga para el chat."],
+      [labels.copy, state.language !== "es" ? "Short message + optional long text" : "Mensaje breve + texto ampliado opcional", state.language !== "es" ? "The app opens WhatsApp when the browser allows it." : "La app abre WhatsApp cuando el navegador lo permite."],
+      [labels.media, `${mediaCount} ${state.language !== "es" ? "selected asset(s)" : "activo(s) seleccionado(s)"}`, state.language !== "es" ? "Send only one or two strong assets in chat." : "Envía solo uno o dos activos fuertes en el chat."],
+      [labels.limit, state.language !== "es" ? "User sends manually" : "El usuario envía manualmente", state.language !== "es" ? "No automatic posting without a native connector." : "No hay publicación automática sin conector nativo."],
     ],
     Instagram: [
-      [labels.master, state.language === "en" ? "Visual carousel or reel script" : "Carrusel visual o guion de reel", state.language === "en" ? "Use the PDF as a planning reference, not the social post itself." : "Usa el PDF como referencia de planificación, no como post en sí."],
-      [labels.copy, state.language === "en" ? "Caption, hook, and slide text" : "Leyenda, gancho y texto de láminas", state.language === "en" ? "Copy/paste into Instagram after visual review." : "Copia/pega en Instagram después de revisar visualmente."],
-      [labels.media, `${visualCount} ${state.language === "en" ? "visual asset(s)" : "activo(s) visual(es)"}`, state.language === "en" ? "Images and short clips are primary; documents become notes." : "Imágenes y clips cortos son principales; documentos quedan como notas."],
-      [labels.limit, state.language === "en" ? "Manual publish" : "Publicación manual", state.language === "en" ? "Instagram API publishing remains future connector work." : "Publicar por API de Instagram queda para conectores futuros."],
+      [labels.master, state.language !== "es" ? "Visual carousel or reel script" : "Carrusel visual o guion de reel", state.language !== "es" ? "Use the PDF as a planning reference, not the social post itself." : "Usa el PDF como referencia de planificación, no como post en sí."],
+      [labels.copy, state.language !== "es" ? "Caption, hook, and slide text" : "Leyenda, gancho y texto de láminas", state.language !== "es" ? "Copy/paste into Instagram after visual review." : "Copia/pega en Instagram después de revisar visualmente."],
+      [labels.media, `${visualCount} ${state.language !== "es" ? "visual asset(s)" : "activo(s) visual(es)"}`, state.language !== "es" ? "Images and short clips are primary; documents become notes." : "Imágenes y clips cortos son principales; documentos quedan como notas."],
+      [labels.limit, state.language !== "es" ? "Manual publish" : "Publicación manual", state.language !== "es" ? "Instagram API publishing remains future connector work." : "Publicar por API de Instagram queda para conectores futuros."],
     ],
     Facebook: [
-      [labels.master, state.language === "en" ? "Memory album or narrative post" : "Álbum de memoria o post narrativo", state.language === "en" ? "Good for a warm story with selected context." : "Sirve para una historia cálida con contexto seleccionado."],
-      [labels.copy, state.language === "en" ? "Post text and caption" : "Texto del post y leyenda", state.language === "en" ? "Prepared for manual paste." : "Preparado para pegado manual."],
-      [labels.media, `${visualCount} ${state.language === "en" ? "visual asset(s)" : "activo(s) visual(es)"}`, state.language === "en" ? "Use selected images/video; keep sensitive people private." : "Usa imágenes/video seleccionados; cuida privacidad de personas."],
-      [labels.limit, state.language === "en" ? "Manual publish" : "Publicación manual", state.language === "en" ? "Direct posting needs approved API setup." : "Publicación directa requiere API aprobada."],
+      [labels.master, state.language !== "es" ? "Memory album or narrative post" : "Álbum de memoria o post narrativo", state.language !== "es" ? "Good for a warm story with selected context." : "Sirve para una historia cálida con contexto seleccionado."],
+      [labels.copy, state.language !== "es" ? "Post text and caption" : "Texto del post y leyenda", state.language !== "es" ? "Prepared for manual paste." : "Preparado para pegado manual."],
+      [labels.media, `${visualCount} ${state.language !== "es" ? "visual asset(s)" : "activo(s) visual(es)"}`, state.language !== "es" ? "Use selected images/video; keep sensitive people private." : "Usa imágenes/video seleccionados; cuida privacidad de personas."],
+      [labels.limit, state.language !== "es" ? "Manual publish" : "Publicación manual", state.language !== "es" ? "Direct posting needs approved API setup." : "Publicación directa requiere API aprobada."],
     ],
     LinkedIn: [
-      [labels.master, state.language === "en" ? "Professional insight or carousel" : "Hallazgo profesional o carrusel", state.language === "en" ? "The piece should teach, explain, or support a decision." : "La pieza debe enseñar, explicar o apoyar una decisión."],
-      [labels.copy, state.language === "en" ? "Point of view + evidence + lesson" : "Punto de vista + evidencia + lección", state.language === "en" ? "Tone should be less diary, more useful conclusion." : "El tono debe ser menos bitácora y más conclusión útil."],
-      [labels.media, `${visualCount} ${state.language === "en" ? "visual/evidence asset(s)" : "activo(s) visuales/de evidencia"}`, state.language === "en" ? "Use charts, images, documents, or proof only when relevant." : "Usa gráficos, imágenes, documentos o evidencia solo si aportan."],
-      [labels.limit, state.language === "en" ? "Manual publish" : "Publicación manual", state.language === "en" ? "The app prepares the content; you review professional tone." : "La app prepara contenido; tú revisas el tono profesional."],
+      [labels.master, state.language !== "es" ? "Professional insight or carousel" : "Hallazgo profesional o carrusel", state.language !== "es" ? "The piece should teach, explain, or support a decision." : "La pieza debe enseñar, explicar o apoyar una decisión."],
+      [labels.copy, state.language !== "es" ? "Point of view + evidence + lesson" : "Punto de vista + evidencia + lección", state.language !== "es" ? "Tone should be less diary, more useful conclusion." : "El tono debe ser menos bitácora y más conclusión útil."],
+      [labels.media, `${visualCount} ${state.language !== "es" ? "visual/evidence asset(s)" : "activo(s) visuales/de evidencia"}`, state.language !== "es" ? "Use charts, images, documents, or proof only when relevant." : "Usa gráficos, imágenes, documentos o evidencia solo si aportan."],
+      [labels.limit, state.language !== "es" ? "Manual publish" : "Publicación manual", state.language !== "es" ? "The app prepares the content; you review professional tone." : "La app prepara contenido; tú revisas el tono profesional."],
     ],
     Email: [
-      [labels.master, state.language === "en" ? "Letter, brief, or health summary" : "Carta, resumen o ficha de salud", state.language === "en" ? "PDF remains the formal reference if the message is long." : "El PDF queda como referencia formal si el mensaje es largo."],
-      [labels.copy, state.language === "en" ? "Subject + body" : "Asunto + cuerpo", state.language === "en" ? "The app opens a draft when mailto is supported." : "La app abre un borrador cuando mailto está soportado."],
-      [labels.media, `${supportCount} ${state.language === "en" ? "annex/support asset(s)" : "activo(s) de anexo/apoyo"}`, state.language === "en" ? "Attachments are reviewed separately; sensitive files need care." : "Adjuntos se revisan aparte; archivos sensibles requieren cuidado."],
-      [labels.limit, state.language === "en" ? "Attachments are not auto-sent" : "Adjuntos no se envían solos", state.language === "en" ? "The browser cannot attach files automatically." : "El navegador no puede adjuntar archivos automáticamente."],
+      [labels.master, state.language !== "es" ? "Letter, brief, or health summary" : "Carta, resumen o ficha de salud", state.language !== "es" ? "PDF remains the formal reference if the message is long." : "El PDF queda como referencia formal si el mensaje es largo."],
+      [labels.copy, state.language !== "es" ? "Subject + body" : "Asunto + cuerpo", state.language !== "es" ? "The app opens a draft when mailto is supported." : "La app abre un borrador cuando mailto está soportado."],
+      [labels.media, `${supportCount} ${state.language !== "es" ? "annex/support asset(s)" : "activo(s) de anexo/apoyo"}`, state.language !== "es" ? "Attachments are reviewed separately; sensitive files need care." : "Adjuntos se revisan aparte; archivos sensibles requieren cuidado."],
+      [labels.limit, state.language !== "es" ? "Attachments are not auto-sent" : "Adjuntos no se envían solos", state.language !== "es" ? "The browser cannot attach files automatically." : "El navegador no puede adjuntar archivos automáticamente."],
     ],
     "Blog/Web": [
-      [labels.master, state.language === "en" ? "HTML/PDF article package" : "Paquete artículo HTML/PDF", state.language === "en" ? "Use HTML for web layout and PDF for fixed reading." : "Usa HTML para maqueta web y PDF para lectura fija."],
-      [labels.copy, state.language === "en" ? "Sections and captions" : "Secciones y leyendas", state.language === "en" ? "Ready to adapt into a CMS or external page." : "Listo para adaptar en CMS o página externa."],
-      [labels.media, `${mediaCount} ${state.language === "en" ? "selected asset(s)" : "activo(s) seleccionado(s)"}`, state.language === "en" ? "Images render; audio/video/docs remain controls or references." : "Imágenes se muestran; audio/video/documentos quedan como controles o referencias."],
-      [labels.limit, state.language === "en" ? "No CMS connector yet" : "Sin conector CMS todavía", state.language === "en" ? "Publishing to a site is manual until connectors exist." : "Publicar en un sitio es manual hasta tener conectores."],
+      [labels.master, state.language !== "es" ? "HTML/PDF article package" : "Paquete artículo HTML/PDF", state.language !== "es" ? "Use HTML for web layout and PDF for fixed reading." : "Usa HTML para maqueta web y PDF para lectura fija."],
+      [labels.copy, state.language !== "es" ? "Sections and captions" : "Secciones y leyendas", state.language !== "es" ? "Ready to adapt into a CMS or external page." : "Listo para adaptar en CMS o página externa."],
+      [labels.media, `${mediaCount} ${state.language !== "es" ? "selected asset(s)" : "activo(s) seleccionado(s)"}`, state.language !== "es" ? "Images render; audio/video/docs remain controls or references." : "Imágenes se muestran; audio/video/documentos quedan como controles o referencias."],
+      [labels.limit, state.language !== "es" ? "No CMS connector yet" : "Sin conector CMS todavía", state.language !== "es" ? "Publishing to a site is manual until connectors exist." : "Publicar en un sitio es manual hasta tener conectores."],
     ],
     "PDF/HTML": [
-      [labels.master, state.language === "en" ? "Edited ReportLab PDF" : "PDF editado ReportLab", state.language === "en" ? "This is the final artifact for reading, printing, or sending." : "Este es el artefacto final para leer, imprimir o enviar."],
-      [labels.copy, state.language === "en" ? "Summary + long text" : "Resumen + texto ampliado", state.language === "en" ? "Can be copied to another channel after review." : "Puede copiarse a otro canal después de revisar."],
-      [labels.media, `${mediaCount} ${state.language === "en" ? "curated asset(s)" : "activo(s) curado(s)"}`, state.language === "en" ? "Images can be embedded; other media are summarized as evidence." : "Imágenes se incrustan; otros medios se resumen como evidencia."],
-      [labels.limit, state.language === "en" ? "Review before sharing" : "Revisar antes de compartir", state.language === "en" ? "PDF is final only after human approval." : "El PDF es final solo después de aprobación humana."],
+      [labels.master, state.language !== "es" ? "Edited ReportLab PDF" : "PDF editado ReportLab", state.language !== "es" ? "This is the final artifact for reading, printing, or sending." : "Este es el artefacto final para leer, imprimir o enviar."],
+      [labels.copy, state.language !== "es" ? "Summary + long text" : "Resumen + texto ampliado", state.language !== "es" ? "Can be copied to another channel after review." : "Puede copiarse a otro canal después de revisar."],
+      [labels.media, `${mediaCount} ${state.language !== "es" ? "curated asset(s)" : "activo(s) curado(s)"}`, state.language !== "es" ? "Images can be embedded; other media are summarized as evidence." : "Imágenes se incrustan; otros medios se resumen como evidencia."],
+      [labels.limit, state.language !== "es" ? "Review before sharing" : "Revisar antes de compartir", state.language !== "es" ? "PDF is final only after human approval." : "El PDF es final solo después de aprobación humana."],
     ],
   };
   return (rowsByChannel[channel] || rowsByChannel["PDF/HTML"]).map(([label, value, detail]) => ({ label, value, detail }));
@@ -23157,102 +23551,102 @@ function buildPublicationChannelDeliverables(draft, profile, media = []) {
 function getPublicationChannelProfile(channel) {
   const profiles = {
     WhatsApp: {
-      format: state.language === "en" ? "Short message or personal recap" : "Mensaje breve o resumen personal",
-      brief: state.language === "en" ? "Best for quick sharing with context and one clear next step." : "Ideal para compartir rapido con contexto y una accion clara.",
-      reason: state.language === "en" ? "People read it on mobile and expect direct language." : "La gente lo lee en movil y espera lenguaje directo.",
-      mediaMode: state.language === "en" ? "Few media assets" : "Pocos medios",
-      action: state.language === "en" ? "Copy or open WhatsApp" : "Copiar o abrir WhatsApp",
-      actionDetail: state.language === "en" ? "The app prepares the text; you review and send." : "La app prepara el texto; tu revisas y envias.",
+      format: state.language !== "es" ? "Short message or personal recap" : "Mensaje breve o resumen personal",
+      brief: state.language !== "es" ? "Best for quick sharing with context and one clear next step." : "Ideal para compartir rapido con contexto y una accion clara.",
+      reason: state.language !== "es" ? "People read it on mobile and expect direct language." : "La gente lo lee en movil y espera lenguaje directo.",
+      mediaMode: state.language !== "es" ? "Few media assets" : "Pocos medios",
+      action: state.language !== "es" ? "Copy or open WhatsApp" : "Copiar o abrir WhatsApp",
+      actionDetail: state.language !== "es" ? "The app prepares the text; you review and send." : "La app prepara el texto; tu revisas y envias.",
     },
     Instagram: {
-      format: state.language === "en" ? "Carousel, story or reel script" : "Carrusel, historia o guion de reel",
-      brief: state.language === "en" ? "Best for visual memory with a strong opening." : "Ideal para memoria visual con una apertura fuerte.",
-      reason: state.language === "en" ? "Images and short captions carry the message." : "Las imagenes y textos cortos sostienen el mensaje.",
-      mediaMode: state.language === "en" ? "Visual first" : "Visual primero",
-      action: state.language === "en" ? "Copy and paste" : "Copiar y pegar",
-      actionDetail: state.language === "en" ? "Direct posting needs a future connector/API." : "La publicacion directa requiere un conector/API futuro.",
+      format: state.language !== "es" ? "Carousel, story or reel script" : "Carrusel, historia o guion de reel",
+      brief: state.language !== "es" ? "Best for visual memory with a strong opening." : "Ideal para memoria visual con una apertura fuerte.",
+      reason: state.language !== "es" ? "Images and short captions carry the message." : "Las imagenes y textos cortos sostienen el mensaje.",
+      mediaMode: state.language !== "es" ? "Visual first" : "Visual primero",
+      action: state.language !== "es" ? "Copy and paste" : "Copiar y pegar",
+      actionDetail: state.language !== "es" ? "Direct posting needs a future connector/API." : "La publicacion directa requiere un conector/API futuro.",
     },
     Facebook: {
-      format: state.language === "en" ? "Album, story or family update" : "Album, historia o actualizacion familiar",
-      brief: state.language === "en" ? "Best for a warmer narrative with selected media." : "Ideal para una narrativa mas calida con medios seleccionados.",
-      reason: state.language === "en" ? "It tolerates more context than short social posts." : "Permite mas contexto que una publicacion social corta.",
-      mediaMode: state.language === "en" ? "Images plus context" : "Imagenes con contexto",
-      action: state.language === "en" ? "Copy and paste" : "Copiar y pegar",
-      actionDetail: state.language === "en" ? "The app prepares content; Facebook posting remains manual." : "La app prepara contenido; publicar en Facebook sigue siendo manual.",
+      format: state.language !== "es" ? "Album, story or family update" : "Album, historia o actualizacion familiar",
+      brief: state.language !== "es" ? "Best for a warmer narrative with selected media." : "Ideal para una narrativa mas calida con medios seleccionados.",
+      reason: state.language !== "es" ? "It tolerates more context than short social posts." : "Permite mas contexto que una publicacion social corta.",
+      mediaMode: state.language !== "es" ? "Images plus context" : "Imagenes con contexto",
+      action: state.language !== "es" ? "Copy and paste" : "Copiar y pegar",
+      actionDetail: state.language !== "es" ? "The app prepares content; Facebook posting remains manual." : "La app prepara contenido; publicar en Facebook sigue siendo manual.",
     },
     LinkedIn: {
-      format: state.language === "en" ? "Professional insight or learning carousel" : "Hallazgo profesional o carrusel de aprendizaje",
-      brief: state.language === "en" ? "Best for lessons, decisions, projects and work evidence." : "Ideal para aprendizajes, decisiones, proyectos y evidencia laboral.",
-      reason: state.language === "en" ? "It needs a clear point of view and useful evidence." : "Necesita un punto de vista claro y evidencia util.",
-      mediaMode: state.language === "en" ? "Evidence and charts" : "Evidencia y graficos",
-      action: state.language === "en" ? "Copy and paste" : "Copiar y pegar",
-      actionDetail: state.language === "en" ? "Review tone before posting publicly." : "Revisa el tono antes de publicar en publico.",
+      format: state.language !== "es" ? "Professional insight or learning carousel" : "Hallazgo profesional o carrusel de aprendizaje",
+      brief: state.language !== "es" ? "Best for lessons, decisions, projects and work evidence." : "Ideal para aprendizajes, decisiones, proyectos y evidencia laboral.",
+      reason: state.language !== "es" ? "It needs a clear point of view and useful evidence." : "Necesita un punto de vista claro y evidencia util.",
+      mediaMode: state.language !== "es" ? "Evidence and charts" : "Evidencia y graficos",
+      action: state.language !== "es" ? "Copy and paste" : "Copiar y pegar",
+      actionDetail: state.language !== "es" ? "Review tone before posting publicly." : "Revisa el tono antes de publicar en publico.",
     },
     Email: {
-      format: state.language === "en" ? "Letter, executive note or health brief" : "Carta, nota ejecutiva o ficha de salud",
-      brief: state.language === "en" ? "Best for sending a complete message to one person or group." : "Ideal para enviar un mensaje completo a una persona o grupo.",
-      reason: state.language === "en" ? "Email supports longer text and annexes." : "El email soporta texto mas largo y anexos.",
-      mediaMode: state.language === "en" ? "Annexes and links" : "Anexos y enlaces",
-      action: state.language === "en" ? "Open email draft" : "Abrir borrador de email",
-      actionDetail: state.language === "en" ? "Subject and body are prepared; attachments are reviewed separately." : "Asunto y cuerpo quedan preparados; adjuntos se revisan aparte.",
+      format: state.language !== "es" ? "Letter, executive note or health brief" : "Carta, nota ejecutiva o ficha de salud",
+      brief: state.language !== "es" ? "Best for sending a complete message to one person or group." : "Ideal para enviar un mensaje completo a una persona o grupo.",
+      reason: state.language !== "es" ? "Email supports longer text and annexes." : "El email soporta texto mas largo y anexos.",
+      mediaMode: state.language !== "es" ? "Annexes and links" : "Anexos y enlaces",
+      action: state.language !== "es" ? "Open email draft" : "Abrir borrador de email",
+      actionDetail: state.language !== "es" ? "Subject and body are prepared; attachments are reviewed separately." : "Asunto y cuerpo quedan preparados; adjuntos se revisan aparte.",
     },
     "Blog/Web": {
-      format: state.language === "en" ? "Article, dossier or visual memory" : "Articulo, dossier o memoria visual",
-      brief: state.language === "en" ? "Best for a polished piece that can live on a page." : "Ideal para una pieza pulida que pueda vivir en una pagina.",
-      reason: state.language === "en" ? "Web output can combine narrative, media and references." : "La salida web combina narrativa, medios y referencias.",
-      mediaMode: state.language === "en" ? "Complete media set" : "Conjunto multimedia completo",
-      action: state.language === "en" ? "Export HTML/PDF" : "Exportar HTML/PDF",
-      actionDetail: state.language === "en" ? "Use PDF for fixed reading and HTML for web layout." : "Usa PDF para lectura fija y HTML para maqueta web.",
+      format: state.language !== "es" ? "Article, dossier or visual memory" : "Articulo, dossier o memoria visual",
+      brief: state.language !== "es" ? "Best for a polished piece that can live on a page." : "Ideal para una pieza pulida que pueda vivir en una pagina.",
+      reason: state.language !== "es" ? "Web output can combine narrative, media and references." : "La salida web combina narrativa, medios y referencias.",
+      mediaMode: state.language !== "es" ? "Complete media set" : "Conjunto multimedia completo",
+      action: state.language !== "es" ? "Export HTML/PDF" : "Exportar HTML/PDF",
+      actionDetail: state.language !== "es" ? "Use PDF for fixed reading and HTML for web layout." : "Usa PDF para lectura fija y HTML para maqueta web.",
     },
     "PDF/HTML": {
-      format: state.language === "en" ? "Edited PDF, dossier, or printable memory" : "PDF editado, dossier o memoria imprimible",
-      brief: state.language === "en" ? "Best for the polished final artifact with selected media and clear sections." : "Ideal para el artefacto final pulido, con medios seleccionados y secciones claras.",
-      reason: state.language === "en" ? "It preserves layout, evidence, captions, and the human review trail." : "Conserva diseno, evidencia, leyendas y trazabilidad de revision humana.",
-      mediaMode: state.language === "en" ? "Selected media with captions" : "Medios seleccionados con leyendas",
-      action: state.language === "en" ? "Download edited PDF" : "Descargar PDF editado",
-      actionDetail: state.language === "en" ? "Use this as the master version before posting elsewhere." : "Usa esta version como maestro antes de publicar en otros canales.",
+      format: state.language !== "es" ? "Edited PDF, dossier, or printable memory" : "PDF editado, dossier o memoria imprimible",
+      brief: state.language !== "es" ? "Best for the polished final artifact with selected media and clear sections." : "Ideal para el artefacto final pulido, con medios seleccionados y secciones claras.",
+      reason: state.language !== "es" ? "It preserves layout, evidence, captions, and the human review trail." : "Conserva diseno, evidencia, leyendas y trazabilidad de revision humana.",
+      mediaMode: state.language !== "es" ? "Selected media with captions" : "Medios seleccionados con leyendas",
+      action: state.language !== "es" ? "Download edited PDF" : "Descargar PDF editado",
+      actionDetail: state.language !== "es" ? "Use this as the master version before posting elsewhere." : "Usa esta version como maestro antes de publicar en otros canales.",
     },
   };
   return profiles[channel] || {
-    format: state.language === "en" ? "Edited PDF or HTML" : "PDF o HTML editado",
-    brief: state.language === "en" ? "Best for final review, printing or sharing as file." : "Ideal para revision final, impresion o envio como archivo.",
-    reason: state.language === "en" ? "The document keeps structure and media references." : "El documento conserva estructura y referencias multimedia.",
-    mediaMode: state.language === "en" ? "Selected media" : "Medios seleccionados",
-    action: state.language === "en" ? "Export file" : "Exportar archivo",
-    actionDetail: state.language === "en" ? "Download PDF as the main output." : "Descarga PDF como salida principal.",
+    format: state.language !== "es" ? "Edited PDF or HTML" : "PDF o HTML editado",
+    brief: state.language !== "es" ? "Best for final review, printing or sharing as file." : "Ideal para revision final, impresion o envio como archivo.",
+    reason: state.language !== "es" ? "The document keeps structure and media references." : "El documento conserva estructura y referencias multimedia.",
+    mediaMode: state.language !== "es" ? "Selected media" : "Medios seleccionados",
+    action: state.language !== "es" ? "Export file" : "Exportar archivo",
+    actionDetail: state.language !== "es" ? "Download PDF as the main output." : "Descarga PDF como salida principal.",
   };
 }
 
 function buildPublicationSubject(draft, profile) {
-  const title = shortPublicationText(draft?.title || (state.language === "en" ? "Vibe publication" : "Publicacion Vibe"), 72);
+  const title = shortPublicationText(draft?.title || (state.language !== "es" ? "Vibe publication" : "Publicacion Vibe"), 72);
   if (draft?.channel === "Email") return `${title} - ${profile.format}`;
-  if (draft?.channel === "LinkedIn") return `${title}: ${state.language === "en" ? "what I learned" : "lo que aprendi"}`;
+  if (draft?.channel === "LinkedIn") return `${title}: ${state.language !== "es" ? "what I learned" : "lo que aprendi"}`;
   return title;
 }
 
 function buildPublicationChannelCopy(draft, profile, mode, summary, action) {
-  const title = draft?.title || (state.language === "en" ? "Vibe publication" : "Publicacion Vibe");
+  const title = draft?.title || (state.language !== "es" ? "Vibe publication" : "Publicacion Vibe");
   const mediaCount = getApprovedPublicationMedia(draft || {}).length;
   if (mode === "short") {
-    return state.language === "en"
+    return state.language !== "es"
       ? `${title}. ${summary} ${action ? `Next: ${action}` : ""}`.trim()
       : `${title}. ${summary} ${action ? `Siguiente: ${action}` : ""}`.trim();
   }
   if (mode === "caption") {
     const mediaLine = mediaCount
-      ? state.language === "en" ? `${mediaCount} selected media asset(s).` : `${mediaCount} activo(s) multimedia seleccionados.`
-      : state.language === "en" ? "Text-only version." : "Version solo texto.";
-    return state.language === "en"
+      ? state.language !== "es" ? `${mediaCount} selected media asset(s).` : `${mediaCount} activo(s) multimedia seleccionados.`
+      : state.language !== "es" ? "Text-only version." : "Version solo texto.";
+    return state.language !== "es"
       ? `${shortPublicationText(title, 84)} - ${profile.format}. ${mediaLine}`
       : `${shortPublicationText(title, 84)} - ${profile.format}. ${mediaLine}`;
   }
-  return state.language === "en"
+  return state.language !== "es"
     ? `${title}\n\n${summary}\n\nWhy it matters: ${draft?.purpose || profile.reason}\n\nSuggested close: ${action || profile.actionDetail}`
     : `${title}\n\n${summary}\n\nPor que importa: ${draft?.purpose || profile.reason}\n\nCierre sugerido: ${action || profile.actionDetail}`;
 }
 
 function buildPublicationChannelChecklist(draft, profile, media) {
-  const items = state.language === "en"
+  const items = state.language !== "es"
     ? [
         "Read title and first paragraph aloud.",
         "Confirm names, faces, locations and sensitive data.",
@@ -23266,22 +23660,22 @@ function buildPublicationChannelChecklist(draft, profile, media) {
         "Usa PDF como registro final; usa el texto de canal para publicar.",
       ];
   if (!media.length) {
-    items.push(state.language === "en" ? "Decide if this should remain text-only." : "Decide si debe quedar solo como texto.");
+    items.push(state.language !== "es" ? "Decide if this should remain text-only." : "Decide si debe quedar solo como texto.");
   }
   if (profile.action.includes("API") || profile.actionDetail.includes("API")) {
-    items.push(state.language === "en" ? "Direct API publishing is future work." : "La publicacion directa por API queda para una fase futura.");
+    items.push(state.language !== "es" ? "Direct API publishing is future work." : "La publicacion directa por API queda para una fase futura.");
   }
   return items;
 }
 
 function getPublicationFormatHelpText() {
-  return state.language === "en"
+  return state.language !== "es"
     ? "Format guide: PDF is for reading, printing, or sending. HTML keeps the visual layout. Markdown is easy to edit in notes or documents. JSON is a technical backup for Admin."
     : "Guía de formatos: PDF es para leer, imprimir o enviar. HTML conserva el diseño visual. Markdown es fácil de editar en notas o documentos. JSON es un respaldo técnico para Administración.";
 }
 
 function getPublicationChannelStatus(channel) {
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         whatsapp: "Ready: the app opens WhatsApp with the text prepared. You review and send.",
         email: "Ready: the app opens an email draft with subject and text. You review and send.",
@@ -23339,12 +23733,12 @@ async function preparePublicationChannelLaunch() {
     exportCurrentPublicationHtml();
     return;
   }
-  addPublicationHistory(draft, "exported", state.language === "en" ? `Prepared ${channel}` : `Canal preparado: ${channel}`);
+  addPublicationHistory(draft, "exported", state.language !== "es" ? `Prepared ${channel}` : `Canal preparado: ${channel}`);
   persistPublicationDraft(draft);
-  document.getElementById("publicationStatus").textContent = state.language === "en"
+  document.getElementById("publicationStatus").textContent = state.language !== "es"
     ? `${channel} is ready. The text was copied${opened ? " and the channel was opened." : ". Open the channel manually if the browser blocked it."}`
     : `${channel} listo. El texto fue copiado${opened ? " y el canal fue abierto." : ". Abre el canal manualmente si el navegador lo bloqueó."}`;
-  if (!copied) notify(state.language === "en" ? "Could not copy automatically." : "No se pudo copiar automáticamente.", "warn");
+  if (!copied) notify(state.language !== "es" ? "Could not copy automatically." : "No se pudo copiar automáticamente.", "warn");
 }
 
 function renderPublicationApproval(draft) {
@@ -23418,10 +23812,10 @@ function renderPublicationEditor(draft) {
     <section class="publication-editor">
       <div class="publication-section-heading">
         <div>
-          <h3>${escapeHtml(state.language === "en" ? "1. Edit final text" : "1. Editar texto final")}</h3>
-          <p class="card-meta">${escapeHtml(state.language === "en" ? "These fields control the final document. Title, summary, and body update the visible pages and the ReportLab PDF payload." : "Estos campos controlan el documento final. Titulo, resumen y cuerpo actualizan las paginas visibles y el PDF ReportLab.")}</p>
+          <h3>${escapeHtml(state.language !== "es" ? "1. Edit final text" : "1. Editar texto final")}</h3>
+          <p class="card-meta">${escapeHtml(state.language !== "es" ? "These fields control the final document. Title, summary, and body update the visible pages and the ReportLab PDF payload." : "Estos campos controlan el documento final. Titulo, resumen y cuerpo actualizan las paginas visibles y el PDF ReportLab.")}</p>
         </div>
-        <span>${escapeHtml(state.language === "en" ? "Editable" : "Editable")}</span>
+        <span>${escapeHtml(state.language !== "es" ? "Editable" : "Editable")}</span>
       </div>
       <label>
         ${escapeHtml(t("labels.publicationTitleField"))}
@@ -23446,10 +23840,10 @@ function renderPublicationPageEditor(draft) {
     <section class="publication-page-editor">
       <div class="publication-section-heading">
         <div>
-          <h3>${escapeHtml(state.language === "en" ? "2. Edit publication pages" : "2. Editar paginas de la publicacion")}</h3>
-          <p class="card-meta">${escapeHtml(state.language === "en" ? "Each page has a purpose, layout, and editable text. A manually edited page is preserved when you adjust the general text above." : "Cada pagina tiene proposito, maqueta y texto editable. Si editas una pagina manualmente, la app la respeta cuando ajustes el texto general.")}</p>
+          <h3>${escapeHtml(state.language !== "es" ? "2. Edit publication pages" : "2. Editar paginas de la publicacion")}</h3>
+          <p class="card-meta">${escapeHtml(state.language !== "es" ? "Each page has a purpose, layout, and editable text. A manually edited page is preserved when you adjust the general text above." : "Cada pagina tiene proposito, maqueta y texto editable. Si editas una pagina manualmente, la app la respeta cuando ajustes el texto general.")}</p>
         </div>
-        <span>${pages.length} ${escapeHtml(state.language === "en" ? "pages" : "paginas")}</span>
+        <span>${pages.length} ${escapeHtml(state.language !== "es" ? "pages" : "paginas")}</span>
       </div>
       <div class="publication-page-grid">
         ${pages.map((page, index) => renderPublicationPageEditorCard(page, index)).join("")}
@@ -23462,20 +23856,20 @@ function renderPublicationPageEditorCard(page, index) {
   return `
     <article class="publication-page-card page-${escapeHtml(page.pageType)}">
       <header>
-        <span>${escapeHtml(state.language === "en" ? `Page ${page.pageNumber}` : `Pagina ${page.pageNumber}`)}</span>
+        <span>${escapeHtml(state.language !== "es" ? `Page ${page.pageNumber}` : `Pagina ${page.pageNumber}`)}</span>
         <strong>${escapeHtml(getPublicationPageTypeLabel(page.pageType))}</strong>
         <small>${escapeHtml(page.layoutTemplate)}</small>
       </header>
       <label>
-        ${escapeHtml(state.language === "en" ? "Page title" : "Titulo de pagina")}
+        ${escapeHtml(state.language !== "es" ? "Page title" : "Titulo de pagina")}
         <input class="publication-edit-control" data-publication-page-index="${index}" data-publication-page-field="title" type="text" value="${escapeHtml(page.title)}" />
       </label>
       <label>
-        ${escapeHtml(state.language === "en" ? "Subtitle" : "Subtitulo")}
+        ${escapeHtml(state.language !== "es" ? "Subtitle" : "Subtitulo")}
         <input class="publication-edit-control" data-publication-page-index="${index}" data-publication-page-field="subtitle" type="text" value="${escapeHtml(page.subtitle)}" />
       </label>
       <label>
-        ${escapeHtml(state.language === "en" ? "Page text" : "Texto de pagina")}
+        ${escapeHtml(state.language !== "es" ? "Page text" : "Texto de pagina")}
         <textarea class="publication-edit-control" data-publication-page-index="${index}" data-publication-page-field="body" rows="5">${escapeHtml(page.body)}</textarea>
       </label>
     </article>
@@ -23483,7 +23877,7 @@ function renderPublicationPageEditorCard(page, index) {
 }
 
 function getPublicationPageTypeLabel(type) {
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         cover: "Cover",
         summary: "Summary",
@@ -23541,7 +23935,7 @@ function renderPublicationFinalDocument(draft) {
           <h3>${escapeHtml(t("labels.publicationFinalDocument"))}</h3>
           <p class="card-meta">${escapeHtml(t("labels.publicationFinalDocumentHelp"))}</p>
         </div>
-        <span>${pages.length} ${escapeHtml(state.language === "en" ? "pages" : "paginas")} · ${media.length} ${escapeHtml(t("metrics.media"))}</span>
+        <span>${pages.length} ${escapeHtml(state.language !== "es" ? "pages" : "paginas")} · ${media.length} ${escapeHtml(t("metrics.media"))}</span>
       </div>
       <article>
         ${pages.map((page) => renderPublicationFinalPage(page, media)).join("")}
@@ -23561,7 +23955,7 @@ function renderPublicationFinalPage(page, media) {
   return `
     <section class="publication-final-page publication-final-page-${escapeHtml(page.pageType)}">
       <div class="publication-final-page-meta">
-        <span>${escapeHtml(state.language === "en" ? `Page ${page.pageNumber}` : `Pagina ${page.pageNumber}`)}</span>
+        <span>${escapeHtml(state.language !== "es" ? `Page ${page.pageNumber}` : `Pagina ${page.pageNumber}`)}</span>
         <strong>${escapeHtml(getPublicationPageTypeLabel(page.pageType))}</strong>
       </div>
       <h2>${escapeHtml(page.title)}</h2>
@@ -23720,10 +24114,10 @@ function buildPublicationReadiness(draft) {
         label: t("labels.publicationPrivacy"),
         score: privacyScore,
         detail: draft.privacy
-          ? state.language === "en"
+          ? state.language !== "es"
             ? "Automatic cleanup is active."
             : "La limpieza automática está activa."
-          : state.language === "en"
+          : state.language !== "es"
             ? "Automatic cleanup is disabled."
             : "La limpieza automática está desactivada.",
       },
@@ -23731,16 +24125,16 @@ function buildPublicationReadiness(draft) {
         label: t("labels.publicationMediaUse"),
         score: mediaScore,
         detail: totalMedia
-          ? state.language === "en"
+          ? state.language !== "es"
             ? `${includedMedia}/${totalMedia} media assets selected.`
             : `${includedMedia}/${totalMedia} activos multimedia seleccionados.`
-          : state.language === "en"
+          : state.language !== "es"
             ? "No linked media is available."
             : "No hay multimedia vinculada disponible.",
       },
       { label: t("labels.publicationChannelFit"), score: channelScore.score, detail: channelScore.detail },
       {
-        label: state.language === "en" ? "Direct channel status" : "Estado del canal directo",
+        label: state.language !== "es" ? "Direct channel status" : "Estado del canal directo",
         score: directScore,
         detail: directStatus.detail,
       },
@@ -23758,14 +24152,14 @@ function scorePublicationReadability(words, channel) {
   if (words <= limit) {
     return {
       score: words < 45 ? 68 : 92,
-      detail: state.language === "en" ? `${words} words; length is manageable.` : `${words} palabras; la extensión es manejable.`,
+      detail: state.language !== "es" ? `${words} words; length is manageable.` : `${words} palabras; la extensión es manejable.`,
     };
   }
   const overRatio = Math.min(1, (words - limit) / Math.max(1, limit));
   return {
     score: Math.max(45, Math.round(88 - overRatio * 45)),
     detail:
-      state.language === "en"
+      state.language !== "es"
         ? `${words} words; recommended limit for ${channel}: ${limit}.`
         : `${words} palabras; límite recomendado para ${channel}: ${limit}.`,
   };
@@ -23798,7 +24192,7 @@ function scorePublicationChannelFit(draft, words, includedMedia) {
   return {
     score,
     detail:
-      state.language === "en"
+      state.language !== "es"
         ? `${displayPublicationType(draft.type)} adapted for ${draft.channel}.`
         : `${displayPublicationType(draft.type)} adaptada para ${draft.channel}.`,
   };
@@ -23809,14 +24203,14 @@ function buildPublicationSuggestions({ draft, words, includedMedia, totalMedia, 
   const limit = getPublicationWordLimit(draft.channel);
   if (words > limit) {
     suggestions.push(
-      state.language === "en"
+      state.language !== "es"
         ? "Shorten the draft or move detail into a longer report before publishing."
         : "Reduce el borrador o mueve el detalle a un reporte más largo antes de publicar.",
     );
   }
   if (privacyScore < 75) {
     suggestions.push(
-      state.language === "en"
+      state.language !== "es"
         ? "Activate privacy cleanup and manually review names, faces, locations, and sensitive data."
         : "Activa la limpieza de privacidad y revisa manualmente nombres, rostros, ubicaciones y datos sensibles.",
     );
@@ -23824,24 +24218,24 @@ function buildPublicationSuggestions({ draft, words, includedMedia, totalMedia, 
   if (mediaScore < 70) {
     suggestions.push(
       totalMedia
-        ? state.language === "en"
+        ? state.language !== "es"
           ? "Select the strongest media assets so the publication feels less text-heavy."
           : "Selecciona los activos multimedia más fuertes para que la publicación no dependa solo del texto."
-        : state.language === "en"
+        : state.language !== "es"
           ? "Add media to the source experiences when the channel needs a more visual piece."
           : "Agrega multimedia a las experiencias fuente cuando el canal necesite una pieza más visual.",
     );
   }
   if (channelScore.score < 75 || readability.score < 75) {
     suggestions.push(
-      state.language === "en"
+      state.language !== "es"
         ? "Review tone, length, and call to action for the selected channel."
         : "Revisa el tono, la extensión y el llamado a la acción según el canal seleccionado.",
     );
   }
   if (!suggestions.length) {
     suggestions.push(
-      state.language === "en"
+      state.language !== "es"
         ? "Perform a final human review before exporting or sharing."
         : "Haz una revisión humana final antes de exportar o compartir.",
     );
@@ -23853,10 +24247,10 @@ function renderPublicationMedia(media) {
   if (!media.length) return `<p class="card-meta">${escapeHtml(t("labels.publicationMediaEmpty"))}</p>`;
   const included = media.filter((item) => item.included !== false).length;
   const selectionLabel = included === media.length
-    ? (state.language === "en" ? "All media included" : "Toda la multimedia incluida")
+    ? (state.language !== "es" ? "All media included" : "Toda la multimedia incluida")
     : included === 0
-      ? (state.language === "en" ? "No media included" : "Sin multimedia incluida")
-      : (state.language === "en" ? `${included} selected manually` : `${included} seleccionados manualmente`);
+      ? (state.language !== "es" ? "No media included" : "Sin multimedia incluida")
+      : (state.language !== "es" ? `${included} selected manually` : `${included} seleccionados manualmente`);
   return `
     <section class="publication-media">
       <div class="publication-section-heading">
@@ -23865,9 +24259,9 @@ function renderPublicationMedia(media) {
           <p class="card-meta">${escapeHtml(selectionLabel)}. ${escapeHtml(t("labels.publicationMediaHelp"))}</p>
         </div>
         <div class="pill-row publication-media-actions">
-          <button class="secondary-button" type="button" data-publication-media-bulk="recommended">${escapeHtml(state.language === "en" ? "Recommended" : "Recomendado")}</button>
-          <button class="secondary-button" type="button" data-publication-media-bulk="all">${escapeHtml(state.language === "en" ? "Include all" : "Incluir todo")}</button>
-          <button class="secondary-button" type="button" data-publication-media-bulk="none">${escapeHtml(state.language === "en" ? "No media" : "Sin multimedia")}</button>
+          <button class="secondary-button" type="button" data-publication-media-bulk="recommended">${escapeHtml(state.language !== "es" ? "Recommended" : "Recomendado")}</button>
+          <button class="secondary-button" type="button" data-publication-media-bulk="all">${escapeHtml(state.language !== "es" ? "Include all" : "Incluir todo")}</button>
+          <button class="secondary-button" type="button" data-publication-media-bulk="none">${escapeHtml(state.language !== "es" ? "No media" : "Sin multimedia")}</button>
         </div>
       </div>
       <div class="publication-media-grid">
@@ -23907,7 +24301,7 @@ function renderPublicationFileBadge(item) {
   return `
     <div class="publication-file-badge">
       <strong>${escapeHtml(getPublicationMediaKindLabel(item))}</strong>
-      <span>${escapeHtml(state.language === "en" ? "Referenced in the story, not embedded visually." : "Referenciado en la historia; no se incrusta como imagen.")}</span>
+      <span>${escapeHtml(state.language !== "es" ? "Referenced in the story, not embedded visually." : "Referenciado en la historia; no se incrusta como imagen.")}</span>
     </div>
   `;
 }
@@ -23925,19 +24319,19 @@ function renderPublicationMediaAction(item) {
 }
 
 function getPublicationMediaActionLabel(item) {
-  if (String(item.type || "").startsWith("image/")) return state.language === "en" ? "Open image" : "Abrir imagen";
-  if (String(item.type || "").startsWith("video/")) return state.language === "en" ? "Open or download video" : "Abrir o descargar video";
-  if (String(item.type || "").startsWith("audio/")) return state.language === "en" ? "Open or download audio" : "Abrir o descargar audio";
-  if (isArchiveLikePublicationMedia(item)) return state.language === "en" ? "Download ZIP/archive" : "Descargar ZIP/archivo";
-  return state.language === "en" ? "Open or download file" : "Abrir o descargar archivo";
+  if (String(item.type || "").startsWith("image/")) return state.language !== "es" ? "Open image" : "Abrir imagen";
+  if (String(item.type || "").startsWith("video/")) return state.language !== "es" ? "Open or download video" : "Abrir o descargar video";
+  if (String(item.type || "").startsWith("audio/")) return state.language !== "es" ? "Open or download audio" : "Abrir o descargar audio";
+  if (isArchiveLikePublicationMedia(item)) return state.language !== "es" ? "Download ZIP/archive" : "Descargar ZIP/archivo";
+  return state.language !== "es" ? "Open or download file" : "Abrir o descargar archivo";
 }
 
 function getPublicationMediaKindLabel(item) {
-  if (String(item.type || "").startsWith("image/")) return state.language === "en" ? "Image" : "Imagen";
-  if (String(item.type || "").startsWith("video/")) return state.language === "en" ? "Video" : "Video";
-  if (String(item.type || "").startsWith("audio/")) return state.language === "en" ? "Audio" : "Audio";
+  if (String(item.type || "").startsWith("image/")) return state.language !== "es" ? "Image" : "Imagen";
+  if (String(item.type || "").startsWith("video/")) return state.language !== "es" ? "Video" : "Video";
+  if (String(item.type || "").startsWith("audio/")) return state.language !== "es" ? "Audio" : "Audio";
   if (isArchiveLikePublicationMedia(item)) return "ZIP";
-  return state.language === "en" ? "Document" : "Documento";
+  return state.language !== "es" ? "Document" : "Documento";
 }
 
 function isArchiveLikePublicationMedia(item) {
@@ -23960,15 +24354,15 @@ function renderPublicationMediaCaption(item) {
   const roleLabel = item.publicationRoleLabel || getPublicationMediaRole(item, state.currentPublicationDraft || {}, 0).label;
   const roleDetail = item.publicationRoleDetail || "";
   const mediaRole = String(item.type || "").startsWith("image/")
-    ? (state.language === "en" ? "Visual asset: can be shown in the PDF." : "Activo visual: puede mostrarse en el PDF.")
-    : (state.language === "en" ? "Support asset: summarized here; open/download from the app or HTML." : "Activo de apoyo: se resume aquí; se abre o descarga desde la app o HTML.");
+    ? (state.language !== "es" ? "Visual asset: can be shown in the PDF." : "Activo visual: puede mostrarse en el PDF.")
+    : (state.language !== "es" ? "Support asset: summarized here; open/download from the app or HTML." : "Activo de apoyo: se resume aquí; se abre o descarga desde la app o HTML.");
   return `
     <figcaption class="publication-media-caption">
       <strong title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</strong>
       <span title="${escapeHtml(item.experienceTitle)}">${escapeHtml(item.experienceTitle)}</span>
       <span class="publication-provenance ${item.isDemo ? "is-demo" : "is-user"}">${escapeHtml(item.provenance || "")}</span>
-      <small class="publication-media-role"><b>${escapeHtml(state.language === "en" ? "Editorial role" : "Rol editorial")}:</b> ${escapeHtml(roleLabel)}${roleDetail ? ` - ${escapeHtml(roleDetail)}` : ""}</small>
-      <small><b>${escapeHtml(state.language === "en" ? "Use" : "Uso")}:</b> ${escapeHtml(mediaRole)}</small>
+      <small class="publication-media-role"><b>${escapeHtml(state.language !== "es" ? "Editorial role" : "Rol editorial")}:</b> ${escapeHtml(roleLabel)}${roleDetail ? ` - ${escapeHtml(roleDetail)}` : ""}</small>
+      <small><b>${escapeHtml(state.language !== "es" ? "Use" : "Uso")}:</b> ${escapeHtml(mediaRole)}</small>
       ${
         context || tags.length
           ? `<small><b>${escapeHtml(t("labels.publicationMediaContext"))}:</b> ${escapeHtml(shortPublicationText(context || tags.join(", "), 260))}</small>`
@@ -23993,11 +24387,11 @@ async function handlePublicationDistributionCopy(event) {
   }[key];
   if (!value) return;
   const copied = await copyTextToClipboard(value);
-  addPublicationHistory(draft, "exported", state.language === "en" ? `Copied ${key}` : `Copiado ${key}`);
+  addPublicationHistory(draft, "exported", state.language !== "es" ? `Copied ${key}` : `Copiado ${key}`);
   persistPublicationDraft(draft);
   document.getElementById("publicationStatus").textContent = copied
-    ? (state.language === "en" ? "Text copied for the selected channel." : "Texto copiado para el canal seleccionado.")
-    : (state.language === "en" ? "Could not copy automatically. Select the text manually." : "No se pudo copiar automaticamente. Selecciona el texto manualmente.");
+    ? (state.language !== "es" ? "Text copied for the selected channel." : "Texto copiado para el canal seleccionado.")
+    : (state.language !== "es" ? "Could not copy automatically. Select the text manually." : "No se pudo copiar automaticamente. Selecciona el texto manualmente.");
 }
 
 function handlePublicationMediaBulkAction(event) {
@@ -24018,20 +24412,20 @@ function handlePublicationMediaBulkAction(event) {
     draft,
     "media",
     mode === "recommended"
-      ? (state.language === "en" ? "Recommended media selection applied" : "Seleccion recomendada de multimedia aplicada")
+      ? (state.language !== "es" ? "Recommended media selection applied" : "Seleccion recomendada de multimedia aplicada")
       : include
-      ? (state.language === "en" ? "All media included" : "Toda la multimedia incluida")
-      : (state.language === "en" ? "Publication without media" : "Publicacion sin multimedia"),
+      ? (state.language !== "es" ? "All media included" : "Toda la multimedia incluida")
+      : (state.language !== "es" ? "Publication without media" : "Publicacion sin multimedia"),
   );
   state.currentPublicationDraft = draft;
   state.publicationDrafts = state.publicationDrafts.map((item) => (item.id === draft.id ? draft : item));
   savePublicationDrafts();
   renderPublications();
   document.getElementById("publicationStatus").textContent = mode === "recommended"
-    ? (state.language === "en" ? "Recommended media selection applied for this type and channel." : "Seleccion recomendada aplicada para este tipo y canal.")
+    ? (state.language !== "es" ? "Recommended media selection applied for this type and channel." : "Seleccion recomendada aplicada para este tipo y canal.")
     : include
-    ? (state.language === "en" ? "All media will be included in the publication." : "Toda la multimedia quedo incluida en la publicacion.")
-    : (state.language === "en" ? "The publication will be generated without media." : "La publicacion se generara sin multimedia.");
+    ? (state.language !== "es" ? "All media will be included in the publication." : "Toda la multimedia quedo incluida en la publicacion.")
+    : (state.language !== "es" ? "The publication will be generated without media." : "La publicacion se generara sin multimedia.");
 }
 
 function handlePublicationMediaSelection(event) {
@@ -24066,7 +24460,7 @@ function handlePublicationDraftEdit(event) {
     draft.pages = pages;
     draft.approvalStatus = "review";
     draft.approvedAt = "";
-    addPublicationHistory(draft, "edited", state.language === "en" ? `Page ${index + 1}` : `Pagina ${index + 1}`, { coalesceMs: 15000 });
+    addPublicationHistory(draft, "edited", state.language !== "es" ? `Page ${index + 1}` : `Pagina ${index + 1}`, { coalesceMs: 15000 });
     state.currentPublicationDraft = draft;
     state.publicationDrafts = state.publicationDrafts.map((item) => (item.id === draft.id ? draft : item));
     savePublicationDrafts();
@@ -24147,13 +24541,13 @@ function applyPublicationTemplateStructure(draft, template = {}) {
   };
   const sections = guides[template.tone] || guides.editorial;
   if (sections.some((section) => body.includes(section))) return body;
-  const firstBlock = body || (state.language === "en" ? "Edit this block with the final publication text." : "Edita este bloque con el texto final de la publicacion.");
+  const firstBlock = body || (state.language !== "es" ? "Edit this block with the final publication text." : "Edita este bloque con el texto final de la publicacion.");
   return `${title}
 
 ${sections.map((section, index) => `${index + 1}. ${section}
-${index === 0 ? firstBlock : (state.language === "en" ? "Edit this block before exporting." : "Edita este bloque antes de exportar.")}`).join("\n\n")}
+${index === 0 ? firstBlock : (state.language !== "es" ? "Edit this block before exporting." : "Edita este bloque antes de exportar.")}`).join("\n\n")}
 
-${state.language === "en" ? "Selected media" : "Multimedia seleccionada"}: ${mediaCount} activo(s).`;
+${state.language !== "es" ? "Selected media" : "Multimedia seleccionada"}: ${mediaCount} activo(s).`;
 }
 
 function handlePublicationApprovalClick(event) {
@@ -24255,7 +24649,7 @@ async function exportCurrentPublicationPdf() {
     return;
   }
   try {
-    document.getElementById("publicationStatus").textContent = state.language === "en" ? "Generating edited ReportLab publication PDF..." : "Generando PDF editado ReportLab de publicacion...";
+    document.getElementById("publicationStatus").textContent = state.language !== "es" ? "Generating edited ReportLab publication PDF..." : "Generando PDF editado ReportLab de publicacion...";
     setPublicationProgress({
       title: t("labels.publicationProgressPdfStart"),
       detail: t("labels.publicationProgressPdfStartDetail"),
@@ -24283,11 +24677,11 @@ async function exportCurrentPublicationPdf() {
     persistPublicationDraft(draft);
     downloadPublicationBlob(blob, "publicacion-inteligente.pdf", warning);
     finishPublicationProgress("publicacion-inteligente.pdf");
-    document.getElementById("publicationStatus").textContent = state.language === "en" ? "Edited ReportLab publication PDF generated." : "PDF editado ReportLab de publicacion generado.";
+    document.getElementById("publicationStatus").textContent = state.language !== "es" ? "Edited ReportLab publication PDF generated." : "PDF editado ReportLab de publicacion generado.";
   } catch (error) {
     console.warn("Publication PDF export failed", error);
     const detail = getExportErrorDetail(error);
-    document.getElementById("publicationStatus").textContent = state.language === "en" ? `ReportLab PDF failed. Detail: ${detail}` : `Fallo el PDF ReportLab. Detalle: ${detail}`;
+    document.getElementById("publicationStatus").textContent = state.language !== "es" ? `ReportLab PDF failed. Detail: ${detail}` : `Fallo el PDF ReportLab. Detalle: ${detail}`;
     failPublicationProgress(document.getElementById("publicationStatus").textContent);
     notify(document.getElementById("publicationStatus").textContent, "error");
   }
@@ -24324,7 +24718,7 @@ async function copyCurrentPublicationText() {
     document.getElementById("publicationStatus").textContent = t("labels.publicationEmpty");
     return;
   }
-  addPublicationHistory(draft, "exported", state.language === "en" ? "Copied text" : "Texto copiado");
+  addPublicationHistory(draft, "exported", state.language !== "es" ? "Copied text" : "Texto copiado");
   persistPublicationDraft(draft);
   const copied = await copyTextToClipboard(buildPublicationMarkdown(draft));
   document.getElementById("publicationStatus").textContent = copied ? t("labels.publicationCopiedText") : t("labels.publicationCopyFailed");
@@ -24336,7 +24730,7 @@ async function copyCurrentPublicationHtml() {
     document.getElementById("publicationStatus").textContent = t("labels.publicationEmpty");
     return;
   }
-  addPublicationHistory(draft, "exported", state.language === "en" ? "Copied HTML" : "HTML copiado");
+  addPublicationHistory(draft, "exported", state.language !== "es" ? "Copied HTML" : "HTML copiado");
   persistPublicationDraft(draft);
   const copied = await copyTextToClipboard(buildPublicationHtml(draft));
   document.getElementById("publicationStatus").textContent = copied ? t("labels.publicationCopiedHtml") : t("labels.publicationCopyFailed");
@@ -24380,8 +24774,8 @@ function buildPublicationHtml(draft) {
   const deliverablesText = (kit.deliverables || [])
     .map((row) => `${row.label}: ${row.value}. ${row.detail}`)
     .join("\n");
-  const studioHtml = `<section class="publication-export-page"><p class="meta">${escapeHtml(state.language === "en" ? "Channel publication studio" : "Estudio de publicacion por canal")}</p><h2>${escapeHtml(studio.format)}</h2><p>${escapeHtml(studio.outputAction)}</p><pre>${escapeHtml(`${studio.mediaDecision}\n\n${studio.editorFocus}\n\n${studio.checklist.join("\n")}`)}</pre></section>`;
-  const kitHtml = `<section class="publication-export-page"><p class="meta">${escapeHtml(state.language === "en" ? "Channel distribution kit" : "Kit de salida por canal")}</p><h2>${escapeHtml(kit.format)}</h2><p>${escapeHtml(kit.brief)}</p><pre>${escapeHtml(`${deliverablesText}\n\n${kit.subject}\n\n${kit.shortCopy}\n\n${kit.longCopy}`)}</pre></section>`;
+  const studioHtml = `<section class="publication-export-page"><p class="meta">${escapeHtml(state.language !== "es" ? "Channel publication studio" : "Estudio de publicacion por canal")}</p><h2>${escapeHtml(studio.format)}</h2><p>${escapeHtml(studio.outputAction)}</p><pre>${escapeHtml(`${studio.mediaDecision}\n\n${studio.editorFocus}\n\n${studio.checklist.join("\n")}`)}</pre></section>`;
+  const kitHtml = `<section class="publication-export-page"><p class="meta">${escapeHtml(state.language !== "es" ? "Channel distribution kit" : "Kit de salida por canal")}</p><h2>${escapeHtml(kit.format)}</h2><p>${escapeHtml(kit.brief)}</p><pre>${escapeHtml(`${deliverablesText}\n\n${kit.subject}\n\n${kit.shortCopy}\n\n${kit.longCopy}`)}</pre></section>`;
   const mediaHtml = approvedMedia.length
     ? `<section><h2>${escapeHtml(t("labels.publicationMedia"))}</h2><div class="media">${approvedMedia
         .map((item) =>
@@ -24411,7 +24805,7 @@ function buildPublicationHtml(draft) {
             )
             .join("")}</div>`
         : "";
-      return `<section class="publication-export-page page-${escapeHtml(page.pageType)}"><p class="meta">${escapeHtml(state.language === "en" ? `Page ${page.pageNumber}` : `Pagina ${page.pageNumber}`)} - ${escapeHtml(getPublicationPageTypeLabel(page.pageType))}</p><h2>${escapeHtml(page.title)}</h2>${page.subtitle ? `<p class="approval">${escapeHtml(page.subtitle)}</p>` : ""}${pageMediaHtml}<pre>${escapeHtml(page.body)}</pre></section>`;
+      return `<section class="publication-export-page page-${escapeHtml(page.pageType)}"><p class="meta">${escapeHtml(state.language !== "es" ? `Page ${page.pageNumber}` : `Pagina ${page.pageNumber}`)} - ${escapeHtml(getPublicationPageTypeLabel(page.pageType))}</p><h2>${escapeHtml(page.title)}</h2>${page.subtitle ? `<p class="approval">${escapeHtml(page.subtitle)}</p>` : ""}${pageMediaHtml}<pre>${escapeHtml(page.body)}</pre></section>`;
     })
     .join("");
   return `<!doctype html>
@@ -24496,7 +24890,7 @@ function exportCurrentPublicationPackage() {
     })),
     history: draft.history || [],
   };
-  addPublicationHistory(draft, "exported", state.language === "en" ? "Editorial package" : "Paquete editorial");
+  addPublicationHistory(draft, "exported", state.language !== "es" ? "Editorial package" : "Paquete editorial");
   persistPublicationDraft(draft);
   downloadPublicationBlob(
     new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" }),
@@ -24511,7 +24905,7 @@ function buildPublicationMarkdown(draft) {
   const pages = exportDraft.pages;
   const kit = exportDraft.distributionKit;
   const studio = exportDraft.channelStudio;
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         type: "Type",
         style: "Style",
@@ -24539,30 +24933,30 @@ function buildPublicationMarkdown(draft) {
 
 ${draft.summary}
 
-## ${state.language === "en" ? "Channel publication studio" : "Estudio de publicacion por canal"}
+## ${state.language !== "es" ? "Channel publication studio" : "Estudio de publicacion por canal"}
 
-- ${state.language === "en" ? "Recommended format" : "Formato recomendado"}: ${studio.format}
-- ${state.language === "en" ? "Media decision" : "Decision multimedia"}: ${studio.mediaDecision}
-- ${state.language === "en" ? "Output" : "Salida"}: ${studio.outputAction}
-- ${state.language === "en" ? "Editor focus" : "Foco de edicion"}: ${studio.editorFocus}
+- ${state.language !== "es" ? "Recommended format" : "Formato recomendado"}: ${studio.format}
+- ${state.language !== "es" ? "Media decision" : "Decision multimedia"}: ${studio.mediaDecision}
+- ${state.language !== "es" ? "Output" : "Salida"}: ${studio.outputAction}
+- ${state.language !== "es" ? "Editor focus" : "Foco de edicion"}: ${studio.editorFocus}
 
-## ${state.language === "en" ? "Channel deliverables" : "Entregables por canal"}
+## ${state.language !== "es" ? "Channel deliverables" : "Entregables por canal"}
 
 ${(kit.deliverables || []).map((row) => `- ${row.label}: ${row.value}. ${row.detail}`).join("\n")}
 
-## ${state.language === "en" ? "Channel distribution kit" : "Kit de salida por canal"}
+## ${state.language !== "es" ? "Channel distribution kit" : "Kit de salida por canal"}
 
-- ${state.language === "en" ? "Format" : "Formato"}: ${kit.format}
-- ${state.language === "en" ? "Action" : "Accion"}: ${kit.action}
-- ${state.language === "en" ? "Media" : "Multimedia"}: ${kit.mediaInstruction}
+- ${state.language !== "es" ? "Format" : "Formato"}: ${kit.format}
+- ${state.language !== "es" ? "Action" : "Accion"}: ${kit.action}
+- ${state.language !== "es" ? "Media" : "Multimedia"}: ${kit.mediaInstruction}
 
-### ${state.language === "en" ? "Subject / title" : "Asunto / titulo"}
+### ${state.language !== "es" ? "Subject / title" : "Asunto / titulo"}
 ${kit.subject}
 
-### ${state.language === "en" ? "Short copy" : "Texto corto"}
+### ${state.language !== "es" ? "Short copy" : "Texto corto"}
 ${kit.shortCopy}
 
-### ${state.language === "en" ? "Long copy" : "Texto ampliado"}
+### ${state.language !== "es" ? "Long copy" : "Texto ampliado"}
 ${kit.longCopy}
 
 ${formatPublicationMediaMarkdown(getApprovedPublicationMedia(draft))}
@@ -24655,7 +25049,7 @@ function persistPublicationDraft(draft) {
 }
 
 function displayPublicationType(type) {
-  if (state.language !== "en") return type;
+  if (state.language === "es") return type;
   const map = {
     "Publicación social rápida": "Quick social post",
     "Reporte narrativo": "Narrative report",
@@ -24671,7 +25065,7 @@ function displayPublicationType(type) {
 }
 
 function displayPublicationStyle(style) {
-  if (state.language !== "en") return style;
+  if (state.language === "es") return style;
   const map = {
     Profesional: "Professional",
     Turístico: "Travel",
@@ -24784,7 +25178,7 @@ async function saveExportToProjectFolder(filename, content) {
     state.lastServerExport = {
       ok: false,
       filename,
-      message: state.language === "en" ? "Could not save the export in the project folder." : "No se pudo guardar la exportacion en la carpeta del proyecto.",
+      message: state.language !== "es" ? "Could not save the export in the project folder." : "No se pudo guardar la exportacion en la carpeta del proyecto.",
       error: error.message,
       savedAt: new Date().toISOString(),
     };
@@ -24923,27 +25317,27 @@ function recordBackupAudit(action, payload = buildLocalBackupPayload()) {
 
 function describeBackupAudit() {
   if (!state.backupAudit?.at) {
-    return state.language === "en" ? "No backup, restore, or local clean action recorded yet" : "Aún no hay respaldo, restauración o limpieza local registrada";
+    return state.language !== "es" ? "No backup, restore, or local clean action recorded yet" : "Aún no hay respaldo, restauración o limpieza local registrada";
   }
   const actionLabels = {
-    export: state.language === "en" ? "Last backup" : "Último respaldo",
-    test: state.language === "en" ? "Central MVP test" : "Prueba central MVP",
-    restore: state.language === "en" ? "Last restore" : "Última restauración",
-    clear: state.language === "en" ? "Last local clean" : "Última limpieza local",
+    export: state.language !== "es" ? "Last backup" : "Último respaldo",
+    test: state.language !== "es" ? "Central MVP test" : "Prueba central MVP",
+    restore: state.language !== "es" ? "Last restore" : "Última restauración",
+    clear: state.language !== "es" ? "Last local clean" : "Última limpieza local",
   };
   const counts = state.backupAudit.counts || {};
-  const detail = state.language === "en"
+  const detail = state.language !== "es"
     ? `${counts.experiences || 0} experiences · ${counts.agendaEvents || 0} agenda events · ${counts.publicationDrafts || 0} publications · ${counts.pilotTests || 0} pilot tests · ${counts.manualReviewed || 0} manual sections · ${counts.pilotSignoff ? "signed" : "unsigned"}`
     : `${counts.experiences || 0} experiencias · ${counts.agendaEvents || 0} eventos · ${counts.publicationDrafts || 0} publicaciones · ${counts.pilotTests || 0} pruebas piloto · ${counts.manualReviewed || 0} secciones manual · ${counts.pilotSignoff ? "firmada" : "sin firma"}`;
   const integrity = state.backupAudit.integrity === "verified"
-    ? state.language === "en" ? "integrity verified" : "integridad verificada"
-    : state.language === "en" ? "without integrity mark" : "sin marca de integridad";
+    ? state.language !== "es" ? "integrity verified" : "integridad verificada"
+    : state.language !== "es" ? "without integrity mark" : "sin marca de integridad";
   const exportLocation = state.backupAudit.exportPath
-    ? state.language === "en"
+    ? state.language !== "es"
       ? ` · saved in project: ${state.backupAudit.exportPath}`
       : ` · guardado en proyecto: ${state.backupAudit.exportPath}`
     : state.backupAudit.exportSaveOk === false
-      ? state.language === "en"
+      ? state.language !== "es"
         ? " · project-folder copy pending"
         : " · copia en carpeta del proyecto pendiente"
       : "";
@@ -24963,13 +25357,13 @@ function summarizeBackupPayload(payload = {}) {
     manualReviewed: payload.manualReview && typeof payload.manualReview === "object" ? Object.values(payload.manualReview).filter(Boolean).length : 0,
     offlineQueue: Array.isArray(payload.offlineQueue) ? payload.offlineQueue.length : 0,
     schema: payload.schema || (Array.isArray(payload) ? "legacy-array" : "unknown"),
-    appVersion: payload.appVersion || (state.language === "en" ? "not specified" : "no especificada"),
+    appVersion: payload.appVersion || (state.language !== "es" ? "not specified" : "no especificada"),
   };
 }
 
 function confirmBackupRestore(payload = {}) {
   const summary = summarizeBackupPayload(payload);
-  const message = state.language === "en"
+  const message = state.language !== "es"
     ? `Restore this backup?\n\nSchema: ${summary.schema}\nVersion: ${summary.appVersion}\nExperiences: ${summary.experiences}\nAgenda events: ${summary.agendaEvents}\nBlocked days: ${summary.agendaBlockedDates}\nPublications: ${summary.publicationDrafts}\nAsset metadata: ${summary.assetMetadata}\nPilot tests: ${summary.pilotTests}\nPilot signoff: ${summary.pilotSignoff ? "yes" : "no"}\nManual reviewed: ${summary.manualReviewed}\nOffline queue: ${summary.offlineQueue}\n\nThis replaces the local state in this browser. Remote Supabase data is not deleted. Continue?`
     : `¿Restaurar este respaldo?\n\nEsquema: ${summary.schema}\nVersión: ${summary.appVersion}\nExperiencias: ${summary.experiences}\nEventos de Agenda: ${summary.agendaEvents}\nDías bloqueados: ${summary.agendaBlockedDates}\nPublicaciones: ${summary.publicationDrafts}\nMetadatos de activos: ${summary.assetMetadata}\nPruebas piloto: ${summary.pilotTests}\nFirma del piloto: ${summary.pilotSignoff ? "sí" : "no"}\nManual revisado: ${summary.manualReviewed}\nCola sin conexión: ${summary.offlineQueue}\n\nEsto reemplaza el estado local de este navegador. No borra datos remotos de Supabase. ¿Continuar?`;
   return confirm(message);
@@ -24999,7 +25393,7 @@ function describeBackupCoverage() {
     Object.keys(payload.routineSettings || {}).length,
     payload.offlineQueue.length,
   ].reduce((sum, value) => sum + value, 0);
-  return state.language === "en"
+  return state.language !== "es"
     ? `${covered} local items across experiences, Agenda, publications, assets, profile, Daily, routines, and offline queue`
     : `${covered} elementos locales entre experiencias, Agenda, publicaciones, activos, perfil, Diario, rutinas y cola sin conexión`;
 }
@@ -25023,20 +25417,20 @@ async function restoreBackupFromFile(event) {
     const integrity = await verifyBackupIntegrity(payload);
     if (integrity.status === "mismatch") {
       const proceed = confirm(
-        state.language === "en"
+        state.language !== "es"
           ? "The backup integrity check failed. The file may be incomplete or modified. Restore anyway?"
           : "La verificación de integridad del respaldo falló. El archivo puede estar incompleto o modificado. ¿Restaurar de todos modos?",
       );
       if (!proceed) {
-        status.textContent = state.language === "en" ? "Restore canceled by integrity check." : "Restauración cancelada por verificación de integridad.";
+        status.textContent = state.language !== "es" ? "Restore canceled by integrity check." : "Restauración cancelada por verificación de integridad.";
         return;
       }
     } else if (integrity.status === "unsupported") {
-      status.textContent = state.language === "en" ? "Backup integrity algorithm is not supported." : "El algoritmo de integridad del respaldo no es compatible.";
+      status.textContent = state.language !== "es" ? "Backup integrity algorithm is not supported." : "El algoritmo de integridad del respaldo no es compatible.";
       return;
     }
     if (!confirmBackupRestore(payload)) {
-      status.textContent = state.language === "en" ? "Restore canceled." : "Restauración cancelada.";
+      status.textContent = state.language !== "es" ? "Restore canceled." : "Restauración cancelada.";
       return;
     }
     const experiences = normalizeExperiences(payload.experiences || (Array.isArray(payload) ? payload : []));
@@ -25145,31 +25539,31 @@ function renderInsights() {
   const scopeLabel = document.getElementById("insightScopeLabel");
   if (scopeLabel) {
     const scopeParts = buildAnalyticalScopeParts(state.insightsFilters);
-    const base = scopeParts.length ? scopeParts.join(" · ") : state.language === "en" ? "General view" : "Vista general";
+    const base = scopeParts.length ? scopeParts.join(" · ") : state.language !== "es" ? "General view" : "Vista general";
     scopeLabel.textContent = `${base} · ${sourceExperiences.length} ${t("labels.items")}`;
   }
   renderSharedScopeContext(
     "insightsSharedScopeContext",
     state.insightsFilters,
     sourceExperiences.length,
-    state.language === "en" ? "Findings" : "Hallazgos",
+    state.language !== "es" ? "Findings" : "Hallazgos",
   );
   renderQuestionSuggestions();
   document.getElementById("insightList").innerHTML = `
     <section class="insight-hub-intro">
-      <span class="report-kicker">${escapeHtml(state.language === "en" ? "Main output" : "Salida principal")}</span>
-      <h3>${escapeHtml(state.language === "en" ? "Experience findings by human theme" : "Hallazgos de experiencias por eje humano")}</h3>
-      <p>${escapeHtml(state.language === "en" ? "This view turns experiences, energy, people, places, events, and assets into a clear reading. Use the thematic axes first; then review the prioritized findings." : "Esta vista convierte experiencias, energía, personas, lugares, eventos y activos en una lectura clara. Primero revisa los ejes temáticos; luego los hallazgos priorizados.")}</p>
+      <span class="report-kicker">${escapeHtml(state.language !== "es" ? "Main output" : "Salida principal")}</span>
+      <h3>${escapeHtml(state.language !== "es" ? "Experience findings by human theme" : "Hallazgos de experiencias por eje humano")}</h3>
+      <p>${escapeHtml(state.language !== "es" ? "This view turns experiences, energy, people, places, events, and assets into a clear reading. Use the thematic axes first; then review the prioritized findings." : "Esta vista convierte experiencias, energía, personas, lugares, eventos y activos en una lectura clara. Primero revisa los ejes temáticos; luego los hallazgos priorizados.")}</p>
     </section>
-    <section class="insight-axis-grid" aria-label="${escapeHtml(state.language === "en" ? "Analysis themes" : "Ejes de análisis")}">
+    <section class="insight-axis-grid" aria-label="${escapeHtml(state.language !== "es" ? "Analysis themes" : "Ejes de análisis")}">
       ${thematicAxes.map(renderInsightAxisCard).join("")}
     </section>
     ${renderInsightActionPlan(actionPlan)}
     <section class="insight-priority-section">
       <div class="publication-section-heading">
         <div>
-          <h3>${escapeHtml(state.language === "en" ? "Prioritized findings" : "Hallazgos priorizados")}</h3>
-          <p class="card-meta">${escapeHtml(state.language === "en" ? "Ordered reading with evidence, confidence, and next action." : "Lectura ordenada con evidencia, confianza y próxima acción.")}</p>
+          <h3>${escapeHtml(state.language !== "es" ? "Prioritized findings" : "Hallazgos priorizados")}</h3>
+          <p class="card-meta">${escapeHtml(state.language !== "es" ? "Ordered reading with evidence, confidence, and next action." : "Lectura ordenada con evidencia, confianza y próxima acción.")}</p>
         </div>
       </div>
       ${insights
@@ -25182,7 +25576,7 @@ function renderInsights() {
           <div class="insight-body">
             <div class="insight-topline">
               <span class="pill">${escapeHtml(localizeInsightType(insight.type))}</span>
-              <span class="insight-confidence">${insight.confidence}% ${state.language === "en" ? "confidence" : "confianza"}</span>
+              <span class="insight-confidence">${insight.confidence}% ${state.language !== "es" ? "confidence" : "confianza"}</span>
             </div>
             <h3>${escapeHtml(insight.title)}</h3>
             <p>${escapeHtml(insight.description)}</p>
@@ -25221,7 +25615,7 @@ function renderQuestionSuggestions() {
 }
 
 function getInsightThematicDefinitionsLegacy() {
-  return state.language === "en"
+  return state.language !== "es"
     ? [
         { id: "health", title: "Health and wellbeing", categories: ["Salud", "Hogar", "Espiritualidad"], question: "How are energy, recovery, habits, and emotional stability behaving?", action: "Choose one small rest, movement, or recovery adjustment this week and notice whether your energy responds." },
         { id: "work", title: "Work and productivity", categories: ["Trabajo"], question: "Where is real productivity rising or creating load?", action: "Review one recent work block and decide what to keep, delegate, pause, or simplify." },
@@ -25245,7 +25639,7 @@ function getInsightThematicDefinitionsLegacy() {
 }
 
 function getInsightThematicDefinitions() {
-  return state.language === "en"
+  return state.language !== "es"
     ? [
         { id: "health", title: "Health and wellbeing", categories: ["Salud", "Hogar", "Espiritualidad"], question: "How are energy, recovery, habits, and emotional stability behaving?", action: "Choose one small rest, movement, or recovery adjustment this week and notice whether your energy responds." },
         { id: "work", title: "Work and productivity", categories: ["Trabajo"], question: "Where is real productivity rising or creating load?", action: "Review one recent work block and decide what to keep, delegate, pause, or simplify." },
@@ -25278,11 +25672,11 @@ function buildInsightThematicAxes(experiences = []) {
     const score = items.length ? Math.round((items.length / total) * 45 + avgEnergy * 5 + Math.max(0, 10 - saturated * 2)) : 0;
     const status = items.length
       ? avgEnergy >= 7 && saturated === 0
-        ? (state.language === "en" ? "Favorable" : "Favorable")
+        ? (state.language !== "es" ? "Favorable" : "Favorable")
         : saturated
-          ? (state.language === "en" ? "Needs attention" : "Requiere atención")
-          : (state.language === "en" ? "Observed" : "En observación")
-      : (state.language === "en" ? "No data yet" : "Sin datos aún");
+          ? (state.language !== "es" ? "Needs attention" : "Requiere atención")
+          : (state.language !== "es" ? "Observed" : "En observación")
+      : (state.language !== "es" ? "No data yet" : "Sin datos aún");
     return { ...axis, items, avgEnergy, saturated, assets, score: Math.max(0, Math.min(100, score)), status };
   });
 }
@@ -25295,9 +25689,9 @@ function renderInsightAxisCard(axis) {
         <span>${escapeHtml(axis.status)}</span>
       </div>
       <div class="insight-axis-metrics">
-        <article><span>${escapeHtml(state.language === "en" ? "Experiences" : "Experiencias")}</span><strong>${axis.items.length}</strong></article>
-        <article><span>${escapeHtml(state.language === "en" ? "Energy" : "Energía")}</span><strong>${axis.avgEnergy}/10</strong></article>
-        <article><span>${escapeHtml(state.language === "en" ? "Assets" : "Activos")}</span><strong>${axis.assets}</strong></article>
+        <article><span>${escapeHtml(state.language !== "es" ? "Experiences" : "Experiencias")}</span><strong>${axis.items.length}</strong></article>
+        <article><span>${escapeHtml(state.language !== "es" ? "Energy" : "Energía")}</span><strong>${axis.avgEnergy}/10</strong></article>
+        <article><span>${escapeHtml(state.language !== "es" ? "Assets" : "Activos")}</span><strong>${axis.assets}</strong></article>
       </div>
       <div class="insight-meter" aria-hidden="true"><span style="width:${Math.max(4, axis.score)}%"></span></div>
       <p>${escapeHtml(axis.question)}</p>
@@ -25324,7 +25718,7 @@ function buildInsightActionPlan(experiences = getInsightsExperiences(), insights
   const addAction = (action) => {
     if (!action?.title || actions.some((item) => item.title === action.title)) return;
     actions.push({
-      horizon: state.language === "en" ? "Next 7 days" : "Próximos 7 días",
+      horizon: state.language !== "es" ? "Next 7 days" : "Próximos 7 días",
       priority: localizedPriority("medium"),
       agendaType: "Personal",
       durationMinutes: 45,
@@ -25334,14 +25728,14 @@ function buildInsightActionPlan(experiences = getInsightsExperiences(), insights
 
   if (!list.length) {
     return [{
-      title: state.language === "en" ? "Create a complete first capture" : "Crear una primera captura completa",
-      horizon: state.language === "en" ? "Today" : "Hoy",
+      title: state.language !== "es" ? "Create a complete first capture" : "Crear una primera captura completa",
+      horizon: state.language !== "es" ? "Today" : "Hoy",
       priority: localizedPriority("high"),
-      evidence: state.language === "en" ? "There are no experiences in this scope yet." : "Aún no hay experiencias en este alcance.",
-      why: state.language === "en"
+      evidence: state.language !== "es" ? "There are no experiences in this scope yet." : "Aún no hay experiencias en este alcance.",
+      why: state.language !== "es"
         ? "The system needs at least one well-described experience to produce useful findings."
         : "El sistema necesita al menos una experiencia bien descrita para generar hallazgos útiles.",
-      next: state.language === "en"
+      next: state.language !== "es"
         ? "Capture one real moment with objective, place, people, energy, and at least one note or asset."
         : "Registra un momento real con objetivo, lugar, personas, energía y al menos una nota o activo.",
       agendaType: "Personal",
@@ -25350,10 +25744,10 @@ function buildInsightActionPlan(experiences = getInsightsExperiences(), insights
 
   if (quality.score < 75) {
     addAction({
-      title: state.language === "en" ? "Improve the next five captures" : "Mejorar las próximas cinco capturas",
+      title: state.language !== "es" ? "Improve the next five captures" : "Mejorar las próximas cinco capturas",
       priority: localizedPriority("high"),
-      evidence: `${state.language === "en" ? "Data confidence" : "Confiabilidad de datos"}: ${quality.score}%. ${quality.weak.slice(0, 3).join(" · ")}`,
-      why: state.language === "en"
+      evidence: `${state.language !== "es" ? "Data confidence" : "Confiabilidad de datos"}: ${quality.score}%. ${quality.weak.slice(0, 3).join(" · ")}`,
+      why: state.language !== "es"
         ? "The conclusions become more useful when the basic context is complete."
         : "Las conclusiones se vuelven más útiles cuando el contexto básico está completo.",
       next: quality.action,
@@ -25363,13 +25757,13 @@ function buildInsightActionPlan(experiences = getInsightsExperiences(), insights
 
   if (analysis.saturated?.length || analysis.lowEnergy?.length) {
     addAction({
-      title: state.language === "en" ? "Protect recovery before adding more load" : "Cuidar recuperación antes de sumar carga",
+      title: state.language !== "es" ? "Protect recovery before adding more load" : "Cuidar recuperación antes de sumar carga",
       priority: localizedPriority("high"),
-      evidence: `${analysis.saturated?.length || 0} ${state.language === "en" ? "saturated experiences" : "experiencias saturadas"} · ${analysis.lowEnergy?.length || 0} ${state.language === "en" ? "low-energy experiences" : "experiencias de baja energía"}`,
-      why: state.language === "en"
+      evidence: `${analysis.saturated?.length || 0} ${state.language !== "es" ? "saturated experiences" : "experiencias saturadas"} · ${analysis.lowEnergy?.length || 0} ${state.language !== "es" ? "low-energy experiences" : "experiencias de baja energía"}`,
+      why: state.language !== "es"
         ? "This is not a warning to stop; it is a signal to create space before the pattern becomes heavier."
         : "No es una alarma para detenerse; es una señal para crear espacio antes de que el patrón pese más.",
-      next: state.language === "en"
+      next: state.language !== "es"
         ? "Schedule one recovery block and record how your energy changes afterwards."
         : "Agenda un bloque de recuperación y registra cómo cambia tu energía después.",
       agendaType: "Bienestar",
@@ -25379,26 +25773,26 @@ function buildInsightActionPlan(experiences = getInsightsExperiences(), insights
 
   if (biometricMatches.length) {
     addAction({
-      title: state.language === "en" ? "Compare perceived energy with biometrics" : "Comparar energía percibida con biometría",
+      title: state.language !== "es" ? "Compare perceived energy with biometrics" : "Comparar energía percibida con biometría",
       priority: localizedPriority("medium"),
-      evidence: `${biometricMatches.length} ${state.language === "en" ? "matched records" : "registros vinculados"} · ${state.language === "en" ? "suggested energy" : "energía sugerida"} ${biometricAverage}/10`,
-      why: state.language === "en"
+      evidence: `${biometricMatches.length} ${state.language !== "es" ? "matched records" : "registros vinculados"} · ${state.language !== "es" ? "suggested energy" : "energía sugerida"} ${biometricAverage}/10`,
+      why: state.language !== "es"
         ? "Body data can explain why some days feel lighter or heavier than the narrative alone suggests."
         : "Los datos del cuerpo pueden explicar por que algunos dias se sienten mas livianos o pesados de lo que dice solo la narracion.",
-      next: state.language === "en"
+      next: state.language !== "es"
         ? "In the next three captures, compare perceived energy, sleep or activity, and the final mood."
         : "En las próximas tres capturas, compara energía percibida, sueño o actividad, y estado final.",
       agendaType: "Bienestar",
     });
   } else if (state.biometricImports?.length) {
     addAction({
-      title: state.language === "en" ? "Align biometrics with experience times" : "Alinear biometría con horarios de experiencias",
+      title: state.language !== "es" ? "Align biometrics with experience times" : "Alinear biometría con horarios de experiencias",
       priority: localizedPriority("low"),
-      evidence: state.language === "en" ? "Biometric files exist, but no records matched this scope." : "Hay archivos biométricos, pero no coincidieron con este alcance.",
-      why: state.language === "en"
+      evidence: state.language !== "es" ? "Biometric files exist, but no records matched this scope." : "Hay archivos biométricos, pero no coincidieron con este alcance.",
+      why: state.language !== "es"
         ? "The file is useful only when dates and hours can be related to real experiences."
         : "El archivo solo aporta valor cuando fechas y horas se pueden relacionar con experiencias reales.",
-      next: state.language === "en"
+      next: state.language !== "es"
         ? "Review the dates in the scope or capture one experience close to a biometric record."
         : "Revisa las fechas del alcance o captura una experiencia cercana a un registro biométrico.",
       agendaType: "Bienestar",
@@ -25407,10 +25801,10 @@ function buildInsightActionPlan(experiences = getInsightsExperiences(), insights
 
   if (topAxis) {
     addAction({
-      title: state.language === "en" ? `Go deeper into ${topAxis.title}` : `Profundizar ${topAxis.title}`,
+      title: state.language !== "es" ? `Go deeper into ${topAxis.title}` : `Profundizar ${topAxis.title}`,
       priority: topAxis.saturated ? localizedPriority("high") : localizedPriority("medium"),
-      evidence: `${topAxis.items.length} ${state.language === "en" ? "experiences" : "experiencias"} · ${state.language === "en" ? "energy" : "energía"} ${topAxis.avgEnergy}/10 · ${topAxis.status}`,
-      why: state.language === "en"
+      evidence: `${topAxis.items.length} ${state.language !== "es" ? "experiences" : "experiencias"} · ${state.language !== "es" ? "energy" : "energía"} ${topAxis.avgEnergy}/10 · ${topAxis.status}`,
+      why: state.language !== "es"
         ? "This is where your data is speaking most clearly right now."
         : "Este es el eje donde tus datos están hablando con más claridad ahora.",
       next: topAxis.action,
@@ -25421,10 +25815,10 @@ function buildInsightActionPlan(experiences = getInsightsExperiences(), insights
   const strongestInsight = [...(Array.isArray(insights) ? insights : [])].sort((a, b) => (b.confidence || 0) - (a.confidence || 0))[0];
   if (strongestInsight) {
     addAction({
-      title: state.language === "en" ? "Turn the strongest finding into a test" : "Convertir el hallazgo principal en una prueba",
+      title: state.language !== "es" ? "Turn the strongest finding into a test" : "Convertir el hallazgo principal en una prueba",
       priority: getInsightPriority(strongestInsight),
-      evidence: `${strongestInsight.confidence || 0}% ${state.language === "en" ? "confidence" : "confianza"} · ${localizeInsightType(strongestInsight.type)}`,
-      why: state.language === "en"
+      evidence: `${strongestInsight.confidence || 0}% ${state.language !== "es" ? "confidence" : "confianza"} · ${localizeInsightType(strongestInsight.type)}`,
+      why: state.language !== "es"
         ? "A finding becomes valuable when it changes one small decision and you observe the result."
         : "Un hallazgo gana valor cuando cambia una decisión pequeña y observas el resultado.",
       next: strongestInsight.action || strongestInsight.description,
@@ -25438,12 +25832,12 @@ function buildInsightActionPlan(experiences = getInsightsExperiences(), insights
 function renderInsightActionPlan(actionPlan = []) {
   const actions = Array.isArray(actionPlan) ? actionPlan : [];
   return `
-    <section class="insight-action-plan" aria-label="${escapeHtml(state.language === "en" ? "Seven-day action plan" : "Plan de acción de siete días")}">
+    <section class="insight-action-plan" aria-label="${escapeHtml(state.language !== "es" ? "Seven-day action plan" : "Plan de acción de siete días")}">
       <div class="publication-section-heading">
         <div>
-          <span class="report-kicker">${escapeHtml(state.language === "en" ? "Actionable output" : "Salida accionable")}</span>
-          <h3>${escapeHtml(state.language === "en" ? "7-day action plan" : "Plan de acción 7 días")}</h3>
-          <p class="card-meta">${escapeHtml(state.language === "en" ? "Concrete next steps from the current scope, ready to schedule." : "Próximos pasos concretos desde el alcance actual, listos para agendar.")}</p>
+          <span class="report-kicker">${escapeHtml(state.language !== "es" ? "Actionable output" : "Salida accionable")}</span>
+          <h3>${escapeHtml(state.language !== "es" ? "7-day action plan" : "Plan de acción 7 días")}</h3>
+          <p class="card-meta">${escapeHtml(state.language !== "es" ? "Concrete next steps from the current scope, ready to schedule." : "Próximos pasos concretos desde el alcance actual, listos para agendar.")}</p>
         </div>
       </div>
       <div class="insight-plan-grid">
@@ -25456,8 +25850,8 @@ function renderInsightActionPlan(actionPlan = []) {
             <h4>${escapeHtml(action.title)}</h4>
             <p>${escapeHtml(action.why || "")}</p>
             <dl>
-              <div><dt>${escapeHtml(state.language === "en" ? "Evidence" : "Evidencia")}</dt><dd>${escapeHtml(action.evidence || "")}</dd></div>
-              <div><dt>${escapeHtml(state.language === "en" ? "Next step" : "Próximo paso")}</dt><dd>${escapeHtml(action.next || "")}</dd></div>
+              <div><dt>${escapeHtml(state.language !== "es" ? "Evidence" : "Evidencia")}</dt><dd>${escapeHtml(action.evidence || "")}</dd></div>
+              <div><dt>${escapeHtml(state.language !== "es" ? "Next step" : "Próximo paso")}</dt><dd>${escapeHtml(action.next || "")}</dd></div>
             </dl>
             <div class="insight-actions">
               <button class="ghost-button" type="button" data-insight-plan-index="${index}">${escapeHtml(t("labels.insightScheduleAgenda"))}</button>
@@ -25492,17 +25886,17 @@ function createAgendaEventFromInsight(insight, index = 0) {
   const participantFields = buildPilotParticipantFields(getActivePilotParticipantId(["insights", "dashboard"]));
   const agendaEvent = {
     id: createId(),
-    title: `${state.language === "en" ? "Action" : "Acción"}: ${insight.title}`,
+    title: `${state.language !== "es" ? "Action" : "Acción"}: ${insight.title}`,
     type: mapInsightTypeToAgendaType(insight),
     description: [insight.description, insight.action ? `${t("labels.actionLabel")}: ${insight.action}` : ""].filter(Boolean).join("\n\n"),
     startAt: start.toISOString(),
     endAt: end.toISOString(),
-    location: state.language === "en" ? "To be defined" : "Por definir",
-    participants: participantFields.pilotParticipantName || (state.language === "en" ? "Personal follow-up" : "Seguimiento personal"),
+    location: state.language !== "es" ? "To be defined" : "Por definir",
+    participants: participantFields.pilotParticipantName || (state.language !== "es" ? "Personal follow-up" : "Seguimiento personal"),
     ...participantFields,
     priority: String(insight.type || "").toLowerCase().includes("riesgo") || String(insight.type || "").toLowerCase().includes("risk") ? "alta" : "normal",
     status: "Planificado",
-    reminders: state.language === "en" ? "15 min before" : "15 min antes",
+    reminders: state.language !== "es" ? "15 min before" : "15 min antes",
     createdAt: new Date().toISOString(),
     source: "insight",
   };
@@ -25529,21 +25923,21 @@ function createAgendaEventFromInsightPlan(action, index = 0) {
   const participantFields = buildPilotParticipantFields(getActivePilotParticipantId(["insights", "dashboard"]));
   const agendaEvent = {
     id: createId(),
-    title: `${state.language === "en" ? "Plan" : "Plan"}: ${action.title}`,
+    title: `${state.language !== "es" ? "Plan" : "Plan"}: ${action.title}`,
     type: action.agendaType || "Personal",
     description: [
       action.why,
-      action.evidence ? `${state.language === "en" ? "Evidence" : "Evidencia"}: ${action.evidence}` : "",
-      action.next ? `${state.language === "en" ? "Next step" : "Próximo paso"}: ${action.next}` : "",
+      action.evidence ? `${state.language !== "es" ? "Evidence" : "Evidencia"}: ${action.evidence}` : "",
+      action.next ? `${state.language !== "es" ? "Next step" : "Próximo paso"}: ${action.next}` : "",
     ].filter(Boolean).join("\n\n"),
     startAt: start.toISOString(),
     endAt: end.toISOString(),
-    location: state.language === "en" ? "To be defined" : "Por definir",
-    participants: participantFields.pilotParticipantName || (state.language === "en" ? "Personal follow-up" : "Seguimiento personal"),
+    location: state.language !== "es" ? "To be defined" : "Por definir",
+    participants: participantFields.pilotParticipantName || (state.language !== "es" ? "Personal follow-up" : "Seguimiento personal"),
     ...participantFields,
     priority: String(action.priority || "").toLowerCase().includes("alta") || String(action.priority || "").toLowerCase().includes("high") ? "alta" : "normal",
     status: "Planificado",
-    reminders: state.language === "en" ? "15 min before" : "15 min antes",
+    reminders: state.language !== "es" ? "15 min before" : "15 min antes",
     createdAt: new Date().toISOString(),
     source: "insight-action-plan",
   };
@@ -25572,7 +25966,7 @@ function buildInsightsExportPayload() {
   return {
     generatedAt: new Date().toISOString(),
     appVersion: APP_VERSION,
-    participant: participantId === "all" ? (state.language === "en" ? "All groups/people" : "Todos los grupos/personas") : getPilotParticipantName(participantId),
+    participant: participantId === "all" ? (state.language !== "es" ? "All groups/people" : "Todos los grupos/personas") : getPilotParticipantName(participantId),
     filters: { ...state.insightsFilters },
     experiences: experiences.length,
     axes,
@@ -25584,41 +25978,41 @@ function buildInsightsExportPayload() {
 function buildInsightsMarkdown() {
   const payload = buildInsightsExportPayload();
   return [
-    `# ${state.language === "en" ? "Experience Findings" : "Hallazgos de experiencias"}`,
+    `# ${state.language !== "es" ? "Experience Findings" : "Hallazgos de experiencias"}`,
     "",
-    `- ${state.language === "en" ? "Generated" : "Generado"}: ${formatDate(payload.generatedAt)}`,
-    `- ${state.language === "en" ? "Scope" : "Alcance"}: ${payload.participant}`,
-    `- ${state.language === "en" ? "Experiences" : "Experiencias"}: ${payload.experiences}`,
+    `- ${state.language !== "es" ? "Generated" : "Generado"}: ${formatDate(payload.generatedAt)}`,
+    `- ${state.language !== "es" ? "Scope" : "Alcance"}: ${payload.participant}`,
+    `- ${state.language !== "es" ? "Experiences" : "Experiencias"}: ${payload.experiences}`,
     "",
-    `## ${state.language === "en" ? "Human themes" : "Ejes humanos"}`,
+    `## ${state.language !== "es" ? "Human themes" : "Ejes humanos"}`,
     "",
     ...payload.axes.flatMap((axis) => [
       `### ${axis.title}`,
-      `- ${state.language === "en" ? "Status" : "Estado"}: ${axis.status}`,
-      `- ${state.language === "en" ? "Experiences" : "Experiencias"}: ${axis.items.length}`,
-      `- ${state.language === "en" ? "Average energy" : "Energía media"}: ${axis.avgEnergy}/10`,
-      `- ${state.language === "en" ? "Question" : "Pregunta"}: ${axis.question}`,
-      `- ${state.language === "en" ? "Action" : "Acción"}: ${axis.action}`,
+      `- ${state.language !== "es" ? "Status" : "Estado"}: ${axis.status}`,
+      `- ${state.language !== "es" ? "Experiences" : "Experiencias"}: ${axis.items.length}`,
+      `- ${state.language !== "es" ? "Average energy" : "Energía media"}: ${axis.avgEnergy}/10`,
+      `- ${state.language !== "es" ? "Question" : "Pregunta"}: ${axis.question}`,
+      `- ${state.language !== "es" ? "Action" : "Acción"}: ${axis.action}`,
       "",
     ]),
-    `## ${state.language === "en" ? "7-day action plan" : "Plan de acción 7 días"}`,
+    `## ${state.language !== "es" ? "7-day action plan" : "Plan de acción 7 días"}`,
     "",
     ...payload.actionPlan.flatMap((action, index) => [
       `### ${index + 1}. ${action.title}`,
-      `- ${state.language === "en" ? "Priority" : "Prioridad"}: ${action.priority}`,
-      `- ${state.language === "en" ? "Evidence" : "Evidencia"}: ${action.evidence}`,
-      `- ${state.language === "en" ? "Why it matters" : "Por que importa"}: ${action.why}`,
-      `- ${state.language === "en" ? "Next step" : "Próximo paso"}: ${action.next}`,
+      `- ${state.language !== "es" ? "Priority" : "Prioridad"}: ${action.priority}`,
+      `- ${state.language !== "es" ? "Evidence" : "Evidencia"}: ${action.evidence}`,
+      `- ${state.language !== "es" ? "Why it matters" : "Por que importa"}: ${action.why}`,
+      `- ${state.language !== "es" ? "Next step" : "Próximo paso"}: ${action.next}`,
       "",
     ]),
-    `## ${state.language === "en" ? "Prioritized findings" : "Hallazgos priorizados"}`,
+    `## ${state.language !== "es" ? "Prioritized findings" : "Hallazgos priorizados"}`,
     "",
     ...payload.insights.flatMap((insight, index) => [
       `### ${index + 1}. ${insight.title}`,
-      `- ${state.language === "en" ? "Type" : "Tipo"}: ${localizeInsightType(insight.type)}`,
-      `- ${state.language === "en" ? "Confidence" : "Confianza"}: ${insight.confidence}%`,
-      `- ${state.language === "en" ? "Reading" : "Lectura"}: ${insight.description}`,
-      `- ${state.language === "en" ? "Action" : "Acción"}: ${insight.action || ""}`,
+      `- ${state.language !== "es" ? "Type" : "Tipo"}: ${localizeInsightType(insight.type)}`,
+      `- ${state.language !== "es" ? "Confidence" : "Confianza"}: ${insight.confidence}%`,
+      `- ${state.language !== "es" ? "Reading" : "Lectura"}: ${insight.description}`,
+      `- ${state.language !== "es" ? "Action" : "Acción"}: ${insight.action || ""}`,
       "",
     ]),
   ].join("\n");
@@ -25630,7 +26024,7 @@ function buildInsightsHtml() {
 <html lang="${state.language}">
 <head>
   <meta charset="utf-8" />
-  <title>${escapeHtml(state.language === "en" ? "Experience Findings" : "Hallazgos de experiencias")}</title>
+  <title>${escapeHtml(state.language !== "es" ? "Experience Findings" : "Hallazgos de experiencias")}</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 32px; color: #17202a; }
     h1 { margin-bottom: 4px; }
@@ -25645,18 +26039,18 @@ function buildInsightsHtml() {
   </style>
 </head>
 <body>
-  <h1>${escapeHtml(state.language === "en" ? "Experience Findings" : "Hallazgos de experiencias")}</h1>
-  <p class="meta">${escapeHtml(state.language === "en" ? "Generated" : "Generado")}: ${escapeHtml(formatDate(payload.generatedAt))} · ${escapeHtml(state.language === "en" ? "Scope" : "Alcance")}: ${escapeHtml(payload.participant)} · ${payload.experiences} ${escapeHtml(state.language === "en" ? "experiences" : "experiencias")}</p>
-  <h2>${escapeHtml(state.language === "en" ? "Human themes" : "Ejes humanos")}</h2>
+  <h1>${escapeHtml(state.language !== "es" ? "Experience Findings" : "Hallazgos de experiencias")}</h1>
+  <p class="meta">${escapeHtml(state.language !== "es" ? "Generated" : "Generado")}: ${escapeHtml(formatDate(payload.generatedAt))} · ${escapeHtml(state.language !== "es" ? "Scope" : "Alcance")}: ${escapeHtml(payload.participant)} · ${payload.experiences} ${escapeHtml(state.language !== "es" ? "experiences" : "experiencias")}</p>
+  <h2>${escapeHtml(state.language !== "es" ? "Human themes" : "Ejes humanos")}</h2>
   <section class="grid">
-    ${payload.axes.map((axis) => `<article><span>${escapeHtml(axis.status)}</span><h3>${escapeHtml(axis.title)}</h3><p><strong>${axis.items.length}</strong> ${escapeHtml(state.language === "en" ? "experiences" : "experiencias")} · ${axis.avgEnergy}/10 · ${axis.assets} ${escapeHtml(state.language === "en" ? "assets" : "activos")}</p><p>${escapeHtml(axis.question)}</p><p><strong>${escapeHtml(state.language === "en" ? "Action" : "Acción")}:</strong> ${escapeHtml(axis.action)}</p></article>`).join("")}
+    ${payload.axes.map((axis) => `<article><span>${escapeHtml(axis.status)}</span><h3>${escapeHtml(axis.title)}</h3><p><strong>${axis.items.length}</strong> ${escapeHtml(state.language !== "es" ? "experiences" : "experiencias")} · ${axis.avgEnergy}/10 · ${axis.assets} ${escapeHtml(state.language !== "es" ? "assets" : "activos")}</p><p>${escapeHtml(axis.question)}</p><p><strong>${escapeHtml(state.language !== "es" ? "Action" : "Acción")}:</strong> ${escapeHtml(axis.action)}</p></article>`).join("")}
   </section>
-  <h2>${escapeHtml(state.language === "en" ? "7-day action plan" : "Plan de acción 7 días")}</h2>
+  <h2>${escapeHtml(state.language !== "es" ? "7-day action plan" : "Plan de acción 7 días")}</h2>
   <section class="grid">
-    ${payload.actionPlan.map((action, index) => `<article><span>${index + 1} - ${escapeHtml(action.priority || "")} - ${escapeHtml(action.horizon || "")}</span><h3>${escapeHtml(action.title)}</h3><p>${escapeHtml(action.why || "")}</p><p><strong>${escapeHtml(state.language === "en" ? "Evidence" : "Evidencia")}:</strong> ${escapeHtml(action.evidence || "")}</p><p><strong>${escapeHtml(state.language === "en" ? "Next step" : "Próximo paso")}:</strong> ${escapeHtml(action.next || "")}</p></article>`).join("")}
+    ${payload.actionPlan.map((action, index) => `<article><span>${index + 1} - ${escapeHtml(action.priority || "")} - ${escapeHtml(action.horizon || "")}</span><h3>${escapeHtml(action.title)}</h3><p>${escapeHtml(action.why || "")}</p><p><strong>${escapeHtml(state.language !== "es" ? "Evidence" : "Evidencia")}:</strong> ${escapeHtml(action.evidence || "")}</p><p><strong>${escapeHtml(state.language !== "es" ? "Next step" : "Próximo paso")}:</strong> ${escapeHtml(action.next || "")}</p></article>`).join("")}
   </section>
-  <h2>${escapeHtml(state.language === "en" ? "Prioritized findings" : "Hallazgos priorizados")}</h2>
-  ${payload.insights.map((insight, index) => `<article><span>${index + 1} · ${escapeHtml(localizeInsightType(insight.type))} · ${insight.confidence}%</span><h3>${escapeHtml(insight.title)}</h3><p>${escapeHtml(insight.description)}</p><p><strong>${escapeHtml(state.language === "en" ? "Action" : "Acción")}:</strong> ${escapeHtml(insight.action || "")}</p></article>`).join("")}
+  <h2>${escapeHtml(state.language !== "es" ? "Prioritized findings" : "Hallazgos priorizados")}</h2>
+  ${payload.insights.map((insight, index) => `<article><span>${index + 1} · ${escapeHtml(localizeInsightType(insight.type))} · ${insight.confidence}%</span><h3>${escapeHtml(insight.title)}</h3><p>${escapeHtml(insight.description)}</p><p><strong>${escapeHtml(state.language !== "es" ? "Action" : "Acción")}:</strong> ${escapeHtml(insight.action || "")}</p></article>`).join("")}
 </body>
 </html>`;
 }
@@ -25664,18 +26058,18 @@ function buildInsightsHtml() {
 function exportInsightsMarkdown() {
   const content = buildInsightsMarkdown();
   downloadBlob(new Blob([content], { type: "text/markdown;charset=utf-8" }), "hallazgos-experiencias.md", content);
-  notify(state.language === "en" ? "Findings exported as Markdown." : "Hallazgos exportados como Markdown.", "success");
+  notify(state.language !== "es" ? "Findings exported as Markdown." : "Hallazgos exportados como Markdown.", "success");
 }
 
 function exportInsightsHtml() {
   const content = buildInsightsHtml();
   downloadBlob(new Blob([content], { type: "text/html;charset=utf-8" }), "hallazgos-experiencias.html", content);
-  notify(state.language === "en" ? "Findings reading downloaded." : "Lectura de hallazgos descargada.", "success");
+  notify(state.language !== "es" ? "Findings reading downloaded." : "Lectura de hallazgos descargada.", "success");
 }
 
 async function exportInsightsPdf() {
   const payload = buildInsightsExportPayload();
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         start: "Generating findings PDF",
         startDetail: "Validating scope, human themes, action plan, and ReportLab payload.",
@@ -25733,12 +26127,12 @@ async function exportInsightsPdf() {
   } catch (error) {
     console.warn("Insights PDF export failed", error);
     const detail = getExportErrorDetail(error);
-    const message = state.language === "en"
+    const message = state.language !== "es"
       ? `ReportLab PDF failed. Detail: ${detail}`
       : `Fallo el PDF ReportLab. Detalle: ${detail}`;
     setInsightsProgress({ title: labels.error, detail: message, percent: 100, stateName: "error" });
     notify(
-      state.language === "en"
+      state.language !== "es"
         ? `ReportLab PDF failed. Detail: ${detail}`
         : `Fallo el PDF ReportLab. Detalle: ${detail}`,
       "error",
@@ -25762,7 +26156,7 @@ function handleQuestionSuggestionClick(event) {
 }
 
 function localizeInsightType(type) {
-  if (state.language === "en") return type;
+  if (state.language !== "es") return type;
   const labels = {
     Pattern: "Patrón",
     Recommendation: "Recomendación",
@@ -25796,7 +26190,7 @@ function getInsightPriority(insight) {
 
 function getInsightEvidence(insight) {
   const confidence = Number(insight.confidence || 0);
-  if (state.language === "en") {
+  if (state.language !== "es") {
     return confidence >= 84 ? `${confidence}% confidence, repeated pattern` : `${confidence}% confidence, initial signal`;
   }
   return confidence >= 84 ? `${confidence}% de confianza, patrón repetido` : `${confidence}% de confianza, señal inicial`;
@@ -25939,9 +26333,9 @@ function renderRoutineHistory() {
 
 function formatRoutineLogMessage(message) {
   return String(message)
-    .replace("Routine completed:", state.language === "en" ? "Completed:" : "Completada:")
-    .replace("Routine checked:", state.language === "en" ? "Checked:" : "Revisada:")
-    .replace("Scheduled routine failed:", state.language === "en" ? "Scheduled failed:" : "Programada fallida:");
+    .replace("Routine completed:", state.language !== "es" ? "Completed:" : "Completada:")
+    .replace("Routine checked:", state.language !== "es" ? "Checked:" : "Revisada:")
+    .replace("Scheduled routine failed:", state.language !== "es" ? "Scheduled failed:" : "Programada fallida:");
 }
 
 function getConnectorStatus(id) {
@@ -26079,7 +26473,7 @@ function getBackendRoutineList() {
 
 function getWeekdayOptions(selected) {
   const days =
-    state.language === "en"
+    state.language !== "es"
       ? ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
       : ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
   return days.map((day, index) => `<option value="${index}" ${String(index) === String(selected) ? "selected" : ""}>${day}</option>`).join("");
@@ -26321,10 +26715,10 @@ function renderManual() {
   const query = state.manualFilters.query || "";
   const selectedSection = state.manualFilters.section || "all";
   const chips = [
-    { index: "all", title: state.language === "en" ? "All" : "Todo" },
+    { index: "all", title: state.language !== "es" ? "All" : "Todo" },
     ...allSections.map((section, index) => ({ index: String(index), title: section.title })),
   ];
-  const countLabel = state.language === "en"
+  const countLabel = state.language !== "es"
     ? `${sections.length}/${allSections.length} sections · ${countReviewedManualSections()}/${allSections.length} reviewed`
     : `${sections.length}/${allSections.length} secciones · ${countReviewedManualSections()}/${allSections.length} revisadas`;
   renderManualReviewMeter(allSections.length);
@@ -26355,10 +26749,10 @@ function renderManual() {
               <h3>${escapeHtml(section.title)}</h3>
               <div class="manual-section-actions">
                 <button class="${isManualSectionReviewed(section.index) ? "primary-button" : "ghost-button"}" type="button" data-manual-review-section="${escapeHtml(String(section.index))}">
-                  ${escapeHtml(isManualSectionReviewed(section.index) ? (state.language === "en" ? "Reviewed" : "Revisada") : (state.language === "en" ? "Mark reviewed" : "Marcar revisada"))}
+                  ${escapeHtml(isManualSectionReviewed(section.index) ? (state.language !== "es" ? "Reviewed" : "Revisada") : (state.language !== "es" ? "Mark reviewed" : "Marcar revisada"))}
                 </button>
                 <button class="ghost-button" type="button" data-manual-copy-section="${escapeHtml(String(section.index))}">
-                  ${escapeHtml(state.language === "en" ? "Copy section" : "Copiar sección")}
+                  ${escapeHtml(state.language !== "es" ? "Copy section" : "Copiar sección")}
                 </button>
               </div>
             </div>
@@ -26374,9 +26768,9 @@ function renderManual() {
     )
     .join("")
     : `<article class="manual-empty">
-        <strong>${escapeHtml(state.language === "en" ? "No manual sections found" : "No se encontraron secciones")}</strong>
-        <p>${escapeHtml(state.language === "en" ? "The manual is not empty; the current filters are hiding all sections." : "El manual no está vacío; los filtros actuales están ocultando todas las secciones.")}</p>
-        <button class="ghost-button" type="button" data-manual-clear-filters="true">${escapeHtml(state.language === "en" ? "Show full manual" : "Ver manual completo")}</button>
+        <strong>${escapeHtml(state.language !== "es" ? "No manual sections found" : "No se encontraron secciones")}</strong>
+        <p>${escapeHtml(state.language !== "es" ? "The manual is not empty; the current filters are hiding all sections." : "El manual no está vacío; los filtros actuales están ocultando todas las secciones.")}</p>
+        <button class="ghost-button" type="button" data-manual-clear-filters="true">${escapeHtml(state.language !== "es" ? "Show full manual" : "Ver manual completo")}</button>
       </article>`;
 }
 
@@ -26386,7 +26780,7 @@ function renderManualReviewMeter(totalSections) {
   const summary = calculateManualReviewSummary();
   meter.innerHTML = `
     <div>
-      <strong>${escapeHtml(state.language === "en" ? "Manual review progress" : "Progreso de revisión del manual")}</strong>
+      <strong>${escapeHtml(state.language !== "es" ? "Manual review progress" : "Progreso de revisión del manual")}</strong>
       <span>${escapeHtml(`${summary.score}% · ${summary.reviewed}/${totalSections}`)}</span>
     </div>
     <div class="manual-review-bar"><span style="width:${Math.max(0, Math.min(100, summary.score))}%"></span></div>
@@ -26400,16 +26794,16 @@ function renderManualActiveFilters(resultCount, allSections) {
   const selectedSection = state.manualFilters.section || "all";
   const reviewFilter = state.manualFilters.review || "all";
   const active = [];
-  if (query) active.push({ label: state.language === "en" ? `Search: ${query}` : `Búsqueda: ${query}`, clear: "query" });
+  if (query) active.push({ label: state.language !== "es" ? `Search: ${query}` : `Búsqueda: ${query}`, clear: "query" });
   if (selectedSection !== "all") {
     const section = allSections[Number(selectedSection)];
-    active.push({ label: state.language === "en" ? `Section: ${section?.title || selectedSection}` : `Sección: ${section?.title || selectedSection}`, clear: "section" });
+    active.push({ label: state.language !== "es" ? `Section: ${section?.title || selectedSection}` : `Sección: ${section?.title || selectedSection}`, clear: "section" });
   }
   if (reviewFilter !== "all") {
     active.push({
       label: reviewFilter === "reviewed"
-        ? state.language === "en" ? "Reviewed only" : "Solo revisadas"
-        : state.language === "en" ? "Pending only" : "Solo pendientes",
+        ? state.language !== "es" ? "Reviewed only" : "Solo revisadas"
+        : state.language !== "es" ? "Pending only" : "Solo pendientes",
       clear: "review",
     });
   }
@@ -26417,15 +26811,15 @@ function renderManualActiveFilters(resultCount, allSections) {
     container.innerHTML = "";
     return;
   }
-  const summary = state.language === "en" ? `${resultCount}/${allSections.length} visible sections` : `${resultCount}/${allSections.length} secciones visibles`;
+  const summary = state.language !== "es" ? `${resultCount}/${allSections.length} visible sections` : `${resultCount}/${allSections.length} secciones visibles`;
   container.innerHTML = `
     <div>
-      <strong>${escapeHtml(state.language === "en" ? "Active filters" : "Filtros activos")}</strong>
+      <strong>${escapeHtml(state.language !== "es" ? "Active filters" : "Filtros activos")}</strong>
       <span>${escapeHtml(summary)}</span>
     </div>
     <div>
       ${active.map((item) => `<button type="button" data-manual-clear-one="${escapeHtml(item.clear)}">${escapeHtml(item.label)}</button>`).join("")}
-      <button type="button" data-manual-clear-filters="true">${escapeHtml(state.language === "en" ? "Clear all" : "Limpiar todo")}</button>
+      <button type="button" data-manual-clear-filters="true">${escapeHtml(state.language !== "es" ? "Clear all" : "Limpiar todo")}</button>
     </div>
   `;
 }
@@ -26470,8 +26864,8 @@ async function handleManualAction(event) {
   const count = document.getElementById("manualResultCount");
   if (count) {
     count.textContent = copied
-      ? state.language === "en" ? "Section copied" : "Sección copiada"
-      : state.language === "en" ? "Could not copy section" : "No se pudo copiar la sección";
+      ? state.language !== "es" ? "Section copied" : "Sección copiada"
+      : state.language !== "es" ? "Could not copy section" : "No se pudo copiar la sección";
   }
 }
 
@@ -26550,12 +26944,12 @@ function getFilteredManualSections() {
 
 function buildManualMarkdown() {
   const sections = getFilteredManualSections();
-  const title = state.language === "en" ? "Experience Hub User Manual" : "Manual del Usuario de Experience Hub";
+  const title = state.language !== "es" ? "Experience Hub User Manual" : "Manual del Usuario de Experience Hub";
   const lines = [
     `# ${title}`,
     "",
-    `${state.language === "en" ? "Generated" : "Generado"}: ${formatDate(new Date().toISOString())}`,
-    `${state.language === "en" ? "Version" : "Versión"}: ${APP_VERSION}`,
+    `${state.language !== "es" ? "Generated" : "Generado"}: ${formatDate(new Date().toISOString())}`,
+    `${state.language !== "es" ? "Version" : "Versión"}: ${APP_VERSION}`,
     "",
   ];
   sections.forEach((section) => {
@@ -26572,7 +26966,7 @@ function buildManualSectionMarkdown(section, index) {
 }
 
 function buildManualPrintableHtml() {
-  const title = state.language === "en" ? "Experience Hub User Manual" : "Manual del Usuario de Experience Hub";
+  const title = state.language !== "es" ? "Experience Hub User Manual" : "Manual del Usuario de Experience Hub";
   const sectionsHtml = getFilteredManualSections()
     .map(
       (section) => `
@@ -26585,7 +26979,7 @@ function buildManualPrintableHtml() {
     )
     .join("");
   return `<!doctype html>
-<html lang="${state.language === "en" ? "en" : "es"}">
+<html lang="${state.language !== "es" ? "en" : "es"}">
 <head>
   <meta charset="utf-8" />
   <title>${escapeHtml(title)}</title>
@@ -26602,7 +26996,7 @@ function buildManualPrintableHtml() {
 <body>
   <header>
     <h1>${escapeHtml(title)}</h1>
-    <p class="meta">${escapeHtml(state.language === "en" ? "Generated" : "Generado")}: ${escapeHtml(formatDate(new Date().toISOString()))} · ${escapeHtml(state.language === "en" ? "Version" : "Versión")}: ${escapeHtml(APP_VERSION)}</p>
+    <p class="meta">${escapeHtml(state.language !== "es" ? "Generated" : "Generado")}: ${escapeHtml(formatDate(new Date().toISOString()))} · ${escapeHtml(state.language !== "es" ? "Version" : "Versión")}: ${escapeHtml(APP_VERSION)}</p>
   </header>
   ${sectionsHtml}
 </body>
@@ -26611,9 +27005,9 @@ function buildManualPrintableHtml() {
 
 async function exportManualPdf() {
   const html = buildManualPrintableHtml();
-  notify(state.language === "en" ? "Generating edited manual PDF..." : "Generando PDF editado del manual...", "info");
+  notify(state.language !== "es" ? "Generating edited manual PDF..." : "Generando PDF editado del manual...", "info");
   if (!state.apiOnline) {
-    notify(state.language === "en" ? "PDF requires the API. No HTML fallback was downloaded." : "El PDF requiere la API. No se descargo HTML como sustituto.", "error");
+    notify(state.language !== "es" ? "PDF requires the API. No HTML fallback was downloaded." : "El PDF requiere la API. No se descargo HTML como sustituto.", "error");
     return;
   }
   try {
@@ -26624,11 +27018,11 @@ async function exportManualPdf() {
     });
     if (!response.ok) throw new Error(await response.text());
     downloadBlob(await response.blob(), "manual-vibe.pdf");
-    notify(state.language === "en" ? "Edited manual PDF generated." : "PDF editado del manual generado.", "success");
+    notify(state.language !== "es" ? "Edited manual PDF generated." : "PDF editado del manual generado.", "success");
   } catch (error) {
     console.warn("Manual PDF export failed", error);
     const detail = getExportErrorDetail(error);
-    notify(state.language === "en" ? `ReportLab PDF failed. Detail: ${detail}` : `Fallo el PDF ReportLab. Detalle: ${detail}`, "error");
+    notify(state.language !== "es" ? `ReportLab PDF failed. Detail: ${detail}` : `Fallo el PDF ReportLab. Detalle: ${detail}`, "error");
   }
 }
 
@@ -26639,7 +27033,7 @@ function renderDevelopmentRulesPanel() {
   const manualReview = calculateManualReviewSummary();
   const supabaseGate = buildSupabasePilotGate();
   const labels =
-    state.language === "en"
+    state.language !== "es"
       ? {
           title: "Development Rules",
           subtitle: "Permanent operating criteria for every increment.",
@@ -26706,7 +27100,7 @@ function buildCoreMvpGateChecks() {
   const assetCount = experiences.reduce((total, item) => total + (Array.isArray(item.attachments) ? item.attachments.length : 0), 0);
   const hasReportExports = Boolean(state.reportExportAudit?.json || state.reportExportAudit?.csv || state.reportExportAudit?.html || state.reportExportAudit?.pdf);
   const privacy = readPrivacySettings();
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         open: "Open",
         run: "Run",
@@ -26762,10 +27156,10 @@ function buildCoreMvpGateChecks() {
 function describeReportExportAudit() {
   const audit = state.reportExportAudit || {};
   const formats = ["json", "csv", "html", "pdf"].filter((format) => audit[format]?.at);
-  if (!formats.length) return state.language === "en" ? "No report export recorded." : "Sin exportación de reporte registrada.";
+  if (!formats.length) return state.language !== "es" ? "No report export recorded." : "Sin exportación de reporte registrada.";
   const last = audit.lastFormat || formats[formats.length - 1];
   const date = audit.lastAt || audit[last]?.at || "";
-  return state.language === "en"
+  return state.language !== "es"
     ? `${formats.map((item) => item.toUpperCase()).join(", ")} tested · last ${last.toUpperCase()} ${formatDate(date)}`
     : `${formats.map((item) => item.toUpperCase()).join(", ")} probados · último ${last.toUpperCase()} ${formatDate(date)}`;
 }
@@ -26778,7 +27172,7 @@ function buildCoreMvpPayload() {
     generatedAt: new Date().toISOString(),
     appVersion: APP_VERSION,
     language: state.language,
-    scope: state.language === "en" ? "Core MVP only" : "Solo MVP central",
+    scope: state.language !== "es" ? "Core MVP only" : "Solo MVP central",
     score: readiness.score,
     ready: readiness.ready,
     total: readiness.total,
@@ -26826,9 +27220,9 @@ function buildCoreMvpPayload() {
 
 function buildCoreMvpDecision(readiness) {
   const score = Number(readiness?.score || 0);
-  if (score >= 90) return state.language === "en" ? "Core MVP ready for a real 5-user test." : "MVP central listo para prueba real con 5 usuarios.";
-  if (score >= 75) return state.language === "en" ? "Almost ready: close the first blocker before testing with users." : "Casi listo: cierra el primer bloqueo antes de probar con usuarios.";
-  return state.language === "en" ? "Do not expand scope. Close the core flow first." : "No ampliar alcance. Cerrar primero el flujo central.";
+  if (score >= 90) return state.language !== "es" ? "Core MVP ready for a real 5-user test." : "MVP central listo para prueba real con 5 usuarios.";
+  if (score >= 75) return state.language !== "es" ? "Almost ready: close the first blocker before testing with users." : "Casi listo: cierra el primer bloqueo antes de probar con usuarios.";
+  return state.language !== "es" ? "Do not expand scope. Close the core flow first." : "No ampliar alcance. Cerrar primero el flujo central.";
 }
 
 function buildCoreMvpFinalClosure(payload = buildCoreMvpPayload()) {
@@ -26841,7 +27235,7 @@ function buildCoreMvpFinalClosure(payload = buildCoreMvpPayload()) {
     return {
       ready: false,
       score,
-      decision: state.language === "en"
+      decision: state.language !== "es"
         ? "Not closed: the operational gate still has core blockers."
         : "No cerrado: la compuerta operativa todavía tiene bloqueos centrales.",
     };
@@ -26850,7 +27244,7 @@ function buildCoreMvpFinalClosure(payload = buildCoreMvpPayload()) {
     return {
       ready: false,
       score,
-      decision: state.language === "en"
+      decision: state.language !== "es"
         ? "Not closed: the real human test is still incomplete."
         : "No cerrado: la prueba humana real todavía está incompleta.",
     };
@@ -26859,7 +27253,7 @@ function buildCoreMvpFinalClosure(payload = buildCoreMvpPayload()) {
     return {
       ready: false,
       score,
-      decision: state.language === "en"
+      decision: state.language !== "es"
         ? "Not closed: add evidence notes to every real test step."
         : "No cerrado: agrega evidencia a cada paso de la prueba real.",
     };
@@ -26868,7 +27262,7 @@ function buildCoreMvpFinalClosure(payload = buildCoreMvpPayload()) {
     return {
       ready: false,
       score,
-      decision: state.language === "en"
+      decision: state.language !== "es"
         ? "Not closed: assign a tester or pilot owner before final signoff."
         : "No cerrado: asigna un responsable de prueba antes del cierre final.",
     };
@@ -26876,7 +27270,7 @@ function buildCoreMvpFinalClosure(payload = buildCoreMvpPayload()) {
   return {
     ready: true,
     score,
-    decision: state.language === "en"
+    decision: state.language !== "es"
       ? "Core MVP ready for final signoff."
       : "MVP central listo para cierre final.",
   };
@@ -26904,43 +27298,43 @@ function recordCoreMvpAudit(action = "register", payload = buildCoreMvpPayload()
 
 function describeCoreMvpAudit() {
   if (!state.coreMvpAudit?.at) {
-    return state.language === "en" ? "No core MVP test registered yet." : "Aún no hay prueba central del MVP registrada.";
+    return state.language !== "es" ? "No core MVP test registered yet." : "Aún no hay prueba central del MVP registrada.";
   }
   const pending = state.coreMvpAudit.pending?.length
     ? state.coreMvpAudit.pending.join(" · ")
-    : state.language === "en" ? "no core blockers" : "sin bloqueos centrales";
+    : state.language !== "es" ? "no core blockers" : "sin bloqueos centrales";
   return `${formatDate(state.coreMvpAudit.at)} · ${state.coreMvpAudit.score}% · ${pending}`;
 }
 
 function buildCoreMvpMarkdown(payload = buildCoreMvpPayload()) {
   const closure = buildCoreMvpFinalClosure(payload);
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? { title: "Core MVP Gate", generated: "Generated", score: "Score", decision: "Decision", blocker: "First blocker", checks: "Checks", real: "Real human test", final: "Final closure", ready: "ready", review: "review", signed: "Final signoff" }
     : { title: "Compuerta del MVP central", generated: "Generado", score: "Puntaje", decision: "Decisión", blocker: "Primer bloqueo", checks: "Controles", real: "Prueba humana real", ready: "listo", review: "revisar" };
   return [
     `# ${labels.title}`,
     "",
     `**${labels.generated}:** ${formatDate(payload.generatedAt)}`,
-    `**${state.language === "en" ? "Version" : "Versión"}:** ${payload.appVersion}`,
+    `**${state.language !== "es" ? "Version" : "Versión"}:** ${payload.appVersion}`,
     `**${labels.score}:** ${payload.score}% (${payload.ready}/${payload.total})`,
     `**${labels.decision}:** ${payload.decision}`,
-    `**${labels.blocker}:** ${payload.firstBlocker ? `${payload.firstBlocker.label}: ${payload.firstBlocker.detail}` : (state.language === "en" ? "None" : "Ninguno")}`,
+    `**${labels.blocker}:** ${payload.firstBlocker ? `${payload.firstBlocker.label}: ${payload.firstBlocker.detail}` : (state.language !== "es" ? "None" : "Ninguno")}`,
     "",
     `## ${labels.real}`,
     "",
     `**${labels.score}:** ${payload.realTest.score}% (${payload.realTest.done}/${payload.realTest.total})`,
-    `**${state.language === "en" ? "Evidence" : "Evidencia"}:** ${payload.realTest.evidenceScore}% (${payload.realTest.evidenceDone}/${payload.realTest.total})`,
+    `**${state.language !== "es" ? "Evidence" : "Evidencia"}:** ${payload.realTest.evidenceScore}% (${payload.realTest.evidenceDone}/${payload.realTest.total})`,
     ...getCoreMvpManualTestItems().map((item) => {
       const saved = state.coreMvpManualTest?.[item.key] || {};
-      const evidence = saved.note ? ` ${state.language === "en" ? "Evidence" : "Evidencia"}: ${saved.note}` : "";
+      const evidence = saved.note ? ` ${state.language !== "es" ? "Evidence" : "Evidencia"}: ${saved.note}` : "";
       return `- [${saved.done ? "x" : " "}] ${item.title}: ${item.detail}${evidence}`;
     }),
     "",
-    `## ${state.language === "en" ? "Final closure" : "Cierre final"}`,
+    `## ${state.language !== "es" ? "Final closure" : "Cierre final"}`,
     "",
     `**${labels.score}:** ${closure.score}%`,
     `**${labels.decision}:** ${closure.decision}`,
-    `**${state.language === "en" ? "Final signoff" : "Cierre registrado"}:** ${payload.realTestMeta.finalSignoffAt ? `${formatDate(payload.realTestMeta.finalSignoffAt)} (${payload.realTestMeta.finalSignoffVersion || payload.appVersion})` : (state.language === "en" ? "Not registered" : "No registrado")}`,
+    `**${state.language !== "es" ? "Final signoff" : "Cierre registrado"}:** ${payload.realTestMeta.finalSignoffAt ? `${formatDate(payload.realTestMeta.finalSignoffAt)} (${payload.realTestMeta.finalSignoffVersion || payload.appVersion})` : (state.language !== "es" ? "Not registered" : "No registrado")}`,
     "",
     `## ${labels.checks}`,
     "",
@@ -26951,7 +27345,7 @@ function buildCoreMvpMarkdown(payload = buildCoreMvpPayload()) {
 
 function buildCoreMvpRealTestMarkdown(payload = buildCoreMvpPayload()) {
   const closure = buildCoreMvpFinalClosure(payload);
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? { title: "Real 5-User MVP Test", generated: "Generated", version: "Version", score: "Progress", next: "Next pending step", done: "done", pending: "pending" }
     : { title: "Prueba real del MVP con 5 usuarios", generated: "Generado", version: "Versión", score: "Avance", next: "Siguiente paso pendiente", done: "realizado", pending: "pendiente" };
   const items = getCoreMvpManualTestItems();
@@ -26962,21 +27356,21 @@ function buildCoreMvpRealTestMarkdown(payload = buildCoreMvpPayload()) {
     `**${labels.generated}:** ${formatDate(payload.generatedAt)}`,
     `**${labels.version}:** ${payload.appVersion}`,
     `**${labels.score}:** ${payload.realTest.score}% (${payload.realTest.done}/${payload.realTest.total})`,
-    `**${state.language === "en" ? "Evidence" : "Evidencia"}:** ${payload.realTest.evidenceScore}% (${payload.realTest.evidenceDone}/${payload.realTest.total})`,
-    `**${labels.next}:** ${next ? `${next.title}: ${next.detail}` : (state.language === "en" ? "None" : "Ninguno")}`,
-    `**${state.language === "en" ? "Tester" : "Responsable"}:** ${payload.realTestMeta.tester || "-"}`,
-    `**${state.language === "en" ? "Cohort" : "Grupo"}:** ${payload.realTestMeta.cohort || "-"}`,
-    `**${state.language === "en" ? "Notes / blockers" : "Notas / bloqueos"}:** ${payload.realTestMeta.notes || "-"}`,
-    `**${state.language === "en" ? "Started" : "Inicio"}:** ${payload.realTestMeta.startedAt ? formatDate(payload.realTestMeta.startedAt) : "-"}`,
-    `**${state.language === "en" ? "Completed" : "Cierre de prueba"}:** ${payload.realTestMeta.completedAt ? formatDate(payload.realTestMeta.completedAt) : "-"}`,
-    `**${state.language === "en" ? "Final closure" : "Cierre final"}:** ${closure.decision}`,
-    `**${state.language === "en" ? "Final signoff" : "Cierre registrado"}:** ${payload.realTestMeta.finalSignoffAt ? `${formatDate(payload.realTestMeta.finalSignoffAt)} (${payload.realTestMeta.finalSignoffVersion || payload.appVersion})` : "-"}`,
+    `**${state.language !== "es" ? "Evidence" : "Evidencia"}:** ${payload.realTest.evidenceScore}% (${payload.realTest.evidenceDone}/${payload.realTest.total})`,
+    `**${labels.next}:** ${next ? `${next.title}: ${next.detail}` : (state.language !== "es" ? "None" : "Ninguno")}`,
+    `**${state.language !== "es" ? "Tester" : "Responsable"}:** ${payload.realTestMeta.tester || "-"}`,
+    `**${state.language !== "es" ? "Cohort" : "Grupo"}:** ${payload.realTestMeta.cohort || "-"}`,
+    `**${state.language !== "es" ? "Notes / blockers" : "Notas / bloqueos"}:** ${payload.realTestMeta.notes || "-"}`,
+    `**${state.language !== "es" ? "Started" : "Inicio"}:** ${payload.realTestMeta.startedAt ? formatDate(payload.realTestMeta.startedAt) : "-"}`,
+    `**${state.language !== "es" ? "Completed" : "Cierre de prueba"}:** ${payload.realTestMeta.completedAt ? formatDate(payload.realTestMeta.completedAt) : "-"}`,
+    `**${state.language !== "es" ? "Final closure" : "Cierre final"}:** ${closure.decision}`,
+    `**${state.language !== "es" ? "Final signoff" : "Cierre registrado"}:** ${payload.realTestMeta.finalSignoffAt ? `${formatDate(payload.realTestMeta.finalSignoffAt)} (${payload.realTestMeta.finalSignoffVersion || payload.appVersion})` : "-"}`,
     "",
     ...items.map((item) => {
       const saved = state.coreMvpManualTest?.[item.key] || {};
       const stateText = saved.done ? labels.done : labels.pending;
       const dateText = saved.updatedAt ? ` · ${formatDate(saved.updatedAt)}` : "";
-      const evidence = saved.note ? ` ${state.language === "en" ? "Evidence" : "Evidencia"}: ${saved.note}` : "";
+      const evidence = saved.note ? ` ${state.language !== "es" ? "Evidence" : "Evidencia"}: ${saved.note}` : "";
       return `- [${saved.done ? "x" : " "}] ${item.title}: ${item.detail} (${stateText}${dateText}).${evidence}`;
     }),
     "",
@@ -26999,8 +27393,8 @@ function buildCoreMvpClosurePackage(payload = buildCoreMvpPayload()) {
       return { key: item.key, title: item.title, detail: item.detail, view: item.view || target.view, focus: item.focus || target.focus || "", run: item.run || target.run || "" };
     });
   const nextAction = pendingSteps[0]
-    || (pendingEvidence[0] ? { ...pendingEvidence[0], reason: state.language === "en" ? "Add evidence note" : "Agregar evidencia" } : null)
-    || (!String(payload.realTestMeta.tester || "").trim() ? { key: "tester", title: state.language === "en" ? "Assign tester" : "Asignar responsable", detail: state.language === "en" ? "Register the person responsible for the test." : "Registra la persona responsable de la prueba." } : null);
+    || (pendingEvidence[0] ? { ...pendingEvidence[0], reason: state.language !== "es" ? "Add evidence note" : "Agregar evidencia" } : null)
+    || (!String(payload.realTestMeta.tester || "").trim() ? { key: "tester", title: state.language !== "es" ? "Assign tester" : "Asignar responsable", detail: state.language !== "es" ? "Register the person responsible for the test." : "Registra la persona responsable de la prueba." } : null);
   return {
     generatedAt: new Date().toISOString(),
     appVersion: APP_VERSION,
@@ -27050,7 +27444,7 @@ function buildCoreMvpClosurePackage(payload = buildCoreMvpPayload()) {
 }
 
 function buildCoreMvpClosurePackageMarkdown(pack = buildCoreMvpClosurePackage()) {
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? { title: "Core MVP Closure Package", generated: "Generated", version: "Version", decision: "Decision", canClose: "Can close", next: "Next action", gate: "Operational gate", real: "Real human test", evidence: "Evidence", pending: "Pending", yes: "yes", no: "no", none: "None" }
     : { title: "Paquete de cierre del MVP central", generated: "Generado", version: "Versión", decision: "Decisión", canClose: "Puede cerrar", next: "Siguiente acción", gate: "Compuerta operativa", real: "Prueba humana real", evidence: "Evidencia", pending: "Pendiente", yes: "sí", no: "no", none: "Ninguna" };
   return [
@@ -27071,15 +27465,15 @@ function buildCoreMvpClosurePackageMarkdown(pack = buildCoreMvpClosurePackage())
     "",
     `**Pasos:** ${pack.realHumanTest.score}% (${pack.realHumanTest.done}/${pack.realHumanTest.total})`,
     `**${labels.evidence}:** ${pack.realHumanTest.evidenceScore}% (${pack.realHumanTest.evidenceDone}/${pack.realHumanTest.total})`,
-    `**${state.language === "en" ? "Started" : "Inicio"}:** ${pack.realHumanTest.session?.startedAt ? formatDate(pack.realHumanTest.session.startedAt) : "-"}`,
-    `**${state.language === "en" ? "Completed" : "Cierre de prueba"}:** ${pack.realHumanTest.session?.completedAt ? formatDate(pack.realHumanTest.session.completedAt) : "-"}`,
+    `**${state.language !== "es" ? "Started" : "Inicio"}:** ${pack.realHumanTest.session?.startedAt ? formatDate(pack.realHumanTest.session.startedAt) : "-"}`,
+    `**${state.language !== "es" ? "Completed" : "Cierre de prueba"}:** ${pack.realHumanTest.session?.completedAt ? formatDate(pack.realHumanTest.session.completedAt) : "-"}`,
     ...pack.realHumanTest.steps.map((step) => `- [${step.done ? "x" : " "}] ${step.title}: ${step.detail}${step.evidence ? ` ${labels.evidence}: ${step.evidence}` : ""}`),
     "",
   ].join("\n");
 }
 
 function renderCoreMvpClosurePackagePreview(pack = buildCoreMvpClosurePackage()) {
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? { title: "Closure package preview", decision: "Decision", next: "Next action", openNext: "Open next action", canClose: "Can close", gate: "Operational gate", real: "Real test", evidence: "Evidence", blockers: "Open items", yes: "yes", no: "no", none: "None" }
     : { title: "Vista previa del paquete de cierre", decision: "Decisi\u00f3n", next: "Siguiente acci\u00f3n", openNext: "Abrir siguiente acci\u00f3n", canClose: "Puede cerrar", gate: "Compuerta operativa", real: "Prueba real", evidence: "Evidencia", blockers: "Pendientes abiertos", yes: "s\u00ed", no: "no", none: "Ninguno" };
   const blockers = [
@@ -27122,7 +27516,7 @@ function renderCoreMvpGatePanel() {
   const sessionStarted = Boolean(state.coreMvpManualTestMeta?.startedAt);
   const sessionCompleted = Boolean(state.coreMvpManualTestMeta?.completedAt);
   const canFinishSession = realTest.score >= 100 && realTest.evidenceScore >= 100 && Boolean(String(state.coreMvpManualTestMeta?.tester || "").trim());
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         title: "Core MVP Closure",
         subtitle: "The main gate now focuses only on what is required to test the product for real.",
@@ -27281,15 +27675,15 @@ function renderCoreMvpGatePanel() {
         <div class="core-mvp-real-meta">
           <label>
             <span>${escapeHtml(labels.tester)}</span>
-            <input id="coreMvpTesterInput" type="text" value="${escapeHtml(state.coreMvpManualTestMeta?.tester || "")}" placeholder="${escapeHtml(state.language === "en" ? "Name or role" : "Nombre o rol")}" />
+            <input id="coreMvpTesterInput" type="text" value="${escapeHtml(state.coreMvpManualTestMeta?.tester || "")}" placeholder="${escapeHtml(state.language !== "es" ? "Name or role" : "Nombre o rol")}" />
           </label>
           <label>
             <span>${escapeHtml(labels.cohort)}</span>
-            <input id="coreMvpCohortInput" type="text" value="${escapeHtml(state.coreMvpManualTestMeta?.cohort || "")}" placeholder="${escapeHtml(state.language === "en" ? "Pilot 1, user 3..." : "Piloto 1, usuario 3...")}" />
+            <input id="coreMvpCohortInput" type="text" value="${escapeHtml(state.coreMvpManualTestMeta?.cohort || "")}" placeholder="${escapeHtml(state.language !== "es" ? "Pilot 1, user 3..." : "Piloto 1, usuario 3...")}" />
           </label>
           <label>
             <span>${escapeHtml(labels.notes)}</span>
-            <textarea id="coreMvpNotesInput" rows="2" placeholder="${escapeHtml(state.language === "en" ? "What was tested, what failed, or what was confusing." : "Qu\u00e9 se prob\u00f3, qu\u00e9 fall\u00f3 o qu\u00e9 result\u00f3 confuso.")}">${escapeHtml(state.coreMvpManualTestMeta?.notes || "")}</textarea>
+            <textarea id="coreMvpNotesInput" rows="2" placeholder="${escapeHtml(state.language !== "es" ? "What was tested, what failed, or what was confusing." : "Qu\u00e9 se prob\u00f3, qu\u00e9 fall\u00f3 o qu\u00e9 result\u00f3 confuso.")}">${escapeHtml(state.coreMvpManualTestMeta?.notes || "")}</textarea>
           </label>
           <button class="ghost-button" type="button" data-core-mvp-action="save-real-meta">${escapeHtml(labels.saveNotes)}</button>
           <div class="core-mvp-session-actions">
@@ -27449,7 +27843,7 @@ function handleCoreMvpGateClick(event) {
     saveCoreMvpManualTestMeta();
     renderAdmin();
     requestAnimationFrame(() => focusAppElement("coreMvpGatePanel"));
-    notify(state.language === "en" ? "Real test session started." : "Sesión de prueba real iniciada.", "success");
+    notify(state.language !== "es" ? "Real test session started." : "Sesión de prueba real iniciada.", "success");
     return;
   }
   if (action === "finish-real-session") {
@@ -27457,7 +27851,7 @@ function handleCoreMvpGateClick(event) {
     const tester = String(document.getElementById("coreMvpTesterInput")?.value || state.coreMvpManualTestMeta?.tester || "").trim();
     if (summary.score < 100 || summary.evidenceScore < 100 || !tester) {
       notify(
-        state.language === "en"
+        state.language !== "es"
           ? "Complete every step, save all evidence, and assign a tester before finishing the real test."
           : "Completa todos los pasos, guarda toda la evidencia y asigna un responsable antes de terminar la prueba real.",
         "warn",
@@ -27478,7 +27872,7 @@ function handleCoreMvpGateClick(event) {
     saveCoreMvpManualTestMeta();
     renderAdmin();
     requestAnimationFrame(() => focusAppElement("coreMvpGatePanel"));
-    notify(state.language === "en" ? "Real test session completed." : "Sesión de prueba real completada.", "success");
+    notify(state.language !== "es" ? "Real test session completed." : "Sesión de prueba real completada.", "success");
     return;
   }
   if (action === "save-real-step-note" || action === "complete-real-step-note") {
@@ -27487,7 +27881,7 @@ function handleCoreMvpGateClick(event) {
     const noteInput = Array.from(document.querySelectorAll("[data-core-mvp-real-note]")).find((item) => item.dataset.coreMvpRealNote === key);
     const note = String(noteInput?.value || "").trim();
     if (action === "complete-real-step-note" && !note) {
-      notify(state.language === "en" ? "Add evidence before completing this step." : "Agrega evidencia antes de completar este paso.", "warn");
+      notify(state.language !== "es" ? "Add evidence before completing this step." : "Agrega evidencia antes de completar este paso.", "warn");
       requestAnimationFrame(() => focusAppElement("coreMvpGatePanel"));
       return;
     }
@@ -27532,7 +27926,7 @@ function handleCoreMvpGateClick(event) {
     recordCoreMvpAudit("final-signoff", buildCoreMvpPayload());
     renderAdmin();
     requestAnimationFrame(() => focusAppElement("coreMvpGatePanel"));
-    const message = state.language === "en" ? "Final MVP signoff registered." : "Cierre final del MVP registrado.";
+    const message = state.language !== "es" ? "Final MVP signoff registered." : "Cierre final del MVP registrado.";
     if (status) status.textContent = message;
     notify(message, "success");
     return;
@@ -27543,7 +27937,7 @@ function handleCoreMvpGateClick(event) {
     downloadBlob(new Blob([content], { type: "text/markdown;charset=utf-8" }), "prueba-real-mvp-5-usuarios.md", content);
     recordCoreMvpAudit("real-markdown", payload);
     setCoreMvpFeedback(
-      state.language === "en" ? "Real test evidence exported." : "Evidencia de prueba real exportada.",
+      state.language !== "es" ? "Real test evidence exported." : "Evidencia de prueba real exportada.",
       "success",
       "prueba-real-mvp-5-usuarios.md",
     );
@@ -27562,7 +27956,7 @@ function handleCoreMvpGateClick(event) {
       downloadBlob(new Blob([content], { type: "text/markdown;charset=utf-8" }), "paquete-cierre-mvp-central.md", content);
     }
     setCoreMvpFeedback(
-      state.language === "en" ? "Core MVP closure package exported." : "Paquete de cierre del MVP exportado.",
+      state.language !== "es" ? "Core MVP closure package exported." : "Paquete de cierre del MVP exportado.",
       "success",
       action === "closure-package-json" ? "paquete-cierre-mvp-central.json" : "paquete-cierre-mvp-central.md",
     );
@@ -27572,13 +27966,13 @@ function handleCoreMvpGateClick(event) {
   if (action === "register") {
     recordCoreMvpAudit("register");
     setCoreMvpFeedback(
-      state.language === "en" ? "MVP test registered." : "Prueba del MVP registrada.",
+      state.language !== "es" ? "MVP test registered." : "Prueba del MVP registrada.",
       "success",
-      state.language === "en" ? "The audit was updated in Admin." : "La auditoría quedó actualizada en Administración.",
+      state.language !== "es" ? "The audit was updated in Admin." : "La auditoría quedó actualizada en Administración.",
     );
     renderAdmin();
     const status = document.getElementById("embeddingStatus");
-    if (status) status.textContent = state.language === "en" ? "MVP test registered." : "Prueba del MVP registrada.";
+    if (status) status.textContent = state.language !== "es" ? "MVP test registered." : "Prueba del MVP registrada.";
     return;
   }
   if (action === "markdown" || action === "json") {
@@ -27592,7 +27986,7 @@ function handleCoreMvpGateClick(event) {
       downloadBlob(new Blob([content], { type: "text/markdown;charset=utf-8" }), "compuerta-mvp-central.md", content);
     }
     setCoreMvpFeedback(
-      state.language === "en" ? "Core MVP gate exported." : "Compuerta del MVP exportada.",
+      state.language !== "es" ? "Core MVP gate exported." : "Compuerta del MVP exportada.",
       "success",
       action === "json" ? "compuerta-mvp-central.json" : "compuerta-mvp-central.md",
     );
@@ -27605,7 +27999,7 @@ function handleCoreMvpGateClick(event) {
 async function runCoreMvpOperationalTest() {
   const status = document.getElementById("embeddingStatus");
   if (status) {
-    status.textContent = state.language === "en"
+    status.textContent = state.language !== "es"
       ? "Running the central MVP test..."
       : "Ejecutando la prueba central del MVP...";
   }
@@ -27642,13 +28036,13 @@ async function runCoreMvpOperationalTest() {
   showView("admin");
   requestAnimationFrame(() => focusAppElement("coreMvpGatePanel"));
   const refreshed = buildCoreMvpPayload();
-  const message = state.language === "en"
+  const message = state.language !== "es"
     ? `Central MVP test completed: ${refreshed.score}% · ${refreshed.firstBlocker ? refreshed.firstBlocker.label : "no core blocker"}.`
     : `Prueba central del MVP completada: ${refreshed.score}% · ${refreshed.firstBlocker ? refreshed.firstBlocker.label : "sin bloqueo central"}.`;
   state.coreMvpActionFeedback = {
     message,
     type: refreshed.score >= 85 ? "success" : "warn",
-    detail: state.language === "en" ? "The central audit was refreshed." : "La auditoría central fue actualizada.",
+    detail: state.language !== "es" ? "The central audit was refreshed." : "La auditoría central fue actualizada.",
     at: new Date().toISOString(),
   };
   renderAdmin();
@@ -27659,7 +28053,7 @@ async function runCoreMvpOperationalTest() {
 }
 
 function getCoreMvpManualTestItems() {
-  return state.language === "en"
+  return state.language !== "es"
     ? [
         { key: "realCapture", title: "Create one real experience", detail: "Use a real note, date, category, energy, place, people, and objective.", view: "capture" },
         { key: "realAttachment", title: "Attach one real file", detail: "Attach an image, audio, video, or document and confirm it appears in Multimodal Assets.", view: "capture" },
@@ -27718,7 +28112,7 @@ function buildQuickQaChecks() {
   const assetWorkflow = calculateAssetWorkflowReadiness();
   const pilot = calculatePilotReadiness();
   const labels =
-    state.language === "en"
+    state.language !== "es"
       ? {
           app: "App loads with current version",
           appDetail: `Loaded version ${APP_VERSION}.`,
@@ -27854,25 +28248,25 @@ function recordQuickQaAudit(action, payload = buildQuickQaPayload()) {
 
 function getQuickQaActionLabel(action) {
   const actionLabels = {
-    copy: state.language === "en" ? "copied" : "copiada",
-    copyBlocked: state.language === "en" ? "copy blocked by browser" : "copia bloqueada por el navegador",
-    register: state.language === "en" ? "registered" : "registrada",
-    markdown: state.language === "en" ? "Markdown exported" : "Markdown exportado",
-    json: state.language === "en" ? "JSON exported" : "JSON exportado",
+    copy: state.language !== "es" ? "copied" : "copiada",
+    copyBlocked: state.language !== "es" ? "copy blocked by browser" : "copia bloqueada por el navegador",
+    register: state.language !== "es" ? "registered" : "registrada",
+    markdown: state.language !== "es" ? "Markdown exported" : "Markdown exportado",
+    json: state.language !== "es" ? "JSON exported" : "JSON exportado",
   };
   return actionLabels[action] || action || "";
 }
 
 function describeQuickQaAudit() {
   if (!state.quickQaAudit?.at) {
-    return state.language === "en"
+    return state.language !== "es"
       ? "No exported or copied verification yet."
       : "Aún no hay verificación copiada o exportada.";
   }
   const pending = state.quickQaAudit.pending?.length
     ? state.quickQaAudit.pending.join(" · ")
-    : state.language === "en" ? "no pending checks" : "sin controles pendientes";
-  return state.language === "en"
+    : state.language !== "es" ? "no pending checks" : "sin controles pendientes";
+  return state.language !== "es"
     ? `${getQuickQaActionLabel(state.quickQaAudit.action)}: ${formatDate(state.quickQaAudit.at)} · ${state.quickQaAudit.score}% · ${pending}`
     : `${getQuickQaActionLabel(state.quickQaAudit.action)}: ${formatDate(state.quickQaAudit.at)} · ${state.quickQaAudit.score}% · ${pending}`;
 }
@@ -27886,7 +28280,7 @@ function getQuickQaHistory() {
 function renderQuickQaHistory() {
   const history = getQuickQaHistory();
   if (!history.length) return "";
-  const title = state.language === "en" ? "Recent evidence" : "Evidencia reciente";
+  const title = state.language !== "es" ? "Recent evidence" : "Evidencia reciente";
   const trend = buildQuickQaTrend(history);
   return `
     <div class="quick-qa-history">
@@ -27897,7 +28291,7 @@ function renderQuickQaHistory() {
           .map((item) => {
             const pending = item.pending?.length
               ? item.pending.slice(0, 2).join(" · ")
-              : state.language === "en" ? "no pending checks" : "sin pendientes";
+              : state.language !== "es" ? "no pending checks" : "sin pendientes";
             return `
               <article>
                 <span>${escapeHtml(`${item.score}%`)}</span>
@@ -27918,13 +28312,13 @@ function buildQuickQaTrend(history) {
   if (!history.length) {
     return {
       className: "is-stable",
-      text: state.language === "en" ? "No evidence trend yet." : "Aún no hay tendencia de evidencia.",
+      text: state.language !== "es" ? "No evidence trend yet." : "Aún no hay tendencia de evidencia.",
     };
   }
   if (history.length === 1) {
     return {
       className: "is-stable",
-      text: state.language === "en"
+      text: state.language !== "es"
         ? "First evidence snapshot recorded."
         : "Primer corte de evidencia registrado.",
     };
@@ -27935,7 +28329,7 @@ function buildQuickQaTrend(history) {
   if (delta > 0) {
     return {
       className: "is-up",
-      text: state.language === "en"
+      text: state.language !== "es"
         ? `Improved by ${delta} points since the previous snapshot.`
         : `Mejoró ${delta} puntos frente al corte anterior.`,
     };
@@ -27943,14 +28337,14 @@ function buildQuickQaTrend(history) {
   if (delta < 0) {
     return {
       className: "is-down",
-      text: state.language === "en"
+      text: state.language !== "es"
         ? `Dropped ${Math.abs(delta)} points since the previous snapshot.`
         : `Bajó ${Math.abs(delta)} puntos frente al corte anterior.`,
     };
   }
   return {
     className: "is-stable",
-    text: state.language === "en"
+    text: state.language !== "es"
       ? "No score change since the previous snapshot."
       : "Sin cambio de puntaje frente al corte anterior.",
   };
@@ -27961,8 +28355,8 @@ function buildQuickQaDecision(readiness) {
   if (score >= 90) {
     return {
       className: "is-ready",
-      title: state.language === "en" ? "Pilot decision criterion" : "Criterio de decisión",
-      text: state.language === "en"
+      title: state.language !== "es" ? "Pilot decision criterion" : "Criterio de decisión",
+      text: state.language !== "es"
         ? `Ready for final human review before inviting ${PILOT_TARGET_USERS} users.`
         : `Listo para revisión humana final antes de invitar ${PILOT_TARGET_USERS} usuarios.`,
     };
@@ -27970,8 +28364,8 @@ function buildQuickQaDecision(readiness) {
   if (score >= 80) {
     return {
       className: "is-caution",
-      title: state.language === "en" ? "Pilot decision criterion" : "Criterio de decisión",
-      text: state.language === "en"
+      title: state.language !== "es" ? "Pilot decision criterion" : "Criterio de decisión",
+      text: state.language !== "es"
         ? `Start the reduced ${PILOT_TARGET_USERS}-user pilot after recording evidence.`
         : `Iniciar el piloto reducido de ${PILOT_TARGET_USERS} usuarios después de registrar evidencia.`,
     };
@@ -27979,16 +28373,16 @@ function buildQuickQaDecision(readiness) {
   if (score >= 70) {
     return {
       className: "is-caution",
-      title: state.language === "en" ? "Pilot decision criterion" : "Criterio de decisión",
-      text: state.language === "en"
+      title: state.language !== "es" ? "Pilot decision criterion" : "Criterio de decisión",
+      text: state.language !== "es"
         ? "Run an internal test with 1-2 users before expanding."
         : "Realizar prueba interna con 1-2 personas antes de ampliar.",
     };
   }
   return {
     className: "is-blocked",
-    title: state.language === "en" ? "Pilot decision criterion" : "Criterio de decisión",
-    text: state.language === "en"
+    title: state.language !== "es" ? "Pilot decision criterion" : "Criterio de decisión",
+    text: state.language !== "es"
       ? "Do not invite pilot users yet. Close the recommended blocker first."
       : "No invitar usuarios piloto todavía. Cierra primero el bloqueo recomendado.",
   };
@@ -28006,7 +28400,7 @@ function renderQuickQaDecision(readiness) {
 
 function renderQuickQaNextAction(checks) {
   const pending = buildQuickQaNextAction(checks);
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         title: "Recommended next action",
         allReady: "All quick verification checks are ready. Register evidence and move to final pilot review.",
@@ -28049,7 +28443,7 @@ function buildQuickQaNextAction(checks) {
   return {
     label: pending.label,
     detail: pending.detail,
-    action: pending.action || (state.language === "en" ? "Open" : "Abrir"),
+    action: pending.action || (state.language !== "es" ? "Open" : "Abrir"),
     view: pending.view || "admin",
     focus: pending.focus || "",
     run: pending.run || "",
@@ -28058,7 +28452,7 @@ function buildQuickQaNextAction(checks) {
 
 function buildQuickQaMarkdown(payload = buildQuickQaPayload()) {
   const labels =
-    state.language === "en"
+    state.language !== "es"
       ? { title: "Quick MVP Verification", generated: "Generated", version: "Version", score: "Score", decision: "Decision criterion", next: "Next action", trend: "Evidence trend", history: "Recent history", noHistory: "No previous evidence snapshots.", checks: "Checks", ready: "ready", review: "review" }
       : { title: "Verificación rápida del MVP", generated: "Generado", version: "Versión", score: "Puntaje", decision: "Criterio de decisión", next: "Siguiente acción", trend: "Tendencia de evidencia", history: "Historial reciente", noHistory: "No hay cortes de evidencia previos.", checks: "Controles", ready: "listo", review: "revisar" };
   return [
@@ -28076,7 +28470,7 @@ function buildQuickQaMarkdown(payload = buildQuickQaPayload()) {
     "",
     payload.nextAction
       ? `${payload.nextAction.label}: ${payload.nextAction.detail} (${payload.nextAction.action})`
-      : state.language === "en" ? "All checks are ready." : "Todos los controles están listos.",
+      : state.language !== "es" ? "All checks are ready." : "Todos los controles están listos.",
     "",
     `## ${labels.trend}`,
     "",
@@ -28088,7 +28482,7 @@ function buildQuickQaMarkdown(payload = buildQuickQaPayload()) {
       ? payload.history.map((item) => {
           const pending = item.pending?.length
             ? item.pending.join(" · ")
-            : state.language === "en" ? "no pending checks" : "sin controles pendientes";
+            : state.language !== "es" ? "no pending checks" : "sin controles pendientes";
           return `- ${formatDate(item.at)} · ${item.score}% (${item.ready}/${item.total}) · ${item.actionLabel}: ${pending}`;
         })
       : [labels.noHistory]),
@@ -28119,8 +28513,8 @@ async function copyQuickQaSummary() {
   renderAdmin();
   if (status) {
     status.textContent = copied
-      ? state.language === "en" ? "Quick MVP verification copied." : "Verificación rápida del MVP copiada."
-      : state.language === "en" ? "Could not copy Quick MVP verification." : "No se pudo copiar la verificación rápida del MVP.";
+      ? state.language !== "es" ? "Quick MVP verification copied." : "Verificación rápida del MVP copiada."
+      : state.language !== "es" ? "Could not copy Quick MVP verification." : "No se pudo copiar la verificación rápida del MVP.";
   }
 }
 
@@ -28129,7 +28523,7 @@ function registerQuickQaSnapshot() {
   renderAdmin();
   const status = document.getElementById("embeddingStatus");
   if (status) {
-    status.textContent = state.language === "en"
+    status.textContent = state.language !== "es"
       ? "Quick MVP verification registered."
       : "Verificación rápida del MVP registrada.";
   }
@@ -28158,7 +28552,7 @@ function renderQuickQaPanel() {
   const checks = buildQuickQaChecks();
   const readiness = summarizeReadiness(checks.map((check) => check.ok));
   const labels =
-    state.language === "en"
+    state.language !== "es"
       ? {
           title: "Quick MVP Verification",
           subtitle: "Short smoke test before inviting or expanding pilot users.",
@@ -28234,7 +28628,7 @@ function buildMvpFlowChecks() {
   const pilot = calculatePilotReadiness();
   const publicationReady = (state.publications || []).length > 0 || reportAcceptance.score >= 85;
   const privacy = readPrivacySettings();
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         open: "Open",
         capture: "Capture real or example experiences",
@@ -28307,7 +28701,7 @@ function renderMvpFlowPanel() {
   const checks = buildMvpFlowChecks();
   const readiness = summarizeReadiness(checks.map((check) => check.ok));
   const next = checks.find((check) => !check.ok);
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         title: "Complete MVP Flow",
         subtitle: "End-to-end route to close the pilot-ready product without jumping between loose panels.",
@@ -28370,7 +28764,7 @@ function renderApiStatusPanel() {
   const container = document.getElementById("apiStatusPanel");
   if (!container) return;
   const status = state.apiStatus || {};
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         title: "Local Server And API",
         subtitle: "Operational check for the local backend used by Supabase, routines, jobs, and server exports.",
@@ -28438,13 +28832,13 @@ async function handleApiStatusClick(event) {
   if (action !== "refresh") return;
   const status = document.getElementById("embeddingStatus");
   if (status) {
-    status.textContent = state.language === "en" ? "Checking local API..." : "Verificando API local...";
+    status.textContent = state.language !== "es" ? "Checking local API..." : "Verificando API local...";
   }
   await hydrateFromApi();
   if (status) {
     status.textContent = state.apiOnline
-      ? state.language === "en" ? "Local API available." : "API local disponible."
-      : state.language === "en" ? "Local API unavailable; local mode active." : "API local no disponible; modo local activo.";
+      ? state.language !== "es" ? "Local API available." : "API local disponible."
+      : state.language !== "es" ? "Local API unavailable; local mode active." : "API local no disponible; modo local activo.";
   }
   renderAdmin();
 }
@@ -28459,7 +28853,7 @@ function buildUiQualityChecks() {
   );
   const mvpFlow = summarizeReadiness(buildMvpFlowChecks().map((check) => check.ok));
   const quickQa = summarizeReadiness(buildQuickQaChecks().map((check) => check.ok));
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         open: "Open",
         clear: "Clear filters",
@@ -28562,7 +28956,7 @@ function buildUiQualityPayload() {
 }
 
 function buildUiQualityMarkdown(payload = buildUiQualityPayload()) {
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? { title: "Interface Quality Evidence", generated: "Generated", version: "Version", score: "Score", api: "Local API", next: "Next action", checks: "Controls", ready: "ready", review: "review" }
     : { title: "Evidencia de calidad de interfaz", generated: "Generado", version: "Versión", score: "Puntaje", api: "API local", next: "Siguiente acción", checks: "Controles", ready: "listo", review: "revisar" };
   return [
@@ -28574,16 +28968,16 @@ function buildUiQualityMarkdown(payload = buildUiQualityPayload()) {
     "",
     `## ${labels.api}`,
     "",
-    `- ${state.language === "en" ? "Online" : "En línea"}: ${payload.api.online ? "sí" : "no"}`,
-    `- ${state.language === "en" ? "Mode" : "Modo"}: ${payload.api.mode}`,
-    `- ${state.language === "en" ? "Latency" : "Latencia"}: ${payload.api.latencyMs == null ? "-" : `${payload.api.latencyMs} ms`}`,
-    `- ${state.language === "en" ? "Checked" : "Verificada"}: ${payload.api.checkedAt ? formatDate(payload.api.checkedAt) : "-"}`,
+    `- ${state.language !== "es" ? "Online" : "En línea"}: ${payload.api.online ? "sí" : "no"}`,
+    `- ${state.language !== "es" ? "Mode" : "Modo"}: ${payload.api.mode}`,
+    `- ${state.language !== "es" ? "Latency" : "Latencia"}: ${payload.api.latencyMs == null ? "-" : `${payload.api.latencyMs} ms`}`,
+    `- ${state.language !== "es" ? "Checked" : "Verificada"}: ${payload.api.checkedAt ? formatDate(payload.api.checkedAt) : "-"}`,
     "",
     `## ${labels.next}`,
     "",
     payload.nextAction
       ? `${payload.nextAction.label}: ${payload.nextAction.detail} (${payload.nextAction.action})`
-      : state.language === "en" ? "No visible interface blockers detected." : "No se detectan bloqueos visibles de interfaz.",
+      : state.language !== "es" ? "No visible interface blockers detected." : "No se detectan bloqueos visibles de interfaz.",
     "",
     `## ${labels.checks}`,
     "",
@@ -28612,11 +29006,11 @@ function recordUiQualityAudit(action, payload = buildUiQualityPayload()) {
 
 function describeUiQualityAudit() {
   if (!state.uiQualityAudit?.at) {
-    return state.language === "en" ? "No interface quality evidence yet." : "Aún no hay evidencia de calidad de interfaz.";
+    return state.language !== "es" ? "No interface quality evidence yet." : "Aún no hay evidencia de calidad de interfaz.";
   }
   const pending = state.uiQualityAudit.pending?.length
     ? state.uiQualityAudit.pending.join(" · ")
-    : state.language === "en" ? "no pending controls" : "sin controles pendientes";
+    : state.language !== "es" ? "no pending controls" : "sin controles pendientes";
   return `${formatDate(state.uiQualityAudit.at)} · ${state.uiQualityAudit.score}% · ${pending}`;
 }
 
@@ -28644,7 +29038,7 @@ function renderUiQualityPanel() {
   const checks = buildUiQualityChecks();
   const readiness = summarizeReadiness(checks.map((check) => check.ok));
   const next = checks.find((check) => !check.ok);
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         title: "Interface Quality",
         subtitle: "Small guardrail against empty views, stale versions, server confusion, and missing pilot evidence.",
@@ -28747,7 +29141,7 @@ async function handleUiQualityClick(event) {
 function renderAdminOperationalFocusPanel() {
   const container = document.getElementById("adminOperationalFocusPanel");
   if (!container) return;
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         title: "Operational Admin",
         subtitle: "Main controls first. Pilot closure and technical evidence were moved to Advanced diagnostics.",
@@ -28846,7 +29240,7 @@ function renderAdminOperationalFocusPanel() {
         gate: "Persistente por defecto",
         gateDetail: "Los diagnósticos técnicos de Supabase/API quedan en Administración; el usuario solo ve entrar, guardar pendientes y reintentar.",
       };
-  if (state.language !== "en") {
+  if (state.language === "es") {
     labels.saveDetail = "Captura informa la fase exacta del fallo y mantiene una experiencia como guardada si Agenda o el refresco necesitan revisi\u00f3n.";
     labels.smoke = "Prueba autom\u00e1tica";
     labels.smokeDetail = "npm run check ahora valida sintaxis, versi\u00f3n/cache, funciones cr\u00edticas de captura y v\u00ednculos evento-activo antes de publicar.";
@@ -28977,7 +29371,7 @@ function renderAdminOperationalFocusPanel() {
 function renderAdminCommandCenter() {
   const container = document.getElementById("adminCommandCenter");
   if (!container) return;
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         title: "Command Center",
         subtitle: "Product focus: fewer panels, clearer decisions, and direct movement toward publication.",
@@ -29049,7 +29443,7 @@ function renderPublishPlanPanel() {
   if (!container) return;
   const mediaReadiness = calculateAssetStorageReadiness();
   const mediaReady = Boolean(mediaReadiness.remote > 0 && mediaReadiness.pendingSync === 0);
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         title: "Publication Plan",
         subtitle: "Concrete sequence to move from local MVP to a private, testable deployment.",
@@ -29125,7 +29519,7 @@ function buildMultiDevicePersistenceChecks() {
   const remoteDataReady = supabaseConfigured && state.apiOnline;
   const storageReady = !storage.total || storage.pendingSync === 0;
   const cloudServerReady = Boolean(state.health?.cloudReady || state.health?.deploymentMode === "production");
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         ready: "Ready",
         review: "Review",
@@ -29179,7 +29573,7 @@ function renderMultiDevicePersistencePanel() {
   const checks = buildMultiDevicePersistenceChecks();
   const readiness = summarizeReadiness(checks.map((check) => check.ok));
   const next = checks.find((check) => !check.ok);
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         title: "Multi-Device Persistence",
         subtitle: "Gate for using the same app from desktop, mobile, and tablet without losing ownership, files, or report history.",
@@ -29236,7 +29630,7 @@ function buildDeviceIntegrationSamplePayloads(now = new Date().toISOString()) {
   return [
     {
       name: "vibeapp-quick-note",
-      label: state.language === "en" ? "Vibeapp quick note" : "Nota rápida Vibeapp",
+      label: state.language !== "es" ? "Vibeapp quick note" : "Nota rápida Vibeapp",
       family: "vibeapp-native",
       expectedTarget: "experience",
       signal: {
@@ -29253,7 +29647,7 @@ function buildDeviceIntegrationSamplePayloads(now = new Date().toISOString()) {
     },
     {
       name: "vibeapp-photo",
-      label: state.language === "en" ? "Vibeapp photo/video/audio" : "Foto/video/audio Vibeapp",
+      label: state.language !== "es" ? "Vibeapp photo/video/audio" : "Foto/video/audio Vibeapp",
       family: "vibeapp-native",
       expectedTarget: "assets",
       signal: {
@@ -29271,7 +29665,7 @@ function buildDeviceIntegrationSamplePayloads(now = new Date().toISOString()) {
     },
     {
       name: "meta-glasses-media-import",
-      label: state.language === "en" ? "Meta/Oakley media import" : "Importación Meta/Oakley",
+      label: state.language !== "es" ? "Meta/Oakley media import" : "Importación Meta/Oakley",
       family: "meta-glasses",
       expectedTarget: "assets",
       signal: {
@@ -29296,7 +29690,7 @@ function buildDeviceIntegrationSamplePayloads(now = new Date().toISOString()) {
     },
     {
       name: "oura-biometric-daily",
-      label: state.language === "en" ? "Oura biometric day" : "Biometría Oura diaria",
+      label: state.language !== "es" ? "Oura biometric day" : "Biometría Oura diaria",
       family: "oura",
       expectedTarget: "context",
       signal: {
@@ -29320,7 +29714,7 @@ function buildDeviceIntegrationSamplePayloads(now = new Date().toISOString()) {
     },
     {
       name: "apple-health-file",
-      label: state.language === "en" ? "Apple Health file" : "Archivo Apple Health",
+      label: state.language !== "es" ? "Apple Health file" : "Archivo Apple Health",
       family: "apple-health",
       expectedTarget: "context",
       signal: {
@@ -29337,7 +29731,7 @@ function buildDeviceIntegrationSamplePayloads(now = new Date().toISOString()) {
     },
     {
       name: "samsung-health-file",
-      label: state.language === "en" ? "Samsung Health file" : "Archivo Samsung Health",
+      label: state.language !== "es" ? "Samsung Health file" : "Archivo Samsung Health",
       family: "samsung-health",
       expectedTarget: "context",
       signal: {
@@ -29354,7 +29748,7 @@ function buildDeviceIntegrationSamplePayloads(now = new Date().toISOString()) {
     },
     {
       name: "health-connect-activity",
-      label: state.language === "en" ? "Android Health Connect" : "Android Health Connect",
+      label: state.language !== "es" ? "Android Health Connect" : "Android Health Connect",
       family: "health-connect",
       expectedTarget: "context",
       signal: {
@@ -29371,7 +29765,7 @@ function buildDeviceIntegrationSamplePayloads(now = new Date().toISOString()) {
     },
     {
       name: "calendar-event",
-      label: state.language === "en" ? "Calendar event" : "Evento de calendario",
+      label: state.language !== "es" ? "Calendar event" : "Evento de calendario",
       family: "calendar",
       expectedTarget: "agenda",
       signal: {
@@ -29411,7 +29805,7 @@ function buildDeviceIntegrationSampleKit() {
 function buildDeviceIntegrationContract() {
   const samplePayloads = buildDeviceIntegrationSamplePayloads();
   const samplePayload = samplePayloads[1]?.signal || samplePayloads[0]?.signal;
-  const requiredFields = state.language === "en"
+  const requiredFields = state.language !== "es"
     ? [
         ["sourceId", "Stable identifier for the source or device."],
         ["sourceType", "Type: mobile, wearable, file_import, api, calendar, voice, or manual."],
@@ -29428,7 +29822,7 @@ function buildDeviceIntegrationContract() {
         ["payloadType", "Tipo de contenido: biometric, location, media, activity, sleep, text, calendar o context."],
         ["payload", "Datos normalizados o referencia segura al archivo."],
       ];
-  const optionalFields = state.language === "en"
+  const optionalFields = state.language !== "es"
     ? [
         ["location", "City, country, coordinates, or place label when available."],
         ["deviceMetadata", "Model, operating system, source app, version, and declared permissions."],
@@ -29446,27 +29840,27 @@ function buildDeviceIntegrationContract() {
   const sources = [
     {
       key: "mobile",
-      label: state.language === "en" ? "Mobile capture" : "Captura móvil",
-      status: state.language === "en" ? "Contract ready" : "Contrato listo",
-      detail: state.language === "en" ? "Images, audio, video, location, quick notes, and voice commands." : "Imágenes, audio, video, ubicación, notas rápidas y comandos de voz.",
+      label: state.language !== "es" ? "Mobile capture" : "Captura móvil",
+      status: state.language !== "es" ? "Contract ready" : "Contrato listo",
+      detail: state.language !== "es" ? "Images, audio, video, location, quick notes, and voice commands." : "Imágenes, audio, video, ubicación, notas rápidas y comandos de voz.",
     },
     {
       key: "wearables",
-      label: state.language === "en" ? "Wearables" : "Wearables",
-      status: state.language === "en" ? "Next connector" : "Siguiente conector",
-      detail: state.language === "en" ? "Heart rate, sleep, movement, energy, recovery, and stress indicators." : "Frecuencia cardíaca, sueño, movimiento, energía, recuperación e indicadores de estrés.",
+      label: state.language !== "es" ? "Wearables" : "Wearables",
+      status: state.language !== "es" ? "Next connector" : "Siguiente conector",
+      detail: state.language !== "es" ? "Heart rate, sleep, movement, energy, recovery, and stress indicators." : "Frecuencia cardíaca, sueño, movimiento, energía, recuperación e indicadores de estrés.",
     },
     {
       key: "files",
-      label: state.language === "en" ? "File imports" : "Importación de archivos",
-      status: state.language === "en" ? "Supported now" : "Soportado ahora",
-      detail: state.language === "en" ? "CSV metadata, documents, images, audio, video, and manual analytical text." : "CSV de metadatos, documentos, imágenes, audio, video y texto analítico manual.",
+      label: state.language !== "es" ? "File imports" : "Importación de archivos",
+      status: state.language !== "es" ? "Supported now" : "Soportado ahora",
+      detail: state.language !== "es" ? "CSV metadata, documents, images, audio, video, and manual analytical text." : "CSV de metadatos, documentos, imágenes, audio, video y texto analítico manual.",
     },
     {
       key: "api",
-      label: state.language === "en" ? "API/MCP services" : "Servicios API/MCP",
-      status: state.language === "en" ? "Design first" : "Diseño primero",
-      detail: state.language === "en" ? "External apps such as Clio should use this contract before code reuse." : "Apps externas como Clio deben usar este contrato antes de reutilizar código.",
+      label: state.language !== "es" ? "API/MCP services" : "Servicios API/MCP",
+      status: state.language !== "es" ? "Design first" : "Diseño primero",
+      detail: state.language !== "es" ? "External apps such as Clio should use this contract before code reuse." : "Apps externas como Clio deben usar este contrato antes de reutilizar código.",
     },
   ];
   return {
@@ -29482,8 +29876,8 @@ function buildDeviceIntegrationContract() {
     healthConnectNormalizerEndpoint: "POST /api/integration/health-connect/normalize",
     metaWearablesManifestEndpoint: "GET /api/integration/meta-wearables/manifest",
     metaWearablesNormalizerEndpoint: "POST /api/integration/meta-wearables/normalize",
-    owner: state.profile?.name || state.profile?.email || (state.language === "en" ? "Experience Hub owner" : "Responsable de Experience Hub"),
-    purpose: state.language === "en"
+    owner: state.profile?.name || state.profile?.email || (state.language !== "es" ? "Experience Hub owner" : "Responsable de Experience Hub"),
+    purpose: state.language !== "es"
       ? "Normalize signals from devices, files, apps, and services into experiences, assets, Agenda events, and reports."
       : "Normalizar señales de dispositivos, archivos, apps y servicios hacia experiencias, activos, eventos de Agenda y reportes.",
     requiredFields,
@@ -29491,7 +29885,7 @@ function buildDeviceIntegrationContract() {
     sources,
     samplePayload,
     samplePayloads,
-    acceptanceChecks: state.language === "en"
+    acceptanceChecks: state.language !== "es"
       ? [
           "Validation returns ok=true before real ingestion.",
           "The payload has a stable sourceId and idempotencyKey.",
@@ -29504,7 +29898,7 @@ function buildDeviceIntegrationContract() {
           "Multimedia o biometría privada declara nivel privado/sensible.",
           "La ruta destino es explícita: experiencia, activos, agenda o contexto.",
         ],
-    rules: state.language === "en"
+    rules: state.language !== "es"
       ? [
           "No source writes directly into reports; every signal must first become an experience, asset, Agenda event, or context record.",
           "Participant ownership is mandatory before storing or analyzing a signal.",
@@ -29524,7 +29918,7 @@ function renderDeviceIntegrationPanel() {
   const container = document.getElementById("deviceList");
   if (!container) return;
   const contract = buildDeviceIntegrationContract();
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         title: "Device Integration Contract",
         subtitle: "Single entry shape for mobile, wearables, files, APIs, and MCP services.",
@@ -29653,8 +30047,8 @@ function renderDeviceIntegrationPanel() {
             <div><dt>Apple Health</dt><dd>${escapeHtml(`${contract.appleHealthManifestEndpoint} · ${contract.appleHealthNormalizerEndpoint}`)}</dd></div>
             <div><dt>Health Connect</dt><dd>${escapeHtml(`${contract.healthConnectManifestEndpoint} · ${contract.healthConnectNormalizerEndpoint}`)}</dd></div>
             <div><dt>Meta</dt><dd>${escapeHtml(`${contract.metaWearablesManifestEndpoint} · ${contract.metaWearablesNormalizerEndpoint}`)}</dd></div>
-            <div><dt>${escapeHtml(state.language === "en" ? "families" : "familias")}</dt><dd>${escapeHtml(contract.samplePayloads.map((sample) => sample.family).join(", "))}</dd></div>
-            <div><dt>${escapeHtml(state.language === "en" ? "samples" : "ejemplos")}</dt><dd>${escapeHtml(String(contract.samplePayloads.length))}</dd></div>
+            <div><dt>${escapeHtml(state.language !== "es" ? "families" : "familias")}</dt><dd>${escapeHtml(contract.samplePayloads.map((sample) => sample.family).join(", "))}</dd></div>
+            <div><dt>${escapeHtml(state.language !== "es" ? "samples" : "ejemplos")}</dt><dd>${escapeHtml(String(contract.samplePayloads.length))}</dd></div>
           </dl>
         </article>
       </div>
@@ -29677,17 +30071,17 @@ function renderDeviceIntegrationPanel() {
           <p>${escapeHtml(ouraStatus.connected ? labels.ouraConnected : labels.ouraDisconnected)}</p>
           <small>${escapeHtml(ouraStatus.configured ? labels.ouraConfigured : labels.ouraNotConfigured)}</small>
         </div>
-        <span class="${ouraStatus.connected ? "status-ok" : "status-warn"}">${escapeHtml(ouraStatus.connected ? (state.language === "en" ? "Connected" : "Conectado") : (state.language === "en" ? "Review" : "Revisar"))}</span>
+        <span class="${ouraStatus.connected ? "status-ok" : "status-warn"}">${escapeHtml(ouraStatus.connected ? (state.language !== "es" ? "Connected" : "Conectado") : (state.language !== "es" ? "Review" : "Revisar"))}</span>
         <div class="device-simulation-results">
           <div>
             <span class="${ouraLastConnection.ok ? "status-ok" : "status-warn"}">${escapeHtml(ouraLastConnection.ok ? "OK" : "!")}</span>
             <strong>${escapeHtml(labels.ouraLastAttempt)}</strong>
-            <small>${escapeHtml(ouraLastConnection.message || (state.language === "en" ? "No attempt registered in this session." : "Sin intento registrado en esta sesion."))}</small>
+            <small>${escapeHtml(ouraLastConnection.message || (state.language !== "es" ? "No attempt registered in this session." : "Sin intento registrado en esta sesion."))}</small>
           </div>
           <div>
             <span class="${ouraStatus.connected ? "status-ok" : "status-warn"}">${escapeHtml(ouraStatus.connected ? "OK" : "!")}</span>
             <strong>${escapeHtml(labels.ouraNextAction)}</strong>
-            <small>${escapeHtml(ouraStatus.nextAction || (state.language === "en" ? "Connect Oura from this button." : "Conecta Oura desde este boton."))}</small>
+            <small>${escapeHtml(ouraStatus.nextAction || (state.language !== "es" ? "Connect Oura from this button." : "Conecta Oura desde este boton."))}</small>
           </div>
         </div>
       </article>
@@ -29698,11 +30092,11 @@ function renderDeviceIntegrationPanel() {
             simulation?.status === "running"
               ? labels.simulationRunning
               : simulation?.checkedAt
-                ? `${simulation.passed || 0}/${simulation.samples || 0} ${state.language === "en" ? "signals passed" : "señales correctas"} · ${Object.entries(simulation.targetSummary || {}).map(([target, count]) => `${target}: ${count}`).join(" · ")}`
+                ? `${simulation.passed || 0}/${simulation.samples || 0} ${state.language !== "es" ? "signals passed" : "señales correctas"} · ${Object.entries(simulation.targetSummary || {}).map(([target, count]) => `${target}: ${count}`).join(" · ")}`
                 : labels.simulationEmpty,
           )}</p>
         </div>
-        ${simulation?.checkedAt ? `<span class="${simulation.ok ? "status-ok" : "status-warn"}">${escapeHtml(simulation.ok ? (state.language === "en" ? "Ready" : "Listo") : (state.language === "en" ? "Review" : "Revisar"))}</span>` : ""}
+        ${simulation?.checkedAt ? `<span class="${simulation.ok ? "status-ok" : "status-warn"}">${escapeHtml(simulation.ok ? (state.language !== "es" ? "Ready" : "Listo") : (state.language !== "es" ? "Review" : "Revisar"))}</span>` : ""}
         ${
           simulation?.results?.length
             ? `<div class="device-simulation-results">
@@ -29724,11 +30118,11 @@ function renderDeviceIntegrationPanel() {
             connectorSelfTest?.status === "running"
               ? labels.connectorSelfTestRunning
               : connectorSelfTest?.checkedAt
-                ? `${connectorSelfTest.passed || 0}/${connectorSelfTest.samples || 0} ${state.language === "en" ? "connectors passed" : "conectores correctos"} · ${Object.entries(connectorSelfTest.targetSummary || {}).map(([target, count]) => `${target}: ${count}`).join(" · ")}`
+                ? `${connectorSelfTest.passed || 0}/${connectorSelfTest.samples || 0} ${state.language !== "es" ? "connectors passed" : "conectores correctos"} · ${Object.entries(connectorSelfTest.targetSummary || {}).map(([target, count]) => `${target}: ${count}`).join(" · ")}`
                 : labels.connectorSelfTestEmpty,
           )}</p>
         </div>
-        ${connectorSelfTest?.checkedAt ? `<span class="${connectorSelfTest.ok ? "status-ok" : "status-warn"}">${escapeHtml(connectorSelfTest.ok ? (state.language === "en" ? "Ready" : "Listo") : (state.language === "en" ? "Review" : "Revisar"))}</span>` : ""}
+        ${connectorSelfTest?.checkedAt ? `<span class="${connectorSelfTest.ok ? "status-ok" : "status-warn"}">${escapeHtml(connectorSelfTest.ok ? (state.language !== "es" ? "Ready" : "Listo") : (state.language !== "es" ? "Review" : "Revisar"))}</span>` : ""}
         ${
           connectorSelfTest?.results?.length
             ? `<div class="device-simulation-results">
@@ -29750,36 +30144,36 @@ function renderDeviceIntegrationPanel() {
 function buildDeviceIntegrationMarkdown() {
   const contract = buildDeviceIntegrationContract();
   const lines = [
-    state.language === "en" ? "# Device Integration Contract" : "# Contrato de integración de dispositivos",
+    state.language !== "es" ? "# Device Integration Contract" : "# Contrato de integración de dispositivos",
     "",
-    `**${state.language === "en" ? "Version" : "Versión"}:** ${contract.version}`,
-    `**${state.language === "en" ? "Owner" : "Responsable"}:** ${contract.owner}`,
+    `**${state.language !== "es" ? "Version" : "Versión"}:** ${contract.version}`,
+    `**${state.language !== "es" ? "Owner" : "Responsable"}:** ${contract.owner}`,
     "",
     contract.purpose,
     "",
-    `## ${state.language === "en" ? "Sources" : "Fuentes"}`,
+    `## ${state.language !== "es" ? "Sources" : "Fuentes"}`,
     ...contract.sources.map((source) => `- **${source.label}:** ${source.status}. ${source.detail}`),
     "",
-    `## ${state.language === "en" ? "Required Fields" : "Campos obligatorios"}`,
+    `## ${state.language !== "es" ? "Required Fields" : "Campos obligatorios"}`,
     ...contract.requiredFields.map(([field, detail]) => `- **${field}:** ${detail}`),
     "",
-    `## ${state.language === "en" ? "Optional Fields" : "Campos opcionales"}`,
+    `## ${state.language !== "es" ? "Optional Fields" : "Campos opcionales"}`,
     ...contract.optionalFields.map(([field, detail]) => `- **${field}:** ${detail}`),
     "",
-    `## ${state.language === "en" ? "Validation" : "Validación"}`,
+    `## ${state.language !== "es" ? "Validation" : "Validación"}`,
     `- **schemaVersion:** ${contract.schemaVersion}`,
     `- **endpoint:** ${contract.validationEndpoint}`,
     `- **samples:** ${contract.samplesEndpoint}`,
     ...contract.acceptanceChecks.map((check) => `- ${check}`),
     "",
-    `## ${state.language === "en" ? "Sample kit" : "Kit de integración"}`,
+    `## ${state.language !== "es" ? "Sample kit" : "Kit de integración"}`,
     ...contract.samplePayloads.map((sample) => `- **${sample.label}:** ${sample.family} -> ${sample.expectedTarget}`),
     "",
     "```json",
     JSON.stringify(buildDeviceIntegrationSampleKit(), null, 2),
     "```",
     "",
-    `## ${state.language === "en" ? "Rules" : "Reglas"}`,
+    `## ${state.language !== "es" ? "Rules" : "Reglas"}`,
     ...contract.rules.map((rule) => `- ${rule}`),
   ];
   return lines.join("\n");
@@ -29818,16 +30212,16 @@ function handleDeviceIntegrationClick(event) {
   if (action === "copy-sample") {
     copyTextToClipboard(JSON.stringify(buildDeviceIntegrationContract().samplePayload, null, 2)).then((copied) => {
       notify(copied
-        ? state.language === "en" ? "Sample integration payload copied." : "Payload ejemplo de integración copiado."
-        : state.language === "en" ? "Could not copy the sample payload." : "No se pudo copiar el payload ejemplo.");
+        ? state.language !== "es" ? "Sample integration payload copied." : "Payload ejemplo de integración copiado."
+        : state.language !== "es" ? "Could not copy the sample payload." : "No se pudo copiar el payload ejemplo.");
     });
     return;
   }
   if (action === "copy-samples") {
     copyTextToClipboard(JSON.stringify(buildDeviceIntegrationSampleKit(), null, 2)).then((copied) => {
       notify(copied
-        ? state.language === "en" ? "Integration sample kit copied." : "Kit de integración copiado."
-        : state.language === "en" ? "Could not copy the integration kit." : "No se pudo copiar el kit de integración.");
+        ? state.language !== "es" ? "Integration sample kit copied." : "Kit de integración copiado."
+        : state.language !== "es" ? "Could not copy the integration kit." : "No se pudo copiar el kit de integración.");
     });
   }
 }
@@ -29836,19 +30230,19 @@ async function connectOuraAccount() {
   try {
     if (!state.session?.access_token) {
       state.pendingAuthReturn = "oura";
-      notify(state.language === "en"
+      notify(state.language !== "es"
         ? "Oura needs an active Vibe session. Your data and sync state were not changed."
         : "Oura necesita una sesion activa de Vibe. Tus datos y sincronizacion no fueron modificados.", "warn");
       return;
     }
-    notify(state.language === "en" ? "Opening Oura authorization..." : "Abriendo autorizacion Oura...");
+    notify(state.language !== "es" ? "Opening Oura authorization..." : "Abriendo autorizacion Oura...");
     state.ouraConnectionStatus = {
       ...(state.ouraConnectionStatus || {}),
       pending: true,
       lastConnection: {
         ok: false,
         status: "opening",
-        message: state.language === "en" ? "Opening Oura authorization..." : "Abriendo autorizacion Oura...",
+        message: state.language !== "es" ? "Opening Oura authorization..." : "Abriendo autorizacion Oura...",
         checkedAt: new Date().toISOString(),
       },
     };
@@ -29865,7 +30259,7 @@ async function connectOuraAccount() {
       payload = {};
     }
     if (response.status === 401) {
-      throw new Error(state.language === "en"
+      throw new Error(state.language !== "es"
         ? "Your Vibe session needs confirmation before connecting Oura. Your data and sync state were not changed."
         : "Tu sesion de Vibe necesita confirmacion antes de conectar Oura. Tus datos y sincronizacion no fueron modificados.");
     }
@@ -29873,7 +30267,7 @@ async function connectOuraAccount() {
       throw new Error(payload?.message || payload?.error || `API ${response.status}`);
     }
     if (!payload?.authUrl) {
-      throw new Error(state.language === "en" ? "Oura authorization URL was not received." : "No se recibio la URL de autorizacion Oura.");
+      throw new Error(state.language !== "es" ? "Oura authorization URL was not received." : "No se recibio la URL de autorizacion Oura.");
     }
     window.location.href = payload.authUrl;
   } catch (error) {
@@ -29886,7 +30280,7 @@ async function connectOuraAccount() {
         checkedAt: new Date().toISOString(),
       },
     };
-    notify(state.language === "en"
+    notify(state.language !== "es"
       ? `Could not connect Oura: ${error.message}`
       : `No se pudo conectar Oura: ${error.message}`, "warn");
     renderDashboardIntegrationHandoff();
@@ -29901,8 +30295,8 @@ async function runVibeappSimulation() {
     const result = await apiRequest("/vibeapp/simulate", { method: "POST", body: JSON.stringify({}) });
     state.vibeappSimulation = result;
     notify(result.ok
-      ? state.language === "en" ? "Vibeapp simulation passed." : "Simulación Vibeapp correcta."
-      : state.language === "en" ? "Vibeapp simulation needs review." : "La simulación Vibeapp requiere revisión.");
+      ? state.language !== "es" ? "Vibeapp simulation passed." : "Simulación Vibeapp correcta."
+      : state.language !== "es" ? "Vibeapp simulation needs review." : "La simulación Vibeapp requiere revisión.");
   } catch (error) {
     state.vibeappSimulation = {
       ok: false,
@@ -29913,7 +30307,7 @@ async function runVibeappSimulation() {
       targetSummary: {},
       results: [{ label: "API", ok: false, payloadType: "simulation", target: "review", errors: [error.message] }],
     };
-    notify(state.language === "en" ? `Vibeapp simulation failed: ${error.message}` : `Falló la simulación Vibeapp: ${error.message}`);
+    notify(state.language !== "es" ? `Vibeapp simulation failed: ${error.message}` : `Falló la simulación Vibeapp: ${error.message}`);
   }
   renderDeviceIntegrationPanel();
 }
@@ -29925,8 +30319,8 @@ async function runDeviceConnectorSelfTest() {
     const result = await apiRequest("/integration/device/selftest", { method: "GET" });
     state.deviceConnectorSelfTest = result;
     notify(result.ok
-      ? state.language === "en" ? "Device connector self-test passed." : "Prueba de conectores correcta."
-      : state.language === "en" ? "Device connector self-test needs review." : "La prueba de conectores requiere revisión.");
+      ? state.language !== "es" ? "Device connector self-test passed." : "Prueba de conectores correcta."
+      : state.language !== "es" ? "Device connector self-test needs review." : "La prueba de conectores requiere revisión.");
   } catch (error) {
     state.deviceConnectorSelfTest = {
       ok: false,
@@ -29937,7 +30331,7 @@ async function runDeviceConnectorSelfTest() {
       targetSummary: {},
       results: [{ connector: "API", ok: false, payloadType: "selftest", target: "review", errors: [error.message] }],
     };
-    notify(state.language === "en" ? `Device connector test failed: ${error.message}` : `Falló la prueba de conectores: ${error.message}`);
+    notify(state.language !== "es" ? `Device connector test failed: ${error.message}` : `Falló la prueba de conectores: ${error.message}`);
   }
   renderDeviceIntegrationPanel();
 }
@@ -29946,7 +30340,7 @@ function renderProductSettingsPanel() {
   const container = document.getElementById("productSettingsPanel");
   if (!container) return;
   const connectivity = getConnectivitySummary();
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         title: "Product controls",
         help: "Daily use stays simple. Technical checks, backup, privacy, and test data live here.",
@@ -30090,14 +30484,14 @@ function handleProductSettingsAction(event) {
 
 function renderAdminRecovery(error) {
   const status = document.getElementById("adminHubStatus");
-  if (status) status.textContent = state.language === "en" ? "Admin available" : "Administración disponible";
+  if (status) status.textContent = state.language !== "es" ? "Admin available" : "Administración disponible";
   const container = document.getElementById("adminGlobalProgressPanel") || document.getElementById("adminView");
   if (!container) return;
   const detail = error?.message || String(error || "");
   container.innerHTML = `
     <article class="data-status-card is-warning">
-      <strong>${escapeHtml(state.language === "en" ? "Administration opened in recovery mode" : "Administración abierta en modo recuperación")}</strong>
-      <p>${escapeHtml(state.language === "en"
+      <strong>${escapeHtml(state.language !== "es" ? "Administration opened in recovery mode" : "Administración abierta en modo recuperación")}</strong>
+      <p>${escapeHtml(state.language !== "es"
         ? "Your administrator access is not blocked. One internal panel did not finish rendering, but navigation and core controls remain available."
         : "Tu acceso de administrador no está bloqueado. Un panel interno no terminó de renderizar, pero la navegación y los controles principales siguen disponibles.")}</p>
       ${detail ? `<small>${escapeHtml(detail)}</small>` : ""}
@@ -30115,8 +30509,8 @@ function renderStartupRecovery(error) {
   if (panel) {
     panel.innerHTML = `
       <article class="data-status-card is-warning">
-        <strong>${escapeHtml(state.language === "en" ? "App recovered with limited startup" : "App recuperada con inicio limitado")}</strong>
-        <p>${escapeHtml(state.language === "en"
+        <strong>${escapeHtml(state.language !== "es" ? "App recovered with limited startup" : "App recuperada con inicio limitado")}</strong>
+        <p>${escapeHtml(state.language !== "es"
           ? "Navigation remains available. Open Administration if you need to review the detail."
           : "La navegación sigue disponible. Abre Administración si necesitas revisar el detalle.")}</p>
         ${detail ? `<small>${escapeHtml(detail)}</small>` : ""}
@@ -30158,8 +30552,8 @@ function renderAdminUnsafe() {
       ? t("labels.supabaseOnline")
       : t("labels.apiOnline")
     : t("labels.offline");
-  const okStatus = state.language === "en" ? "OK" : "Correcto";
-  const attentionStatus = state.language === "en" ? "Attention" : "Atención";
+  const okStatus = state.language !== "es" ? "OK" : "Correcto";
+  const attentionStatus = state.language !== "es" ? "Attention" : "Atención";
   const webSpeechSupported = Boolean(window.SpeechRecognition || window.webkitSpeechRecognition);
   const dailyReadiness = calculateDailyReadiness();
   const feedbackSummary = calculatePilotFeedbackSummary();
@@ -30171,84 +30565,84 @@ function renderAdminUnsafe() {
   renderProductSettingsPanel();
   const health = [
     [
-      state.language === "en" ? "Core MVP closure" : "Cierre operativo del MVP",
+      state.language !== "es" ? "Core MVP closure" : "Cierre operativo del MVP",
       summarizeReadiness(buildCoreMvpGateChecks().map((check) => check.ok)).score >= 85 ? okStatus : attentionStatus,
-      state.language === "en"
+      state.language !== "es"
         ? "Main release gate: capture, persistence, library, assets, reports, exports, backup, and clear blockers."
         : "Compuerta principal: captura, persistencia, librería, activos, reportes, exportaciones, respaldo y bloqueos claros.",
-      { view: "admin", focus: "coreMvpGatePanel", label: state.language === "en" ? "Open gate" : "Ver compuerta" },
+      { view: "admin", focus: "coreMvpGatePanel", label: state.language !== "es" ? "Open gate" : "Ver compuerta" },
     ],
     [
-      state.language === "en" ? "Development rules" : "Reglas de desarrollo",
+      state.language !== "es" ? "Development rules" : "Reglas de desarrollo",
       okStatus,
-      state.language === "en"
+      state.language !== "es"
         ? "Manual/Admin updates, robustness, agility, and proven patterns are now visible controls."
         : "Manual/Admin, robustez, agilidad y patrones probados quedan como controles visibles.",
-      { view: "admin", focus: "developmentRulesPanel", label: state.language === "en" ? "View rules" : "Ver reglas" },
+      { view: "admin", focus: "developmentRulesPanel", label: state.language !== "es" ? "View rules" : "Ver reglas" },
     ],
     [
-      state.language === "en" ? "Release control audit" : "Auditoría de control de release",
+      state.language !== "es" ? "Release control audit" : "Auditoría de control de release",
       okStatus,
-      state.language === "en"
+      state.language !== "es"
         ? "npm run audit:control verifies version, PWA cache/reset, progress model, Manual/Admin evidence, and release scripts before deploy."
         : "npm run audit:control verifica versión, caché/reset PWA, modelo de avance, evidencia Manual/Admin y scripts de release antes del deploy.",
-      { view: "admin", focus: "adminGlobalProgressPanel", label: state.language === "en" ? "Open progress" : "Ver avance" },
+      { view: "admin", focus: "adminGlobalProgressPanel", label: state.language !== "es" ? "Open progress" : "Ver avance" },
     ],
     [
-      state.language === "en" ? "Quick MVP verification" : "Verificación rápida del MVP",
+      state.language !== "es" ? "Quick MVP verification" : "Verificación rápida del MVP",
       buildQuickQaChecks().every((check) => check.ok) ? okStatus : attentionStatus,
-      state.language === "en"
+      state.language !== "es"
         ? "Smoke-test checklist for app version, Supabase, reports, assets, privacy/backup, and pilot readiness."
         : "Checklist corto de versión, Supabase, reportes, activos, privacidad/respaldo y preparación del piloto.",
-      { view: "admin", focus: "quickQaPanel", label: state.language === "en" ? "Open checklist" : "Ver checklist" },
+      { view: "admin", focus: "quickQaPanel", label: state.language !== "es" ? "Open checklist" : "Ver checklist" },
     ],
     [
-      state.language === "en" ? "Complete MVP flow" : "Ruta MVP completa",
+      state.language !== "es" ? "Complete MVP flow" : "Ruta MVP completa",
       mvpFlowReadiness.score >= 85 ? okStatus : attentionStatus,
-      state.language === "en"
+      state.language !== "es"
         ? `${mvpFlowReadiness.score}% · ${mvpFlowReadiness.ready}/${mvpFlowReadiness.total} end-to-end stages ready`
         : `${mvpFlowReadiness.score}% · ${mvpFlowReadiness.ready}/${mvpFlowReadiness.total} etapas de punta a punta listas`,
-      { view: "admin", focus: "mvpFlowPanel", label: state.language === "en" ? "Open route" : "Ver ruta" },
+      { view: "admin", focus: "mvpFlowPanel", label: state.language !== "es" ? "Open route" : "Ver ruta" },
     ],
     [
-      state.language === "en" ? "Interface quality" : "Calidad de interfaz",
+      state.language !== "es" ? "Interface quality" : "Calidad de interfaz",
       summarizeReadiness(buildUiQualityChecks().map((check) => check.ok)).score >= 85 ? okStatus : attentionStatus,
-      state.language === "en"
+      state.language !== "es"
         ? "Checks empty Manual filters, API status, version, data, backup evidence, and MVP route."
         : "Revisa filtros vacíos del Manual, API, versión, datos, respaldo y ruta MVP.",
-      { view: "admin", focus: "uiQualityPanel", label: state.language === "en" ? "Open quality" : "Ver calidad" },
+      { view: "admin", focus: "uiQualityPanel", label: state.language !== "es" ? "Open quality" : "Ver calidad" },
     ],
     [
-      state.language === "en" ? "Local server/API" : "Servidor local/API",
+      state.language !== "es" ? "Local server/API" : "Servidor local/API",
       state.apiOnline ? okStatus : attentionStatus,
       state.apiStatus?.checkedAt
-        ? state.language === "en"
+        ? state.language !== "es"
           ? `${state.apiStatus.message || gatewayDetail} · ${state.apiStatus.latencyMs ?? "-"} ms`
           : `${state.apiStatus.message || gatewayDetail} · ${state.apiStatus.latencyMs ?? "-"} ms`
         : gatewayDetail,
-      { view: "admin", focus: "apiStatusPanel", label: state.language === "en" ? "View status" : "Ver estado" },
+      { view: "admin", focus: "apiStatusPanel", label: state.language !== "es" ? "View status" : "Ver estado" },
     ],
     [
-      state.language === "en" ? "Current delivery vs full ambition" : "Entrega actual vs ambición completa",
+      state.language !== "es" ? "Current delivery vs full ambition" : "Entrega actual vs ambición completa",
       globalProgress.overall >= 90 ? okStatus : attentionStatus,
-      state.language === "en"
+      state.language !== "es"
         ? `Current delivery ${globalProgress.overall}%. Full ambition ${globalProgress.tracks.find((track) => track.key === "full")?.score || totalProgress.full}%. Native app and direct connectors are product horizon, not PWA blockers.`
         : `Entrega actual ${globalProgress.overall}%. Ambición completa ${globalProgress.tracks.find((track) => track.key === "full")?.score || totalProgress.full}%. App nativa y conectores directos son horizonte de producto, no bloqueo de la PWA.`,
     ],
     [
-      state.language === "en" ? `${PILOT_TARGET_USERS}-user pilot scope` : `Alcance piloto ${PILOT_TARGET_USERS} usuarios`,
+      state.language !== "es" ? `${PILOT_TARGET_USERS}-user pilot scope` : `Alcance piloto ${PILOT_TARGET_USERS} usuarios`,
       totalProgress.pilot >= 85 ? okStatus : attentionStatus,
-      state.language === "en"
+      state.language !== "es"
         ? "Reduced release scope active: local/Supabase operation, manual review, backups, privacy, and exports before external automation."
         : "Alcance reducido activo: operación local/Supabase, revisión manual, respaldos, privacidad y exportaciones antes de automatización externa.",
     ],
     [
-      state.language === "en" ? "Manual onboarding" : "Onboarding del manual",
+      state.language !== "es" ? "Manual onboarding" : "Onboarding del manual",
       manualReviewSummary.score >= 80 ? okStatus : attentionStatus,
-      state.language === "en"
+      state.language !== "es"
         ? `${manualReviewSummary.reviewed}/${manualReviewSummary.total} sections reviewed · ${manualReviewSummary.score}%`
         : `${manualReviewSummary.reviewed}/${manualReviewSummary.total} secciones revisadas · ${manualReviewSummary.score}%`,
-      { view: "manual", label: state.language === "en" ? "Open manual" : "Abrir manual" },
+      { view: "manual", label: state.language !== "es" ? "Open manual" : "Abrir manual" },
     ],
     [
       t("labels.functionalReadiness"),
@@ -30285,108 +30679,108 @@ function renderAdminUnsafe() {
       state.health?.routineScheduler ? `Activo cada ${state.health.routineScheduler.intervalSeconds}s` : "Programación local pendiente",
     ],
     [
-      state.language === "en" ? "Calendar export" : "Exportación de calendario",
+      state.language !== "es" ? "Calendar export" : "Exportación de calendario",
       okStatus,
-      state.language === "en" ? "Local .ics export and file import for Agenda events" : "Exportación e importación local .ics para eventos de Agenda",
+      state.language !== "es" ? "Local .ics export and file import for Agenda events" : "Exportación e importación local .ics para eventos de Agenda",
     ],
     [
-      state.language === "en" ? "Agenda blocked days" : "Días bloqueados de Agenda",
+      state.language !== "es" ? "Agenda blocked days" : "Días bloqueados de Agenda",
       okStatus,
-      state.language === "en"
+      state.language !== "es"
         ? `${state.agendaBlockedDates.length} unavailable dates marked locally`
         : `${state.agendaBlockedDates.length} fechas no disponibles marcadas localmente`,
     ],
     [
-      state.language === "en" ? "Publication closure" : "Cierre de publicaciones",
+      state.language !== "es" ? "Publication closure" : "Cierre de publicaciones",
       okStatus,
-      state.language === "en"
+      state.language !== "es"
         ? "Pre-publication checklist for approval, privacy, media, channel fit, and export readiness"
         : "Lista prepublicación para aprobación, privacidad, multimedia, ajuste al canal y preparación de exportación",
     ],
     [
-      state.language === "en" ? "Daily interactive modules" : "Módulos interactivos del Diario",
+      state.language !== "es" ? "Daily interactive modules" : "Módulos interactivos del Diario",
       dailyReadiness.interactiveReady ? okStatus : attentionStatus,
-      state.language === "en"
+      state.language !== "es"
         ? `${dailyReadiness.score}% ready · interactive modules active locally · ${dailyReadiness.contentReady ? "updated content available" : "refresh Daily for live content"}`
         : `${dailyReadiness.score}% listo · módulos interactivos activos localmente · ${dailyReadiness.contentReady ? "contenido actualizado disponible" : "actualiza Diario para contenido real"}`,
     ],
     [
-      state.language === "en" ? "Initial predictive outlook" : "Proyección inicial",
+      state.language !== "es" ? "Initial predictive outlook" : "Proyección inicial",
       predictiveExperienceCount >= 4 ? okStatus : attentionStatus,
-      state.language === "en"
+      state.language !== "es"
         ? `${predictiveExperienceCount} filtered experiences available for local heuristic outlook`
         : `${predictiveExperienceCount} experiencias filtradas disponibles para proyección heurística local`,
     ],
     [
-      state.language === "en" ? "Report exports" : "Exportaciones de reporte",
+      state.language !== "es" ? "Report exports" : "Exportaciones de reporte",
       okStatus,
-      state.language === "en"
+      state.language !== "es"
         ? "JSON, CSV, printable HTML, and structured native PDF"
         : "JSON, CSV, HTML imprimible y PDF editorial",
     ],
     [
-      state.language === "en" ? "Voice commands" : "Comandos de voz",
+      state.language !== "es" ? "Voice commands" : "Comandos de voz",
       webSpeechSupported ? okStatus : attentionStatus,
       webSpeechSupported
-        ? state.language === "en"
+        ? state.language !== "es"
           ? "Microphone flow, V invocation, and clickable command examples are available"
           : "El flujo con micrófono, la invocación V y los ejemplos clicables están disponibles"
-        : state.language === "en"
+        : state.language !== "es"
           ? "This browser has no Web Speech support; clickable examples remain available"
           : "Este navegador no tiene Web Speech; los ejemplos clicables siguen disponibles",
     ],
     [
-      state.language === "en" ? "Groups / people" : "Grupos / personas",
+      state.language !== "es" ? "Groups / people" : "Grupos / personas",
       participantSummary.total <= PILOT_TARGET_USERS && participantSummary.needsOnboarding === 0 ? okStatus : attentionStatus,
-      state.language === "en"
+      state.language !== "es"
         ? `${participantSummary.total}/${PILOT_TARGET_USERS} registered · ${participantSummary.active} active · ${participantSummary.onboarded} onboarded`
         : `${participantSummary.total}/${PILOT_TARGET_USERS} registrados · ${participantSummary.active} activos · ${participantSummary.onboarded} con onboarding`,
-      { view: "admin", focus: "pilotParticipantsPanel", label: state.language === "en" ? "Open technical view" : "Ver vista tecnica" },
+      { view: "admin", focus: "pilotParticipantsPanel", label: state.language !== "es" ? "Open technical view" : "Ver vista tecnica" },
     ],
     [
-      state.language === "en" ? "Group/person scope across flows" : "Alcance por grupo/persona en flujos",
+      state.language !== "es" ? "Group/person scope across flows" : "Alcance por grupo/persona en flujos",
       okStatus,
-      state.language === "en"
+      state.language !== "es"
         ? "Capture, Dashboard, Agenda, calendar, Insights, Reports, Publications, Daily actions, and predictive actions share group/person scope."
         : "Captura, Panel, Agenda, calendario, Hallazgos, Reportes, Publicaciones, acciones de Diario y acciones predictivas comparten alcance por grupo/persona.",
-      { view: "agenda", label: state.language === "en" ? "Open Agenda" : "Abrir Agenda" },
+      { view: "agenda", label: state.language !== "es" ? "Open Agenda" : "Abrir Agenda" },
     ],
     [
-      state.language === "en" ? "Pilot test plan" : "Plan de pruebas piloto",
+      state.language !== "es" ? "Pilot test plan" : "Plan de pruebas piloto",
       pilotTestSummary.score >= 80 ? okStatus : attentionStatus,
-      state.language === "en"
+      state.language !== "es"
         ? `${pilotTestSummary.completed}/${pilotTestSummary.total} scenarios complete · ${pilotTestSummary.score}%`
         : `${pilotTestSummary.completed}/${pilotTestSummary.total} escenarios completos · ${pilotTestSummary.score}%`,
-      { view: "admin", focus: "pilotTestPlanPanel", label: state.language === "en" ? "Open tests" : "Ver pruebas" },
+      { view: "admin", focus: "pilotTestPlanPanel", label: state.language !== "es" ? "Open tests" : "Ver pruebas" },
     ],
     [
-      state.language === "en" ? "Pilot feedback" : "Feedback del piloto",
+      state.language !== "es" ? "Pilot feedback" : "Feedback del piloto",
       feedbackSummary.blockingOpen ? attentionStatus : okStatus,
-      state.language === "en"
+      state.language !== "es"
         ? `${feedbackSummary.open} open · ${feedbackSummary.blockingOpen} high/blocker · ${feedbackSummary.resolved} resolved`
         : `${feedbackSummary.open} abiertos · ${feedbackSummary.blockingOpen} altos/bloqueantes · ${feedbackSummary.resolved} resueltos`,
-      { view: "admin", focus: "pilotFeedbackPanel", label: state.language === "en" ? "Open feedback" : "Ver feedback" },
+      { view: "admin", focus: "pilotFeedbackPanel", label: state.language !== "es" ? "Open feedback" : "Ver feedback" },
     ],
     [
-      state.language === "en" ? "External integration strategy" : "Estrategia de integración externa",
+      state.language !== "es" ? "External integration strategy" : "Estrategia de integración externa",
       okStatus,
-      state.language === "en"
+      state.language !== "es"
         ? "Clio and future services are documented as API/MCP-first candidates before code reuse."
         : "Clio y servicios futuros quedan documentados como candidatos API/MCP antes de reutilizar código.",
-      { view: "admin", focus: "externalIntegrationPanel", label: state.language === "en" ? "Open strategy" : "Ver estrategia" },
+      { view: "admin", focus: "externalIntegrationPanel", label: state.language !== "es" ? "Open strategy" : "Ver estrategia" },
     ],
     [
-      state.language === "en" ? "Loaded version" : "Versión cargada",
+      state.language !== "es" ? "Loaded version" : "Versión cargada",
       okStatus,
       APP_VERSION,
     ],
     [
-      state.language === "en" ? "Full local backup" : "Respaldo local integral",
+      state.language !== "es" ? "Full local backup" : "Respaldo local integral",
       okStatus,
       describeBackupCoverage(),
     ],
     [
-      state.language === "en" ? "Backup audit" : "Auditoría de respaldo",
+      state.language !== "es" ? "Backup audit" : "Auditoría de respaldo",
       state.backupAudit?.at ? okStatus : attentionStatus,
       describeBackupAudit(),
     ],
@@ -30396,84 +30790,84 @@ function renderAdminUnsafe() {
       state.config?.transcriptionProvider === "openai" ? "Servidor OpenAI activo" : "Web Speech / manual",
     ],
     [
-      state.language === "en" ? "Multimodal analytical readiness" : "Preparación analítica multimodal",
+      state.language !== "es" ? "Multimodal analytical readiness" : "Preparación analítica multimodal",
       assetAnalysisReadiness.score >= 70 || !assetAnalysisReadiness.total ? okStatus : attentionStatus,
-      state.language === "en"
+      state.language !== "es"
         ? `${assetAnalysisReadiness.score}% · ${assetAnalysisReadiness.withText}/${assetAnalysisReadiness.total} assets with analytical text · ${assetAnalysisReadiness.processingPending} pending processing · ${assetAnalysisReadiness.suggested} suggested locally`
         : `${assetAnalysisReadiness.score}% · ${assetAnalysisReadiness.withText}/${assetAnalysisReadiness.total} activos con texto analítico · ${assetAnalysisReadiness.processingPending} con procesamiento pendiente · ${assetAnalysisReadiness.suggested} sugeridos localmente`,
     ],
     [
-      state.language === "en" ? "Asset workflow closure" : "Cierre del flujo de activos",
+      state.language !== "es" ? "Asset workflow closure" : "Cierre del flujo de activos",
       assetWorkflowReadiness.score >= 85 ? okStatus : attentionStatus,
-      state.language === "en"
+      state.language !== "es"
         ? `${assetWorkflowReadiness.score}% · ${assetWorkflowReadiness.ready}/${assetWorkflowReadiness.total} closed controls: filters, sort, CSV, checklist, safe import, audit, IDs, and batch suggestions`
         : `${assetWorkflowReadiness.score}% · ${assetWorkflowReadiness.ready}/${assetWorkflowReadiness.total} controles cerrados: filtros, orden, CSV, checklist, importación segura, auditoría, ID y sugerencias por lote`,
       {
         view: "assetLibrary",
         focus: "assetProcessingActionPlan",
-        label: state.language === "en" ? "View assets" : "Ver activos",
+        label: state.language !== "es" ? "View assets" : "Ver activos",
       },
     ],
     [
-      state.language === "en" ? "Multimodal review plan" : "Plan de revisión multimodal",
+      state.language !== "es" ? "Multimodal review plan" : "Plan de revisión multimodal",
       assetAnalysisReadiness.processingPending ? attentionStatus : okStatus,
-      state.language === "en"
+      state.language !== "es"
         ? `${assetAnalysisReadiness.processingPending} pending assets · visible checklist and Markdown export available`
         : `${assetAnalysisReadiness.processingPending} activos pendientes · checklist visible y exportación Markdown disponibles`,
       {
         view: "assetLibrary",
         run: "showPendingAssetText",
         focus: "assetProcessingActionPlan",
-        label: state.language === "en" ? "View pending" : "Ver pendientes",
+        label: state.language !== "es" ? "View pending" : "Ver pendientes",
       },
     ],
     [
-      state.language === "en" ? "Asset metadata import" : "Importación de metadatos",
+      state.language !== "es" ? "Asset metadata import" : "Importación de metadatos",
       state.assetMetadataImportSummary ? okStatus : attentionStatus,
       state.assetMetadataImportSummary
-        ? state.language === "en"
+        ? state.language !== "es"
           ? `${state.assetMetadataImportSummary.updated || 0} updated · ${state.assetMetadataImportSummary.cleared || 0} cleared · ${state.assetMetadataImportSummary.ignoredEmpty || 0} empty ignored · ${state.assetMetadataImportSummary.ignoredMissing || 0} not found`
           : `${state.assetMetadataImportSummary.updated || 0} actualizados · ${state.assetMetadataImportSummary.cleared || 0} limpiados · ${state.assetMetadataImportSummary.ignoredEmpty || 0} vacíos ignorados · ${state.assetMetadataImportSummary.ignoredMissing || 0} no encontrados`
-        : state.language === "en"
+        : state.language !== "es"
           ? "No import recorded"
           : "Sin importación registrada",
     ],
     [
-      state.language === "en" ? "Asset search" : "Búsqueda de activos",
+      state.language !== "es" ? "Asset search" : "Búsqueda de activos",
       okStatus,
-      state.language === "en"
+      state.language !== "es"
         ? "Text, type, category, provenance, readiness, analytical text, and date range"
         : "Texto, tipo, categoría, origen, disponibilidad, texto analítico y rango de fecha",
     ],
     [
-      state.language === "en" ? "Private Storage readiness" : "Preparación de Storage privado",
+      state.language !== "es" ? "Private Storage readiness" : "Preparación de Storage privado",
       assetStorageReadiness.pendingSync ? attentionStatus : okStatus,
-      state.language === "en"
+      state.language !== "es"
         ? `${assetStorageReadiness.remote}/${assetStorageReadiness.total} remote · ${assetStorageReadiness.pendingSync} pending sync · ${assetStorageReadiness.cached} cached previews`
         : `${assetStorageReadiness.remote}/${assetStorageReadiness.total} remotos · ${assetStorageReadiness.pendingSync} pendientes de sincronizar · ${assetStorageReadiness.cached} vistas en caché`,
     ],
     [
-      state.language === "en" ? "Attachment repair" : "Reparación de adjuntos",
+      state.language !== "es" ? "Attachment repair" : "Reparación de adjuntos",
       summarizeAttachmentSyncState().pending ? attentionStatus : okStatus,
-      state.language === "en"
+      state.language !== "es"
         ? `${summarizeAttachmentSyncState().pending} pending attachments · one visible action repairs Library, Assets, Reports, and Publications`
         : `${summarizeAttachmentSyncState().pending} adjuntos pendientes · una acción visible repara Librería, Activos, Reportes y Publicaciones`,
-      { view: "admin", focus: "multiDevicePersistencePanel", label: state.language === "en" ? "Open Admin" : "Abrir Administración" },
+      { view: "admin", focus: "multiDevicePersistencePanel", label: state.language !== "es" ? "Open Admin" : "Abrir Administración" },
     ],
     [
-      state.language === "en" ? "Attachment upload traceability" : "Trazabilidad de subidas de adjuntos",
+      state.language !== "es" ? "Attachment upload traceability" : "Trazabilidad de subidas de adjuntos",
       uploadAttemptSummary.ok ? okStatus : attentionStatus,
       uploadAttemptSummary.detail,
-      { view: "admin", focus: "supabaseDiagnostics", run: "runSupabaseDiagnostics", label: state.language === "en" ? "View history" : "Ver historial" },
+      { view: "admin", focus: "supabaseDiagnostics", run: "runSupabaseDiagnostics", label: state.language !== "es" ? "View history" : "Ver historial" },
     ],
     [
       "Sincronización sin conexión",
       state.offlineQueue.length ? attentionStatus : okStatus,
       state.offlineQueue.length
-        ? state.language === "en"
+        ? state.language !== "es"
           ? `${state.offlineQueue.length} pending changes with visible resolution policy`
           : `${state.offlineQueue.length} cambios pendientes con política de resolución visible`
-        : state.language === "en"
+        : state.language !== "es"
           ? "No pending changes"
           : "Sin pendientes",
     ],
@@ -30490,7 +30884,7 @@ function renderAdminUnsafe() {
     ],
   ];
   document.getElementById("embeddingStatus").textContent =
-    state.embeddingStatus || (state.language === "en" ? "Vector search ready for Supabase" : "Búsqueda vectorial lista para Supabase");
+    state.embeddingStatus || (state.language !== "es" ? "Vector search ready for Supabase" : "Búsqueda vectorial lista para Supabase");
   renderGlobalProgressPanel("adminGlobalProgressPanel");
   renderAdminOperationalFocusPanel();
   renderAdminCommandCenter();
@@ -30548,53 +30942,53 @@ function buildSupabasePilotGate() {
   const checks = [
     {
       key: "config",
-      label: state.language === "en" ? "Supabase configured" : "Supabase configurado",
+      label: state.language !== "es" ? "Supabase configured" : "Supabase configurado",
       ok: Boolean(state.apiOnline && state.persistence === "supabase" && state.config?.supabaseUrl && state.config?.supabasePublishableKey),
       detail: state.persistence === "supabase"
-        ? state.language === "en" ? "API is using Supabase persistence." : "La API usa persistencia Supabase."
-        : state.language === "en" ? "Activate STORAGE_ADAPTER=supabase." : "Activa STORAGE_ADAPTER=supabase.",
+        ? state.language !== "es" ? "API is using Supabase persistence." : "La API usa persistencia Supabase."
+        : state.language !== "es" ? "Activate STORAGE_ADAPTER=supabase." : "Activa STORAGE_ADAPTER=supabase.",
     },
     {
       key: "session",
-      label: state.language === "en" ? "User session" : "Sesión de usuario",
+      label: state.language !== "es" ? "User session" : "Sesión de usuario",
       ok: Boolean(state.session?.access_token),
       detail: state.session?.access_token
-        ? state.language === "en" ? "Active Supabase Auth token." : "Token activo de Supabase Auth."
-        : state.language === "en" ? "Sign in before inviting pilot users." : "Inicia sesión antes de invitar usuarios piloto.",
+        ? state.language !== "es" ? "Active Supabase Auth token." : "Token activo de Supabase Auth."
+        : state.language !== "es" ? "Sign in before inviting pilot users." : "Inicia sesión antes de invitar usuarios piloto.",
       action: "auth",
     },
     {
       key: "diagnostics",
-      label: state.language === "en" ? "Diagnostics clean" : "Diagnóstico sin errores",
+      label: state.language !== "es" ? "Diagnostics clean" : "Diagnóstico sin errores",
       ok: diagnostics?.status === "ok",
       detail: diagnostics
         ? formatDiagnosticSummary(diagnostics)
-        : state.language === "en" ? "Run Verify cloud." : "Ejecuta Verificar nube.",
+        : state.language !== "es" ? "Run Verify cloud." : "Ejecuta Verificar nube.",
       action: "diagnostics",
     },
     {
       key: "storage",
-      label: state.language === "en" ? "Private Storage" : "Storage privado",
+      label: state.language !== "es" ? "Private Storage" : "Storage privado",
       ok: getDiagnostic("storage")?.status === "ok",
-      detail: getDiagnostic("storage")?.detail || (state.language === "en" ? "Verify that experience-media is private and that the real test validates signed URLs." : "Verifica que experience-media sea privado y que la prueba real valide URLs firmadas."),
+      detail: getDiagnostic("storage")?.detail || (state.language !== "es" ? "Verify that experience-media is private and that the real test validates signed URLs." : "Verifica que experience-media sea privado y que la prueba real valide URLs firmadas."),
       action: "diagnostics",
     },
     {
       key: "selfTest",
-      label: state.language === "en" ? "Real flow test" : "Prueba de flujo real",
+      label: state.language !== "es" ? "Real flow test" : "Prueba de flujo real",
       ok: selfTest?.status === "ok",
       detail: selfTest
         ? formatSelfTestSummary(selfTest)
-        : state.language === "en" ? "Run the real Supabase test: profile, private upload, signed URL, read, search, and cleanup." : "Ejecuta la prueba real Supabase: perfil, subida privada, URL firmada, lectura, búsqueda y limpieza.",
+        : state.language !== "es" ? "Run the real Supabase test: profile, private upload, signed URL, read, search, and cleanup." : "Ejecuta la prueba real Supabase: perfil, subida privada, URL firmada, lectura, búsqueda y limpieza.",
       action: "selfTest",
     },
     {
       key: "offline",
-      label: state.language === "en" ? "Offline queue clear" : "Cola sin conexión limpia",
+      label: state.language !== "es" ? "Offline queue clear" : "Cola sin conexión limpia",
       ok: state.offlineQueue.length === 0,
       detail: state.offlineQueue.length
-        ? state.language === "en" ? `${state.offlineQueue.length} pending changes.` : `${state.offlineQueue.length} cambios pendientes.`
-        : state.language === "en" ? "No pending changes." : "Sin pendientes.",
+        ? state.language !== "es" ? `${state.offlineQueue.length} pending changes.` : `${state.offlineQueue.length} cambios pendientes.`
+        : state.language !== "es" ? "No pending changes." : "Sin pendientes.",
       action: "sync",
     },
   ];
@@ -30617,23 +31011,23 @@ function renderSupabasePilotGatePanel() {
   container.innerHTML = `
     <div class="supabase-pilot-gate-heading">
       <div>
-        <h3>${escapeHtml(state.language === "en" ? "Supabase Pilot Gate" : "Compuerta Supabase del piloto")}</h3>
-        <p class="card-meta">${escapeHtml(state.language === "en" ? `${gate.ready}/${gate.total} controls ready. Active API is not enough; the real flow must be verified.` : `${gate.ready}/${gate.total} controles listos. API activa no basta; el flujo real debe estar verificado.`)}</p>
+        <h3>${escapeHtml(state.language !== "es" ? "Supabase Pilot Gate" : "Compuerta Supabase del piloto")}</h3>
+        <p class="card-meta">${escapeHtml(state.language !== "es" ? `${gate.ready}/${gate.total} controls ready. Active API is not enough; the real flow must be verified.` : `${gate.ready}/${gate.total} controles listos. API activa no basta; el flujo real debe estar verificado.`)}</p>
       </div>
       <strong class="${gate.ok ? "status-ok" : "status-warn"}">${escapeHtml(`${gate.score}%`)}</strong>
     </div>
     <div class="supabase-pilot-gate-actions">
-      <button class="ghost-button" type="button" data-supabase-gate-action="diagnostics">${escapeHtml(state.language === "en" ? "Verify cloud" : "Verificar nube")}</button>
-      <button class="ghost-button" type="button" data-supabase-gate-action="selfTest">${escapeHtml(state.language === "en" ? "Test full flow" : "Probar flujo completo")}</button>
-      <button class="ghost-button" type="button" data-supabase-gate-action="auth">${escapeHtml(state.language === "en" ? "Open access" : "Abrir acceso")}</button>
-      <button class="ghost-button" type="button" data-supabase-gate-action="sync">${escapeHtml(state.language === "en" ? "Sync queue" : "Sincronizar cola")}</button>
+      <button class="ghost-button" type="button" data-supabase-gate-action="diagnostics">${escapeHtml(state.language !== "es" ? "Verify cloud" : "Verificar nube")}</button>
+      <button class="ghost-button" type="button" data-supabase-gate-action="selfTest">${escapeHtml(state.language !== "es" ? "Test full flow" : "Probar flujo completo")}</button>
+      <button class="ghost-button" type="button" data-supabase-gate-action="auth">${escapeHtml(state.language !== "es" ? "Open access" : "Abrir acceso")}</button>
+      <button class="ghost-button" type="button" data-supabase-gate-action="sync">${escapeHtml(state.language !== "es" ? "Sync queue" : "Sincronizar cola")}</button>
     </div>
     <div class="supabase-pilot-gate-grid">
       ${gate.checks
         .map(
           (check) => `
             <article class="${check.ok ? "is-ready" : "is-review"}">
-              <span class="${check.ok ? "status-ok" : "status-warn"}">${escapeHtml(check.ok ? (state.language === "en" ? "Ready" : "Listo") : (state.language === "en" ? "Review" : "Revisar"))}</span>
+              <span class="${check.ok ? "status-ok" : "status-warn"}">${escapeHtml(check.ok ? (state.language !== "es" ? "Ready" : "Listo") : (state.language !== "es" ? "Review" : "Revisar"))}</span>
               <strong>${escapeHtml(check.label)}</strong>
               <p>${escapeHtml(check.detail)}</p>
             </article>
@@ -30844,7 +31238,7 @@ async function runSupabaseSelfTest() {
           label: "Auth",
           status: "warn",
           detail: t("labels.supabaseDiagnosticsNeedsSession"),
-          action: state.language === "en" ? "Sign in and run the real flow test again." : "Inicia sesión y vuelve a ejecutar la prueba real.",
+          action: state.language !== "es" ? "Sign in and run the real flow test again." : "Inicia sesión y vuelve a ejecutar la prueba real.",
           actionType: "openAuth",
         },
       ],
@@ -30872,10 +31266,10 @@ async function runSupabaseSelfTest() {
           status: needsSession ? "warn" : "error",
           detail: needsSession ? t("labels.supabaseDiagnosticsNeedsSession") : error.message || "No se pudo ejecutar la prueba real.",
           action: needsSession
-            ? state.language === "en"
+            ? state.language !== "es"
               ? "Sign in and run the real flow test again."
               : "Inicia sesión y vuelve a ejecutar la prueba real."
-            : state.language === "en"
+            : state.language !== "es"
               ? "Run Verify Supabase first and resolve the pending closure action."
               : "Ejecuta Verificar nube primero y resuelve la acción pendiente.",
           actionType: needsSession ? "openAuth" : "openAdmin",
@@ -30910,7 +31304,7 @@ async function runSupabaseDiagnostics() {
           label: "Auth",
           status: "warn",
           detail: t("labels.supabaseDiagnosticsNeedsSession"),
-          action: state.language === "en" ? "Sign in from the app access panel and run Verify cloud again." : "Inicia sesión desde el panel de acceso y vuelve a ejecutar Verificar nube.",
+          action: state.language !== "es" ? "Sign in from the app access panel and run Verify cloud again." : "Inicia sesión desde el panel de acceso y vuelve a ejecutar Verificar nube.",
           actionType: "openAuth",
         },
       ],
@@ -30935,10 +31329,10 @@ async function runSupabaseDiagnostics() {
           status: needsSession ? "warn" : "error",
           detail: needsSession ? t("labels.supabaseDiagnosticsNeedsSession") : error.message || "No se pudo ejecutar la verificación.",
           action: needsSession
-            ? state.language === "en"
+            ? state.language !== "es"
               ? "Sign in from the app access panel and run Verify Supabase again."
               : "Inicia sesión desde el panel de acceso y vuelve a ejecutar Verificar nube."
-            : state.language === "en"
+            : state.language !== "es"
               ? "Review the local API and run the verification again."
               : "Revisa la API local y vuelve a ejecutar la verificación.",
           actionType: needsSession ? "openAuth" : "openAdmin",
@@ -30961,10 +31355,10 @@ async function loadUploadAttempts(options = {}) {
     const attempts = await apiRequest("/upload-attempts?limit=12");
     state.uploadAttempts = Array.isArray(attempts) ? attempts : [];
     state.uploadAttemptsCheckedAt = new Date().toISOString();
-    if (!options.silent) document.getElementById("embeddingStatus").textContent = state.language === "en" ? "Attachment upload history updated." : "Historial de adjuntos actualizado.";
+    if (!options.silent) document.getElementById("embeddingStatus").textContent = state.language !== "es" ? "Attachment upload history updated." : "Historial de adjuntos actualizado.";
     return state.uploadAttempts;
   } catch (error) {
-    if (!options.silent) document.getElementById("embeddingStatus").textContent = state.language === "en" ? "Could not read attachment upload history." : "No se pudo leer el historial de adjuntos.";
+    if (!options.silent) document.getElementById("embeddingStatus").textContent = state.language !== "es" ? "Could not read attachment upload history." : "No se pudo leer el historial de adjuntos.";
     return state.uploadAttempts || [];
   }
 }
@@ -30998,7 +31392,7 @@ function renderSelfTestPlainSummary(result) {
   const assetsOk = stepOk("workspaceAssets");
   const agendaMissing = missingTableErrors.some((step) => String(step.detail || "").includes("agenda_events"));
   const workspaceMissing = missingTableErrors.some((step) => /participants|assets|experience_events/i.test(String(step.detail || "")));
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         titleOk: "What this result means",
         filesOk: "File upload is working: image, audio, video, document, and ZIP reached private Storage and can be read with signed URLs.",
@@ -31054,7 +31448,7 @@ function renderSelfTestPlainSummary(result) {
 
 function renderSelfTestAssetMatrix(steps = []) {
   const findStep = (id) => steps.find((step) => step.id === id);
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         title: "Asset families tested",
         help: "This follows the CLIO-style pattern: private Storage, signed URL, shared asset row, and local cache only as fallback.",
@@ -31150,7 +31544,7 @@ function renderSupabaseDiagnostics() {
 function renderUploadAttemptsPanel() {
   const attempts = consolidateUploadAttempts(state.uploadAttempts || []);
   const summary = summarizeUploadAttempts(attempts);
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         title: "Attachment upload history",
         empty: "No recent attachment uploads were found for this user.",
@@ -31244,7 +31638,7 @@ function summarizeUploadAttempts(attempts = state.uploadAttempts || []) {
   const failed = attempts.filter((attempt) => attempt.status === "failed").length;
   const uploaded = attempts.filter((attempt) => attempt.status === "uploaded").length;
   const active = attempts.filter((attempt) => attempt.status === "uploading" || attempt.status === "pending").length;
-  const detail = state.language === "en"
+  const detail = state.language !== "es"
     ? `${uploaded}/${total} uploaded · ${failed} failed · ${active} pending`
     : `${uploaded}/${total} subidos · ${failed} fallidos · ${active} pendientes`;
   return {
@@ -31262,7 +31656,7 @@ function formatSelfTestSummary(result) {
   const ok = steps.filter((step) => step.status === "ok").length;
   const warn = steps.filter((step) => step.status === "warn").length;
   const error = steps.filter((step) => step.status === "error").length;
-  return state.language === "en"
+  return state.language !== "es"
     ? `${ok}/${steps.length} OK · ${warn} attention · ${error} error`
     : `${ok}/${steps.length} correctos · ${warn} con atención · ${error} con error`;
 }
@@ -31273,8 +31667,8 @@ function renderDiagnosticCheck(check, source = "") {
     check.status === "ok"
       ? t("labels.backlogReady")
       : check.status === "warn"
-        ? state.language === "en" ? "Attention" : "Atención"
-        : state.language === "en" ? "Error" : "Error";
+        ? state.language !== "es" ? "Attention" : "Atención"
+        : state.language !== "es" ? "Error" : "Error";
   return `
     <article class="diagnostic-card">
       <header>
@@ -31303,7 +31697,7 @@ function formatDiagnosticSummary(diagnostics) {
   const ok = checks.filter((check) => check.status === "ok").length;
   const warn = checks.filter((check) => check.status === "warn").length;
   const error = checks.filter((check) => check.status === "error").length;
-  return state.language === "en"
+  return state.language !== "es"
     ? `${ok}/${checks.length} OK · ${warn} attention · ${error} error`
     : `${ok}/${checks.length} correctos · ${warn} con atención · ${error} con error`;
 }
@@ -31311,7 +31705,7 @@ function formatDiagnosticSummary(diagnostics) {
 function buildMvpClosureSummary(readiness = calculateDevelopmentReadiness(), totalProgress = calculateTotalProductProgress(readiness)) {
   const backlog = buildParallelBacklog();
   const pilotBlockingTitles = new Set(
-    state.language === "en"
+    state.language !== "es"
       ? ["Daily briefing", "Capture quality", "Reports and insights", "Multimodal foundation", "Supabase session", "Offline queue"]
       : ["Diario informativo", "Calidad de captura", "Reportes y hallazgos", "Base multimodal", "Sesión Supabase", "Cola sin conexión"],
   );
@@ -31324,17 +31718,17 @@ function buildMvpClosureSummary(readiness = calculateDevelopmentReadiness(), tot
     view: item.view,
     ready: true,
   }));
-  const later = state.language === "en"
+  const later = state.language !== "es"
     ? ["External account connectors", "Advanced predictive AI", "Automatic OCR/transcription", "Direct social publishing", "Massive-scale operations"]
     : ["Conectores externos de cuentas", "IA predictiva avanzada", "OCR/transcripción automática", "Publicación directa en redes", "Operación a escala masiva"];
-  const headline = state.language === "en"
+  const headline = state.language !== "es"
     ? `Operational base ${totalProgress.mvp}% · product validation ${totalProgress.pilot}% · final product ${totalProgress.full}%`
     : `Base operativa ${totalProgress.mvp}% · validación de producto ${totalProgress.pilot}% · producto final ${totalProgress.full}%`;
   const status = pending.length
-    ? state.language === "en"
+    ? state.language !== "es"
       ? `${pending.length} product-critical closures remain before expanding usage.`
       : `Quedan ${pending.length} cierres críticos antes de ampliar el uso.`
-    : state.language === "en"
+    : state.language !== "es"
       ? "The core validation is operationally closed; remaining work belongs to advanced product phases."
       : "La validación central está cerrada operativamente; lo restante pertenece a fases avanzadas del producto.";
   return {
@@ -31355,7 +31749,7 @@ function buildMvpClosureSummary(readiness = calculateDevelopmentReadiness(), tot
       ready: Boolean(item.ready),
     })),
     later,
-    scope: state.language === "en" ? "VibePWA product consolidation" : "Consolidación de producto VibePWA",
+    scope: state.language !== "es" ? "VibePWA product consolidation" : "Consolidación de producto VibePWA",
   };
 }
 
@@ -31390,21 +31784,21 @@ async function copyMvpClosureSummary() {
   const status = document.getElementById("embeddingStatus");
   if (status) {
     status.textContent = copied
-      ? state.language === "en" ? "Product closure summary copied." : "Resumen de cierre del producto copiado."
-      : state.language === "en" ? "Could not copy the product closure summary." : "No se pudo copiar el resumen de cierre del producto.";
+      ? state.language !== "es" ? "Product closure summary copied." : "Resumen de cierre del producto copiado."
+      : state.language !== "es" ? "Could not copy the product closure summary." : "No se pudo copiar el resumen de cierre del producto.";
   }
 }
 
 function buildMvpClosureMarkdown(summary) {
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? { title: "Product Closure", progress: "Progress", readiness: "Readiness", ready: "Ready capabilities", pending: "Critical pending items", later: "Advanced phase", generated: "Generated", scope: "Scope" }
     : { title: "Cierre del producto", progress: "Avance", readiness: "Preparación", ready: "Capacidades listas", pending: "Pendientes críticos", later: "Fase avanzada", generated: "Generado", scope: "Alcance" };
   const readyLines = summary.ready.length
     ? summary.ready.map((item) => `- ${item.title}: ${item.detail}`).join("\n")
-    : `- ${state.language === "en" ? "No ready capabilities recorded." : "No hay capacidades listas registradas."}`;
+    : `- ${state.language !== "es" ? "No ready capabilities recorded." : "No hay capacidades listas registradas."}`;
   const pendingLines = summary.pending.length
     ? summary.pending.map((item) => `- ${item.title}: ${item.detail} (${item.action || item.view})`).join("\n")
-    : `- ${state.language === "en" ? "No priority closures pending." : "No hay cierres prioritarios pendientes."}`;
+    : `- ${state.language !== "es" ? "No priority closures pending." : "No hay cierres prioritarios pendientes."}`;
   return [
     `# ${labels.title}`,
     "",
@@ -31415,8 +31809,8 @@ function buildMvpClosureMarkdown(summary) {
     "",
     `## ${labels.readiness}`,
     "",
-    `- ${state.language === "en" ? "Functional" : "Funcional"}: ${summary.readiness.functional.ready}/${summary.readiness.functional.total} (${summary.readiness.functional.score}%)`,
-    `- ${state.language === "en" ? "Technical" : "Técnico"}: ${summary.readiness.technical.ready}/${summary.readiness.technical.total} (${summary.readiness.technical.score}%)`,
+    `- ${state.language !== "es" ? "Functional" : "Funcional"}: ${summary.readiness.functional.ready}/${summary.readiness.functional.total} (${summary.readiness.functional.score}%)`,
+    `- ${state.language !== "es" ? "Technical" : "Técnico"}: ${summary.readiness.technical.ready}/${summary.readiness.technical.total} (${summary.readiness.technical.score}%)`,
     "",
     `## ${labels.ready}`,
     "",
@@ -31438,7 +31832,7 @@ function renderMvpClosurePanel(readiness, totalProgress) {
   document.getElementById("mvpClosurePanel").innerHTML = `
     <div class="mvp-closure-heading">
       <div>
-        <h3>${escapeHtml(state.language === "en" ? "Product Closure" : "Cierre del producto")}</h3>
+        <h3>${escapeHtml(state.language !== "es" ? "Product Closure" : "Cierre del producto")}</h3>
         <p class="card-meta">${escapeHtml(closure.headline)} · ${escapeHtml(closure.status)}</p>
       </div>
       <div class="mvp-closure-meter" aria-label="${escapeHtml(closure.headline)}">
@@ -31446,27 +31840,27 @@ function renderMvpClosurePanel(readiness, totalProgress) {
       </div>
     </div>
     <div class="mvp-closure-actions">
-      <button class="ghost-button" type="button" data-mvp-export="json">${escapeHtml(state.language === "en" ? "Export JSON" : "Exportar JSON")}</button>
-      <button class="ghost-button" type="button" data-mvp-export="markdown">${escapeHtml(state.language === "en" ? "Export Markdown" : "Exportar Markdown")}</button>
-      <button class="ghost-button" type="button" data-mvp-copy="summary">${escapeHtml(state.language === "en" ? "Copy summary" : "Copiar resumen")}</button>
+      <button class="ghost-button" type="button" data-mvp-export="json">${escapeHtml(state.language !== "es" ? "Export JSON" : "Exportar JSON")}</button>
+      <button class="ghost-button" type="button" data-mvp-export="markdown">${escapeHtml(state.language !== "es" ? "Export Markdown" : "Exportar Markdown")}</button>
+      <button class="ghost-button" type="button" data-mvp-copy="summary">${escapeHtml(state.language !== "es" ? "Copy summary" : "Copiar resumen")}</button>
     </div>
     <div class="mvp-closure-grid">
       <article class="mvp-closure-card">
-        <strong>${escapeHtml(state.language === "en" ? "Ready Now" : "Listo ahora")}</strong>
-        <p>${escapeHtml(`${readiness.functional.ready}/${readiness.functional.total} ${state.language === "en" ? "functional checks" : "controles funcionales"} · ${readiness.technical.ready}/${readiness.technical.total} ${state.language === "en" ? "technical checks" : "controles técnicos"}`)}</p>
+        <strong>${escapeHtml(state.language !== "es" ? "Ready Now" : "Listo ahora")}</strong>
+        <p>${escapeHtml(`${readiness.functional.ready}/${readiness.functional.total} ${state.language !== "es" ? "functional checks" : "controles funcionales"} · ${readiness.technical.ready}/${readiness.technical.total} ${state.language !== "es" ? "technical checks" : "controles técnicos"}`)}</p>
         <div class="mvp-ready-list">
           ${closure.ready.slice(0, 6).map((item) => `<span>${escapeHtml(item.title)}</span>`).join("")}
         </div>
       </article>
       <article class="mvp-closure-card">
-        <strong>${escapeHtml(state.language === "en" ? "Advanced phase" : "Fase avanzada")}</strong>
+        <strong>${escapeHtml(state.language !== "es" ? "Advanced phase" : "Fase avanzada")}</strong>
         <div class="pill-row">${closure.later.map((item) => `<span class="pill">${escapeHtml(item)}</span>`).join("")}</div>
       </article>
     </div>
     ${
       closure.pending.length
         ? `<div class="mvp-closure-pending">
-            <strong>${escapeHtml(state.language === "en" ? "Critical pending items" : "Pendientes críticos")}</strong>
+            <strong>${escapeHtml(state.language !== "es" ? "Critical pending items" : "Pendientes críticos")}</strong>
             ${closure.pending
               .map(
                 (item) => `
@@ -31498,32 +31892,32 @@ function calculatePilotReadiness() {
   const checks = [
     {
       key: "capture",
-      label: state.language === "en" ? "Capture and sample data" : "Captura y datos de prueba",
+      label: state.language !== "es" ? "Capture and sample data" : "Captura y datos de prueba",
       ok: state.experiences.length >= 3,
-      detail: state.language === "en" ? `${state.experiences.length} experiences available` : `${state.experiences.length} experiencias disponibles`,
+      detail: state.language !== "es" ? `${state.experiences.length} experiences available` : `${state.experiences.length} experiencias disponibles`,
       view: "capture",
     },
     {
       key: "privacy",
-      label: state.language === "en" ? "Recommended privacy" : "Privacidad recomendada",
+      label: state.language !== "es" ? "Recommended privacy" : "Privacidad recomendada",
       ok: privacy.localProcessing && !privacy.shareAnalytics && privacy.sensitiveMode,
-      detail: state.language === "en" ? "Local processing, analytics off, sensitive mode" : "Procesamiento local, analítica apagada y modo sensible",
+      detail: state.language !== "es" ? "Local processing, analytics off, sensitive mode" : "Procesamiento local, analítica apagada y modo sensible",
       view: "admin",
       focus: "privacyChecklist",
     },
     {
       key: "backup",
-      label: state.language === "en" ? "Backup and restore practice" : "Práctica de respaldo y restauración",
+      label: state.language !== "es" ? "Backup and restore practice" : "Práctica de respaldo y restauración",
       ok: Boolean(state.backupAudit?.at),
-      detail: state.backupAudit?.at ? formatDate(state.backupAudit.at) : state.language === "en" ? "Run a backup before inviting users" : "Ejecuta un respaldo antes de invitar usuarios",
+      detail: state.backupAudit?.at ? formatDate(state.backupAudit.at) : state.language !== "es" ? "Run a backup before inviting users" : "Ejecuta un respaldo antes de invitar usuarios",
       view: "admin",
       focus: "mvpClosurePanel",
     },
     {
       key: "supabase",
-      label: state.language === "en" ? "Supabase operation" : "Operación Supabase",
+      label: state.language !== "es" ? "Supabase operation" : "Operación Supabase",
       ok: supabaseGate.ok,
-      detail: state.language === "en"
+      detail: state.language !== "es"
         ? `${supabaseGate.score}% · ${supabaseGate.ready}/${supabaseGate.total} gate controls ready`
         : `${supabaseGate.score}% · ${supabaseGate.ready}/${supabaseGate.total} controles de compuerta listos`,
       view: "admin",
@@ -31531,18 +31925,18 @@ function calculatePilotReadiness() {
     },
     {
       key: "offline",
-      label: state.language === "en" ? "Offline queue clear" : "Cola sin conexión limpia",
+      label: state.language !== "es" ? "Offline queue clear" : "Cola sin conexión limpia",
       ok: state.offlineQueue.length === 0,
-      detail: state.offlineQueue.length ? `${state.offlineQueue.length} ${state.language === "en" ? "pending changes" : "cambios pendientes"}` : state.language === "en" ? "No pending changes" : "Sin pendientes",
+      detail: state.offlineQueue.length ? `${state.offlineQueue.length} ${state.language !== "es" ? "pending changes" : "cambios pendientes"}` : state.language !== "es" ? "No pending changes" : "Sin pendientes",
       view: "admin",
       run: "syncOffline",
       focus: "offlineQueuePanel",
     },
     {
       key: "reports",
-      label: state.language === "en" ? "Reports with exportable data" : "Reportes con datos exportables",
+      label: state.language !== "es" ? "Reports with exportable data" : "Reportes con datos exportables",
       ok: reportExperiences.length >= 3 && reportAcceptance.score >= 85,
-      detail: state.language === "en"
+      detail: state.language !== "es"
         ? `${reportExperiences.length} reportable experiences · ${reportAcceptance.score}% acceptance pack`
         : `${reportExperiences.length} experiencias reportables · ${reportAcceptance.score}% paquete de aceptación`,
       view: "report",
@@ -31550,7 +31944,7 @@ function calculatePilotReadiness() {
     },
     {
       key: "assets",
-      label: state.language === "en" ? "Multimodal assets workflow" : "Flujo de activos multimodales",
+      label: state.language !== "es" ? "Multimodal assets workflow" : "Flujo de activos multimodales",
       ok: assetWorkflow.score >= 85,
       detail: `${assetWorkflow.score}% · ${assetWorkflow.ready}/${assetWorkflow.total}`,
       view: "assetLibrary",
@@ -31558,9 +31952,9 @@ function calculatePilotReadiness() {
     },
     {
       key: "feedback",
-      label: state.language === "en" ? "Pilot feedback under control" : "Feedback piloto bajo control",
+      label: state.language !== "es" ? "Pilot feedback under control" : "Feedback piloto bajo control",
       ok: feedbackSummary.blockingOpen === 0,
-      detail: state.language === "en"
+      detail: state.language !== "es"
         ? `${feedbackSummary.open} open · ${feedbackSummary.blockingOpen} high/blocker`
         : `${feedbackSummary.open} abiertos · ${feedbackSummary.blockingOpen} altos/bloqueantes`,
       view: "admin",
@@ -31568,9 +31962,9 @@ function calculatePilotReadiness() {
     },
     {
       key: "pilotTests",
-      label: state.language === "en" ? "Pilot test plan progress" : "Avance del plan de pruebas piloto",
+      label: state.language !== "es" ? "Pilot test plan progress" : "Avance del plan de pruebas piloto",
       ok: pilotTestSummary.score >= 80,
-      detail: state.language === "en"
+      detail: state.language !== "es"
         ? `${pilotTestSummary.completed}/${pilotTestSummary.total} scenarios complete`
         : `${pilotTestSummary.completed}/${pilotTestSummary.total} escenarios completos`,
       view: "admin",
@@ -31578,9 +31972,9 @@ function calculatePilotReadiness() {
     },
     {
       key: "participants",
-      label: state.language === "en" ? "Pilot cohort within scope" : "Grupo piloto dentro del alcance",
+      label: state.language !== "es" ? "Pilot cohort within scope" : "Grupo piloto dentro del alcance",
       ok: participantSummary.total > 0 && participantSummary.total <= PILOT_TARGET_USERS,
-      detail: state.language === "en"
+      detail: state.language !== "es"
         ? `${participantSummary.total}/${PILOT_TARGET_USERS} participants registered`
         : `${participantSummary.total}/${PILOT_TARGET_USERS} participantes registrados`,
       view: "admin",
@@ -31588,9 +31982,9 @@ function calculatePilotReadiness() {
     },
     {
       key: "participantOnboarding",
-      label: state.language === "en" ? "Participant onboarding complete" : "Onboarding de participantes completo",
+      label: state.language !== "es" ? "Participant onboarding complete" : "Onboarding de participantes completo",
       ok: participantSummary.needsOnboarding === 0,
-      detail: state.language === "en"
+      detail: state.language !== "es"
         ? `${participantSummary.onboarded}/${participantSummary.total} participants ready`
         : `${participantSummary.onboarded}/${participantSummary.total} participantes listos`,
       view: "admin",
@@ -31598,13 +31992,13 @@ function calculatePilotReadiness() {
     },
     {
       key: "qaEvidence",
-      label: state.language === "en" ? "QA evidence registered" : "Evidencia QA registrada",
+      label: state.language !== "es" ? "QA evidence registered" : "Evidencia QA registrada",
       ok: qaReady,
       detail: qaReady
-        ? state.language === "en"
+        ? state.language !== "es"
           ? `Quick verification ${qaEvidence.quickVerification.score}% · interface quality ${qaEvidence.interfaceQuality.score}%`
           : `Verificación rápida ${qaEvidence.quickVerification.score}% · calidad de interfaz ${qaEvidence.interfaceQuality.score}%`
-        : state.language === "en"
+        : state.language !== "es"
           ? "Register Quick Verification and Interface Quality before exporting the pilot package"
           : "Registra Verificación rápida y Calidad de interfaz antes de exportar el paquete piloto",
       view: "admin",
@@ -31612,9 +32006,9 @@ function calculatePilotReadiness() {
     },
     {
       key: "manual",
-      label: state.language === "en" ? "User manual and admin guidance" : "Manual y guía de administración",
+      label: state.language !== "es" ? "User manual and admin guidance" : "Manual y guía de administración",
       ok: manualReviewSummary.score >= 80,
-      detail: state.language === "en"
+      detail: state.language !== "es"
         ? `${manualReviewSummary.reviewed}/${manualReviewSummary.total} sections reviewed`
         : `${manualReviewSummary.reviewed}/${manualReviewSummary.total} secciones revisadas`,
       view: "manual",
@@ -31624,12 +32018,12 @@ function calculatePilotReadiness() {
   const score = Math.round((ready / checks.length) * 100);
   const recommendation =
     score >= 90
-      ? state.language === "en" ? `Ready to run the ${PILOT_TARGET_USERS}-user pilot` : `Listo para iniciar el piloto de ${PILOT_TARGET_USERS} usuarios`
+      ? state.language !== "es" ? `Ready to run the ${PILOT_TARGET_USERS}-user pilot` : `Listo para iniciar el piloto de ${PILOT_TARGET_USERS} usuarios`
       : score >= 80
-        ? state.language === "en" ? `Start with ${PILOT_TARGET_USERS} users` : `Iniciar con ${PILOT_TARGET_USERS} usuarios`
+        ? state.language !== "es" ? `Start with ${PILOT_TARGET_USERS} users` : `Iniciar con ${PILOT_TARGET_USERS} usuarios`
         : score >= 70
-          ? state.language === "en" ? "Internal test with 1-2 users first" : "Prueba interna con 1-2 usuarios primero"
-          : state.language === "en" ? "Do not invite users yet" : "No invitar usuarios todavía";
+          ? state.language !== "es" ? "Internal test with 1-2 users first" : "Prueba interna con 1-2 usuarios primero"
+          : state.language !== "es" ? "Do not invite users yet" : "No invitar usuarios todavía";
   return {
     checks,
     ready,
@@ -31680,8 +32074,8 @@ function renderPilotBlockers(checks) {
   if (!blockers.length) {
     return `
       <div class="pilot-blockers is-clear">
-        <strong>${escapeHtml(state.language === "en" ? "No priority blockers" : "Sin bloqueos prioritarios")}</strong>
-        <p>${escapeHtml(state.language === "en" ? "The controlled pilot can move to final human review." : "El piloto controlado puede pasar a la revisión humana final.")}</p>
+        <strong>${escapeHtml(state.language !== "es" ? "No priority blockers" : "Sin bloqueos prioritarios")}</strong>
+        <p>${escapeHtml(state.language !== "es" ? "The controlled pilot can move to final human review." : "El piloto controlado puede pasar a la revisión humana final.")}</p>
       </div>
     `;
   }
@@ -31689,8 +32083,8 @@ function renderPilotBlockers(checks) {
     <div class="pilot-blockers">
       <div class="pilot-blockers-heading">
         <div>
-          <strong>${escapeHtml(state.language === "en" ? "Priority blockers" : "Bloqueos prioritarios")}</strong>
-          <p>${escapeHtml(state.language === "en" ? "Resolve these first to raise pilot readiness faster." : "Resuelve estos puntos primero para subir más rápido la preparación del piloto.")}</p>
+          <strong>${escapeHtml(state.language !== "es" ? "Priority blockers" : "Bloqueos prioritarios")}</strong>
+          <p>${escapeHtml(state.language !== "es" ? "Resolve these first to raise pilot readiness faster." : "Resuelve estos puntos primero para subir más rápido la preparación del piloto.")}</p>
         </div>
         <span>${escapeHtml(`${blockers.length}`)}</span>
       </div>
@@ -31706,7 +32100,7 @@ function renderPilotBlockers(checks) {
                   <small>${escapeHtml(check.detail)}</small>
                 </div>
                 <button class="ghost-button" type="button" data-backlog-view="${escapeHtml(check.view || "admin")}" data-backlog-focus="${escapeHtml(check.focus || "")}" data-backlog-run="${escapeHtml(check.run || "")}">
-                  ${escapeHtml(state.language === "en" ? "Open" : "Abrir")}
+                  ${escapeHtml(state.language !== "es" ? "Open" : "Abrir")}
                 </button>
               </article>
             `,
@@ -31724,15 +32118,15 @@ function renderPilotReadinessPanel() {
   container.innerHTML = `
     <div class="pilot-readiness-heading">
       <div>
-        <h3>${escapeHtml(state.language === "en" ? "Pilot Readiness" : "Preparación del piloto")}</h3>
-        <p class="card-meta">${escapeHtml(readiness.recommendation)} · ${escapeHtml(`${readiness.ready}/${readiness.total}`)} ${escapeHtml(state.language === "en" ? "checks ready" : "controles listos")}</p>
+        <h3>${escapeHtml(state.language !== "es" ? "Pilot Readiness" : "Preparación del piloto")}</h3>
+        <p class="card-meta">${escapeHtml(readiness.recommendation)} · ${escapeHtml(`${readiness.ready}/${readiness.total}`)} ${escapeHtml(state.language !== "es" ? "checks ready" : "controles listos")}</p>
       </div>
       <strong>${escapeHtml(`${readiness.score}%`)}</strong>
     </div>
     <div class="pilot-readiness-actions">
-      <button class="ghost-button" type="button" data-pilot-readiness-export="json">${escapeHtml(state.language === "en" ? "Export JSON" : "Exportar JSON")}</button>
-      <button class="ghost-button" type="button" data-pilot-readiness-export="markdown">${escapeHtml(state.language === "en" ? "Export Markdown" : "Exportar Markdown")}</button>
-      <button class="ghost-button" type="button" data-pilot-readiness-copy="summary">${escapeHtml(state.language === "en" ? "Copy summary" : "Copiar resumen")}</button>
+      <button class="ghost-button" type="button" data-pilot-readiness-export="json">${escapeHtml(state.language !== "es" ? "Export JSON" : "Exportar JSON")}</button>
+      <button class="ghost-button" type="button" data-pilot-readiness-export="markdown">${escapeHtml(state.language !== "es" ? "Export Markdown" : "Exportar Markdown")}</button>
+      <button class="ghost-button" type="button" data-pilot-readiness-copy="summary">${escapeHtml(state.language !== "es" ? "Copy summary" : "Copiar resumen")}</button>
     </div>
     <div class="pilot-readiness-meter"><span style="width:${Math.max(0, Math.min(100, readiness.score))}%"></span></div>
     ${renderPilotBlockers(readiness.checks)}
@@ -31742,12 +32136,12 @@ function renderPilotReadinessPanel() {
           (check) => `
             <article class="${check.ok ? "is-ready" : "is-review"}">
               <div>
-                <span class="${check.ok ? "status-ok" : "status-warn"}">${escapeHtml(check.ok ? (state.language === "en" ? "Ready" : "Listo") : (state.language === "en" ? "Review" : "Revisar"))}</span>
+                <span class="${check.ok ? "status-ok" : "status-warn"}">${escapeHtml(check.ok ? (state.language !== "es" ? "Ready" : "Listo") : (state.language !== "es" ? "Review" : "Revisar"))}</span>
                 <strong>${escapeHtml(check.label)}</strong>
                 <p>${escapeHtml(check.detail)}</p>
               </div>
               <button class="ghost-button" type="button" data-backlog-view="${escapeHtml(check.view || "admin")}" data-backlog-focus="${escapeHtml(check.focus || "")}" data-backlog-run="${escapeHtml(check.run || "")}">
-                ${escapeHtml(state.language === "en" ? "Open" : "Abrir")}
+                ${escapeHtml(state.language !== "es" ? "Open" : "Abrir")}
               </button>
             </article>
           `,
@@ -31777,7 +32171,7 @@ function buildPilotReadinessExportPayload() {
     exportedAt: new Date().toISOString(),
     appVersion: APP_VERSION,
     language: state.language,
-    scope: state.language === "en" ? `Fast controlled pilot for ${PILOT_TARGET_USERS} users` : `Piloto rápido controlado de ${PILOT_TARGET_USERS} usuarios`,
+    scope: state.language !== "es" ? `Fast controlled pilot for ${PILOT_TARGET_USERS} users` : `Piloto rápido controlado de ${PILOT_TARGET_USERS} usuarios`,
     score: readiness.score,
     recommendation: readiness.recommendation,
     ready: readiness.ready,
@@ -31793,7 +32187,7 @@ function buildPilotReadinessExportPayload() {
 }
 
 function buildPilotReadinessMarkdown(payload = buildPilotReadinessExportPayload()) {
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? { title: "Pilot Readiness", generated: "Generated", scope: "Scope", score: "Score", recommendation: "Recommendation", checks: "Checks", ready: "ready", review: "review" }
     : { title: "Preparación del piloto", generated: "Generado", scope: "Alcance", score: "Puntaje", recommendation: "Recomendación", checks: "Controles", ready: "listo", review: "revisar" };
   return [
@@ -31825,8 +32219,8 @@ async function copyPilotReadinessSummary() {
   const status = document.getElementById("embeddingStatus");
   if (status) {
     status.textContent = copied
-      ? state.language === "en" ? "Pilot readiness summary copied." : "Resumen de preparación del piloto copiado."
-      : state.language === "en" ? "Could not copy pilot readiness." : "No se pudo copiar la preparación del piloto.";
+      ? state.language !== "es" ? "Pilot readiness summary copied." : "Resumen de preparación del piloto copiado."
+      : state.language !== "es" ? "Could not copy pilot readiness." : "No se pudo copiar la preparación del piloto.";
   }
 }
 
@@ -31835,14 +32229,14 @@ function buildPilotInviteKit() {
   const blockers = readiness.checks.filter((check) => !check.ok);
   const cohort =
     readiness.score >= 90
-      ? state.language === "en" ? `Invite ${PILOT_TARGET_USERS} users` : `Invitar ${PILOT_TARGET_USERS} usuarios`
+      ? state.language !== "es" ? `Invite ${PILOT_TARGET_USERS} users` : `Invitar ${PILOT_TARGET_USERS} usuarios`
       : readiness.score >= 80
-        ? state.language === "en" ? `Invite ${PILOT_TARGET_USERS} users first` : `Invitar primero ${PILOT_TARGET_USERS} usuarios`
+        ? state.language !== "es" ? `Invite ${PILOT_TARGET_USERS} users first` : `Invitar primero ${PILOT_TARGET_USERS} usuarios`
         : readiness.score >= 70
-          ? state.language === "en" ? "Internal test with 1-2 users" : "Prueba interna con 1-2 usuarios"
-          : state.language === "en" ? "Wait before inviting users" : "Esperar antes de invitar usuarios";
+          ? state.language !== "es" ? "Internal test with 1-2 users" : "Prueba interna con 1-2 usuarios"
+          : state.language !== "es" ? "Wait before inviting users" : "Esperar antes de invitar usuarios";
   const invitation =
-    state.language === "en"
+    state.language !== "es"
       ? [
           "Hello, I am preparing a controlled pilot of Experience Hub.",
           "The goal is to test capture, reports, multimedia assets, privacy, backups, and exports with real but limited use.",
@@ -31854,7 +32248,7 @@ function buildPilotInviteKit() {
           "Por favor úsalo primero con datos no críticos, reporta flujos confusos y respalda o exporta tu trabajo antes de cambios importantes.",
         ].join("\n\n");
   const onboarding =
-    state.language === "en"
+    state.language !== "es"
       ? [
           "Confirm access and language.",
           "Load or create at least one experience.",
@@ -31885,12 +32279,12 @@ function buildPilotInviteKit() {
 
 function buildPilotInviteMarkdown(kit = buildPilotInviteKit()) {
   const labels =
-    state.language === "en"
+    state.language !== "es"
       ? { title: "Pilot Invitation Kit", generated: "Generated", cohort: "Recommended cohort", score: "Readiness", invite: "Invitation message", onboarding: "Onboarding checklist", blockers: "Before inviting" }
       : { title: "Kit de invitación piloto", generated: "Generado", cohort: "Grupo recomendado", score: "Preparación", invite: "Mensaje de invitación", onboarding: "Checklist de onboarding", blockers: "Antes de invitar" };
   const blockerLines = kit.blockers.length
     ? kit.blockers.map((item) => `- ${item.label}: ${item.detail}`).join("\n")
-    : `- ${state.language === "en" ? "No pilot blockers detected." : "No se detectan bloqueos del piloto."}`;
+    : `- ${state.language !== "es" ? "No pilot blockers detected." : "No se detectan bloqueos del piloto."}`;
   return [
     `# ${labels.title}`,
     "",
@@ -31914,7 +32308,7 @@ function buildPilotInviteMarkdown(kit = buildPilotInviteKit()) {
 }
 
 function getPilotParticipantLabels() {
-  return state.language === "en"
+  return state.language !== "es"
     ? {
         title: "Groups, account and data",
         subtitle: "Private subgroups inside the same user account.",
@@ -31990,7 +32384,7 @@ function renderParticipantAdminRow(item, labels, archived = false) {
     <article class="${archived ? "is-archived" : ""}">
       <div>
         <strong>${escapeHtml(item.name)}</strong>
-        <p>${escapeHtml([item.email, item.role].filter(Boolean).join(" - ") || (state.language === "en" ? "Private group" : "Grupo privado"))}</p>
+        <p>${escapeHtml([item.email, item.role].filter(Boolean).join(" - ") || (state.language !== "es" ? "Private group" : "Grupo privado"))}</p>
         <small>${escapeHtml(status)} - ${escapeHtml(formatDate(item.archivedAt || item.createdAt))}</small>
         ${archived ? "" : `<div class="pilot-participant-checks" aria-label="${escapeHtml(labels.onboarding)}">
           ${["accessOk", "manualOk", "testOk"]
@@ -32009,7 +32403,7 @@ function renderParticipantAdminRow(item, labels, archived = false) {
         ${archived
           ? `<button class="ghost-button" type="button" data-pilot-participant-reactivate="${escapeHtml(item.id)}">${escapeHtml(labels.reactivate)}</button>`
           : item.isPrimaryUser
-            ? `<span class="pill">${escapeHtml(state.language === "en" ? "Main account" : "Cuenta principal")}</span>`
+            ? `<span class="pill">${escapeHtml(state.language !== "es" ? "Main account" : "Cuenta principal")}</span>`
             : `<button class="ghost-button subtle-danger" type="button" data-pilot-participant-archive="${escapeHtml(item.id)}">${escapeHtml(labels.archive)}</button>`}
         ${archived ? "" : `<button class="ghost-button" type="button" data-pilot-participant-complete="${escapeHtml(item.id)}">${escapeHtml(labels.statuses[2])}</button>`}
       </div>
@@ -32047,12 +32441,12 @@ function renderPilotParticipantsPanel() {
       <h4>${escapeHtml(labels.activeTitle)}</h4>
       ${activeRows.length ? activeRows.map((item) => renderParticipantAdminRow(item, labels, false)).join("") : `<p class="card-meta">${escapeHtml(labels.empty)}</p>`}
       <h4>${escapeHtml(labels.archivedTitle)}</h4>
-      ${archivedRows.length ? archivedRows.map((item) => renderParticipantAdminRow(item, labels, true)).join("") : `<p class="card-meta">${escapeHtml(state.language === "en" ? "No archived groups." : "No hay grupos archivados.")}</p>`}
+      ${archivedRows.length ? archivedRows.map((item) => renderParticipantAdminRow(item, labels, true)).join("") : `<p class="card-meta">${escapeHtml(state.language !== "es" ? "No archived groups." : "No hay grupos archivados.")}</p>`}
     </div>
     <div class="account-closure-info">
-      <strong>${escapeHtml(state.language === "en" ? "Account closure" : "Baja de cuenta")}</strong>
+      <strong>${escapeHtml(state.language !== "es" ? "Account closure" : "Baja de cuenta")}</strong>
       <p>${escapeHtml(labels.accountPolicy)}</p>
-      <button class="ghost-button subtle-danger" type="button" data-account-closure-request>${escapeHtml(state.language === "en" ? "Request account closure" : "Solicitar baja de cuenta")}</button>
+      <button class="ghost-button subtle-danger" type="button" data-account-closure-request>${escapeHtml(state.language !== "es" ? "Request account closure" : "Solicitar baja de cuenta")}</button>
     </div>
   `;
 }
@@ -32090,13 +32484,13 @@ async function handlePilotParticipantClick(event) {
   if (archiveButton) {
     const id = archiveButton.dataset.pilotParticipantArchive;
     const name = getPilotParticipantName(id);
-    const message = state.language === "en"
+    const message = state.language !== "es"
       ? `Archive ${name}? It will stop appearing for new captures, but saved experiences and assets will remain.`
       : `Archivar ${name}? Dejara de aparecer para nuevas capturas, pero sus experiencias y activos guardados se conservaran.`;
     if (!confirm(message)) return;
     await updatePilotParticipantLifecycle(id, "archive");
     refreshPilotGroupSurfaces({ renderAdminPanel: true });
-    notify(state.language === "en" ? `${name} archived. Historical data was preserved.` : `${name} archivado. La data historica se conservo.`, "success");
+    notify(state.language !== "es" ? `${name} archived. Historical data was preserved.` : `${name} archivado. La data historica se conservo.`, "success");
     return;
   }
   const reactivateButton = event.target.closest("[data-pilot-participant-reactivate]");
@@ -32104,7 +32498,7 @@ async function handlePilotParticipantClick(event) {
     const id = reactivateButton.dataset.pilotParticipantReactivate;
     await updatePilotParticipantLifecycle(id, "reactivate");
     refreshPilotGroupSurfaces({ selectedId: id, renderAdminPanel: true });
-    notify(state.language === "en" ? `${getPilotParticipantName(id)} reactivated.` : `${getPilotParticipantName(id)} reactivado.`, "success");
+    notify(state.language !== "es" ? `${getPilotParticipantName(id)} reactivated.` : `${getPilotParticipantName(id)} reactivado.`, "success");
     return;
   }
   const closureButton = event.target.closest("[data-account-closure-request]");
@@ -32127,7 +32521,7 @@ async function handlePilotParticipantClick(event) {
   if (completeButton) {
     const item = state.pilotParticipants.find((entry) => entry.id === completeButton.dataset.pilotParticipantComplete);
     if (item) {
-      item.status = state.language === "en" ? "completed" : "completado";
+      item.status = state.language !== "es" ? "completed" : "completado";
       item.completedAt = new Date().toISOString();
       savePilotParticipants();
       await syncPilotParticipantToApi(item);
@@ -32143,27 +32537,27 @@ function exportPilotParticipantsCsv() {
 }
 
 async function requestAccountClosure() {
-  const firstConfirm = state.language === "en"
+  const firstConfirm = state.language !== "es"
     ? "Request account closure? This does not delete data immediately. Download a backup first."
     : "Solicitar baja de cuenta? Esto no borra datos de inmediato. Descarga un respaldo primero.";
   if (!confirm(firstConfirm)) return;
-  const secondConfirm = state.language === "en"
+  const secondConfirm = state.language !== "es"
     ? "Confirm that you understand: saved experiences remain until final server-side deletion is approved."
     : "Confirma que entiendes: las experiencias guardadas se conservan hasta aprobar el borrado final en servidor.";
   if (!confirm(secondConfirm)) return;
-  const reason = prompt(state.language === "en" ? "Optional reason for the request" : "Motivo opcional de la solicitud") || "";
+  const reason = prompt(state.language !== "es" ? "Optional reason for the request" : "Motivo opcional de la solicitud") || "";
   try {
     const result = await apiRequest("/account/closure-request", {
       method: "POST",
       body: JSON.stringify({ reason, appVersion: APP_VERSION }),
     });
-    notify(result.message || (state.language === "en" ? "Account closure request registered." : "Solicitud de baja registrada."), "success");
+    notify(result.message || (state.language !== "es" ? "Account closure request registered." : "Solicitud de baja registrada."), "success");
   } catch (error) {
-    notify(state.language === "en" ? `Could not register closure request: ${error.message || error}` : `No se pudo registrar la baja: ${error.message || error}`, "warning");
+    notify(state.language !== "es" ? `Could not register closure request: ${error.message || error}` : `No se pudo registrar la baja: ${error.message || error}`, "warning");
   }
 }
 function getPilotFeedbackLabels() {
-  return state.language === "en"
+  return state.language !== "es"
     ? {
         title: "Pilot feedback log",
         subtitle: "Capture issues, confusion, and improvement ideas during the pilot.",
@@ -32219,7 +32613,7 @@ function renderPilotFeedbackPanel() {
     <div class="pilot-feedback-heading">
       <div>
         <h3>${escapeHtml(labels.title)}</h3>
-        <p class="card-meta">${escapeHtml(labels.subtitle)} · ${escapeHtml(state.language === "en" ? `${summary.open} open, ${summary.blockingOpen} high/blocker` : `${summary.open} abiertos, ${summary.blockingOpen} altos/bloqueantes`)}</p>
+        <p class="card-meta">${escapeHtml(labels.subtitle)} · ${escapeHtml(state.language !== "es" ? `${summary.open} open, ${summary.blockingOpen} high/blocker` : `${summary.open} abiertos, ${summary.blockingOpen} altos/bloqueantes`)}</p>
       </div>
       <button class="ghost-button" type="button" data-pilot-feedback-export="csv">${escapeHtml(labels.export)}</button>
     </div>
@@ -32282,7 +32676,7 @@ function handlePilotFeedbackClick(event) {
   if (resolveButton) {
     const item = state.pilotFeedback.find((entry) => entry.id === resolveButton.dataset.pilotFeedbackResolve);
     if (item) {
-      item.status = state.language === "en" ? "resolved" : "resuelto";
+      item.status = state.language !== "es" ? "resolved" : "resuelto";
       item.resolvedAt = new Date().toISOString();
       savePilotFeedback();
       renderPilotFeedbackPanel();
@@ -32297,7 +32691,7 @@ function exportPilotFeedbackCsv() {
 }
 
 function getPilotTestScenarios() {
-  return state.language === "en"
+  return state.language !== "es"
     ? [
         { key: "capture", title: "Capture a real experience", detail: "Create, edit, attach evidence, and delete only if needed." },
         { key: "report", title: "Generate a report", detail: "Review indicators, charts, findings, and export at least one format." },
@@ -32339,14 +32733,14 @@ function renderPilotTestPlanPanel() {
   container.innerHTML = `
     <div class="pilot-test-heading">
       <div>
-        <h3>${escapeHtml(state.language === "en" ? "Pilot Test Plan" : "Plan de pruebas piloto")}</h3>
-        <p class="card-meta">${escapeHtml(state.language === "en" ? "Minimum scenarios before expanding the pilot group." : "Escenarios mínimos antes de ampliar el grupo piloto.")}</p>
+        <h3>${escapeHtml(state.language !== "es" ? "Pilot Test Plan" : "Plan de pruebas piloto")}</h3>
+        <p class="card-meta">${escapeHtml(state.language !== "es" ? "Minimum scenarios before expanding the pilot group." : "Escenarios mínimos antes de ampliar el grupo piloto.")}</p>
       </div>
       <span class="pill">${escapeHtml(`${summary.completed}/${summary.total} · ${summary.score}%`)}</span>
     </div>
     <div class="pilot-readiness-actions">
-      <button class="ghost-button" type="button" data-pilot-test-action="export-markdown">${escapeHtml(state.language === "en" ? "Export plan" : "Exportar plan")}</button>
-      <button class="ghost-button" type="button" data-pilot-test-action="reset">${escapeHtml(state.language === "en" ? "Reset tests" : "Reiniciar pruebas")}</button>
+      <button class="ghost-button" type="button" data-pilot-test-action="export-markdown">${escapeHtml(state.language !== "es" ? "Export plan" : "Exportar plan")}</button>
+      <button class="ghost-button" type="button" data-pilot-test-action="reset">${escapeHtml(state.language !== "es" ? "Reset tests" : "Reiniciar pruebas")}</button>
     </div>
     <div class="pilot-test-list">
       ${scenarios
@@ -32386,7 +32780,7 @@ function handlePilotTestPlanClick(event) {
     downloadBlob(new Blob([buildPilotTestPlanMarkdown()], { type: "text/markdown;charset=utf-8" }), `plan-pruebas-piloto-${PILOT_TARGET_USERS}-usuarios.md`);
     return;
   }
-  if (action === "reset" && confirm(state.language === "en" ? "Reset pilot test progress?" : "¿Reiniciar el avance del plan de pruebas piloto?")) {
+  if (action === "reset" && confirm(state.language !== "es" ? "Reset pilot test progress?" : "¿Reiniciar el avance del plan de pruebas piloto?")) {
     state.pilotTestPlan = {};
     savePilotTestPlan();
     renderAdmin();
@@ -32396,9 +32790,9 @@ function handlePilotTestPlanClick(event) {
 function buildPilotTestPlanMarkdown() {
   const summary = calculatePilotTestPlanSummary();
   const lines = [
-    state.language === "en" ? "# Pilot Test Plan" : "# Plan de pruebas piloto",
+    state.language !== "es" ? "# Pilot Test Plan" : "# Plan de pruebas piloto",
     "",
-    state.language === "en"
+    state.language !== "es"
       ? `Progress: ${summary.completed}/${summary.total} scenarios complete (${summary.score}%).`
       : `Avance: ${summary.completed}/${summary.total} escenarios completos (${summary.score}%).`,
     "",
@@ -32418,19 +32812,19 @@ function buildPilotClosureRecord() {
   const blockers = [
     ...readiness.checks.filter((check) => !check.ok).map((check) => `${check.label}: ${check.detail}`),
     ...(feedback.blockingOpen
-      ? [state.language === "en" ? `${feedback.blockingOpen} high/blocker feedback items remain open` : `${feedback.blockingOpen} feedback altos o bloqueantes siguen abiertos`]
+      ? [state.language !== "es" ? `${feedback.blockingOpen} high/blocker feedback items remain open` : `${feedback.blockingOpen} feedback altos o bloqueantes siguen abiertos`]
       : []),
   ];
   const decision =
     readiness.score >= 90 && tests.score >= 80 && participants.total > 0 && participants.total <= PILOT_TARGET_USERS && participants.needsOnboarding === 0 && feedback.blockingOpen === 0
-      ? state.language === "en"
+      ? state.language !== "es"
         ? "Proceed with the controlled pilot"
         : "Proceder con el piloto controlado"
       : readiness.score >= 80 && feedback.blockingOpen === 0
-        ? state.language === "en"
+        ? state.language !== "es"
           ? "Proceed with a smaller internal group"
           : "Proceder con un grupo interno más pequeño"
-        : state.language === "en"
+        : state.language !== "es"
           ? "Do not expand the pilot yet"
           : "No ampliar el piloto todavía";
   return {
@@ -32453,8 +32847,8 @@ function renderPilotClosureRecordPanel() {
   const packagePreview = buildPilotPackagePreview();
   const signoff = record.signoff || {};
   const suggestedDecision = signoff.decision || getSuggestedPilotSignoffDecision(record);
-  const suggestedOwner = signoff.owner || state.profile?.name || state.profile?.email || (state.language === "en" ? "Pilot owner" : "Responsable piloto");
-  const cards = state.language === "en"
+  const suggestedOwner = signoff.owner || state.profile?.name || state.profile?.email || (state.language !== "es" ? "Pilot owner" : "Responsable piloto");
+  const cards = state.language !== "es"
     ? [
         ["Readiness", `${record.readiness.score}%`, `${record.readiness.ready}/${record.readiness.total} checks ready`],
         ["Test plan", `${record.tests.score}%`, `${record.tests.completed}/${record.tests.total} scenarios complete`],
@@ -32470,19 +32864,19 @@ function renderPilotClosureRecordPanel() {
   container.innerHTML = `
     <div class="pilot-closure-record-heading">
       <div>
-        <h3>${escapeHtml(state.language === "en" ? "Pilot Closure Record" : "Acta de cierre piloto")}</h3>
+        <h3>${escapeHtml(state.language !== "es" ? "Pilot Closure Record" : "Acta de cierre piloto")}</h3>
         <p class="card-meta">${escapeHtml(record.decision)}</p>
       </div>
-      <span class="${record.blockers.length ? "status-warn" : "status-ok"}">${escapeHtml(record.blockers.length ? (state.language === "en" ? "Review" : "Revisar") : (state.language === "en" ? "Ready" : "Listo"))}</span>
+      <span class="${record.blockers.length ? "status-warn" : "status-ok"}">${escapeHtml(record.blockers.length ? (state.language !== "es" ? "Review" : "Revisar") : (state.language !== "es" ? "Ready" : "Listo"))}</span>
     </div>
     <div class="pilot-readiness-actions">
-      <button class="ghost-button" type="button" data-pilot-closure-record="copy">${escapeHtml(state.language === "en" ? "Copy record" : "Copiar acta")}</button>
-      <button class="ghost-button" type="button" data-pilot-closure-record="markdown">${escapeHtml(state.language === "en" ? "Export Markdown" : "Exportar Markdown")}</button>
-      <button class="ghost-button" type="button" data-pilot-closure-record="json">${escapeHtml(state.language === "en" ? "Export JSON" : "Exportar JSON")}</button>
-      <button class="ghost-button" type="button" data-pilot-closure-record="package-markdown">${escapeHtml(state.language === "en" ? "Export package MD" : "Exportar paquete MD")}</button>
-      <button class="ghost-button" type="button" data-pilot-closure-record="package-json">${escapeHtml(state.language === "en" ? "Export package JSON" : "Exportar paquete JSON")}</button>
-      <button class="ghost-button" type="button" data-pilot-closure-record="register-qa">${escapeHtml(state.language === "en" ? "Register QA evidence" : "Registrar evidencia QA")}</button>
-      <button class="primary-button" type="button" data-pilot-closure-record="save-signoff">${escapeHtml(state.language === "en" ? "Save decision" : "Guardar decisión")}</button>
+      <button class="ghost-button" type="button" data-pilot-closure-record="copy">${escapeHtml(state.language !== "es" ? "Copy record" : "Copiar acta")}</button>
+      <button class="ghost-button" type="button" data-pilot-closure-record="markdown">${escapeHtml(state.language !== "es" ? "Export Markdown" : "Exportar Markdown")}</button>
+      <button class="ghost-button" type="button" data-pilot-closure-record="json">${escapeHtml(state.language !== "es" ? "Export JSON" : "Exportar JSON")}</button>
+      <button class="ghost-button" type="button" data-pilot-closure-record="package-markdown">${escapeHtml(state.language !== "es" ? "Export package MD" : "Exportar paquete MD")}</button>
+      <button class="ghost-button" type="button" data-pilot-closure-record="package-json">${escapeHtml(state.language !== "es" ? "Export package JSON" : "Exportar paquete JSON")}</button>
+      <button class="ghost-button" type="button" data-pilot-closure-record="register-qa">${escapeHtml(state.language !== "es" ? "Register QA evidence" : "Registrar evidencia QA")}</button>
+      <button class="primary-button" type="button" data-pilot-closure-record="save-signoff">${escapeHtml(state.language !== "es" ? "Save decision" : "Guardar decisión")}</button>
     </div>
     <p id="pilotClosureRecordStatus" class="pilot-closure-record-status" aria-live="polite">${escapeHtml(formatPilotClosureRecordStatus(record, signoff))}</p>
     <div class="pilot-closure-record-grid">
@@ -32501,19 +32895,19 @@ function renderPilotClosureRecordPanel() {
     ${
       record.blockers.length
         ? `<div class="pilot-closure-blockers">
-            <strong>${escapeHtml(state.language === "en" ? "Pending before expanding" : "Pendiente antes de ampliar")}</strong>
+            <strong>${escapeHtml(state.language !== "es" ? "Pending before expanding" : "Pendiente antes de ampliar")}</strong>
             ${record.blockers.slice(0, 6).map((item) => `<p>${escapeHtml(item)}</p>`).join("")}
           </div>`
-        : `<p class="card-meta">${escapeHtml(state.language === "en" ? "No critical blockers detected for a controlled pilot." : "No se detectan bloqueos críticos para un piloto controlado.")}</p>`
+        : `<p class="card-meta">${escapeHtml(state.language !== "es" ? "No critical blockers detected for a controlled pilot." : "No se detectan bloqueos críticos para un piloto controlado.")}</p>`
     }
     <div class="pilot-package-preview">
       <div>
-        <strong>${escapeHtml(state.language === "en" ? "Pilot package contents" : "Contenido del paquete piloto")}</strong>
-        <p>${escapeHtml(state.language === "en" ? "Review what will be included before exporting the full evidence package." : "Revisa qué se incluirá antes de exportar el paquete completo de evidencia.")}</p>
+        <strong>${escapeHtml(state.language !== "es" ? "Pilot package contents" : "Contenido del paquete piloto")}</strong>
+        <p>${escapeHtml(state.language !== "es" ? "Review what will be included before exporting the full evidence package." : "Revisa qué se incluirá antes de exportar el paquete completo de evidencia.")}</p>
       </div>
       <div class="pilot-package-evidence-action">
-        <p>${escapeHtml(state.language === "en" ? "If QA evidence is pending, register the current checks before exporting the package." : "Si la evidencia QA está pendiente, registra los controles actuales antes de exportar el paquete.")}</p>
-        <button class="ghost-button" type="button" data-pilot-closure-record="register-qa">${escapeHtml(state.language === "en" ? "Register QA evidence" : "Registrar evidencia QA")}</button>
+        <p>${escapeHtml(state.language !== "es" ? "If QA evidence is pending, register the current checks before exporting the package." : "Si la evidencia QA está pendiente, registra los controles actuales antes de exportar el paquete.")}</p>
+        <button class="ghost-button" type="button" data-pilot-closure-record="register-qa">${escapeHtml(state.language !== "es" ? "Register QA evidence" : "Registrar evidencia QA")}</button>
       </div>
       <div class="pilot-package-preview-grid">
         ${packagePreview
@@ -32531,32 +32925,32 @@ function renderPilotClosureRecordPanel() {
     </div>
     <div class="pilot-closure-signoff">
       <label>
-        <span>${escapeHtml(state.language === "en" ? "Formal decision" : "Decisión formal")}</span>
+        <span>${escapeHtml(state.language !== "es" ? "Formal decision" : "Decisión formal")}</span>
         <select id="pilotClosureDecision">
           ${[
-            ["", state.language === "en" ? "Not recorded" : "Sin registrar"],
-            ["go", state.language === "en" ? "Proceed" : "Proceder"],
-            ["limited", state.language === "en" ? "Proceed with smaller group" : "Proceder con grupo reducido"],
-            ["hold", state.language === "en" ? "Hold" : "Pausar"],
+            ["", state.language !== "es" ? "Not recorded" : "Sin registrar"],
+            ["go", state.language !== "es" ? "Proceed" : "Proceder"],
+            ["limited", state.language !== "es" ? "Proceed with smaller group" : "Proceder con grupo reducido"],
+            ["hold", state.language !== "es" ? "Hold" : "Pausar"],
           ]
             .map(([value, label]) => `<option value="${escapeHtml(value)}" ${suggestedDecision === value ? "selected" : ""}>${escapeHtml(label)}</option>`)
             .join("")}
         </select>
       </label>
       <label>
-        <span>${escapeHtml(state.language === "en" ? "Owner" : "Responsable")}</span>
-        <input id="pilotClosureOwner" type="text" value="${escapeHtml(suggestedOwner)}" placeholder="${escapeHtml(state.language === "en" ? "Name or role" : "Nombre o rol")}" />
+        <span>${escapeHtml(state.language !== "es" ? "Owner" : "Responsable")}</span>
+        <input id="pilotClosureOwner" type="text" value="${escapeHtml(suggestedOwner)}" placeholder="${escapeHtml(state.language !== "es" ? "Name or role" : "Nombre o rol")}" />
       </label>
       <label class="pilot-closure-signoff-notes">
-        <span>${escapeHtml(state.language === "en" ? "Closure notes" : "Notas de cierre")}</span>
-        <textarea id="pilotClosureNotes" rows="3" placeholder="${escapeHtml(state.language === "en" ? "Key decision context, pending commitments, or next review date." : "Contexto de la decisión, compromisos pendientes o próxima revisión.")}">${escapeHtml(signoff.notes || "")}</textarea>
+        <span>${escapeHtml(state.language !== "es" ? "Closure notes" : "Notas de cierre")}</span>
+        <textarea id="pilotClosureNotes" rows="3" placeholder="${escapeHtml(state.language !== "es" ? "Key decision context, pending commitments, or next review date." : "Contexto de la decisión, compromisos pendientes o próxima revisión.")}">${escapeHtml(signoff.notes || "")}</textarea>
       </label>
-      ${signoff.updatedAt ? `<small>${escapeHtml(state.language === "en" ? "Last saved" : "Último guardado")}: ${escapeHtml(formatDate(signoff.updatedAt))}</small>` : ""}
+      ${signoff.updatedAt ? `<small>${escapeHtml(state.language !== "es" ? "Last saved" : "Último guardado")}: ${escapeHtml(formatDate(signoff.updatedAt))}</small>` : ""}
     </div>
     ${
       Array.isArray(signoff.history) && signoff.history.length
         ? `<div class="pilot-closure-history">
-            <strong>${escapeHtml(state.language === "en" ? "Decision history" : "Historial de decisiones")}</strong>
+            <strong>${escapeHtml(state.language !== "es" ? "Decision history" : "Historial de decisiones")}</strong>
             ${signoff.history
               .slice(0, 5)
               .map(
@@ -32582,7 +32976,7 @@ async function handlePilotClosureRecordClick(event) {
   if (action === "register-qa") {
     recordQuickQaAudit("pilotPackage", buildQuickQaPayload());
     recordUiQualityAudit("pilotPackage", buildUiQualityPayload());
-    setPilotClosureRecordStatus(state.language === "en" ? "QA evidence registered for the pilot package." : "Evidencia QA registrada para el paquete piloto.");
+    setPilotClosureRecordStatus(state.language !== "es" ? "QA evidence registered for the pilot package." : "Evidencia QA registrada para el paquete piloto.");
     renderAdmin();
     focusAppElement("pilotClosureRecordPanel");
     return;
@@ -32609,8 +33003,8 @@ async function handlePilotClosureRecordClick(event) {
     const status = document.getElementById("embeddingStatus");
     if (status) {
       status.textContent = copied
-        ? state.language === "en" ? "Pilot closure record copied." : "Acta de cierre piloto copiada."
-        : state.language === "en" ? "Could not copy closure record." : "No se pudo copiar el acta de cierre.";
+        ? state.language !== "es" ? "Pilot closure record copied." : "Acta de cierre piloto copiada."
+        : state.language !== "es" ? "Could not copy closure record." : "No se pudo copiar el acta de cierre.";
     }
     return;
   }
@@ -32618,7 +33012,7 @@ async function handlePilotClosureRecordClick(event) {
     const previousHistory = Array.isArray(state.pilotClosureSignoff?.history) ? state.pilotClosureSignoff.history : [];
     const nextSignoff = {
       decision: document.getElementById("pilotClosureDecision")?.value || getSuggestedPilotSignoffDecision(record),
-      owner: String(document.getElementById("pilotClosureOwner")?.value || "").trim() || state.profile?.name || state.profile?.email || (state.language === "en" ? "Pilot owner" : "Responsable piloto"),
+      owner: String(document.getElementById("pilotClosureOwner")?.value || "").trim() || state.profile?.name || state.profile?.email || (state.language !== "es" ? "Pilot owner" : "Responsable piloto"),
       notes: String(document.getElementById("pilotClosureNotes")?.value || "").trim(),
       updatedAt: new Date().toISOString(),
       appVersion: APP_VERSION,
@@ -32628,18 +33022,18 @@ async function handlePilotClosureRecordClick(event) {
       history: [nextSignoff, ...previousHistory].slice(0, 10),
     };
     savePilotClosureSignoff();
-    setPilotClosureRecordStatus(state.language === "en" ? `Pilot decision saved: ${formatPilotSignoffDecision(nextSignoff.decision)}.` : `Decisión del piloto guardada: ${formatPilotSignoffDecision(nextSignoff.decision)}.`);
+    setPilotClosureRecordStatus(state.language !== "es" ? `Pilot decision saved: ${formatPilotSignoffDecision(nextSignoff.decision)}.` : `Decisión del piloto guardada: ${formatPilotSignoffDecision(nextSignoff.decision)}.`);
     const status = document.getElementById("embeddingStatus");
-    if (status) status.textContent = state.language === "en" ? "Pilot decision saved." : "Decisión del piloto guardada.";
+    if (status) status.textContent = state.language !== "es" ? "Pilot decision saved." : "Decisión del piloto guardada.";
     renderAdmin();
   }
 }
 
 function formatPilotSignoffDecision(decision) {
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? { go: "Proceed", limited: "Proceed with smaller group", hold: "Hold" }
     : { go: "Proceder", limited: "Proceder con grupo reducido", hold: "Pausar" };
-  return labels[decision] || (state.language === "en" ? "Not recorded" : "Sin registrar");
+  return labels[decision] || (state.language !== "es" ? "Not recorded" : "Sin registrar");
 }
 
 function getSuggestedPilotSignoffDecision(record = buildPilotClosureRecord()) {
@@ -32650,12 +33044,12 @@ function getSuggestedPilotSignoffDecision(record = buildPilotClosureRecord()) {
 
 function formatPilotClosureRecordStatus(record = buildPilotClosureRecord(), signoff = record.signoff || {}) {
   if (signoff.updatedAt) {
-    return state.language === "en"
+    return state.language !== "es"
       ? `Completed: ${formatPilotSignoffDecision(signoff.decision)} · ${formatDate(signoff.completedAt || signoff.updatedAt)}. You can export the record or package now.`
       : `Completado: ${formatPilotSignoffDecision(signoff.decision)} · ${formatDate(signoff.completedAt || signoff.updatedAt)}. Ya puedes exportar el acta o el paquete.`;
   }
   const suggested = formatPilotSignoffDecision(getSuggestedPilotSignoffDecision(record));
-  return state.language === "en"
+  return state.language !== "es"
     ? `Suggested decision: ${suggested}. Review owner and notes, then press Save decision.`
     : `Decisión sugerida: ${suggested}. Revisa responsable y notas, luego pulsa Guardar decisión.`;
 }
@@ -32668,7 +33062,7 @@ function setPilotClosureRecordStatus(message) {
 }
 
 function buildPilotClosureRecordMarkdown(record = buildPilotClosureRecord()) {
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         title: "Pilot Closure Record",
         generated: "Generated",
@@ -32789,13 +33183,13 @@ function formatPilotQaEvidenceLine(item, emptyText) {
   if (!item) return emptyText;
   const pending = item.pending?.length
     ? item.pending.slice(0, 3).join(" · ")
-    : state.language === "en" ? "no pending controls" : "sin controles pendientes";
-  return `${item.score}% · ${item.ready}/${item.total} · ${item.at ? formatDate(item.at) : (state.language === "en" ? "No date" : "Sin fecha")} · ${pending}`;
+    : state.language !== "es" ? "no pending controls" : "sin controles pendientes";
+  return `${item.score}% · ${item.ready}/${item.total} · ${item.at ? formatDate(item.at) : (state.language !== "es" ? "No date" : "Sin fecha")} · ${pending}`;
 }
 
 function buildPilotPackagePreview(pkg = buildPilotPackage()) {
   const signed = Boolean(pkg.closureRecord?.signoff?.decision);
-  return state.language === "en"
+  return state.language !== "es"
     ? [
         { label: "QA evidence", value: pkg.qaEvidence?.interfaceQuality ? `${pkg.qaEvidence.interfaceQuality.score}%` : "Pending", detail: pkg.qaEvidence?.quickVerification ? "Quick verification + interface quality" : "Register QA evidence before pilot" },
         { label: "Readiness", value: `${pkg.readiness.score}%`, detail: `${pkg.readiness.ready}/${pkg.readiness.total} checks ready` },
@@ -32817,7 +33211,7 @@ function buildPilotPackagePreview(pkg = buildPilotPackage()) {
 }
 
 function buildPilotPackageMarkdown(pkg = buildPilotPackage()) {
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         title: "50-User Pilot Package",
         generated: "Generated",
@@ -32844,12 +33238,12 @@ function buildPilotPackageMarkdown(pkg = buildPilotPackage()) {
     `# ${labels.title}`,
     "",
     `**${labels.generated}:** ${formatDate(pkg.exportedAt)}`,
-    `**${state.language === "en" ? "Version" : "Versión"}:** ${pkg.appVersion}`,
+    `**${state.language !== "es" ? "Version" : "Versión"}:** ${pkg.appVersion}`,
     "",
     `## ${labels.qa}`,
     "",
-    `- ${state.language === "en" ? "Quick verification" : "Verificación rápida"}: ${formatPilotQaEvidenceLine(pkg.qaEvidence?.quickVerification, state.language === "en" ? "No evidence registered" : "Sin evidencia registrada")}`,
-    `- ${state.language === "en" ? "Interface quality" : "Calidad de interfaz"}: ${formatPilotQaEvidenceLine(pkg.qaEvidence?.interfaceQuality, state.language === "en" ? "No evidence registered" : "Sin evidencia registrada")}`,
+    `- ${state.language !== "es" ? "Quick verification" : "Verificación rápida"}: ${formatPilotQaEvidenceLine(pkg.qaEvidence?.quickVerification, state.language !== "es" ? "No evidence registered" : "Sin evidencia registrada")}`,
+    `- ${state.language !== "es" ? "Interface quality" : "Calidad de interfaz"}: ${formatPilotQaEvidenceLine(pkg.qaEvidence?.interfaceQuality, state.language !== "es" ? "No evidence registered" : "Sin evidencia registrada")}`,
     "",
     `## ${labels.readiness}`,
     "",
@@ -32865,14 +33259,14 @@ function buildPilotPackageMarkdown(pkg = buildPilotPackage()) {
     "",
     `## ${labels.participants}`,
     "",
-    `- ${state.language === "en" ? "Registered" : "Registrados"}: ${pkg.participants.summary.total}/${PILOT_TARGET_USERS}`,
-    `- ${state.language === "en" ? "Onboarded" : "Con onboarding"}: ${pkg.participants.summary.onboarded}`,
+    `- ${state.language !== "es" ? "Registered" : "Registrados"}: ${pkg.participants.summary.total}/${PILOT_TARGET_USERS}`,
+    `- ${state.language !== "es" ? "Onboarded" : "Con onboarding"}: ${pkg.participants.summary.onboarded}`,
     ...pkg.participants.items.slice(0, 20).map((item) => `- ${item.name || "-"} · ${item.email || "-"} · ${item.status || "-"}`),
     "",
     `## ${labels.feedback}`,
     "",
-    `- ${state.language === "en" ? "Open" : "Abiertos"}: ${pkg.feedback.summary.open}`,
-    `- ${state.language === "en" ? "High/blocker" : "Altos/bloqueantes"}: ${pkg.feedback.summary.blockingOpen}`,
+    `- ${state.language !== "es" ? "Open" : "Abiertos"}: ${pkg.feedback.summary.open}`,
+    `- ${state.language !== "es" ? "High/blocker" : "Altos/bloqueantes"}: ${pkg.feedback.summary.blockingOpen}`,
     ...pkg.feedback.items.slice(0, 20).map((item) => `- ${item.module || "-"} · ${item.severity || "-"} · ${item.status || "-"}: ${item.note || ""}`),
     "",
     `## ${labels.closure}`,
@@ -32889,16 +33283,16 @@ function renderPilotInviteKitPanel() {
   container.innerHTML = `
     <div class="pilot-invite-heading">
       <div>
-        <h3>${escapeHtml(state.language === "en" ? "Pilot Invitation Kit" : "Kit de invitación piloto")}</h3>
+        <h3>${escapeHtml(state.language !== "es" ? "Pilot Invitation Kit" : "Kit de invitación piloto")}</h3>
         <p class="card-meta">${escapeHtml(kit.cohort)} · ${escapeHtml(kit.recommendation)}</p>
       </div>
       <span class="pill">${escapeHtml(`${kit.score}%`)}</span>
     </div>
     <div class="pilot-invite-message">${escapeHtml(kit.invitation).replace(/\n/g, "<br />")}</div>
     <div class="pilot-readiness-actions">
-      <button class="ghost-button" type="button" data-pilot-invite-action="copy-message">${escapeHtml(state.language === "en" ? "Copy invitation" : "Copiar invitación")}</button>
-      <button class="ghost-button" type="button" data-pilot-invite-action="export-markdown">${escapeHtml(state.language === "en" ? "Export kit" : "Exportar kit")}</button>
-      <button class="ghost-button" type="button" data-backlog-view="manual">${escapeHtml(state.language === "en" ? "Open manual" : "Abrir manual")}</button>
+      <button class="ghost-button" type="button" data-pilot-invite-action="copy-message">${escapeHtml(state.language !== "es" ? "Copy invitation" : "Copiar invitación")}</button>
+      <button class="ghost-button" type="button" data-pilot-invite-action="export-markdown">${escapeHtml(state.language !== "es" ? "Export kit" : "Exportar kit")}</button>
+      <button class="ghost-button" type="button" data-backlog-view="manual">${escapeHtml(state.language !== "es" ? "Open manual" : "Abrir manual")}</button>
     </div>
     <div class="pilot-invite-checklist">
       ${kit.onboarding.map((item) => `<span>${escapeHtml(item)}</span>`).join("")}
@@ -32911,7 +33305,7 @@ async function handlePilotInviteKitClick(event) {
   if (action === "copy-message") {
     const copied = await copyTextToClipboard(buildPilotInviteKit().invitation);
     const status = document.getElementById("embeddingStatus");
-    if (status) status.textContent = copied ? (state.language === "en" ? "Pilot invitation copied." : "Invitación piloto copiada.") : (state.language === "en" ? "Could not copy invitation." : "No se pudo copiar la invitación.");
+    if (status) status.textContent = copied ? (state.language !== "es" ? "Pilot invitation copied." : "Invitación piloto copiada.") : (state.language !== "es" ? "Could not copy invitation." : "No se pudo copiar la invitación.");
     return;
   }
   if (action === "export-markdown") {
@@ -32922,7 +33316,7 @@ async function handlePilotInviteKitClick(event) {
 }
 
 function getExternalIntegrationOptions() {
-  return state.language === "en"
+  return state.language !== "es"
     ? [
         {
           title: "Integrate by MCP or API",
@@ -32985,22 +33379,22 @@ function renderExternalIntegrationPanel() {
   container.innerHTML = `
     <div class="external-integration-heading">
       <div>
-        <h3>${escapeHtml(state.language === "en" ? "External Integrations" : "Integraciones externas")}</h3>
-        <p class="card-meta">${escapeHtml(state.language === "en" ? "Decision map for Clio, APIs, MCPs, GitHub, and future services." : "Mapa de decisión para Clio, APIs, MCPs, GitHub y servicios futuros.")}</p>
+        <h3>${escapeHtml(state.language !== "es" ? "External Integrations" : "Integraciones externas")}</h3>
+        <p class="card-meta">${escapeHtml(state.language !== "es" ? "Decision map for Clio, APIs, MCPs, GitHub, and future services." : "Mapa de decisión para Clio, APIs, MCPs, GitHub y servicios futuros.")}</p>
       </div>
       <div class="external-integration-actions">
-        <button class="ghost-button" type="button" data-external-integration-action="copy-strategy">${escapeHtml(state.language === "en" ? "Copy strategy" : "Copiar estrategia")}</button>
-        <button class="ghost-button" type="button" data-external-integration-action="copy-contract">${escapeHtml(state.language === "en" ? "Copy contract" : "Copiar contrato")}</button>
+        <button class="ghost-button" type="button" data-external-integration-action="copy-strategy">${escapeHtml(state.language !== "es" ? "Copy strategy" : "Copiar estrategia")}</button>
+        <button class="ghost-button" type="button" data-external-integration-action="copy-contract">${escapeHtml(state.language !== "es" ? "Copy contract" : "Copiar contrato")}</button>
       </div>
     </div>
     <div class="external-integration-summary">
-      <strong>${escapeHtml(state.language === "en" ? "Current recommendation" : "Recomendación actual")}</strong>
-      <p>${escapeHtml(state.language === "en" ? "Start with an API/MCP contract and a shared GitHub workspace. Reuse Clio code only after repository review." : "Empezar con contrato API/MCP y un espacio compartido en GitHub. Reutilizar código de Clio solo después de revisar el repositorio.")}</p>
+      <strong>${escapeHtml(state.language !== "es" ? "Current recommendation" : "Recomendación actual")}</strong>
+      <p>${escapeHtml(state.language !== "es" ? "Start with an API/MCP contract and a shared GitHub workspace. Reuse Clio code only after repository review." : "Empezar con contrato API/MCP y un espacio compartido en GitHub. Reutilizar código de Clio solo después de revisar el repositorio.")}</p>
     </div>
     <div class="external-integration-contract">
       <div>
-        <strong>${escapeHtml(state.language === "en" ? "Minimum integration contract" : "Contrato mínimo de integración")}</strong>
-        <p>${escapeHtml(state.language === "en" ? "Use this as the first GitHub issue or API/MCP agreement before connecting another app." : "Úsalo como primer issue de GitHub o acuerdo API/MCP antes de conectar otra app.")}</p>
+        <strong>${escapeHtml(state.language !== "es" ? "Minimum integration contract" : "Contrato mínimo de integración")}</strong>
+        <p>${escapeHtml(state.language !== "es" ? "Use this as the first GitHub issue or API/MCP agreement before connecting another app." : "Úsalo como primer issue de GitHub o acuerdo API/MCP antes de conectar otra app.")}</p>
       </div>
       <div class="external-integration-contract-grid">
         ${contract
@@ -33035,7 +33429,7 @@ function renderExternalIntegrationPanel() {
 }
 
 function getExternalIntegrationContract() {
-  return state.language === "en"
+  return state.language !== "es"
     ? [
         { label: "Resources", detail: "experiences, assets, devices, calendar events, locations, commands, and generated artifacts." },
         { label: "Normalized signal", detail: "every event or asset keeps sourceType, sourceDevice, sourceId, capturedAt, participantId, payloadType, permissions, and a trace fingerprint." },
@@ -33059,7 +33453,7 @@ function getExternalIntegrationContract() {
 }
 
 function buildExternalIntegrationMarkdown() {
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         title: "External Integration Strategy",
         recommendation: "Current recommendation",
@@ -33077,7 +33471,7 @@ function buildExternalIntegrationMarkdown() {
   return [
     `# ${labels.title}`,
     "",
-    `**${state.language === "en" ? "Version" : "Versión"}:** ${APP_VERSION}`,
+    `**${state.language !== "es" ? "Version" : "Versión"}:** ${APP_VERSION}`,
     `**${labels.recommendation}:** ${labels.recommendationText}`,
     "",
     ...getExternalIntegrationOptions().flatMap((item) => [
@@ -33092,7 +33486,7 @@ function buildExternalIntegrationMarkdown() {
 }
 
 function buildExternalIntegrationContractMarkdown() {
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         title: "Minimum API/MCP Integration Contract",
         purpose: "Purpose",
@@ -33114,7 +33508,7 @@ function buildExternalIntegrationContractMarkdown() {
   return [
     `# ${labels.title}`,
     "",
-    `**${state.language === "en" ? "Version" : "Versión"}:** ${APP_VERSION}`,
+    `**${state.language !== "es" ? "Version" : "Versión"}:** ${APP_VERSION}`,
     `**${labels.purpose}:** ${labels.purposeText}`,
     `**${labels.candidate}:** Clio / future external services`,
     `**${labels.transport}:** ${labels.transportText}`,
@@ -33145,11 +33539,11 @@ async function handleExternalIntegrationClick(event) {
   if (status) {
     status.textContent = copied
       ? isContract
-        ? state.language === "en" ? "Integration contract copied." : "Contrato de integración copiado."
-        : state.language === "en" ? "External integration strategy copied." : "Estrategia de integración externa copiada."
+        ? state.language !== "es" ? "Integration contract copied." : "Contrato de integración copiado."
+        : state.language !== "es" ? "External integration strategy copied." : "Estrategia de integración externa copiada."
       : isContract
-        ? state.language === "en" ? "Could not copy integration contract." : "No se pudo copiar el contrato de integración."
-        : state.language === "en" ? "Could not copy integration strategy." : "No se pudo copiar la estrategia de integración.";
+        ? state.language !== "es" ? "Could not copy integration contract." : "No se pudo copiar el contrato de integración."
+        : state.language !== "es" ? "Could not copy integration strategy." : "No se pudo copiar la estrategia de integración.";
   }
 }
 
@@ -33161,7 +33555,7 @@ function buildParallelWorkstreams(readiness = calculateDevelopmentReadiness()) {
   const pilotPending = pilot.checks.filter((check) => !check.ok);
   const manual = calculateManualReviewSummary();
   const integrationReady = true;
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? {
         functional: "Functional closure",
         technical: "Technical closure",
@@ -33235,7 +33629,7 @@ function buildParallelWorkstreams(readiness = calculateDevelopmentReadiness()) {
         owner: labels.qaOwner,
         score: manual.score,
         status: manualPending ? "review" : "ready",
-        detail: state.language === "en"
+        detail: state.language !== "es"
           ? `${manual.reviewed}/${manual.total} manual sections reviewed. Grammar and visible copy are checked during each block.`
           : `${manual.reviewed}/${manual.total} secciones del manual revisadas. La gramática y textos visibles se revisan en cada bloque.`,
         next: { view: "manual", action: labels.open },
@@ -33246,7 +33640,7 @@ function buildParallelWorkstreams(readiness = calculateDevelopmentReadiness()) {
         owner: labels.integrationOwner,
         score: integrationReady ? 100 : 0,
         status: integrationReady ? "ready" : "review",
-        detail: state.language === "en"
+        detail: state.language !== "es"
           ? "API/MCP-first strategy, minimum contract, and normalized signal metadata are documented. Repository review remains a future step."
           : "La estrategia API/MCP, el contrato mínimo y los metadatos de señal normalizada están documentados. La revisión del repositorio queda como paso futuro.",
         next: { view: "admin", focus: "externalIntegrationPanel", action: labels.open },
@@ -33263,8 +33657,8 @@ function renderParallelWorkstreamsPanel(readiness = calculateDevelopmentReadines
   container.innerHTML = `
     <div class="parallel-workstreams-heading">
       <div>
-        <h3>${escapeHtml(state.language === "en" ? "Parallel Closure Plan" : "Plan de cierre paralelo")}</h3>
-        <p class="card-meta">${escapeHtml(state.language === "en" ? `${pending} streams need attention. Use this board to avoid scattered mini-tasks.` : `${pending} frentes requieren atención. Usa este tablero para evitar mini tareas dispersas.`)}</p>
+        <h3>${escapeHtml(state.language !== "es" ? "Parallel Closure Plan" : "Plan de cierre paralelo")}</h3>
+        <p class="card-meta">${escapeHtml(state.language !== "es" ? `${pending} streams need attention. Use this board to avoid scattered mini-tasks.` : `${pending} frentes requieren atención. Usa este tablero para evitar mini tareas dispersas.`)}</p>
       </div>
       <button class="ghost-button" type="button" data-parallel-workstreams-action="copy">${escapeHtml(plan.labels.copy)}</button>
     </div>
@@ -33294,20 +33688,20 @@ function renderParallelWorkstreamsPanel(readiness = calculateDevelopmentReadines
 
 function buildParallelWorkstreamsMarkdown(readiness = calculateDevelopmentReadiness()) {
   const plan = buildParallelWorkstreams(readiness);
-  const labels = state.language === "en"
+  const labels = state.language !== "es"
     ? { title: "Parallel Closure Plan", owner: "Owner", score: "Score", status: "Status", next: "Next action" }
     : { title: "Plan de cierre paralelo", owner: "Responsable sugerido", score: "Puntaje", status: "Estado", next: "Siguiente acción" };
   return [
     `# ${labels.title}`,
     "",
-    `**${state.language === "en" ? "Version" : "Versión"}:** ${APP_VERSION}`,
+    `**${state.language !== "es" ? "Version" : "Versión"}:** ${APP_VERSION}`,
     "",
     ...plan.streams.flatMap((item) => [
       `## ${item.title}`,
       "",
       `- ${labels.owner}: ${item.owner}`,
       `- ${labels.score}: ${item.score}%`,
-      `- ${labels.status}: ${item.status === "ready" ? (state.language === "en" ? "Ready" : "Listo") : (state.language === "en" ? "Review" : "Revisar")}`,
+      `- ${labels.status}: ${item.status === "ready" ? (state.language !== "es" ? "Ready" : "Listo") : (state.language !== "es" ? "Review" : "Revisar")}`,
       `- ${item.detail}`,
       `- ${labels.next}: ${item.next?.action || plan.labels.open}`,
       "",
@@ -33322,8 +33716,8 @@ async function handleParallelWorkstreamsClick(event) {
     const status = document.getElementById("embeddingStatus");
     if (status) {
       status.textContent = copied
-        ? state.language === "en" ? "Parallel closure plan copied." : "Plan de cierre paralelo copiado."
-        : state.language === "en" ? "Could not copy parallel plan." : "No se pudo copiar el plan paralelo.";
+        ? state.language !== "es" ? "Parallel closure plan copied." : "Plan de cierre paralelo copiado."
+        : state.language !== "es" ? "Could not copy parallel plan." : "No se pudo copiar el plan paralelo.";
     }
     return;
   }
@@ -33836,7 +34230,7 @@ function notify(detail, type = "ok") {
   addNotification({
     id: `local-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     type,
-    title: type === "warn" ? (state.language === "en" ? "Attention" : "Atención") : (state.language === "en" ? "Ready" : "Listo"),
+    title: type === "warn" ? (state.language !== "es" ? "Attention" : "Atención") : (state.language !== "es" ? "Ready" : "Listo"),
     detail,
     createdAt: new Date().toISOString(),
   });
@@ -33905,13 +34299,13 @@ function buildInsights(experiences = state.experiences) {
   if (experiences.length === 0) {
     return [
       {
-        type: state.language === "en" ? "Recommendation" : "Recomendación",
+        type: state.language !== "es" ? "Recommendation" : "Recomendación",
         confidence: 70,
-        title: state.language === "en" ? "Start by capturing three moments" : "Empieza capturando tres momentos",
-        description: state.language === "en"
+        title: state.language !== "es" ? "Start by capturing three moments" : "Empieza capturando tres momentos",
+        description: state.language !== "es"
           ? "The system needs base experiences to detect energy, context, and learning patterns."
           : "El sistema necesita experiencias base para detectar patrones de energía, contexto y aprendizaje.",
-        action: state.language === "en"
+        action: state.language !== "es"
           ? "Add one work, one wellbeing, and one learning experience to activate comparisons."
           : "Carga una experiencia de trabajo, una de bienestar y una de aprendizaje para activar comparaciones.",
       },
@@ -33925,40 +34319,40 @@ function buildInsights(experiences = state.experiences) {
   const learnings = analysis.learnings;
   const insights = [
     {
-      type: state.language === "en" ? "Pattern" : "Patrón",
+      type: state.language !== "es" ? "Pattern" : "Patrón",
       confidence: 88,
-      title: state.language === "en" ? `${displayCategory(top)} leads your recent log` : `${displayCategory(top)} domina tu registro reciente`,
-      description: analysis.focus || (state.language === "en"
+      title: state.language !== "es" ? `${displayCategory(top)} leads your recent log` : `${displayCategory(top)} domina tu registro reciente`,
+      description: analysis.focus || (state.language !== "es"
         ? `${displayCategory(top)} concentrates more time than other categories. Review whether that distribution reflects your current goals.`
         : `La categoría ${displayCategory(top)} concentra más tiempo que las demás. Conviene revisar si ese reparto refleja tus objetivos actuales.`),
-      action: state.language === "en"
+      action: state.language !== "es"
         ? `Review whether ${displayCategory(top)} should remain the priority or whether time should move toward another category.`
         : `Revisa si ${displayCategory(top)} debe mantenerse como prioridad o si conviene redistribuir tiempo hacia otra categoría.`,
     },
     {
       type: "Tendencia",
       confidence: 82,
-      title: state.language === "en" ? "Energy compared by period" : "Energía comparada por periodo",
-      description: analysis.trend || (state.language === "en" ? "There is not enough data yet to compare energy trends between periods." : "Aún no hay suficientes datos para comparar tendencia de energía entre periodos."),
-      action: state.language === "en" ? "Use the 7- or 30-day report filter to check whether the trend holds." : "Usa el filtro de 7 o 30 días en Reportes para revisar si la tendencia se sostiene.",
+      title: state.language !== "es" ? "Energy compared by period" : "Energía comparada por periodo",
+      description: analysis.trend || (state.language !== "es" ? "There is not enough data yet to compare energy trends between periods." : "Aún no hay suficientes datos para comparar tendencia de energía entre periodos."),
+      action: state.language !== "es" ? "Use the 7- or 30-day report filter to check whether the trend holds." : "Usa el filtro de 7 o 30 días en Reportes para revisar si la tendencia se sostiene.",
     },
     {
-      type: saturated.length ? (state.language === "en" ? "Risk" : "Riesgo") : (state.language === "en" ? "Achievement" : "Logro"),
+      type: saturated.length ? (state.language !== "es" ? "Risk" : "Riesgo") : (state.language !== "es" ? "Achievement" : "Logro"),
       confidence: saturated.length ? 84 : 76,
-      title: saturated.length ? (state.language === "en" ? "Saturation signals detected" : "Señales de saturación detectadas") : (state.language === "en" ? "No dominant saturation" : "Sin saturación dominante"),
-      description: analysis.risk || (state.language === "en" ? "Recent emotional state remains stable; this is a good moment to measure goal progress." : "El estado emocional reciente se mantiene estable; buen momento para medir progreso de objetivos."),
+      title: saturated.length ? (state.language !== "es" ? "Saturation signals detected" : "Señales de saturación detectadas") : (state.language !== "es" ? "No dominant saturation" : "Sin saturación dominante"),
+      description: analysis.risk || (state.language !== "es" ? "Recent emotional state remains stable; this is a good moment to measure goal progress." : "El estado emocional reciente se mantiene estable; buen momento para medir progreso de objetivos."),
       action: saturated.length
-        ? (state.language === "en" ? "Schedule a recovery routine or reduce load in the most saturated category." : "Programa una rutina de recuperación o reduce carga en la categoría con más saturación.")
-        : (state.language === "en" ? "Keep the current pattern and capture context notes to validate stability." : "Mantén el patrón actual y captura notas de contexto para validar la estabilidad."),
+        ? (state.language !== "es" ? "Schedule a recovery routine or reduce load in the most saturated category." : "Programa una rutina de recuperación o reduce carga en la categoría con más saturación.")
+        : (state.language !== "es" ? "Keep the current pattern and capture context notes to validate stability." : "Mantén el patrón actual y captura notas de contexto para validar la estabilidad."),
     },
     {
-      type: state.language === "en" ? "Recommendation" : "Recomendación",
+      type: state.language !== "es" ? "Recommendation" : "Recomendación",
       confidence: 81,
-      title: state.language === "en" ? "Turn learnings into actions" : "Convierte aprendizajes en acciones",
-      description: state.language === "en"
+      title: state.language !== "es" ? "Turn learnings into actions" : "Convierte aprendizajes en acciones",
+      description: state.language !== "es"
         ? `${learnings.length} experiences contain explicit learning. Add next actions to close the memory-action loop.`
         : `${learnings.length} experiencias contienen aprendizaje explícito. Agrega acciones pendientes para cerrar el ciclo memoria-acción.`,
-      action: state.language === "en"
+      action: state.language !== "es"
         ? "Filter Learning in the library and turn the three most repeated learnings into next steps."
         : "Filtra Aprendizaje en la librería y convierte los tres aprendizajes más repetidos en próximos pasos.",
     },
@@ -33966,13 +34360,13 @@ function buildInsights(experiences = state.experiences) {
 
   if (highEnergy.length) {
     insights.splice(2, 0, {
-      type: state.language === "en" ? "Correlation" : "Correlación",
+      type: state.language !== "es" ? "Correlation" : "Correlación",
       confidence: 78,
-      title: state.language === "en" ? "High energy linked to clear context" : "Alta energía conectada con contexto claro",
-      description: state.language === "en"
+      title: state.language !== "es" ? "High energy linked to clear context" : "Alta energía conectada con contexto claro",
+      description: state.language !== "es"
         ? `${highEnergy.length} experiences show high energy. ${analysis.energyDrivers || "Use those contexts as candidates for proactive routines."}`
         : `${highEnergy.length} experiencias aparecen con energía alta. ${analysis.energyDrivers || "Usa esos contextos como candidatos para rutinas proactivas."}`,
-      action: state.language === "en"
+      action: state.language !== "es"
         ? "Repeat the context of experiences with energy 8/10 or higher and measure whether the pattern holds."
         : "Repite el contexto de las experiencias con energía 8/10 o superior y mide si el patrón se mantiene.",
     });
@@ -33980,13 +34374,13 @@ function buildInsights(experiences = state.experiences) {
 
   if (state.contextImpact) {
     insights.push({
-      type: state.language === "en" ? "Context" : "Contexto",
+      type: state.language !== "es" ? "Context" : "Contexto",
       confidence: 74,
-      title: state.language === "en" ? "External impact is active in the reading" : "Impacto externo activo en la lectura",
-      description: state.language === "en"
+      title: state.language !== "es" ? "External impact is active in the reading" : "Impacto externo activo en la lectura",
+      description: state.language !== "es"
         ? `Current context analysis is ${state.contextImpact.impactScore}/100: ${state.contextImpact.summary}`
         : `El análisis contextual actual marca ${state.contextImpact.impactScore}/100: ${state.contextImpact.summary}`,
-      action: state.language === "en"
+      action: state.language !== "es"
         ? "Before planning critical experiences, review the place in Dashboard and compare weather/news with registered energy."
         : "Antes de planificar experiencias críticas, revisa el lugar en el Panel y compara clima/noticias con energía registrada.",
     });
@@ -33994,15 +34388,15 @@ function buildInsights(experiences = state.experiences) {
 
   if (analysis.biometricContext?.status === "active") {
     insights.push({
-      type: state.language === "en" ? "Biometrics" : "Biometría",
+      type: state.language !== "es" ? "Biometrics" : "Biometría",
       confidence: Math.round(Math.min(92, 62 + analysis.biometricContext.coveragePct * 0.3)),
-      title: state.language === "en" ? "Body context now informs this reading" : "El contexto corporal ya informa esta lectura",
-      description: state.language === "en"
+      title: state.language !== "es" ? "Body context now informs this reading" : "El contexto corporal ya informa esta lectura",
+      description: state.language !== "es"
         ? `${Math.round(analysis.biometricContext.coveragePct)}% of the selected experiences have nearby biometric context. Suggested energy averages ${(analysis.biometricContext.averageSuggestedEnergy || 0).toFixed(1)}/10.`
         : `${Math.round(analysis.biometricContext.coveragePct)}% de las experiencias seleccionadas tiene contexto biométrico cercano. La energía sugerida promedia ${(analysis.biometricContext.averageSuggestedEnergy || 0).toFixed(1)}/10.`,
       action: analysis.biometricContext.biometricRiskScore >= 40
-        ? (state.language === "en" ? "Before adding demanding activities, review sleep, heart rate, and recovery signals in the Dashboard." : "Antes de sumar actividades exigentes, revisa sueño, frecuencia y recuperación en el Panel.")
-        : (state.language === "en" ? "Keep capturing perceived energy; compare it with biometric suggestions to calibrate future reports." : "Sigue capturando energía percibida; compárala con la sugerencia biométrica para calibrar reportes futuros."),
+        ? (state.language !== "es" ? "Before adding demanding activities, review sleep, heart rate, and recovery signals in the Dashboard." : "Antes de sumar actividades exigentes, revisa sueño, frecuencia y recuperación en el Panel.")
+        : (state.language !== "es" ? "Keep capturing perceived energy; compare it with biometric suggestions to calibrate future reports." : "Sigue capturando energía percibida; compárala con la sugerencia biométrica para calibrar reportes futuros."),
     });
   }
 
@@ -34028,28 +34422,28 @@ function buildExperienceAnalysis(experiences) {
   const topLocation = topValue(list.map((item) => item.location).filter((value) => value && value !== "Sin ubicación"));
   const biometricContext = buildBiometricIntelligenceSummary(list);
   const trend = list.length < 4
-    ? (state.language === "en" ? "At least four experiences are needed for a reliable trend." : "Se necesitan al menos cuatro experiencias para una tendencia confiable.")
+    ? (state.language !== "es" ? "At least four experiences are needed for a reliable trend." : "Se necesitan al menos cuatro experiencias para una tendencia confiable.")
     : energyDelta > 0.5
-      ? (state.language === "en" ? `Recent energy is up ${energyDelta} points versus the previous period.` : `La energía reciente sube ${energyDelta} puntos frente al periodo anterior.`)
+      ? (state.language !== "es" ? `Recent energy is up ${energyDelta} points versus the previous period.` : `La energía reciente sube ${energyDelta} puntos frente al periodo anterior.`)
       : energyDelta < -0.5
-        ? (state.language === "en" ? `Recent energy is down ${Math.abs(energyDelta)} points versus the previous period.` : `La energía reciente baja ${Math.abs(energyDelta)} puntos frente al periodo anterior.`)
-        : (state.language === "en" ? "Recent energy remains stable versus the previous period." : "La energía reciente se mantiene estable frente al periodo anterior.");
+        ? (state.language !== "es" ? `Recent energy is down ${Math.abs(energyDelta)} points versus the previous period.` : `La energía reciente baja ${Math.abs(energyDelta)} puntos frente al periodo anterior.`)
+        : (state.language !== "es" ? "Recent energy remains stable versus the previous period." : "La energía reciente se mantiene estable frente al periodo anterior.");
   const focus = topObjective
-    ? (state.language === "en" ? `The most repeated goal is "${topObjective}", with ${displayCategory(topCategory)} as the dominant category.` : `El objetivo más repetido es "${topObjective}", con predominio de ${displayCategory(topCategory)}.`)
-    : (state.language === "en" ? `The dominant category is ${displayCategory(topCategory)}; more specific goals still need to be captured.` : `La categoría dominante es ${displayCategory(topCategory)}; aún falta capturar objetivos más específicos.`);
+    ? (state.language !== "es" ? `The most repeated goal is "${topObjective}", with ${displayCategory(topCategory)} as the dominant category.` : `El objetivo más repetido es "${topObjective}", con predominio de ${displayCategory(topCategory)}.`)
+    : (state.language !== "es" ? `The dominant category is ${displayCategory(topCategory)}; more specific goals still need to be captured.` : `La categoría dominante es ${displayCategory(topCategory)}; aún falta capturar objetivos más específicos.`);
   const risk = saturated.length || lowEnergy.length
-    ? (state.language === "en" ? `${saturated.length} saturated experiences and ${lowEnergy.length} low-energy experiences need follow-up.` : `${saturated.length} experiencias saturadas y ${lowEnergy.length} con energía baja requieren seguimiento.`)
-    : (state.language === "en" ? "There are no strong saturation or low-energy signals in the filtered set." : "No hay señales fuertes de saturación o energía baja en el conjunto filtrado.");
+    ? (state.language !== "es" ? `${saturated.length} saturated experiences and ${lowEnergy.length} low-energy experiences need follow-up.` : `${saturated.length} experiencias saturadas y ${lowEnergy.length} con energía baja requieren seguimiento.`)
+    : (state.language !== "es" ? "There are no strong saturation or low-energy signals in the filtered set." : "No hay señales fuertes de saturación o energía baja en el conjunto filtrado.");
   const energyDrivers = topLocation || topPerson
-    ? state.language === "en"
+    ? state.language !== "es"
       ? `Higher-energy contexts can be compared with ${topLocation ? `location ${topLocation}` : `person ${topPerson}`}.`
       : `Los contextos de mayor energía se pueden comparar con ${topLocation ? `ubicación ${topLocation}` : `persona ${topPerson}`}.`
     : "";
   const action = saturated.length || biometricContext.biometricRiskScore >= 60
-    ? (state.language === "en" ? "Prioritize recovery, reduce friction, and avoid adding load to saturated contexts." : "Prioriza recuperación, reduce fricción y evita concentrar nuevas cargas en los contextos saturados.")
+    ? (state.language !== "es" ? "Prioritize recovery, reduce friction, and avoid adding load to saturated contexts." : "Prioriza recuperación, reduce fricción y evita concentrar nuevas cargas en los contextos saturados.")
     : highEnergy.length
-      ? (state.language === "en" ? "Replicate the conditions of high-energy experiences and turn them into routines." : "Replica las condiciones de las experiencias con energía alta y conviértelas en rutina.")
-      : (state.language === "en" ? "Improve capture quality with goal, people, and location for more precise recommendations." : "Aumenta la calidad de captura con objetivo, persona y ubicación para obtener recomendaciones más precisas.");
+      ? (state.language !== "es" ? "Replicate the conditions of high-energy experiences and turn them into routines." : "Replica las condiciones de las experiencias con energía alta y conviértelas en rutina.")
+      : (state.language !== "es" ? "Improve capture quality with goal, people, and location for more precise recommendations." : "Aumenta la calidad de captura con objetivo, persona y ubicación para obtener recomendaciones más precisas.");
   return {
     executive: [trend, focus, risk],
     trend,
@@ -34109,13 +34503,13 @@ async function answerQuestion() {
   const question = document.getElementById("questionInput").value.trim().toLowerCase();
   const answerBox = document.getElementById("answerBox");
   if (!question) {
-    answerBox.textContent = state.language === "en"
+    answerBox.textContent = state.language !== "es"
       ? "Ask a question about energy, categories, people, locations, or learnings."
       : "Haz una pregunta sobre energía, categorías, personas, ubicaciones o aprendizajes.";
     return;
   }
 
-  answerBox.textContent = state.language === "en" ? "Searching related experiences..." : "Buscando experiencias relacionadas...";
+  answerBox.textContent = state.language !== "es" ? "Searching related experiences..." : "Buscando experiencias relacionadas...";
   const scopedExperiences = getInsightsExperiences();
   const selectedParticipantId = state.insightsFilters?.pilotParticipantId || "all";
   const matches = (await semanticSearch(question)).filter(
@@ -34128,14 +34522,14 @@ async function answerQuestion() {
   const sample = target.slice(0, 3);
   answerBox.innerHTML = `
     <section class="question-answer-card">
-      <span class="report-kicker">${state.language === "en" ? "System answer" : "Respuesta del sistema"}</span>
+      <span class="report-kicker">${state.language !== "es" ? "System answer" : "Respuesta del sistema"}</span>
       <h3>${escapeHtml(question)}</h3>
       <div class="question-answer-metrics">
-        <article><span>${state.language === "en" ? "Matches" : "Coincidencias"}</span><strong>${matches.length}</strong></article>
+        <article><span>${state.language !== "es" ? "Matches" : "Coincidencias"}</span><strong>${matches.length}</strong></article>
         <article><span>${t("metrics.avgEnergy")}</span><strong>${avg}/10</strong></article>
-        <article><span>${state.language === "en" ? "Categories" : "Categorías"}</span><strong>${escapeHtml(categoriesFound || (state.language === "en" ? "no data" : "sin datos"))}</strong></article>
+        <article><span>${state.language !== "es" ? "Categories" : "Categorías"}</span><strong>${escapeHtml(categoriesFound || (state.language !== "es" ? "no data" : "sin datos"))}</strong></article>
       </div>
-      <p>${state.contextImpact ? `${state.language === "en" ? "Current external context" : "Contexto externo actual"}: ${escapeHtml(state.contextImpact.summary)}` : (state.language === "en" ? "You can enrich this answer by analyzing city-level context impact." : "Puedes enriquecer esta respuesta analizando impacto contextual por ciudad.")}</p>
+      <p>${state.contextImpact ? `${state.language !== "es" ? "Current external context" : "Contexto externo actual"}: ${escapeHtml(state.contextImpact.summary)}` : (state.language !== "es" ? "You can enrich this answer by analyzing city-level context impact." : "Puedes enriquecer esta respuesta analizando impacto contextual por ciudad.")}</p>
       ${
         sample.length
           ? `<div class="question-match-list">
@@ -34194,10 +34588,10 @@ async function backfillEmbeddings() {
 async function syncWorkspaceStructure() {
   const status = document.getElementById("embeddingStatus");
   if (!state.apiOnline) {
-    status.textContent = state.language === "en" ? "API unavailable for structure sync." : "API no disponible para sincronizar estructura.";
+    status.textContent = state.language !== "es" ? "API unavailable for structure sync." : "API no disponible para sincronizar estructura.";
     return;
   }
-  status.textContent = state.language === "en" ? "Syncing workspace structure..." : "Sincronizando estructura workspace...";
+  status.textContent = state.language !== "es" ? "Syncing workspace structure..." : "Sincronizando estructura workspace...";
   try {
     const result = await apiRequest("/workspace/backfill", {
       method: "POST",
@@ -34205,15 +34599,15 @@ async function syncWorkspaceStructure() {
     });
     const ok = result.status === "ok" || result.status === "partial";
     status.textContent = ok
-      ? state.language === "en"
+      ? state.language !== "es"
         ? `Structure sync: ${result.syncedExperiences} experiences, ${result.syncedParticipants || 0} participants, ${result.syncedEvents} events, ${result.syncedAssets} assets.`
         : `Estructura sincronizada: ${result.syncedExperiences} experiencias, ${result.syncedParticipants || 0} participantes, ${result.syncedEvents} eventos, ${result.syncedAssets} activos.`
-      : state.language === "en"
+      : state.language !== "es"
         ? "Migration required: apply database/workspace-events-assets.sql first."
         : "Migración requerida: aplica primero database/workspace-events-assets.sql.";
     await runSupabaseDiagnostics();
   } catch {
-    status.textContent = state.language === "en"
+    status.textContent = state.language !== "es"
       ? "Could not sync structure. Check session and Supabase migration."
       : "No se pudo sincronizar la estructura. Revisa sesión y migración Supabase.";
   }
@@ -34557,7 +34951,7 @@ function formatFileSize(bytes = 0) {
 function formatDate(value) {
   const date = new Date(value);
   if (!value || Number.isNaN(date.getTime())) {
-    return state.language === "en" ? "No date" : "Sin fecha";
+    return state.language !== "es" ? "No date" : "Sin fecha";
   }
   return new Intl.DateTimeFormat("es", {
     dateStyle: "medium",
@@ -34568,7 +34962,7 @@ function formatDate(value) {
 function formatShortDate(value) {
   const date = new Date(value);
   if (!value || Number.isNaN(date.getTime())) {
-    return state.language === "en" ? "No date" : "Sin fecha";
+    return state.language !== "es" ? "No date" : "Sin fecha";
   }
   return new Intl.DateTimeFormat("es", {
     day: "2-digit",
