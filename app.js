@@ -1,4 +1,4 @@
-const APP_VERSION = "20260611-french-polish-575";
+const APP_VERSION = "20260612-theme-context-577";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -485,6 +485,12 @@ const i18n = {
       capturedHours: "Horas capturadas",
     },
     labels: {
+      themeControl: "Pantalla",
+      themeOptions: {
+        current: "Actual",
+        light: "Claro",
+        dark: "Oscuro",
+      },
       categoryAll: "Todas las categorías",
       categoryLabels: {
         Trabajo: "Trabajo",
@@ -1316,6 +1322,12 @@ const i18n = {
       capturedHours: "Captured hours",
     },
     labels: {
+      themeControl: "Display",
+      themeOptions: {
+        current: "Current",
+        light: "Light",
+        dark: "Dark",
+      },
       categoryAll: "All categories",
       categoryLabels: {
         Trabajo: "Work",
@@ -2162,6 +2174,12 @@ i18n.fr = mergeLocale(i18n.en, {
     capturedHours: "Heures capturées",
   },
   labels: {
+    themeControl: "Affichage",
+    themeOptions: {
+      current: "Actuel",
+      light: "Clair",
+      dark: "Sombre",
+    },
     categoryAll: "Toutes les catégories",
     categoryLabels: {
       Trabajo: "Travail",
@@ -4245,6 +4263,7 @@ const state = {
   pilotClosureSignoff: loadPilotClosureSignoff(),
   pilotFeedback: loadPilotFeedback(),
   manualReview: loadManualReview(),
+  displayTheme: loadDisplayTheme(),
   pendingAttachments: [],
   captureSaveStatus: null,
   captureDraftAutosave: { inProgress: false, timer: null, lastSignature: "", lastSavedAt: 0 },
@@ -4398,8 +4417,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     setupActions();
     setupAuth();
     setupAudioCapture();
+    setupDisplayTheme();
     populateStaticControls();
     setupLanguage();
+    applyDisplayTheme();
     applyLanguage();
     normalizeVisibleVersionUrl();
     try {
@@ -5127,6 +5148,18 @@ function loadLanguage() {
   } catch {
     return "es";
   }
+}
+
+function loadDisplayTheme() {
+  try {
+    return normalizeDisplayTheme(localStorage.getItem("experience-hub-display-theme") || "current");
+  } catch {
+    return "current";
+  }
+}
+
+function normalizeDisplayTheme(theme) {
+  return ["light", "current", "dark"].includes(theme) ? theme : "current";
 }
 
 function normalizeLanguage(language) {
@@ -6917,9 +6950,48 @@ function setupLanguage() {
   renderAuthStatePanel();
 }
 
+function setupDisplayTheme() {
+  const select = document.getElementById("themeSelect");
+  if (!select) return;
+  select.value = state.displayTheme;
+  select.addEventListener("change", (event) => {
+    state.displayTheme = normalizeDisplayTheme(event.target.value);
+    select.value = state.displayTheme;
+    try {
+      localStorage.setItem("experience-hub-display-theme", state.displayTheme);
+    } catch {
+      // Ignore theme persistence restrictions.
+    }
+    applyDisplayTheme();
+  });
+}
+
+function applyDisplayTheme() {
+  const theme = normalizeDisplayTheme(state.displayTheme);
+  document.documentElement.dataset.theme = theme;
+  const select = document.getElementById("themeSelect");
+  if (select) select.value = theme;
+  const metaTheme = document.querySelector('meta[name="theme-color"]');
+  if (metaTheme) {
+    metaTheme.setAttribute("content", theme === "dark" ? "#111827" : theme === "light" ? "#f8fafc" : "#0d7c66");
+  }
+}
+
+function applyDisplayThemeLanguage() {
+  const label = document.getElementById("themeControlLabel");
+  const select = document.getElementById("themeSelect");
+  if (label) label.textContent = t("labels.themeControl");
+  if (!select) return;
+  const optionLabels = t("labels.themeOptions");
+  Array.from(select.options).forEach((option) => {
+    option.textContent = optionLabels[option.value] || option.textContent;
+  });
+}
+
 function applyLanguage() {
   document.documentElement.lang = state.language;
   document.querySelector(".language-control span").textContent = t("languageLabel");
+  applyDisplayThemeLanguage();
   document.querySelectorAll(".nav-item").forEach((button) => {
     button.textContent = productNavLabel(button.dataset.view);
   });

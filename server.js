@@ -32,6 +32,49 @@ const MAX_JSON_BODY_LENGTH = Number(process.env.MAX_JSON_BODY_LENGTH || 40_000_0
 const MAX_MEDIA_BODY_LENGTH = Number(process.env.MAX_MEDIA_BODY_LENGTH || 90_000_000);
 const LOCAL_USER_ID = process.env.LOCAL_USER_ID || "00000000-0000-0000-0000-000000000001";
 const CONTEXT_TIMEOUT_MS = Number(process.env.CONTEXT_TIMEOUT_MS || 12000);
+const DAILY_NEWS_FRESHNESS_HOURS = Math.max(1, Math.min(Number(process.env.DAILY_NEWS_FRESHNESS_HOURS || 48), 168));
+const MOBILE_DAILY_CONTEXT_CACHE_MINUTES = Math.max(5, Math.min(Number(process.env.MOBILE_DAILY_CONTEXT_CACHE_MINUTES || 30), 180));
+const TRUSTED_NEWS_DOMAINS = (process.env.TRUSTED_NEWS_DOMAINS || [
+  "reuters.com",
+  "bbc.com",
+  "bbc.co.uk",
+  "apnews.com",
+  "ap.org",
+  "afp.com",
+  "efe.com",
+  "bloomberg.com",
+  "ft.com",
+  "financialtimes.com",
+  "theguardian.com",
+  "npr.org",
+  "dw.com",
+  "france24.com",
+  "elpais.com",
+  "nytimes.com",
+  "washingtonpost.com",
+  "wsj.com",
+].join(",")).split(",").map((domain) => domain.trim().toLowerCase()).filter(Boolean);
+const TRUSTED_NEWS_NAMES = [
+  "reuters",
+  "bbc",
+  "associated press",
+  "ap news",
+  "ap",
+  "afp",
+  "efe",
+  "bloomberg",
+  "financial times",
+  "the guardian",
+  "npr",
+  "deutsche welle",
+  "dw",
+  "france 24",
+  "el pais",
+  "the new york times",
+  "the washington post",
+  "wall street journal",
+  "wsj",
+];
 const EMBEDDINGS_PROVIDER = process.env.EMBEDDINGS_PROVIDER || "local-hash";
 const EMBEDDING_DIMENSIONS = Number(process.env.EMBEDDING_DIMENSIONS || 384);
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
@@ -7570,15 +7613,81 @@ async function getMobileDailyContext(searchParams = new URLSearchParams(), user 
   if (!force) {
     briefing = await getStoredDailyBriefing(user, locationLabel, language);
   }
-  if (!briefing || isStoredDailyBriefingStale(briefing)) {
-    briefing = await buildLiveDailyBriefingForPlace(place, language);
-    await saveStoredDailyBriefing(user, briefing);
-    briefing.cached = false;
-    briefing.cacheSource = "live";
+  if (!briefing || isMobileDailyBriefingStale(briefing)) {
+    try {
+      briefing = await buildLiveDailyBriefingForPlace(place, language);
+      await saveStoredDailyBriefing(user, briefing);
+      briefing.cached = false;
+      briefing.cacheSource = "live";
+    } catch (error) {
+      const warning = `mobile_daily_live_failed: ${sanitizeDiagnosticError(error)}`;
+      if (briefing) {
+        briefing = normalizeMobileDailyFallbackBriefing(briefing, place, language, warning);
+      } else {
+        briefing = await buildMobileDailyFallbackBriefing(place, language, warning);
+      }
+      await appendLog("warn", "Mobile daily context served with fallback", {
+        userId: user?.id || LOCAL_USER_ID,
+        location: locationLabel,
+        warning,
+      });
+    }
   } else {
     briefing.cached = true;
   }
   return buildMobileDailyContextResponse(briefing, place);
+}
+
+function normalizeMobileDailyFallbackBriefing(briefing = {}, place = {}, language = "es", warning = "mobile_daily_fallback") {
+  const sections = Array.isArray(briefing.sections) ? briefing.sections : [];
+  const agendaLinks = Array.isArray(briefing.agendaLinks) && briefing.agendaLinks.length
+    ? briefing.agendaLinks
+    : buildAgendaLinks(place, language);
+  return {
+    ...briefing,
+    schemaVersion: briefing.schemaVersion || "20260522-daily-media-specific-35",
+    generatedAt: briefing.generatedAt || new Date().toISOString(),
+    nextRefreshAt: briefing.nextRefreshAt || new Date(Date.now() + MOBILE_DAILY_CONTEXT_CACHE_MINUTES * 60 * 1000).toISOString(),
+    refreshEveryHours: briefing.refreshEveryHours || MOBILE_DAILY_CONTEXT_CACHE_MINUTES / 60,
+    locale: briefing.locale || language,
+    location: briefing.location || place.name || "",
+    country: briefing.country || place.country || "",
+    countryCode: briefing.countryCode || place.countryCode || "",
+    sections,
+    agendaLinks,
+    groups: Array.isArray(briefing.groups) ? briefing.groups : buildBriefingGroups(sections, language),
+    weather: briefing.weather || unavailableWeatherImpact("weather_unavailable"),
+    cached: Boolean(briefing.cached),
+    cacheSource: briefing.cacheSource || "fallback",
+    warning,
+  };
+}
+
+async function buildMobileDailyFallbackBriefing(place = {}, language = "es", warning = "mobile_daily_fallback") {
+  let weather = unavailableWeatherImpact("weather_unavailable");
+  try {
+    weather = await getWeatherImpact(place);
+  } catch (error) {
+    warning = `${warning}; weather_failed: ${sanitizeDiagnosticError(error)}`;
+  }
+  const generatedAt = new Date().toISOString();
+  return {
+    schemaVersion: "20260522-daily-media-specific-35",
+    generatedAt,
+    nextRefreshAt: new Date(Date.now() + MOBILE_DAILY_CONTEXT_CACHE_MINUTES * 60 * 1000).toISOString(),
+    refreshEveryHours: MOBILE_DAILY_CONTEXT_CACHE_MINUTES / 60,
+    locale: language,
+    location: place.name || "",
+    country: place.country || "",
+    countryCode: place.countryCode || "",
+    sections: [],
+    groups: buildBriefingGroups([], language),
+    weather,
+    agendaLinks: buildAgendaLinks(place, language),
+    cached: false,
+    cacheSource: "fallback",
+    warning,
+  };
 }
 
 async function reverseGeocodeCoordinates(lat, lon, language = "es") {
@@ -7637,6 +7746,7 @@ function buildMobileDailyContextResponse(briefing = {}, place = {}) {
     nextRefreshAt: briefing.nextRefreshAt || null,
     cached: Boolean(briefing.cached),
     cacheSource: briefing.cacheSource || "",
+    warning: briefing.warning || null,
     location: {
       lat: place.latitude ?? null,
       lon: place.longitude ?? null,
@@ -7730,15 +7840,15 @@ async function buildLiveDailyBriefingForPlace(place, language = "es") {
   const weather = weatherResult[0]?.status === "fulfilled" ? weatherResult[0].value : unavailableWeatherImpact(weatherResult[0]?.reason);
   return {
     schemaVersion: "20260522-daily-media-specific-35",
-    source: "GDELT DOC 2.0 + Google News RSS",
+    source: "Trusted News RSS + fresh fallback",
     location: place.name,
     country: place.country || place.countryCode || "",
     countryCode: place.countryCode,
     scope: `${placeLabel || location} + ${worldLabel}`,
     locale: normalizedLanguage,
     generatedAt: new Date().toISOString(),
-    refreshEveryHours: 6,
-    nextRefreshAt: addMinutes(new Date(), 360).toISOString(),
+    refreshEveryHours: MOBILE_DAILY_CONTEXT_CACHE_MINUTES / 60,
+    nextRefreshAt: addMinutes(new Date(), MOBILE_DAILY_CONTEXT_CACHE_MINUTES).toISOString(),
     agendaLinks: buildAgendaLinks(place, normalizedLanguage),
     weather,
     groups: buildBriefingGroups(resolvedSections, normalizedLanguage),
@@ -7890,6 +8000,12 @@ function isStoredDailyBriefingStale(briefing) {
   return Date.now() - new Date(briefing.generatedAt).getTime() >= refreshMs;
 }
 
+function isMobileDailyBriefingStale(briefing) {
+  if (!briefing?.generatedAt) return true;
+  if (briefing.schemaVersion !== "20260522-daily-media-specific-35") return true;
+  return Date.now() - new Date(briefing.generatedAt).getTime() >= MOBILE_DAILY_CONTEXT_CACHE_MINUTES * 60 * 1000;
+}
+
 function buildBriefingSections(queryPlace, language) {
   if (language === "en") {
     return [
@@ -7987,24 +8103,37 @@ function buildAgendaLinks(place, language) {
 }
 
 async function fetchBriefingSection(section, language) {
-  const gdeltArticles = await fetchGdeltBriefingArticles(section);
+  const trustedRssArticles = await hydrateArticleImages(await fetchGoogleNewsRss(section, language, { trusted: true, maxRecords: 10 }));
+  const trustedFreshRssArticles = prepareBriefingArticles(trustedRssArticles, { trustedOnly: true, maxRecords: 6 });
+  if (trustedFreshRssArticles.length) {
+    return enrichBriefingSection({
+      id: section.id,
+      scope: section.scope,
+      title: section.title,
+      source: "Trusted News RSS",
+      summary: buildBriefingSummary(trustedFreshRssArticles, language),
+      articles: trustedFreshRssArticles,
+    }, language);
+  }
+
+  const gdeltArticles = prepareBriefingArticles(await fetchGdeltBriefingArticles(section, 10), { trustedOnly: true, maxRecords: 6 });
   if (gdeltArticles.length) {
     return enrichBriefingSection({
       id: section.id,
       scope: section.scope,
       title: section.title,
-      source: "GDELT DOC 2.0",
+      source: "Trusted GDELT",
       summary: buildBriefingSummary(gdeltArticles, language),
       articles: gdeltArticles,
     }, language);
   }
 
-  const rssArticles = await hydrateArticleImages(await fetchGoogleNewsRss(section, language));
+  const rssArticles = prepareBriefingArticles(await hydrateArticleImages(await fetchGoogleNewsRss(section, language, { maxRecords: 10 })), { maxRecords: 6 });
   return enrichBriefingSection({
     id: section.id,
     scope: section.scope,
     title: section.title,
-    source: rssArticles.length ? "Google News RSS" : "Sin fuente disponible",
+    source: rssArticles.length ? "Fresh News RSS" : "Sin fuente disponible",
     summary: buildBriefingSummary(rssArticles, language),
     articles: rssArticles,
   }, language);
@@ -8104,6 +8233,64 @@ function uniqueBy(items, keyFn) {
   });
 }
 
+function prepareBriefingArticles(articles = [], options = {}) {
+  const maxRecords = Number(options.maxRecords || 6);
+  const trustedOnly = Boolean(options.trustedOnly);
+  return uniqueBy(
+    articles
+      .map((article) => ({ ...article, publishedAtMs: parseNewsDateMs(article.seenAt || article.publishedAt) }))
+      .filter((article) => Number.isFinite(article.publishedAtMs))
+      .filter((article) => Date.now() - article.publishedAtMs <= DAILY_NEWS_FRESHNESS_HOURS * 60 * 60 * 1000)
+      .filter((article) => !trustedOnly || isTrustedNewsArticle(article))
+      .sort((a, b) => b.publishedAtMs - a.publishedAtMs),
+    (article) => normalizeArticleKey(article),
+  ).slice(0, maxRecords);
+}
+
+function normalizeArticleKey(article = {}) {
+  return String(article.url || article.title || "")
+    .toLowerCase()
+    .replace(/\?.*$/, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function parseNewsDateMs(value) {
+  if (!value) return NaN;
+  const raw = String(value).trim();
+  const direct = Date.parse(raw);
+  if (Number.isFinite(direct)) return direct;
+  const gdelt = raw.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/);
+  if (gdelt) {
+    return Date.UTC(Number(gdelt[1]), Number(gdelt[2]) - 1, Number(gdelt[3]), Number(gdelt[4]), Number(gdelt[5]), Number(gdelt[6]));
+  }
+  const compactDate = raw.match(/^(\d{4})(\d{2})(\d{2})$/);
+  if (compactDate) {
+    return Date.UTC(Number(compactDate[1]), Number(compactDate[2]) - 1, Number(compactDate[3]));
+  }
+  return NaN;
+}
+
+function isTrustedNewsArticle(article = {}) {
+  const domain = normalizeNewsDomain(article.domain || article.sourceUrl || article.url);
+  const sourceName = String(article.domain || article.sourceName || article.source || "").toLowerCase();
+  return (
+    TRUSTED_NEWS_DOMAINS.some((trustedDomain) => domain === trustedDomain || domain.endsWith(`.${trustedDomain}`)) ||
+    TRUSTED_NEWS_NAMES.some((trustedName) => sourceName.includes(trustedName))
+  );
+}
+
+function normalizeNewsDomain(value = "") {
+  const raw = String(value || "").trim().toLowerCase();
+  if (!raw) return "";
+  try {
+    const parsed = new URL(raw.startsWith("http") ? raw : `https://${raw}`);
+    return parsed.hostname.replace(/^www\./, "");
+  } catch {
+    return raw.replace(/^www\./, "").replace(/\/.*$/, "");
+  }
+}
+
 function buildBriefingMediaLinks(query, language) {
   const videoLabel = language === "en" ? "Videos" : "Videos";
   const imageLabel = language === "en" ? "Images" : "Imágenes";
@@ -8121,7 +8308,8 @@ async function fetchGdeltBriefingArticles(section, maxRecords = 6) {
   url.searchParams.set("mode", "artlist");
   url.searchParams.set("format", "json");
   url.searchParams.set("maxrecords", String(maxRecords));
-  url.searchParams.set("sort", "hybridrel");
+  url.searchParams.set("sort", "datedesc");
+  url.searchParams.set("timespan", `${DAILY_NEWS_FRESHNESS_HOURS}h`);
   try {
     const payload = await fetchJsonWithTimeout(url);
     return (payload.articles || []).slice(0, maxRecords).map((article) => ({
@@ -8139,9 +8327,15 @@ async function fetchGdeltBriefingArticles(section, maxRecords = 6) {
   }
 }
 
-async function fetchGoogleNewsRss(section, language) {
+async function fetchGoogleNewsRss(section, language, options = {}) {
   const url = new URL("https://news.google.com/rss/search");
-  url.searchParams.set("q", normalizeNewsQuery(section.query));
+  let query = normalizeNewsQuery(section.query);
+  query = `${query} when:${DAILY_NEWS_FRESHNESS_HOURS}h`;
+  if (options.trusted) {
+    const domainQuery = TRUSTED_NEWS_DOMAINS.slice(0, 10).map((domain) => `site:${domain}`).join(" OR ");
+    query = `${query} (${domainQuery})`;
+  }
+  url.searchParams.set("q", query);
   if (language === "en") {
     url.searchParams.set("hl", "en-US");
     url.searchParams.set("gl", "US");
@@ -8157,7 +8351,7 @@ async function fetchGoogleNewsRss(section, language) {
   }
   try {
     const xml = await fetchTextWithTimeout(url);
-    return parseGoogleNewsRss(xml, language).slice(0, 6);
+    return parseGoogleNewsRss(xml, language).slice(0, Number(options.maxRecords || 6));
   } catch {
     return [];
   }
@@ -8184,6 +8378,8 @@ function parseGoogleNewsRss(xml, language) {
       title: title || domain || "Artículo",
       url: decodeXml(readXmlTag(item, "link")),
       domain,
+      sourceName,
+      sourceUrl,
       language,
       sourceCountry: null,
       seenAt: readXmlTag(item, "pubDate"),

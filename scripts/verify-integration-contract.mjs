@@ -97,6 +97,9 @@ assert(files.server.includes("id: \"oura-sync\"") && files.server.includes("sync
 assert(files.server.includes("personalAccessTokenStatus: \"deprecated-not-for-product\""), "Server must not treat Oura Personal Access Tokens as the product path.");
 assert(files.server.includes("scopes: [\"spo2\"]"), "Oura SpO2 scope must be spo2.");
 assert(files.server.includes("source: \"live-location-search\"") && files.server.includes("buildAgendaLinks(place, language)") && files.server.includes("Espectaculos y agenda cultural"), "Mobile daily context must provide date-aware, city-anchored entertainment fallback items when live listings are empty.");
+assert(files.server.includes("DAILY_NEWS_FRESHNESS_HOURS") && files.server.includes("when:${DAILY_NEWS_FRESHNESS_HOURS}h") && files.server.includes("timespan\", `${DAILY_NEWS_FRESHNESS_HOURS}h`"), "Mobile daily context must reject stale news and query fresh news windows.");
+assert(files.server.includes("TRUSTED_NEWS_DOMAINS") && files.server.includes("reuters.com") && files.server.includes("bbc.com") && files.server.includes("apnews.com"), "Mobile daily context must prioritize trusted news sources such as Reuters, BBC, and AP.");
+assert(files.server.includes("MOBILE_DAILY_CONTEXT_CACHE_MINUTES") && files.server.includes("isMobileDailyBriefingStale") && files.server.includes("normalizeMobileDailyFallbackBriefing"), "Mobile daily context must use a short mobile cache and serve a safe fallback when live providers fail.");
 
 assert(files.packageJson.includes("\"verify:integrations\""), "package.json must expose verify:integrations.");
 assert(files.packageJson.includes("npm run verify:integrations"), "verify:pilot must include verify:integrations.");
