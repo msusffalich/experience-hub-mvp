@@ -96,6 +96,7 @@ assert(files.server.includes("next_token") && files.server.includes("maxPages") 
 assert(files.server.includes("id: \"oura-sync\"") && files.server.includes("syncOuraApiData({"), "Oura product sync must have a disabled scheduled routine.");
 assert(files.server.includes("personalAccessTokenStatus: \"deprecated-not-for-product\""), "Server must not treat Oura Personal Access Tokens as the product path.");
 assert(files.server.includes("scopes: [\"spo2\"]"), "Oura SpO2 scope must be spo2.");
+assert(files.server.includes("source: \"live-location-search\"") && files.server.includes("buildAgendaLinks(place, language)") && files.server.includes("Espectaculos y agenda cultural"), "Mobile daily context must provide date-aware, city-anchored entertainment fallback items when live listings are empty.");
 
 assert(files.packageJson.includes("\"verify:integrations\""), "package.json must expose verify:integrations.");
 assert(files.packageJson.includes("npm run verify:integrations"), "verify:pilot must include verify:integrations.");

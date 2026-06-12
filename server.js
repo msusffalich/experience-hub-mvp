@@ -7669,26 +7669,43 @@ function flattenMobileNewsSections(sections = []) {
 }
 
 function buildMobileEntertainmentItems(briefing = {}, localSections = [], place = {}) {
+  const language = normalizeDailyLanguage(briefing.locale || "es");
+  const locationLabel = [place.name || briefing.location, place.country || briefing.country || place.countryCode || briefing.countryCode].filter(Boolean).join(", ");
   const entertainmentSection = localSections.find((section) => /entertainment|entretenimiento|event/i.test(section.id || section.title || ""));
   const articleItems = (entertainmentSection?.articles || []).slice(0, 4).map((article) => ({
     title: article.title || entertainmentSection.title || "",
     type: "event",
-    venue: place.name || briefing.location || "",
+    venue: locationLabel || place.name || briefing.location || "",
     time: article.seenAt || null,
     image: article.image || null,
     url: article.url || "",
     source: article.domain || article.source || entertainmentSection.source || "",
   }));
-  const linkItems = (briefing.agendaLinks || []).slice(0, 5).map((link) => ({
+  const linkItems = (briefing.agendaLinks || []).slice(0, 6).map((link) => ({
     title: link.label || link.query || "",
     type: /cine|movie|showtime/i.test(`${link.label} ${link.query}`) ? "movie" : "event",
-    venue: place.name || briefing.location || "",
-    time: null,
+    venue: locationLabel || place.name || briefing.location || "",
+    time: link.dateLabel || null,
     image: null,
     url: link.url || "",
     source: "search",
+    category: link.category || "",
+    description: link.description || "",
   }));
-  return [...articleItems, ...linkItems].slice(0, 8);
+  const fallbackItems = !articleItems.length && !linkItems.length
+    ? buildAgendaLinks(place, language).slice(0, 6).map((link) => ({
+        title: link.label || link.query || "",
+        type: /cine|cinema|movie|showtime/i.test(`${link.label} ${link.query}`) ? "movie" : "event",
+        venue: locationLabel,
+        time: link.dateLabel || null,
+        image: null,
+        url: link.url || "",
+        source: "live-location-search",
+        category: link.category || "",
+        description: link.description || "",
+      }))
+    : [];
+  return [...articleItems, ...linkItems, ...fallbackItems].slice(0, 8);
 }
 
 async function buildLiveDailyBriefing(location, language = "es") {
@@ -7930,33 +7947,41 @@ function buildBriefingGroups(sections, language) {
 
 function buildAgendaLinks(place, language) {
   const placeLabel = [place.name, place.country || place.countryCode].filter(Boolean).join(" ");
+  const date = new Date();
+  const dateLabel = date.toISOString().slice(0, 10);
   const labels =
     language === "en"
       ? [
-          ["Movie showtimes", `movie showtimes ${placeLabel}`],
-          ["Concerts", `concerts ${placeLabel}`],
-          ["Theater", `theater shows ${placeLabel}`],
-          ["Events today", `events today ${placeLabel}`],
-          ["Exhibitions", `exhibitions museums ${placeLabel}`],
+          ["Movie showtimes today", "cinema", `movie showtimes today ${dateLabel} ${placeLabel}`, "Current movie showtimes in the user's city."],
+          ["Concerts today", "concerts", `concerts live music today ${dateLabel} ${placeLabel}`, "Concerts and live music happening today."],
+          ["Theater and performing arts", "theater", `theater performing arts shows today ${dateLabel} ${placeLabel}`, "Theater, comedy, dance and performing arts."],
+          ["City events today", "events", `events today ${dateLabel} ${placeLabel}`, "Current local events for today."],
+          ["Exhibitions and museums", "exhibitions", `exhibitions museums today ${dateLabel} ${placeLabel}`, "Museum, gallery and cultural exhibitions."],
+          ["Shows and cultural agenda", "shows", `shows cultural agenda today ${dateLabel} ${placeLabel}`, "Other active shows, festivals and cultural plans."],
         ]
       : language === "fr"
         ? [
-            ["Cinema", `cinema seances ${placeLabel}`],
-            ["Concerts", `concerts ${placeLabel}`],
-            ["Theatre", `theatre spectacles ${placeLabel}`],
-            ["Evenements aujourd'hui", `evenements aujourd'hui ${placeLabel}`],
-            ["Expositions", `expositions musees ${placeLabel}`],
+            ["Cinema aujourd'hui", "cinema", `cinema seances aujourd'hui ${dateLabel} ${placeLabel}`, "Seances de cinema actuelles dans la ville de l'utilisateur."],
+            ["Concerts aujourd'hui", "concerts", `concerts musique live aujourd'hui ${dateLabel} ${placeLabel}`, "Concerts et musique live disponibles aujourd'hui."],
+            ["Theatre et arts de la scene", "theater", `theatre spectacles arts scene aujourd'hui ${dateLabel} ${placeLabel}`, "Theatre, danse, humour et arts de la scene."],
+            ["Evenements aujourd'hui", "events", `evenements aujourd'hui ${dateLabel} ${placeLabel}`, "Evenements locaux actuels pour aujourd'hui."],
+            ["Expositions et musees", "exhibitions", `expositions musees aujourd'hui ${dateLabel} ${placeLabel}`, "Musees, galeries et expositions culturelles."],
+            ["Spectacles et agenda culturel", "shows", `spectacles agenda culturel aujourd'hui ${dateLabel} ${placeLabel}`, "Autres spectacles, festivals et sorties culturelles."],
           ]
       : [
-          ["Cartelera de cine", `cartelera cine ${placeLabel}`],
-          ["Conciertos", `conciertos ${placeLabel}`],
-          ["Teatro", `teatro obras ${placeLabel}`],
-          ["Eventos de hoy", `eventos hoy ${placeLabel}`],
-          ["Exposiciones", `exposiciones museos ${placeLabel}`],
+          ["Cines y cartelera de hoy", "cinema", `cartelera cines hoy ${dateLabel} ${placeLabel}`, "Funciones de cine vigentes en la ciudad del usuario."],
+          ["Conciertos de hoy", "concerts", `conciertos musica en vivo hoy ${dateLabel} ${placeLabel}`, "Conciertos y musica en vivo disponibles hoy."],
+          ["Teatro y artes escenicas", "theater", `teatro obras artes escenicas hoy ${dateLabel} ${placeLabel}`, "Teatro, comedia, danza y artes escenicas."],
+          ["Eventos de hoy", "events", `eventos hoy ${dateLabel} ${placeLabel}`, "Eventos locales vigentes para la fecha actual."],
+          ["Exposiciones y museos", "exhibitions", `exposiciones museos hoy ${dateLabel} ${placeLabel}`, "Museos, galerias y exposiciones culturales."],
+          ["Espectaculos y agenda cultural", "shows", `espectaculos agenda cultural hoy ${dateLabel} ${placeLabel}`, "Otros espectaculos, festivales y planes culturales vigentes."],
         ];
-  return labels.map(([label, query]) => ({
+  return labels.map(([label, category, query, description]) => ({
     label,
+    category,
+    description,
     query,
+    dateLabel,
     url: `https://www.google.com/search?q=${encodeURIComponent(query)}`,
   }));
 }

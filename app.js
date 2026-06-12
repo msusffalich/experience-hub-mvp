@@ -1,4 +1,4 @@
-const APP_VERSION = "20260611-french-language-complete-573";
+const APP_VERSION = "20260611-french-polish-575";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2059,10 +2059,10 @@ function mergeLocale(base, overrides) {
 i18n.fr = mergeLocale(i18n.en, {
   languageLabel: "Langue",
   nav: {
-    auth: "Acces",
+    auth: "Accès",
     dashboard: "Accueil",
     capture: "Capturer",
-    library: "Bibliotheque",
+    library: "Bibliothèque",
     assetLibrary: "Fichiers",
     agenda: "Agenda",
     timeline: "Chronologie",
@@ -2075,18 +2075,18 @@ i18n.fr = mergeLocale(i18n.en, {
     admin: "Administration",
   },
   viewTitles: {
-    auth: "Acces securise",
+    auth: "Accès sécurisé",
     dashboard: "Accueil",
     capture: "Capture rapide",
-    library: "Bibliotheque d'experiences",
+    library: "Bibliothèque d'expériences",
     assetLibrary: "Fichiers multimodaux",
     agenda: "Agenda intelligent",
     timeline: "Chronologie contextuelle",
     experienceMap: "Carte des relations",
-    report: "Rapport d'experiences",
+    report: "Rapport d'expériences",
     publications: "Publications intelligentes",
     insights: "Enseignements actionnables",
-    automation: "Capacites, routines et MCP",
+    automation: "Capacités, routines et MCP",
     manual: "Aide",
     admin: "Administration",
   },
@@ -2096,34 +2096,34 @@ i18n.fr = mergeLocale(i18n.en, {
     voiceCommand: "Commande vocale",
     reloadApp: "Actualiser l'app",
     refreshDaily: "Actualiser le quotidien",
-    clearLocalData: "Vider les donnees locales",
-    export: "Sauvegarde des donnees",
+    clearLocalData: "Vider les données locales",
+    export: "Sauvegarde des données",
     restoreBackup: "Restaurer une sauvegarde",
-    applyRecommendedPrivacy: "Appliquer le recommande",
-    save: "Enregistrer l'experience",
+    applyRecommendedPrivacy: "Appliquer la recommandation",
+    save: "Enregistrer l'expérience",
     clear: "Effacer",
-    downloadReport: "Telecharger le rapport",
+    downloadReport: "Télécharger le rapport",
     exportAssetInventory: "Exporter l'inventaire",
     exportAssetInventoryCsv: "CSV inventaire",
     exportAssetProcessingBacklog: "Exporter les traitements",
     exportAssetProcessingBacklogCsv: "CSV traitements",
-    exportAssetProcessingChecklist: "Checklist de revision",
-    exportAssetMetadataTemplate: "Modele CSV",
-    exportAssetEditableMetadataCsv: "CSV edition",
+    exportAssetProcessingChecklist: "Checklist de révision",
+    exportAssetMetadataTemplate: "Modèle CSV",
+    exportAssetEditableMetadataCsv: "CSV édition",
     suggestFilteredAssetText: "Suggérer le texte",
     clearAssetFilters: "Effacer les filtres",
-    importAssetMetadata: "Importer les metadonnees",
+    importAssetMetadata: "Importer les métadonnées",
     importBiometricAsset: "Importer historique",
     exportAgendaIcs: "Exporter calendrier",
-    exportAgendaEvent: "Exporter evenement",
+    exportAgendaEvent: "Exporter l'événement",
     importAgendaIcs: "Importer .ics",
     saveBlockedDates: "Enregistrer blocages",
     downloadCsv: "CSV",
     printReport: "HTML imprimable",
-    previewPublication: "Apercu imprimable",
+    previewPublication: "Aperçu imprimable",
     copyPublicationText: "Copier le texte",
     copyPublicationHtml: "Copier HTML",
-    exportPublicationPackage: "Paquet editorial",
+    exportPublicationPackage: "Dossier éditorial",
     downloadPdf: "PDF",
     edit: "Modifier",
     delete: "Supprimer",
@@ -2132,84 +2132,84 @@ i18n.fr = mergeLocale(i18n.en, {
     exportObsidian: "Exporter Markdown",
     remove: "Retirer",
     signIn: "Entrer",
-    signUp: "Creer un compte",
+    signUp: "Créer un compte",
     signOut: "Sortir",
-    resetPassword: "Recuperer le mot de passe",
+    resetPassword: "Récupérer le mot de passe",
     resendConfirmation: "Renvoyer confirmation",
     showPassword: "Afficher",
     hidePassword: "Masquer",
-    updateEmbeddings: "Mettre a jour embeddings",
+    updateEmbeddings: "Mettre à jour les embeddings",
     syncWorkspaceStructure: "Synchroniser structure",
-    refreshOps: "Actualiser operation",
-    verifySupabase: "Verifier cloud",
+    refreshOps: "Actualiser l'opération",
+    verifySupabase: "Vérifier le cloud",
     testSupabaseFlow: "Tester flux complet",
     syncOffline: "Synchroniser hors ligne",
-    unlockLocal: "Deverrouiller local",
-    showLocalKey: "Afficher cle",
-    hideLocalKey: "Masquer cle",
-    applyLocalKey: "Appliquer cle",
+    unlockLocal: "Déverrouiller le local",
+    showLocalKey: "Afficher la clé",
+    hideLocalKey: "Masquer la clé",
+    applyLocalKey: "Appliquer la clé",
     saveProfile: "Enregistrer profil",
     enable: "Activer",
-    runNow: "Executer",
+    runNow: "Exécuter",
   },
   metrics: {
-    experiences: "Experiences",
-    hours: "Heures enregistrees",
-    avgEnergy: "Energie moyenne",
-    topCategory: "Categorie principale",
-    media: "Pieces multimedia",
-    total: "Total experiences",
-    capturedHours: "Heures capturees",
+    experiences: "Expériences",
+    hours: "Heures enregistrées",
+    avgEnergy: "Énergie moyenne",
+    topCategory: "Catégorie principale",
+    media: "Pièces multimédias",
+    total: "Total expériences",
+    capturedHours: "Heures capturées",
   },
   labels: {
-    categoryAll: "Toutes les categories",
+    categoryAll: "Toutes les catégories",
     categoryLabels: {
       Trabajo: "Travail",
       "Viajes / Paseos": "Voyages / sorties",
-      Salud: "Sante",
+      Salud: "Santé",
       Social: "Social",
       Entretenimiento: "Divertissement",
       Aprendizaje: "Apprentissage",
       Compras: "Achats",
-      Creatividad: "Creativite",
+      Creatividad: "Créativité",
       Hogar: "Maison",
-      Espiritualidad: "Spiritualite",
+      Espiritualidad: "Spiritualité",
     },
-    noMedia: "Sans pieces jointes",
-    energyDefinition: "L'energie est une auto-evaluation de 1 a 10 du niveau percu de vitalite, concentration ou disponibilite pendant l'experience.",
-    mediaDefinition: "Les pieces multimedia sont les images, videos ou audios lies a une experience. Ce n'est pas une moyenne.",
-    attachments: "pieces jointes",
-    results: "resultats",
-    items: "elements",
-    noLibrary: "Aucune experience pour ces filtres.",
-    noTimeline: "Aucune experience pour ces filtres.",
-    noAttachments: "Aucune piece multimedia pour le moment.",
-    assetLibraryIntro: "Inventaire des images, videos, audios et documents associes aux experiences.",
+    noMedia: "Sans pièces jointes",
+    energyDefinition: "L'énergie est une auto-évaluation de 1 à 10 du niveau perçu de vitalité, concentration ou disponibilité pendant l'expérience.",
+    mediaDefinition: "Les pièces multimédias sont les images, vidéos ou audios liés à une expérience. Ce n'est pas une moyenne.",
+    attachments: "pièces jointes",
+    results: "résultats",
+    items: "éléments",
+    noLibrary: "Aucune expérience pour ces filtres.",
+    noTimeline: "Aucune expérience pour ces filtres.",
+    noAttachments: "Aucune pièce multimédia pour le moment.",
+    assetLibraryIntro: "Inventaire des images, vidéos, audios et documents associés aux expériences.",
     assetLibraryEmpty: "Aucun fichier multimodal pour ces filtres.",
-    assetLinkedExperience: "Experience liee",
+    assetLinkedExperience: "Expérience liée",
     assetStorage: "Stockage",
-    assetStorageStatus: "Etat du stockage",
+    assetStorageStatus: "État du stockage",
     assetStorageRemote: "Serveur/Supabase",
     assetStorageLocal: "Local temporaire",
-    assetStorageCached: "Apercu local",
+    assetStorageCached: "Aperçu local",
     assetStorageNeedsSync: "Synchronisation requise",
-    assetReady: "Pret a reutiliser",
-    assetNeedsReview: "A revoir avant usage",
-    assetProcessingStatus: "Etat d'analyse",
+    assetReady: "Prêt à réutiliser",
+    assetNeedsReview: "À revoir avant usage",
+    assetProcessingStatus: "État d'analyse",
     assetProcessingReady: "Texte analytique disponible",
     assetProcessingPendingFilter: "Traitement en attente",
-    assetDownloadFile: "Telecharger le fichier",
-    assetArchiveOnly: "Archive compressee",
-    assetArchiveOnlyDetail: "Conservee et telechargeable, mais non interpretee automatiquement.",
-    assetTags: "Etiquettes",
-    assetTagsEmpty: "Sans etiquettes",
-    assetManualMetadata: "Metadonnees manuelles",
+    assetDownloadFile: "Télécharger le fichier",
+    assetArchiveOnly: "Archive compressée",
+    assetArchiveOnlyDetail: "Conservée et téléchargeable, mais non interprétée automatiquement.",
+    assetTags: "Étiquettes",
+    assetTagsEmpty: "Sans étiquettes",
+    assetManualMetadata: "Métadonnées manuelles",
     assetAnalyticalText: "Texte analytique",
     assetOriginalLanguage: "Langue originale",
     assetTranslatedText: "Traduction dans la langue utilisateur",
     assetTranslationLanguage: "Langue de traduction",
-    authStateTitle: "Etat d'acces",
-    authNextStep: "Prochaine etape",
+    authStateTitle: "État d'accès",
+    authNextStep: "Prochaine étape",
     authConfigReady: "Configuration Supabase disponible",
     authConfigMissing: "Configuration Supabase manquante",
     authTokenReady: "Session active",
@@ -2217,33 +2217,33 @@ i18n.fr = mergeLocale(i18n.en, {
     authRefreshReady: "Jeton de renouvellement disponible",
     authRefreshMissing: "Sans jeton de renouvellement",
     authReturnNone: "Aucun retour en attente",
-    authReturnDiagnostics: "Retour aux diagnostics apres connexion",
-    authReturnSelfTest: "Retour au test reel apres connexion",
-    authReturnQuickQa: "Retour a la verification apres connexion",
-    authNextConfig: "Verifier la configuration du serveur",
-    authNextVerify: "Verifier la synchronisation",
+    authReturnDiagnostics: "Retour aux diagnostics après connexion",
+    authReturnSelfTest: "Retour au test réel après connexion",
+    authReturnQuickQa: "Retour à la vérification après connexion",
+    authNextConfig: "Vérifier la configuration du serveur",
+    authNextVerify: "Vérifier la synchronisation",
     authNextSignIn: "Connecte-toi pour activer la synchronisation",
-    authSessionExpired: "Session expiree. Connecte-toi a nouveau.",
-    authSessionIncomplete: "Session incomplete",
+    authSessionExpired: "Session expirée. Connecte-toi à nouveau.",
+    authSessionIncomplete: "Session incomplète",
     privacyLocalTitle: "Traitement local",
     privacyLocalHelp: "Conserve le travail dans ce navigateur lorsque c'est possible.",
     privacyAnalyticsTitle: "Analytique anonyme",
-    privacyAnalyticsHelp: "Utilise uniquement des metriques generales, pas le contenu personnel.",
+    privacyAnalyticsHelp: "Utilise uniquement des métriques générales, pas le contenu personnel.",
     appVersion: "Version",
-    appVersionMismatch: "Version differente",
+    appVersionMismatch: "Version différente",
     appVersionNoticeTitle: "Nouvelle version disponible",
-    appVersionNoticeDetail: "Actualise l'app pour eviter une copie ancienne du cache.",
+    appVersionNoticeDetail: "Actualise l'app pour éviter une copie ancienne du cache.",
     appVersionNoticeAction: "Actualiser maintenant",
-    manualUpdated: "Manuel actualise",
+    manualUpdated: "Manuel actualisé",
     dailySearchGoogle: "Rechercher dans Google",
     contextFallbackSource: "Source de secours",
     noNotifications: "Sans alertes",
-    scheduledRoutineNotice: "Routine programmee executee",
+    scheduledRoutineNotice: "Routine programmée exécutée",
   },
   report: {
     narrative: (count, media, category, energy) =>
-      `La bibliotheque contient ${count} experiences avec ${media} images ou videos enregistrees. La categorie dominante est ${category}, et l'energie moyenne est ${energy}/10.`,
-    next: "La prochaine etape naturelle est l'export PDF, la recherche semantique et les rapports par semaine, objectif ou personne.",
+      `La bibliothèque contient ${count} expériences avec ${media} images ou vidéos enregistrées. La catégorie dominante est ${category}, et l'énergie moyenne est ${energy}/10.`,
+    next: "La prochaine étape naturelle est l'export PDF, la recherche sémantique et les rapports par semaine, objectif ou personne.",
   },
 });
 
@@ -3810,21 +3810,21 @@ manualContent.fr = [
   {
     title: "Ce qu'est VibePWA",
     body: [
-      "VibePWA est le centre web de Vibe pour organiser, analyser et publier des experiences humaines. Il est concu pour le travail profond sur ordinateur, Mac, tablette ou navigateur mobile.",
-      "Vibeapp est l'app mobile native pour capturer le contexte du telephone: notes rapides, audio, photo, video, localisation, biometrie et signaux de l'environnement. VibePWA consomme ces donnees depuis le serveur au lieu de dupliquer les connecteurs mobiles.",
-      "Le produit separe clairement l'usage quotidien et l'operation avancee: l'utilisateur voit Accueil, Capture, Bibliotheque, Fichiers, Agenda, Rapports, Publications, Enseignements et Aide; les diagnostics et controles techniques restent dans Administration.",
-      "La regle de conception est simple: interface claire pour l'utilisateur final, logique robuste a l'interieur, synchronisation transparente et messages comprehensibles.",
+      "VibePWA est le centre web de Vibe pour organiser, analyser et publier des expériences humaines. Il est conçu pour le travail approfondi sur ordinateur, Mac, tablette ou navigateur mobile.",
+      "Vibeapp est l'app mobile native pour capturer le contexte du téléphone: notes rapides, audio, photo, vidéo, localisation, biométrie et signaux de l'environnement. VibePWA consomme ces données depuis le serveur au lieu de dupliquer les connecteurs mobiles.",
+      "Le produit sépare clairement l'usage quotidien et l'opération avancée: l'utilisateur voit Accueil, Capture, Bibliothèque, Fichiers, Agenda, Rapports, Publications, Enseignements et Aide; les diagnostics et contrôles techniques restent dans Administration.",
+      "La règle de conception est simple: interface claire pour l'utilisateur final, logique robuste à l'intérieur, synchronisation transparente et messages compréhensibles.",
     ],
   },
   {
-    title: "Acces, invitation et securite",
+    title: "Accès, invitation et sécurité",
     items: [
-      "Se connecter avec Google ou par email confirme seulement l'identite. Cela ne donne pas automatiquement le droit d'utiliser le produit.",
-      "En mode prive, le serveur doit verifier une invitation, une liste d'emails autorises ou une appartenance active au workspace.",
-      "Si une personne se connecte sans approbation, l'app doit afficher Acces en attente et bloquer experiences, fichiers, agenda, rapports, publications et synchronisation mobile.",
-      "VibePWA et Vibeapp utilisent le meme protocole: connexion, jeton de session, verification du statut serveur, workspace autorise et role actif.",
-      "Si le serveur repond pending, blocked ou revoked, Vibeapp peut afficher un ecran local minimal, mais ne doit pas lire ni envoyer de donnees au serveur.",
-      "Pour un pilote ou une beta privee, le filtre recommande est une liste d'emails autorises. Le mode public pourra exister plus tard, mais les nouveaux comptes devront commencer comme demandes en attente.",
+      "Se connecter avec Google ou par email confirme seulement l'identité. Cela ne donne pas automatiquement le droit d'utiliser le produit.",
+      "En mode privé, le serveur doit vérifier une invitation, une liste d'emails autorisés ou une appartenance active au workspace.",
+      "Si une personne se connecte sans approbation, l'app doit afficher Accès en attente et bloquer expériences, fichiers, agenda, rapports, publications et synchronisation mobile.",
+      "VibePWA et Vibeapp utilisent le même protocole: connexion, jeton de session, vérification du statut serveur, workspace autorisé et rôle actif.",
+      "Si le serveur répond pending, blocked ou revoked, Vibeapp peut afficher un écran local minimal, mais ne doit pas lire ni envoyer de données au serveur.",
+      "Pour un pilote ou une bêta privée, le filtre recommandé est une liste d'emails autorisés. Le mode public pourra exister plus tard, mais les nouveaux comptes devront commencer comme demandes en attente.",
     ],
   },
   {
@@ -5310,25 +5310,15 @@ function markApiConnectivityFailure(error, options = {}) {
 function getConnectivitySummary() {
   const pending = state.offlineQueue?.length || 0;
   const hasSession = Boolean(state.session?.access_token);
-  const labels = state.language !== "es"
-    ? {
-        synced: "Synced",
-        syncing: "Syncing",
-        pending: "pending save",
-        signIn: "Sign in to save",
-        slow: "Server slow",
-        offline: "Connection pending",
-        local: "Local mode",
-      }
-    : {
-        synced: "Sincronizado",
-        syncing: "Sincronizando",
-        pending: "guardado pendiente",
-        signIn: "Entrar para guardar",
-        slow: "Servidor lento",
-        offline: "Conexión pendiente",
-        local: "Modo local",
-      };
+  const labels = {
+    synced: languageText("Sincronizado", "Synced", "Synchronisé"),
+    syncing: languageText("Sincronizando", "Syncing", "Synchronisation"),
+    pending: languageText("guardado pendiente", "pending save", "enregistrement en attente"),
+    signIn: languageText("Entrar para guardar", "Sign in to save", "Connexion requise"),
+    slow: languageText("Servidor lento", "Server slow", "Serveur lent"),
+    offline: languageText("Conexión pendiente", "Connection pending", "Connexion en attente"),
+    local: languageText("Modo local", "Local mode", "Mode local"),
+  };
   if (!state.config || state.config.persistence !== "supabase") {
     return { text: labels.local, tone: "neutral", action: "status" };
   }
@@ -6893,7 +6883,7 @@ function showAuthView() {
   document.querySelectorAll(".view").forEach((section) => section.classList.remove("active-view"));
   document.querySelector('[data-view="auth"]')?.classList.add("active");
   document.getElementById("authView").classList.add("active-view");
-  document.getElementById("viewTitle").textContent = state.language !== "es" ? "Secure access" : "Acceso seguro";
+  document.getElementById("viewTitle").textContent = languageText("Acceso seguro", "Secure access", "Accès sécurisé");
   renderAuthStatePanel();
 }
 
@@ -7145,68 +7135,68 @@ function applyFrenchStaticTextOverrides() {
   setText("auth-heading", "Connexion");
   const authHelp = document.querySelector(".auth-help");
   if (authHelp) {
-    authHelp.querySelector("strong").textContent = "Premier acces";
-    authHelp.querySelector("p").textContent = "Si tu n'as pas encore d'utilisateur, saisis ton email, cree un mot de passe et clique sur Creer un compte. Les cles techniques du projet ne sont pas des mots de passe.";
+    authHelp.querySelector("strong").textContent = "Premier accès";
+    authHelp.querySelector("p").textContent = "Si tu n'as pas encore d'utilisateur, saisis ton email, crée un mot de passe et clique sur Créer un compte. Les clés techniques du projet ne sont pas des mots de passe.";
   }
   setText("manualVersionEyebrow", "Version active");
-  setText("manualVersionSummary", "Guide pratique organise par theme. Vibeapp capture le contexte natif; VibePWA revise, analyse, rapporte, publie et administre.");
-  setText("manualGuideStartTitle", "Demarrage rapide");
-  setText("manualGuideStartText", "Utilise Vibeapp pour capturer; utilise VibePWA pour revoir Bibliotheque, Fichiers, Rapports, Enseignements et Publications.");
-  setText("manualGuideOperateTitle", "Operations");
-  setText("manualGuideOperateText", "Synchronisation serveur, confidentialite, sauvegardes et continuite multi-appareils.");
+  setText("manualVersionSummary", "Guide pratique organisé par thème. Vibeapp capture le contexte natif; VibePWA révise, analyse, rapporte, publie et administre.");
+  setText("manualGuideStartTitle", "Démarrage rapide");
+  setText("manualGuideStartText", "Utilise Vibeapp pour capturer; utilise VibePWA pour revoir Bibliothèque, Fichiers, Rapports, Enseignements et Publications.");
+  setText("manualGuideOperateTitle", "Opérations");
+  setText("manualGuideOperateText", "Synchronisation serveur, confidentialité, sauvegardes et continuité multi-appareils.");
   setText("manualGuideAdminTitle", "Administration");
-  setText("manualGuideAdminText", "Connecteurs, diagnostics, qualite et controles de publication.");
+  setText("manualGuideAdminText", "Connecteurs, diagnostics, qualité et contrôles de publication.");
   setText("manualSearchLabel", "Rechercher dans l'aide");
-  setPlaceholder("manualSearchInput", "Rechercher section, fonction ou mot-cle");
-  setText("manualReviewFilterLabel", "Etat de revision");
+  setPlaceholder("manualSearchInput", "Rechercher une section, une fonction ou un mot-clé");
+  setText("manualReviewFilterLabel", "État de révision");
   const manualReviewFilter = document.getElementById("manualReviewFilter");
   if (manualReviewFilter) {
     manualReviewFilter.options[0].textContent = "Toutes";
     manualReviewFilter.options[1].textContent = "En attente";
-    manualReviewFilter.options[2].textContent = "Revues";
+    manualReviewFilter.options[2].textContent = "Révisées";
   }
-  setText("manualClearSearchButton", "Effacer recherche");
+  setText("manualClearSearchButton", "Effacer la recherche");
   setText("manualExportMarkdownButton", "Exporter Markdown");
-  setText("manualExportPdfButton", "Telecharger PDF edite ReportLab");
+  setText("manualExportPdfButton", "Télécharger le PDF édité ReportLab");
   setText("manualExportHtmlButton", "HTML imprimable");
   setText("manualMarkAllButton", "Tout marquer");
-  setText("manualResetReviewButton", "Reinitialiser revision");
-  setPlaceholder("experienceMapSearchInput", "Rechercher experience, personne, lieu ou objectif");
-  setPlaceholder("experienceMapQuestionInput", "Exemple : quels lieux sont lies a une energie plus elevee ?");
-  setPlaceholder("assetSearchInput", "Rechercher fichier, experience, lieu, personne, format ou date");
-  setText("dashboardPilotTitle", "Preparation du pilote");
-  setText("dashboardPilotStatus", "Suivi operationnel");
-  setText("agendaAdvancedTitle", "Options avancees de calendrier");
+  setText("manualResetReviewButton", "Réinitialiser la révision");
+  setPlaceholder("experienceMapSearchInput", "Rechercher une expérience, une personne, un lieu ou un objectif");
+  setPlaceholder("experienceMapQuestionInput", "Exemple : quels lieux sont liés à une énergie plus élevée ?");
+  setPlaceholder("assetSearchInput", "Rechercher fichier, expérience, lieu, personne, format ou date");
+  setText("dashboardPilotTitle", "Préparation du pilote");
+  setText("dashboardPilotStatus", "Suivi opérationnel");
+  setText("agendaAdvancedTitle", "Options avancées de calendrier");
   setText("agendaAdvancedHelp", "Importer, exporter et bloquer des jours");
-  setText("agendaPilotParticipantLabel", "Groupe/personne lie");
-  setText("agendaSaveButton", "Enregistrer evenement");
+  setText("agendaPilotParticipantLabel", "Groupe/personne lié");
+  setText("agendaSaveButton", "Enregistrer l'événement");
   setText("reportExportTitle", "Options techniques du rapport");
   setText("reportExportHelp", "JSON, CSV, HTML et preuves d'acceptation");
   setText("publicationMoreTitle", "Options techniques");
-  setText("publicationMoreHelp", "HTML, Markdown, copies et paquet editorial");
+  setText("publicationMoreHelp", "HTML, Markdown, copies et dossier éditorial");
   setText("reportParticipantLabel", "Groupe/personne dans ce rapport");
   setText("insightsParticipantLabel", "Groupe / personne");
   setText("publicationParticipantLabel", "Groupe / personne source");
-  setText("generatePublicationButton", "Generer brouillon");
+  setText("generatePublicationButton", "Générer le brouillon");
   setText("exportPublicationHtmlButton", "Exporter HTML");
   setText("exportPublicationMarkdownButton", "Exporter Markdown");
   setText("publicationHistoryHeading", "Brouillons");
-  setText("adminHubStatus", "Centre operationnel");
-  setText("adminExecutiveTitle", "Resume executif");
-  setText("adminExecutiveHelp", "Etat, priorites et publication");
+  setText("adminHubStatus", "Centre opérationnel");
+  setText("adminExecutiveTitle", "Résumé exécutif");
+  setText("adminExecutiveHelp", "État, priorités et publication");
   setText("adminPersistenceTitle", "Synchronisation et cloud");
-  setText("adminPersistenceHelp", "Multi-appareils, sauvegarde et verification");
-  setText("adminPeopleTitle", "Groupes, compte et donnees");
-  setText("adminPeopleHelp", "Creation, archivage, reactivation et conservation de l'historique");
-  setText("adminAssetsTitle", "Fichiers et medias");
-  setText("adminAssetsHelp", "Inventaire, import, revision et traitement");
+  setText("adminPersistenceHelp", "Multi-appareils, sauvegarde et vérification");
+  setText("adminPeopleTitle", "Groupes, compte et données");
+  setText("adminPeopleHelp", "Création, archivage, réactivation et conservation de l'historique");
+  setText("adminAssetsTitle", "Fichiers et médias");
+  setText("adminAssetsHelp", "Inventaire, import, révision et traitement");
   setText("adminProfileDevicesTitle", "Profil et appareils");
-  setText("adminProfileDevicesHelp", "Compte, preferences et sources de capture");
-  setText("adminQualityTitle", "Qualite et preuves");
-  setText("adminQualityHelp", "Regles, tests, tracabilite et registres");
-  setText("adminAdvancedTitle", "Diagnostics avances");
-  setText("adminAdvancedHelp", "Serveur, donnees de test, integrations et journaux");
-  setText("openAdvancedDiagnosticsButton", "Diagnostics avances");
+  setText("adminProfileDevicesHelp", "Compte, préférences et sources de capture");
+  setText("adminQualityTitle", "Qualité et preuves");
+  setText("adminQualityHelp", "Règles, tests, traçabilité et registres");
+  setText("adminAdvancedTitle", "Diagnostics avancés");
+  setText("adminAdvancedHelp", "Serveur, données de test, intégrations et journaux");
+  setText("openAdvancedDiagnosticsButton", "Diagnostics avancés");
 }
 
 function setupForm() {
@@ -12283,9 +12273,15 @@ function renderCaptureSaveStatus() {
     box.innerHTML = "";
     return;
   }
-  const labels = state.language !== "es"
-    ? { saved: "Saved", synced: "Synced", syncing: "Sync", viewLibrary: "Open Library", keepCapturing: "Keep capturing", signIn: "Sign in", sync: "Save pending" }
-    : { saved: "Guardado", synced: "Sincronizado", syncing: "Sync", viewLibrary: "Abrir Libreria", keepCapturing: "Seguir capturando", signIn: "Entrar", sync: "Guardar pendientes" };
+  const labels = {
+    saved: languageText("Guardado", "Saved", "Enregistré"),
+    synced: languageText("Sincronizado", "Synced", "Synchronisé"),
+    syncing: languageText("Sync", "Sync", "Synchronisation"),
+    viewLibrary: languageText("Abrir Librería", "Open Library", "Ouvrir la bibliothèque"),
+    keepCapturing: languageText("Seguir capturando", "Keep capturing", "Continuer la capture"),
+    signIn: languageText("Entrar", "Sign in", "Connexion"),
+    sync: languageText("Guardar pendientes", "Save pending", "Enregistrer les éléments en attente"),
+  };
   const isAutosave = String(status.reason || "").startsWith("autosave_");
   const actionButtons = [
     status.reason === "auth_required" ? `<button class="primary-button" type="button" data-capture-save-action="auth">${escapeHtml(labels.signIn)}</button>` : "",
