@@ -286,8 +286,10 @@ async function handleApi(req, res, url) {
     sendJson(res, 200, {
       ok: true,
       accessToken: auth.access_token,
+      refreshToken: auth.refresh_token || null,
       tokenType: auth.token_type || "bearer",
       expiresIn: auth.expires_in || null,
+      expiresAt: auth.expires_at || null,
       user: {
         id: auth.user?.id || "",
         email: auth.user?.email || email,
