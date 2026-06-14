@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 
@@ -7,7 +7,7 @@ const root = process.cwd();
 const pwaVersion = readFileSync(path.join(root, "app.js"), "utf8").match(/const APP_VERSION = "([^"]+)";/)?.[1] || "unknown";
 const pubspec = readFileSync(path.join(root, "vibeapp", "pubspec.yaml"), "utf8");
 const vibeappVersion = pubspec.match(/^version:\s*(.+)$/m)?.[1]?.trim() || "0.0.0+0";
-const vibeappMain = readFileSync(path.join(root, "vibeapp", "lib", "main.dart"), "utf8");
+const vibeappMain = readDartLibraryTree(path.join(root, "vibeapp", "lib"));
 const vibeappReleaseLabel = vibeappMain.match(/vibeappReleaseLabel\s*=\s*'([^']+)'/)?.[1] || pwaVersion;
 const bundleId = "com.miguelsusffalich.vibeapp";
 const handoffCategory = (process.env.VIBE_HANDOFF_CATEGORY || "").trim();
@@ -26,6 +26,18 @@ const zipChecksumPath = `${zipPath}.sha256`;
 
 function sha256(filePath) {
   return createHash("sha256").update(readFileSync(filePath)).digest("hex");
+}
+
+function readDartLibraryTree(dir) {
+  if (!existsSync(dir)) return "";
+  return readdirSync(dir, { withFileTypes: true })
+    .flatMap((entry) => {
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) return readDartLibraryTree(fullPath);
+      if (entry.isFile() && entry.name.endsWith(".dart")) return readFileSync(fullPath, "utf8");
+      return "";
+    })
+    .join("\n");
 }
 
 function formatBytes(bytes) {

@@ -83,6 +83,7 @@ const TRANSCRIPTION_PROVIDER = process.env.TRANSCRIPTION_PROVIDER || "openai";
 const OPENAI_TRANSCRIPTION_MODEL = process.env.OPENAI_TRANSCRIPTION_MODEL || "gpt-4o-mini-transcribe";
 const OCR_PROVIDER = process.env.OCR_PROVIDER || "openai";
 const OPENAI_OCR_MODEL = process.env.OPENAI_OCR_MODEL || "gpt-4o-mini";
+const OPENAI_ASSISTANT_MODEL = process.env.OPENAI_ASSISTANT_MODEL || process.env.OPENAI_CHAT_MODEL || OPENAI_OCR_MODEL;
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || "claude-haiku-4-5";
 const ANTHROPIC_API_BASE_URL = (process.env.ANTHROPIC_API_BASE_URL || "https://api.anthropic.com").trim().replace(/\/$/, "");
@@ -3307,7 +3308,7 @@ async function handleMobileAssistantMessage(body = {}, user = {}) {
     throw new HttpError(400, "assistant_payload_incomplete", "Falta el texto para consultar a V.");
   }
   const history = normalizeAssistantHistory(body.history);
-  const result = await callAnthropicMessages({
+  const result = await callMobileAssistantMessages({
     system,
     messages: [...history, { role: "user", content: text }],
     maxTokens: Number(body.maxTokens || body.max_tokens || 700),
@@ -3336,7 +3337,7 @@ async function handleMobileAssistantVision(body = {}, user = {}) {
   if (approxBytes > 8_000_000) {
     throw new HttpError(413, "assistant_vision_image_too_large", "La imagen es muy grande para analizarla. Usa una version mas liviana.");
   }
-  const result = await callAnthropicMessages({
+  const result = await callMobileAssistantMessages({
     system,
     messages: [
       {
@@ -3499,6 +3500,24 @@ function limitAssistantText(value, maxLength, fieldName) {
   return text;
 }
 
+async function callMobileAssistantMessages({ system, messages, maxTokens = 700 }) {
+  if (ANTHROPIC_API_KEY) {
+    try {
+      return await callAnthropicMessages({ system, messages, maxTokens });
+    } catch (error) {
+      if (!OPENAI_API_KEY) throw error;
+      await appendLog("warn", "mobile_assistant_anthropic_fallback", {
+        status: error.status || null,
+        message: sanitizeDiagnosticError(error),
+      });
+    }
+  }
+  if (OPENAI_API_KEY) {
+    return callOpenAIAssistantMessages({ system, messages, maxTokens });
+  }
+  throw new HttpError(503, "assistant_not_configured", "La IA de V no esta configurada. Define ANTHROPIC_API_KEY u OPENAI_API_KEY.");
+}
+
 async function callAnthropicMessages({ system, messages, maxTokens = 700 }) {
   if (!ANTHROPIC_API_KEY) {
     throw new HttpError(503, "assistant_not_configured", "La IA de V no esta configurada en Railway. Define ANTHROPIC_API_KEY.");
@@ -3534,6 +3553,69 @@ async function callAnthropicMessages({ system, messages, maxTokens = 700 }) {
     throw new HttpError(502, "assistant_empty_response", "La IA respondio sin texto util.");
   }
   return { text, model: decoded.model || ANTHROPIC_MODEL };
+}
+
+async function callOpenAIAssistantMessages({ system, messages, maxTokens = 700 }) {
+  const openAiMessages = convertAssistantMessagesToOpenAI(system, messages);
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${OPENAI_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: OPENAI_ASSISTANT_MODEL,
+      messages: openAiMessages,
+      max_tokens: Math.max(1, Math.min(Number(maxTokens) || 700, 1200)),
+    }),
+  });
+  const raw = await response.text();
+  let decoded = {};
+  try {
+    decoded = raw ? JSON.parse(raw) : {};
+  } catch {
+    decoded = { raw };
+  }
+  if (!response.ok) {
+    const providerMessage = decoded?.error?.message || raw || `HTTP ${response.status}`;
+    throw new HttpError(response.status, "assistant_provider_failed", providerMessage);
+  }
+  const text = String(decoded?.choices?.[0]?.message?.content || "").trim();
+  if (!text) {
+    throw new HttpError(502, "assistant_empty_response", "La IA respondio sin texto util.");
+  }
+  return { text, model: decoded.model || OPENAI_ASSISTANT_MODEL };
+}
+
+function convertAssistantMessagesToOpenAI(system, messages = []) {
+  const output = [{ role: "system", content: String(system || "") }];
+  messages.forEach((message) => {
+    const role = message?.role === "assistant" ? "assistant" : "user";
+    output.push({
+      role,
+      content: convertAssistantContentToOpenAI(message?.content),
+    });
+  });
+  return output;
+}
+
+function convertAssistantContentToOpenAI(content) {
+  if (typeof content === "string") return content;
+  if (!Array.isArray(content)) return String(content || "");
+  const parts = content.map((part) => {
+    if (part?.type === "text") {
+      return { type: "text", text: String(part.text || "") };
+    }
+    if (part?.type === "image" && part.source?.type === "base64") {
+      const mediaType = String(part.source.media_type || "image/jpeg").replace("image/jpg", "image/jpeg");
+      return {
+        type: "image_url",
+        image_url: { url: `data:${mediaType};base64,${part.source.data || ""}` },
+      };
+    }
+    return null;
+  }).filter(Boolean);
+  return parts.length ? parts : "";
 }
 
 async function getProfile(user = { id: LOCAL_USER_ID, email: "local-user@example.com" }) {

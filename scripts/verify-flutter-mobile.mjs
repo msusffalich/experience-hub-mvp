@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 
 const root = process.cwd();
@@ -19,6 +19,18 @@ const check = (condition, message) => {
   if (!condition) failures.push(message);
 };
 
+function readDartLibraryTree(dir) {
+  if (!existsSync(dir)) return "";
+  return readdirSync(dir, { withFileTypes: true })
+    .flatMap((entry) => {
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) return readDartLibraryTree(fullPath);
+      if (entry.isFile() && entry.name.endsWith(".dart")) return readFileSync(fullPath, "utf8");
+      return "";
+    })
+    .join("\n");
+}
+
 check(existsSync(appDir), "vibeapp directory is missing.");
 check(existsSync(flutterBin), `Flutter executable was not found: ${flutterBin}`);
 check(existsSync(javaHome), `JDK 21 path was not found: ${javaHome}`);
@@ -26,7 +38,7 @@ check(existsSync(androidHome), `Android SDK path was not found: ${androidHome}`)
 
 const files = {
   pubspec: readFileSync(path.join(appDir, "pubspec.yaml"), "utf8"),
-  main: readFileSync(path.join(appDir, "lib", "main.dart"), "utf8"),
+  main: readDartLibraryTree(path.join(appDir, "lib")),
   test: readFileSync(path.join(appDir, "test", "widget_test.dart"), "utf8"),
   buildGradle: readFileSync(path.join(appDir, "android", "app", "build.gradle.kts"), "utf8"),
   settingsGradle: readFileSync(path.join(appDir, "android", "settings.gradle.kts"), "utf8"),

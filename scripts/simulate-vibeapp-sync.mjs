@@ -1,10 +1,22 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
+
+function readTextTree(dir, extension = ".dart") {
+  if (!existsSync(dir)) return "";
+  return readdirSync(dir, { withFileTypes: true })
+    .flatMap((entry) => {
+      const fullPath = `${dir}/${entry.name}`;
+      if (entry.isDirectory()) return readTextTree(fullPath, extension);
+      if (entry.isFile() && entry.name.endsWith(extension)) return readFileSync(fullPath, "utf8");
+      return "";
+    })
+    .join("\n");
+}
 
 const files = {
   app: readFileSync("app.js", "utf8"),
   server: readFileSync("server.js", "utf8"),
   packageJson: readFileSync("package.json", "utf8"),
-  vibeappMain: readFileSync("vibeapp/lib/main.dart", "utf8"),
+  vibeappMain: readTextTree("vibeapp/lib"),
   vibeappTest: readFileSync("vibeapp/test/widget_test.dart", "utf8"),
 };
 
