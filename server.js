@@ -87,6 +87,8 @@ const OPENAI_ASSISTANT_MODEL = process.env.OPENAI_ASSISTANT_MODEL || process.env
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || "claude-haiku-4-5";
 const ANTHROPIC_API_BASE_URL = (process.env.ANTHROPIC_API_BASE_URL || "https://api.anthropic.com").trim().replace(/\/$/, "");
+const MOBILE_ASSISTANT_PROVIDER = (process.env.MOBILE_ASSISTANT_PROVIDER || (OPENAI_API_KEY ? "openai" : "anthropic")).trim().toLowerCase();
+const MOBILE_ASSISTANT_PROVIDER_TIMEOUT_MS = Math.max(1000, Math.min(Number(process.env.MOBILE_ASSISTANT_PROVIDER_TIMEOUT_MS || 12000), 30000));
 const SIGNAL_METADATA_SCHEMA_VERSION = "clio-inspired-signal-v1";
 const INTEGRATION_CONTRACT_VERSION = "vibe-signal-contract-v2";
 const OURA_API_BASE_URL = (process.env.OURA_API_BASE_URL || "https://api.ouraring.com").trim().replace(/\/$/, "");
@@ -3501,19 +3503,35 @@ function limitAssistantText(value, maxLength, fieldName) {
 }
 
 async function callMobileAssistantMessages({ system, messages, maxTokens = 700 }) {
-  if (ANTHROPIC_API_KEY) {
+  const startedAt = Date.now();
+  const preferredProvider = ["anthropic", "claude"].includes(MOBILE_ASSISTANT_PROVIDER) ? "anthropic" : "openai";
+  const providerOrder = preferredProvider === "anthropic" ? ["anthropic", "openai"] : ["openai", "anthropic"];
+  let lastError = null;
+  for (const provider of providerOrder) {
+    if (provider === "openai" && !OPENAI_API_KEY) continue;
+    if (provider === "anthropic" && !ANTHROPIC_API_KEY) continue;
     try {
-      return await callAnthropicMessages({ system, messages, maxTokens });
+      const result = provider === "openai"
+        ? await callOpenAIAssistantMessages({ system, messages, maxTokens })
+        : await callAnthropicMessages({ system, messages, maxTokens });
+      await appendLog("info", "mobile_assistant_provider_ok", {
+        provider,
+        model: result.model,
+        durationMs: Date.now() - startedAt,
+      });
+      return result;
     } catch (error) {
-      if (!OPENAI_API_KEY) throw error;
-      await appendLog("warn", "mobile_assistant_anthropic_fallback", {
+      lastError = error;
+      await appendLog("warn", "mobile_assistant_provider_failed", {
+        provider,
         status: error.status || null,
         message: sanitizeDiagnosticError(error),
+        durationMs: Date.now() - startedAt,
       });
     }
   }
-  if (OPENAI_API_KEY) {
-    return callOpenAIAssistantMessages({ system, messages, maxTokens });
+  if (lastError) {
+    throw lastError;
   }
   throw new HttpError(503, "assistant_not_configured", "La IA de V no esta configurada. Define ANTHROPIC_API_KEY u OPENAI_API_KEY.");
 }
@@ -3522,7 +3540,7 @@ async function callAnthropicMessages({ system, messages, maxTokens = 700 }) {
   if (!ANTHROPIC_API_KEY) {
     throw new HttpError(503, "assistant_not_configured", "La IA de V no esta configurada en Railway. Define ANTHROPIC_API_KEY.");
   }
-  const response = await fetch(`${ANTHROPIC_API_BASE_URL}/v1/messages`, {
+  const response = await fetchWithTimeout(`${ANTHROPIC_API_BASE_URL}/v1/messages`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -3535,7 +3553,7 @@ async function callAnthropicMessages({ system, messages, maxTokens = 700 }) {
       system,
       messages,
     }),
-  });
+  }, MOBILE_ASSISTANT_PROVIDER_TIMEOUT_MS);
   const raw = await response.text();
   let decoded = {};
   try {
@@ -3557,7 +3575,7 @@ async function callAnthropicMessages({ system, messages, maxTokens = 700 }) {
 
 async function callOpenAIAssistantMessages({ system, messages, maxTokens = 700 }) {
   const openAiMessages = convertAssistantMessagesToOpenAI(system, messages);
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+  const response = await fetchWithTimeout("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${OPENAI_API_KEY}`,
@@ -3568,7 +3586,7 @@ async function callOpenAIAssistantMessages({ system, messages, maxTokens = 700 }
       messages: openAiMessages,
       max_tokens: Math.max(1, Math.min(Number(maxTokens) || 700, 1200)),
     }),
-  });
+  }, MOBILE_ASSISTANT_PROVIDER_TIMEOUT_MS);
   const raw = await response.text();
   let decoded = {};
   try {
@@ -3585,6 +3603,21 @@ async function callOpenAIAssistantMessages({ system, messages, maxTokens = 700 }
     throw new HttpError(502, "assistant_empty_response", "La IA respondio sin texto util.");
   }
   return { text, model: decoded.model || OPENAI_ASSISTANT_MODEL };
+}
+
+async function fetchWithTimeout(url, options = {}, timeoutMs = 12000) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      throw new HttpError(504, "assistant_provider_timeout", `La IA no respondio dentro de ${Math.round(timeoutMs / 1000)} segundos.`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 function convertAssistantMessagesToOpenAI(system, messages = []) {

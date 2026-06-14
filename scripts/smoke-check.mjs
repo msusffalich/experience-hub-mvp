@@ -385,7 +385,15 @@ assert(files.packageJson.includes("\"package:vibeapp:ios\"") && files.vibeappIos
 assert(files.packageJson.includes("\"simulate:vibeapp\"") && files.packageJson.includes("npm run simulate:vibeapp"), "package.json must expose and run the Vibeapp sync simulator in pilot verification.");
 assert(files.server.includes('url.pathname === "/api/mobile/auth/sign-in"') && files.server.includes("signInSupabasePassword"), "Server must expose the Vibeapp mobile sign-in proxy.");
 assert(files.server.includes("refreshToken: auth.refresh_token") && files.server.includes("expiresAt: auth.expires_at"), "Mobile sign-in proxy must return refreshToken/expiresAt so Vibeapp can refresh sessions without a direct Supabase fallback.");
-assert(files.server.includes("callMobileAssistantMessages") && files.server.includes("callOpenAIAssistantMessages") && files.server.includes("OPENAI_ASSISTANT_MODEL"), "Mobile assistant must fall back to OpenAI when Anthropic is unavailable.");
+assert(
+  files.server.includes("callMobileAssistantMessages")
+    && files.server.includes("callOpenAIAssistantMessages")
+    && files.server.includes("OPENAI_ASSISTANT_MODEL")
+    && files.server.includes("MOBILE_ASSISTANT_PROVIDER")
+    && files.server.includes("MOBILE_ASSISTANT_PROVIDER_TIMEOUT_MS")
+    && files.server.includes("mobile_assistant_provider_ok"),
+  "Mobile assistant must use a configurable provider, timeout slow providers, and log latency/model.",
+);
 assert(files.vibeappMain.includes("/api/mobile/auth/sign-in") && files.vibeappMain.includes("signInViaBackend"), "Vibeapp must sign in through the Vibe backend instead of direct mobile Supabase auth.");
 assert(files.vibeappSimulator.includes("Vibeapp sync simulation passed") && files.vibeappSimulator.includes("meta-glasses-import"), "Vibeapp simulator must validate native and external-session sync samples.");
 assert(files.app.includes("Simulador de sincronizaci") && files.app.includes("Native sync simulator"), "Manual/Admin must expose the Vibeapp sync simulator.");
