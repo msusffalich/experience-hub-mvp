@@ -9,7 +9,7 @@ Vibeapp is the native capture and mobile context app. It is responsible for data
 - Text notes, voice notes, camera photos, gallery images, video, audio, and quick commands through V.
 - Location, movement context, device-local time, and mobile situation.
 - Weather, news, and daily context derived from the user's current mobile context.
-- Apple Health, Health Connect, Oura, Samsung/Galaxy, Meta/Oakley, and other device or wearable sources.
+- Apple Health, Health Connect, Oura, Samsung/Galaxy, Meta/Oakley visual media, and other device or wearable sources.
 - Local queue, retry, and idempotency for native captures.
 
 VibePWA is the web analysis and operations surface. It is responsible for:
@@ -32,7 +32,7 @@ Supabase and the backend are the single source of truth. Both apps must converge
 ## API Responsibilities
 
 - `POST /api/integration/ingest`
-  - Text notes, agenda events, location signals, weather/news summaries, biometric summaries, Oura/Health Connect/Samsung context, and Meta/Oakley metadata.
+  - Text notes, agenda events, location signals, weather/news summaries, biometric summaries, Oura/Health Connect/Samsung context, and Meta/Oakley visual media metadata.
 - `POST /api/media`
   - Binary photo, video, audio, document, and other files before or during experience consolidation.
 - `POST /api/experiences`
@@ -62,6 +62,7 @@ Supabase and the backend are the single source of truth. Both apps must converge
 - Weather and news belong to the mobile/native context path. Vibeapp should send the relevant daily context when it has current location and permission.
 - VibePWA may keep a manual city as a backup only when no recent mobile context exists.
 - Biometrics belong to the native/device path. Vibeapp should read Apple Health, Health Connect, Oura, or Samsung/Galaxy when available.
+- Meta/Oakley/Ray-Ban glasses are a visual source only for this product stage. Vibe can analyze imported photos/videos, but V voice, wake, microphone, and spoken dialogue remain on the phone or tablet.
 - VibePWA asset import for biometric files is historical/recovery/admin only. It must not be presented as the normal user path.
 - Reports, Findings, and Publications use the server-normalized context, regardless of whether it came from live native capture or a backup import.
 

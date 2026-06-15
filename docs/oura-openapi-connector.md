@@ -184,7 +184,7 @@ Tipos priorizados: StepsRecord, ActiveCaloriesBurnedRecord, DistanceRecord, Hear
 
 ## Meta Wearables
 
-Decision: Meta Wearables no debe tratarse como REST cloud general para Vibe. La ruta inmediata es importacion desde Meta AI/Galeria del telefono; la ruta avanzada es Vibeapp como puente nativo si el SDK/Device Access Toolkit queda disponible para el proyecto.
+Decision: Meta Wearables no debe tratarse como REST cloud general para Vibe. La ruta de producto es visual: importar fotos/videos desde Meta AI, Fotos o Galeria del telefono, o usar Vibeapp como puente de camara cuando el SDK sea estable para captura visual. No se promete voz por gafas: el microfono, el wake y la conversacion de V quedan en telefono o tablet.
 
 Rutas backend:
 

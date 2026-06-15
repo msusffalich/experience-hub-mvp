@@ -25,7 +25,7 @@ Una entrega de Vibeapp que toque Apple/iOS, selector de archivos, permisos, cama
 | Oura Ring | API Oura v2 / importacion manual de respaldo | CSV, JSON, API REST | Validado por codigo/tests en PC; OAuth backend, token cifrado, sync paginado, webhook y rutina `Oura Sync`; `daily_activity` real de Oura Ring 4 normalizado e ingerido con `npm run verify:oura:personal-json`; endpoints vacios son aceptables cuando no hubo lecturas | Configurar credenciales Oura en Railway, conectar OAuth real y completar con lecturas reales: sleep, daily_sleep, daily_readiness, heartrate, SpO2, stress, resilience y workouts |
 | Samsung Health / Samsung Watch / Galaxy Watch | Health Connect / importacion manual | CSV, JSON, ZIP de transporte | Bloqueado por falta de dispositivo Samsung/Galaxy; solo manifest, normalizador y tests PC | Android fisico con Samsung/Galaxy Watch, permisos Health Connect y lectura real |
 | Health Connect Android | Puente Android planificado y contrato normalizado | steps, heart rate, sleep, HRV, activity | Emulador disponible para validar permisos/flujo; datos reales de wearable siguen bloqueados | Device Android con Health Connect instalado o emulador con flujo de permisos/simulacion validado |
-| Meta / Oakley / Ray-Ban | Importar desde Meta AI/Fotos/Galeria al telefono | JPG, HEIC, MP4, HEVC, JSON/HTML de cuenta | Validado por codigo/tests en PC | Prueba con media real importada desde lentes |
+| Meta / Oakley / Ray-Ban | Ruta visual: importar desde Meta AI/Fotos/Galeria al telefono o usar Vibeapp como puente de camara cuando aplique | JPG, HEIC, MP4, HEVC, JSON/HTML de cuenta | Validado por codigo/tests en PC; decision de producto 618: sin voz por gafas | Prueba con media real importada desde lentes |
 | Camara iPhone | ImagePicker nativo | JPG/HEIC imagen, video MOV/MP4 segun iOS | Validado por build/install en Mac; prueba manual previa | Repetir si cambia UI de captura |
 | Audio iPhone | Record plugin | M4A/AAC | Validado por build/install en Mac; prueba manual previa | Repetir si cambia permiso o codec |
 | Ubicacion iPhone | Geolocator | coordenadas + precision | Validado por build/install en Mac; prueba manual previa | Repetir si cambia permiso o texto de privacidad |
@@ -56,7 +56,7 @@ Una entrega de Vibeapp que toque Apple/iOS, selector de archivos, permisos, cama
 - El comando `V` en primer plano es parte del producto; el wake-up con app cerrada debe resolverse con capacidades nativas y pruebas reales por OS.
 - Apple Health directo requiere HealthKit nativo con permisos granulares; hasta entonces se acepta exportacion manual CSV/JSON/ZIP.
 - Samsung/Galaxy debe priorizar Health Connect, no APIs antiguas.
-- Meta/Oakley debe entrar por importacion desde Meta AI/Fotos/Galeria salvo que Meta habilite SDK/API apropiado para el proyecto.
+- Meta/Oakley debe entrar como captura visual o importacion desde Meta AI/Fotos/Galeria. No se promete voz por gafas; V escucha y responde desde telefono/tablet.
 - La meta de producto es compatibilidad total con iPhone, iPad, telefonos Android, tablets Android, Apple Watch, Samsung Watch/Galaxy Watch, Oura Ring y lentes Meta Ray-Ban/Oakley.
 - La app no debe declarar una familia como lista comercialmente hasta tener al menos una prueba fisica o API real de esa familia.
 

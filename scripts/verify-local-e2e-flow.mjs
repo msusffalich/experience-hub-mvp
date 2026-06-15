@@ -80,7 +80,10 @@ function createCdpClient(ws) {
   });
   return function cdp(method, params = {}) {
     const id = nextId++;
-    const payload = JSON.stringify({ id, method, params });
+    const timeoutMs = Number(params.__timeoutMs || 45000);
+    const cleanParams = { ...params };
+    delete cleanParams.__timeoutMs;
+    const payload = JSON.stringify({ id, method, params: cleanParams });
     return new Promise((resolve, reject) => {
       pending.set(id, { resolve, reject });
       ws.send(payload);
@@ -89,7 +92,7 @@ function createCdpClient(ws) {
           pending.delete(id);
           reject(new Error(`${method} timed out`));
         }
-      }, 45000);
+      }, Math.max(1000, timeoutMs));
     });
   };
 }
@@ -103,7 +106,8 @@ async function evaluate(cdp, expression, timeoutMs = 45000) {
         expression,
         awaitPromise: true,
         returnByValue: true,
-        timeout: Math.min(timeoutMs, 15000),
+        timeout: timeoutMs,
+        __timeoutMs: timeoutMs + 5000,
       });
       if (result.exceptionDetails) {
         const text = result.exceptionDetails.text || result.exceptionDetails.exception?.description || "Runtime.evaluate failed";
@@ -116,7 +120,7 @@ async function evaluate(cdp, expression, timeoutMs = 45000) {
       }
       return result.result?.value;
     } catch (error) {
-      if (/Execution context was destroyed|Cannot find context|Inspected target navigated|Target closed/i.test(String(error?.message || error))) {
+      if (/Execution context was destroyed|Cannot find context|Inspected target navigated|Target closed|Runtime\.evaluate timed out/i.test(String(error?.message || error))) {
         lastError = error;
         await sleep(350);
         continue;
@@ -127,7 +131,7 @@ async function evaluate(cdp, expression, timeoutMs = 45000) {
   throw lastError || new Error("Runtime.evaluate timed out");
 }
 
-function waitExpression(expression, timeoutMs = 45000) {
+function waitExpression(expression, timeoutMs = 45000, label = "condition") {
   return `(async () => {
     const started = Date.now();
     while (Date.now() - started < ${timeoutMs}) {
@@ -135,7 +139,7 @@ function waitExpression(expression, timeoutMs = 45000) {
       if (result) return result;
       await new Promise((resolve) => setTimeout(resolve, 250));
     }
-    throw new Error("Timed out waiting for condition");
+    throw new Error(${JSON.stringify(`Timed out waiting for ${label}`)});
   })()`;
 }
 
@@ -189,10 +193,13 @@ try {
   const cdp = createCdpClient(ws);
   await cdp("Page.enable");
   await cdp("Runtime.enable");
+  await cdp("Page.navigate", { url: targetUrl });
 
-  await evaluate(cdp, waitExpression(`return document.readyState === "complete" || document.readyState === "interactive";`));
-  await evaluate(cdp, waitExpression(`return document.body && document.body.innerText.includes("Vibe");`));
-  await evaluate(cdp, waitExpression(`return document.body.innerText.includes("${version}") || window.APP_VERSION === "${version}";`));
+  await evaluate(cdp, waitExpression(`return document.readyState === "complete" || document.readyState === "interactive";`, 45000, "document readiness"));
+  await evaluate(cdp, waitExpression(`return document.body && document.body.innerText.includes("Vibe");`, 45000, "Vibe shell text"));
+  await evaluate(cdp, waitExpression(`
+    return Array.from(document.scripts).some((script) => (script.src || "").includes("app.js") && (script.src || "").includes("v=${version}"));
+  `, 45000, `current app asset version ${version}`));
 
   await evaluate(cdp, `(async () => {
     const nav = document.querySelector('button[data-view="capture"]');

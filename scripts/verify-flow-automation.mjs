@@ -152,7 +152,7 @@ try {
         name: "flow-automation-document.txt",
         type: "text/plain",
         kind: "document",
-        dataUrl: "data:text/plain;charset=utf-8,Documento%20de%20auditoria%20para%20flujo%20automatico.",
+        dataUrl: "data:text/plain;base64,RG9jdW1lbnRvIGRlIGF1ZGl0b3JpYSBwYXJhIGZsdWpvIGF1dG9tYXRpY28u",
       },
     }),
   });
