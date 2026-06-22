@@ -13,7 +13,7 @@
       (() => {
         try {
           const theme = localStorage.getItem("experience-hub-display-theme") || "current";
-          document.documentElement.dataset.theme = ["light", "current", "dark"].includes(theme)  theme : "current";
+          document.documentElement.dataset.theme = ["light", "current", "dark"].includes(theme) ? theme : "current";
         } catch {
           document.documentElement.dataset.theme = "current";
         }
@@ -1215,5 +1215,4 @@
     <script src="app.js?v=20260622-publication-editorial-653"></script>
 </body>
 </html>
-
 

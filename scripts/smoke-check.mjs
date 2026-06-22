@@ -65,6 +65,7 @@ assert(Boolean(version), "APP_VERSION was not found in app.js.");
 assert(files.index.includes(`app.js?v=${version}`), "index.html does not load the current app.js version.");
 assert(files.index.includes(`styles.css?v=${version}`), "index.html does not load the current styles.css version.");
 assert(files.index.includes(`manifest.webmanifest?v=${version}`), "index.html does not load the current manifest version.");
+assert(!files.index.includes("includes(theme)  theme"), "index.html has a broken theme ternary before app boot.");
 assert(files.serviceWorker.includes(`experience-hub-pwa-${version}`), "service-worker.js cache name does not match APP_VERSION.");
 assert(files.reset.includes(version) && files.reset.includes("getRegistrations") && files.reset.includes("caches.keys"), "reset.html must clear PWA caches and redirect to the current version.");
 assert(files.serviceWorker.includes("NETWORK_ONLY_PATHS") && files.serviceWorker.includes('"/app.js"') && files.serviceWorker.includes('cache: "no-store"'), "service-worker.js must never cache the app shell files.");
