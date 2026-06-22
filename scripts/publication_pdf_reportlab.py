@@ -7,7 +7,7 @@ import urllib.request
 from html import unescape
 from pathlib import Path
 
-from PIL import Image as PILImage, ImageFile
+from PIL import Image as PILImage, ImageFile, ImageOps
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
 from reportlab.lib.pagesizes import letter
@@ -70,6 +70,16 @@ def clean_html(value):
     ]
     for item in noise:
         text = text.replace(item, " ")
+    text = re.sub(r"\blabels\.categoryLabels\.", "", text, flags=re.I)
+    text = re.sub(r"\b(vibeapp-native|Storage privado|Supabase|URL firmada|sincronizado con Storage privado)\b", "", text, flags=re.I)
+    text = re.sub(r"\bSe(?:ñ|\u00c3\u00b1)al\s+(?:location|ubicaci(?:o|ó|\u00c3\u00b3)n)\s+recibida\s+desde\s+", "", text, flags=re.I)
+    text = re.sub(r"\bUbicaci(?:o|ó|\u00c3\u00b3)n\s+desde\s+", "", text, flags=re.I)
+    text = re.sub(r"\bCaptura\s+m(?:o|ó|\u00c3\u00b3)vil\b", "", text, flags=re.I)
+    text = re.sub(r"\bprimary-user[-\w]*\b", "", text, flags=re.I)
+    text = re.sub(r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b", "", text, flags=re.I)
+    text = re.sub(r"\b[\w.-]+\.(?:jpg|jpeg|png|gif|webp|heic|mp4|mov|webm|mp3|wav|m4a|pdf|docx?|txt|csv|json|zip)\b", "", text, flags=re.I)
+    text = text.replace("Extracción local automática para", "Lectura de")
+    text = text.replace("Extracci\u00c3\u00b3n local autom\u00c3\u00a1tica para", "Lectura de")
     return " ".join(text.split())
 
 
@@ -462,9 +472,11 @@ def image_flowable_from_media(item, width=PAGE_WIDTH - 2 * MARGIN, max_height=3.
     try:
         source = io.BytesIO(data)
         with PILImage.open(source) as pil:
+            pil = ImageOps.exif_transpose(pil)
             pil.load()
+            pil.thumbnail((1600, 1200), PILImage.Resampling.LANCZOS)
             normalized = io.BytesIO()
-            pil.convert("RGB").save(normalized, format="PNG")
+            pil.convert("RGB").save(normalized, format="JPEG", quality=84, optimize=True)
         normalized.seek(0)
         image = Image(normalized)
         ratio = image.imageHeight / max(1, image.imageWidth)
@@ -479,11 +491,15 @@ def image_flowable_from_media(item, width=PAGE_WIDTH - 2 * MARGIN, max_height=3.
         return None
 
 
+def friendly_media_name(item):
+    kind = human_kind(item)
+    title = clean_html((item or {}).get("experienceTitle") or "")
+    return f"{kind} de {title}" if title else kind
+
+
 def media_caption(item):
     pieces = [
-        item.get("name") or "Activo",
-        item.get("experienceTitle") or "",
-        human_kind(item),
+        friendly_media_name(item),
     ]
     context = item.get("manualNote") or item.get("analyticalText") or item.get("translatedText") or ""
     if context:
@@ -496,20 +512,19 @@ def media_caption(item):
 def media_action_note(item):
     kind = human_kind(item).lower()
     if kind == "audio":
-        return "Acción: reproducir o descargar desde la app/HTML; el PDF conserva la transcripción o resumen."
+        return "Audio disponible para reproducir en la app; el PDF conserva la transcripcion o resumen."
     if kind == "video":
-        return "Acción: reproducir o descargar desde la app/HTML; el PDF conserva la lectura editorial."
+        return "Video disponible para reproducir en la app; el PDF conserva la lectura editorial."
     if kind == "documento":
-        return "Acción: abrir o descargar desde la app/HTML; el PDF resume el contenido interpretado."
-    return "Acción: descargar desde la app/HTML; se conserva como activo de transporte."
-
+        return "Documento disponible para abrir en la app; el PDF resume el contenido interpretado."
+    return "Archivo disponible para descarga desde la app."
 
 def media_gallery(media):
     flow = []
     images = [item for item in media if str(item.get("type") or "").startswith("image/") and item.get("included", True) is not False]
     non_images = [item for item in media if item not in images and item.get("included", True) is not False]
     rendered = 0
-    for item in images[:3]:
+    for item in images[:4]:
         image = image_flowable_from_media(item)
         if image:
             flow.append(KeepTogether([
@@ -526,12 +541,12 @@ def media_gallery(media):
         flow.append(Spacer(1, 8))
     if non_images:
         flow.append(Spacer(1, 4))
-        for item in non_images[:8]:
+        for item in non_images[:5]:
             body = item.get("manualNote") or item.get("analyticalText") or item.get("translatedText") or item.get("experienceTitle") or "Disponible para revisar."
             flow.append(KeepTogether([
                 text_card(
-                    f"{human_kind(item)}: {short(item.get('name') or 'Activo', 64)}",
-                    f"Uso editorial: {short(body, 260)} {media_action_note(item)}",
+                    friendly_media_name(item),
+                    f"{short(body, 260)} {media_action_note(item)}",
                     colors.HexColor("#0d7c66"),
                 ),
                 Spacer(1, 7),
@@ -630,18 +645,17 @@ def evidence_plain_language(item):
     role_detail = item.get("publicationRoleDetail") or ""
     health = re.search(r"salud|medic|doctor|examen|laboratorio|diagnost|glucosa|colesterol|presion|sangre|health|medical|lab", f"{text} {name}", re.I)
     if health:
-        prefix = "Resumen claro de salud: explicar hallazgos sin diagnosticar, separando dato observado y posible siguiente paso."
+        prefix = "Lectura de salud: presentar lo observado en lenguaje claro, sin diagnosticar."
     elif item.get("externalTransportOnly") or str(item.get("publicationRole") or "") == "transport":
-        prefix = "Solo transporte: conservar para trazabilidad o descarga; no interpretar automaticamente."
+        prefix = "Archivo de soporte: conservarlo como referencia, sin convertirlo en conclusion."
     elif str(item.get("type") or "").startswith("image/"):
-        prefix = "Lectura visual: usar como portada, galeria o evidencia contextual."
+        prefix = "Lectura visual: usarlo para ubicar el momento y reforzar la memoria."
     elif str(item.get("type") or "").startswith(("audio/", "video/")):
-        prefix = "Memoria hablada o audiovisual: usar transcripcion, tono y momento vivido. Se reproduce o descarga desde app/HTML."
+        prefix = "Memoria audiovisual: rescatar el tono, la escena y lo que se quiso registrar."
     else:
-        prefix = "Documento de soporte: convertir el contenido en lenguaje claro. Se abre o descarga desde app/HTML."
+        prefix = "Documento de soporte: resumir lo importante en lenguaje claro."
     detail = short(text, 170)
-    role_line = f"Rol editorial: {role}. {role_detail}" if role else ""
-    return " ".join(part for part in [role_line, prefix, detail] if part)
+    return " ".join(part for part in [prefix, detail] if part)
 
 
 def editorial_plan_rows(draft, media, all_media):
@@ -696,12 +710,12 @@ def decision_cards(rows):
 
 
 def evidence_cards(media):
-    selected = [item for item in (media or []) if item.get("included", True) is not False][:10]
+    selected = [item for item in (media or []) if item.get("included", True) is not False][:6]
     if not selected:
         return [text_card("Evidencia multimedia", "No se seleccionó multimedia para esta publicación.", GOLD)]
     flow = []
     for item in selected:
-        title = f"{human_kind(item)} - {short(item.get('name') or 'Activo', 72)}"
+        title = friendly_media_name(item)
         context = item.get("experienceTitle") or "Sin experiencia vinculada"
         body = f"{context}. {evidence_plain_language(item)}"
         flow.append(KeepTogether([
@@ -814,13 +828,18 @@ def page_layout_note(page):
         "actions": "Acciones: convierte lectura en pasos concretos.",
         "findings": "Hallazgos: sintetiza lo que importa.",
         "questions": "Preguntas: prepara dudas para revisar.",
+        "work-summary": "Jornada: resume contexto, objetivo y resultado operativo.",
+        "agreements": "Acuerdos: separa decisiones, compromisos y evidencias.",
+        "pending": "Pendientes: convierte el cierre en seguimiento claro.",
+        "dashboard": "Dashboard: resume KPIs, tendencias y lectura ejecutiva.",
+        "charts": "Cuadros: explica visualizaciones, proporciones e infografias.",
     }
     return f"{labels.get(page_type, 'Pagina editorial.')} Maqueta: {layout}."
 
 
 def render_publication_page(page, media):
     title = page.get("title") or "Pagina"
-    subtitle = page.get("subtitle") or page_layout_note(page)
+    subtitle = page.get("subtitle") or ""
     body = page.get("body") or "Sin texto editorial."
     accent_map = {
         "cover": GOLD,
@@ -843,13 +862,17 @@ def render_publication_page(page, media):
         "actions": colors.HexColor("#f2b84b"),
         "findings": RUST,
         "questions": colors.HexColor("#7a5cc8"),
+        "work-summary": BLUE,
+        "agreements": colors.HexColor("#0d7c66"),
+        "pending": colors.HexColor("#f2b84b"),
+        "dashboard": BLUE,
+        "charts": colors.HexColor("#7a5cc8"),
     }
     page_media = media_for_page(media, page)
     page_type = page.get("pageType")
     accent = accent_map.get(page_type, BLUE)
     flow = [
-        section_heading(f"Pagina {page.get('pageNumber') or ''}: {title}", subtitle),
-        text_card("Funcion editorial", page_layout_note(page), accent),
+        section_heading(title, subtitle),
         Spacer(1, 8),
     ]
     if page_type == "cover":
@@ -867,8 +890,20 @@ def render_publication_page(page, media):
     if page_type in ("timeline", "chapters"):
         flow.append(sequence_cards(body, accent, label="Paso" if page_type == "chapters" else "Momento"))
         return flow
-    if page_type in ("questions", "actions", "findings"):
+    if page_type in ("questions", "actions", "findings", "agreements", "pending"):
         flow.append(checklist_cards(body, accent))
+        return flow
+    if page_type == "dashboard":
+        flow.append(paragraph_block("Lectura del dashboard", body, max_parts=5, part_limit=420))
+        if page_media:
+            flow.append(Spacer(1, 8))
+            flow.extend(media_gallery(page_media[:4]))
+        return flow
+    if page_type == "charts":
+        flow.append(sequence_cards(body, accent, label="Visual"))
+        if page_media:
+            flow.append(Spacer(1, 8))
+            flow.extend(media_gallery(page_media[:4]))
         return flow
     if page_type == "letter":
         flow.append(letter_block(title, body))
@@ -877,11 +912,11 @@ def render_publication_page(page, media):
         flow.extend(media_gallery(page_media))
         flow.append(Spacer(1, 8))
     if page_type == "media":
-        flow.append(paragraph_block("Lectura de los activos", body, max_parts=8, part_limit=360))
+        flow.append(paragraph_block("Evidencia seleccionada", body, max_parts=8, part_limit=360))
     elif page_type == "evidence":
         flow.append(evidence_summary_grid(body, accent))
     else:
-        flow.append(paragraph_block("Contenido editado", body, max_parts=6, part_limit=520))
+        flow.append(paragraph_block("Relato editado", body, max_parts=6, part_limit=520))
     return flow
 
 
@@ -978,40 +1013,130 @@ def letter_block(title, body):
     return paragraph_block(title, body, max_parts=8, part_limit=560)
 
 
-def build_paged_publication(title, summary, draft, stats, highlights, all_media, media, purpose, people, locations):
+def public_page_text(page):
+    text = "\n".join([
+        page.get("title") or "",
+        page.get("subtitle") or "",
+        page.get("body") or "",
+    ])
+    blocked = (
+        "channel",
+        "closing",
+    )
+    if page.get("pageType") in blocked:
+        return ""
+    return clean_html(text)
+
+
+def editorial_story_from_draft(draft, summary, body):
     pages = draft.get("pages") or []
-    flow = [
-        hero(title, "Publicacion paginada con portada, narrativa, multimedia y cierre."),
-        Spacer(1, 16),
-        PublicationDashboard(stats, len(media), len(highlights)),
-        Spacer(1, 12),
-        editorial_cards([
-            ("Proposito de la pieza", f"{purpose}\nPersonas: {people}\nLugares: {locations}", GOLD),
-            ("Resumen editorial", summary, RUST),
-            ("Estructura", f"{len(pages)} paginas editables. El PDF usa el texto revisado en la app.", BLUE),
-            ("Seleccion multimedia", media_selection_label(all_media, media), colors.HexColor("#0d7c66")),
-        ]),
-        PageBreak(),
+    preferred = [
+        page for page in pages
+        if page.get("pageType") in ("story", "memory", "letter", "work-summary", "dashboard", "findings", "chapters")
     ]
-    visible_pages = pages[:12]
-    for index, page_item in enumerate(visible_pages):
-        flow.extend(render_publication_page(page_item, media))
-        if index < len(visible_pages) - 1:
-            flow.append(PageBreak())
-    flow.extend([
-        PageBreak(),
-        *channel_studio_cards(draft),
-        PageBreak(),
-        *distribution_kit(draft, media, all_media),
-        PageBreak(),
-        section_heading("Salida y canal", "Preparacion final para compartir sin publicar automaticamente."),
-        *channel_cards(channel_rows(draft.get("channel"))),
-        Spacer(1, 12),
+    source = "\n\n".join(public_page_text(page) for page in preferred) or body or summary
+    lines = []
+    blocked = re.compile(r"(direccion editorial|contrato editorial|plan de diseno|plan de publicacion|canal recomendado|decision multimedia|kit de salida|entregables|maqueta|layout|html|markdown|json|reportlab|pdf/html)", re.I)
+    skip_next = False
+    for part in re.split(r"\n+|(?<=[.!?])\s+", source):
+        item = clean_html(part).strip()
+        item = re.sub(r"^\s*(?:[-*]|\d+[.)])\s*", "", item)
+        if skip_next:
+            skip_next = False
+            continue
+        if blocked.search(item):
+            skip_next = True
+            continue
+        if len(item) < 18:
+            continue
+        if item not in lines:
+            lines.append(item)
+    if not lines:
+        lines = [clean_html(summary or "Publicacion preparada para revision humana.")]
+    return lines[:7]
+
+
+def build_story_section(title, summary, body_lines):
+    flow = [
+        section_heading("Historia editada", "Lectura narrativa preparada para compartir."),
+        text_card("Idea central", summary, RUST),
+        Spacer(1, 8),
+    ]
+    for index, line in enumerate(body_lines[:5], 1):
+        flow.append(KeepTogether([
+            text_card(f"Parte {index}", short(line, 520), BLUE if index % 2 else colors.HexColor("#0d7c66")),
+            Spacer(1, 7),
+        ]))
+    return flow
+
+
+def build_moment_section(highlights):
+    flow = [section_heading("Momentos que sostienen la historia", "Seleccionados por relevancia narrativa, no como inventario.")]
+    rows = []
+    for index, item in enumerate((highlights or [])[:6], 1):
+        title = clean_html(item.get("title") or "Momento")
+        note = clean_html(item.get("note") or item.get("location") or "Registro disponible para memoria.")
+        rows.append([str(index), title, short(note, 230)])
+    if not rows:
+        rows = [["-", "Sin momentos destacados", "Agrega notas, fotos o audio para enriquecer la publicacion."]]
+    flow.append(simple_table(["#", "Momento", "Por que importa"], rows, [0.35 * inch, 1.8 * inch, PAGE_WIDTH - 2 * MARGIN - 2.15 * inch]))
+    return flow
+
+
+def build_publication_closing(draft, purpose):
+    text = draft.get("summary") or purpose or "Documento preparado para revision final."
+    return [
+        section_heading("Cierre editorial", "Antes de compartir, revisa privacidad, permisos y coherencia narrativa."),
         text_card(
-            "Cierre",
-            "Este PDF es la version editada para revision humana. No publica automaticamente en redes. Si el contenido se aprueba, puede compartirse por copia manual, enlace o por una API de canal cuando este configurada.",
+            "Lectura final",
+            f"{short(text, 420)} Revisa nombres, rostros, datos sensibles y derechos de los medios antes de enviar o publicar.",
             colors.HexColor("#f2b84b"),
         ),
+    ]
+
+
+def build_paged_publication(title, summary, draft, stats, highlights, all_media, media, purpose, people, locations):
+    context_lines = [purpose]
+    if people and people.lower() not in ("sin personas indicadas", "not specified"):
+        context_lines.append(f"Personas: {people}")
+    if locations and locations.lower() not in ("sin ubicacion indicada", "no location specified"):
+        context_lines.append(f"Lugares: {locations}")
+    first_image = next((item for item in media if str(item.get("type") or "").startswith("image/")), None)
+    story_lines = editorial_story_from_draft(draft, summary, draft.get("body") or "")
+    flow = [
+        hero(title, "Publicacion editada, narrada y lista para revision."),
+        Spacer(1, 14),
+    ]
+    if first_image:
+        cover_image = image_flowable_from_media(first_image, width=PAGE_WIDTH - 2 * MARGIN, max_height=3.7 * inch)
+        if cover_image:
+            flow.extend([cover_image, Spacer(1, 8), para(media_caption(first_image), "Muted"), Spacer(1, 12)])
+    flow.extend([
+        editorial_cards([
+            ("Enfoque", "\n".join(context_lines), GOLD),
+            ("Resumen", summary, RUST),
+            ("Material usado", media_selection_label(all_media, media), colors.HexColor("#0d7c66")),
+            ("Revision", "Pieza publica sin lenguaje tecnico ni inventario interno.", BLUE),
+        ]),
+        PageBreak(),
+        *build_story_section(title, summary, story_lines),
+        PageBreak(),
+        *build_moment_section(highlights),
+    ])
+    if media:
+        flow.extend([
+            PageBreak(),
+            section_heading("Galeria y soportes", "Imagenes curadas primero; audio, video y documentos se interpretan en lenguaje claro."),
+            *media_gallery(media),
+        ])
+        flow.extend([
+            PageBreak(),
+            section_heading("Lectura de la evidencia", "Que aporta cada medio a la historia."),
+            *evidence_cards(media),
+        ])
+    flow.extend([
+        PageBreak(),
+        *build_publication_closing(draft, purpose),
     ])
     return flow
 
@@ -1030,63 +1155,7 @@ def build(payload):
     purpose = draft.get("purpose") or "Pieza preparada para compartir una memoria viva, no un reporte técnico."
     people = ", ".join(draft.get("people") or []) or "Sin personas indicadas"
     locations = ", ".join(draft.get("locations") or []) or "Sin ubicacion indicada"
-    if draft.get("pages"):
-        return build_paged_publication(title, summary, draft, stats, highlights, all_media, media, purpose, people, locations)
-    flow = [
-        hero(title, "Memoria editorial para revisar, aprobar y compartir."),
-        Spacer(1, 16),
-        PublicationDashboard(stats, len(media), len(highlights)),
-        Spacer(1, 12),
-        editorial_cards([
-            ("Propósito de la pieza", f"{purpose}\nPersonas: {people}\nLugares: {locations}", GOLD),
-            ("Resumen editorial", summary, RUST),
-            ("Portada sugerida", cover_direction(draft, media), colors.HexColor("#7a5cc8")),
-            ("Selección multimedia", media_selection_label(all_media, media), colors.HexColor("#0d7c66")),
-        ]),
-        Spacer(1, 12),
-        section_heading("Dirección editorial", "Decisiones previas a publicar: formato, canal, portada, multimedia y tono."),
-        *decision_cards(editorial_plan_rows(draft, media, all_media)),
-        Spacer(1, 12),
-        section_heading("Historia", "Texto limpio para compartir. El detalle técnico queda fuera de esta pieza."),
-    ]
-    for paragraph in story_paragraphs(body):
-        flow.append(para(paragraph, "Bodyx"))
-        flow.append(Spacer(1, 5))
-    flow.extend([
-        Spacer(1, 8),
-        section_heading("Momentos seleccionados", "Secuencia vertical para evitar paneles montados."),
-    ])
-    for index, item in enumerate(highlights[:6], 1):
-        flow.append(KeepTogether([
-            text_card(
-                f"{index}. {item.get('title') or 'Momento'}",
-                f"{item.get('category') or '-'} - {short(item.get('note') or item.get('location') or 'Registrado para memoria.', 260)}",
-                colors.HexColor("#7a5cc8") if index % 2 else colors.HexColor("#0d7c66"),
-            ),
-            Spacer(1, 7),
-        ]))
-    if not highlights:
-        flow.append(text_card("Momentos", "No hay momentos destacados en el borrador.", colors.HexColor("#f2b84b")))
-    flow.extend([
-        Spacer(1, 12),
-        section_heading("Interpretación de evidencia", "Lectura humana de documentos, imágenes, audio y video antes de compartir."),
-        *evidence_cards(media),
-        Spacer(1, 12),
-        section_heading("Multimedia incluida", "Las imágenes disponibles se incrustan; audio, video y documentos se listan como evidencia para revisar."),
-        *media_gallery(media),
-        Spacer(1, 12),
-        *channel_studio_cards(draft),
-        Spacer(1, 12),
-        section_heading("Salida y canal"),
-        *channel_cards(channel_rows(draft.get("channel"))),
-        Spacer(1, 12),
-        text_card(
-            "Cierre",
-            "Este PDF es la versión editada para revisión humana. No publica automáticamente en redes. Si el contenido se aprueba, puede compartirse por copia manual, enlace o por una API de canal cuando esté configurada.",
-            colors.HexColor("#f2b84b"),
-        ),
-    ])
-    return flow
+    return build_paged_publication(title, summary, draft, stats, highlights, all_media, media, purpose, people, locations)
 
 
 def main():

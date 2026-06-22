@@ -1,6 +1,6 @@
 # Vibeapp / VibePWA Operating Contract
 
-Version: 2026-06-10
+Version: 2026-06-16
 
 ## Product Roles
 
@@ -49,19 +49,52 @@ Supabase and the backend are the single source of truth. Both apps must converge
   - This is not immediate destructive deletion; backup, identity confirmation, and server-side review are required before final deletion.
 - `POST /api/mobile/assistant/message`
   - Server-side assistant calls for Vibeapp.
+- `GET /api/mobile/assistant/status`
+  - Protected status endpoint for Vibeapp to confirm whether Arnes is enabled, whether Arnes `/health` responds, and which `source` value should appear in assistant responses.
+  - Does not expose secrets or full service URLs.
 - `POST /api/mobile/ai/transcribe`
   - Server-side audio transcription for Vibeapp.
+- `POST /api/mobile/realtime/token`
+  - Server-side OpenAI Realtime ephemeral token minting for Vibeapp voice through glasses or phone/tablet audio.
+  - Requires the signed-in user's bearer token.
+  - Vibeapp receives only the short-lived client secret/token, never the OpenAI API key.
+  - Defaults are server-controlled with `OPENAI_REALTIME_MODEL` and `OPENAI_REALTIME_VOICE`.
+  - Use `OPENAI_REALTIME_API_KEY` for a dedicated voice/realtime key when available; otherwise the backend falls back to `OPENAI_API_KEY`.
 - `POST /api/mobile/ai/vision`
   - Server-side image interpretation for Vibeapp.
   - Canonical route for new Vibeapp builds. The backend also accepts legacy `POST /api/mobile/assistant/vision` temporarily so installed builds do not break during the transition.
+- `GET /api/mobile/context/daily?lat={lat}&lon={lon}&lang={es|en|fr}`
+  - Server-side daily context summary for Vibeapp/Arnes when the phone or tablet provides current location.
+  - Requires the signed-in user's bearer token.
+- `GET /api/mobile/context/health-summary?from={iso-date}&to={iso-date}&lang={es|en|fr}`
+  - Server-side read endpoint for normalized biometric, activity, and sleep context already ingested from Vibeapp or device connectors.
+  - This is the endpoint Arnes should use for health context. It returns a privacy-limited summary and recent signal previews, not raw complete health exports.
 - `GET /api/mobile/oura/{collection}`
   - Server-side Oura proxy, when OAuth/token storage is active.
+
+## Arnes Assistant Layer
+
+Arnes is the optional native assistant orchestration service for Vibeapp. It should run as a separate Railway service and stay additive.
+
+- Vibeapp continues calling `POST /api/mobile/assistant/message`.
+- VibePWA/backend may forward that request to Arnes only when `ARNES_ASSISTANT_ENABLED=true` and `ARNES_ASSISTANT_URL` is configured.
+- The backend forwards the signed-in user's bearer token to Arnes. Arnes should reuse that bearer when calling user-scoped VibePWA endpoints.
+- Do not use a service-role token for ordinary user data. Service credentials are reserved for narrow backend-only administration, never normal assistant reads.
+- Arnes may call:
+  - `POST /api/mobile/ai/vision`
+  - `GET /api/mobile/context/daily`
+  - `GET /api/mobile/context/health-summary`
+  - Existing ingestion/media endpoints only when an action explicitly creates or updates user data.
+- If Arnes is unavailable, the backend falls back to the existing mobile assistant provider so installed Vibeapp builds do not break.
+- Arnes responses must preserve the current client contract: `answer` or `text`, plus optional `actions[]`.
+- Vibeapp can call `GET /api/mobile/assistant/status` after login to verify Arnes configuration. The decisive E2E proof remains the response from `POST /api/mobile/assistant/message`: `source: "arnes"` means the route used Arnes; `source: "native-provider"` means fallback.
 
 ## Context Rules
 
 - Weather and news belong to the mobile/native context path. Vibeapp should send the relevant daily context when it has current location and permission.
 - VibePWA may keep a manual city as a backup only when no recent mobile context exists.
 - Biometrics belong to the native/device path. Vibeapp should read Apple Health, Health Connect, Oura, or Samsung/Galaxy when available.
+- VibePWA exposes health context back to Vibeapp/Arnes through `/api/mobile/context/health-summary` after ingestion, so assistant decisions can use server truth without asking the client to resend raw files.
 - Meta/Oakley/Ray-Ban glasses are a visual source only for this product stage. Vibe can analyze imported photos/videos, but V voice, wake, microphone, and spoken dialogue remain on the phone or tablet.
 - VibePWA asset import for biometric files is historical/recovery/admin only. It must not be presented as the normal user path.
 - Reports, Findings, and Publications use the server-normalized context, regardless of whether it came from live native capture or a backup import.
@@ -71,6 +104,7 @@ Supabase and the backend are the single source of truth. Both apps must converge
 - End users should not see connector complexity in normal daily panels.
 - VibePWA may show connector health in Administration and Data Origins.
 - Vibeapp should show clear capture actions, group/person selector, sync status, and retry state, without exposing backend mechanics.
+- Vibeapp voice/realtime UI must request `/api/mobile/realtime/token` just before opening the OpenAI Realtime WebSocket because the token is intentionally short-lived.
 - VibePWA owns group/person creation, archive/reactivation, and account-closure requests.
 - Vibeapp reads active groups/persons and may select the active group, but it must not delete groups, users, or historical records.
 - Any action that changes data must confirm success, pending state, or actionable failure in plain language.

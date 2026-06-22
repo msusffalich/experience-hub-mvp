@@ -1,6 +1,7 @@
 import io
 import json
 import math
+import re
 import sys
 from datetime import datetime, timezone
 from html import escape
@@ -52,6 +53,17 @@ def clean(value):
             text = text.encode("latin1").decode("utf-8")
         except Exception:
             pass
+    text = re.sub(r"\blabels\.categoryLabels\.", "", text, flags=re.I)
+    text = re.sub(r"\b(vibeapp-native|Storage privado|Supabase|URL firmada|sincronizado con Storage privado)\b", "", text, flags=re.I)
+    text = re.sub(r"\bSe(?:ñ|\u00c3\u00b1)al\s+(?:location|ubicaci(?:o|ó|\u00c3\u00b3)n)\s+recibida\s+desde\s+", "", text, flags=re.I)
+    text = re.sub(r"\bUbicaci(?:o|ó|\u00c3\u00b3)n\s+desde\s+", "", text, flags=re.I)
+    text = re.sub(r"\bCaptura\s+m(?:o|ó|\u00c3\u00b3)vil\b", "", text, flags=re.I)
+    text = re.sub(r"\bprimary-user[-\w]*\b", "", text, flags=re.I)
+    text = re.sub(r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b", "", text, flags=re.I)
+    text = re.sub(r"\b[\w.-]+\.(?:jpg|jpeg|png|gif|webp|heic|mp4|mov|webm|mp3|wav|m4a|pdf|docx?|txt|csv|json|zip)\b", "", text, flags=re.I)
+    text = text.replace("Extracción local automática para", "Lectura de")
+    text = text.replace("Extracci\u00c3\u00b3n local autom\u00c3\u00a1tica para", "Lectura de")
+    text = text.replace("Uso: evidencia consultable para reportes, memoria y publicaciones. Revisar antes de publicar.", "")
     return " ".join(text.split())
 
 
@@ -296,7 +308,7 @@ def axis_cards(axes):
         color = AXIS_COLORS[index % len(AXIS_COLORS)]
         body = (
             f"Estado: {axis.get('status', '-')}. Energia media: {axis.get('avgEnergy', 0)}/10. "
-            f"Evidencia: {len(axis.get('items') or [])} experiencias y {axis.get('assets', 0)} activos. "
+            f"Base observada: {len(axis.get('items') or [])} experiencias y {axis.get('assets', 0)} elementos de apoyo. "
             f"Siguiente paso: {human_action(axis.get('action', ''), 180)}"
         )
         rows.append([text_axis_card(axis.get("title") or "Eje", body, color, width)])
@@ -434,7 +446,7 @@ def build_story(payload):
     action_plan = payload.get("actionPlan") or []
     experiences = payload.get("experiences", 0)
     story = [CoverBlock(payload), PageBreak()]
-    story.append(para("Resumen de salida", "H1x"))
+    story.append(para("Resumen ejecutivo", "H1x"))
     story.append(metric_grid([
         ("Experiencias", experiences),
         ("Ejes humanos", len(axes)),
@@ -458,8 +470,8 @@ def build_story(payload):
         meta = f"{clean(action.get('priority') or 'Prioridad media')} - {clean(action.get('horizon') or 'Próximos 7 días')}"
         body = (
             f"{clean(action.get('why') or '')} "
-            f"Evidencia: {clean(action.get('evidence') or '')}. "
-            f"Próximo paso: {human_action(action.get('next') or '', 150)}"
+            f"Base observada: {clean(action.get('evidence') or '')}. "
+            f"Siguiente paso: {human_action(action.get('next') or '', 150)}"
         )
         plan_cards.append(card(f"{index + 1}. {clean(action.get('title') or 'Acción')}", body, meta))
     story.append(two_columns(plan_cards) if plan_cards else para("No hay acciones suficientes para este alcance.", "Bodyx"))
@@ -467,13 +479,13 @@ def build_story(payload):
     cards = []
     for index, insight in enumerate(insights[:8]):
         meta = f"{clean(insight.get('type') or 'Hallazgo')} - confianza {insight.get('confidence', 0)}%"
-        body = f"{insight.get('description', '')} Siguiente paso sugerido: {human_action(insight.get('action', ''), 140)}"
+        body = f"{clean(insight.get('description', ''))} Siguiente paso: {human_action(insight.get('action', ''), 140)}"
         cards.append(card(f"{index + 1}. {insight.get('title', 'Hallazgo')}", body, meta))
     story.append(two_columns(cards) if cards else para("No hay hallazgos suficientes para este alcance.", "Bodyx"))
     story.append(para("Ejes de exploracion", "H1x"))
     story.append(axis_table(axes))
     story.append(Spacer(1, 8))
-    story.append(para("Este PDF resume decisiones, evidencia y recomendaciones. JSON/CSV quedan para auditoria tecnica; este documento es la salida ejecutiva para lectura humana.", "Small"))
+    story.append(para("Este PDF resume patrones, señales y recomendaciones en lenguaje humano. La intención es orientar decisiones, no exponer detalles técnicos.", "Small"))
     return story
 
 

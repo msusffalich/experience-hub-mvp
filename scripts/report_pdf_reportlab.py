@@ -1,6 +1,7 @@
 import io
 import json
 import math
+import re
 import sys
 from datetime import datetime, timezone
 from html import escape
@@ -65,6 +66,17 @@ def clean(value):
             text = text.encode("latin1").decode("utf-8")
         except Exception:
             pass
+    text = re.sub(r"\blabels\.categoryLabels\.", "", text, flags=re.I)
+    text = re.sub(r"\b(vibeapp-native|Storage privado|Supabase|URL firmada|sincronizado con Storage privado)\b", "", text, flags=re.I)
+    text = re.sub(r"\bSe(?:ñ|\u00c3\u00b1)al\s+(?:location|ubicaci(?:o|ó|\u00c3\u00b3)n)\s+recibida\s+desde\s+", "", text, flags=re.I)
+    text = re.sub(r"\bUbicaci(?:o|ó|\u00c3\u00b3)n\s+desde\s+", "", text, flags=re.I)
+    text = re.sub(r"\bCaptura\s+m(?:o|ó|\u00c3\u00b3)vil\b", "", text, flags=re.I)
+    text = re.sub(r"\bprimary-user[-\w]*\b", "", text, flags=re.I)
+    text = re.sub(r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b", "", text, flags=re.I)
+    text = re.sub(r"\b[\w.-]+\.(?:jpg|jpeg|png|gif|webp|heic|mp4|mov|webm|mp3|wav|m4a|pdf|docx?|txt|csv|json|zip)\b", "", text, flags=re.I)
+    text = text.replace("Extracción local automática para", "Lectura de")
+    text = text.replace("Extracci\u00c3\u00b3n local autom\u00c3\u00a1tica para", "Lectura de")
+    text = text.replace("Uso: evidencia consultable para reportes, memoria y publicaciones. Revisar antes de publicar.", "")
     return " ".join(text.split())
 
 
@@ -567,8 +579,8 @@ def evidence_cards(items):
             break
     cards = []
     for item in selected:
-        title = f"{item.get('experienceTitle') or item.get('name') or 'Evidencia'}"
-        meta = f"{item.get('kind', '')} - {item.get('name', '')}"
+        title = f"{item.get('experienceTitle') or 'Elemento de apoyo'}"
+        meta = f"{item.get('kind', '') or 'Contexto'}"
         body = item.get("analyticalText") or item.get("translatedText") or item.get("manualNote") or "Evidencia disponible para revisar."
         body = body.replace("Extracción local automática para", "Texto extraído de")
         body = body.replace("Uso: evidencia consultable para reportes, memoria y publicaciones. Revisar antes de publicar.", "")
@@ -622,7 +634,7 @@ def build_story(report):
         ("Confiabilidad", f"{quality.get('score', 0)}%"),
     ]))
     story.append(Spacer(1, 10))
-    story.append(card("Lectura general", f"La libreria contiene {summary.get('totalExperiences', len(rows))} experiencias y {attachment_count} activos. La categoria dominante es {summary.get('topCategory', '-')}, con energia media {summary.get('averageEnergy', 0)}/10. Este reporte resume lo accionable y deja el detalle tecnico completo para JSON o CSV."))
+    story.append(card("Lectura general", f"La libreria contiene {summary.get('totalExperiences', len(rows))} experiencias y {attachment_count} elementos de apoyo. La categoria dominante es {summary.get('topCategory', '-')}, con energia media {summary.get('averageEnergy', 0)}/10. Este reporte prioriza patrones, señales relevantes y acciones concretas para decidir."))
     story.append(Spacer(1, 8))
     story.append(visual_dashboard(summary, rows, kpis, categories, quality))
     story.append(Spacer(1, 8))
@@ -647,13 +659,13 @@ def build_story(report):
     route_cards = [(item.get("title", "Ruta"), f"{item.get('count', 0)} experiencias con energia media {item.get('avgEnergy', 0)}/10.", item.get("dominant", "")) for item in routes[:4]]
     story.append(two_column_cards(route_cards) if route_cards else para("No hay rutas suficientes.", "Muted"))
 
-    story.extend(section_title("Evidencia multimodal curada"))
+    story.extend(section_title("Evidencia seleccionada"))
     story.append(evidence_cards(evidence))
 
     story.extend(section_title("Registro resumido"))
     story.append(short_register(rows))
     story.append(Spacer(1, 8))
-    story.append(para("El registro completo, la evidencia extendida y los campos tecnicos se conservan en JSON y CSV. Este PDF es una lectura ejecutiva para revisar y decidir.", "Muted"))
+    story.append(para("Este PDF es una lectura ejecutiva: resume lo importante, conserva el contexto y deja una ruta clara para revisar y decidir.", "Muted"))
     return story
 
 

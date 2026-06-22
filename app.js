@@ -1,4 +1,4 @@
-const APP_VERSION = "20260615-production-meta-clarity-620";
+﻿const APP_VERSION = "20260622-publication-editorial-653";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -54,6 +54,8 @@ const publicationTypes = [
   "Carta / email largo",
   "Dossier PDF",
   "Ficha de salud",
+  "Jornada de trabajo",
+  "Reporte dashboard",
 ];
 const publicationTypeGuides = {
   "Publicación social rápida": {
@@ -119,6 +121,20 @@ const publicationTypeGuides = {
     channels: ["PDF/HTML", "Email"],
     structure: ["Motivo", "Datos observados", "Evidencia", "Preguntas para el profesional", "Próximo paso"],
   },
+  "Jornada de trabajo": {
+    purpose: "Para convertir un día, reunión o periodo laboral en un resumen claro de contexto, acuerdos, decisiones y próximos pasos.",
+    bestFor: "Jornadas de trabajo, reuniones, visitas a clientes, proyectos, llamadas, acuerdos, pendientes y seguimiento profesional.",
+    mediaPolicy: "Prioriza notas, documentos, imágenes de apoyo, agenda y audios transcritos. La multimedia se usa como evidencia curada, no como copia directa.",
+    channels: ["Email", "PDF/HTML", "LinkedIn"],
+    structure: ["Contexto de la jornada", "Acuerdos y decisiones", "Pendientes", "Evidencia", "Próxima acción"],
+  },
+  "Reporte dashboard": {
+    purpose: "Para transformar experiencias y activos en un reporte visual con KPIs, cuadros, infografías, narrativa ejecutiva y recomendaciones.",
+    bestFor: "Seguimiento semanal, proyectos, salud, aprendizaje, viajes, productividad o cualquier grupo de experiencias que necesite lectura visual.",
+    mediaPolicy: "Combina indicadores, tablas, imágenes, documentos interpretados, biometría y línea de tiempo. Videos y audios quedan como evidencia resumida o enlace.",
+    channels: ["PDF/HTML", "Email", "LinkedIn"],
+    structure: ["Portada ejecutiva", "KPIs", "Dashboard visual", "Hallazgos", "Evidencia multimedia", "Acciones"],
+  },
 };
 const publicationStyles = ["Profesional", "Turístico", "Científico", "Familiar", "Minimalista", "Revista Premium", "Bitácora Viva", "Educativo", "Editorial visual", "Clínico claro", "Corporativo", "Social cálido"];
 const publicationChannels = ["WhatsApp", "Instagram", "Facebook", "LinkedIn", "Email", "PDF/HTML", "Blog/Web"];
@@ -143,14 +159,17 @@ const publicationTemplates = [
   { id: "medical-email", type: publicationTypes[8], style: publicationStyles[9], channel: "Email", tone: "medicalEmail" },
   { id: "executive-pdf", type: "Resumen ejecutivo", style: "Profesional", channel: "PDF/HTML", tone: "executivePdf" },
   { id: "learning-portfolio", type: "Dossier PDF", style: "Educativo", channel: "Blog/Web", tone: "learningPortfolio" },
+  { id: "workday-brief", type: "Jornada de trabajo", style: "Corporativo", channel: "Email", tone: "workday" },
+  { id: "workday-pdf", type: "Jornada de trabajo", style: "Profesional", channel: "PDF/HTML", tone: "workdayPdf" },
+  { id: "dashboard-report", type: "Reporte dashboard", style: "Corporativo", channel: "PDF/HTML", tone: "dashboard" },
 ];
 const publicationChannelFormatPicker = [
   { channel: "WhatsApp", templates: ["social-card", "whatsapp-thread", "family-memory"] },
   { channel: "Instagram", templates: ["instagram-carousel", "story-script", "social-card"] },
   { channel: "Facebook", templates: ["facebook-album", "family-memory", "travel-magazine"] },
-  { channel: "LinkedIn", templates: ["linkedin-carousel", "executive-brief", "learning-dossier"] },
-  { channel: "Email", templates: ["personal-letter", "medical-email", "executive-brief"] },
-  { channel: "PDF/HTML", templates: ["formal-dossier", "executive-pdf", "health-share"] },
+  { channel: "LinkedIn", templates: ["linkedin-carousel", "dashboard-report", "workday-brief"] },
+  { channel: "Email", templates: ["workday-brief", "personal-letter", "medical-email", "executive-brief"] },
+  { channel: "PDF/HTML", templates: ["dashboard-report", "workday-pdf", "formal-dossier", "executive-pdf", "health-share"] },
   { channel: "Blog/Web", templates: ["blog-story", "travel-magazine", "learning-portfolio"] },
 ];
 const publicationQuickStarts = [
@@ -208,7 +227,29 @@ const publicationQuickStarts = [
     templateId: "formal-dossier",
     source: "report",
   },
+  {
+    id: "workday-summary",
+    labelEs: "Jornada laboral",
+    labelEn: "Workday summary",
+    detailEs: "Resumen de acuerdos, decisiones, pendientes y evidencia.",
+    detailEn: "Summary of agreements, decisions, pending items, and evidence.",
+    templateId: "workday-pdf",
+    source: "report",
+  },
+  {
+    id: "dashboard-report",
+    labelEs: "Dashboard ejecutivo",
+    labelEn: "Executive dashboard",
+    detailEs: "Reporte visual con indicadores, cuadros, imagenes y acciones.",
+    detailEn: "Visual report with indicators, charts, images, and actions.",
+    templateId: "dashboard-report",
+    source: "report",
+  },
 ];
+const PUBLICATION_SIGNAL_SOURCE_RE = new RegExp("Se(?:ñ|\\u00c3\\u00b1)al\\s+(?:location|ubicaci(?:o|ó|\\u00c3\\u00b3)n)\\s+recibida\\s+desde\\s+", "gi");
+const PUBLICATION_LOCATION_SOURCE_RE = new RegExp("Ubicaci(?:o|ó|\\u00c3\\u00b3)n\\s+desde\\s+", "gi");
+const PUBLICATION_MOBILE_CAPTURE_RE = new RegExp("Captura\\s+m(?:o|ó|\\u00c3\\u00b3)vil", "gi");
+const PUBLICATION_EMPTY_LOCATION_RE = new RegExp("^(?:sin ubicaci(?:o|ó|\\u00c3\\u00b3)n|no location|dato del usuario)$", "i");
 const insightQuickStarts = [
   {
     id: "recent-week",
@@ -395,7 +436,7 @@ const i18n = {
       insights: "Hallazgos",
       automation: "Automatizaciones",
       manual: "Ayuda",
-      admin: "Administracion",
+      admin: "Operacion",
     },
     viewTitles: {
       auth: "Acceso seguro",
@@ -411,7 +452,7 @@ const i18n = {
       insights: "Hallazgos accionables",
       automation: "Capacidades, rutinas y MCP",
       manual: "Manual del Usuario",
-      admin: "Administracion",
+      admin: "Operacion y administracion",
     },
     buttons: {
       reset: "Cargar ejemplo",
@@ -1232,7 +1273,7 @@ const i18n = {
       insights: "Insights",
       automation: "Automations",
       manual: "Help",
-      admin: "Administration",
+      admin: "Operation",
     },
     viewTitles: {
       auth: "Secure access",
@@ -1248,7 +1289,7 @@ const i18n = {
       insights: "Actionable insights",
       automation: "Skills, Routines and MCPs",
       manual: "Help",
-      admin: "Administration",
+      admin: "Operation and administration",
     },
     buttons: {
       reset: "Load example",
@@ -2084,7 +2125,7 @@ i18n.fr = mergeLocale(i18n.en, {
     insights: "Enseignements",
     automation: "Automatisations",
     manual: "Aide",
-    admin: "Administration",
+    admin: "Operation",
   },
   viewTitles: {
     auth: "Accès sécurisé",
@@ -2100,7 +2141,7 @@ i18n.fr = mergeLocale(i18n.en, {
     insights: "Enseignements actionnables",
     automation: "Capacités, routines et MCP",
     manual: "Aide",
-    admin: "Administration",
+    admin: "Operation and administration",
   },
   buttons: {
     reset: "Charger un exemple",
@@ -2512,6 +2553,7 @@ const manualContent = {
         "El indicador superior de sincronización solo muestra alertas cuando existe una acción real: iniciar sesión o resolver cambios pendientes. Los chequeos breves del servidor se manejan en silencio para no confundir al usuario.",
         "Los grupos/personas se crean en Inicio o Captura y se administran en Operacion. Archivar un grupo no borra experiencias: solo lo oculta de nuevas capturas y filtros normales. El historial se conserva hasta que borres registros concretos o solicites baja de cuenta.",
         "La baja de cuenta es una accion separada de privacidad. Antes de pedirla descarga un respaldo; el borrado definitivo requiere confirmacion de identidad y revision del servidor.",
+        "Para comenzar con datos reales, usa Operacion > Controles del producto > Limpieza y datos de prueba. Vaciar este navegador solo borra la copia local; Borrar datos de nube descarga un respaldo, pide confirmacion escrita y elimina experiencias, agenda, activos, contexto diario y archivos sincronizados del usuario autenticado, conservando la cuenta.",
         "Este Manual del Usuario tiene búsqueda, contador de resultados y filtros por sección para consultar rápidamente una función específica sin recorrer todo el documento.",
         "El manual puede exportarse como Markdown o HTML imprimible usando el filtro actual, útil para compartir instrucciones, llevarlo a Obsidian/Notion o revisarlo fuera de la aplicación.",
         "Cada sección del manual puede copiarse de forma individual en formato Markdown para compartir instrucciones puntuales sin exportar todo el documento.",
@@ -3189,6 +3231,7 @@ const manualContent = {
         "The top sync indicator only warns when there is a real action: sign in or resolve pending changes. Short server checks are handled quietly so the user is not confused by technical polling.",
         "Groups/people are created from Home or Capture and managed in Operation. Archiving a group does not delete experiences: it only hides the group from new captures and normal filters. History remains until specific records are deleted or account closure is requested.",
         "Account closure is a separate privacy action. Download a backup first; final destructive deletion requires identity confirmation and server-side review.",
+        "To start with real data, use Operation > Product controls > Cleanup and test data. Clear this browser only removes the local copy; Erase cloud data downloads a backup, asks for typed confirmation, and deletes experiences, agenda, assets, daily context, and synchronized files for the signed-in user while keeping the account.",
         "This User Manual has search, a result counter, and section filters so you can find a specific feature without reading the whole document.",
         "The manual can be exported as Markdown or printable HTML using the current filter, useful for sharing instructions, moving it into Obsidian/Notion, or reviewing it outside the app.",
         "Each manual section can be copied individually as Markdown so you can share focused instructions without exporting the whole document.",
@@ -3854,6 +3897,7 @@ manualContent.fr = [
       "Inviter une vraie personne est different: l'invitation cree une adhesion avec email, role et statut d'acces.",
       "Le proprietaire ou l'administrateur peut approuver, suspendre ou retirer un membre. Le retrait bloque l'acces futur; les donnees deja enregistrees restent selon la politique du workspace jusqu'a suppression explicite ou fermeture du compte.",
       "L'utilisateur normal cree et selectionne ses groupes depuis Accueil ou Capture; Administration reste reservee au controle operationnel.",
+      "Pour recommencer avec des donnees reelles, utilise Operation > Controles du produit > Nettoyage et donnees de test. Vider ce navigateur supprime seulement la copie locale; Effacer donnees du cloud telecharge une sauvegarde, demande une confirmation ecrite et supprime les experiences, l'agenda, les actifs, le contexte quotidien et les fichiers synchronises de l'utilisateur connecte, tout en conservant le compte.",
     ],
   },
   {
@@ -4165,7 +4209,7 @@ const demoExperiences = [
     objective: "llegar a reunión",
     mood: "Saturado",
     energy: 4,
-    location: "San Juan",
+    location: "Winter Garden",
     people: "Solo",
     attachments: [],
     notes: "El tráfico redujo el foco antes de una reunión importante. Conviene revisar clima/noticias antes de traslados.",
@@ -4296,6 +4340,12 @@ const state = {
   profile: loadLocalProfile(),
   contextImpact: null,
   dailyBriefing: loadDailyBriefing(),
+  mobileHealthSummary: null,
+  dashboardContextRefreshedAt: "",
+  dashboardContextRefreshInProgress: false,
+  contextImpactRefreshedAt: "",
+  contextImpactRefreshedFor: "",
+  contextImpactRefreshInProgress: false,
   dailyLocationPreference: loadDailyLocationPreference(),
   selectedDailyArticle: null,
   backendRoutines: [],
@@ -5069,15 +5119,15 @@ function getPilotGroupMessage(result) {
   if (result.existed) {
     if (result.reactivated) {
       return state.language !== "es"
-        ? `${name} was reactivated and selected. Historical experiences were preserved.`
+         ? `${name} was reactivated and selected. Historical experiences were preserved.`
         : `${name} fue reactivado y quedo seleccionado. Sus experiencias historicas se conservaron.`;
     }
     return state.language !== "es"
-      ? `${name} already existed and is now selected.`
+       ? `${name} already existed and is now selected.`
       : `${name} ya existia y quedo seleccionado.`;
   }
   return state.language !== "es"
-    ? `${name} was created and selected for this account.`
+     ? `${name} was created and selected for this account.`
     : `${name} fue creado y seleccionado para esta cuenta.`;
 }
 
@@ -5292,7 +5342,7 @@ function t(path) {
     value = i18n.es;
     for (const part of parts) value = value?.[part];
   }
-  return value ?? path;
+  return value ? value : path;
 }
 
 function languageText(es, en, fr = en) {
@@ -5449,7 +5499,7 @@ async function hydrateFromApi() {
       checkedAt: new Date().toISOString(),
       latencyMs: Math.round(performance.now() - startedAt),
       message: state.language !== "es"
-        ? `Local API did not respond. The app keeps working with local data. ${error.message || ""}`.trim()
+         ? `Local API did not respond. The app keeps working with local data. ${error.message || ""}`.trim()
         : `La API local no respondió. La app sigue funcionando con datos locales. ${error.message || ""}`.trim(),
       service: "",
       mode: "local",
@@ -5506,7 +5556,7 @@ async function pollServerSyncState(options = {}) {
       renderAll();
       notify(
         state.language !== "es"
-          ? "Updated with changes from another device."
+           ? "Updated with changes from another device."
           : "Actualizado con cambios de otro dispositivo.",
         "success",
       );
@@ -5823,7 +5873,7 @@ async function saveAgendaEventToApi(agendaEvent, options = {}) {
     if (!options.silent) {
       const status = document.getElementById("agendaFormStatus");
       if (status) status.textContent = state.language !== "es"
-        ? "Event saved on this device. It will sync when the connection is ready."
+         ? "Event saved on this device. It will sync when the connection is ready."
         : "Evento guardado en este dispositivo. Se sincronizará cuando la conexión esté lista.";
     }
     return { remote: false, reason: error?.message || "api_error" };
@@ -6267,7 +6317,7 @@ async function syncOfflineQueue(options = {}) {
         if (!state.offlineQueue.length) {
           if (!options.silent) {
             document.getElementById("embeddingStatus").textContent = state.language !== "es"
-              ? `${resolved} pending changes were already available in the cloud.`
+               ? `${resolved} pending changes were already available in the cloud.`
               : `${resolved} pendientes ya estaban disponibles en la nube.`;
           }
           renderPersistenceGateBanner();
@@ -6331,8 +6381,90 @@ async function syncOfflineMutation(mutation) {
 
 function clearLocalData() {
   const message =
-    "Esto vaciará las experiencias visibles, la agenda local, las publicaciones, la biometria importada, los metadatos de activos, el perfil local, el Diario, las rutinas, los adjuntos locales y la cola sin conexión de este navegador. No borra datos remotos ya guardados en Supabase ni cierra tu sesión. Haz un respaldo de datos antes si quieres conservar una copia. ¿Continuar?";
+    state.language === "fr"
+       ? "Cela vide seulement ce navigateur: experiences visibles, agenda local, publications, biometrie importee, metadonnees, pieces jointes locales et file hors ligne. Le cloud n'est pas efface. Continuer?"
+      : state.language !== "es"
+         ? "This clears only this browser: visible experiences, local agenda, publications, imported biometrics, metadata, local attachments, and the offline queue. Cloud data is not erased. Continue?"
+        : "Esto vacia solo este navegador: experiencias visibles, agenda local, publicaciones, biometria importada, metadatos, adjuntos locales y cola sin conexion. La nube no se borra. Continuar?";
   if (!confirm(message)) return;
+  const backupPayload = buildLocalBackupPayload();
+  resetLocalStateForFreshStart();
+  recordBackupAudit("clear", backupPayload);
+  renderOfflineQueuePanel();
+  renderAll();
+  showView("capture");
+  document.getElementById("embeddingStatus").textContent =
+    state.language === "fr"
+       ? "Donnees locales videes. Tu peux commencer avec des donnees reelles."
+      : state.language !== "es"
+         ? "Local data cleared. You can start with real data."
+        : "Datos locales vaciados. Puedes iniciar tu carga real.";
+}
+
+async function resetCloudDataForFreshStart() {
+  const status = document.getElementById("embeddingStatus");
+  if (!state.session?.access_token) {
+    if (status) status.textContent = state.language === "fr"
+       ? "Connecte-toi avant d'effacer les donnees du cloud."
+      : state.language !== "es"
+         ? "Sign in before erasing cloud data."
+        : "Inicia sesion antes de borrar datos de nube.";
+    return;
+  }
+  const warning = state.language === "fr"
+     ? "Cette action efface tes experiences, agenda, rapports quotidiens, actifs synchronises et fichiers du cloud pour recommencer avec des donnees reelles. La session et le compte restent actifs. Une sauvegarde sera telechargee d'abord."
+    : state.language !== "es"
+       ? "This erases your cloud experiences, agenda, daily context, synced assets, and files so you can start with real data. Your account and session remain active. A backup downloads first."
+      : "Esto borra tus experiencias, agenda, contexto diario, activos sincronizados y archivos de la nube para comenzar con datos reales. Tu cuenta y sesion quedan activas. Primero se descargara un respaldo.";
+  if (!confirm(warning)) return;
+  await exportLocalBackup();
+  const expected = state.language === "fr" ? "SUPPRIMER LES DONNEES" : state.language !== "es" ? "DELETE DATA" : "BORRAR DATOS";
+  const typed = prompt(
+    state.language === "fr"
+       ? `Pour confirmer, ecris exactement: ${expected}`
+      : state.language !== "es"
+         ? `To confirm, type exactly: ${expected}`
+        : `Para confirmar, escribe exactamente: ${expected}`,
+  );
+  if (String(typed || "").trim() !== expected) {
+    if (status) status.textContent = state.language === "fr"
+       ? "Nettoyage annule. Le texte de confirmation ne correspond pas."
+      : state.language !== "es"
+         ? "Cleanup canceled. Confirmation text did not match."
+        : "Limpieza cancelada. El texto de confirmacion no coincidio.";
+    return;
+  }
+  if (status) status.textContent = state.language === "fr" ? "Effacement des donnees du cloud..." : state.language !== "es" ? "Erasing cloud data..." : "Borrando datos de nube...";
+  try {
+    const result = await apiRequest("/account/data-reset", {
+      method: "POST",
+      body: JSON.stringify({ confirmation: expected, appVersion: APP_VERSION, includeGroups: false }),
+      preserveSessionOnAuthFailure: true,
+    });
+    resetLocalStateForFreshStart();
+    renderOfflineQueuePanel();
+    renderAll();
+    showView("dashboard");
+    const deletedTables = Object.entries(result.deleted || {})
+      .map(([key, value]) => `${key}: ${value}`)
+      .join(" · ");
+    if (status) status.textContent = state.language === "fr"
+       ? `Cloud nettoye. Fichiers supprimes: ${result.storage?.deleted || 0}.`
+      : state.language !== "es"
+         ? `Cloud data erased. Files removed: ${result.storage?.deleted || 0}.`
+        : `Datos de nube borrados. Archivos eliminados: ${result.storage?.deleted || 0}. ${deletedTables}`;
+    notify(state.language === "fr" ? "Donnees nettoyees. Tu peux commencer avec des donnees reelles." : state.language !== "es" ? "Data cleaned. You can start with real data." : "Datos limpios. Puedes comenzar con datos reales.");
+  } catch (error) {
+    if (status) status.textContent = state.language === "fr"
+       ? `Le nettoyage du cloud a echoue: ${error.message}`
+      : state.language !== "es"
+         ? `Cloud cleanup failed: ${error.message}`
+        : `No se pudo limpiar la nube: ${error.message}`;
+    notify(state.language === "fr" ? "Le nettoyage du cloud n'a pas ete complete." : state.language !== "es" ? "Cloud cleanup did not complete." : "La limpieza de nube no se completo.", "warn");
+  }
+}
+
+function resetLocalStateForFreshStart() {
   state.experiences = [];
   state.agendaEvents = [];
   state.agendaBlockedDates = [];
@@ -6349,7 +6481,6 @@ function clearLocalData() {
   state.selectedDailyArticle = null;
   state.routineSettings = {};
   state.manualReview = {};
-  recordBackupAudit("clear", buildLocalBackupPayload());
   saveExperiences();
   saveAgendaEvents();
   saveAgendaBlockedDates();
@@ -6362,10 +6493,6 @@ function clearLocalData() {
   saveRoutineSettings();
   saveManualReview();
   saveOfflineQueue();
-  renderOfflineQueuePanel();
-  renderAll();
-  showView("capture");
-  document.getElementById("embeddingStatus").textContent = "Datos locales vaciados. Puedes iniciar tu carga real; la sesión y el idioma se conservaron.";
 }
 
 function loadDailyBriefing() {
@@ -6441,8 +6568,38 @@ function renderPersistenceGateBanner() {
     banner.innerHTML = "";
     return;
   }
-  const labels = state.language !== "es"
-    ? {
+  const labels = state.language === "fr"
+     ? {
+        title: "Controles du produit",
+        help: "L'utilisation quotidienne reste simple. Sauvegarde, confidentialite, synchronisation et controles avances vivent ici.",
+        app: "App",
+        sync: "Synchronisation",
+        data: "Donnees",
+        security: "Confidentialite",
+        diagnostics: "Diagnostic",
+        refresh: "Actualiser l'app",
+        voice: "Commande vocale",
+        backup: "Telecharger sauvegarde",
+        restore: "Restaurer sauvegarde",
+        syncOffline: "Synchroniser les elements en attente",
+        verify: "Verifier le cloud",
+        selfTest: "Tester le flux complet",
+        recommended: "Appliquer la confidentialite recommandee",
+        showKey: document.getElementById("localKeyInput")?.type === "password" ? "Afficher la cle locale" : "Masquer la cle locale",
+        applyKey: "Appliquer la cle locale",
+        unlock: "Deverrouiller les donnees locales",
+        demoOpen: "Nettoyage et donnees de test",
+        demoHelp: "Zone avancee. Sauvegarde d'abord; les actions de suppression demandent confirmation.",
+        loadDemo: "Charger exemple",
+        clearDemo: "Supprimer exemple",
+        clearLocal: "Vider ce navigateur",
+        resetCloud: "Effacer donnees du cloud",
+        localMode: "Securite locale",
+        localReady: "Confidentialite recommandee active.",
+        localReview: "Verifier la cle locale ou la confidentialite.",
+      }
+    : state.language !== "es"
+       ? {
         authTitle: "Sign in to save on all your devices",
         authDetail: "Before capturing, sign in with the same user you will use on mobile, tablet, and desktop.",
         apiTitle: "Cloud save is not confirmed",
@@ -6511,14 +6668,14 @@ function clearOfflineQueueFromBanner() {
     return;
   }
   const message = state.language !== "es"
-    ? "This clears only this browser's pending local queue. It does not delete experiences already saved in Supabase or local Library. Continue?"
+     ? "This clears only this browser's pending local queue. It does not delete experiences already saved in Supabase or local Library. Continue?"
     : "Esto limpia solo la cola local pendiente de este navegador. No borra experiencias ya guardadas en Supabase ni en la Librería local. ¿Continuar?";
   if (!confirm(message)) return;
   const cleared = state.offlineQueue.length;
   state.offlineQueue = [];
   saveOfflineQueue();
   document.getElementById("embeddingStatus").textContent = state.language !== "es"
-    ? `${cleared} local pending items cleared.`
+     ? `${cleared} local pending items cleared.`
     : `${cleared} pendientes locales limpiados.`;
   renderPersistenceGateBanner();
   renderOfflineQueuePanel();
@@ -6542,7 +6699,7 @@ function renderCoreMvpReturnBanner(activeView = document.querySelector(".active-
     return;
   }
   const labels = state.language !== "es"
-    ? {
+     ? {
         title: "MVP closure action in progress",
         detail: "Complete this step, then return to Admin to save evidence and continue the real test.",
         evidence: "Evidence observed in this module",
@@ -6816,7 +6973,7 @@ function renderAuthStatus() {
   }
   const pending = state.offlineQueue?.length || 0;
   const labels = state.language !== "es"
-    ? {
+     ? {
         synced: "Synced",
         pending: "Pending save",
         signIn: "Sign in to save",
@@ -7050,7 +7207,7 @@ function applyLanguage() {
   if (authHelp) {
     authHelp.querySelector("strong").textContent = state.language !== "es" ? "First access" : "Primer acceso";
     authHelp.querySelector("p").textContent = state.language !== "es"
-      ? "If you do not have a user yet, enter your email, create a password, and click Create account. Technical project keys are not passwords."
+       ? "If you do not have a user yet, enter your email, create a password, and click Create account. Technical project keys are not passwords."
       : "Si aún no tienes usuario, escribe tu correo electrónico, crea una contraseña y pulsa Crear cuenta. Las claves técnicas del proyecto no sirven como contraseña.";
   }
   document.getElementById("signInButton").textContent = t("buttons.signIn");
@@ -7064,7 +7221,7 @@ function applyLanguage() {
   document.getElementById("manualVersionEyebrow").textContent = state.language !== "es" ? "Current version" : "Versión vigente";
   document.getElementById("manualVersionValue").textContent = APP_VERSION;
   document.getElementById("manualVersionSummary").textContent = state.language !== "es"
-    ? "Practical guide organized by topic so you can understand the app flow without reading everything line by line."
+     ? "Practical guide organized by topic so you can understand the app flow without reading everything line by line."
     : "Guía práctica organizada por temas para entender el flujo de la app sin leer todo de corrido.";
   document.getElementById("manualGuideStartTitle").textContent = state.language !== "es" ? "Quick start" : "Inicio rápido";
   document.getElementById("manualGuideStartText").textContent = state.language !== "es" ? "Capture, Library, Assets, and Reports." : "Captura, Librería, Activos y Reportes.";
@@ -7074,16 +7231,16 @@ function applyLanguage() {
   document.getElementById("manualGuideAdminText").textContent = state.language !== "es" ? "Quality, diagnostics, and publishing." : "Calidad, diagnóstico y publicación.";
   document.getElementById("manualSearchLabel").textContent = state.language !== "es" ? "Search the manual" : "Buscar en el manual";
   document.getElementById("manualVersionSummary").textContent = state.language !== "es"
-    ? "Practical guide organized by topic. Vibeapp captures native context; VibePWA reviews, analyzes, reports, publishes, and administers."
+     ? "Practical guide organized by topic. Vibeapp captures native context; VibePWA reviews, analyzes, reports, publishes, and administers."
     : "Guia practica organizada por temas. Vibeapp captura el contexto nativo; VibePWA revisa, analiza, reporta, publica y administra.";
   document.getElementById("manualGuideStartText").textContent = state.language !== "es"
-    ? "Use Vibeapp to capture; use VibePWA to review Library, Assets, Reports, Findings, and Publications."
+     ? "Use Vibeapp to capture; use VibePWA to review Library, Assets, Reports, Findings, and Publications."
     : "Usa Vibeapp para capturar; usa VibePWA para revisar Libreria, Activos, Reportes, Hallazgos y Publicaciones.";
   document.getElementById("manualGuideOperateText").textContent = state.language !== "es"
-    ? "Server sync, privacy, backups, and multi-device continuity."
+     ? "Server sync, privacy, backups, and multi-device continuity."
     : "Sincronizacion de servidor, privacidad, respaldos y continuidad multidispositivo.";
   document.getElementById("manualGuideAdminText").textContent = state.language !== "es"
-    ? "Connectors, diagnostics, quality, and publishing controls."
+     ? "Connectors, diagnostics, quality, and publishing controls."
     : "Conectores, diagnostico, calidad y controles de publicacion.";
   document.getElementById("manualSearchInput").placeholder =
     state.language !== "es" ? "Search section, feature, or keyword" : "Buscar sección, función o palabra clave";
@@ -7106,6 +7263,15 @@ function applyLanguage() {
   const dashboardPilotStatus = document.getElementById("dashboardPilotStatus");
   if (dashboardPilotTitle) dashboardPilotTitle.textContent = state.language !== "es" ? "Pilot readiness" : "Preparación del piloto";
   if (dashboardPilotStatus) dashboardPilotStatus.textContent = state.language !== "es" ? "Operational follow-up" : "Seguimiento operativo";
+  const dashboardDataResetButton = document.getElementById("dashboardDataResetButton");
+  if (dashboardDataResetButton) {
+    dashboardDataResetButton.textContent = state.language === "fr" ? "Effacer donnees" : state.language !== "es" ? "Clean data" : "Limpiar datos";
+    dashboardDataResetButton.title = state.language === "fr"
+       ? "Telecharge une sauvegarde puis efface les donnees du cloud avec confirmation."
+      : state.language !== "es"
+         ? "Downloads a backup, then erases cloud data after confirmation."
+        : "Descarga un respaldo y luego borra los datos de nube con confirmacion.";
+  }
   document.getElementById("exportAssetInventoryButton").textContent = t("buttons.exportAssetInventory");
   document.getElementById("exportAssetInventoryCsvButton").textContent = t("buttons.exportAssetInventoryCsv");
   document.getElementById("exportAssetProcessingBacklogButton").textContent = t("buttons.exportAssetProcessingBacklog");
@@ -7238,6 +7404,7 @@ function applyFrenchStaticTextOverrides() {
   setPlaceholder("assetSearchInput", "Rechercher fichier, expérience, lieu, personne, format ou date");
   setText("dashboardPilotTitle", "Préparation du pilote");
   setText("dashboardPilotStatus", "Suivi opérationnel");
+  setText("dashboardDataResetButton", "Effacer donnees");
   setText("agendaAdvancedTitle", "Options avancées de calendrier");
   setText("agendaAdvancedHelp", "Importer, exporter et bloquer des jours");
   setText("agendaPilotParticipantLabel", "Groupe/personne lié");
@@ -7347,7 +7514,7 @@ function setupForm() {
       if (savedCommitted && state.captureSaveStatus) {
         const detail = agendaRequested
           ? state.language !== "es"
-            ? "The experience was saved. Agenda could not be updated; review it only if you intended to create a calendar event."
+             ? "The experience was saved. Agenda could not be updated; review it only if you intended to create a calendar event."
             : "La experiencia fue guardada. Agenda no pudo actualizarse; revísala solo si querías crear un evento de calendario."
           : state.captureSaveStatus.detail;
         if (agendaRequested) state.captureSaveStatus.detail = detail;
@@ -7426,32 +7593,32 @@ function getCaptureSaveErrorDetail(error) {
   if (reason === "required_fields") {
     const fields = Array.isArray(error.fields) && error.fields.length ? error.fields.join(", ") : (state.language !== "es" ? "required fields" : "campos obligatorios");
     return state.language !== "es"
-      ? `Missing required fields: ${fields}. Complete them and save again.`
+       ? `Missing required fields: ${fields}. Complete them and save again.`
       : `Faltan campos obligatorios: ${fields}. Complétalos y guarda de nuevo.`;
   }
   if (reason === "invalid_timestamp") {
     return state.language !== "es"
-      ? "The date and time are not valid. Select them again and save."
+       ? "The date and time are not valid. Select them again and save."
       : "La fecha y hora no son válidas. Selecciónalas de nuevo y guarda.";
   }
   if (reason === "invalid_duration") {
     return state.language !== "es"
-      ? "Duration must be at least 1 minute. Correct it and save again."
+       ? "Duration must be at least 1 minute. Correct it and save again."
       : "La duración debe ser de al menos 1 minuto. Corrígela y guarda de nuevo.";
   }
   if (String(reason).includes("Invalid time value")) {
     return state.language !== "es"
-      ? "The date and time could not be interpreted. Select them again and save."
+       ? "The date and time could not be interpreted. Select them again and save."
       : "La fecha y hora no se pudieron interpretar. Selecciónalas de nuevo y guarda.";
   }
   return state.language !== "es"
-    ? "The experience could not be saved. Check the session, required fields, and connection; then try again."
+     ? "The experience could not be saved. Check the session, required fields, and connection; then try again."
     : "No se pudo guardar la experiencia. Revisa sesión, campos obligatorios y conexión; luego inténtalo de nuevo.";
 }
 
 function getCaptureSavePhaseLabel(phase = "") {
   const labels = state.language !== "es"
-    ? {
+     ? {
         starting: "start",
         validation: "field validation",
         read_form: "reading the form and attachments",
@@ -7481,22 +7648,22 @@ function getCaptureSaveErrorDetailActionable(error, phase = "") {
   if (reason === "required_fields") {
     const fields = Array.isArray(error.fields) && error.fields.length ? error.fields.join(", ") : (state.language !== "es" ? "required fields" : "campos obligatorios");
     return state.language !== "es"
-      ? `Missing required fields: ${fields}. Complete them and save again.`
+       ? `Missing required fields: ${fields}. Complete them and save again.`
       : `Faltan campos obligatorios: ${fields}. Compl\u00e9talos y guarda de nuevo.`;
   }
   if (reason === "invalid_timestamp") {
     return state.language !== "es"
-      ? "The date and time are not valid. Select them again and save."
+       ? "The date and time are not valid. Select them again and save."
       : "La fecha y hora no son v\u00e1lidas. Selecci\u00f3nalas de nuevo y guarda.";
   }
   if (reason === "invalid_duration") {
     return state.language !== "es"
-      ? "Duration must be at least 1 minute. Correct it and save again."
+       ? "Duration must be at least 1 minute. Correct it and save again."
       : "La duraci\u00f3n debe ser de al menos 1 minuto. Corr\u00edgela y guarda de nuevo.";
   }
   if (String(reason).includes("Invalid time value")) {
     return state.language !== "es"
-      ? "The date and time could not be interpreted. Select them again and save."
+       ? "The date and time could not be interpreted. Select them again and save."
       : "La fecha y hora no se pudieron interpretar. Selecci\u00f3nalas de nuevo y guarda.";
   }
   const phaseLabel = getCaptureSavePhaseLabel(phase);
@@ -7505,7 +7672,7 @@ function getCaptureSaveErrorDetailActionable(error, phase = "") {
     ? rawMessage.slice(0, 180)
     : "";
   return state.language !== "es"
-    ? `The save stopped during: ${phaseLabel}. ${technicalDetail ? `Detail: ${technicalDetail}. ` : ""}The form was kept so you can retry.`
+     ? `The save stopped during: ${phaseLabel}. ${technicalDetail ? `Detail: ${technicalDetail}. ` : ""}The form was kept so you can retry.`
     : `El guardado se detuvo en: ${phaseLabel}. ${technicalDetail ? `Detalle: ${technicalDetail}. ` : ""}El formulario se conserv\u00f3 para que puedas reintentar.`;
 }
 
@@ -7837,7 +8004,7 @@ function renderSharedScopeContext(containerId, filters = {}, count = 0, outputLa
   const container = document.getElementById(containerId);
   if (!container) return;
   const labels = state.language !== "es"
-    ? {
+     ? {
         title: "Scope used in this output",
         fallback: "Full view",
         count: "experiences",
@@ -7873,7 +8040,7 @@ function generateReportFromScope() {
   const scopeText = getReportScopeLabel(scope);
   setReportFlowStatus(
     state.language !== "es"
-      ? `Report generated for ${count} experience(s). Scope: ${scopeText}. Continue with the acceptance pack.`
+       ? `Report generated for ${count} experience(s). Scope: ${scopeText}. Continue with the acceptance pack.`
       : `Reporte generado para ${count} experiencia(s). Alcance: ${scopeText}. Lee la síntesis principal y luego usa el paquete de aceptación.`,
   );
   document.getElementById("reportSummary")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -7919,7 +8086,7 @@ function handleReportScopeAction(event) {
 function getReportScopeLabel(scope = state.reportFilters.scope) {
   const labels =
     state.language !== "es"
-      ? {
+       ? {
           all: "all experiences",
           period: "quick range",
           filters: "category, person, origin, or objective filters",
@@ -8095,6 +8262,7 @@ function setupActions() {
   document.getElementById("mvpFlowPanel").addEventListener("click", handleParallelBacklogClick);
   document.getElementById("apiStatusPanel").addEventListener("click", handleApiStatusClick);
   document.getElementById("uiQualityPanel").addEventListener("click", handleUiQualityClick);
+  document.querySelector(".dashboard-primary-panel")?.addEventListener("click", handleDashboardPrimaryAction);
   document.querySelector(".dashboard-primary-panel")?.addEventListener("click", handleParallelBacklogClick);
   document.getElementById("dashboardAttachmentBox")?.addEventListener("click", handleDashboardAttachmentAction);
   document.getElementById("dashboardIntegrationBox")?.addEventListener("click", handleDashboardIntegrationAction);
@@ -8154,8 +8322,8 @@ async function handleDashboardGroupListClick(event) {
     const participantId = archiveButton.dataset.dashboardGroupArchive || "";
     const name = getPilotParticipantName(participantId);
     const confirmText = state.language !== "es"
-      ? `Archive ${name}? It will no longer appear for new captures, but its saved experiences will remain in your history.`
-      : `Archivar ${name}? Ya no aparecera para nuevas capturas, pero sus experiencias guardadas se conservaran en el historial.`;
+       ? `Archive ${name} It will no longer appear for new captures, but its saved experiences will remain in your history.`
+      : `Archivar ${name} Ya no aparecera para nuevas capturas, pero sus experiencias guardadas se conservaran en el historial.`;
     if (!confirm(confirmText)) return;
     const result = await updatePilotParticipantLifecycle(participantId, "archive");
     refreshPilotGroupSurfaces({ renderAdminPanel: true });
@@ -8174,7 +8342,7 @@ async function handleDashboardGroupListClick(event) {
   refreshPilotGroupSurfaces({ selectedId: participantId });
   notify(
     state.language !== "es"
-      ? `${getPilotParticipantName(participantId)} is now the active group/person.`
+       ? `${getPilotParticipantName(participantId)} is now the active group/person.`
       : `${getPilotParticipantName(participantId)} queda como grupo/persona activo.`,
     "success",
   );
@@ -8595,7 +8763,7 @@ async function loadDemoData() {
   const agendaDetail = t("labels.demoAgendaLoaded").replace("{count}", String(nextDemoAgenda.length));
   const baseMessage = `${nextDemo.length} experiencias de ejemplo multimodales cargadas. ${agendaDetail}`;
   document.getElementById("embeddingStatus").textContent = state.session?.access_token
-    ? baseMessage
+     baseMessage
     : `${baseMessage} Entra para sincronizarlas con Supabase.`;
 }
 
@@ -8715,7 +8883,7 @@ function populateStaticControls() {
   const selectedAssetType = assetTypeSelect.value || "all";
   const assetTypeOptions =
     state.language !== "es"
-      ? [
+       ? [
           ["all", "All types"],
           ["image", "Images"],
           ["video", "Videos"],
@@ -8792,7 +8960,7 @@ function populateStaticControls() {
   const assetEventLinkSelect = document.getElementById("assetEventLinkFilter");
   const selectedAssetEventLink = assetEventLinkSelect?.value || state.assetFilters.eventLink || "all";
   const assetEventLinkOptions = state.language !== "es"
-    ? [
+     ? [
         ["all", "All links"],
         ["linked", "Linked to event"],
         ["whole", "Whole experience"],
@@ -8932,19 +9100,19 @@ function getPublicationChannelPlaybook(channel) {
       audience: "Red profesional que espera aprendizaje, evidencia y punto de vista.",
       rhythm: "Carrusel o resumen profesional con lección clara y cierre útil.",
       output: "Copiar texto y estructura; ajustar tono antes de publicar.",
-      templates: ["linkedin-carousel", "executive-brief", "learning-dossier"],
+      templates: ["linkedin-carousel", "dashboard-report", "workday-brief", "executive-brief"],
     },
     Email: {
       audience: "Una persona o grupo que necesita entender contexto y anexos.",
       rhythm: "Asunto claro, resumen, cuerpo medio y anexos o referencias.",
       output: "Abrir borrador de email o copiar asunto/cuerpo.",
-      templates: ["personal-letter", "executive-brief", "health-share"],
+      templates: ["workday-brief", "personal-letter", "executive-brief", "health-share"],
     },
     "PDF/HTML": {
       audience: "Lectura final, archivo personal, memoria o entrega formal.",
       rhythm: "Portada, resumen, secciones editadas, evidencia y anexos.",
       output: "Descargar PDF ReportLab como versión maestra.",
-      templates: ["formal-dossier", "magazine-story", "memory-album", "health-share"],
+      templates: ["dashboard-report", "workday-pdf", "formal-dossier", "magazine-story", "memory-album", "health-share"],
     },
     "Blog/Web": {
       audience: "Lectores que pueden recorrer una historia extendida con contexto.",
@@ -8960,10 +9128,10 @@ function renderPublicationChannelPlaybook(channel, currentType) {
   const profile = getPublicationChannelPlaybook(channel);
   const title = state.language !== "es" ? "Channel playbook" : "Playbook del canal";
   const subtitle = state.language !== "es"
-    ? "Use this to choose the right format before generating the draft."
+     ? "Use this to choose the right format before generating the draft."
     : "Úsalo para elegir el formato correcto antes de generar el borrador.";
   const items = state.language !== "es"
-    ? [
+     ? [
         ["Audience", translatePublicationGuideText(profile.audience)],
         ["Rhythm", translatePublicationGuideText(profile.rhythm)],
         ["Output", translatePublicationGuideText(profile.output)],
@@ -9015,7 +9183,7 @@ function renderPublicationPresetSuggestions(type, channel) {
   if (!suggestions.length) return "";
   const title = state.language !== "es" ? "Suggested formats before generating" : "Formatos sugeridos antes de generar";
   const help = state.language !== "es"
-    ? "Choose one to align type, style, and channel before creating the draft."
+     ? "Choose one to align type, style, and channel before creating the draft."
     : "Elige uno para alinear tipo, estilo y canal antes de crear el borrador.";
   return `
     <div class="publication-preset-panel">
@@ -9038,28 +9206,38 @@ function renderPublicationPresetSuggestions(type, channel) {
 
 function getPublicationCompositionProfile(type, channel, style) {
   const visualTypes = new Set(["Álbum experiencial", "Carrusel visual", "Guion de story/reel"]);
-  const formalTypes = new Set(["Resumen ejecutivo", "Dossier PDF", "Ficha de salud"]);
+  const formalTypes = new Set(["Resumen ejecutivo", "Dossier PDF", "Ficha de salud", "Jornada de trabajo", "Reporte dashboard"]);
   const isVisual = visualTypes.has(type);
   const isFormal = formalTypes.has(type);
-  const layout = isVisual
-    ? "Portada visual, bloques cortos y galería curada"
+  const isWorkday = type === "Jornada de trabajo";
+  const isDashboard = type === "Reporte dashboard";
+  const layout = isDashboard
+     ? "Portada ejecutiva, KPIs, dashboard visual, hallazgos, evidencia y acciones"
+    : isWorkday
+       ? "Resumen de jornada, acuerdos, decisiones, pendientes y evidencia"
+      : isVisual
+     ? "Portada visual, bloques cortos y galería curada"
     : isFormal
-      ? "Portada sobria, resumen, evidencia y cierre accionable"
+       ? "Portada sobria, resumen, evidencia y cierre accionable"
       : "Portada editorial, relato por secciones y momentos clave";
-  const media = isVisual
-    ? "Imágenes y video primero; audio/documentos como notas de apoyo"
+  const media = isDashboard
+     ? "Indicadores, tablas, imagenes, documentos y biometria como evidencia visual"
+    : isWorkday
+       ? "Notas, documentos, agenda, audios transcritos e imagenes de soporte"
+      : isVisual
+     ? "Imágenes y video primero; audio/documentos como notas de apoyo"
     : isFormal
-      ? "Documentos, datos y texto interpretado primero; multimedia solo si aporta evidencia"
+       ? "Documentos, datos y texto interpretado primero; multimedia solo si aporta evidencia"
       : "Mezcla de narrativa, imágenes destacadas y anexos resumidos";
   const text = channel === "WhatsApp" || channel === "Instagram"
-    ? "Texto breve, directo y fácil de revisar antes de compartir"
+     ? "Texto breve, directo y fácil de revisar antes de compartir"
     : channel === "Email" || channel === "LinkedIn"
-      ? "Texto medio, con contexto y conclusión clara"
+       ? "Texto medio, con contexto y conclusión clara"
       : "Texto completo, con secciones editadas y lectura final";
   const action = channel === "WhatsApp" || channel === "Email"
-    ? "Preparar mensaje revisable; el usuario decide enviar"
+     ? "Preparar mensaje revisable; el usuario decide enviar"
     : channel === "PDF/HTML"
-      ? "Generar documento maestro en PDF editado"
+       ? "Generar documento maestro en PDF editado"
       : "Preparar pieza para copiar, adaptar o publicar manualmente";
   return { layout, media, text, action, style };
 }
@@ -9068,10 +9246,10 @@ function renderPublicationCompositionPlan(type, channel, style) {
   const profile = getPublicationCompositionProfile(type, channel, style);
   const title = state.language !== "es" ? "Composition recipe" : "Receta de composición";
   const help = state.language !== "es"
-    ? "This is the structure the draft will follow before export."
+     ? "This is the structure the draft will follow before export."
     : "Esta es la estructura que seguirá el borrador antes de exportar.";
   const items = state.language !== "es"
-    ? [
+     ? [
         ["Layout", translatePublicationGuideText(profile.layout)],
         ["Media", translatePublicationGuideText(profile.media)],
         ["Text depth", translatePublicationGuideText(profile.text)],
@@ -9109,26 +9287,26 @@ function renderPublicationTypeChannelFit(type, channel) {
   const indirect = channel === "PDF/HTML" || channel === "Blog/Web";
   const status = exact || indirect ? "ok" : "review";
   const label = state.language !== "es"
-    ? exact
-      ? "Strong fit"
+     ? exact
+       ? "Strong fit"
       : indirect
-        ? "Good as master document"
+         ? "Good as master document"
         : "Review channel fit"
     : exact
-      ? "Buen encaje"
+       ? "Buen encaje"
       : indirect
-        ? "Buen documento maestro"
+         ? "Buen documento maestro"
         : "Revisar encaje del canal";
   const detail = state.language !== "es"
-    ? exact
-      ? `${displayPublicationType(type)} is naturally suited for ${channel}.`
+     ? exact
+       ? `${displayPublicationType(type)} is naturally suited for ${channel}.`
       : indirect
-        ? `${displayPublicationType(type)} can be exported as the master piece, then adapted to a posting channel.`
+         ? `${displayPublicationType(type)} can be exported as the master piece, then adapted to a posting channel.`
         : `${displayPublicationType(type)} can still work, but ${channel} usually performs better with: ${recommended.join(", ")}.`
     : exact
-      ? `${displayPublicationType(type)} esta naturalmente alineado con ${channel}.`
+       ? `${displayPublicationType(type)} esta naturalmente alineado con ${channel}.`
       : indirect
-        ? `${displayPublicationType(type)} puede salir como pieza maestra y luego adaptarse a un canal de publicacion.`
+         ? `${displayPublicationType(type)} puede salir como pieza maestra y luego adaptarse a un canal de publicacion.`
         : `${displayPublicationType(type)} puede funcionar, pero ${channel} suele ir mejor con: ${recommended.join(", ")}.`;
   return `
     <div class="publication-fit-panel is-${status}">
@@ -9148,7 +9326,7 @@ function handlePublicationPresetClick(event) {
   document.getElementById("publicationChannelInput").value = template.channel;
   updatePublicationTypeHelp();
   document.getElementById("publicationStatus").textContent = state.language !== "es"
-    ? "Suggested publication format applied."
+     ? "Suggested publication format applied."
     : "Formato sugerido aplicado.";
 }
 
@@ -9529,7 +9707,7 @@ function buildGlobalProgressSnapshot() {
       total.full * 0.14,
   );
   const labels = state.language !== "es"
-    ? {
+     ? {
         title: "Global Progress",
         subtitle: "Implemented product capability. Current browser data is audited separately in Current data.",
         overall: "Current delivery",
@@ -9614,7 +9792,7 @@ function buildGlobalProgressSnapshot() {
     { key: "full", title: labels.full, score: fullAmbitionOverall, detail: labels.fullDetail, view: "admin", focus: "publishPlanPanel" },
   ];
   const routeLabels = state.language !== "es"
-    ? {
+     ? {
         ownerOps: "Technical ops",
         ownerContent: "Content/product",
         ownerAssets: "Multimodal QA",
@@ -9881,7 +10059,7 @@ function renderDashboardDataStatusPanel() {
       : state.language !== "es" ? "Sign in to see shared data" : "Inicia sesion para ver datos compartidos";
   const syncText = pendingQueue || pendingAssets
     ? state.language !== "es"
-      ? `${pendingQueue + pendingAssets} item(s) need sync`
+       ? `${pendingQueue + pendingAssets} item(s) need sync`
       : `${pendingQueue + pendingAssets} elemento(s) requieren sincronizacion`
     : state.language !== "es" ? "No pending sync" : "Sin pendientes de sincronizacion";
   const lastSyncAt = state.serverSync?.checkedAt || state.connectivity?.lastOkAt || state.apiStatus?.checkedAt || "";
@@ -9919,51 +10097,68 @@ function analyzePublicationScopeRecommendation() {
   const media = collectPublicationMedia(experiences);
   const categories = topValues(experiences.map((item) => item.category).filter(Boolean), 3);
   const hasHealth = experiences.some((item) => item.category === "Salud") || media.some((item) => /health|salud|biometric|biometr/i.test(`${item.name || ""} ${item.analyticalText || ""}`));
+  const hasWork = experiences.some((item) => item.category === "Trabajo")
+    || experiences.some((item) => /trabajo|reunion|reunión|acuerdo|decision|decisión|pendiente|cliente|proyecto|llamada|jornada/i.test(`${item.title || ""} ${item.objective || ""} ${item.notes || ""}`));
   const imageCount = media.filter((item) => String(item.type || "").startsWith("image/")).length;
   const videoCount = media.filter((item) => String(item.type || "").startsWith("video/")).length;
   const documentCount = media.filter((item) => /pdf|document|text|csv|json|word|officedocument/i.test(String(item.type || ""))).length;
   const audioCount = media.filter((item) => String(item.type || "").startsWith("audio/")).length;
+  const dataCount = media.filter((item) => /csv|json|biometric|biometr|health|oura|samsung|apple health/i.test(`${item.type || ""} ${item.name || ""} ${item.externalPayloadType || ""}`)).length;
   const topCategory = categories[0] || "";
   let type = "Reporte narrativo";
   let style = "Revista Premium";
   let channel = "PDF/HTML";
   let reason = state.language !== "es"
-    ? "Good default for turning several experiences into a readable memory."
+     ? "Good default for turning several experiences into a readable memory."
     : "Buen punto de partida para convertir varias experiencias en una memoria legible.";
   if (hasHealth || topCategory === "Salud") {
     type = "Ficha de salud";
     style = "Clínico claro";
     channel = "PDF/HTML";
     reason = state.language !== "es"
-      ? "Health or biometric evidence benefits from clear language, evidence, and careful privacy."
+       ? "Health or biometric evidence benefits from clear language, evidence, and careful privacy."
       : "La evidencia de salud o biometría necesita lenguaje claro, evidencia y privacidad cuidadosa.";
+  } else if (hasWork) {
+    type = "Jornada de trabajo";
+    style = "Corporativo";
+    channel = "PDF/HTML";
+    reason = state.language !== "es"
+       ? "Work material should become a practical summary of agreements, decisions, pending items, and evidence."
+      : "El material laboral debe convertirse en un resumen practico de acuerdos, decisiones, pendientes y evidencia.";
+  } else if (dataCount >= 2 || experiences.length >= 10 || documentCount + audioCount + videoCount >= 5) {
+    type = "Reporte dashboard";
+    style = "Corporativo";
+    channel = "PDF/HTML";
+    reason = state.language !== "es"
+       ? "This scope has enough evidence for a visual dashboard with KPIs, charts, findings, and actions."
+      : "Este alcance tiene suficiente evidencia para un dashboard visual con KPIs, cuadros, hallazgos y acciones.";
   } else if (imageCount + videoCount >= 4) {
     type = "Álbum experiencial";
     style = topCategory === "Viajes / Paseos" ? "Turístico" : "Bitácora Viva";
     channel = "PDF/HTML";
     reason = state.language !== "es"
-      ? "The selected scope has enough visual material for a memory-style publication."
+       ? "The selected scope has enough visual material for a memory-style publication."
       : "El alcance seleccionado tiene suficiente material visual para una publicación tipo memoria.";
   } else if (documentCount >= 2 || experiences.length >= 8) {
     type = "Dossier PDF";
     style = "Revista Premium";
     channel = "PDF/HTML";
     reason = state.language !== "es"
-      ? "Several records or documents need a structured document, not a short post."
+       ? "Several records or documents need a structured document, not a short post."
       : "Varios registros o documentos necesitan un documento estructurado, no una publicación breve.";
   } else if (experiences.length <= 2 && imageCount + videoCount >= 1) {
     type = "Publicación social rápida";
     style = "Social cálido";
     channel = "WhatsApp";
     reason = state.language !== "es"
-      ? "A small scope with media is better as a short, reviewable message."
+       ? "A small scope with media is better as a short, reviewable message."
       : "Un alcance corto con multimedia funciona mejor como mensaje breve y revisable.";
   } else if (audioCount > 0 && imageCount + videoCount < 2) {
     type = "Carta / email largo";
     style = "Social cálido";
     channel = "Email";
     reason = state.language !== "es"
-      ? "Audio-heavy material usually works better as edited narration or a message."
+       ? "Audio-heavy material usually works better as edited narration or a message."
       : "El material con mucho audio suele funcionar mejor como narración editada o mensaje.";
   }
   return {
@@ -10002,7 +10197,7 @@ function renderDashboardGroupOnboarding() {
   const activeId = state.dashboardFilters?.pilotParticipantId || "all";
   if (status) {
     status.textContent = state.language !== "es"
-      ? `${groups.length} groups/people available`
+       ? `${groups.length} groups/people available`
       : `${groups.length} grupos/personas disponibles`;
   }
   list.innerHTML = groups.length
@@ -10259,7 +10454,7 @@ function requiresRemotePersistence() {
 
 function buildCaptureBlockedStatus(reason = "auth_required") {
   const labels = state.language !== "es"
-    ? {
+     ? {
         title: "Sign in before saving",
         auth: "Sign in first so the experience is saved on all your devices. The form will stay available.",
         api: "The app cannot confirm cloud save right now. Try again before saving important experiences.",
@@ -10285,7 +10480,7 @@ function buildCaptureBlockedStatus(reason = "auth_required") {
 
 function buildCaptureSaveStatus(experience, apiResult = {}, edited = false) {
   const labels = state.language !== "es"
-    ? {
+     ? {
         title: edited ? "Experience updated" : "Experience saved",
         localOnlyTitle: "Saved only on this device",
         notPersistentTitle: "Save not safely persisted",
@@ -10501,7 +10696,7 @@ function setCaptureLiveSyncStatus(status = "pending", reason = "") {
   const hasContent = canLiveSyncCaptureDraft();
   if (!hasContent) return;
   const labels = state.language !== "es"
-    ? {
+     ? {
         pending: "Preparing live sync...",
         syncing: "Syncing draft across devices...",
         title: "Live draft",
@@ -10585,7 +10780,7 @@ function readSelectedFiles() {
   if (accepted.length !== files.length) {
     notify(
       state.language !== "es"
-        ? `Some files were skipped. Vibe accepts supported image, audio, video, document, and compressed-file formats up to ${canUploadBinary ? 75 : 25} MB per file.`
+         ? `Some files were skipped. Vibe accepts supported image, audio, video, document, and compressed-file formats up to ${canUploadBinary ? 75 : 25} MB per file.`
         : `Algunos archivos se omitieron. Vibe acepta formatos compatibles de imagen, audio, video, documentos y comprimidos de hasta ${canUploadBinary ? 75 : 25} MB por archivo.`,
       "warn",
     );
@@ -10772,7 +10967,7 @@ function renderCaptureEventPreview() {
   const events = getCaptureEventOptions();
   const attachments = state.pendingAttachments || [];
   const labels = state.language !== "es"
-    ? {
+     ? {
         title: "Internal events",
         empty: "If the experience has several moments, write one event per line. If not, leave this empty and the record will stay as one complete experience.",
         count: "events detected",
@@ -11187,8 +11382,8 @@ async function deleteExperience(id) {
   const experience = state.experiences.find((item) => item.id === id);
   const title = experience?.title || (state.language !== "es" ? "this experience" : "esta experiencia");
   const message = state.language !== "es"
-    ? `Delete "${title}"? This removes it from Library, Timeline, reports, and local assets linked to it.`
-    : `¿Eliminar "${title}"? Se quitará de Librería, Línea de tiempo, reportes y activos locales vinculados.`;
+     ? `Delete "${title}" This removes it from Library, Timeline, reports, and local assets linked to it.`
+    : `¿Eliminar "${title}" Se quitará de Librería, Línea de tiempo, reportes y activos locales vinculados.`;
   if (!confirm(message)) return;
   state.experiences = state.experiences.filter((item) => item.id !== id);
   saveExperiences();
@@ -11220,7 +11415,7 @@ function safeShowView(view) {
     }
     notify(
       state.language !== "es"
-        ? "The section opened with a recoverable warning. Navigation remains available."
+         ? "The section opened with a recoverable warning. Navigation remains available."
         : "La sección abrió con una advertencia recuperable. La navegación sigue disponible.",
       "warn",
     );
@@ -11298,7 +11493,7 @@ function renderViewRecovery(view = getActiveView(), error = null) {
   const section = document.getElementById(`${view}View`);
   if (!section) return;
   const message = state.language !== "es"
-    ? "This section opened, but one panel could not finish loading. Navigation remains available."
+     ? "This section opened, but one panel could not finish loading. Navigation remains available."
     : "Esta seccion abrio, pero un panel no termino de cargar. La navegacion sigue disponible.";
   const detail = error?.message || String(error || "");
   section.querySelector(".view-recovery-panel")?.remove();
@@ -11319,7 +11514,7 @@ function renderAdminLoading() {
     <article class="status-panel">
       <strong>${escapeHtml(state.language !== "es" ? "Loading Administration..." : "Cargando Administracion...")}</strong>
       <p>${escapeHtml(state.language !== "es"
-        ? "Operational controls are loaded only when this section is opened."
+         ? "Operational controls are loaded only when this section is opened."
         : "Los controles operativos se cargan solo al entrar en esta seccion.")}</p>
     </article>
   `;
@@ -11327,6 +11522,7 @@ function renderAdminLoading() {
 
 function renderDashboardView() {
   updateDashboardParticipantControl();
+  refreshDashboardOperationalContext({ silent: true });
   renderDashboardScopedPanels();
   renderDashboardTimeContext();
   renderDashboardStateAndProgressPanels({ compact: true });
@@ -11455,10 +11651,10 @@ function renderDashboardTimeContext() {
   const nextText = nextEvent
     ? `${nextEvent.title} · ${formatDate(nextEvent.startAt)}`
     : state.language !== "es"
-      ? "No upcoming linked event"
+       ? "No upcoming linked event"
       : "Sin próximo evento vinculado";
   const labels = state.language !== "es"
-    ? { today: "Today", time: "Current time", zone: "Timezone", next: "Next event" }
+     ? { today: "Today", time: "Current time", zone: "Timezone", next: "Next event" }
     : { today: "Hoy", time: "Hora actual", zone: "Zona horaria", next: "Próximo evento" };
   box.innerHTML = `
     <article>
@@ -11553,7 +11749,7 @@ function renderDashboardAttachmentStatus() {
   if (status) status.textContent = state.language !== "es" ? "Media and documents" : "Multimedia y documentos";
   const summary = summarizeAttachmentSyncState();
   const labels = state.language !== "es"
-    ? {
+     ? {
         clearTitle: "All attachments are ready",
         clearDetail: summary.total
           ? `${summary.ready}/${summary.total} attachments are available for Library, Assets, Reports, and Publications.`
@@ -11636,7 +11832,7 @@ async function repairDashboardAttachments() {
     state.dashboardAttachmentFeedback = {
       type: "warn",
       message: state.language !== "es"
-        ? "Some files need to be selected again from the device where they exist."
+         ? "Some files need to be selected again from the device where they exist."
         : "Algunos archivos deben volver a seleccionarse desde el dispositivo donde existen.",
     };
     renderDashboardAttachmentStatus();
@@ -11650,7 +11846,7 @@ async function repairDashboardAttachments() {
     requestAnimationFrame(() => {
       const message = document.getElementById("authMessage");
       if (message) message.textContent = state.language !== "es"
-        ? "Sign in to repair attachments across your devices."
+         ? "Sign in to repair attachments across your devices."
         : "Inicia sesión para reparar adjuntos en todos tus dispositivos.";
     });
     return;
@@ -11676,10 +11872,10 @@ async function repairDashboardAttachments() {
   renderAll();
   const next = summarizeAttachmentSyncState();
   const pendingText = state.language !== "es"
-    ? `${next.pending} ${next.pending === 1 ? "attachment remains" : "attachments remain"} pending.`
+     ? `${next.pending} ${next.pending === 1 ? "attachment remains" : "attachments remain"} pending.`
     : `${next.pending} ${next.pending === 1 ? "adjunto sigue" : "adjuntos siguen"} pendiente${next.pending === 1 ? "" : "s"}.`;
   const message = state.language !== "es"
-    ? `${repaired} ${repaired === 1 ? "attachment repaired" : "attachments repaired"}. ${pendingText}`
+     ? `${repaired} ${repaired === 1 ? "attachment repaired" : "attachments repaired"}. ${pendingText}`
     : `${repaired} ${repaired === 1 ? "adjunto reparado" : "adjuntos reparados"}. ${pendingText}`;
   if (status) status.textContent = message;
   state.dashboardAttachmentFeedback = { type: next.pending ? "warn" : "ok", message };
@@ -11710,7 +11906,7 @@ function renderDashboardPilotReadiness() {
   const readiness = calculatePilotReadiness();
   const pendingChecks = getDashboardPilotPendingChecks(readiness);
   const cards = state.language !== "es"
-    ? [
+     ? [
         { label: "Manual", value: `${manual.score}%`, detail: `${manual.reviewed}/${manual.total} reviewed`, view: "manual", ok: manual.score >= 80 },
         { label: "Tests", value: `${tests.score}%`, detail: `${tests.completed}/${tests.total} complete`, view: "admin", focus: "pilotTestPlanPanel", ok: tests.score >= 80 },
         { label: "Participants", value: `${participants.total}/${PILOT_TARGET_USERS}`, detail: `${participants.onboarded} onboarded`, view: "admin", focus: "pilotParticipantsPanel", ok: participants.total <= PILOT_TARGET_USERS && participants.needsOnboarding === 0 },
@@ -11756,7 +11952,7 @@ function renderDashboardPilotReadiness() {
     </div>
     ${
       pendingChecks.length
-        ? `<div class="dashboard-pilot-pending">
+         ? `<div class="dashboard-pilot-pending">
             <strong>${escapeHtml(state.language !== "es" ? "Pending now" : "Pendiente ahora")}</strong>
             ${pendingChecks
               .map(
@@ -11816,7 +12012,7 @@ function buildDashboardPilotSummary() {
   const next = getDashboardPilotNextAction(readiness, manual, tests, participants, feedback);
   const pending = getDashboardPilotPendingChecks(readiness);
   return state.language !== "es"
-    ? [
+     ? [
         "# Pilot readiness summary",
         `Readiness: ${readiness.score}% (${readiness.ready}/${readiness.total})`,
         `Manual: ${manual.score}% (${manual.reviewed}/${manual.total})`,
@@ -11872,7 +12068,7 @@ function renderDashboardAgenda() {
       const relative =
         minutesUntil < 0
           ? state.language !== "es"
-            ? "In progress"
+             ? "In progress"
             : "En curso"
           : formatRelativeAgendaTime(minutesUntil);
       return `
@@ -12102,7 +12298,7 @@ function buildCaptureWritingSuggestions(draft) {
     return value.length > 12 && value === value.toUpperCase() && /[A-ZÁÉÍÓÚÜÑ]/.test(value);
   };
   const labels = state.language !== "es"
-    ? {
+     ? {
         ready: "The draft is clear enough for the MVP test.",
         titleShort: "Make the title more specific: include action, place, or result.",
         titleCaps: "Use sentence-style capitalization instead of all caps.",
@@ -12143,7 +12339,7 @@ function buildCaptureWritingSuggestions(draft) {
 
 function renderCaptureWritingCoachMarkup(suggestions) {
   const labels = state.language !== "es"
-    ? {
+     ? {
         title: "Grammar and clarity review",
         intro: "Local suggestions before saving. They improve analysis quality but do not block the save.",
       }
@@ -12201,7 +12397,7 @@ function buildCaptureWritingSuggestionsActionable(draft) {
   };
   const cleaned = buildCleanCaptureDraft(draft);
   const labels = state.language !== "es"
-    ? {
+     ? {
         ready: "The draft is clear enough for the MVP test.",
         titleShort: "Make the title more specific: include action, place, or result.",
         titleCaps: "Use sentence-style capitalization instead of all caps.",
@@ -12252,7 +12448,7 @@ function buildCaptureWritingSuggestionsActionable(draft) {
 
 function renderCaptureWritingCoachMarkupActionable(suggestions) {
   const labels = state.language !== "es"
-    ? {
+     ? {
         title: "Grammar and clarity review",
         intro: "Apply the proposed rewrite or open Copilot with a prepared prompt. These suggestions do not block saving.",
         suggested: "Suggested text",
@@ -12314,7 +12510,7 @@ function applyCaptureWritingSuggestion(index) {
 function openCaptureWritingCopilot(index) {
   const suggestion = state.captureWritingSuggestions[index];
   const labels = state.language !== "es"
-    ? {
+     ? {
         prompt: "Rewrite this experience field with correct grammar, natural wording, and concise style. Keep the meaning and return only the improved text.",
         opened: "Copilot opened with a rewrite prompt.",
         blocked: "The browser blocked Copilot. The prompt was copied if clipboard access was available.",
@@ -12488,7 +12684,7 @@ function buildDailyReliabilityChecks(briefing = state.dailyBriefing) {
   const fresh = Number.isFinite(generatedAt) && Date.now() - generatedAt <= 6 * 60 * 60 * 1000;
   const labels =
     state.language !== "es"
-      ? {
+       ? {
           news: "News content",
           split: "Local/world separation",
           weather: "Weather active",
@@ -12578,7 +12774,7 @@ function renderDailyReliabilityPanel(briefing = state.dailyBriefing) {
   const title = state.language !== "es" ? "Daily Reliability" : "Confiabilidad del Diario";
   const summary =
     state.language !== "es"
-      ? `${ready}/${checks.length} controls ready. Content: ${contentReady ? "current" : "needs refresh"}. Interaction: ${interactiveReady ? "available" : "needs review"}.`
+       ? `${ready}/${checks.length} controls ready. Content: ${contentReady ? "current" : "needs refresh"}. Interaction: ${interactiveReady ? "available" : "needs review"}.`
       : `${ready}/${checks.length} controles listos. Contenido: ${contentReady ? "vigente" : "requiere refresco"}. Interacción: ${interactiveReady ? "disponible" : "requiere revisión"}.`;
   return `
     <section class="daily-reliability-panel">
@@ -12747,10 +12943,10 @@ function renderDailyActionButton(link) {
 }
 
 function buildClientAgendaLinks(location) {
-  const place = String(location || inferPrimaryLocation() || "San Juan").trim();
+  const place = String(location || inferPrimaryLocation() || getDefaultOperationalLocation()).trim();
   const labels =
     state.language !== "es"
-      ? [
+       ? [
           ["Movie showtimes", `movie showtimes ${place}`],
           ["Concerts", `concerts ${place}`],
           ["Theater", `theater shows ${place}`],
@@ -12772,7 +12968,7 @@ function buildClientAgendaLinks(location) {
 }
 
 function buildClientDailyMediaLinks(location) {
-  const place = String(location || inferPrimaryLocation() || "San Juan").trim();
+  const place = String(location || inferPrimaryLocation() || getDefaultOperationalLocation()).trim();
   const query = state.language !== "es" ? `${place} news events today` : `${place} noticias eventos hoy`;
   return [
     { type: "image", label: t("labels.dailyImageSearch"), query, url: `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}` },
@@ -12784,11 +12980,11 @@ function buildClientDailyMediaLinks(location) {
 function buildClientDailyHoroscope() {
   const signs =
     state.language !== "es"
-      ? ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"]
+       ? ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"]
       : ["Aries", "Tauro", "Géminis", "Cáncer", "Leo", "Virgo", "Libra", "Escorpio", "Sagitario", "Capricornio", "Acuario", "Piscis"];
   const themes =
     state.language !== "es"
-      ? ["focus", "patience", "movement", "dialogue", "care", "planning", "creativity", "rest", "clarity", "discipline", "connection", "learning"]
+       ? ["focus", "patience", "movement", "dialogue", "care", "planning", "creativity", "rest", "clarity", "discipline", "connection", "learning"]
       : ["foco", "paciencia", "movimiento", "diálogo", "cuidado", "planificación", "creatividad", "descanso", "claridad", "disciplina", "conexión", "aprendizaje"];
   const today = new Date().toISOString().slice(0, 10);
   return signs.map((sign, index) => {
@@ -12798,7 +12994,7 @@ function buildClientDailyHoroscope() {
       source: t("labels.dailySourceLocalFallback"),
       text:
         state.language !== "es"
-          ? `Good day to practice ${theme}. Keep one clear priority and avoid scattering attention.`
+           ? `Good day to practice ${theme}. Keep one clear priority and avoid scattering attention.`
           : `Buen día para practicar ${theme}. Mantén una prioridad clara y evita dispersar la atención.`,
     };
   });
@@ -13183,7 +13379,7 @@ function renderDailyExplorePanel() {
         <p>${escapeHtml(t("labels.dailyExploreMediaHelp"))}</p>
         ${
           previews.length
-            ? `<div class="daily-explore-preview-grid">
+             ? `<div class="daily-explore-preview-grid">
                 ${previews
                   .map(
                     (item) => `
@@ -13246,12 +13442,12 @@ function renderDailyHoroscopeInline() {
 }
 
 function buildStaticDailySearchUrl(query) {
-  const location = document.getElementById("dailyLocationInput")?.value?.trim() || inferPrimaryLocation() || "San Juan";
+  const location = document.getElementById("dailyLocationInput")?.value?.trim() || inferPrimaryLocation() || getDefaultOperationalLocation();
   return `https://www.google.com/search?q=${encodeURIComponent(`${query} ${location}`)}`;
 }
 
 function buildStaticDailyMediaUrl(type) {
-  const location = document.getElementById("dailyLocationInput")?.value?.trim() || inferPrimaryLocation() || "San Juan";
+  const location = document.getElementById("dailyLocationInput")?.value?.trim() || inferPrimaryLocation() || getDefaultOperationalLocation();
   const query = state.language !== "es" ? `${location} news events today` : `${location} noticias eventos hoy`;
   if (type === "image") return `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}`;
   if (type === "video") return `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
@@ -13268,7 +13464,7 @@ function renderDailyActionOptions(kind, meta = {}) {
 }
 
 function buildDailyActionOptions(kind) {
-  const location = document.getElementById("dailyLocationInput")?.value?.trim() || inferPrimaryLocation() || "San Juan";
+  const location = document.getElementById("dailyLocationInput")?.value?.trim() || inferPrimaryLocation() || getDefaultOperationalLocation();
   const baseQuery = buildDailyActionQuery(kind, location);
   const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(baseQuery)}`;
   const mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(baseQuery)}`;
@@ -13313,7 +13509,7 @@ function buildDailyActionOptions(kind) {
 }
 
 function buildDailyActionQuery(kind, location) {
-  const place = location || "San Juan";
+  const place = location || getDefaultOperationalLocation();
   const queries = {
     "cartelera cine": state.language !== "es" ? `movie showtimes ${place}` : `cartelera cine ${place}`,
     conciertos: state.language !== "es" ? `concerts ${place}` : `conciertos ${place}`,
@@ -13338,7 +13534,7 @@ function openDailyExternalResource(url, meta = {}) {
 
 function setDailyActionResult({ title, detail, url = "", opened = false, actions = [], bodyHtml = "" }) {
   const actionHtml = actions.length
-    ? `
+     ? `
       <div class="daily-action-choice-list" aria-label="${escapeHtml(t("labels.dailyActionOptionsTitle"))}">
         ${actions
           .map((action) =>
@@ -13373,7 +13569,7 @@ function getStaticDailyActionTitle(button) {
 }
 
 function buildStaticDailyActionDetail(kind) {
-  const location = document.getElementById("dailyLocationInput")?.value?.trim() || inferPrimaryLocation() || "San Juan";
+  const location = document.getElementById("dailyLocationInput")?.value?.trim() || inferPrimaryLocation() || getDefaultOperationalLocation();
   const map = {
     "cartelera cine": state.language !== "es" ? `Choose how to check current movie showtimes for ${location}.` : `Elige cómo consultar la cartelera de cine vigente para ${location}.`,
     conciertos: state.language !== "es" ? `Choose how to check current concerts for ${location}.` : `Elige cómo consultar conciertos vigentes para ${location}.`,
@@ -13494,7 +13690,7 @@ function scheduleDailyListingsReview(query = "") {
   const searchHint =
     query ||
     (state.language !== "es"
-      ? `movies, concerts, theater, events, and exhibitions in ${location}`
+       ? `movies, concerts, theater, events, and exhibitions in ${location}`
       : `cartelera, conciertos, teatro, eventos y exposiciones en ${location}`);
   const participantFields = buildPilotParticipantFields(getActivePilotParticipantId(["dashboard", "agenda"]));
   const agendaEvent = {
@@ -13503,7 +13699,7 @@ function scheduleDailyListingsReview(query = "") {
     type: "Personal",
     description:
       state.language !== "es"
-        ? `Daily action created from the Dashboard. Review current listings and decide whether to add a concrete plan.\n\nSearch focus: ${searchHint}`
+         ? `Daily action created from the Dashboard. Review current listings and decide whether to add a concrete plan.\n\nSearch focus: ${searchHint}`
         : `Acción creada desde el Panel del Diario. Revisa la cartelera vigente y decide si conviene agregar un plan concreto.\n\nFoco de búsqueda: ${searchHint}`,
     startAt: start.toISOString(),
     endAt: end.toISOString(),
@@ -13942,17 +14138,17 @@ function renderAppVersionBadge() {
   const urlVersion = new URLSearchParams(window.location.search).get("v") || "";
   const mismatch = Boolean(urlVersion && urlVersion !== APP_VERSION);
   badge.textContent = mismatch
-    ? `${t("labels.appVersion")} ${APP_VERSION} · ${t("labels.appVersionMismatch")}`
+     ? `${t("labels.appVersion")} ${APP_VERSION} · ${t("labels.appVersionMismatch")}`
     : `${t("labels.appVersion")} ${APP_VERSION}`;
   badge.classList.toggle("is-warning", mismatch);
   reloadButton?.classList.toggle("reload-warning", mismatch);
   if (reloadButton) {
     reloadButton.title = mismatch
-      ? `${t("labels.appVersionMismatch")}: ${urlVersion}. ${t("labels.appVersionNoticeAction")}.`
+       ? `${t("labels.appVersionMismatch")}: ${urlVersion}. ${t("labels.appVersionNoticeAction")}.`
       : t("buttons.reloadApp");
   }
   badge.title = mismatch
-    ? `${t("labels.appVersionMismatch")}: ${urlVersion}`
+     ? `${t("labels.appVersionMismatch")}: ${urlVersion}`
     : `${t("labels.appVersion")} ${APP_VERSION}`;
 }
 
@@ -14133,20 +14329,114 @@ function setupDailyBriefingRefresh() {
   if (!state.dailyBriefing || isDailyBriefingStale(state.dailyBriefing)) {
     window.setTimeout(() => refreshDailyBriefing({ silent: true }), 1200);
   }
+  window.setTimeout(() => refreshDashboardOperationalContext({ silent: true }), 1800);
   window.setInterval(() => {
     refreshDailyBriefing({ silent: true });
+    refreshDashboardOperationalContext({ silent: true });
   }, 15 * 60 * 1000);
 }
 
+async function refreshDashboardOperationalContext(options = {}) {
+  if (!state.session?.access_token || state.dashboardContextRefreshInProgress) return false;
+  const lastRefresh = new Date(state.dashboardContextRefreshedAt || 0).getTime();
+  const maxAgeMs = options.force ? 0 : 3 * 60 * 1000;
+  if (lastRefresh && Date.now() - lastRefresh < maxAgeMs) return false;
+  state.dashboardContextRefreshInProgress = true;
+  try {
+    await hydrateFromApi();
+    await refreshMobileHealthSummary({ silent: true });
+    if (!state.dailyBriefing || isDailyBriefingStale(state.dailyBriefing)) {
+      await refreshDailyBriefing({ silent: true });
+    }
+    await refreshContextImpactAutomatically({ silent: true });
+    state.dashboardContextRefreshedAt = new Date().toISOString();
+    const activeView = document.querySelector(".view.active-view")?.id || "";
+    if (activeView === "dashboardView") {
+      renderDashboardBiometricContext();
+      renderDashboardIntegrationHandoff();
+      renderDailyBriefing();
+      renderContextImpact();
+      renderMetrics();
+      renderRecentSignals();
+    }
+    return true;
+  } catch (error) {
+    markApiConnectivityFailure(error, { immediate: false });
+    return false;
+  } finally {
+    state.dashboardContextRefreshInProgress = false;
+  }
+}
+
+async function refreshMobileHealthSummary(options = {}) {
+  if (!state.session?.access_token) return null;
+  const end = new Date();
+  const start = new Date(end.getTime() - 45 * 24 * 60 * 60 * 1000);
+  try {
+    const query = new URLSearchParams({
+      locale: state.language,
+      from: start.toISOString(),
+      to: end.toISOString(),
+    });
+    state.mobileHealthSummary = await apiRequest(`/mobile/context/health-summary?${query.toString()}`, {
+      preserveSessionOnAuthFailure: true,
+    });
+    return state.mobileHealthSummary;
+  } catch (error) {
+    if (!options.silent) notify(state.language !== "es" ? "Health context could not be refreshed." : "No se pudo actualizar el contexto de salud.", "warn");
+    return null;
+  }
+}
+
 function getDailyOperationalLocation() {
-  return (
-    state.dailyLocationPreference ||
-    document.getElementById("dailyLocationInput")?.value?.trim() ||
-    document.getElementById("contextLocationInput")?.value?.trim() ||
-    state.dailyBriefing?.location ||
-    inferPrimaryLocation() ||
-    "San Juan"
-  );
+  return resolveOperationalContextLocation() || getDefaultOperationalLocation();
+}
+
+function resolveOperationalContextLocation(preferred = "") {
+  const candidates = [
+    preferred,
+    ...getMobileContextLocationCandidates(),
+    state.dailyLocationPreference,
+    document.getElementById("dailyLocationInput")?.value?.trim(),
+    document.getElementById("contextLocationInput")?.value?.trim(),
+    state.dailyBriefing?.location,
+    state.dailyBriefing?.scope,
+    inferPrimaryLocation(),
+  ];
+  return candidates.map(normalizeContextLocationValue).find(isUsableContextLocation) || "";
+}
+
+function getMobileContextLocationCandidates() {
+  return collectStructuredMobileContexts(state.experiences)
+    .flatMap((item) => {
+      const context = item.context || {};
+      const location = context.location || context.place || context.geo || {};
+      return [
+        location.label,
+        location.city,
+        location.name,
+        location.displayName,
+        context.locationLabel,
+        context.locationName,
+        item.experience?.location,
+      ];
+    })
+    .filter(Boolean);
+}
+
+function normalizeContextLocationValue(value = "") {
+  return String(value || "").trim();
+}
+
+function isUsableContextLocation(value = "") {
+  const text = normalizeContextLocationValue(value);
+  if (text.length < 2) return false;
+  const comparable = normalizeComparableText(text);
+  if (!comparable || comparable === "sin ubicacion" || comparable === "no location") return false;
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text)) return false;
+  if (/^https?:\/\//i.test(text)) return false;
+  if (/^(todos?|all|none|null|undefined|sin datos)$/i.test(comparable)) return false;
+  return true;
 }
 
 function locationsEquivalent(a = "", b = "") {
@@ -14172,7 +14462,7 @@ function handleDailyLocationChange(event) {
   if (status) status.textContent = t("labels.dailyLocationSaved");
   if (!locationsEquivalent(previous, value)) {
     refreshDailyBriefing({ force: true, location: value });
-    renderContextImpact();
+    refreshContextImpactAutomatically({ force: true, preferredLocation: value, silent: true });
   }
 }
 
@@ -14181,9 +14471,53 @@ function handleContextLocationChange(event) {
   if (!value) return;
   saveDailyLocationPreference(value);
   syncDailyLocationInputs(value);
+  refreshContextImpactAutomatically({ force: true, preferredLocation: value, silent: true });
 }
 
 async function analyzeContextImpact() {
+  return refreshContextImpactAutomatically({ force: true, silent: false, manual: true });
+}
+
+async function refreshContextImpactAutomatically(options = {}) {
+  if (state.contextImpactRefreshInProgress) return false;
+  const input = document.getElementById("contextLocationInput");
+  const box = document.getElementById("contextImpactBox");
+  const location = resolveOperationalContextLocation(options.preferredLocation || input?.value?.trim() || "");
+  if (!location) {
+    if (box && !options.silent) box.innerHTML = `<p class="card-meta">${t("labels.contextEmpty")}</p>`;
+    updateContextStatus();
+    return false;
+  }
+  const lastRefresh = new Date(state.contextImpactRefreshedAt || 0).getTime();
+  const sameLocation = locationsEquivalent(location, state.contextImpactRefreshedFor);
+  const currentReady = state.contextImpact && locationsEquivalent(location, state.contextImpact.location || state.contextImpact.queryLocation);
+  if (!options.force && sameLocation && currentReady && lastRefresh && Date.now() - lastRefresh < 45 * 60 * 1000) return false;
+  if (box && (!options.silent || !state.contextImpact)) box.innerHTML = `<p class="card-meta">${t("labels.contextLoading")}</p>`;
+  saveDailyLocationPreference(location);
+  syncDailyLocationInputs(location);
+  updateContextStatus("loading");
+  state.contextImpactRefreshInProgress = true;
+  try {
+    const experienceType = getContextExperienceType();
+    const impact = await apiRequest(`/context/impact?location=${encodeURIComponent(location)}&experienceType=${encodeURIComponent(experienceType)}`);
+    state.contextImpact = { ...impact, queryLocation: location };
+    state.contextImpactRefreshedAt = new Date().toISOString();
+    state.contextImpactRefreshedFor = location;
+    renderContextImpact();
+    renderReport();
+    return true;
+  } catch (error) {
+    updateContextStatus("error");
+    if (box && (!options.silent || !state.contextImpact)) {
+      box.innerHTML = `<p class="card-meta">${state.language !== "es" ? "Environmental/geopolitical impact could not be refreshed now. Vibe will retry automatically." : "No se pudo actualizar el impacto ambiental/geopolitico ahora. Vibe reintentara automaticamente."}</p>`;
+    }
+    return false;
+  } finally {
+    state.contextImpactRefreshInProgress = false;
+  }
+}
+
+async function analyzeContextImpactLegacy() {
   const input = document.getElementById("contextLocationInput");
   const box = document.getElementById("contextImpactBox");
   const location = input.value.trim() || getDailyOperationalLocation();
@@ -14210,12 +14544,12 @@ async function analyzeContextImpact() {
 
 async function applyPrimaryContextLocation() {
   const input = document.getElementById("contextLocationInput");
-  const location = inferPrimaryLocation() || getDailyOperationalLocation();
+  const location = resolveOperationalContextLocation(inferPrimaryLocation());
   input.value = location;
   saveDailyLocationPreference(location);
   syncDailyLocationInputs(location);
   updateContextStatus("primary", { location });
-  await analyzeContextImpact();
+  await refreshContextImpactAutomatically({ force: true, preferredLocation: location, silent: false });
 }
 
 function getContextExperienceType() {
@@ -14230,7 +14564,7 @@ function renderContextImpact() {
   const impact = state.contextImpact;
   const box = document.getElementById("contextImpactBox");
   const input = document.getElementById("contextLocationInput");
-  if (input && !input.value.trim()) {
+  if (input && !isUsableContextLocation(input.value)) {
     input.value = getDailyOperationalLocation();
     syncDailyLocationInputs(input.value);
   }
@@ -14328,7 +14662,7 @@ function renderContextNewsDigest(news) {
       </article>
       ${
         secondary.length
-          ? `<div class="context-news-secondary">
+           ? `<div class="context-news-secondary">
               <span class="card-meta">${t("labels.contextMoreSignals")}</span>
               ${secondary.map(renderContextNewsCard).join("")}
             </div>`
@@ -14352,11 +14686,11 @@ function buildContextArticleTakeaway(article, news) {
   const domain = article.domain || article.source || "la fuente consultada";
   if (news?.fallbackReason) {
     return state.language !== "es"
-      ? `This item is shown from a fallback source because the primary geopolitical feed did not return enough coverage. Use it as a context signal, not as a final assessment.`
+       ? `This item is shown from a fallback source because the primary geopolitical feed did not return enough coverage. Use it as a context signal, not as a final assessment.`
       : `Esta noticia se muestra desde una fuente de respaldo porque la fuente geopolítica primaria no entregó cobertura suficiente. Úsala como señal de contexto, no como conclusión final.`;
   }
   return state.language !== "es"
-    ? `Reported by ${domain}. It helps explain what public, political, security, or economic topics may affect the experience context.`
+     ? `Reported by ${domain}. It helps explain what public, political, security, or economic topics may affect the experience context.`
     : `Reportado por ${domain}. Ayuda a entender qué temas públicos, políticos, de seguridad o económicos pueden influir en el contexto de la experiencia.`;
 }
 
@@ -14427,6 +14761,10 @@ function inferPrimaryLocation() {
   return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || "";
 }
 
+function getDefaultOperationalLocation() {
+  return "Winter Garden, Florida";
+}
+
 function renderLibrary() {
   const items = getFilteredLibraryExperiences();
   const filtersActive = areLibraryFiltersActive();
@@ -14482,7 +14820,7 @@ function buildLibraryVisibilityNotice(items, filtersActive, lastSaved) {
   const savedVisible = lastSaved && items.some((item) => item.id === lastSaved.id);
   if (lastSaved && savedVisible) {
     const labels = state.language !== "es"
-      ? { title: "Last saved experience is visible", detail: "This is the record you just saved from Capture." }
+       ? { title: "Last saved experience is visible", detail: "This is the record you just saved from Capture." }
       : { title: "La última experiencia guardada está visible", detail: "Este es el registro que acabas de guardar desde Captura." };
     return `
       <article class="library-notice is-success">
@@ -14493,7 +14831,7 @@ function buildLibraryVisibilityNotice(items, filtersActive, lastSaved) {
   }
   if (lastSaved && filtersActive) {
     const labels = state.language !== "es"
-      ? { title: "Saved, but hidden by filters", detail: "The experience exists, but the current Library filters are hiding it.", action: "Show all experiences" }
+       ? { title: "Saved, but hidden by filters", detail: "The experience exists, but the current Library filters are hiding it.", action: "Show all experiences" }
       : { title: "Guardada, pero oculta por filtros", detail: "La experiencia existe, pero los filtros actuales de Librería la están ocultando.", action: "Ver todas las experiencias" };
     return `
       <article class="library-notice is-warn">
@@ -14507,7 +14845,7 @@ function buildLibraryVisibilityNotice(items, filtersActive, lastSaved) {
   }
   if (!items.length && state.experiences.length && filtersActive) {
     const labels = state.language !== "es"
-      ? { title: "No results with active filters", detail: "There are saved experiences, but none match the current filters.", action: "Clear filters" }
+       ? { title: "No results with active filters", detail: "There are saved experiences, but none match the current filters.", action: "Clear filters" }
       : { title: "Sin resultados con filtros activos", detail: "Hay experiencias guardadas, pero ninguna coincide con los filtros actuales.", action: "Limpiar filtros" };
     return `
       <article class="library-notice is-warn">
@@ -14837,7 +15175,7 @@ function hydrateBiometricImportsFromExperiences(experiences = state.experiences)
     const structuredContext = experience.metadata?.structuredContext || {};
     const structuredSignals = Array.isArray(structuredContext.signals) ? structuredContext.signals : [];
     const metricSignals = structuredSignals.length
-      ? structuredSignals
+       structuredSignals
       : Object.entries(structuredContext.metrics || {}).map(([type, value]) => ({
           type,
           value,
@@ -14871,10 +15209,10 @@ function hydrateBiometricImportsFromExperiences(experiences = state.experiences)
           recordCount: rows.length,
           metricNames,
           summaryText: state.language !== "es"
-            ? `Native biometric context from ${sourceDevice}. ${rows.length} records. Signals: ${metricText}.`
+             ? `Native biometric context from ${sourceDevice}. ${rows.length} records. Signals: ${metricText}.`
             : `Contexto biométrico nativo desde ${sourceDevice}. ${rows.length} registros. Señales: ${metricText}.`,
           analysisText: state.language !== "es"
-            ? `Native biometric context linked to ${experience.title || "experience"}. It informs energy, recovery, sleep, activity, and risk by date/time.`
+             ? `Native biometric context linked to ${experience.title || "experience"}. It informs energy, recovery, sleep, activity, and risk by date/time.`
             : `Contexto biométrico nativo vinculado a ${experience.title || "la experiencia"}. Informa energía, recuperación, sueño, actividad y riesgo por fecha/hora.`,
           extractedText: JSON.stringify(structuredContext, null, 2),
           previewText: structuredContext.summary || "",
@@ -15060,7 +15398,7 @@ function renderBiometricAssetPanel() {
     summary.textContent = latest
       ? `${latest.name} · ${latest.recordCount || 0} ${state.language !== "es" ? "records" : "registros"} · ${(latest.metricNames || []).slice(0, 4).join(", ") || t("labels.biometricAssetNoMetrics")}`
       : state.language !== "es"
-        ? "No biometric file imported yet."
+         ? "No biometric file imported yet."
         : "Aun no hay archivo biometrico importado.";
   }
 }
@@ -15103,7 +15441,7 @@ function buildAssetWorkflowChecks(assets = collectMultimodalAssets()) {
   const visibleKeys = new Set(assets.map((asset) => asset.assetKey));
   const visibleReviewStillApplies = visibleReviewAssetIds.length > 0 && visibleReviewAssetIds.some((key) => visibleKeys.has(key));
   const labels = state.language !== "es"
-    ? {
+     ? {
         inventory: "Inventory has assets",
         ids: "Stable asset IDs",
         exports: "Exports tested",
@@ -15321,7 +15659,7 @@ function buildAssetMetrics(assets) {
   const syncPending = assets.filter((asset) => buildAssetStorageStatus(asset).needsSync).length;
   const processingPending = assets.filter((asset) => !buildAssetProcessingStatus(asset).ready).length;
   return state.language !== "es"
-    ? [
+     ? [
         ["Assets", assets.length],
         ["User assets", userAssets],
         ["With analytical text", withAnalysis],
@@ -15387,10 +15725,10 @@ function renderAudioReadinessPanel(assets = collectMultimodalAssets()) {
   const transcriptReady = audioAssets.filter((asset) => Boolean(String(asset.analysisText || asset.extractedText || asset.previewText || "").trim())).length;
   const providerReady = state.config?.transcriptionProvider === "openai" || state.health?.transcriptionProvider === "openai";
   const labels = state.language !== "es"
-    ? {
+     ? {
         title: "Audio readiness",
         detail: audioAssets.length
-          ? `${remote}/${audioAssets.length} remote · ${playable}/${audioAssets.length} playable · ${transcriptReady}/${audioAssets.length} with transcript or analytical text`
+           ? `${remote}/${audioAssets.length} remote · ${playable}/${audioAssets.length} playable · ${transcriptReady}/${audioAssets.length} with transcript or analytical text`
           : "No audio assets yet. Record or attach audio in Capture to test the flow.",
         provider: providerReady ? "Backend transcription active" : "Backend transcription not active",
         quick: "Quick audio capture now fills a draft from the transcript and keeps the audio as evidence.",
@@ -15400,7 +15738,7 @@ function renderAudioReadinessPanel(assets = collectMultimodalAssets()) {
     : {
         title: "Preparación de audio",
         detail: audioAssets.length
-          ? `${remote}/${audioAssets.length} remotos · ${playable}/${audioAssets.length} reproducibles · ${transcriptReady}/${audioAssets.length} con transcripción o texto analítico`
+           ? `${remote}/${audioAssets.length} remotos · ${playable}/${audioAssets.length} reproducibles · ${transcriptReady}/${audioAssets.length} con transcripción o texto analítico`
           : "Aún no hay audios. Graba o adjunta audio en Captura para probar el flujo.",
         provider: providerReady ? "Transcripción backend activa" : "Transcripción backend no activa",
         quick: "La captura rápida por audio completa un borrador desde la transcripción y conserva el audio como evidencia.",
@@ -15474,7 +15812,7 @@ function renderAssetProcessingActionPlan(assets) {
       </div>
       ${
         rows.length > visibleRows.length
-          ? `<p class="card-meta">${escapeHtml(t("labels.assetProcessingActionPlanMore").replace("{count}", String(rows.length - visibleRows.length)))}</p>`
+           ? `<p class="card-meta">${escapeHtml(t("labels.assetProcessingActionPlanMore").replace("{count}", String(rows.length - visibleRows.length)))}</p>`
           : ""
       }
     </section>
@@ -15490,7 +15828,7 @@ function buildAssetProcessingGroups(assets) {
   };
   const details =
     state.language !== "es"
-      ? {
+       ? {
           extraction: "Documents that need text extraction or manual analytical text.",
           transcription: "Audio assets that need transcription or human notes.",
           description: "Images that need OCR, description, or visual context.",
@@ -15752,7 +16090,7 @@ function exportAssetMetadataTemplateCsv() {
   const headers = ["assetId", "analyticalText", "extractedText", "detectedLanguage", "translatedText", "translationLanguage", "manualNote", "manualTags", "clearMetadata"];
   const example =
     state.language !== "es"
-      ? {
+       ? {
           assetId: "",
           analyticalText: "Example: write transcript, OCR, visual description, or analytical reading here.",
           manualNote: "Optional human context. Leave assetId empty in this example row.",
@@ -15830,7 +16168,7 @@ function buildAssetProcessingBacklogRows(assets) {
 function getAssetProcessingNextAction(code) {
   const actions =
     state.language !== "es"
-      ? {
+       ? {
           extraction: "Extract text or add manual analytical text.",
           transcription: "Transcribe audio or add a human summary.",
           description: "Add OCR, visual description, or relevant context.",
@@ -16046,10 +16384,10 @@ function parseBiometricFile(rawText, file = {}) {
   const metricText = metricNames.length ? metricNames.join(", ") : t("labels.biometricAssetNoMetrics");
   const rangeText = startAt && endAt ? `${formatDate(startAt)} - ${formatDate(endAt)}` : state.language !== "es" ? "No date range detected" : "Sin rango de fechas detectado";
   const summaryText = state.language !== "es"
-    ? `Biometric import from ${sourceDevice}. ${normalizedRows.length} records. Signals: ${metricText}. Range: ${rangeText}.`
+     ? `Biometric import from ${sourceDevice}. ${normalizedRows.length} records. Signals: ${metricText}. Range: ${rangeText}.`
     : `Importacion biometrica desde ${sourceDevice}. ${normalizedRows.length} registros. Senales: ${metricText}. Rango: ${rangeText}.`;
   const analysisText = state.language !== "es"
-    ? `${summaryText} This asset is cross-experience context and should be matched by date/time before adjusting energy, recovery, stress, sleep, or activity indicators.`
+     ? `${summaryText} This asset is cross-experience context and should be matched by date/time before adjusting energy, recovery, stress, sleep, or activity indicators.`
     : `${summaryText} Este activo es contexto transversal y debe vincularse por fecha/hora antes de ajustar energia, recuperacion, estres, sueno o actividad.`;
   return { rows: normalizedRows, recordCount: normalizedRows.length, metricNames, startAt, endAt, sourceDevice, summaryText, analysisText };
 }
@@ -16493,6 +16831,7 @@ function collectStructuredMobileContexts(experiences = getDashboardExperiences()
 
 function buildDashboardMobileContextSummary() {
   const contexts = collectStructuredMobileContexts();
+  const mobileHealth = state.mobileHealthSummary?.summary || null;
   const latestWeatherContext = contexts.find((item) => item.context.weather);
   const latestNewsContext = contexts.find((item) => item.context.news?.local?.length || item.context.news?.global?.length);
   const latestHealthContext = contexts.find((item) =>
@@ -16504,17 +16843,20 @@ function buildDashboardMobileContextSummary() {
   const briefingEntertainment = (briefing?.agendaLinks || []).length;
   const newsLocal = latestNewsContext?.context.news?.local?.length || 0;
   const newsGlobal = latestNewsContext?.context.news?.global?.length || 0;
+  const healthCount = Number(mobileHealth?.signals || mobileHealth?.records || 0) || (
+    latestHealthContext
+      ? (latestHealthContext.context?.signals?.length || Object.keys(latestHealthContext.context?.metrics || {}).length || 1)
+      : 0
+  );
   return {
     totalContexts: contexts.length,
-    latestAt: contexts[0]?.timestamp || briefing?.generatedAt || "",
-    source: contexts[0]?.source || briefing?.cacheSource || "",
+    latestAt: contexts[0]?.timestamp || state.mobileHealthSummary?.generatedAt || briefing?.generatedAt || "",
+    source: contexts[0]?.source || (mobileHealth?.connectors || [])[0] || state.mobileHealthSummary?.source || briefing?.cacheSource || "",
     location: briefing?.location || latestWeatherContext?.experience?.location || contexts[0]?.experience?.location || "",
     weather: latestWeatherContext?.context.weather || briefing?.weather?.current || briefing?.weather || null,
     newsCount: newsLocal + newsGlobal + briefingArticles,
     entertainmentCount: (latestNewsContext?.context.entertainment || []).length + briefingEntertainment,
-    healthCount: latestHealthContext
-      ? (latestHealthContext.context?.signals?.length || Object.keys(latestHealthContext.context?.metrics || {}).length || 1)
-      : 0,
+    healthCount,
   };
 }
 
@@ -16527,7 +16869,7 @@ function renderDashboardIntegrationHandoff() {
   if (status) status.textContent = state.language !== "es" ? "Vibeapp and connectors" : "Vibeapp y conectores";
   const summary = buildDashboardIntegrationHandoffSummary();
   const labels = state.language !== "es"
-    ? {
+     ? {
         clear: "No native or connector signals in this scope yet.",
         clearDetail: "Vibeapp is the normal source for mobile location, weather, news, biometrics, media, and voice captures. When it sends data, this panel shows where it landed.",
         active: "Native handoff visible",
@@ -16586,7 +16928,7 @@ function renderDashboardIntegrationHandoff() {
     mobileContext.latestAt ? `${labels.lastUpdate}: ${formatDate(mobileContext.latestAt)}` : "",
   ].filter(Boolean).join(" - ") || labels.waitingMobile;
   box.innerHTML = `
-    <div class="dashboard-integration-summary ${mobileContext.totalContexts || state.dailyBriefing ? "is-active" : "needs-data"}">
+    <div class="dashboard-integration-summary ${mobileContext.totalContexts || mobileContext.healthCount || state.dailyBriefing ? "is-active" : "needs-data"}">
       <div>
         <strong>${escapeHtml(labels.mobileContext)}</strong>
         <p>${escapeHtml(mobileDetail)}</p>
@@ -16775,7 +17117,7 @@ function renderAssetCard(asset) {
         }
         ${
           externalProfile.hasProfile
-            ? `<section class="asset-readiness-panel asset-external-profile-panel">
+             ? `<section class="asset-readiness-panel asset-external-profile-panel">
                 <strong>${escapeHtml(state.language !== "es" ? "Device/source profile" : "Perfil de dispositivo/origen")}: ${escapeHtml(externalProfile.source || externalProfile.label)}</strong>
                 <p>${escapeHtml(externalProfile.treatment || (state.language !== "es" ? "Imported with normalized source metadata." : "Importado con metadatos de origen normalizados."))}</p>
                 <div class="pill-row">
@@ -16966,7 +17308,7 @@ async function processVisibleAssetBacklog() {
   }
   renderAssetLibrary();
   const message = state.language !== "es"
-    ? `${processed}/${pending.length} visible assets processed.`
+     ? `${processed}/${pending.length} visible assets processed.`
     : `${processed}/${pending.length} activos visibles procesados.`;
   notify(message, processed ? "ok" : "warn");
   const intro = document.getElementById("assetLibraryIntro");
@@ -16983,7 +17325,7 @@ function scheduleAutomaticAssetProcessing(experience = {}) {
     .filter(Boolean);
   if (!pendingAssetKeys.length) return;
   const startMessage = state.language !== "es"
-    ? `Processing ${pendingAssetKeys.length} attachment(s) in the background.`
+     ? `Processing ${pendingAssetKeys.length} attachment(s) in the background.`
     : `Procesando ${pendingAssetKeys.length} adjunto(s) en segundo plano.`;
   notify(startMessage, "ok");
   setTimeout(() => {
@@ -17037,7 +17379,7 @@ async function processAssetKeysInBackground(assetKeys = [], contextId = "", opti
   renderAssetLibrary();
   renderAdmin();
   const message = state.language !== "es"
-    ? `${processed}/${uniqueKeys.length} attachment(s) processed and synced automatically.`
+     ? `${processed}/${uniqueKeys.length} attachment(s) processed and synced automatically.`
     : `${processed}/${uniqueKeys.length} adjunto(s) procesados y sincronizados automáticamente.`;
   if (!options.silent || processed) notify(message, processed === uniqueKeys.length ? "ok" : "warn");
   markAssetWorkflowAudit("autoProcessedAt", { contextId, processed, attempted: uniqueKeys.length });
@@ -17083,7 +17425,7 @@ async function processAssetNow(key, options = {}) {
     renderAssetLibrary();
     const message = remoteSync.synced
       ? state.language !== "es"
-        ? `Asset processed and synced: ${asset.name || key}.`
+         ? `Asset processed and synced: ${asset.name || key}.`
         : `Activo procesado y sincronizado: ${asset.name || key}.`
       : state.language !== "es"
         ? `Asset processed locally. It will sync when the cloud is available: ${asset.name || key}.`
@@ -17211,7 +17553,7 @@ async function buildProcessedAssetAnalysis(asset, manual = {}) {
         note: [
           manual.note,
           state.language !== "es"
-            ? "Archive files are stored for transport and download only; they are not interpreted automatically."
+             ? "Archive files are stored for transport and download only; they are not interpreted automatically."
             : "Los archivos comprimidos se guardan solo para transporte y descarga; no se interpretan automáticamente.",
         ]
           .filter(Boolean)
@@ -17414,7 +17756,7 @@ function detectAssetTextLanguage(text = "") {
 function buildLocalTranslationPlaceholder(text, sourceLanguage, targetLanguage) {
   if (normalizeAssetLanguageCode(sourceLanguage) === normalizeAssetLanguageCode(targetLanguage)) return text;
   return state.language !== "es"
-    ? `[Translation pending from ${(sourceLanguage || "original").toUpperCase()}]\n${text}`
+     ? `[Translation pending from ${(sourceLanguage || "original").toUpperCase()}]\n${text}`
     : `[Traducción pendiente desde ${(sourceLanguage || "original").toUpperCase()}]\n${text}`;
 }
 
@@ -17535,7 +17877,7 @@ function buildAssetProcessingStatus(asset) {
       label: t("labels.assetProcessingReady"),
       detail:
         state.language !== "es"
-          ? "This asset already has analytical text for search, reports, memory, and publications."
+           ? "This asset already has analytical text for search, reports, memory, and publications."
           : "Este activo ya tiene texto analítico para búsqueda, reportes, memoria y publicaciones.",
     };
   }
@@ -17546,7 +17888,7 @@ function buildAssetProcessingStatus(asset) {
       label: state.language !== "es" ? "Review before interpreting" : "Revisar antes de interpretar",
       detail:
         state.language !== "es"
-          ? "This external file is preserved with source metadata, but the user should review it before automatic interpretation."
+           ? "This external file is preserved with source metadata, but the user should review it before automatic interpretation."
           : "Este archivo externo se conserva con metadatos de origen, pero el usuario debe revisarlo antes de interpretarlo automáticamente.",
     };
   }
@@ -17557,7 +17899,7 @@ function buildAssetProcessingStatus(asset) {
       label: t("labels.assetProcessingTextAvailable"),
       detail:
         state.language !== "es"
-          ? "The document has a readable text preview. Add or suggest analytical text to use it more deeply in reports."
+           ? "The document has a readable text preview. Add or suggest analytical text to use it more deeply in reports."
           : "El documento tiene una vista textual legible. Agrega o sugiere texto analítico para usarlo mejor en reportes.",
     };
   }
@@ -17568,7 +17910,7 @@ function buildAssetProcessingStatus(asset) {
       label: state.language !== "es" ? "Transport only" : "Solo transporte",
       detail:
         state.language !== "es"
-          ? "This imported bundle is preserved for traceability or download. It is not interpreted automatically."
+           ? "This imported bundle is preserved for traceability or download. It is not interpreted automatically."
           : "Este paquete importado se conserva para trazabilidad o descarga. No se interpreta automáticamente.",
     };
   }
@@ -17587,7 +17929,7 @@ function buildAssetProcessingStatus(asset) {
       label: t("labels.assetProcessingNeedsExtraction"),
       detail:
         state.language !== "es"
-          ? `${(extension || "Document").toUpperCase()} is stored and traceable, but needs later text extraction or manual analytical text.`
+           ? `${(extension || "Document").toUpperCase()} is stored and traceable, but needs later text extraction or manual analytical text.`
           : `${(extension || "Documento").toUpperCase()} está guardado y trazable, pero requiere extracción posterior o texto analítico manual.`,
     };
   }
@@ -17598,7 +17940,7 @@ function buildAssetProcessingStatus(asset) {
       label: t("labels.assetProcessingNeedsTranscription"),
       detail:
         state.language !== "es"
-          ? "The audio is stored and playable when supported, but needs transcription or manual notes for deeper analysis."
+           ? "The audio is stored and playable when supported, but needs transcription or manual notes for deeper analysis."
           : "El audio está guardado y se reproduce si el navegador lo permite, pero requiere transcripción o notas manuales para análisis profundo.",
     };
   }
@@ -17609,7 +17951,7 @@ function buildAssetProcessingStatus(asset) {
       label: t("labels.assetProcessingNeedsVideoReview"),
       detail:
         state.language !== "es"
-          ? "The video is stored and playable when supported, but needs transcription, scene description, or manual context."
+           ? "The video is stored and playable when supported, but needs transcription, scene description, or manual context."
           : "El video está guardado y se reproduce si el navegador lo permite, pero requiere transcripción, descripción de escenas o contexto manual.",
     };
   }
@@ -17620,7 +17962,7 @@ function buildAssetProcessingStatus(asset) {
       label: t("labels.assetProcessingNeedsDescription"),
       detail:
         state.language !== "es"
-          ? "The image is stored and previewable when supported, but needs OCR, visual description, or manual context."
+           ? "The image is stored and previewable when supported, but needs OCR, visual description, or manual context."
           : "La imagen está guardada y se previsualiza si el navegador lo permite, pero requiere OCR, descripción visual o contexto manual.",
     };
   }
@@ -17643,7 +17985,7 @@ function buildAssetReadiness(asset) {
       label: t("labels.assetReady"),
       detail:
         state.language !== "es"
-          ? "Has source, context, and preview support for reuse."
+           ? "Has source, context, and preview support for reuse."
           : "Tiene fuente, contexto y soporte de vista previa para reutilización.",
     };
   }
@@ -17656,7 +17998,7 @@ function buildAssetReadiness(asset) {
     label: t("labels.assetNeedsReview"),
     detail:
       state.language !== "es"
-        ? `Review ${missing.join(", ")} before using it in final outputs.`
+         ? `Review ${missing.join(", ")} before using it in final outputs.`
         : `Revisa ${missing.join(", ")} antes de usarlo en salidas finales.`,
   };
 }
@@ -17669,7 +18011,7 @@ function buildAssetStorageStatus(asset) {
       needsSync: false,
       label: state.language !== "es" ? "Context asset" : "Activo de contexto",
       detail: state.language !== "es"
-        ? "This biometric file is stored as cross-experience context and linked by date/time."
+         ? "This biometric file is stored as cross-experience context and linked by date/time."
         : "Este archivo biometrico se guarda como contexto transversal y se vincula por fecha/hora.",
       badges: [state.language !== "es" ? "Biometrics" : "Biometria", state.language !== "es" ? "Time-based context" : "Contexto por fecha/hora"],
     };
@@ -17800,7 +18142,7 @@ function renderAssetNeedsSync(asset) {
 function renderUnsupportedMediaPreview(asset) {
   const format = (asset.extension || getFileExtension(asset.name) || asset.type || "formato").toUpperCase();
   const message = state.language !== "es"
-    ? "Stored and classified. Browser preview depends on local codec support."
+     ? "Stored and classified. Browser preview depends on local codec support."
     : "Guardado y clasificado. La vista previa depende del soporte del navegador.";
   return `
     <div class="asset-preview asset-preview-unsupported">
@@ -18397,7 +18739,7 @@ async function convertAgendaEventToExperience(event) {
 
 function mapAgendaTypeToCategory(type) {
   const map = {
-    Médica: "Salud",
+    "Médica": "Salud",
     Laboral: "Trabajo",
     Viajes: "Viajes / Paseos",
     Bienestar: "Salud",
@@ -18408,7 +18750,7 @@ function mapAgendaTypeToCategory(type) {
 
 function displayAgendaType(type) {
   if (state.language === "es") return type;
-  const map = { Personal: "Personal", Médica: "Medical", Laboral: "Work", Viajes: "Travel", Bienestar: "Wellness" };
+  const map = { Personal: "Personal", "Médica": "Medical", Laboral: "Work", Viajes: "Travel", Bienestar: "Wellness" };
   return map[type] || type;
 }
 
@@ -18733,7 +19075,7 @@ function buildExperienceMapRoutes(graph) {
       matcher: (item) => Number(item.energy || 0) >= 8,
       description:
         state.language !== "es"
-          ? "Experiences where vitality, focus, or personal availability was strongest."
+           ? "Experiences where vitality, focus, or personal availability was strongest."
           : "Experiencias donde la vitalidad, el foco o la disponibilidad personal fueron más altos.",
     },
     {
@@ -18743,7 +19085,7 @@ function buildExperienceMapRoutes(graph) {
       matcher: (item) => Number(item.energy || 0) <= 4 || normalizeComparableText(item.mood).includes("satur"),
       description:
         state.language !== "es"
-          ? "Moments that may need recovery, pacing, or a lighter routine."
+           ? "Moments that may need recovery, pacing, or a lighter routine."
           : "Momentos que pueden requerir recuperación, pausa o una rutina más liviana.",
     },
     {
@@ -18756,7 +19098,7 @@ function buildExperienceMapRoutes(graph) {
       },
       description:
         state.language !== "es"
-          ? "Experiences that appear to create learning, reflection, or reusable knowledge."
+           ? "Experiences that appear to create learning, reflection, or reusable knowledge."
           : "Experiencias que parecen generar aprendizaje, reflexión o conocimiento reutilizable.",
     },
     {
@@ -18769,7 +19111,7 @@ function buildExperienceMapRoutes(graph) {
       },
       description:
         state.language !== "es"
-          ? "Relationships shaped by recurring people, places, or shared contexts."
+           ? "Relationships shaped by recurring people, places, or shared contexts."
           : "Relaciones marcadas por personas, lugares o contextos compartidos.",
     },
   ];
@@ -19238,7 +19580,7 @@ function sharedAnalyticalScopeMatchesCurrentFilters(preset) {
 
 function getReportScopeForSharedFilters(filters = {}) {
   return filters.category !== "all" || filters.source !== "all" || filters.dateFrom || filters.dateTo || filters.pilotParticipantId !== "all"
-    ? "filters"
+     ? "filters"
     : "all";
 }
 
@@ -19251,7 +19593,7 @@ function renderDashboardAnalyticalScope() {
   const box = document.getElementById("dashboardAnalyticalScopeBox");
   if (!box) return;
   const labels = state.language !== "es"
-    ? {
+     ? {
         title: "Shared analytical scope",
         status: "Reports, Findings, and Publications",
         help: "Choose one scope once. Vibe applies it to Reports, Findings, and Publications so the outputs compare the same experiences.",
@@ -19358,7 +19700,7 @@ function handleDashboardAnalyticalScopeClick(event) {
 function renderReportQuickStart(experiences = getReportExperiences()) {
   const title = state.language !== "es" ? "Start report by purpose" : "Iniciar reporte por objetivo";
   const help = state.language !== "es"
-    ? "Choose the reading you need. Vibe applies the scope and rebuilds the report while keeping the edited ReportLab PDF as the main output."
+     ? "Choose the reading you need. Vibe applies the scope and rebuilds the report while keeping the edited ReportLab PDF as the main output."
     : "Elige la lectura que necesitas. Vibe aplica el alcance y reconstruye el reporte, dejando el PDF editado ReportLab como salida principal.";
   return `
     <section class="report-quick-panel">
@@ -19461,7 +19803,7 @@ function handleReportQuickStart(event) {
   const count = getReportExperiences().length;
   setReportFlowStatus(
     state.language !== "es"
-      ? `Quick report applied: ${label}. ${count} experience(s) in scope. Read it or download the edited ReportLab PDF.`
+       ? `Quick report applied: ${label}. ${count} experience(s) in scope. Read it or download the edited ReportLab PDF.`
       : `Reporte rapido aplicado: ${label}. ${count} experiencia(s) en alcance. Lee el reporte o descarga el PDF editado ReportLab.`,
   );
   notify(state.language !== "es" ? `Quick report applied: ${label}` : `Reporte rapido aplicado: ${label}`, "success");
@@ -19478,7 +19820,7 @@ function formatExperienceMapNodeMarkdown(node) {
     formatShortDate(node.timestamp),
   ];
   const context = [node.location, node.people, node.objective].filter(Boolean).join(" · ");
-  return `- [[${node.label}]] (${details.join(" · ")})${context ? ` — ${context}` : ""}`;
+  return `- [[${node.label}]] (${details.join(" · ")})${context ? ` - ${context}` : ""}`;
 }
 
 function renderReport() {
@@ -19619,7 +19961,7 @@ function updateReportScopeControls() {
   const activeScope = state.reportFilters.scope || "all";
   const scopeOptions =
     state.language !== "es"
-      ? [
+       ? [
           ["all", "All experiences"],
           ["period", "Quick range"],
           ["filters", "Category / person / origin / objective / event"],
@@ -19665,7 +20007,7 @@ function updateReportScopeControls() {
   if (flowSteps) {
     const steps =
       state.language !== "es"
-        ? ["Prepare scope", "Generate and read", "Accept and export"]
+         ? ["Prepare scope", "Generate and read", "Accept and export"]
         : ["Preparar alcance", "Generar y leer", "Aceptar y exportar"];
     flowSteps.innerHTML = steps.map((step, index) => `<li><strong>${index + 1}</strong><span>${escapeHtml(step)}</span></li>`).join("");
   }
@@ -19678,7 +20020,7 @@ function updateReportScopeControls() {
   if (flowStatus && /^(El reporte|The report|Prepara|Prepare)/.test(flowStatus.textContent || "")) {
     flowStatus.textContent =
       state.language !== "es"
-        ? "Prepare the scope, generate the report, then use the acceptance pack to export evidence."
+         ? "Prepare the scope, generate the report, then use the acceptance pack to export evidence."
         : "Prepara el alcance, genera el reporte y usa el paquete de aceptación para exportar evidencia.";
   }
 }
@@ -19689,7 +20031,7 @@ function renderReportScopeSummary(experiences) {
   if (!summary || !title) return;
   title.textContent = state.language !== "es" ? "Report scope" : "Alcance del reporte";
   const labels = state.language !== "es"
-    ? {
+     ? {
         all: "all saved experiences. Filters are off, so the report is a complete baseline.",
         period: `quick range: ${state.reportFilters.period === "all" ? "all history" : `last ${state.reportFilters.period} days`}.`,
         filters: "active filters by category, group/person, origin, person text, objective, or internal event.",
@@ -19711,7 +20053,7 @@ function renderReportScopeSummary(experiences) {
   }
   const scopeLabel = labels[state.reportFilters.scope] || labels.all;
   const dateText = experiences.length
-    ? `${formatShortDate(experiences[0].timestamp)} - ${formatShortDate(experiences[experiences.length - 1].timestamp)}`
+     ? `${formatShortDate(experiences[0].timestamp)} - ${formatShortDate(experiences[experiences.length - 1].timestamp)}`
     : labels.empty;
   const participantName = state.reportFilters.pilotParticipantId === "all" ? "" : getPilotParticipantName(state.reportFilters.pilotParticipantId);
   const participantText = participantName
@@ -19719,7 +20061,7 @@ function renderReportScopeSummary(experiences) {
     : "";
   const sourceText = state.reportFilters.source && state.reportFilters.source !== "all"
     ? state.language !== "es"
-      ? ` Origin: ${getIntegrationSourceFilterLabel(state.reportFilters.source)}.`
+       ? ` Origin: ${getIntegrationSourceFilterLabel(state.reportFilters.source)}.`
       : ` Origen: ${getIntegrationSourceFilterLabel(state.reportFilters.source)}.`
     : "";
   const eventText = state.reportFilters.eventQuery
@@ -19727,11 +20069,11 @@ function renderReportScopeSummary(experiences) {
     : "";
   const customDateText = state.reportFilters.dateFrom || state.reportFilters.dateTo
     ? state.language !== "es"
-      ? ` Selected dates: ${state.reportFilters.dateFrom || "start"} to ${state.reportFilters.dateTo || "today"}.`
+       ? ` Selected dates: ${state.reportFilters.dateFrom || "start"} to ${state.reportFilters.dateTo || "today"}.`
       : ` Fechas seleccionadas: ${state.reportFilters.dateFrom || "inicio"} a ${state.reportFilters.dateTo || "hoy"}.`
     : "";
   summary.textContent = state.language !== "es"
-    ? `This report analyzes ${experiences.length} experience(s): ${scopeLabel}. Range: ${dateText}.${participantText}${sourceText}${eventText}${customDateText}`
+     ? `This report analyzes ${experiences.length} experience(s): ${scopeLabel}. Range: ${dateText}.${participantText}${sourceText}${eventText}${customDateText}`
     : `Este reporte analiza ${experiences.length} experiencia(s): ${scopeLabel}. Rango: ${dateText}.${participantText}${sourceText}${eventText}${customDateText}`;
 }
 
@@ -19782,7 +20124,7 @@ function renderReportMultimodalEvidence(experiences) {
       </div>
       ${
         evidence.length
-          ? `<div class="report-evidence-grid">${evidence.map(renderReportEvidenceCard).join("")}</div>`
+           ? `<div class="report-evidence-grid">${evidence.map(renderReportEvidenceCard).join("")}</div>`
           : `<p class="card-meta">${escapeHtml(t("labels.reportMultimodalEvidenceEmpty"))}</p>`
       }
     </section>
@@ -19800,7 +20142,7 @@ function renderReportEventTimeline(experiences) {
       </div>
       ${
         visibleEvents.length
-          ? `<div class="report-event-list">
+           ? `<div class="report-event-list">
               ${visibleEvents
                 .map(
                   (event) => `
@@ -19818,7 +20160,7 @@ function renderReportEventTimeline(experiences) {
       }
       ${
         events.length > visibleEvents.length
-          ? `<p class="card-meta">${escapeHtml(state.language !== "es" ? `Showing first ${visibleEvents.length} events. Export JSON/HTML for the full set.` : `Se muestran los primeros ${visibleEvents.length} eventos. Exporta JSON/HTML para ver el conjunto completo.`)}</p>`
+           ? `<p class="card-meta">${escapeHtml(state.language !== "es" ? `Showing first ${visibleEvents.length} events. Export JSON/HTML for the full set.` : `Se muestran los primeros ${visibleEvents.length} eventos. Exporta JSON/HTML para ver el conjunto completo.`)}</p>`
           : ""
       }
     </section>
@@ -19910,14 +20252,14 @@ function buildPredictiveOutlook(experiences, analysis, quality) {
       confidence: Math.min(35, Math.max(10, experiences.length * 8)),
       title: state.language !== "es" ? "Not enough signal for a stable outlook" : "Señal insuficiente para una proyección estable",
       hypothesis: state.language !== "es"
-        ? "The report can describe the current moment, but it still needs more experiences to estimate a near-term tendency."
+         ? "The report can describe the current moment, but it still needs more experiences to estimate a near-term tendency."
         : "El reporte puede describir el momento actual, pero aún necesita más experiencias para estimar una tendencia cercana.",
       drivers: [
         state.language !== "es" ? `${experiences.length} experiences available` : `${experiences.length} experiencias disponibles`,
         state.language !== "es" ? `Capture quality: ${quality.score}%` : `Calidad de captura: ${quality.score}%`,
       ],
       nextStep: state.language !== "es"
-        ? "Capture at least four more experiences with objective, energy, mood, location, and notes."
+         ? "Capture at least four more experiences with objective, energy, mood, location, and notes."
         : "Captura al menos cuatro experiencias más con objetivo, energía, estado emocional, ubicación y notas.",
     };
   }
@@ -19953,44 +20295,44 @@ function buildPredictiveOutlook(experiences, analysis, quality) {
     confidence,
     title: state.language !== "es" ? `Near-term tendency: ${direction}` : `Tendencia cercana: ${direction}`,
     hypothesis: state.language !== "es"
-      ? `Based on recent records, energy looks ${direction} and the next period shows ${riskLabel}.`
+       ? `Based on recent records, energy looks ${direction} and the next period shows ${riskLabel}.`
       : `Según los registros recientes, la energía luce ${direction} y el siguiente periodo muestra ${riskLabel}.`,
     drivers: [
       state.language !== "es"
-        ? `Recent energy ${recentEnergy.toFixed(1)}/10 vs. previous ${previousEnergy.toFixed(1)}/10`
+         ? `Recent energy ${recentEnergy.toFixed(1)}/10 vs. previous ${previousEnergy.toFixed(1)}/10`
         : `Energía reciente ${recentEnergy.toFixed(1)}/10 vs. previa ${previousEnergy.toFixed(1)}/10`,
       state.language !== "es"
-        ? `Recent saturation or low energy: ${Math.round(recentSaturationPct)}%`
+         ? `Recent saturation or low energy: ${Math.round(recentSaturationPct)}%`
         : `Saturación o baja energía reciente: ${Math.round(recentSaturationPct)}%`,
       state.language !== "es"
-        ? `Work/recovery balance: ${Math.round(workPct)}% work · ${Math.round(recoveryPct)}% recovery`
+         ? `Work/recovery balance: ${Math.round(workPct)}% work · ${Math.round(recoveryPct)}% recovery`
         : `Balance trabajo/recuperación: ${Math.round(workPct)}% trabajo · ${Math.round(recoveryPct)}% recuperación`,
       state.contextImpact
         ? state.language !== "es"
-          ? `External context impact: ${contextImpact}/100`
+           ? `External context impact: ${contextImpact}/100`
           : `Impacto del contexto externo: ${contextImpact}/100`
         : state.language !== "es"
-          ? "External context not analyzed in this report"
+           ? "External context not analyzed in this report"
           : "Contexto externo no analizado en este reporte",
       biometricSummary.matched
         ? state.language !== "es"
-          ? `Biometric context: ${biometricSummary.matched} matched experiences, suggested energy ${(biometricSummary.averageSuggestedEnergy || 0).toFixed(1)}/10`
+           ? `Biometric context: ${biometricSummary.matched} matched experiences, suggested energy ${(biometricSummary.averageSuggestedEnergy || 0).toFixed(1)}/10`
           : `Contexto biométrico: ${biometricSummary.matched} experiencias vinculadas, energía sugerida ${(biometricSummary.averageSuggestedEnergy || 0).toFixed(1)}/10`
         : state.language !== "es"
-          ? "No biometric context matched this report yet"
+           ? "No biometric context matched this report yet"
           : "Aún no hay contexto biométrico vinculado a este reporte",
     ],
     nextStep:
       riskScore >= 64
         ? state.language !== "es"
-          ? "Plan a recovery block before adding dense work or travel commitments."
+           ? "Plan a recovery block before adding dense work or travel commitments."
           : "Planifica un bloque de recuperación antes de sumar compromisos densos de trabajo o viaje."
         : energyDelta <= -0.45
           ? state.language !== "es"
-            ? "Repeat the conditions from the highest-energy experiences and reduce the most saturated category."
+             ? "Repeat the conditions from the highest-energy experiences and reduce the most saturated category."
             : "Repite condiciones de las experiencias con mayor energía y reduce la categoría más saturada."
           : state.language !== "es"
-            ? "Keep the current rhythm and capture the next outcomes to validate whether the tendency holds."
+             ? "Keep the current rhythm and capture the next outcomes to validate whether the tendency holds."
             : "Mantén el ritmo actual y captura los próximos resultados para validar si la tendencia se sostiene.",
   };
 }
@@ -19998,10 +20340,10 @@ function buildPredictiveOutlook(experiences, analysis, quality) {
 function renderReportEvidenceCard(item) {
   const eventLabel = item.eventTitle
     ? state.language !== "es"
-      ? `Event: ${item.eventTitle}`
+       ? `Event: ${item.eventTitle}`
       : `Evento: ${item.eventTitle}`
     : state.language !== "es"
-      ? "Whole experience"
+       ? "Whole experience"
       : "Toda la experiencia";
   return `
     <article class="report-evidence-card">
@@ -20047,7 +20389,7 @@ function renderIntegratedReportReading(experiences, analysis, quality) {
       </div>
       ${
         routes.length
-          ? `<div class="report-route-strip">
+           ? `<div class="report-route-strip">
               ${routes
                 .map(
                   (route) => `
@@ -20116,7 +20458,7 @@ function buildIntegratedReportCards(experiences, analysis, quality, routes) {
         ? `${learningRoute.items.length} ${state.language !== "es" ? "learning-linked experiences" : "experiencias vinculadas a aprendizaje"}`
         : `${analysis.learnings.length} ${state.language !== "es" ? "learning signals" : "señales de aprendizaje"}`,
       action: state.language !== "es"
-        ? "Convert repeated learnings into one next action and one reusable note."
+         ? "Convert repeated learnings into one next action and one reusable note."
         : "Convierte aprendizajes repetidos en una acción próxima y una nota reutilizable.",
     },
     {
@@ -20127,7 +20469,7 @@ function buildIntegratedReportCards(experiences, analysis, quality, routes) {
         ? `${socialRoute.items.length} ${state.language !== "es" ? "experiences connected by people or places" : "experiencias conectadas por personas o lugares"}`
         : (state.language !== "es" ? "More participant/place data will improve this reading." : "Más datos de personas y lugares mejorarán esta lectura."),
       action: state.language !== "es"
-        ? "Review whether repeated people or places raise energy, create saturation, or support learning."
+         ? "Review whether repeated people or places raise energy, create saturation, or support learning."
         : "Revisa si las personas o lugares repetidos elevan energía, generan saturación o sostienen aprendizaje.",
     },
   ];
@@ -20262,7 +20604,7 @@ function buildLivingMemoryLog(experiences, analysis) {
       title: highEnergy.title || topCategory,
       detail:
         state.language !== "es"
-          ? `Energy reached ${highEnergy.energy}/10 in ${displayCategory(highEnergy.category)}. Preserve the context: ${highEnergy.location || "no location"}${highEnergy.people ? `, with ${highEnergy.people}` : ""}.`
+           ? `Energy reached ${highEnergy.energy}/10 in ${displayCategory(highEnergy.category)}. Preserve the context: ${highEnergy.location || "no location"}${highEnergy.people ? `, with ${highEnergy.people}` : ""}.`
           : `La energía llegó a ${highEnergy.energy}/10 en ${displayCategory(highEnergy.category)}. Conviene preservar el contexto: ${highEnergy.location || "sin ubicación"}${highEnergy.people ? `, con ${highEnergy.people}` : ""}.`,
     });
   }
@@ -20272,7 +20614,7 @@ function buildLivingMemoryLog(experiences, analysis) {
       title: learning.title || displayCategory(learning.category),
       detail:
         state.language !== "es"
-          ? summarizeNote(learning.notes, "This experience contains a reusable learning signal.")
+           ? summarizeNote(learning.notes, "This experience contains a reusable learning signal.")
           : summarizeNote(learning.notes, "Esta experiencia contiene una señal de aprendizaje reutilizable."),
     });
   }
@@ -20282,7 +20624,7 @@ function buildLivingMemoryLog(experiences, analysis) {
       title: state.language !== "es" ? "Next thread to continue" : "Siguiente hilo para continuar",
       detail:
         state.language !== "es"
-          ? `The most recent experience belongs to ${displayCategory(recent.category)}. Continue by documenting the next action, result, or emotional after-effect.`
+           ? `The most recent experience belongs to ${displayCategory(recent.category)}. Continue by documenting the next action, result, or emotional after-effect.`
           : `La experiencia más reciente pertenece a ${displayCategory(recent.category)}. Continúa documentando la siguiente acción, resultado o efecto emocional posterior.`,
     });
   }
@@ -20561,7 +20903,7 @@ function buildHumanKpis(experiences, analysis, quality) {
       label: localizedHumanKpiLabel("daily-energy"),
       score: Math.round(clampScore((avgEnergy * 10 * 0.7) + (biometricEnergyScore * 0.3))),
       detail: state.language !== "es"
-        ? `Perceived energy is ${avgEnergy.toFixed(1)}/10; biometrics cover ${Math.round(biometricSummary.coveragePct)}% of the filtered set.`
+         ? `Perceived energy is ${avgEnergy.toFixed(1)}/10; biometrics cover ${Math.round(biometricSummary.coveragePct)}% of the filtered set.`
         : `La energía percibida es ${avgEnergy.toFixed(1)}/10; la biometría cubre ${Math.round(biometricSummary.coveragePct)}% del conjunto filtrado.`,
     },
     {
@@ -20641,20 +20983,44 @@ function buildBiometricIntelligenceSummary(experiences = state.experiences) {
   const metrics = aggregateBiometricRows(signalRows.length ? signalRows : rows);
   const summary = summarizeBiometricSignalsForExperiences(scopedExperiences);
   const imported = state.biometricImports || [];
-  const sources = [...new Set(imported.map((item) => item.sourceDevice || item.metadata?.connector || "").filter(Boolean))].slice(0, 4);
-  const recentMatches = signals
+  const serverHealth = state.mobileHealthSummary?.summary || null;
+  const serverHealthItems = Array.isArray(state.mobileHealthSummary?.items) ? state.mobileHealthSummary.items : [];
+  const serverRecords = Number(serverHealth?.records || 0);
+  const serverSignals = Number(serverHealth?.signals || 0);
+  const serverSources = Array.isArray(serverHealth?.connectors) ? serverHealth.connectors.filter(Boolean) : [];
+  const sources = [...new Set([
+    ...imported.map((item) => item.sourceDevice || item.metadata?.connector || "").filter(Boolean),
+    ...serverSources,
+  ])].slice(0, 4);
+  let recentMatches = signals
     .slice()
     .sort((a, b) => new Date(b.experience.timestamp) - new Date(a.experience.timestamp))
     .slice(0, 3);
-  const status = !imported.length
-    ? "missing"
-    : !rows.length
-      ? "needs-processing"
-      : signals.length
-        ? "active"
+  if (!recentMatches.length && serverHealthItems.length) {
+    recentMatches = serverHealthItems.slice(0, 3).map((item) => ({
+      experience: {
+        title: item.title || item.connector || (state.language !== "es" ? "Health context" : "Contexto de salud"),
+        timestamp: item.capturedAt || state.mobileHealthSummary?.generatedAt || new Date().toISOString(),
+      },
+      signal: {
+        detail: item.summary || [
+          item.connector,
+          item.payloadType,
+          Array.isArray(item.metricNames) && item.metricNames.length ? item.metricNames.slice(0, 4).join(", ") : "",
+        ].filter(Boolean).join(" - "),
+      },
+    }));
+  }
+  const hasServerHealth = serverRecords > 0 || serverSignals > 0;
+  const status = !imported.length && !hasServerHealth
+     ? "missing"
+    : !rows.length && !hasServerHealth
+       ? "needs-processing"
+      : signals.length || hasServerHealth
+         ? "active"
         : "unmatched";
   const labels = state.language !== "es"
-    ? {
+     ? {
         missing: "No biometric source has been imported yet.",
         needsProcessing: "Biometric sources exist, but no readable rows were detected.",
         unmatched: "Biometric data is ready, but it does not match the current dates yet.",
@@ -20684,18 +21050,29 @@ function buildBiometricIntelligenceSummary(experiences = state.experiences) {
       : status === "unmatched"
         ? labels.unmatched
         : labels.active;
+  const serverCoverageBase = scopedExperiences.length || serverRecords || 1;
+  const coveragePct = hasServerHealth && !summary.coveragePct
+    ? pct(serverRecords || serverSignals, serverCoverageBase)
+    : summary.coveragePct;
+  const averageSuggestedEnergy = summary.averageSuggestedEnergy || Number(serverHealth?.suggestedEnergy || 0);
+  const rowCount = rows.length || serverSignals || serverRecords;
   return {
     status,
     headline,
     riskLabel,
-    importedCount: imported.length,
-    rowCount: rows.length,
-    matchedExperiences: summary.matched,
+    importedCount: imported.length || serverRecords,
+    rowCount,
+    matchedExperiences: summary.matched || serverRecords,
     totalExperiences: scopedExperiences.length,
-    coveragePct: summary.coveragePct,
-    averageSuggestedEnergy: summary.averageSuggestedEnergy,
+    coveragePct,
+    averageSuggestedEnergy,
     biometricRiskScore: summary.biometricRiskScore,
-    metrics,
+    metrics: {
+      ...metrics,
+      heartAvg: metrics.heartAvg || 0,
+      steps: metrics.steps || 0,
+      sleepMinutes: metrics.sleepMinutes || 0,
+    },
     sources,
     recentMatches,
   };
@@ -20710,7 +21087,7 @@ function renderDashboardBiometricContext() {
   if (status) status.textContent = state.language !== "es" ? "Wearables and health" : "Wearables y salud";
   const summary = buildBiometricIntelligenceSummary(getDashboardExperiences());
   const labels = state.language !== "es"
-    ? {
+     ? {
         import: "Import history",
         report: "Open report",
         coverage: "Coverage",
@@ -20781,7 +21158,7 @@ function renderDashboardBiometricContext() {
 
 function renderReportBiometricImpact(experiences = []) {
   const labels = state.language !== "es"
-    ? {
+     ? {
         title: "Biometric impact",
         noImports: "No biometric file has been imported yet. Import Apple Health export.xml, CSV, or JSON from Assets to compare body signals with experiences.",
         noMatches: "Biometrics are imported, but no records match the date/time of this report scope yet.",
@@ -20875,7 +21252,7 @@ function buildHumanCorrelations(experiences, analysis) {
       title: state.language !== "es" ? "Work pressure and saturation" : "Presión de trabajo y saturación",
       score: workItems.length ? Math.round((pct(workItems.filter((item) => item.mood === "Saturado" || Number(item.energy || 0) <= 4).length, workItems.length) * 0.8) + Math.min(20, workItems.length * 2)) : 0,
       detail: state.language !== "es"
-        ? `${workItems.length} work experiences compared against saturation and low energy.`
+         ? `${workItems.length} work experiences compared against saturation and low energy.`
         : `${workItems.length} experiencias de trabajo comparadas contra saturación y baja energía.`,
       action: state.language !== "es" ? "If signal is high, schedule recovery after dense work blocks." : "Si la señal es alta, programa recuperación después de bloques densos de trabajo.",
     }),
@@ -20884,7 +21261,7 @@ function buildHumanCorrelations(experiences, analysis) {
       title: state.language !== "es" ? "Social connection and energy" : "Conexión social y energía",
       score: socialItems.length ? Math.round(average(socialItems.map((item) => Number(item.energy || 0))) * 10) : 0,
       detail: state.language !== "es"
-        ? `${socialItems.length} experiences include people or social context.`
+         ? `${socialItems.length} experiences include people or social context.`
         : `${socialItems.length} experiencias incluyen personas o contexto social.`,
       action: state.language !== "es" ? "Compare recurring people with high-energy moments." : "Compara personas recurrentes con momentos de energía alta.",
       inverseTone: false,
@@ -20894,7 +21271,7 @@ function buildHumanCorrelations(experiences, analysis) {
       title: state.language !== "es" ? "Recovery contexts and energy" : "Contextos de recuperación y energía",
       score: recoveryItems.length ? Math.round(average(recoveryItems.map((item) => Number(item.energy || 0))) * 10) : 0,
       detail: state.language !== "es"
-        ? `${recoveryItems.length} recovery, health, home, spirituality, or travel/walk experiences analyzed.`
+         ? `${recoveryItems.length} recovery, health, home, spirituality, or travel/walk experiences analyzed.`
         : `${recoveryItems.length} experiencias de recuperación, salud, hogar, espiritualidad o viajes/paseos analizadas.`,
       action: state.language !== "es" ? "Repeat the contexts that raise energy and reduce saturation." : "Repite los contextos que elevan energía y reducen saturación.",
       inverseTone: false,
@@ -20904,7 +21281,7 @@ function buildHumanCorrelations(experiences, analysis) {
       title: state.language !== "es" ? "Learning and resilience" : "Aprendizaje y resiliencia",
       score: learningItems.length ? Math.round((pct(learningItems.length, experiences.length) * 0.5) + (average(learningItems.map((item) => Number(item.energy || 0))) * 5)) : 0,
       detail: state.language !== "es"
-        ? `${learningItems.length} learning signals appear in categories or notes.`
+         ? `${learningItems.length} learning signals appear in categories or notes.`
         : `${learningItems.length} señales de aprendizaje aparecen en categorías o notas.`,
       action: state.language !== "es" ? "Turn repeated learnings into explicit routines or experiments." : "Convierte aprendizajes repetidos en rutinas o experimentos explícitos.",
       inverseTone: false,
@@ -20914,7 +21291,7 @@ function buildHumanCorrelations(experiences, analysis) {
       title: state.language !== "es" ? "Biometric coverage and perceived energy" : "Cobertura biométrica y energía percibida",
       score: biometricSummary.coveragePct ? Math.round((biometricSummary.coveragePct * 0.45) + ((biometricSummary.averageSuggestedEnergy || 0) * 5.5)) : 0,
       detail: state.language !== "es"
-        ? `${biometricSummary.matched} experiences have nearby biometric context; suggested energy average is ${(biometricSummary.averageSuggestedEnergy || 0).toFixed(1)}/10.`
+         ? `${biometricSummary.matched} experiences have nearby biometric context; suggested energy average is ${(biometricSummary.averageSuggestedEnergy || 0).toFixed(1)}/10.`
         : `${biometricSummary.matched} experiencias tienen contexto biométrico cercano; la energía biométrica sugerida promedia ${(biometricSummary.averageSuggestedEnergy || 0).toFixed(1)}/10.`,
       action: state.language !== "es" ? "Compare perceived energy against biometric signals before changing routines." : "Compara energía percibida contra señales biométricas antes de cambiar rutinas.",
       inverseTone: false,
@@ -20924,7 +21301,7 @@ function buildHumanCorrelations(experiences, analysis) {
       title: state.language !== "es" ? "External context and emotional load" : "Contexto externo y carga emocional",
       score: Math.round(Math.max(contextScore, weatherItems.length ? pct(weatherItems.length, experiences.length) : 0, saturatedPct * 0.7 + lowEnergyPct * 0.3)),
       detail: state.language !== "es"
-        ? `${weatherItems.length} experiences mention weather-like cues; active context impact is ${contextScore}/100.`
+         ? `${weatherItems.length} experiences mention weather-like cues; active context impact is ${contextScore}/100.`
         : `${weatherItems.length} experiencias mencionan señales climáticas; el impacto contextual activo es ${contextScore}/100.`,
       action: state.language !== "es" ? "Run context analysis for the main location before planning dense days." : "Ejecuta análisis de contexto para la ubicación principal antes de planificar días densos.",
     }),
@@ -21128,7 +21505,7 @@ function buildBlueprintCategoryReading(row) {
   };
   const fallback =
     state.language !== "es"
-      ? {
+       ? {
           focus: "Experience pattern, energy, saturation, context, and learning.",
           risk: highSaturation || lowEnergy ? "This category needs closer review." : "No strong risk signal in this category.",
           action: "Improve notes, objective, people, and context for sharper analysis.",
@@ -21142,7 +21519,7 @@ function buildBlueprintCategoryReading(row) {
     ...row,
     ...(templates[state.language]?.[category] || fallback),
     focus: highEnergy && category !== "Trabajo"
-      ? `${(templates[state.language]?.[category] || fallback).focus} ${state.language !== "es" ? "Current energy is favorable." : "La energía actual es favorable."}`
+       ? `${(templates[state.language]?.[category] || fallback).focus} ${state.language !== "es" ? "Current energy is favorable." : "La energía actual es favorable."}`
       : (templates[state.language]?.[category] || fallback).focus,
   };
 }
@@ -21224,7 +21601,7 @@ function renderReportDownloadFallback() {
   const action = state.language !== "es" ? "Download again" : "Descargar de nuevo";
   const detail =
     state.language !== "es"
-      ? "If the browser did not open the download automatically, use this link."
+       ? "If the browser did not open the download automatically, use this link."
       : "Si el navegador no abrio la descarga automaticamente, usa este enlace.";
   return `
     <div class="report-download-fallback">
@@ -21251,7 +21628,7 @@ function renderReportProjectExportLocation() {
   const title = state.language !== "es" ? "Saved in project folder" : "Guardado en carpeta del proyecto";
   const detail =
     state.language !== "es"
-      ? "This is the exact local path, independent from the browser download folder."
+       ? "This is the exact local path, independent from the browser download folder."
       : "Esta es la ruta local exacta, independiente de la carpeta de descargas del navegador.";
   return `
     <div class="report-export-location">
@@ -21304,7 +21681,7 @@ function buildReportAcceptanceChecksLegacy() {
   const fileName = getReportExportFileName(lastFormat, audit.lastStatus);
   const purpose = getReportAcceptanceActionPurpose(lastFormat === "package" ? "all" : lastFormat);
   return state.language !== "es"
-    ? `Last action: ${label} · ${formatDate(audit.lastAt)} · ${audit.lastStatus || "ok"}. ${fileName ? `Generated file: ${fileName}. ` : ""}${purpose}`
+     ? `Last action: ${label} · ${formatDate(audit.lastAt)} · ${audit.lastStatus || "ok"}. ${fileName ? `Generated file: ${fileName}. ` : ""}${purpose}`
     : `Ultima accion: ${label} · ${formatDate(audit.lastAt)} · ${audit.lastStatus || "ok"}. ${fileName ? `Archivo generado: ${fileName}. ` : ""}${purpose}`;
   const reportExperiences = getReportExperiences();
   const payload = buildReportExportPayload();
@@ -21313,7 +21690,7 @@ function buildReportAcceptanceChecksLegacy() {
   const hasEvidence = reportExperiences.length >= 3;
   const labels =
     state.language !== "es"
-      ? {
+       ? {
           data: "Reportable data",
           narrative: "Narrative and insights",
           charts: "Charts and breakdowns",
@@ -21375,7 +21752,7 @@ function buildReportAcceptanceChecks() {
   const hasEvidence = reportExperiences.length >= 3;
   const labels =
     state.language !== "es"
-      ? {
+       ? {
           data: "Reportable data",
           narrative: "Narrative and insights",
           charts: "Charts and breakdowns",
@@ -21428,10 +21805,10 @@ function renderReportAcceptancePanel() {
   const title = state.language !== "es" ? "Report Acceptance Pack" : "Paquete de aceptación del reporte";
   const detail =
     state.language !== "es"
-      ? `${readiness.ready}/${readiness.total} controls ready. The pilot should test exports before considering Reports closed.`
+       ? `${readiness.ready}/${readiness.total} controls ready. The pilot should test exports before considering Reports closed.`
       : `${readiness.ready}/${readiness.total} controles listos. El piloto debe probar exportaciones antes de considerar Reportes cerrado.`;
   const actions = state.language !== "es"
-    ? {
+     ? {
         review: "Register human review",
         json: "Download report JSON",
         csv: "Download table CSV",
@@ -21506,14 +21883,14 @@ function formatReportAcceptanceLastActionLegacy() {
   }
   const format = audit.lastFormat || (state.language !== "es" ? "action" : "acción");
   return state.language !== "es"
-    ? `Last action: ${format} · ${formatDate(audit.lastAt)} · ${audit.lastStatus || "ok"}.`
+     ? `Last action: ${format} · ${formatDate(audit.lastAt)} · ${audit.lastStatus || "ok"}.`
     : `Última acción: ${format} · ${formatDate(audit.lastAt)} · ${audit.lastStatus || "ok"}.`;
 }
 
 function getReportAcceptanceActionLabel(format) {
   const labels =
     state.language !== "es"
-      ? {
+       ? {
           review: "human review",
           json: "report JSON",
           csv: "table CSV",
@@ -21537,7 +21914,7 @@ function getReportAcceptanceActionLabel(format) {
 function getReportAcceptanceActionPurpose(action) {
   const purposes =
     state.language !== "es"
-      ? {
+       ? {
           review: "Marks that a person reviewed the report on screen; it does not download a file.",
           json: "Exports the complete structured report for backup, audit, or later processing.",
           csv: "Exports the report table for Excel, Sheets, or simple data review.",
@@ -21577,7 +21954,7 @@ function formatReportAcceptanceLastAction() {
   const fileName = getReportExportFileName(format, audit.lastStatus);
   const purpose = getReportAcceptanceActionPurpose(format === "package" ? "all" : format);
   return state.language !== "es"
-    ? `Last action: ${label} · ${formatDate(audit.lastAt)} · ${audit.lastStatus || "ok"}. ${fileName ? `Generated file: ${fileName}. ` : ""}${purpose}`
+     ? `Last action: ${label} · ${formatDate(audit.lastAt)} · ${audit.lastStatus || "ok"}. ${fileName ? `Generated file: ${fileName}. ` : ""}${purpose}`
     : `Ultima accion: ${label} · ${formatDate(audit.lastAt)} · ${audit.lastStatus || "ok"}. ${fileName ? `Archivo generado: ${fileName}. ` : ""}${purpose}`;
 }
 
@@ -21634,12 +22011,12 @@ function downloadCsvReport() {
   const headers = Object.keys(rows[0] || {
     fecha: "",
     titulo: "",
-    categoría: "",
+    "categoría": "",
     objetivo: "",
-    duración_min: "",
+    "duración_min": "",
     energia: "",
     estado: "",
-    ubicación: "",
+    "ubicación": "",
     personas: "",
     eventos: "",
     resumen_eventos: "",
@@ -21702,7 +22079,7 @@ function downloadPrintableReport() {
       </section>`
     : "";
   const integrated = payload.integratedReading.length
-    ? `<section>
+     ? `<section>
         <h2>${escapeHtml(t("labels.reportIntegratedReading"))}</h2>
         ${payload.integratedReading
           .map(
@@ -21719,13 +22096,13 @@ function downloadPrintableReport() {
       </section>`
     : "";
   const routes = payload.mapRoutes.length
-    ? `<section>
+     ? `<section>
         <h2>${escapeHtml(t("labels.reportMapRoutes"))}</h2>
         <ul>${payload.mapRoutes.map((route) => `<li><strong>${escapeHtml(route.title)}</strong>: ${route.count} · ${route.avgEnergy}/10 · ${escapeHtml(route.dominant || "")}</li>`).join("")}</ul>
       </section>`
     : "";
   const multimodalEvidence = payload.multimodalEvidence.length
-    ? `<section>
+     ? `<section>
         <h2>${escapeHtml(t("labels.reportMultimodalEvidence"))}</h2>
         ${payload.multimodalEvidence
           .map(
@@ -21832,7 +22209,7 @@ function downloadPrintableReport() {
 
 async function downloadPdfReport() {
   const labels = state.language !== "es"
-    ? {
+     ? {
         start: "Generating executive PDF",
         startDetail: "Validating scope, charts, findings, and ReportLab payload.",
         api: "Checking connection",
@@ -21912,6 +22289,11 @@ function getExportErrorDetail(error, limit = 320) {
   } catch {
     detail = raw;
   }
+  if (/%PDF-\d|ReportLab Generated PDF document|\/Type\s*\/Font|endobj|xref|trailer/.test(String(detail))) {
+    return state.language !== "es"
+       ? "The server returned binary PDF data as an error. The app protected the interface; refresh and generate the PDF again."
+      : "El servidor devolvio datos binarios del PDF como error. La app protegio la interfaz; actualiza y genera el PDF otra vez.";
+  }
   return String(detail || "sin detalle")
     .replace(/\s+/g, " ")
     .slice(0, limit);
@@ -21926,7 +22308,7 @@ function generatePublicationDraft() {
   const publicationExperiences = getPublicationExperiences();
   const reportExperiences = filterExperiencesByAnalyticalFilters(getReportExperiences(), state.publicationFilters || {});
   const experiences = source === "latest"
-    ? [...publicationExperiences].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 8)
+     ? [...publicationExperiences].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 8)
     : reportExperiences;
   if (!experiences.length) {
     document.getElementById("publicationStatus").textContent = t("labels.publicationEmpty");
@@ -21954,20 +22336,20 @@ function buildPublicationDraft({ experiences, type, style, channel, privacy }) {
   const title = buildPublicationTitle(type, experiences);
   const media = applyRecommendedPublicationMediaSelection(collectPublicationMedia(experiences), { type, channel });
   const mediaCount = media.filter((item) => item.included !== false).length;
-  const category = displayCategory(getTopCategory(experiences));
+  const category = cleanPublicationCategoryLabel(displayCategory(getTopCategory(experiences)));
   const avgEnergy = experiences.length ? Number(average(experiences.map((item) => Number(item.energy || 0))).toFixed(1)) : 0;
   const highlights = experiences.slice(0, 5).map((item) => ({
-    title: item.title,
+    title: cleanPublicationText(item.title || (state.language !== "es" ? "Recorded experience" : "Experiencia registrada")),
     date: item.timestamp,
-    category: displayCategory(item.category),
+    category: cleanPublicationCategoryLabel(displayCategory(item.category)),
     energy: item.energy,
-    location: item.location,
-    note: item.notes || item.objective || "",
+    location: cleanPublicationLocation(item.location),
+    note: cleanPublicationText(item.notes || item.objective || ""),
   }));
   const rawSummary = buildPublicationSummary(experiences, analysis, category, avgEnergy);
-  const rawBody = buildPublicationBody({ title, type, style, channel, experiences, analysis, mediaCount, category, avgEnergy, highlights, media });
-  const people = topValues(experiences.flatMap((item) => splitPeople(item.people)), 4);
-  const locations = topValues(experiences.map((item) => item.location).filter(Boolean), 4);
+  const people = filterPublicationPeople(topValues(experiences.flatMap((item) => splitPeople(item.people)), 10)).slice(0, 4);
+  const locations = filterPublicationLocations(topValues(experiences.map((item) => item.location).filter(Boolean), 10)).slice(0, 4);
+  const rawBody = buildPublicationBody({ title, type, style, channel, experiences, analysis, mediaCount, category, avgEnergy, highlights, media, people, locations });
   const pages = buildPublicationPages({
     title,
     type,
@@ -22041,14 +22423,10 @@ function buildPublicationPages({ title, type, style, channel, experiences, analy
   const styleLabel = displayPublicationStyle(style);
   const peopleText = people.length ? people.join(", ") : (state.language !== "es" ? "not specified" : "sin personas indicadas");
   const locationText = locations.length ? locations.join(", ") : (state.language !== "es" ? "no location specified" : "sin ubicacion indicada");
-  const momentLines = highlights
-    .map((item, index) => `${index + 1}. ${item.title} - ${item.category}. ${item.note || item.location || (state.language !== "es" ? "Experience recorded." : "Experiencia registrada.")}`)
-    .join("\n");
-  const mediaLines = selectedMedia.length
-    ? selectedMedia.slice(0, 8).map((item, index) => `${index + 1}. ${getPublicationMediaKindLabel(item)} - ${item.name}: ${shortPublicationText([item.translatedText, item.analyticalText, item.manualNote, item.originalText, item.experienceTitle].filter(Boolean).join(" "), 240) || getPublicationMediaActionLabel(item)}`).join("\n")
-    : (state.language !== "es" ? "No media selected for this version." : "No hay multimedia seleccionada para esta version.");
+  const momentLines = buildPublicationMomentLines(highlights);
+  const mediaLines = buildPublicationMediaLines(selectedMedia);
   const channelBody = state.language !== "es"
-    ? `Recommended channel: ${channel}. Use this version as ${typeLabel.toLowerCase()} with a ${styleLabel.toLowerCase()} tone. ${translatePublicationGuideText(guide.mediaPolicy || "")}`
+     ? `Recommended channel: ${channel}. Use this version as ${typeLabel.toLowerCase()} with a ${styleLabel.toLowerCase()} tone. ${translatePublicationGuideText(guide.mediaPolicy || "")}`
     : `Canal recomendado: ${channel}. Usa esta version como ${typeLabel.toLowerCase()} con tono ${styleLabel.toLowerCase()}. ${guide.mediaPolicy || ""}`;
   const basePageSpecs = [
     {
@@ -22057,7 +22435,7 @@ function buildPublicationPages({ title, type, style, channel, experiences, analy
       title,
       subtitle: `${typeLabel} - ${styleLabel} - ${channel}`,
       body: state.language !== "es"
-        ? `A publication prepared from ${experiences.length} experience(s), ${dateRange}. Main focus: ${category}.`
+         ? `A publication prepared from ${experiences.length} experience(s), ${dateRange}. Main focus: ${category}.`
         : `Publicacion preparada a partir de ${experiences.length} experiencia(s), ${dateRange}. Foco principal: ${category}.`,
       mediaIds: firstImage ? [firstImage.id] : [],
     },
@@ -22115,7 +22493,7 @@ function buildPublicationPages({ title, type, style, channel, experiences, analy
       title: state.language !== "es" ? "Closing note" : "Cierre",
       subtitle: state.language !== "es" ? "Human review before publishing" : "Revision humana antes de publicar",
       body: state.language !== "es"
-        ? `${analysis.action}\n\nFinal check: review privacy, names, faces, sensitive information and media rights before sharing.`
+         ? `${analysis.action}\n\nFinal check: review privacy, names, faces, sensitive information and media rights before sharing.`
         : `${analysis.action}\n\nChequeo final: revisa privacidad, nombres, rostros, informacion sensible y derechos de medios antes de compartir.`,
       mediaIds: [],
     },
@@ -22161,6 +22539,8 @@ function applyPublicationPageProfile(basePages, context) {
   const isHealth = lowerType.includes("salud") || lowerType.includes("health");
   const isExecutive = lowerType.includes("resumen");
   const isQuick = lowerType.includes("social") || lowerType.includes("rapida") || lowerType.includes("pida");
+  const isWorkday = lowerType.includes("jornada") || lowerType.includes("trabajo") || lowerType.includes("workday");
+  const isDashboard = lowerType.includes("dashboard") || lowerType.includes("tablero");
   const make = (pageType, layoutTemplate, title, subtitle, body, mediaIds = []) => ({
     pageType,
     layoutTemplate,
@@ -22169,6 +22549,30 @@ function applyPublicationPageProfile(basePages, context) {
     body,
     mediaIds,
   });
+  if (isWorkday) {
+    return [
+      { ...cover, layoutTemplate: "workday-cover" },
+      make("work-summary", "workday-summary", state.language !== "es" ? "Workday summary" : "Resumen de la jornada", state.language !== "es" ? "Context, objective, and what changed" : "Contexto, objetivo y lo que cambio", buildPublicationWorkdaySummary(context)),
+      make("agreements", "agreement-table", state.language !== "es" ? "Agreements and decisions" : "Acuerdos y decisiones", state.language !== "es" ? "Extracted from notes, documents, and spoken records" : "Extraidos de notas, documentos y registros hablados", buildPublicationWorkAgreements(context)),
+      make("pending", "next-actions", state.language !== "es" ? "Pending items" : "Pendientes", state.language !== "es" ? "Operational follow-up" : "Seguimiento operativo", buildPublicationWorkPendingItems(context)),
+      evidence,
+      { ...media, title: state.language !== "es" ? "Work evidence" : "Evidencia de trabajo", layoutTemplate: "work-evidence" },
+      channel,
+      closing,
+    ];
+  }
+  if (isDashboard) {
+    return [
+      { ...cover, layoutTemplate: "dashboard-cover" },
+      make("dashboard", "dashboard-kpi", state.language !== "es" ? "Executive dashboard" : "Dashboard ejecutivo", state.language !== "es" ? "KPIs, trends, proportions, and reading" : "KPIs, tendencias, proporciones y lectura", buildPublicationDashboardNarrative(context), context.mediaIds),
+      make("charts", "charts-and-tables", state.language !== "es" ? "Charts and infographics" : "Cuadros e infografias", state.language !== "es" ? "Suggested visual treatment" : "Tratamiento visual sugerido", buildPublicationChartPlan(context), context.mediaIds),
+      make("findings", "finding-cards", state.language !== "es" ? "What the data suggests" : "Lo que sugieren los datos", state.language !== "es" ? "Interpretation without altering facts" : "Interpretacion sin alterar los hechos", `${context.analysis.focus}\n\n${context.momentLines}`),
+      evidence,
+      media,
+      make("actions", "next-actions", state.language !== "es" ? "Recommended actions" : "Acciones recomendadas", state.language !== "es" ? "Decision-ready output" : "Salida lista para decidir", context.analysis.action),
+      channel,
+    ];
+  }
   if (isQuick) {
     return [
       { ...cover, layoutTemplate: "social-cover" },
@@ -22247,6 +22651,94 @@ function applyPublicationPageProfile(basePages, context) {
     ];
   }
   return basePages;
+}
+
+function buildPublicationWorkdaySummary(context) {
+  const intro = state.language !== "es"
+     ? "This workday brief turns the selected records into an operational summary, not a transcript."
+    : "Este resumen convierte los registros seleccionados en una lectura operativa, no en una transcripcion.";
+  return [
+    intro,
+    `${state.language !== "es" ? "Context" : "Contexto"}: ${context.summary}`,
+    `${state.language !== "es" ? "People" : "Personas"}: ${context.peopleText}`,
+    `${state.language !== "es" ? "Places" : "Lugares"}: ${context.locationText}`,
+    `${state.language !== "es" ? "Main reading" : "Lectura principal"}: ${context.analysis.focus}`,
+  ].join("\n\n");
+}
+
+function buildPublicationWorkAgreements(context) {
+  const source = [
+    context.momentLines,
+    context.mediaLines,
+    context.body,
+  ].join("\n");
+  const agreementLines = extractPublicationActionLines(source, /(acuerdo|acord|decision|decisión|defin|aprob|confirm|commit|agreed|decided)/i, 6);
+  const fallback = state.language !== "es"
+     ? ["No explicit agreements were detected. Review the source notes and add the final wording before sending."]
+    : ["No se detectaron acuerdos explicitos. Revisa las notas fuente y agrega la redaccion final antes de enviar."];
+  return (agreementLines.length ? agreementLines : fallback)
+    .map((line, index) => `${index + 1}. ${line}`)
+    .join("\n");
+}
+
+function buildPublicationWorkPendingItems(context) {
+  const source = [
+    context.momentLines,
+    context.mediaLines,
+    context.body,
+    context.analysis.action,
+  ].join("\n");
+  const pendingLines = extractPublicationActionLines(source, /(pendiente|proximo|próximo|accion|acción|tarea|follow|next|revis|enviar|preparar|validar)/i, 6);
+  const fallback = [
+    context.analysis.action,
+    state.language !== "es"
+       ? "Confirm owners, dates, and open decisions before sharing this workday brief."
+      : "Confirma responsables, fechas y decisiones abiertas antes de compartir este resumen.",
+  ].filter(Boolean);
+  return (pendingLines.length ? pendingLines : fallback)
+    .map((line, index) => `${index + 1}. ${line}`)
+    .join("\n");
+}
+
+function buildPublicationDashboardNarrative(context) {
+  const included = context.selectedMedia?.length || 0;
+  const visualCount = (context.selectedMedia || []).filter((item) => String(item.type || "").startsWith("image/") || String(item.type || "").startsWith("video/")).length;
+  const dataCount = (context.selectedMedia || []).filter((item) => /csv|json|biometric|biometr|health|oura|samsung|apple health/i.test(`${item.type || ""} ${item.name || ""} ${item.externalPayloadType || ""}`)).length;
+  return [
+    `${state.language !== "es" ? "Executive reading" : "Lectura ejecutiva"}: ${context.summary}`,
+    `${state.language !== "es" ? "Narrative signal" : "Señal narrativa"}: ${context.analysis.focus}`,
+    `${state.language !== "es" ? "Evidence base" : "Base de evidencia"}: ${included} ${state.language !== "es" ? "curated media items" : "activos curados"}; ${visualCount} ${state.language !== "es" ? "visuals" : "visuales"}; ${dataCount} ${state.language !== "es" ? "data/biometric files" : "archivos de datos/biometria"}.`,
+    `${state.language !== "es" ? "Use" : "Uso"}: ${state.language !== "es" ? "combine KPI cards, timeline, category proportions, and selected images so the reader understands the facts quickly." : "combinar tarjetas KPI, linea de tiempo, proporciones por categoria e imagenes seleccionadas para que el lector entienda los hechos rapido."}`,
+  ].join("\n\n");
+}
+
+function buildPublicationChartPlan(context) {
+  const lines = state.language !== "es"
+     ? [
+        "KPI cards: number of experiences, curated media, dominant category, average energy.",
+        "Timeline: sequence of the most relevant moments without duplicating every record.",
+        "Category proportion: donut or stacked bar showing the weight of each theme.",
+        "Evidence matrix: table crossing experience, media type, interpretation, and action.",
+        "Infographic: one visual page that connects context, findings, evidence, and recommended next step.",
+      ]
+    : [
+        "Tarjetas KPI: numero de experiencias, multimedia curada, categoria dominante y energia media.",
+        "Linea de tiempo: secuencia de momentos relevantes sin duplicar cada registro.",
+        "Proporcion por categoria: dona o barra apilada para mostrar el peso de cada tema.",
+        "Matriz de evidencia: tabla que cruza experiencia, tipo de activo, interpretacion y accion.",
+        "Infografia: una pagina visual que conecta contexto, hallazgos, evidencia y siguiente paso recomendado.",
+      ];
+  return lines.map((line, index) => `${index + 1}. ${line}`).join("\n");
+}
+
+function extractPublicationActionLines(source, pattern, limit = 6) {
+  return String(source || "")
+    .split(/\n+|[.;]\s+/)
+    .map((line) => line.replace(/^\s*(?:[-*]|\d+[.)])\s*/, "").trim())
+    .filter((line) => line.length > 12 && pattern.test(line))
+    .map((line) => shortPublicationText(line, 190))
+    .filter((line, index, list) => list.findIndex((item) => normalizeComparableText(item) === normalizeComparableText(line)) === index)
+    .slice(0, limit);
 }
 
 function buildPublicationCarouselSlides(context) {
@@ -22334,7 +22826,7 @@ function syncPublicationDraftPagesFromTopLevel(draft = {}, key = "") {
   if (!pages.length) return pages;
   const cover = pages.find((page) => page.pageType === "cover") || pages[0];
   const summary = pages.find((page) => page.pageType === "summary");
-  const story = pages.find((page) => ["story", "memory", "letter", "chapters", "scenes", "voiceover", "slides", "captions"].includes(page.pageType));
+  const story = pages.find((page) => ["story", "memory", "letter", "chapters", "scenes", "voiceover", "slides", "captions", "work-summary", "dashboard", "findings", "agreements", "charts", "pending"].includes(page.pageType));
   if (key === "title" && cover && !cover.editedManually) {
     cover.title = draft.title || cover.title;
   }
@@ -22394,6 +22886,8 @@ function getPublicationMediaRole(item = {}, draft = {}, index = 0) {
   const isDossier = type.includes("dossier");
   const isExecutive = type.includes("resumen");
   const isQuick = type.includes("social") || type.includes("rapida") || type.includes("pida");
+  const isWorkday = type.includes("jornada") || type.includes("trabajo") || type.includes("workday");
+  const isDashboard = type.includes("dashboard") || type.includes("tablero");
   const visualChannel = ["instagram", "facebook", "linkedin", "pdf/html", "blog/web"].some((value) => channel.includes(value));
   let role = "support";
   let score = 55;
@@ -22404,29 +22898,29 @@ function getPublicationMediaRole(item = {}, draft = {}, index = 0) {
     include = isDossier || channel.includes("pdf") || channel.includes("email") || channel.includes("blog");
   } else if (isBiometric) {
     role = "biometric-evidence";
-    score = isHealth || isExecutive || isDossier ? 92 : 68;
-    include = isHealth || isExecutive || isDossier || channel.includes("pdf") || channel.includes("email");
+    score = isHealth || isExecutive || isDossier || isDashboard ? 92 : 68;
+    include = isHealth || isExecutive || isDossier || isDashboard || channel.includes("pdf") || channel.includes("email");
   } else if (isImage) {
     role = index === 0 ? "cover" : "gallery";
-    score = isAlbum || isCarousel || isQuick || visualChannel ? 92 - Math.min(index * 4, 22) : 70;
+    score = isAlbum || isCarousel || isQuick || isDashboard || visualChannel ? 92 - Math.min(index * 4, 22) : 70;
     include = !channel.includes("email") || index < 4 || isDossier;
   } else if (isVideo) {
     role = isStory ? "scene" : "video-memory";
-    score = isStory || isAlbum || isQuick ? 86 - Math.min(index * 4, 20) : 64;
-    include = isStory || isAlbum || isDossier || channel.includes("pdf") || channel.includes("blog") || index < 2;
+    score = isStory || isAlbum || isQuick || isDashboard ? 86 - Math.min(index * 4, 20) : 64;
+    include = isStory || isAlbum || isDossier || isDashboard || channel.includes("pdf") || channel.includes("blog") || index < 2;
   } else if (isAudio) {
     role = "voice-memory";
-    score = isStory || isAlbum || isHealth || isDossier ? 78 : 58;
-    include = isStory || isAlbum || isHealth || isDossier || channel.includes("pdf") || channel.includes("email");
+    score = isStory || isAlbum || isHealth || isDossier || isWorkday ? 78 : 58;
+    include = isStory || isAlbum || isHealth || isDossier || isWorkday || channel.includes("pdf") || channel.includes("email");
   } else if (isDocument) {
-    role = isHealth ? "plain-evidence" : "annex";
-    score = isHealth || isExecutive || isDossier || channel.includes("email") ? 88 : 54;
-    include = isHealth || isExecutive || isDossier || channel.includes("pdf") || channel.includes("email") || channel.includes("blog");
+    role = isHealth || isWorkday || isDashboard ? "plain-evidence" : "annex";
+    score = isHealth || isExecutive || isDossier || isWorkday || isDashboard || channel.includes("email") ? 88 : 54;
+    include = isHealth || isExecutive || isDossier || isWorkday || isDashboard || channel.includes("pdf") || channel.includes("email") || channel.includes("blog");
   }
   if ((isQuick || isCarousel) && !isImage && !isVideo) include = false;
   if (isCarousel && index > 7) include = false;
   const labels = state.language !== "es"
-    ? {
+     ? {
         cover: "Cover candidate",
         gallery: "Gallery asset",
         scene: "Scene / reel clip",
@@ -22451,7 +22945,7 @@ function getPublicationMediaRole(item = {}, draft = {}, index = 0) {
         support: "Activo de apoyo",
       };
   const detail = state.language !== "es"
-    ? `${labels[role] || labels.support}. Recommendation score ${score}/100 for ${displayPublicationType(draft.type || "Reporte narrativo")} on ${draft.channel || "PDF/HTML"}.`
+     ? `${labels[role] || labels.support}. Recommendation score ${score}/100 for ${displayPublicationType(draft.type || "Reporte narrativo")} on ${draft.channel || "PDF/HTML"}.`
     : `${labels[role] || labels.support}. Puntaje recomendado ${score}/100 para ${displayPublicationType(draft.type || "Reporte narrativo")} en ${draft.channel || "PDF/HTML"}.`;
   return { role, label: labels[role] || labels.support, detail, score: Math.max(0, Math.min(100, score)), include };
 }
@@ -22463,7 +22957,7 @@ function syncPublicationPagesWithMedia(draft = {}) {
   const firstVisual = media.find((item) => String(item.type || "").startsWith("image/") || String(item.type || "").startsWith("video/"));
   return pages.map((page) => {
     if (page.pageType === "cover") return { ...page, mediaIds: firstVisual ? [firstVisual.id] : [] };
-    if (["media", "evidence", "annex"].includes(page.pageType)) return { ...page, mediaIds };
+    if (["media", "evidence", "annex", "dashboard", "charts", "work-summary", "agreements"].includes(page.pageType)) return { ...page, mediaIds };
     if (["slides", "scenes"].includes(page.pageType)) return { ...page, mediaIds: media.filter((item) => String(item.type || "").startsWith("image/") || String(item.type || "").startsWith("video/")).map((item) => item.id).slice(0, 8) };
     return page;
   });
@@ -22487,6 +22981,94 @@ function topValues(values, limit = 4) {
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
     .slice(0, limit)
     .map(([value]) => value);
+}
+
+function cleanPublicationCategoryLabel(value) {
+  const raw = String(value || "").replace(/^labels\.categoryLabels\./, "").trim();
+  if (!raw || /^labels\./i.test(raw)) return state.language !== "es" ? "User data" : "Dato del usuario";
+  return raw
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function cleanPublicationText(value) {
+  let text = String(value || "")
+    .replace(/^labels\.categoryLabels\./gi, "")
+    .replace(/\b(vibeapp-native|Storage privado|Supabase|URL firmada|sincronizado con Storage privado)\b/gi, "")
+    .replace(PUBLICATION_SIGNAL_SOURCE_RE, "")
+    .replace(PUBLICATION_LOCATION_SOURCE_RE, "")
+    .replace(PUBLICATION_MOBILE_CAPTURE_RE, "")
+    .replace(/\bprimary-user[-\w]*\b/gi, "")
+    .replace(/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi, "")
+    .replace(/\b[\w.-]+\.(?:jpg|jpeg|png|gif|webp|heic|mp4|mov|webm|mp3|wav|m4a|pdf|docx?|txt|csv|json|zip)\b/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  text = text.replace(/^[\s:;.,-]+|[\s:;.,-]+$/g, "");
+  return text;
+}
+
+function cleanPublicationLocation(value) {
+  const text = cleanPublicationText(value);
+  if (!text || PUBLICATION_EMPTY_LOCATION_RE.test(text)) return "";
+  if (/^\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?$/.test(text)) return "";
+  return text;
+}
+
+function isPublicationReadablePerson(value) {
+  const text = cleanPublicationText(value);
+  if (!text) return false;
+  if (/^(sin personas?|no people|not specified|dato del usuario)$/i.test(text)) return false;
+  if (/primary-user|@|^[0-9a-f-]{16,}$/i.test(text)) return false;
+  return true;
+}
+
+function filterPublicationPeople(values = []) {
+  return values
+    .map(cleanPublicationText)
+    .filter(isPublicationReadablePerson)
+    .filter((value, index, list) => list.findIndex((item) => normalizeComparableText(item) === normalizeComparableText(value)) === index);
+}
+
+function filterPublicationLocations(values = []) {
+  return values
+    .map(cleanPublicationLocation)
+    .filter(Boolean)
+    .filter((value, index, list) => list.findIndex((item) => normalizeComparableText(item) === normalizeComparableText(value)) === index);
+}
+
+function getPublicationFriendlyAssetName(item = {}) {
+  const title = cleanPublicationText(item.experienceTitle || "");
+  const kind = getPublicationMediaKindLabel(item);
+  return title ? `${kind} de ${title}` : kind;
+}
+
+function buildPublicationMomentLines(highlights = []) {
+  const fallback = state.language !== "es" ? "Experience recorded." : "Experiencia registrada.";
+  const lines = highlights
+    .map((item, index) => {
+      const title = cleanPublicationText(item.title) || (state.language !== "es" ? "Recorded experience" : "Experiencia registrada");
+      const category = cleanPublicationCategoryLabel(item.category);
+      const note = cleanPublicationText(item.note || item.location || fallback) || fallback;
+      return `${index + 1}. ${title} - ${category}. ${note}`;
+    })
+    .filter((line) => cleanPublicationText(line).length > 8);
+  return lines.join("\n");
+}
+
+function buildPublicationMediaLines(selectedMedia = []) {
+  const included = selectedMedia.filter((item) => item.included !== false);
+  if (!included.length) {
+    return state.language !== "es" ? "No media selected for this version." : "No hay multimedia seleccionada para esta version.";
+  }
+  return included.slice(0, 8).map((item, index) => {
+    const label = getPublicationFriendlyAssetName(item);
+    const source = cleanPublicationText([item.translatedText, item.analyticalText, item.manualNote, item.originalText, item.experienceTitle]
+      .filter(Boolean)
+      .join(" "));
+    const reading = shortPublicationText(source, 240) || getPublicationMediaActionLabel(item);
+    return `${index + 1}. ${label}: ${reading}`;
+  }).join("\n");
 }
 
 function collectPublicationMedia(experiences) {
@@ -22517,7 +23099,7 @@ function collectPublicationMedia(experiences) {
       included: true,
       needsSync: !asset.url && !asset.dataUrl,
     }))
-    .slice(0, 8);
+    .slice(0, 24);
 }
 
 function buildPublicationTitle(type, experiences) {
@@ -22527,18 +23109,22 @@ function buildPublicationTitle(type, experiences) {
     if (type === "Álbum experiencial") return `Experience album: ${category}`;
     if (type === "Guion de story/reel") return `Story script: ${category}`;
     if (type === "Publicación social rápida") return `Quick update: ${category}`;
+    if (type === "Jornada de trabajo") return `Workday brief: ${category}`;
+    if (type === "Reporte dashboard") return `Executive dashboard: ${category}`;
     return `Narrative report: ${category}`;
   }
   if (type === "Resumen ejecutivo") return `Resumen ejecutivo: ${category}`;
   if (type === "Álbum experiencial") return `Álbum experiencial: ${category}`;
   if (type === "Guion de story/reel") return `Guion de story/reel: ${category}`;
   if (type === "Publicación social rápida") return `Publicación rápida: ${category}`;
+  if (type === "Jornada de trabajo") return `Resumen de jornada: ${category}`;
+  if (type === "Reporte dashboard") return `Dashboard ejecutivo: ${category}`;
   return `Reporte narrativo: ${category}`;
 }
 
 function buildPublicationSummary(experiences, analysis, category, avgEnergy) {
   return state.language !== "es"
-    ? `${experiences.length} experiences centered on ${category}, with average energy of ${avgEnergy}/10. Main reading: ${analysis.focus}`
+     ? `${experiences.length} experiences centered on ${category}, with average energy of ${avgEnergy}/10. Main reading: ${analysis.focus}`
     : `${experiences.length} experiencias centradas en ${category}, con energía media de ${avgEnergy}/10. Lectura principal: ${analysis.focus}`;
 }
 
@@ -22548,12 +23134,16 @@ function buildPublicationPurpose(type, channel) {
     if (type === "Guion de story/reel") return `Short visual sequence for ${channel}: hook, moments, and closing line.`;
     if (type === "Publicación social rápida") return `Shareable update for ${channel}: concise story with selected media.`;
     if (type === "Resumen ejecutivo") return `Clear brief for ${channel}: what happened, what matters, and what follows.`;
+    if (type === "Jornada de trabajo") return `Workday brief for ${channel}: agreements, decisions, pending items, and evidence.`;
+    if (type === "Reporte dashboard") return `Visual dashboard for ${channel}: KPIs, charts, evidence, and action-ready recommendations.`;
     return `Narrative piece for ${channel}: context, highlights, evidence, and final memory.`;
   }
   if (type === "Álbum experiencial") return `Memoria vivida para ${channel}: lugares, personas, multimedia y momentos clave.`;
   if (type === "Guion de story/reel") return `Secuencia visual breve para ${channel}: gancho, momentos y cierre.`;
   if (type === "Publicación social rápida") return `Actualización compartible para ${channel}: historia corta con multimedia seleccionada.`;
   if (type === "Resumen ejecutivo") return `Resumen claro para ${channel}: qué pasó, por qué importa y qué sigue.`;
+  if (type === "Jornada de trabajo") return `Resumen laboral para ${channel}: acuerdos, decisiones, pendientes y evidencia.`;
+  if (type === "Reporte dashboard") return `Dashboard visual para ${channel}: KPIs, cuadros, evidencia y recomendaciones accionables.`;
   return `Pieza narrativa para ${channel}: contexto, momentos, evidencia y memoria final.`;
 }
 
@@ -22562,13 +23152,13 @@ function buildPublicationBodyLegacy({ title, type, style, channel, experiences, 
   const locations = topValues(experiences.map((item) => item.location).filter(Boolean), 4);
   const dateRange = formatPublicationDateRange(experiences);
   const intro = state.language !== "es"
-    ? `This ${displayPublicationType(type).toLowerCase()} is prepared for ${channel}, with a ${displayPublicationStyle(style).toLowerCase()} tone. It turns ${experiences.length} experiences from ${dateRange} into a shareable memory with ${mediaCount} media attachments and a dominant focus on ${category}.`
+     ? `This ${displayPublicationType(type).toLowerCase()} is prepared for ${channel}, with a ${displayPublicationStyle(style).toLowerCase()} tone. It turns ${experiences.length} experiences from ${dateRange} into a shareable memory with ${mediaCount} media attachments and a dominant focus on ${category}.`
     : `Esta pieza de tipo ${displayPublicationType(type).toLowerCase()} está preparada para ${channel}, con tono ${displayPublicationStyle(style).toLowerCase()}. Convierte ${experiences.length} experiencias de ${dateRange} en una memoria compartible con ${mediaCount} adjuntos multimedia y foco dominante en ${category}.`;
   const narrative = state.language !== "es"
-    ? `What should remain: ${analysis.focus} Average energy was ${avgEnergy}/10. The point is not to publish every detail, but to preserve the moments that explain the experience.`
+     ? `What should remain: ${analysis.focus} Average energy was ${avgEnergy}/10. The point is not to publish every detail, but to preserve the moments that explain the experience.`
     : `Lo que debería quedar en la memoria: ${analysis.focus} La energía media fue ${avgEnergy}/10. La idea no es publicar todo, sino preservar los momentos que explican la experiencia.`;
   const context = state.language !== "es"
-    ? `People and places: ${people.length ? people.join(", ") : "not specified"} · ${locations.length ? locations.join(", ") : "no location specified"}.`
+     ? `People and places: ${people.length ? people.join(", ") : "not specified"} · ${locations.length ? locations.join(", ") : "no location specified"}.`
     : `Personas y lugares: ${people.length ? people.join(", ") : "sin personas indicadas"} · ${locations.length ? locations.join(", ") : "sin ubicación indicada"}.`;
   const action = state.language !== "es" ? `Suggested closing: ${analysis.action}` : `Cierre sugerido: ${analysis.action}`;
   const bullets = highlights
@@ -22593,51 +23183,42 @@ function buildPublicationEvidenceText(media = []) {
   if (!evidenceItems.length) return "";
   const lines = evidenceItems.map((item) => {
     const context = [item.analyticalText, item.manualNote, ...(item.tags || []).slice(0, 3)].filter(Boolean).join(" · ");
-    return `- ${item.name} (${item.experienceTitle}): ${context}`;
+    return `- ${getPublicationFriendlyAssetName(item)}: ${cleanPublicationText(context) || getPublicationMediaActionLabel(item)}`;
   });
   return `${t("labels.publicationEvidenceBlock")}:\n${lines.join("\n")}`;
 }
 
-function buildPublicationBody({ title, type, style, channel, experiences, analysis, mediaCount, category, avgEnergy, highlights, media }) {
-  const people = topValues(experiences.flatMap((item) => splitPeople(item.people)), 4);
-  const locations = topValues(experiences.map((item) => item.location).filter(Boolean), 4);
+function buildPublicationBody({ title, type, style, channel, experiences, analysis, mediaCount, category, avgEnergy, highlights, media, people = null, locations = null }) {
+  const cleanPeople = Array.isArray(people) ? people : filterPublicationPeople(topValues(experiences.flatMap((item) => splitPeople(item.people)), 10)).slice(0, 4);
+  const cleanLocations = Array.isArray(locations) ? locations : filterPublicationLocations(topValues(experiences.map((item) => item.location).filter(Boolean), 10)).slice(0, 4);
   const dateRange = formatPublicationDateRange(experiences);
-  const editorialGuide = buildPublicationEditorialGuide({ type, channel, media });
   const interpretation = buildPublicationInterpretationSummary(media);
   const intro = state.language !== "es"
-    ? `This ${displayPublicationType(type).toLowerCase()} is prepared for ${channel}, with a ${displayPublicationStyle(style).toLowerCase()} tone. It turns ${experiences.length} experiences from ${dateRange} into a shareable memory, with an editorial focus on ${category} and ${mediaCount} selected media item(s).`
-    : `Esta pieza de tipo ${displayPublicationType(type).toLowerCase()} esta preparada para ${channel}, con tono ${displayPublicationStyle(style).toLowerCase()}. Convierte ${experiences.length} experiencias de ${dateRange} en una memoria compartible, con foco editorial en ${category} y ${mediaCount} elemento(s) multimedia seleccionados.`;
+     ? `This piece turns ${experiences.length} experience(s) from ${dateRange} into a readable story for ${channel}. The focus is ${category}, with ${mediaCount} selected media item(s).`
+    : `Esta pieza convierte ${experiences.length} experiencia(s) de ${dateRange} en una historia legible para ${channel}. El foco es ${category}, con ${mediaCount} elemento(s) multimedia seleccionados.`;
   const narrative = state.language !== "es"
-    ? `What should remain: ${analysis.focus} Average energy was ${avgEnergy}/10. The piece should not publish every detail; it should select what helps another person understand the lived experience, its evidence, and its practical meaning.`
-    : `Lo que debe quedar en la memoria: ${analysis.focus} La energia media fue ${avgEnergy}/10. La pieza no debe publicar todo; debe seleccionar lo que ayuda a otra persona a entender la experiencia vivida, su evidencia y su significado practico.`;
+     ? `${analysis.focus} Average energy was ${avgEnergy}/10. The value of the publication is not to copy every record, but to explain what happened, what changed, and why the selected moments matter.`
+    : `${analysis.focus} La energia media fue ${avgEnergy}/10. El valor de la publicacion no es copiar cada registro, sino explicar que paso, que cambio y por que importan los momentos seleccionados.`;
   const context = state.language !== "es"
-    ? `People and places: ${people.length ? people.join(", ") : "not specified"} - ${locations.length ? locations.join(", ") : "no location specified"}.`
-    : `Personas y lugares: ${people.length ? people.join(", ") : "sin personas indicadas"} - ${locations.length ? locations.join(", ") : "sin ubicacion indicada"}.`;
+     ? `People and places: ${cleanPeople.length ? cleanPeople.join(", ") : "not specified"} - ${cleanLocations.length ? cleanLocations.join(", ") : "no location specified"}.`
+    : `Personas y lugares: ${cleanPeople.length ? cleanPeople.join(", ") : "sin personas indicadas"} - ${cleanLocations.length ? cleanLocations.join(", ") : "sin ubicacion indicada"}.`;
   const action = state.language !== "es" ? `Suggested closing: ${analysis.action}` : `Cierre sugerido: ${analysis.action}`;
   const bullets = highlights
-    .map((item) => `- ${item.title} (${formatDate(item.date)} - ${item.category}): ${item.note || (state.language !== "es" ? "experience recorded" : "experiencia registrada")}`)
+    .map((item) => `- ${cleanPublicationText(item.title)} (${formatDate(item.date)} - ${cleanPublicationCategoryLabel(item.category)}): ${cleanPublicationText(item.note || item.location || (state.language !== "es" ? "experience recorded" : "experiencia registrada"))}`)
     .join("\n");
   const evidence = buildPublicationEvidenceText(media);
-  return `${title}
+  return `${intro}
 
-${state.language !== "es" ? "Editorial direction" : "Direccion editorial"}
-${intro}
-
-${state.language !== "es" ? "Readable interpretation" : "Interpretacion clara"}
 ${narrative}
 
-${state.language !== "es" ? "Context" : "Contexto"}
 ${context}
 
-${state.language !== "es" ? "Selected moments" : "Momentos seleccionados"}:
+${state.language !== "es" ? "Key moments" : "Momentos clave"}:
 ${bullets || (state.language !== "es" ? "- No specific moments selected yet." : "- Aun no hay momentos especificos seleccionados.")}
 
-${state.language !== "es" ? "Evidence and media interpretation" : "Evidencia e interpretacion multimedia"}
+${state.language !== "es" ? "What the selected media adds" : "Que aporta la multimedia seleccionada"}
 ${interpretation}
 ${evidence ? `\n\n${evidence}` : ""}
-
-${state.language !== "es" ? "Design and publication plan" : "Plan de diseno y publicacion"}
-${editorialGuide}
 
 ${action}`;
 }
@@ -22650,19 +23231,41 @@ function buildPublicationEditorialGuide({ type, channel, media = [] }) {
       ? (state.language !== "es" ? "publish as text only" : "publicar solo como texto")
       : (state.language !== "es" ? `use ${included} curated media items` : `usar ${included} activos multimedia curados`);
   const cover = state.language !== "es"
-    ? `Create a cover aligned with ${displayPublicationType(type).toLowerCase()}: one main visual, a short title, and a human subtitle.`
+     ? `Create a cover aligned with ${displayPublicationType(type).toLowerCase()}: one main visual, a short title, and a human subtitle.`
     : `Crear una portada alineada con ${displayPublicationType(type).toLowerCase()}: una imagen principal, titulo breve y subtitulo humano.`;
   const structure = state.language !== "es"
-    ? `For ${channel}, keep the first screen clear, then sequence context, evidence, memory, and next action.`
+     ? `For ${channel}, keep the first screen clear, then sequence context, evidence, memory, and next action.`
     : `Para ${channel}, mantener clara la primera pantalla y luego ordenar contexto, evidencia, memoria y accion siguiente.`;
   return `${cover}\n${structure}\n${state.language !== "es" ? "Media policy" : "Politica multimedia"}: ${mediaMode}.`;
+}
+
+function buildPublicationEditorialContract({ type, channel, experiences = [], media = [], analysis = {} }) {
+  const included = media.filter((item) => item.included !== false);
+  const hasWork = type === "Jornada de trabajo" || experiences.some((item) => item.category === "Trabajo");
+  const hasDashboard = type === "Reporte dashboard";
+  if (state.language !== "es") {
+    if (hasWork) {
+      return "Edit the selected records into a useful workday narrative: what happened, what was agreed, what remains open, who is involved, and what should happen next. Do not alter facts; remove noise and make the outcome usable.";
+    }
+    if (hasDashboard) {
+      return "Build a visual reading from the evidence: KPI cards, trends, proportions, selected media, interpreted documents, and recommended actions. The text should explain the chart, not repeat the raw data.";
+    }
+    return `Use the ${included.length} selected media item(s) as evidence for a polished ${displayPublicationType(type).toLowerCase()} on ${channel}. Preserve the facts, edit the story, and separate source material from interpretation.`;
+  }
+  if (hasWork) {
+    return "Edita los registros seleccionados como una narrativa laboral util: que paso, que se acordo, que queda abierto, quien participa y que debe ocurrir despues. No alteres los hechos; elimina ruido y vuelve accionable el resultado.";
+  }
+  if (hasDashboard) {
+    return "Construye una lectura visual desde la evidencia: tarjetas KPI, tendencias, proporciones, multimedia seleccionada, documentos interpretados y acciones recomendadas. El texto debe explicar el cuadro, no repetir el dato bruto.";
+  }
+  return `Usa los ${included.length} activo(s) seleccionados como evidencia para una pieza ${displayPublicationType(type).toLowerCase()} en ${channel}. Conserva los hechos, edita la historia y separa material fuente de interpretacion.`;
 }
 
 function buildPublicationInterpretationSummary(media = []) {
   const included = media.filter((item) => item.included !== false).slice(0, 5);
   if (!included.length) {
     return state.language !== "es"
-      ? "No media was selected for this version. The publication should rely on edited text, context, and the user's final review."
+       ? "No media was selected for this version. The publication should rely on edited text, context, and the user's final review."
       : "No se selecciono multimedia para esta version. La publicacion debe apoyarse en el texto editado, el contexto y la revision final del usuario.";
   }
   return included.map((item) => summarizePublicationEvidenceItem(item)).join("\n");
@@ -22672,26 +23275,26 @@ function summarizePublicationEvidenceItem(item) {
   const sourceText = [item.translatedText, item.analyticalText, item.originalText, item.manualNote, item.caption]
     .filter(Boolean)
     .join(" ");
-  const cleanText = shortPublicationText(sourceText, 240);
-  const name = item.name || (state.language !== "es" ? "media item" : "activo");
+  const cleanText = shortPublicationText(cleanPublicationText(sourceText), 240);
+  const name = getPublicationFriendlyAssetName(item);
   const isHealth = /salud|medic|doctor|examen|laboratorio|diagnost|glucosa|colesterol|presion|sangre|health|medical|lab/i.test(`${sourceText} ${name}`);
   if (isHealth) {
     return state.language !== "es"
-      ? `- ${name}: health-related evidence. Explain it in plain language, avoid diagnosis, and separate observed data from recommendations.${cleanText ? ` Summary: ${cleanText}` : ""}`
-      : `- ${name}: evidencia relacionada con salud. Explicarla en lenguaje claro, sin diagnosticar, separando datos observados de recomendaciones.${cleanText ? ` Resumen: ${cleanText}` : ""}`;
+       ? `- ${name}: health-related context. Explain it in plain language, avoid diagnosis, and separate observed data from recommendations.${cleanText ? ` Summary: ${cleanText}` : ""}`
+      : `- ${name}: contexto relacionado con salud. Presentarlo en lenguaje claro, sin diagnosticar, separando datos observados de recomendaciones.${cleanText ? ` Resumen: ${cleanText}` : ""}`;
   }
   if (String(item.type || "").startsWith("image/")) {
     return state.language !== "es"
-      ? `- ${name}: visual evidence for the cover or gallery.${cleanText ? ` Interpreted context: ${cleanText}` : ""}`
-      : `- ${name}: evidencia visual para portada o galeria.${cleanText ? ` Contexto interpretado: ${cleanText}` : ""}`;
+       ? `- ${name}: visual moment for the cover or gallery.${cleanText ? ` Interpreted context: ${cleanText}` : ""}`
+      : `- ${name}: momento visual para portada o galeria.${cleanText ? ` Contexto interpretado: ${cleanText}` : ""}`;
   }
   if (String(item.type || "").startsWith("audio/") || String(item.type || "").startsWith("video/")) {
     return state.language !== "es"
-      ? `- ${name}: spoken or audiovisual memory.${cleanText ? ` Transcript/reading: ${cleanText}` : ""}`
-      : `- ${name}: memoria hablada o audiovisual.${cleanText ? ` Transcripcion/lectura: ${cleanText}` : ""}`;
+       ? `- ${name}: spoken or audiovisual memory.${cleanText ? ` Reading: ${cleanText}` : ""}`
+      : `- ${name}: memoria hablada o audiovisual.${cleanText ? ` Lectura: ${cleanText}` : ""}`;
   }
   return state.language !== "es"
-    ? `- ${name}: document or supporting file.${cleanText ? ` Plain summary: ${cleanText}` : ""}`
+     ? `- ${name}: document or supporting file.${cleanText ? ` Plain summary: ${cleanText}` : ""}`
     : `- ${name}: documento o archivo de soporte.${cleanText ? ` Resumen claro: ${cleanText}` : ""}`;
 }
 
@@ -22703,14 +23306,19 @@ function shortPublicationText(value, limit = 220) {
 function redactSensitiveText(value) {
   return String(value || "")
     .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, "[correo oculto]")
-    .replace(/\+?\d[\d\s().-]{7,}\d/g, "[teléfono oculto]")
+    .replace(/\+?\d[\d\s().-]{7,}\d/g, (match) => {
+      const digits = match.replace(/\D/g, "");
+      if (/\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b/.test(match)) return match;
+      if (digits.length < 10) return match;
+      return "[teléfono oculto]";
+    })
     .replace(/https?:\/\/\S+/gi, "[enlace oculto]");
 }
 
 function renderInsightsQuickStart() {
   const title = state.language !== "es" ? "Start findings by theme" : "Iniciar hallazgos por eje";
   const help = state.language !== "es"
-    ? "Pick the reading you need. Vibe applies the filters and rebuilds findings, action plan, and exports from the same scope."
+     ? "Pick the reading you need. Vibe applies the filters and rebuilds findings, action plan, and exports from the same scope."
     : "Elige la lectura que necesitas. Vibe aplica filtros y reconstruye hallazgos, plan de accion y exportaciones con el mismo alcance.";
   return `
     <section class="insights-quick-panel">
@@ -22798,7 +23406,7 @@ function handleInsightsQuickStart(event) {
   const label = state.language !== "es" ? quick.labelEn : quick.labelEs;
   notify(
     state.language !== "es"
-      ? `Findings updated: ${label}.`
+       ? `Findings updated: ${label}.`
       : `Hallazgos actualizados: ${label}.`,
     "success",
   );
@@ -22871,10 +23479,11 @@ function setInsightsProgress({ title = "", detail = "", percent = 0, stateName =
 }
 
 function renderPublicationQuickStart() {
-  const title = state.language !== "es" ? "Create by channel or purpose" : "Crear por canal o proposito";
+  const title = state.language !== "es" ? "Start with one clear output" : "Empieza con una salida clara";
   const help = state.language !== "es"
-    ? "Choose the closest output. Vibe applies type, style, channel, source, and the editorial recipe before generating."
-    : "Elige la salida mas cercana. Vibe aplica tipo, estilo, canal, fuente y receta editorial antes de generar.";
+     ? "Pick the closest result. Vibe applies the format, channel, style, and source automatically; you can adjust details later."
+    : "Elige el resultado mas cercano. Vibe aplica formato, canal, estilo y fuente automaticamente; luego puedes ajustar detalles.";
+  const featured = publicationQuickStarts.filter((item) => ["travel-memory", "workday-summary", "dashboard-report", "pdf-dossier"].includes(item.id));
   return `
     <section class="publication-quick-panel">
       <div class="publication-section-heading">
@@ -22885,7 +23494,7 @@ function renderPublicationQuickStart() {
         <span>${escapeHtml(state.language !== "es" ? "Fast mode" : "Modo rapido")}</span>
       </div>
       <div class="publication-quick-grid">
-        ${publicationQuickStarts.map((item) => {
+        ${featured.map((item) => {
           const template = publicationTemplates.find((candidate) => candidate.id === item.templateId) || publicationTemplates[0];
           const label = state.language !== "es" ? item.labelEn : item.labelEs;
           const detail = state.language !== "es" ? item.detailEn : item.detailEs;
@@ -22899,14 +23508,20 @@ function renderPublicationQuickStart() {
         }).join("")}
       </div>
     </section>
-    ${renderPublicationChannelFormatPicker()}
+    <details class="user-advanced-drawer publication-action-drawer">
+      <summary>
+        <span>${escapeHtml(state.language !== "es" ? "More formats" : "Mas formatos")}</span>
+        <small>${escapeHtml(state.language !== "es" ? "Use only when the recommended options do not fit." : "Usalo solo si las opciones recomendadas no encajan.")}</small>
+      </summary>
+      ${renderPublicationChannelFormatPicker()}
+    </details>
   `;
 }
 
 function renderPublicationChannelFormatPicker() {
   const title = state.language !== "es" ? "Choose a format by channel" : "Elegir formato por canal";
   const help = state.language !== "es"
-    ? "Start from the channel first. Each option applies the format, style, and channel before you generate or regenerate the publication."
+     ? "Start from the channel first. Each option applies the format, style, and channel before you generate or regenerate the publication."
     : "Empieza por el canal. Cada opcion aplica formato, estilo y canal antes de generar o regenerar la publicacion.";
   return `
     <section class="publication-format-picker">
@@ -22945,7 +23560,7 @@ function renderPublicationScopeRecommendation() {
   const recommendation = analyzePublicationScopeRecommendation();
   const title = state.language !== "es" ? "Recommended publication setup" : "Configuración recomendada";
   const empty = state.language !== "es"
-    ? "Select a date range, group, category, or experience set to receive a useful recommendation."
+     ? "Select a date range, group, category, or experience set to receive a useful recommendation."
     : "Selecciona rango de fechas, grupo, categoría o conjunto de experiencias para recibir una recomendación útil.";
   if (!recommendation.experiences.length) {
     return `
@@ -22958,7 +23573,7 @@ function renderPublicationScopeRecommendation() {
     `;
   }
   const mediaLabel = state.language !== "es"
-    ? `${recommendation.media.length} media item(s): ${recommendation.stats.imageCount} images, ${recommendation.stats.videoCount} videos, ${recommendation.stats.audioCount} audio, ${recommendation.stats.documentCount} documents`
+     ? `${recommendation.media.length} media item(s): ${recommendation.stats.imageCount} images, ${recommendation.stats.videoCount} videos, ${recommendation.stats.audioCount} audio, ${recommendation.stats.documentCount} documents`
     : `${recommendation.media.length} activo(s): ${recommendation.stats.imageCount} imágenes, ${recommendation.stats.videoCount} videos, ${recommendation.stats.audioCount} audios, ${recommendation.stats.documentCount} documentos`;
   return `
     <section class="publication-recommendation-panel">
@@ -22990,7 +23605,7 @@ function handlePublicationRecommendationClick(event) {
   updatePublicationTypeHelp();
   renderPublications();
   document.getElementById("publicationStatus").textContent = state.language !== "es"
-    ? "Recommended setup applied. Generate the draft when ready."
+     ? "Recommended setup applied. Generate the draft when ready."
     : "Configuración recomendada aplicada. Genera el borrador cuando esté listo.";
 }
 
@@ -23016,7 +23631,7 @@ function handlePublicationQuickStart(event) {
     applyPublicationTemplateToInputs(template, "report");
     renderPublications();
     document.getElementById("publicationStatus").textContent = state.language !== "es"
-      ? `Format selected: ${displayPublicationType(template.type)} for ${template.channel}. Generate when ready.`
+       ? `Format selected: ${displayPublicationType(template.type)} for ${template.channel}. Generate when ready.`
       : `Formato seleccionado: ${displayPublicationType(template.type)} para ${template.channel}. Genera cuando este listo.`;
     return;
   }
@@ -23029,14 +23644,14 @@ function handlePublicationQuickStart(event) {
   const count = getPublicationExperiences().length || getReportExperiences().length;
   if (!count) {
     document.getElementById("publicationStatus").textContent = state.language !== "es"
-      ? "Quick setup applied. Add or select source experiences before generating."
+       ? "Quick setup applied. Add or select source experiences before generating."
       : "Receta rapida aplicada. Agrega o selecciona experiencias fuente antes de generar.";
     renderPublications();
     return;
   }
   generatePublicationDraft();
   document.getElementById("publicationStatus").textContent = state.language !== "es"
-    ? `Quick publication created: ${displayPublicationType(template.type)} for ${template.channel}.`
+     ? `Quick publication created: ${displayPublicationType(template.type)} for ${template.channel}.`
     : `Publicacion rapida creada: ${displayPublicationType(template.type)} para ${template.channel}.`;
 }
 
@@ -23054,14 +23669,10 @@ function renderPublicationPreview(draft) {
           <span class="pill ${draft.approvalStatus === "approved" ? "pill-approved" : "pill-review"}">${escapeHtml(displayPublicationApprovalStatus(draft.approvalStatus))}</span>
           ${draft.privacy ? `<span class="pill">${escapeHtml(t("labels.publicationPrivacyApplied"))}</span>` : ""}
         </div>
+        ${renderPublicationFlowSteps(draft)}
         ${renderPublicationApproval(draft)}
-        ${renderPublicationUseGuide(draft)}
-        ${renderPublicationChannelStudio(draft)}
         ${renderPublicationEditor(draft)}
-        ${renderPublicationTemplateGallery(draft)}
         ${renderPublicationMedia(draft.media || [])}
-        ${renderPublicationPageEditor(draft)}
-        ${renderPublicationDistributionKit(draft)}
         ${renderPublicationFinalDocument(draft)}
         <div class="publication-stats">
           <article><span>${t("metrics.experiences")}</span><strong>${draft.stats.experiences}</strong></article>
@@ -23073,6 +23684,11 @@ function renderPublicationPreview(draft) {
             <span>${escapeHtml(state.language !== "es" ? "Editorial checks" : "Controles editoriales")}</span>
             <small>${escapeHtml(state.language !== "es" ? "Readiness, export guide and history" : "Preparación, guía de salida e historial")}</small>
           </summary>
+          ${renderPublicationUseGuide(draft)}
+          ${renderPublicationTemplateGallery(draft)}
+          ${renderPublicationPageEditor(draft)}
+          ${renderPublicationChannelStudio(draft)}
+          ${renderPublicationDistributionKit(draft)}
           ${renderPublicationExportGuide(draft)}
           ${renderPublicationReadiness(draft)}
           ${renderPublicationClosureChecklist(draft)}
@@ -23084,15 +23700,43 @@ function renderPublicationPreview(draft) {
   `;
 }
 
+function renderPublicationFlowSteps(draft) {
+  const included = getApprovedPublicationMedia(draft).length;
+  const labels = state.language !== "es"
+     ? [
+        ["1", "Source selected", `${draft.stats.experiences} experience(s)`],
+        ["2", "Text ready to edit", "Title, summary and story"],
+        ["3", "Media selected", `${included} item(s)`],
+        ["4", "Final PDF", "Review and download"],
+      ]
+    : [
+        ["1", "Fuente seleccionada", `${draft.stats.experiences} experiencia(s)`],
+        ["2", "Texto listo para editar", "Titulo, resumen e historia"],
+        ["3", "Multimedia seleccionada", `${included} elemento(s)`],
+        ["4", "PDF final", "Revisar y descargar"],
+      ];
+  return `
+    <section class="publication-flow-steps" aria-label="${escapeHtml(state.language !== "es" ? "Publication flow" : "Flujo de publicacion")}">
+      ${labels.map(([number, title, detail]) => `
+        <article>
+          <b>${escapeHtml(number)}</b>
+          <strong>${escapeHtml(title)}</strong>
+          <span>${escapeHtml(detail)}</span>
+        </article>
+      `).join("")}
+    </section>
+  `;
+}
+
 function renderPublicationUseGuide(draft) {
   const guide = getPublicationTypeGuide(draft.type);
   const mediaPolicy = state.language !== "es" ? translatePublicationGuideText(guide.mediaPolicy) : guide.mediaPolicy;
   const bestFor = state.language !== "es" ? translatePublicationGuideText(guide.bestFor) : guide.bestFor;
   const textSource = state.language !== "es"
-    ? "Text source: the PDF uses the edited title, summary, and body shown below. If the source data is sparse or test-only, the draft will be short until you enrich it in the editor."
+     ? "Text source: the PDF uses the edited title, summary, and body shown below. If the source data is sparse or test-only, the draft will be short until you enrich it in the editor."
     : "Fuente del texto: el PDF usa el título, resumen y cuerpo editados abajo. Si los datos fuente son escasos o de prueba, el borrador será breve hasta que lo enriquezcas en el editor.";
   const mediaUse = state.language !== "es"
-    ? "Media rule: images are embedded when possible. Audio, video, documents, and ZIP files keep controls or download/open actions in the app/HTML; the PDF summarizes their meaning and preserves the reference."
+     ? "Media rule: images are embedded when possible. Audio, video, documents, and ZIP files keep controls or download/open actions in the app/HTML; the PDF summarizes their meaning and preserves the reference."
     : "Regla multimedia: las imágenes se incrustan cuando es posible. Audio, video, documentos y ZIP conservan controles o acciones de abrir/descargar en la app/HTML; el PDF resume su significado y conserva la referencia.";
   return `
     <section class="publication-use-guide">
@@ -23134,24 +23778,24 @@ function buildPublicationChannelStudio(draft) {
   const socialChannel = ["WhatsApp", "Instagram", "Facebook", "LinkedIn"].includes(draft?.channel);
   const outputAction = socialChannel
     ? state.language !== "es"
-      ? "Assisted output: the app prepares copy, media guidance, and a final PDF; posting remains manual until a channel connector exists."
+       ? "Assisted output: the app prepares copy, media guidance, and a final PDF; posting remains manual until a channel connector exists."
       : "Salida asistida: la app prepara texto, guía de medios y PDF final; publicar sigue siendo manual hasta tener un conector del canal."
     : state.language !== "es"
-      ? "Document output: use the ReportLab PDF as the master version and HTML/Markdown only as support formats."
+       ? "Document output: use the ReportLab PDF as the master version and HTML/Markdown only as support formats."
       : "Salida documental: usa el PDF ReportLab como versión maestra y deja HTML/Markdown como formatos de apoyo.";
   const mediaDecision = selectedMedia.length
     ? state.language !== "es"
-      ? `${selectedMedia.length} of ${allMedia.length} media asset(s) selected: ${imageCount} images, ${videoCount} videos, ${audioCount} audio, ${documentCount} support files.`
+       ? `${selectedMedia.length} of ${allMedia.length} media asset(s) selected: ${imageCount} images, ${videoCount} videos, ${audioCount} audio, ${documentCount} support files.`
       : `${selectedMedia.length} de ${allMedia.length} activo(s) seleccionados: ${imageCount} imágenes, ${videoCount} videos, ${audioCount} audios, ${documentCount} archivos de apoyo.`
     : state.language !== "es"
-      ? "No media selected. This can work for a text publication, but a memory, album, carousel, or dossier should usually include selected assets."
+       ? "No media selected. This can work for a text publication, but a memory, album, carousel, or dossier should usually include selected assets."
       : "No hay multimedia seleccionada. Puede servir para una publicación de texto, pero una memoria, álbum, carrusel o dossier normalmente debería incluir activos seleccionados.";
   const editorFocus = state.language !== "es"
-    ? "Review title, summary, body, page text, and media captions. The PDF uses the edited text shown in this screen."
+     ? "Review title, summary, body, page text, and media captions. The PDF uses the edited text shown in this screen."
     : "Revisa título, resumen, cuerpo, textos de página y leyendas. El PDF usa el texto editado que ves en esta pantalla.";
   const structure = (guide?.structure || []).join(" → ");
   const checklist = state.language !== "es"
-    ? [
+     ? [
         "Confirm that the selected format matches the audience.",
         "Keep only media that improves the story or evidence.",
         "Rewrite the first paragraph so it sounds human, not like a log.",
@@ -23241,7 +23885,7 @@ function renderPublicationHistory(draft) {
       </div>
       ${
         history.length
-          ? `<ol class="publication-history-list">${history
+           ? `<ol class="publication-history-list">${history
               .map(
                 (item) => `
                   <li>
@@ -23299,7 +23943,7 @@ function renderPublicationExportGuide(draft) {
 
 function renderPublicationChannelMatrix(draft) {
   const labels = state.language !== "es"
-    ? {
+     ? {
         title: "Channel fit",
         channel: "Channel",
         bestFormat: "Best format",
@@ -23443,7 +24087,7 @@ function renderPublicationChannelRecommendation(draft, kit) {
 
 function getPublicationChannelTypeRecommendation(channel) {
   const profiles = state.language !== "es"
-    ? {
+     ? {
         WhatsApp: {
           types: ["Quick social post", "Personal letter", "Experience album"],
           note: "Keep it conversational. Use one strong media item or a link to the PDF when the story is long.",
@@ -23534,10 +24178,10 @@ function buildPublicationDistributionKit(draft) {
   const caption = buildPublicationChannelCopy(draft, profile, "caption", summary, action);
   const mediaInstruction = includedMedia.length
     ? state.language !== "es"
-      ? `${includedMedia.length} selected asset(s): ${visualCount} visual and ${supportCount} support file(s). Use only the assets that reinforce the story.`
+       ? `${includedMedia.length} selected asset(s): ${visualCount} visual and ${supportCount} support file(s). Use only the assets that reinforce the story.`
       : `${includedMedia.length} activo(s) seleccionados: ${visualCount} visuales y ${supportCount} de apoyo. Usa solo los activos que refuerzan la historia.`
     : state.language !== "es"
-      ? "No media selected. Publish as text or return to Multimedia selection."
+       ? "No media selected. Publish as text or return to Multimedia selection."
       : "No hay multimedia seleccionada. Publica como texto o vuelve a la seleccion multimedia.";
   return {
     ...profile,
@@ -23557,7 +24201,7 @@ function buildPublicationChannelDeliverables(draft, profile, media = []) {
   const visualCount = media.filter((item) => String(item.type || "").startsWith("image/") || String(item.type || "").startsWith("video/")).length;
   const supportCount = Math.max(0, mediaCount - visualCount);
   const labels = state.language !== "es"
-    ? {
+     ? {
         master: "Master piece",
         copy: "Copy-ready text",
         media: "Media package",
@@ -23697,7 +24341,7 @@ function buildPublicationChannelCopy(draft, profile, mode, summary, action) {
   const mediaCount = getApprovedPublicationMedia(draft || {}).length;
   if (mode === "short") {
     return state.language !== "es"
-      ? `${title}. ${summary} ${action ? `Next: ${action}` : ""}`.trim()
+       ? `${title}. ${summary} ${action ? `Next: ${action}` : ""}`.trim()
       : `${title}. ${summary} ${action ? `Siguiente: ${action}` : ""}`.trim();
   }
   if (mode === "caption") {
@@ -23705,17 +24349,17 @@ function buildPublicationChannelCopy(draft, profile, mode, summary, action) {
       ? state.language !== "es" ? `${mediaCount} selected media asset(s).` : `${mediaCount} activo(s) multimedia seleccionados.`
       : state.language !== "es" ? "Text-only version." : "Version solo texto.";
     return state.language !== "es"
-      ? `${shortPublicationText(title, 84)} - ${profile.format}. ${mediaLine}`
+       ? `${shortPublicationText(title, 84)} - ${profile.format}. ${mediaLine}`
       : `${shortPublicationText(title, 84)} - ${profile.format}. ${mediaLine}`;
   }
   return state.language !== "es"
-    ? `${title}\n\n${summary}\n\nWhy it matters: ${draft?.purpose || profile.reason}\n\nSuggested close: ${action || profile.actionDetail}`
+     ? `${title}\n\n${summary}\n\nWhy it matters: ${draft?.purpose || profile.reason}\n\nSuggested close: ${action || profile.actionDetail}`
     : `${title}\n\n${summary}\n\nPor que importa: ${draft?.purpose || profile.reason}\n\nCierre sugerido: ${action || profile.actionDetail}`;
 }
 
 function buildPublicationChannelChecklist(draft, profile, media) {
   const items = state.language !== "es"
-    ? [
+     ? [
         "Read title and first paragraph aloud.",
         "Confirm names, faces, locations and sensitive data.",
         "Keep only media that improves the story.",
@@ -23738,13 +24382,13 @@ function buildPublicationChannelChecklist(draft, profile, media) {
 
 function getPublicationFormatHelpText() {
   return state.language !== "es"
-    ? "Format guide: PDF is for reading, printing, or sending. HTML keeps the visual layout. Markdown is easy to edit in notes or documents. JSON is a technical backup for Admin."
+     ? "Format guide: PDF is for reading, printing, or sending. HTML keeps the visual layout. Markdown is easy to edit in notes or documents. JSON is a technical backup for Admin."
     : "Guía de formatos: PDF es para leer, imprimir o enviar. HTML conserva el diseño visual. Markdown es fácil de editar en notas o documentos. JSON es un respaldo técnico para Administración.";
 }
 
 function getPublicationChannelStatus(channel) {
   const labels = state.language !== "es"
-    ? {
+     ? {
         whatsapp: "Ready: the app opens WhatsApp with the text prepared. You review and send.",
         email: "Ready: the app opens an email draft with subject and text. You review and send.",
         facebook: "Not automatic yet: the app prepares and copies the content. You paste it into Facebook.",
@@ -23804,7 +24448,7 @@ async function preparePublicationChannelLaunch() {
   addPublicationHistory(draft, "exported", state.language !== "es" ? `Prepared ${channel}` : `Canal preparado: ${channel}`);
   persistPublicationDraft(draft);
   document.getElementById("publicationStatus").textContent = state.language !== "es"
-    ? `${channel} is ready. The text was copied${opened ? " and the channel was opened." : ". Open the channel manually if the browser blocked it."}`
+     ? `${channel} is ready. The text was copied${opened ? " and the channel was opened." : ". Open the channel manually if the browser blocked it."}`
     : `${channel} listo. El texto fue copiado${opened ? " y el canal fue abierto." : ". Abre el canal manualmente si el navegador lo bloqueó."}`;
   if (!copied) notify(state.language !== "es" ? "Could not copy automatically." : "No se pudo copiar automáticamente.", "warn");
 }
@@ -23946,7 +24590,7 @@ function renderPublicationPageEditorCard(page, index) {
 
 function getPublicationPageTypeLabel(type) {
   const labels = state.language !== "es"
-    ? {
+     ? {
         cover: "Cover",
         summary: "Summary",
         story: "Story",
@@ -24130,7 +24774,7 @@ function renderPublicationClosureChecklist(draft) {
       ready: readiness.score >= 75 && channelStatus.level !== "future",
       detail:
         readiness.score >= 75 && channelStatus.level !== "future"
-          ? `${t("labels.publicationClosureChannelReady")} ${readiness.score}%. ${channelStatus.detail}`
+           ? `${t("labels.publicationClosureChannelReady")} ${readiness.score}%. ${channelStatus.detail}`
           : `${t("labels.publicationClosureChannelReview")} ${readiness.score}%. ${channelStatus.detail}`,
     },
   ];
@@ -24183,10 +24827,10 @@ function buildPublicationReadiness(draft) {
         score: privacyScore,
         detail: draft.privacy
           ? state.language !== "es"
-            ? "Automatic cleanup is active."
-            : "La limpieza automática está activa."
+              ? "Automatic cleanup is active."
+             : "La limpieza automática está activa."
           : state.language !== "es"
-            ? "Automatic cleanup is disabled."
+             ? "Automatic cleanup is disabled."
             : "La limpieza automática está desactivada.",
       },
       {
@@ -24194,10 +24838,10 @@ function buildPublicationReadiness(draft) {
         score: mediaScore,
         detail: totalMedia
           ? state.language !== "es"
-            ? `${includedMedia}/${totalMedia} media assets selected.`
-            : `${includedMedia}/${totalMedia} activos multimedia seleccionados.`
+              ? `${includedMedia}/${totalMedia} media assets selected.`
+             : `${includedMedia}/${totalMedia} activos multimedia seleccionados.`
           : state.language !== "es"
-            ? "No linked media is available."
+             ? "No linked media is available."
             : "No hay multimedia vinculada disponible.",
       },
       { label: t("labels.publicationChannelFit"), score: channelScore.score, detail: channelScore.detail },
@@ -24228,7 +24872,7 @@ function scorePublicationReadability(words, channel) {
     score: Math.max(45, Math.round(88 - overRatio * 45)),
     detail:
       state.language !== "es"
-        ? `${words} words; recommended limit for ${channel}: ${limit}.`
+         ? `${words} words; recommended limit for ${channel}: ${limit}.`
         : `${words} palabras; límite recomendado para ${channel}: ${limit}.`,
   };
 }
@@ -24261,7 +24905,7 @@ function scorePublicationChannelFit(draft, words, includedMedia) {
     score,
     detail:
       state.language !== "es"
-        ? `${displayPublicationType(draft.type)} adapted for ${draft.channel}.`
+         ? `${displayPublicationType(draft.type)} adapted for ${draft.channel}.`
         : `${displayPublicationType(draft.type)} adaptada para ${draft.channel}.`,
   };
 }
@@ -24272,14 +24916,14 @@ function buildPublicationSuggestions({ draft, words, includedMedia, totalMedia, 
   if (words > limit) {
     suggestions.push(
       state.language !== "es"
-        ? "Shorten the draft or move detail into a longer report before publishing."
+         ? "Shorten the draft or move detail into a longer report before publishing."
         : "Reduce el borrador o mueve el detalle a un reporte más largo antes de publicar.",
     );
   }
   if (privacyScore < 75) {
     suggestions.push(
       state.language !== "es"
-        ? "Activate privacy cleanup and manually review names, faces, locations, and sensitive data."
+         ? "Activate privacy cleanup and manually review names, faces, locations, and sensitive data."
         : "Activa la limpieza de privacidad y revisa manualmente nombres, rostros, ubicaciones y datos sensibles.",
     );
   }
@@ -24287,24 +24931,24 @@ function buildPublicationSuggestions({ draft, words, includedMedia, totalMedia, 
     suggestions.push(
       totalMedia
         ? state.language !== "es"
-          ? "Select the strongest media assets so the publication feels less text-heavy."
-          : "Selecciona los activos multimedia más fuertes para que la publicación no dependa solo del texto."
+            ? "Select the strongest media assets so the publication feels less text-heavy."
+           : "Selecciona los activos multimedia más fuertes para que la publicación no dependa solo del texto."
         : state.language !== "es"
-          ? "Add media to the source experiences when the channel needs a more visual piece."
+           ? "Add media to the source experiences when the channel needs a more visual piece."
           : "Agrega multimedia a las experiencias fuente cuando el canal necesite una pieza más visual.",
     );
   }
   if (channelScore.score < 75 || readability.score < 75) {
     suggestions.push(
       state.language !== "es"
-        ? "Review tone, length, and call to action for the selected channel."
+         ? "Review tone, length, and call to action for the selected channel."
         : "Revisa el tono, la extensión y el llamado a la acción según el canal seleccionado.",
     );
   }
   if (!suggestions.length) {
     suggestions.push(
       state.language !== "es"
-        ? "Perform a final human review before exporting or sharing."
+         ? "Perform a final human review before exporting or sharing."
         : "Haz una revisión humana final antes de exportar o compartir.",
     );
   }
@@ -24433,7 +25077,7 @@ function renderPublicationMediaCaption(item) {
       <small><b>${escapeHtml(state.language !== "es" ? "Use" : "Uso")}:</b> ${escapeHtml(mediaRole)}</small>
       ${
         context || tags.length
-          ? `<small><b>${escapeHtml(t("labels.publicationMediaContext"))}:</b> ${escapeHtml(shortPublicationText(context || tags.join(", "), 260))}</small>`
+           ? `<small><b>${escapeHtml(t("labels.publicationMediaContext"))}:</b> ${escapeHtml(shortPublicationText(context || tags.join(", "), 260))}</small>`
           : ""
       }
     </figcaption>
@@ -24482,7 +25126,7 @@ function handlePublicationMediaBulkAction(event) {
     mode === "recommended"
       ? (state.language !== "es" ? "Recommended media selection applied" : "Seleccion recomendada de multimedia aplicada")
       : include
-      ? (state.language !== "es" ? "All media included" : "Toda la multimedia incluida")
+        ? (state.language !== "es" ? "All media included" : "Toda la multimedia incluida")
       : (state.language !== "es" ? "Publication without media" : "Publicacion sin multimedia"),
   );
   state.currentPublicationDraft = draft;
@@ -24492,7 +25136,7 @@ function handlePublicationMediaBulkAction(event) {
   document.getElementById("publicationStatus").textContent = mode === "recommended"
     ? (state.language !== "es" ? "Recommended media selection applied for this type and channel." : "Seleccion recomendada aplicada para este tipo y canal.")
     : include
-    ? (state.language !== "es" ? "All media will be included in the publication." : "Toda la multimedia quedo incluida en la publicacion.")
+      ? (state.language !== "es" ? "All media will be included in the publication." : "Toda la multimedia quedo incluida en la publicacion.")
     : (state.language !== "es" ? "The publication will be generated without media." : "La publicacion se generara sin multimedia.");
 }
 
@@ -24845,7 +25489,7 @@ function buildPublicationHtml(draft) {
   const studioHtml = `<section class="publication-export-page"><p class="meta">${escapeHtml(state.language !== "es" ? "Channel publication studio" : "Estudio de publicacion por canal")}</p><h2>${escapeHtml(studio.format)}</h2><p>${escapeHtml(studio.outputAction)}</p><pre>${escapeHtml(`${studio.mediaDecision}\n\n${studio.editorFocus}\n\n${studio.checklist.join("\n")}`)}</pre></section>`;
   const kitHtml = `<section class="publication-export-page"><p class="meta">${escapeHtml(state.language !== "es" ? "Channel distribution kit" : "Kit de salida por canal")}</p><h2>${escapeHtml(kit.format)}</h2><p>${escapeHtml(kit.brief)}</p><pre>${escapeHtml(`${deliverablesText}\n\n${kit.subject}\n\n${kit.shortCopy}\n\n${kit.longCopy}`)}</pre></section>`;
   const mediaHtml = approvedMedia.length
-    ? `<section><h2>${escapeHtml(t("labels.publicationMedia"))}</h2><div class="media">${approvedMedia
+     ? `<section><h2>${escapeHtml(t("labels.publicationMedia"))}</h2><div class="media">${approvedMedia
         .map((item) =>
           item.type.startsWith("image/")
             ? `<figure><img src="${escapeHtml(item.url || item.dataUrl)}" alt="${escapeHtml(item.name)}" /><figcaption>${escapeHtml(buildPublicationExportCaption(item))}</figcaption></figure>`
@@ -24861,7 +25505,7 @@ function buildPublicationHtml(draft) {
     .map((page) => {
       const pageMedia = approvedMedia.filter((item) => (page.mediaIds || []).includes(item.id));
       const pageMediaHtml = pageMedia.length
-        ? `<div class="media">${pageMedia
+         ? `<div class="media">${pageMedia
             .map((item) =>
               item.type.startsWith("image/")
                 ? `<figure><img src="${escapeHtml(item.url || item.dataUrl)}" alt="${escapeHtml(item.name)}" /><figcaption>${escapeHtml(buildPublicationExportCaption(item))}</figcaption></figure>`
@@ -24974,7 +25618,7 @@ function buildPublicationMarkdown(draft) {
   const kit = exportDraft.distributionKit;
   const studio = exportDraft.channelStudio;
   const labels = state.language !== "es"
-    ? {
+     ? {
         type: "Type",
         style: "Style",
         channel: "Channel",
@@ -25128,6 +25772,8 @@ function displayPublicationType(type) {
     "Carta / email largo": "Letter / long email",
     "Dossier PDF": "PDF dossier",
     "Ficha de salud": "Health brief",
+    "Jornada de trabajo": "Workday brief",
+    "Reporte dashboard": "Dashboard report",
   };
   return map[type] || type;
 }
@@ -25136,8 +25782,8 @@ function displayPublicationStyle(style) {
   if (state.language === "es") return style;
   const map = {
     Profesional: "Professional",
-    Turístico: "Travel",
-    Científico: "Scientific",
+    "Turístico": "Travel",
+    "Científico": "Scientific",
     Familiar: "Family",
     Minimalista: "Minimalist",
     "Revista Premium": "Premium magazine",
@@ -25155,13 +25801,13 @@ function buildReportRows() {
   return getReportExperiences().map((item) => ({
     fecha: formatDate(item.timestamp),
     titulo: item.title,
-    categoría: displayCategory(item.category),
+    "categoría": displayCategory(item.category),
     origen: getIntegrationSourceProfile(item).active ? getIntegrationSourceProfile(item).family : "PWA / manual",
     objetivo: item.objective || "",
-    duración_min: item.duration,
+    "duración_min": item.duration,
     energia: item.energy,
     estado: item.mood,
-    ubicación: item.location,
+    "ubicación": item.location,
     personas: item.people,
     eventos: getExperienceEventTimeline(item).length,
     resumen_eventos: buildExperienceEventSummary(item),
@@ -25202,7 +25848,7 @@ function getReportExperiences() {
 }
 
 function csvCell(value) {
-  return `"${String(value ?? "").replace(/"/g, '""')}"`;
+  return `"${String(value || "").replace(/"/g, '""')}"`;
 }
 
 function downloadBlob(blob, filename, serverContent = null) {
@@ -25395,19 +26041,19 @@ function describeBackupAudit() {
   };
   const counts = state.backupAudit.counts || {};
   const detail = state.language !== "es"
-    ? `${counts.experiences || 0} experiences · ${counts.agendaEvents || 0} agenda events · ${counts.publicationDrafts || 0} publications · ${counts.pilotTests || 0} pilot tests · ${counts.manualReviewed || 0} manual sections · ${counts.pilotSignoff ? "signed" : "unsigned"}`
+     ? `${counts.experiences || 0} experiences · ${counts.agendaEvents || 0} agenda events · ${counts.publicationDrafts || 0} publications · ${counts.pilotTests || 0} pilot tests · ${counts.manualReviewed || 0} manual sections · ${counts.pilotSignoff ? "signed" : "unsigned"}`
     : `${counts.experiences || 0} experiencias · ${counts.agendaEvents || 0} eventos · ${counts.publicationDrafts || 0} publicaciones · ${counts.pilotTests || 0} pruebas piloto · ${counts.manualReviewed || 0} secciones manual · ${counts.pilotSignoff ? "firmada" : "sin firma"}`;
   const integrity = state.backupAudit.integrity === "verified"
     ? state.language !== "es" ? "integrity verified" : "integridad verificada"
     : state.language !== "es" ? "without integrity mark" : "sin marca de integridad";
   const exportLocation = state.backupAudit.exportPath
     ? state.language !== "es"
-      ? ` · saved in project: ${state.backupAudit.exportPath}`
-      : ` · guardado en proyecto: ${state.backupAudit.exportPath}`
+        ? ` · saved in project: ${state.backupAudit.exportPath}`
+       : ` · guardado en proyecto: ${state.backupAudit.exportPath}`
     : state.backupAudit.exportSaveOk === false
       ? state.language !== "es"
-        ? " · project-folder copy pending"
-        : " · copia en carpeta del proyecto pendiente"
+          ? " · project-folder copy pending"
+         : " · copia en carpeta del proyecto pendiente"
       : "";
   return `${actionLabels[state.backupAudit.action] || state.backupAudit.action}: ${formatDate(state.backupAudit.at)} · ${detail} · ${integrity}${exportLocation}`;
 }
@@ -25432,7 +26078,7 @@ function summarizeBackupPayload(payload = {}) {
 function confirmBackupRestore(payload = {}) {
   const summary = summarizeBackupPayload(payload);
   const message = state.language !== "es"
-    ? `Restore this backup?\n\nSchema: ${summary.schema}\nVersion: ${summary.appVersion}\nExperiences: ${summary.experiences}\nAgenda events: ${summary.agendaEvents}\nBlocked days: ${summary.agendaBlockedDates}\nPublications: ${summary.publicationDrafts}\nAsset metadata: ${summary.assetMetadata}\nPilot tests: ${summary.pilotTests}\nPilot signoff: ${summary.pilotSignoff ? "yes" : "no"}\nManual reviewed: ${summary.manualReviewed}\nOffline queue: ${summary.offlineQueue}\n\nThis replaces the local state in this browser. Remote Supabase data is not deleted. Continue?`
+     ? `Restore this backup?\n\nSchema: ${summary.schema}\nVersion: ${summary.appVersion}\nExperiences: ${summary.experiences}\nAgenda events: ${summary.agendaEvents}\nBlocked days: ${summary.agendaBlockedDates}\nPublications: ${summary.publicationDrafts}\nAsset metadata: ${summary.assetMetadata}\nPilot tests: ${summary.pilotTests}\nPilot signoff: ${summary.pilotSignoff ? "yes" : "no"}\nManual reviewed: ${summary.manualReviewed}\nOffline queue: ${summary.offlineQueue}\n\nThis replaces the local state in this browser. Remote Supabase data is not deleted. Continue?`
     : `¿Restaurar este respaldo?\n\nEsquema: ${summary.schema}\nVersión: ${summary.appVersion}\nExperiencias: ${summary.experiences}\nEventos de Agenda: ${summary.agendaEvents}\nDías bloqueados: ${summary.agendaBlockedDates}\nPublicaciones: ${summary.publicationDrafts}\nMetadatos de activos: ${summary.assetMetadata}\nPruebas piloto: ${summary.pilotTests}\nFirma del piloto: ${summary.pilotSignoff ? "sí" : "no"}\nManual revisado: ${summary.manualReviewed}\nCola sin conexión: ${summary.offlineQueue}\n\nEsto reemplaza el estado local de este navegador. No borra datos remotos de Supabase. ¿Continuar?`;
   return confirm(message);
 }
@@ -25462,7 +26108,7 @@ function describeBackupCoverage() {
     payload.offlineQueue.length,
   ].reduce((sum, value) => sum + value, 0);
   return state.language !== "es"
-    ? `${covered} local items across experiences, Agenda, publications, assets, profile, Daily, routines, and offline queue`
+     ? `${covered} local items across experiences, Agenda, publications, assets, profile, Daily, routines, and offline queue`
     : `${covered} elementos locales entre experiencias, Agenda, publicaciones, activos, perfil, Diario, rutinas y cola sin conexión`;
 }
 
@@ -25486,7 +26132,7 @@ async function restoreBackupFromFile(event) {
     if (integrity.status === "mismatch") {
       const proceed = confirm(
         state.language !== "es"
-          ? "The backup integrity check failed. The file may be incomplete or modified. Restore anyway?"
+           ? "The backup integrity check failed. The file may be incomplete or modified. Restore anyway?"
           : "La verificación de integridad del respaldo falló. El archivo puede estar incompleto o modificado. ¿Restaurar de todos modos?",
       );
       if (!proceed) {
@@ -25684,7 +26330,7 @@ function renderQuestionSuggestions() {
 
 function getInsightThematicDefinitionsLegacy() {
   return state.language !== "es"
-    ? [
+     ? [
         { id: "health", title: "Health and wellbeing", categories: ["Salud", "Hogar", "Espiritualidad"], question: "How are energy, recovery, habits, and emotional stability behaving?", action: "Choose one small rest, movement, or recovery adjustment this week and notice whether your energy responds." },
         { id: "work", title: "Work and productivity", categories: ["Trabajo"], question: "Where is real productivity rising or creating load?", action: "Review one recent work block and decide what to keep, delegate, pause, or simplify." },
         { id: "learning", title: "Learning and growth", categories: ["Aprendizaje"], question: "What lessons repeat and which should become routines?", action: "Turn one repeated lesson into a brief practice that is easy to repeat." },
@@ -25708,7 +26354,7 @@ function getInsightThematicDefinitionsLegacy() {
 
 function getInsightThematicDefinitions() {
   return state.language !== "es"
-    ? [
+     ? [
         { id: "health", title: "Health and wellbeing", categories: ["Salud", "Hogar", "Espiritualidad"], question: "How are energy, recovery, habits, and emotional stability behaving?", action: "Choose one small rest, movement, or recovery adjustment this week and notice whether your energy responds." },
         { id: "work", title: "Work and productivity", categories: ["Trabajo"], question: "Where is real productivity rising or creating load?", action: "Review one recent work block and decide what to keep, delegate, pause, or simplify." },
         { id: "learning", title: "Learning and growth", categories: ["Aprendizaje"], question: "What lessons repeat and which should become routines?", action: "Turn one repeated lesson into a brief practice that is easy to repeat." },
@@ -25801,10 +26447,10 @@ function buildInsightActionPlan(experiences = getInsightsExperiences(), insights
       priority: localizedPriority("high"),
       evidence: state.language !== "es" ? "There are no experiences in this scope yet." : "Aún no hay experiencias en este alcance.",
       why: state.language !== "es"
-        ? "The system needs at least one well-described experience to produce useful findings."
+         ? "The system needs at least one well-described experience to produce useful findings."
         : "El sistema necesita al menos una experiencia bien descrita para generar hallazgos útiles.",
       next: state.language !== "es"
-        ? "Capture one real moment with objective, place, people, energy, and at least one note or asset."
+         ? "Capture one real moment with objective, place, people, energy, and at least one note or asset."
         : "Registra un momento real con objetivo, lugar, personas, energía y al menos una nota o activo.",
       agendaType: "Personal",
     }];
@@ -25816,7 +26462,7 @@ function buildInsightActionPlan(experiences = getInsightsExperiences(), insights
       priority: localizedPriority("high"),
       evidence: `${state.language !== "es" ? "Data confidence" : "Confiabilidad de datos"}: ${quality.score}%. ${quality.weak.slice(0, 3).join(" · ")}`,
       why: state.language !== "es"
-        ? "The conclusions become more useful when the basic context is complete."
+         ? "The conclusions become more useful when the basic context is complete."
         : "Las conclusiones se vuelven más útiles cuando el contexto básico está completo.",
       next: quality.action,
       agendaType: "Personal",
@@ -25829,10 +26475,10 @@ function buildInsightActionPlan(experiences = getInsightsExperiences(), insights
       priority: localizedPriority("high"),
       evidence: `${analysis.saturated?.length || 0} ${state.language !== "es" ? "saturated experiences" : "experiencias saturadas"} · ${analysis.lowEnergy?.length || 0} ${state.language !== "es" ? "low-energy experiences" : "experiencias de baja energía"}`,
       why: state.language !== "es"
-        ? "This is not a warning to stop; it is a signal to create space before the pattern becomes heavier."
+         ? "This is not a warning to stop; it is a signal to create space before the pattern becomes heavier."
         : "No es una alarma para detenerse; es una señal para crear espacio antes de que el patrón pese más.",
       next: state.language !== "es"
-        ? "Schedule one recovery block and record how your energy changes afterwards."
+         ? "Schedule one recovery block and record how your energy changes afterwards."
         : "Agenda un bloque de recuperación y registra cómo cambia tu energía después.",
       agendaType: "Bienestar",
       durationMinutes: 60,
@@ -25845,10 +26491,10 @@ function buildInsightActionPlan(experiences = getInsightsExperiences(), insights
       priority: localizedPriority("medium"),
       evidence: `${biometricMatches.length} ${state.language !== "es" ? "matched records" : "registros vinculados"} · ${state.language !== "es" ? "suggested energy" : "energía sugerida"} ${biometricAverage}/10`,
       why: state.language !== "es"
-        ? "Body data can explain why some days feel lighter or heavier than the narrative alone suggests."
+         ? "Body data can explain why some days feel lighter or heavier than the narrative alone suggests."
         : "Los datos del cuerpo pueden explicar por que algunos dias se sienten mas livianos o pesados de lo que dice solo la narracion.",
       next: state.language !== "es"
-        ? "In the next three captures, compare perceived energy, sleep or activity, and the final mood."
+         ? "In the next three captures, compare perceived energy, sleep or activity, and the final mood."
         : "En las próximas tres capturas, compara energía percibida, sueño o actividad, y estado final.",
       agendaType: "Bienestar",
     });
@@ -25858,10 +26504,10 @@ function buildInsightActionPlan(experiences = getInsightsExperiences(), insights
       priority: localizedPriority("low"),
       evidence: state.language !== "es" ? "Biometric files exist, but no records matched this scope." : "Hay archivos biométricos, pero no coincidieron con este alcance.",
       why: state.language !== "es"
-        ? "The file is useful only when dates and hours can be related to real experiences."
+         ? "The file is useful only when dates and hours can be related to real experiences."
         : "El archivo solo aporta valor cuando fechas y horas se pueden relacionar con experiencias reales.",
       next: state.language !== "es"
-        ? "Review the dates in the scope or capture one experience close to a biometric record."
+         ? "Review the dates in the scope or capture one experience close to a biometric record."
         : "Revisa las fechas del alcance o captura una experiencia cercana a un registro biométrico.",
       agendaType: "Bienestar",
     });
@@ -25873,7 +26519,7 @@ function buildInsightActionPlan(experiences = getInsightsExperiences(), insights
       priority: topAxis.saturated ? localizedPriority("high") : localizedPriority("medium"),
       evidence: `${topAxis.items.length} ${state.language !== "es" ? "experiences" : "experiencias"} · ${state.language !== "es" ? "energy" : "energía"} ${topAxis.avgEnergy}/10 · ${topAxis.status}`,
       why: state.language !== "es"
-        ? "This is where your data is speaking most clearly right now."
+         ? "This is where your data is speaking most clearly right now."
         : "Este es el eje donde tus datos están hablando con más claridad ahora.",
       next: topAxis.action,
       agendaType: mapInsightTypeToAgendaType({ title: topAxis.title, description: topAxis.question }),
@@ -25887,7 +26533,7 @@ function buildInsightActionPlan(experiences = getInsightsExperiences(), insights
       priority: getInsightPriority(strongestInsight),
       evidence: `${strongestInsight.confidence || 0}% ${state.language !== "es" ? "confidence" : "confianza"} · ${localizeInsightType(strongestInsight.type)}`,
       why: state.language !== "es"
-        ? "A finding becomes valuable when it changes one small decision and you observe the result."
+         ? "A finding becomes valuable when it changes one small decision and you observe the result."
         : "Un hallazgo gana valor cuando cambia una decisión pequeña y observas el resultado.",
       next: strongestInsight.action || strongestInsight.description,
       agendaType: mapInsightTypeToAgendaType(strongestInsight),
@@ -26138,7 +26784,7 @@ function exportInsightsHtml() {
 async function exportInsightsPdf() {
   const payload = buildInsightsExportPayload();
   const labels = state.language !== "es"
-    ? {
+     ? {
         start: "Generating findings PDF",
         startDetail: "Validating scope, human themes, action plan, and ReportLab payload.",
         api: "Checking connection",
@@ -26196,12 +26842,12 @@ async function exportInsightsPdf() {
     console.warn("Insights PDF export failed", error);
     const detail = getExportErrorDetail(error);
     const message = state.language !== "es"
-      ? `ReportLab PDF failed. Detail: ${detail}`
+       ? `ReportLab PDF failed. Detail: ${detail}`
       : `Fallo el PDF ReportLab. Detalle: ${detail}`;
     setInsightsProgress({ title: labels.error, detail: message, percent: 100, stateName: "error" });
     notify(
       state.language !== "es"
-        ? `ReportLab PDF failed. Detail: ${detail}`
+         ? `ReportLab PDF failed. Detail: ${detail}`
         : `Fallo el PDF ReportLab. Detalle: ${detail}`,
       "error",
     );
@@ -26409,13 +27055,13 @@ function formatRoutineLogMessage(message) {
 function getConnectorStatus(id) {
   if (id === "supabase") {
     return state.persistence === "supabase" || state.config?.persistence === "supabase"
-      ? { label: t("labels.active"), className: "status-ok" }
+       ? { label: t("labels.active"), className: "status-ok" }
       : { label: t("labels.optional"), className: "status-warn" };
   }
   if (id === "openai") {
     const active = state.health?.embeddingsProvider === "openai" || state.config?.transcriptionProvider === "openai";
     return active
-      ? { label: t("labels.active"), className: "status-ok" }
+       ? { label: t("labels.active"), className: "status-ok" }
       : { label: t("labels.optional"), className: "status-warn" };
   }
   if (id === "local-browser") {
@@ -26542,7 +27188,7 @@ function getBackendRoutineList() {
 function getWeekdayOptions(selected) {
   const days =
     state.language !== "es"
-      ? ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+       ? ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
       : ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
   return days.map((day, index) => `<option value="${index}" ${String(index) === String(selected) ? "selected" : ""}>${day}</option>`).join("");
 }
@@ -26787,7 +27433,7 @@ function renderManual() {
     ...allSections.map((section, index) => ({ index: String(index), title: section.title })),
   ];
   const countLabel = state.language !== "es"
-    ? `${sections.length}/${allSections.length} sections · ${countReviewedManualSections()}/${allSections.length} reviewed`
+     ? `${sections.length}/${allSections.length} sections · ${countReviewedManualSections()}/${allSections.length} reviewed`
     : `${sections.length}/${allSections.length} secciones · ${countReviewedManualSections()}/${allSections.length} revisadas`;
   renderManualReviewMeter(allSections.length);
   const count = document.getElementById("manualResultCount");
@@ -27102,7 +27748,7 @@ function renderDevelopmentRulesPanel() {
   const supabaseGate = buildSupabasePilotGate();
   const labels =
     state.language !== "es"
-      ? {
+       ? {
           title: "Development Rules",
           subtitle: "Permanent operating criteria for every increment.",
           admin: "Update Manual and Admin",
@@ -27169,7 +27815,7 @@ function buildCoreMvpGateChecks() {
   const hasReportExports = Boolean(state.reportExportAudit?.json || state.reportExportAudit?.csv || state.reportExportAudit?.html || state.reportExportAudit?.pdf);
   const privacy = readPrivacySettings();
   const labels = state.language !== "es"
-    ? {
+     ? {
         open: "Open",
         run: "Run",
         capture: "Capture and save experiences",
@@ -27228,7 +27874,7 @@ function describeReportExportAudit() {
   const last = audit.lastFormat || formats[formats.length - 1];
   const date = audit.lastAt || audit[last]?.at || "";
   return state.language !== "es"
-    ? `${formats.map((item) => item.toUpperCase()).join(", ")} tested · last ${last.toUpperCase()} ${formatDate(date)}`
+     ? `${formats.map((item) => item.toUpperCase()).join(", ")} tested · last ${last.toUpperCase()} ${formatDate(date)}`
     : `${formats.map((item) => item.toUpperCase()).join(", ")} probados · último ${last.toUpperCase()} ${formatDate(date)}`;
 }
 
@@ -27304,7 +27950,7 @@ function buildCoreMvpFinalClosure(payload = buildCoreMvpPayload()) {
       ready: false,
       score,
       decision: state.language !== "es"
-        ? "Not closed: the operational gate still has core blockers."
+         ? "Not closed: the operational gate still has core blockers."
         : "No cerrado: la compuerta operativa todavía tiene bloqueos centrales.",
     };
   }
@@ -27313,7 +27959,7 @@ function buildCoreMvpFinalClosure(payload = buildCoreMvpPayload()) {
       ready: false,
       score,
       decision: state.language !== "es"
-        ? "Not closed: the real human test is still incomplete."
+         ? "Not closed: the real human test is still incomplete."
         : "No cerrado: la prueba humana real todavía está incompleta.",
     };
   }
@@ -27322,7 +27968,7 @@ function buildCoreMvpFinalClosure(payload = buildCoreMvpPayload()) {
       ready: false,
       score,
       decision: state.language !== "es"
-        ? "Not closed: add evidence notes to every real test step."
+         ? "Not closed: add evidence notes to every real test step."
         : "No cerrado: agrega evidencia a cada paso de la prueba real.",
     };
   }
@@ -27331,7 +27977,7 @@ function buildCoreMvpFinalClosure(payload = buildCoreMvpPayload()) {
       ready: false,
       score,
       decision: state.language !== "es"
-        ? "Not closed: assign a tester or pilot owner before final signoff."
+         ? "Not closed: assign a tester or pilot owner before final signoff."
         : "No cerrado: asigna un responsable de prueba antes del cierre final.",
     };
   }
@@ -27339,7 +27985,7 @@ function buildCoreMvpFinalClosure(payload = buildCoreMvpPayload()) {
     ready: true,
     score,
     decision: state.language !== "es"
-      ? "Core MVP ready for final signoff."
+       ? "Core MVP ready for final signoff."
       : "MVP central listo para cierre final.",
   };
 }
@@ -27377,7 +28023,7 @@ function describeCoreMvpAudit() {
 function buildCoreMvpMarkdown(payload = buildCoreMvpPayload()) {
   const closure = buildCoreMvpFinalClosure(payload);
   const labels = state.language !== "es"
-    ? { title: "Core MVP Gate", generated: "Generated", score: "Score", decision: "Decision", blocker: "First blocker", checks: "Checks", real: "Real human test", final: "Final closure", ready: "ready", review: "review", signed: "Final signoff" }
+     ? { title: "Core MVP Gate", generated: "Generated", score: "Score", decision: "Decision", blocker: "First blocker", checks: "Checks", real: "Real human test", final: "Final closure", ready: "ready", review: "review", signed: "Final signoff" }
     : { title: "Compuerta del MVP central", generated: "Generado", score: "Puntaje", decision: "Decisión", blocker: "Primer bloqueo", checks: "Controles", real: "Prueba humana real", ready: "listo", review: "revisar" };
   return [
     `# ${labels.title}`,
@@ -27414,7 +28060,7 @@ function buildCoreMvpMarkdown(payload = buildCoreMvpPayload()) {
 function buildCoreMvpRealTestMarkdown(payload = buildCoreMvpPayload()) {
   const closure = buildCoreMvpFinalClosure(payload);
   const labels = state.language !== "es"
-    ? { title: "Real 5-User MVP Test", generated: "Generated", version: "Version", score: "Progress", next: "Next pending step", done: "done", pending: "pending" }
+     ? { title: "Real 5-User MVP Test", generated: "Generated", version: "Version", score: "Progress", next: "Next pending step", done: "done", pending: "pending" }
     : { title: "Prueba real del MVP con 5 usuarios", generated: "Generado", version: "Versión", score: "Avance", next: "Siguiente paso pendiente", done: "realizado", pending: "pendiente" };
   const items = getCoreMvpManualTestItems();
   const next = items.find((item) => !state.coreMvpManualTest?.[item.key]?.done);
@@ -27513,7 +28159,7 @@ function buildCoreMvpClosurePackage(payload = buildCoreMvpPayload()) {
 
 function buildCoreMvpClosurePackageMarkdown(pack = buildCoreMvpClosurePackage()) {
   const labels = state.language !== "es"
-    ? { title: "Core MVP Closure Package", generated: "Generated", version: "Version", decision: "Decision", canClose: "Can close", next: "Next action", gate: "Operational gate", real: "Real human test", evidence: "Evidence", pending: "Pending", yes: "yes", no: "no", none: "None" }
+     ? { title: "Core MVP Closure Package", generated: "Generated", version: "Version", decision: "Decision", canClose: "Can close", next: "Next action", gate: "Operational gate", real: "Real human test", evidence: "Evidence", pending: "Pending", yes: "yes", no: "no", none: "None" }
     : { title: "Paquete de cierre del MVP central", generated: "Generado", version: "Versión", decision: "Decisión", canClose: "Puede cerrar", next: "Siguiente acción", gate: "Compuerta operativa", real: "Prueba humana real", evidence: "Evidencia", pending: "Pendiente", yes: "sí", no: "no", none: "Ninguna" };
   return [
     `# ${labels.title}`,
@@ -27542,7 +28188,7 @@ function buildCoreMvpClosurePackageMarkdown(pack = buildCoreMvpClosurePackage())
 
 function renderCoreMvpClosurePackagePreview(pack = buildCoreMvpClosurePackage()) {
   const labels = state.language !== "es"
-    ? { title: "Closure package preview", decision: "Decision", next: "Next action", openNext: "Open next action", canClose: "Can close", gate: "Operational gate", real: "Real test", evidence: "Evidence", blockers: "Open items", yes: "yes", no: "no", none: "None" }
+     ? { title: "Closure package preview", decision: "Decision", next: "Next action", openNext: "Open next action", canClose: "Can close", gate: "Operational gate", real: "Real test", evidence: "Evidence", blockers: "Open items", yes: "yes", no: "no", none: "None" }
     : { title: "Vista previa del paquete de cierre", decision: "Decisi\u00f3n", next: "Siguiente acci\u00f3n", openNext: "Abrir siguiente acci\u00f3n", canClose: "Puede cerrar", gate: "Compuerta operativa", real: "Prueba real", evidence: "Evidencia", blockers: "Pendientes abiertos", yes: "s\u00ed", no: "no", none: "Ninguno" };
   const blockers = [
     ...(pack.operationalGate.firstBlocker ? [pack.operationalGate.firstBlocker.label] : []),
@@ -27585,7 +28231,7 @@ function renderCoreMvpGatePanel() {
   const sessionCompleted = Boolean(state.coreMvpManualTestMeta?.completedAt);
   const canFinishSession = realTest.score >= 100 && realTest.evidenceScore >= 100 && Boolean(String(state.coreMvpManualTestMeta?.tester || "").trim());
   const labels = state.language !== "es"
-    ? {
+     ? {
         title: "Core MVP Closure",
         subtitle: "The main gate now focuses only on what is required to test the product for real.",
         central: "Central test",
@@ -27737,7 +28383,7 @@ function renderCoreMvpGatePanel() {
         <p class="core-mvp-real-score">${escapeHtml(`${labels.realScore} · ${labels.evidenceScore}`)}</p>
         ${
           realTest.missingEvidence.length
-            ? `<p class="core-mvp-evidence-warning">${escapeHtml(`${labels.missingEvidence}: ${realTest.missingEvidence.slice(0, 3).join(" · ")}${realTest.missingEvidence.length > 3 ? "..." : ""}`)}</p>`
+             ? `<p class="core-mvp-evidence-warning">${escapeHtml(`${labels.missingEvidence}: ${realTest.missingEvidence.slice(0, 3).join(" · ")}${realTest.missingEvidence.length > 3 ? "..." : ""}`)}</p>`
             : ""
         }
         <div class="core-mvp-real-meta">
@@ -27920,7 +28566,7 @@ function handleCoreMvpGateClick(event) {
     if (summary.score < 100 || summary.evidenceScore < 100 || !tester) {
       notify(
         state.language !== "es"
-          ? "Complete every step, save all evidence, and assign a tester before finishing the real test."
+           ? "Complete every step, save all evidence, and assign a tester before finishing the real test."
           : "Completa todos los pasos, guarda toda la evidencia y asigna un responsable antes de terminar la prueba real.",
         "warn",
       );
@@ -28068,7 +28714,7 @@ async function runCoreMvpOperationalTest() {
   const status = document.getElementById("embeddingStatus");
   if (status) {
     status.textContent = state.language !== "es"
-      ? "Running the central MVP test..."
+       ? "Running the central MVP test..."
       : "Ejecutando la prueba central del MVP...";
   }
   if (state.experiences.length < 3) {
@@ -28105,7 +28751,7 @@ async function runCoreMvpOperationalTest() {
   requestAnimationFrame(() => focusAppElement("coreMvpGatePanel"));
   const refreshed = buildCoreMvpPayload();
   const message = state.language !== "es"
-    ? `Central MVP test completed: ${refreshed.score}% · ${refreshed.firstBlocker ? refreshed.firstBlocker.label : "no core blocker"}.`
+     ? `Central MVP test completed: ${refreshed.score}% · ${refreshed.firstBlocker ? refreshed.firstBlocker.label : "no core blocker"}.`
     : `Prueba central del MVP completada: ${refreshed.score}% · ${refreshed.firstBlocker ? refreshed.firstBlocker.label : "sin bloqueo central"}.`;
   state.coreMvpActionFeedback = {
     message,
@@ -28122,7 +28768,7 @@ async function runCoreMvpOperationalTest() {
 
 function getCoreMvpManualTestItems() {
   return state.language !== "es"
-    ? [
+     ? [
         { key: "realCapture", title: "Create one real experience", detail: "Use a real note, date, category, energy, place, people, and objective.", view: "capture" },
         { key: "realAttachment", title: "Attach one real file", detail: "Attach an image, audio, video, or document and confirm it appears in Multimodal Assets.", view: "capture" },
         { key: "libraryEdit", title: "Find and edit it in Library", detail: "Search the record, edit one field, and confirm the change remains after reload.", view: "library" },
@@ -28181,7 +28827,7 @@ function buildQuickQaChecks() {
   const pilot = calculatePilotReadiness();
   const labels =
     state.language !== "es"
-      ? {
+       ? {
           app: "App loads with current version",
           appDetail: `Loaded version ${APP_VERSION}.`,
           supabase: "Supabase pilot gate",
@@ -28224,7 +28870,7 @@ function buildQuickQaChecks() {
   const supabaseRun = !state.session?.access_token
     ? "openAuthDiagnostics"
     : supabaseBlocker?.action === "selfTest"
-      ? "runSupabaseSelfTest"
+       ? "runSupabaseSelfTest"
       : "runSupabaseDiagnostics";
   const supabaseAction = !state.session?.access_token ? labels.openAccess : labels.run;
   return [
@@ -28328,14 +28974,14 @@ function getQuickQaActionLabel(action) {
 function describeQuickQaAudit() {
   if (!state.quickQaAudit?.at) {
     return state.language !== "es"
-      ? "No exported or copied verification yet."
+       ? "No exported or copied verification yet."
       : "Aún no hay verificación copiada o exportada.";
   }
   const pending = state.quickQaAudit.pending?.length
     ? state.quickQaAudit.pending.join(" · ")
     : state.language !== "es" ? "no pending checks" : "sin controles pendientes";
   return state.language !== "es"
-    ? `${getQuickQaActionLabel(state.quickQaAudit.action)}: ${formatDate(state.quickQaAudit.at)} · ${state.quickQaAudit.score}% · ${pending}`
+     ? `${getQuickQaActionLabel(state.quickQaAudit.action)}: ${formatDate(state.quickQaAudit.at)} · ${state.quickQaAudit.score}% · ${pending}`
     : `${getQuickQaActionLabel(state.quickQaAudit.action)}: ${formatDate(state.quickQaAudit.at)} · ${state.quickQaAudit.score}% · ${pending}`;
 }
 
@@ -28387,7 +29033,7 @@ function buildQuickQaTrend(history) {
     return {
       className: "is-stable",
       text: state.language !== "es"
-        ? "First evidence snapshot recorded."
+         ? "First evidence snapshot recorded."
         : "Primer corte de evidencia registrado.",
     };
   }
@@ -28398,7 +29044,7 @@ function buildQuickQaTrend(history) {
     return {
       className: "is-up",
       text: state.language !== "es"
-        ? `Improved by ${delta} points since the previous snapshot.`
+         ? `Improved by ${delta} points since the previous snapshot.`
         : `Mejoró ${delta} puntos frente al corte anterior.`,
     };
   }
@@ -28406,14 +29052,14 @@ function buildQuickQaTrend(history) {
     return {
       className: "is-down",
       text: state.language !== "es"
-        ? `Dropped ${Math.abs(delta)} points since the previous snapshot.`
+         ? `Dropped ${Math.abs(delta)} points since the previous snapshot.`
         : `Bajó ${Math.abs(delta)} puntos frente al corte anterior.`,
     };
   }
   return {
     className: "is-stable",
     text: state.language !== "es"
-      ? "No score change since the previous snapshot."
+       ? "No score change since the previous snapshot."
       : "Sin cambio de puntaje frente al corte anterior.",
   };
 }
@@ -28425,7 +29071,7 @@ function buildQuickQaDecision(readiness) {
       className: "is-ready",
       title: state.language !== "es" ? "Pilot decision criterion" : "Criterio de decisión",
       text: state.language !== "es"
-        ? `Ready for final human review before inviting ${PILOT_TARGET_USERS} users.`
+         ? `Ready for final human review before inviting ${PILOT_TARGET_USERS} users.`
         : `Listo para revisión humana final antes de invitar ${PILOT_TARGET_USERS} usuarios.`,
     };
   }
@@ -28434,7 +29080,7 @@ function buildQuickQaDecision(readiness) {
       className: "is-caution",
       title: state.language !== "es" ? "Pilot decision criterion" : "Criterio de decisión",
       text: state.language !== "es"
-        ? `Start the reduced ${PILOT_TARGET_USERS}-user pilot after recording evidence.`
+         ? `Start the reduced ${PILOT_TARGET_USERS}-user pilot after recording evidence.`
         : `Iniciar el piloto reducido de ${PILOT_TARGET_USERS} usuarios después de registrar evidencia.`,
     };
   }
@@ -28443,7 +29089,7 @@ function buildQuickQaDecision(readiness) {
       className: "is-caution",
       title: state.language !== "es" ? "Pilot decision criterion" : "Criterio de decisión",
       text: state.language !== "es"
-        ? "Run an internal test with 1-2 users before expanding."
+         ? "Run an internal test with 1-2 users before expanding."
         : "Realizar prueba interna con 1-2 personas antes de ampliar.",
     };
   }
@@ -28451,7 +29097,7 @@ function buildQuickQaDecision(readiness) {
     className: "is-blocked",
     title: state.language !== "es" ? "Pilot decision criterion" : "Criterio de decisión",
     text: state.language !== "es"
-      ? "Do not invite pilot users yet. Close the recommended blocker first."
+       ? "Do not invite pilot users yet. Close the recommended blocker first."
       : "No invitar usuarios piloto todavía. Cierra primero el bloqueo recomendado.",
   };
 }
@@ -28469,7 +29115,7 @@ function renderQuickQaDecision(readiness) {
 function renderQuickQaNextAction(checks) {
   const pending = buildQuickQaNextAction(checks);
   const labels = state.language !== "es"
-    ? {
+     ? {
         title: "Recommended next action",
         allReady: "All quick verification checks are ready. Register evidence and move to final pilot review.",
         detail: "This closes the fastest visible blocker in the MVP smoke test.",
@@ -28521,7 +29167,7 @@ function buildQuickQaNextAction(checks) {
 function buildQuickQaMarkdown(payload = buildQuickQaPayload()) {
   const labels =
     state.language !== "es"
-      ? { title: "Quick MVP Verification", generated: "Generated", version: "Version", score: "Score", decision: "Decision criterion", next: "Next action", trend: "Evidence trend", history: "Recent history", noHistory: "No previous evidence snapshots.", checks: "Checks", ready: "ready", review: "review" }
+       ? { title: "Quick MVP Verification", generated: "Generated", version: "Version", score: "Score", decision: "Decision criterion", next: "Next action", trend: "Evidence trend", history: "Recent history", noHistory: "No previous evidence snapshots.", checks: "Checks", ready: "ready", review: "review" }
       : { title: "Verificación rápida del MVP", generated: "Generado", version: "Versión", score: "Puntaje", decision: "Criterio de decisión", next: "Siguiente acción", trend: "Tendencia de evidencia", history: "Historial reciente", noHistory: "No hay cortes de evidencia previos.", checks: "Controles", ready: "listo", review: "revisar" };
   return [
     `# ${labels.title}`,
@@ -28592,7 +29238,7 @@ function registerQuickQaSnapshot() {
   const status = document.getElementById("embeddingStatus");
   if (status) {
     status.textContent = state.language !== "es"
-      ? "Quick MVP verification registered."
+       ? "Quick MVP verification registered."
       : "Verificación rápida del MVP registrada.";
   }
 }
@@ -28621,7 +29267,7 @@ function renderQuickQaPanel() {
   const readiness = summarizeReadiness(checks.map((check) => check.ok));
   const labels =
     state.language !== "es"
-      ? {
+       ? {
           title: "Quick MVP Verification",
           subtitle: "Short smoke test before inviting or expanding pilot users.",
           ready: "Ready",
@@ -28697,7 +29343,7 @@ function buildMvpFlowChecks() {
   const publicationReady = (state.publications || []).length > 0 || reportAcceptance.score >= 85;
   const privacy = readPrivacySettings();
   const labels = state.language !== "es"
-    ? {
+     ? {
         open: "Open",
         capture: "Capture real or example experiences",
         captureDetail: `${state.experiences.length} experiences available.`,
@@ -28770,7 +29416,7 @@ function renderMvpFlowPanel() {
   const readiness = summarizeReadiness(checks.map((check) => check.ok));
   const next = checks.find((check) => !check.ok);
   const labels = state.language !== "es"
-    ? {
+     ? {
         title: "Complete MVP Flow",
         subtitle: "End-to-end route to close the pilot-ready product without jumping between loose panels.",
         score: `${readiness.ready}/${readiness.total} stages ready`,
@@ -28833,7 +29479,7 @@ function renderApiStatusPanel() {
   if (!container) return;
   const status = state.apiStatus || {};
   const labels = state.language !== "es"
-    ? {
+     ? {
         title: "Local Server And API",
         subtitle: "Operational check for the local backend used by Supabase, routines, jobs, and server exports.",
         online: "Online",
@@ -28922,7 +29568,7 @@ function buildUiQualityChecks() {
   const mvpFlow = summarizeReadiness(buildMvpFlowChecks().map((check) => check.ok));
   const quickQa = summarizeReadiness(buildQuickQaChecks().map((check) => check.ok));
   const labels = state.language !== "es"
-    ? {
+     ? {
         open: "Open",
         clear: "Clear filters",
         version: "Current app version",
@@ -28933,7 +29579,7 @@ function buildUiQualityChecks() {
           : `${visibleManualSections.length}/${allManualSections.length} visible sections.`,
         manualBlocked: "Active filters are hiding the Manual.",
         api: "Local API/server status",
-        apiDetail: state.apiStatus?.checkedAt ? `${state.apiStatus.message || ""} ${state.apiStatus.latencyMs ?? "-"} ms`.trim() : "No recent check.",
+        apiDetail: state.apiStatus?.checkedAt ? `${state.apiStatus.message || ""} ${state.apiStatus.latencyMs ? `- ${state.apiStatus.latencyMs} ms` : ""}`.trim() : "No recent check.",
         mvp: "Complete MVP route",
         mvpDetail: `${mvpFlow.score}% · ${mvpFlow.ready}/${mvpFlow.total} stages ready.`,
         quick: "Quick verification available",
@@ -28954,7 +29600,7 @@ function buildUiQualityChecks() {
           : `${visibleManualSections.length}/${allManualSections.length} secciones visibles.`,
         manualBlocked: "Los filtros activos están ocultando el Manual.",
         api: "Estado del servidor/API local",
-        apiDetail: state.apiStatus?.checkedAt ? `${state.apiStatus.message || ""} ${state.apiStatus.latencyMs ?? "-"} ms`.trim() : "Sin verificación reciente.",
+        apiDetail: state.apiStatus?.checkedAt ? `${state.apiStatus.message || ""} ${state.apiStatus.latencyMs ? `- ${state.apiStatus.latencyMs} ms` : ""}`.trim() : "Sin verificación reciente.",
         mvp: "Ruta MVP completa",
         mvpDetail: `${mvpFlow.score}% · ${mvpFlow.ready}/${mvpFlow.total} etapas listas.`,
         quick: "Verificación rápida disponible",
@@ -29025,7 +29671,7 @@ function buildUiQualityPayload() {
 
 function buildUiQualityMarkdown(payload = buildUiQualityPayload()) {
   const labels = state.language !== "es"
-    ? { title: "Interface Quality Evidence", generated: "Generated", version: "Version", score: "Score", api: "Local API", next: "Next action", checks: "Controls", ready: "ready", review: "review" }
+     ? { title: "Interface Quality Evidence", generated: "Generated", version: "Version", score: "Score", api: "Local API", next: "Next action", checks: "Controls", ready: "ready", review: "review" }
     : { title: "Evidencia de calidad de interfaz", generated: "Generado", version: "Versión", score: "Puntaje", api: "API local", next: "Siguiente acción", checks: "Controles", ready: "listo", review: "revisar" };
   return [
     `# ${labels.title}`,
@@ -29107,7 +29753,7 @@ function renderUiQualityPanel() {
   const readiness = summarizeReadiness(checks.map((check) => check.ok));
   const next = checks.find((check) => !check.ok);
   const labels = state.language !== "es"
-    ? {
+     ? {
         title: "Interface Quality",
         subtitle: "Small guardrail against empty views, stale versions, server confusion, and missing pilot evidence.",
         score: `${readiness.ready}/${readiness.total} controls ready`,
@@ -29210,7 +29856,7 @@ function renderAdminOperationalFocusPanel() {
   const container = document.getElementById("adminOperationalFocusPanel");
   if (!container) return;
   const labels = state.language !== "es"
-    ? {
+     ? {
         title: "Operational Admin",
         subtitle: "Main controls first. Pilot closure and technical evidence were moved to Advanced diagnostics.",
         flow: "Current operating flow",
@@ -29440,7 +30086,7 @@ function renderAdminCommandCenter() {
   const container = document.getElementById("adminCommandCenter");
   if (!container) return;
   const labels = state.language !== "es"
-    ? {
+     ? {
         title: "Command Center",
         subtitle: "Product focus: fewer panels, clearer decisions, and direct movement toward publication.",
         stage: "Core validation closed",
@@ -29512,7 +30158,7 @@ function renderPublishPlanPanel() {
   const mediaReadiness = calculateAssetStorageReadiness();
   const mediaReady = Boolean(mediaReadiness.remote > 0 && mediaReadiness.pendingSync === 0);
   const labels = state.language !== "es"
-    ? {
+     ? {
         title: "Publication Plan",
         subtitle: "Concrete sequence to move from local MVP to a private, testable deployment.",
         ready: "Ready",
@@ -29588,7 +30234,7 @@ function buildMultiDevicePersistenceChecks() {
   const storageReady = !storage.total || storage.pendingSync === 0;
   const cloudServerReady = Boolean(state.health?.cloudReady || state.health?.deploymentMode === "production");
   const labels = state.language !== "es"
-    ? {
+     ? {
         ready: "Ready",
         review: "Review",
         remote: "Remote persistence",
@@ -29642,7 +30288,7 @@ function renderMultiDevicePersistencePanel() {
   const readiness = summarizeReadiness(checks.map((check) => check.ok));
   const next = checks.find((check) => !check.ok);
   const labels = state.language !== "es"
-    ? {
+     ? {
         title: "Multi-Device Persistence",
         subtitle: "Gate for using the same app from desktop, mobile, and tablet without losing ownership, files, or report history.",
         score: `${readiness.ready}/${readiness.total} controls ready`,
@@ -29874,7 +30520,7 @@ function buildDeviceIntegrationContract() {
   const samplePayloads = buildDeviceIntegrationSamplePayloads();
   const samplePayload = samplePayloads[1]?.signal || samplePayloads[0]?.signal;
   const requiredFields = state.language !== "es"
-    ? [
+     ? [
         ["sourceId", "Stable identifier for the source or device."],
         ["sourceType", "Type: mobile, wearable, file_import, api, calendar, voice, or manual."],
         ["capturedAt", "ISO date and time of the original event."],
@@ -29891,7 +30537,7 @@ function buildDeviceIntegrationContract() {
         ["payload", "Datos normalizados o referencia segura al archivo."],
       ];
   const optionalFields = state.language !== "es"
-    ? [
+     ? [
         ["location", "City, country, coordinates, or place label when available."],
         ["deviceMetadata", "Model, operating system, source app, version, and declared permissions."],
         ["confidence", "Confidence level from 0 to 1 when the source provides it or the system calculates it."],
@@ -29946,7 +30592,7 @@ function buildDeviceIntegrationContract() {
     metaWearablesNormalizerEndpoint: "POST /api/integration/meta-wearables/normalize",
     owner: state.profile?.name || state.profile?.email || (state.language !== "es" ? "Experience Hub owner" : "Responsable de Experience Hub"),
     purpose: state.language !== "es"
-      ? "Normalize signals from devices, files, apps, and services into experiences, assets, Agenda events, and reports."
+       ? "Normalize signals from devices, files, apps, and services into experiences, assets, Agenda events, and reports."
       : "Normalizar señales de dispositivos, archivos, apps y servicios hacia experiencias, activos, eventos de Agenda y reportes.",
     requiredFields,
     optionalFields,
@@ -29954,7 +30600,7 @@ function buildDeviceIntegrationContract() {
     samplePayload,
     samplePayloads,
     acceptanceChecks: state.language !== "es"
-      ? [
+       ? [
           "Validation returns ok=true before real ingestion.",
           "The payload has a stable sourceId and idempotencyKey.",
           "Private media or biometric files use private/sensitive privacy level.",
@@ -29967,7 +30613,7 @@ function buildDeviceIntegrationContract() {
           "La ruta destino es explícita: experiencia, activos, agenda o contexto.",
         ],
     rules: state.language !== "es"
-      ? [
+       ? [
           "No source writes directly into reports; every signal must first become an experience, asset, Agenda event, or context record.",
           "Participant ownership is mandatory before storing or analyzing a signal.",
           "Sensitive biometric and media data must use private Storage or local-only mode.",
@@ -29987,7 +30633,7 @@ function renderDeviceIntegrationPanel() {
   if (!container) return;
   const contract = buildDeviceIntegrationContract();
   const labels = state.language !== "es"
-    ? {
+     ? {
         title: "Device Integration Contract",
         subtitle: "Single entry shape for mobile, wearables, files, APIs, and MCP services.",
         fields: "Required fields",
@@ -30168,7 +30814,7 @@ function renderDeviceIntegrationPanel() {
         ${
           simulation?.results?.length
             ? `<div class="device-simulation-results">
-                ${simulation.results.map((item) => `
+                 ${simulation.results.map((item) => `
                   <div>
                     <span class="${item.ok ? "status-ok" : "status-warn"}">${escapeHtml(item.ok ? "OK" : "!")}</span>
                     <strong>${escapeHtml(item.label || item.name)}</strong>
@@ -30194,7 +30840,7 @@ function renderDeviceIntegrationPanel() {
         ${
           connectorSelfTest?.results?.length
             ? `<div class="device-simulation-results">
-                ${connectorSelfTest.results.map((item) => `
+                 ${connectorSelfTest.results.map((item) => `
                   <div>
                     <span class="${item.ok ? "status-ok" : "status-warn"}">${escapeHtml(item.ok ? "OK" : "!")}</span>
                     <strong>${escapeHtml(item.connector || item.name)}</strong>
@@ -30299,7 +30945,7 @@ async function connectOuraAccount() {
     if (!state.session?.access_token) {
       state.pendingAuthReturn = "oura";
       notify(state.language !== "es"
-        ? "Oura needs an active Vibe session. Your data and sync state were not changed."
+         ? "Oura needs an active Vibe session. Your data and sync state were not changed."
         : "Oura necesita una sesion activa de Vibe. Tus datos y sincronizacion no fueron modificados.", "warn");
       return;
     }
@@ -30328,7 +30974,7 @@ async function connectOuraAccount() {
     }
     if (response.status === 401) {
       throw new Error(state.language !== "es"
-        ? "Your Vibe session needs confirmation before connecting Oura. Your data and sync state were not changed."
+         ? "Your Vibe session needs confirmation before connecting Oura. Your data and sync state were not changed."
         : "Tu sesion de Vibe necesita confirmacion antes de conectar Oura. Tus datos y sincronizacion no fueron modificados.");
     }
     if (!response.ok) {
@@ -30349,7 +30995,7 @@ async function connectOuraAccount() {
       },
     };
     notify(state.language !== "es"
-      ? `Could not connect Oura: ${error.message}`
+       ? `Could not connect Oura: ${error.message}`
       : `No se pudo conectar Oura: ${error.message}`, "warn");
     renderDashboardIntegrationHandoff();
     renderDeviceIntegrationPanel();
@@ -30404,67 +31050,106 @@ async function runDeviceConnectorSelfTest() {
   renderDeviceIntegrationPanel();
 }
 
+function getProductSettingsLabels() {
+  const keyVisible = document.getElementById("localKeyInput")?.type !== "password";
+  if (state.language === "fr") {
+    return {
+      title: "Controles du produit",
+      help: "L'utilisation quotidienne reste simple. Sauvegarde, confidentialite, synchronisation et controles avances vivent ici.",
+      app: "App",
+      sync: "Synchronisation",
+      data: "Donnees",
+      security: "Confidentialite",
+      diagnostics: "Diagnostic",
+      refresh: "Actualiser l'app",
+      voice: "Commande vocale",
+      backup: "Telecharger sauvegarde",
+      restore: "Restaurer sauvegarde",
+      syncOffline: "Synchroniser les elements en attente",
+      verify: "Verifier le cloud",
+      selfTest: "Tester le flux complet",
+      recommended: "Appliquer la confidentialite recommandee",
+      showKey: keyVisible ? "Masquer la cle locale" : "Afficher la cle locale",
+      applyKey: "Appliquer la cle locale",
+      unlock: "Deverrouiller les donnees locales",
+      demoOpen: "Nettoyage et donnees de test",
+      demoHelp: "Zone avancee. Sauvegarde d'abord; les actions de suppression demandent confirmation.",
+      loadDemo: "Charger exemple",
+      clearDemo: "Supprimer exemple",
+      clearLocal: "Vider ce navigateur",
+      resetCloud: "Effacer donnees du cloud",
+      localMode: "Securite locale",
+      localReady: "Confidentialite recommandee active.",
+      localReview: "Verifier la cle locale ou la confidentialite.",
+    };
+  }
+  if (state.language !== "es") {
+    return {
+      title: "Product controls",
+      help: "Daily use stays simple. Backup, privacy, sync, and advanced checks live here.",
+      app: "App",
+      sync: "Sync",
+      data: "Data",
+      security: "Privacy",
+      diagnostics: "Diagnostics",
+      refresh: "Refresh app",
+      voice: "Voice command",
+      backup: "Download backup",
+      restore: "Restore backup",
+      syncOffline: "Sync pending changes",
+      verify: "Verify cloud",
+      selfTest: "Run full flow test",
+      recommended: "Apply recommended privacy",
+      showKey: keyVisible ? "Hide local key" : "Show local key",
+      applyKey: "Apply local key",
+      unlock: "Unlock local data",
+      demoOpen: "Cleanup and test data",
+      demoHelp: "Advanced area. Back up first; deletion actions ask for confirmation.",
+      loadDemo: "Load example",
+      clearDemo: "Remove example",
+      clearLocal: "Clear this browser",
+      resetCloud: "Erase cloud data",
+      localMode: "Local security",
+      localReady: "Recommended privacy is active.",
+      localReview: "Review local key or privacy settings.",
+    };
+  }
+  return {
+    title: "Controles del producto",
+    help: "El uso diario queda simple. Respaldo, privacidad, sincronizacion y controles avanzados viven aqui.",
+    app: "App",
+    sync: "Sincronizacion",
+    data: "Datos",
+    security: "Privacidad",
+    diagnostics: "Diagnostico",
+    refresh: "Actualizar app",
+    voice: "Comando de voz",
+    backup: "Descargar respaldo",
+    restore: "Restaurar respaldo",
+    syncOffline: "Sincronizar pendientes",
+    verify: "Verificar nube",
+    selfTest: "Probar flujo completo",
+    recommended: "Aplicar privacidad recomendada",
+    showKey: keyVisible ? "Ocultar clave local" : "Mostrar clave local",
+    applyKey: "Aplicar clave local",
+    unlock: "Desbloquear datos locales",
+    demoOpen: "Limpieza y datos de prueba",
+    demoHelp: "Zona avanzada. Haz respaldo primero; las acciones de borrado piden confirmacion.",
+    loadDemo: "Cargar ejemplo",
+    clearDemo: "Eliminar ejemplo",
+    clearLocal: "Vaciar este navegador",
+    resetCloud: "Borrar datos de nube",
+    localMode: "Seguridad local",
+    localReady: "Privacidad recomendada activa.",
+    localReview: "Revisa clave local o privacidad.",
+  };
+}
+
 function renderProductSettingsPanel() {
   const container = document.getElementById("productSettingsPanel");
   if (!container) return;
   const connectivity = getConnectivitySummary();
-  const labels = state.language !== "es"
-    ? {
-        title: "Product controls",
-        help: "Daily use stays simple. Technical checks, backup, privacy, and test data live here.",
-        app: "App",
-        sync: "Sync",
-        data: "Data",
-        security: "Privacy",
-        diagnostics: "Diagnostics",
-        refresh: "Refresh app",
-        voice: "Voice command",
-        backup: "Download backup",
-        restore: "Restore backup",
-        syncOffline: "Sync pending changes",
-        verify: "Verify cloud",
-        selfTest: "Run full flow test",
-        recommended: "Apply recommended privacy",
-        showKey: document.getElementById("localKeyInput")?.type === "password" ? "Show local key" : "Hide local key",
-        applyKey: "Apply local key",
-        unlock: "Unlock local data",
-        demoOpen: "Test data",
-        demoHelp: "Only for QA or demos. Real user data is not deleted by these buttons.",
-        loadDemo: "Load example",
-        clearDemo: "Remove example",
-        clearLocal: "Clear this browser",
-        localMode: "Local security",
-        localReady: "Recommended privacy is active.",
-        localReview: "Review local key or privacy settings.",
-      }
-    : {
-        title: "Controles del producto",
-        help: "El uso diario queda simple. Las pruebas técnicas, respaldo, privacidad y datos de ejemplo viven aquí.",
-        app: "App",
-        sync: "Sincronización",
-        data: "Datos",
-        security: "Privacidad",
-        diagnostics: "Diagnóstico",
-        refresh: "Actualizar app",
-        voice: "Comando de voz",
-        backup: "Descargar respaldo",
-        restore: "Restaurar respaldo",
-        syncOffline: "Sincronizar pendientes",
-        verify: "Verificar nube",
-        selfTest: "Probar flujo completo",
-        recommended: "Aplicar privacidad recomendada",
-        showKey: document.getElementById("localKeyInput")?.type === "password" ? "Mostrar clave local" : "Ocultar clave local",
-        applyKey: "Aplicar clave local",
-        unlock: "Desbloquear datos locales",
-        demoOpen: "Datos de prueba",
-        demoHelp: "Solo para QA o demostraciones. Estos botones no borran datos reales del usuario.",
-        loadDemo: "Cargar ejemplo",
-        clearDemo: "Eliminar ejemplo",
-        clearLocal: "Vaciar este navegador",
-        localMode: "Seguridad local",
-        localReady: "Privacidad recomendada activa.",
-        localReview: "Revisa clave local o privacidad.",
-      };
+  const labels = getProductSettingsLabels();
   const privacy = readPrivacySettings();
   const key = document.getElementById("localKeyInput")?.value || "";
   const encryptedStored = hasEncryptedLocalData();
@@ -30521,6 +31206,7 @@ function renderProductSettingsPanel() {
         <button class="ghost-button" type="button" data-product-settings-action="load-demo">${escapeHtml(labels.loadDemo)}</button>
         <button class="ghost-button" type="button" data-product-settings-action="clear-demo">${escapeHtml(labels.clearDemo)}</button>
         <button class="danger-button" type="button" data-product-settings-action="clear-local">${escapeHtml(labels.clearLocal)}</button>
+        <button class="danger-button" type="button" data-product-settings-action="reset-cloud">${escapeHtml(labels.resetCloud)}</button>
       </div>
     </details>
   `;
@@ -30545,9 +31231,17 @@ function handleProductSettingsAction(event) {
     "load-demo": loadDemoData,
     "clear-demo": clearDemoData,
     "clear-local": clearLocalData,
+    "reset-cloud": resetCloudDataForFreshStart,
   };
   actions[action]?.();
   window.setTimeout(renderProductSettingsPanel, 50);
+}
+
+function handleDashboardPrimaryAction(event) {
+  const action = event.target.closest("[data-dashboard-action]")?.dataset.dashboardAction;
+  if (action === "reset-cloud") {
+    resetCloudDataForFreshStart();
+  }
 }
 
 function renderAdminRecovery(error) {
@@ -30560,7 +31254,7 @@ function renderAdminRecovery(error) {
     <article class="data-status-card is-warning">
       <strong>${escapeHtml(state.language !== "es" ? "Administration opened in recovery mode" : "Administración abierta en modo recuperación")}</strong>
       <p>${escapeHtml(state.language !== "es"
-        ? "Your administrator access is not blocked. One internal panel did not finish rendering, but navigation and core controls remain available."
+         ? "Your administrator access is not blocked. One internal panel did not finish rendering, but navigation and core controls remain available."
         : "Tu acceso de administrador no está bloqueado. Un panel interno no terminó de renderizar, pero la navegación y los controles principales siguen disponibles.")}</p>
       ${detail ? `<small>${escapeHtml(detail)}</small>` : ""}
     </article>
@@ -30579,7 +31273,7 @@ function renderStartupRecovery(error) {
       <article class="data-status-card is-warning">
         <strong>${escapeHtml(state.language !== "es" ? "App recovered with limited startup" : "App recuperada con inicio limitado")}</strong>
         <p>${escapeHtml(state.language !== "es"
-          ? "Navigation remains available. Open Administration if you need to review the detail."
+           ? "Navigation remains available. Open Administration if you need to review the detail."
           : "La navegación sigue disponible. Abre Administración si necesitas revisar el detalle.")}</p>
         ${detail ? `<small>${escapeHtml(detail)}</small>` : ""}
       </article>
@@ -30636,7 +31330,7 @@ function renderAdminUnsafe() {
       state.language !== "es" ? "Core MVP closure" : "Cierre operativo del MVP",
       summarizeReadiness(buildCoreMvpGateChecks().map((check) => check.ok)).score >= 85 ? okStatus : attentionStatus,
       state.language !== "es"
-        ? "Main release gate: capture, persistence, library, assets, reports, exports, backup, and clear blockers."
+         ? "Main release gate: capture, persistence, library, assets, reports, exports, backup, and clear blockers."
         : "Compuerta principal: captura, persistencia, librería, activos, reportes, exportaciones, respaldo y bloqueos claros.",
       { view: "admin", focus: "coreMvpGatePanel", label: state.language !== "es" ? "Open gate" : "Ver compuerta" },
     ],
@@ -30644,7 +31338,7 @@ function renderAdminUnsafe() {
       state.language !== "es" ? "Development rules" : "Reglas de desarrollo",
       okStatus,
       state.language !== "es"
-        ? "Manual/Admin updates, robustness, agility, and proven patterns are now visible controls."
+         ? "Manual/Admin updates, robustness, agility, and proven patterns are now visible controls."
         : "Manual/Admin, robustez, agilidad y patrones probados quedan como controles visibles.",
       { view: "admin", focus: "developmentRulesPanel", label: state.language !== "es" ? "View rules" : "Ver reglas" },
     ],
@@ -30652,7 +31346,7 @@ function renderAdminUnsafe() {
       state.language !== "es" ? "Release control audit" : "Auditoría de control de release",
       okStatus,
       state.language !== "es"
-        ? "npm run audit:control verifies version, PWA cache/reset, progress model, Manual/Admin evidence, and release scripts before deploy."
+         ? "npm run audit:control verifies version, PWA cache/reset, progress model, Manual/Admin evidence, and release scripts before deploy."
         : "npm run audit:control verifica versión, caché/reset PWA, modelo de avance, evidencia Manual/Admin y scripts de release antes del deploy.",
       { view: "admin", focus: "adminGlobalProgressPanel", label: state.language !== "es" ? "Open progress" : "Ver avance" },
     ],
@@ -30660,7 +31354,7 @@ function renderAdminUnsafe() {
       state.language !== "es" ? "Quick MVP verification" : "Verificación rápida del MVP",
       buildQuickQaChecks().every((check) => check.ok) ? okStatus : attentionStatus,
       state.language !== "es"
-        ? "Smoke-test checklist for app version, Supabase, reports, assets, privacy/backup, and pilot readiness."
+         ? "Smoke-test checklist for app version, Supabase, reports, assets, privacy/backup, and pilot readiness."
         : "Checklist corto de versión, Supabase, reportes, activos, privacidad/respaldo y preparación del piloto.",
       { view: "admin", focus: "quickQaPanel", label: state.language !== "es" ? "Open checklist" : "Ver checklist" },
     ],
@@ -30668,7 +31362,7 @@ function renderAdminUnsafe() {
       state.language !== "es" ? "Complete MVP flow" : "Ruta MVP completa",
       mvpFlowReadiness.score >= 85 ? okStatus : attentionStatus,
       state.language !== "es"
-        ? `${mvpFlowReadiness.score}% · ${mvpFlowReadiness.ready}/${mvpFlowReadiness.total} end-to-end stages ready`
+         ? `${mvpFlowReadiness.score}% · ${mvpFlowReadiness.ready}/${mvpFlowReadiness.total} end-to-end stages ready`
         : `${mvpFlowReadiness.score}% · ${mvpFlowReadiness.ready}/${mvpFlowReadiness.total} etapas de punta a punta listas`,
       { view: "admin", focus: "mvpFlowPanel", label: state.language !== "es" ? "Open route" : "Ver ruta" },
     ],
@@ -30676,7 +31370,7 @@ function renderAdminUnsafe() {
       state.language !== "es" ? "Interface quality" : "Calidad de interfaz",
       summarizeReadiness(buildUiQualityChecks().map((check) => check.ok)).score >= 85 ? okStatus : attentionStatus,
       state.language !== "es"
-        ? "Checks empty Manual filters, API status, version, data, backup evidence, and MVP route."
+         ? "Checks empty Manual filters, API status, version, data, backup evidence, and MVP route."
         : "Revisa filtros vacíos del Manual, API, versión, datos, respaldo y ruta MVP.",
       { view: "admin", focus: "uiQualityPanel", label: state.language !== "es" ? "Open quality" : "Ver calidad" },
     ],
@@ -30694,21 +31388,21 @@ function renderAdminUnsafe() {
       state.language !== "es" ? "Current delivery vs full ambition" : "Entrega actual vs ambición completa",
       globalProgress.overall >= 90 ? okStatus : attentionStatus,
       state.language !== "es"
-        ? `Current delivery ${globalProgress.overall}%. Full ambition ${globalProgress.tracks.find((track) => track.key === "full")?.score || totalProgress.full}%. Native app and direct connectors are product horizon, not PWA blockers.`
+         ? `Current delivery ${globalProgress.overall}%. Full ambition ${globalProgress.tracks.find((track) => track.key === "full")?.score || totalProgress.full}%. Native app and direct connectors are product horizon, not PWA blockers.`
         : `Entrega actual ${globalProgress.overall}%. Ambición completa ${globalProgress.tracks.find((track) => track.key === "full")?.score || totalProgress.full}%. App nativa y conectores directos son horizonte de producto, no bloqueo de la PWA.`,
     ],
     [
       state.language !== "es" ? `${PILOT_TARGET_USERS}-user pilot scope` : `Alcance piloto ${PILOT_TARGET_USERS} usuarios`,
       totalProgress.pilot >= 85 ? okStatus : attentionStatus,
       state.language !== "es"
-        ? "Reduced release scope active: local/Supabase operation, manual review, backups, privacy, and exports before external automation."
+         ? "Reduced release scope active: local/Supabase operation, manual review, backups, privacy, and exports before external automation."
         : "Alcance reducido activo: operación local/Supabase, revisión manual, respaldos, privacidad y exportaciones antes de automatización externa.",
     ],
     [
       state.language !== "es" ? "Manual onboarding" : "Onboarding del manual",
       manualReviewSummary.score >= 80 ? okStatus : attentionStatus,
       state.language !== "es"
-        ? `${manualReviewSummary.reviewed}/${manualReviewSummary.total} sections reviewed · ${manualReviewSummary.score}%`
+         ? `${manualReviewSummary.reviewed}/${manualReviewSummary.total} sections reviewed · ${manualReviewSummary.score}%`
         : `${manualReviewSummary.reviewed}/${manualReviewSummary.total} secciones revisadas · ${manualReviewSummary.score}%`,
       { view: "manual", label: state.language !== "es" ? "Open manual" : "Abrir manual" },
     ],
@@ -30755,35 +31449,35 @@ function renderAdminUnsafe() {
       state.language !== "es" ? "Agenda blocked days" : "Días bloqueados de Agenda",
       okStatus,
       state.language !== "es"
-        ? `${state.agendaBlockedDates.length} unavailable dates marked locally`
+         ? `${state.agendaBlockedDates.length} unavailable dates marked locally`
         : `${state.agendaBlockedDates.length} fechas no disponibles marcadas localmente`,
     ],
     [
       state.language !== "es" ? "Publication closure" : "Cierre de publicaciones",
       okStatus,
       state.language !== "es"
-        ? "Pre-publication checklist for approval, privacy, media, channel fit, and export readiness"
+         ? "Pre-publication checklist for approval, privacy, media, channel fit, and export readiness"
         : "Lista prepublicación para aprobación, privacidad, multimedia, ajuste al canal y preparación de exportación",
     ],
     [
       state.language !== "es" ? "Daily interactive modules" : "Módulos interactivos del Diario",
       dailyReadiness.interactiveReady ? okStatus : attentionStatus,
       state.language !== "es"
-        ? `${dailyReadiness.score}% ready · interactive modules active locally · ${dailyReadiness.contentReady ? "updated content available" : "refresh Daily for live content"}`
+         ? `${dailyReadiness.score}% ready · interactive modules active locally · ${dailyReadiness.contentReady ? "updated content available" : "refresh Daily for live content"}`
         : `${dailyReadiness.score}% listo · módulos interactivos activos localmente · ${dailyReadiness.contentReady ? "contenido actualizado disponible" : "actualiza Diario para contenido real"}`,
     ],
     [
       state.language !== "es" ? "Initial predictive outlook" : "Proyección inicial",
       predictiveExperienceCount >= 4 ? okStatus : attentionStatus,
       state.language !== "es"
-        ? `${predictiveExperienceCount} filtered experiences available for local heuristic outlook`
+         ? `${predictiveExperienceCount} filtered experiences available for local heuristic outlook`
         : `${predictiveExperienceCount} experiencias filtradas disponibles para proyección heurística local`,
     ],
     [
       state.language !== "es" ? "Report exports" : "Exportaciones de reporte",
       okStatus,
       state.language !== "es"
-        ? "JSON, CSV, printable HTML, and structured native PDF"
+         ? "JSON, CSV, printable HTML, and structured native PDF"
         : "JSON, CSV, HTML imprimible y PDF editorial",
     ],
     [
@@ -30791,17 +31485,17 @@ function renderAdminUnsafe() {
       webSpeechSupported ? okStatus : attentionStatus,
       webSpeechSupported
         ? state.language !== "es"
-          ? "Microphone flow, V invocation, and clickable command examples are available"
-          : "El flujo con micrófono, la invocación V y los ejemplos clicables están disponibles"
+            ? "Microphone flow, V invocation, and clickable command examples are available"
+           : "El flujo con micrófono, la invocación V y los ejemplos clicables están disponibles"
         : state.language !== "es"
-          ? "This browser has no Web Speech support; clickable examples remain available"
+           ? "This browser has no Web Speech support; clickable examples remain available"
           : "Este navegador no tiene Web Speech; los ejemplos clicables siguen disponibles",
     ],
     [
       state.language !== "es" ? "Groups / people" : "Grupos / personas",
       participantSummary.total <= PILOT_TARGET_USERS && participantSummary.needsOnboarding === 0 ? okStatus : attentionStatus,
       state.language !== "es"
-        ? `${participantSummary.total}/${PILOT_TARGET_USERS} registered · ${participantSummary.active} active · ${participantSummary.onboarded} onboarded`
+         ? `${participantSummary.total}/${PILOT_TARGET_USERS} registered · ${participantSummary.active} active · ${participantSummary.onboarded} onboarded`
         : `${participantSummary.total}/${PILOT_TARGET_USERS} registrados · ${participantSummary.active} activos · ${participantSummary.onboarded} con onboarding`,
       { view: "admin", focus: "pilotParticipantsPanel", label: state.language !== "es" ? "Open technical view" : "Ver vista tecnica" },
     ],
@@ -30809,7 +31503,7 @@ function renderAdminUnsafe() {
       state.language !== "es" ? "Group/person scope across flows" : "Alcance por grupo/persona en flujos",
       okStatus,
       state.language !== "es"
-        ? "Capture, Dashboard, Agenda, calendar, Insights, Reports, Publications, Daily actions, and predictive actions share group/person scope."
+         ? "Capture, Dashboard, Agenda, calendar, Insights, Reports, Publications, Daily actions, and predictive actions share group/person scope."
         : "Captura, Panel, Agenda, calendario, Hallazgos, Reportes, Publicaciones, acciones de Diario y acciones predictivas comparten alcance por grupo/persona.",
       { view: "agenda", label: state.language !== "es" ? "Open Agenda" : "Abrir Agenda" },
     ],
@@ -30817,7 +31511,7 @@ function renderAdminUnsafe() {
       state.language !== "es" ? "Pilot test plan" : "Plan de pruebas piloto",
       pilotTestSummary.score >= 80 ? okStatus : attentionStatus,
       state.language !== "es"
-        ? `${pilotTestSummary.completed}/${pilotTestSummary.total} scenarios complete · ${pilotTestSummary.score}%`
+         ? `${pilotTestSummary.completed}/${pilotTestSummary.total} scenarios complete · ${pilotTestSummary.score}%`
         : `${pilotTestSummary.completed}/${pilotTestSummary.total} escenarios completos · ${pilotTestSummary.score}%`,
       { view: "admin", focus: "pilotTestPlanPanel", label: state.language !== "es" ? "Open tests" : "Ver pruebas" },
     ],
@@ -30825,7 +31519,7 @@ function renderAdminUnsafe() {
       state.language !== "es" ? "Pilot feedback" : "Feedback del piloto",
       feedbackSummary.blockingOpen ? attentionStatus : okStatus,
       state.language !== "es"
-        ? `${feedbackSummary.open} open · ${feedbackSummary.blockingOpen} high/blocker · ${feedbackSummary.resolved} resolved`
+         ? `${feedbackSummary.open} open · ${feedbackSummary.blockingOpen} high/blocker · ${feedbackSummary.resolved} resolved`
         : `${feedbackSummary.open} abiertos · ${feedbackSummary.blockingOpen} altos/bloqueantes · ${feedbackSummary.resolved} resueltos`,
       { view: "admin", focus: "pilotFeedbackPanel", label: state.language !== "es" ? "Open feedback" : "Ver feedback" },
     ],
@@ -30833,7 +31527,7 @@ function renderAdminUnsafe() {
       state.language !== "es" ? "External integration strategy" : "Estrategia de integración externa",
       okStatus,
       state.language !== "es"
-        ? "Clio and future services are documented as API/MCP-first candidates before code reuse."
+         ? "Clio and future services are documented as API/MCP-first candidates before code reuse."
         : "Clio y servicios futuros quedan documentados como candidatos API/MCP antes de reutilizar código.",
       { view: "admin", focus: "externalIntegrationPanel", label: state.language !== "es" ? "Open strategy" : "Ver estrategia" },
     ],
@@ -30861,14 +31555,14 @@ function renderAdminUnsafe() {
       state.language !== "es" ? "Multimodal analytical readiness" : "Preparación analítica multimodal",
       assetAnalysisReadiness.score >= 70 || !assetAnalysisReadiness.total ? okStatus : attentionStatus,
       state.language !== "es"
-        ? `${assetAnalysisReadiness.score}% · ${assetAnalysisReadiness.withText}/${assetAnalysisReadiness.total} assets with analytical text · ${assetAnalysisReadiness.processingPending} pending processing · ${assetAnalysisReadiness.suggested} suggested locally`
+         ? `${assetAnalysisReadiness.score}% · ${assetAnalysisReadiness.withText}/${assetAnalysisReadiness.total} assets with analytical text · ${assetAnalysisReadiness.processingPending} pending processing · ${assetAnalysisReadiness.suggested} suggested locally`
         : `${assetAnalysisReadiness.score}% · ${assetAnalysisReadiness.withText}/${assetAnalysisReadiness.total} activos con texto analítico · ${assetAnalysisReadiness.processingPending} con procesamiento pendiente · ${assetAnalysisReadiness.suggested} sugeridos localmente`,
     ],
     [
       state.language !== "es" ? "Asset workflow closure" : "Cierre del flujo de activos",
       assetWorkflowReadiness.score >= 85 ? okStatus : attentionStatus,
       state.language !== "es"
-        ? `${assetWorkflowReadiness.score}% · ${assetWorkflowReadiness.ready}/${assetWorkflowReadiness.total} closed controls: filters, sort, CSV, checklist, safe import, audit, IDs, and batch suggestions`
+         ? `${assetWorkflowReadiness.score}% · ${assetWorkflowReadiness.ready}/${assetWorkflowReadiness.total} closed controls: filters, sort, CSV, checklist, safe import, audit, IDs, and batch suggestions`
         : `${assetWorkflowReadiness.score}% · ${assetWorkflowReadiness.ready}/${assetWorkflowReadiness.total} controles cerrados: filtros, orden, CSV, checklist, importación segura, auditoría, ID y sugerencias por lote`,
       {
         view: "assetLibrary",
@@ -30880,7 +31574,7 @@ function renderAdminUnsafe() {
       state.language !== "es" ? "Multimodal review plan" : "Plan de revisión multimodal",
       assetAnalysisReadiness.processingPending ? attentionStatus : okStatus,
       state.language !== "es"
-        ? `${assetAnalysisReadiness.processingPending} pending assets · visible checklist and Markdown export available`
+         ? `${assetAnalysisReadiness.processingPending} pending assets · visible checklist and Markdown export available`
         : `${assetAnalysisReadiness.processingPending} activos pendientes · checklist visible y exportación Markdown disponibles`,
       {
         view: "assetLibrary",
@@ -30894,31 +31588,31 @@ function renderAdminUnsafe() {
       state.assetMetadataImportSummary ? okStatus : attentionStatus,
       state.assetMetadataImportSummary
         ? state.language !== "es"
-          ? `${state.assetMetadataImportSummary.updated || 0} updated · ${state.assetMetadataImportSummary.cleared || 0} cleared · ${state.assetMetadataImportSummary.ignoredEmpty || 0} empty ignored · ${state.assetMetadataImportSummary.ignoredMissing || 0} not found`
-          : `${state.assetMetadataImportSummary.updated || 0} actualizados · ${state.assetMetadataImportSummary.cleared || 0} limpiados · ${state.assetMetadataImportSummary.ignoredEmpty || 0} vacíos ignorados · ${state.assetMetadataImportSummary.ignoredMissing || 0} no encontrados`
+            ? `${state.assetMetadataImportSummary.updated || 0} updated · ${state.assetMetadataImportSummary.cleared || 0} cleared · ${state.assetMetadataImportSummary.ignoredEmpty || 0} empty ignored · ${state.assetMetadataImportSummary.ignoredMissing || 0} not found`
+           : `${state.assetMetadataImportSummary.updated || 0} actualizados · ${state.assetMetadataImportSummary.cleared || 0} limpiados · ${state.assetMetadataImportSummary.ignoredEmpty || 0} vacíos ignorados · ${state.assetMetadataImportSummary.ignoredMissing || 0} no encontrados`
         : state.language !== "es"
-          ? "No import recorded"
+           ? "No import recorded"
           : "Sin importación registrada",
     ],
     [
       state.language !== "es" ? "Asset search" : "Búsqueda de activos",
       okStatus,
       state.language !== "es"
-        ? "Text, type, category, provenance, readiness, analytical text, and date range"
+         ? "Text, type, category, provenance, readiness, analytical text, and date range"
         : "Texto, tipo, categoría, origen, disponibilidad, texto analítico y rango de fecha",
     ],
     [
       state.language !== "es" ? "Private Storage readiness" : "Preparación de Storage privado",
       assetStorageReadiness.pendingSync ? attentionStatus : okStatus,
       state.language !== "es"
-        ? `${assetStorageReadiness.remote}/${assetStorageReadiness.total} remote · ${assetStorageReadiness.pendingSync} pending sync · ${assetStorageReadiness.cached} cached previews`
+         ? `${assetStorageReadiness.remote}/${assetStorageReadiness.total} remote · ${assetStorageReadiness.pendingSync} pending sync · ${assetStorageReadiness.cached} cached previews`
         : `${assetStorageReadiness.remote}/${assetStorageReadiness.total} remotos · ${assetStorageReadiness.pendingSync} pendientes de sincronizar · ${assetStorageReadiness.cached} vistas en caché`,
     ],
     [
       state.language !== "es" ? "Attachment repair" : "Reparación de adjuntos",
       summarizeAttachmentSyncState().pending ? attentionStatus : okStatus,
       state.language !== "es"
-        ? `${summarizeAttachmentSyncState().pending} pending attachments · one visible action repairs Library, Assets, Reports, and Publications`
+         ? `${summarizeAttachmentSyncState().pending} pending attachments · one visible action repairs Library, Assets, Reports, and Publications`
         : `${summarizeAttachmentSyncState().pending} adjuntos pendientes · una acción visible repara Librería, Activos, Reportes y Publicaciones`,
       { view: "admin", focus: "multiDevicePersistencePanel", label: state.language !== "es" ? "Open Admin" : "Abrir Administración" },
     ],
@@ -30933,10 +31627,10 @@ function renderAdminUnsafe() {
       state.offlineQueue.length ? attentionStatus : okStatus,
       state.offlineQueue.length
         ? state.language !== "es"
-          ? `${state.offlineQueue.length} pending changes with visible resolution policy`
-          : `${state.offlineQueue.length} cambios pendientes con política de resolución visible`
+            ? `${state.offlineQueue.length} pending changes with visible resolution policy`
+           : `${state.offlineQueue.length} cambios pendientes con política de resolución visible`
         : state.language !== "es"
-          ? "No pending changes"
+           ? "No pending changes"
           : "Sin pendientes",
     ],
     [
@@ -31180,7 +31874,7 @@ function renderOfflineQueuePanel() {
     ${queue.length ? `<p class="offline-queue-guidance">${escapeHtml(guidance)}</p>` : ""}
     ${
       rows.length
-        ? `<div class="offline-queue-list">
+         ? `<div class="offline-queue-list">
             ${rows.map(renderOfflineQueueItem).join("")}
           </div>
           ${queue.length > rows.length ? `<p class="card-meta">+${queue.length - rows.length} ${t("labels.items")}</p>` : ""}`
@@ -31335,10 +32029,10 @@ async function runSupabaseSelfTest() {
           detail: needsSession ? t("labels.supabaseDiagnosticsNeedsSession") : error.message || "No se pudo ejecutar la prueba real.",
           action: needsSession
             ? state.language !== "es"
-              ? "Sign in and run the real flow test again."
-              : "Inicia sesión y vuelve a ejecutar la prueba real."
+                ? "Sign in and run the real flow test again."
+               : "Inicia sesión y vuelve a ejecutar la prueba real."
             : state.language !== "es"
-              ? "Run Verify Supabase first and resolve the pending closure action."
+               ? "Run Verify Supabase first and resolve the pending closure action."
               : "Ejecuta Verificar nube primero y resuelve la acción pendiente.",
           actionType: needsSession ? "openAuth" : "openAdmin",
         },
@@ -31398,10 +32092,10 @@ async function runSupabaseDiagnostics() {
           detail: needsSession ? t("labels.supabaseDiagnosticsNeedsSession") : error.message || "No se pudo ejecutar la verificación.",
           action: needsSession
             ? state.language !== "es"
-              ? "Sign in from the app access panel and run Verify Supabase again."
-              : "Inicia sesión desde el panel de acceso y vuelve a ejecutar Verificar nube."
+                ? "Sign in from the app access panel and run Verify Supabase again."
+               : "Inicia sesión desde el panel de acceso y vuelve a ejecutar Verificar nube."
             : state.language !== "es"
-              ? "Review the local API and run the verification again."
+               ? "Review the local API and run the verification again."
               : "Revisa la API local y vuelve a ejecutar la verificación.",
           actionType: needsSession ? "openAuth" : "openAdmin",
         },
@@ -31461,7 +32155,7 @@ function renderSelfTestPlainSummary(result) {
   const agendaMissing = missingTableErrors.some((step) => String(step.detail || "").includes("agenda_events"));
   const workspaceMissing = missingTableErrors.some((step) => /participants|assets|experience_events/i.test(String(step.detail || "")));
   const labels = state.language !== "es"
-    ? {
+     ? {
         titleOk: "What this result means",
         filesOk: "File upload is working: image, audio, video, document, and ZIP reached private Storage and can be read with signed URLs.",
         filesReview: "File upload still needs review. Check the cards below for the first failed asset family.",
@@ -31499,12 +32193,12 @@ function renderSelfTestPlainSummary(result) {
       <p>${escapeHtml(assetsOk ? labels.sharedOk : labels.sharedReview)}</p>
       ${
         required.length
-          ? `<p><strong>${escapeHtml(labels.required)}:</strong> ${escapeHtml(required.join(" + "))}</p>`
+           ? `<p><strong>${escapeHtml(labels.required)}:</strong> ${escapeHtml(required.join(" + "))}</p>`
           : ""
       }
       ${
         missingTableErrors.length
-          ? `<div class="self-test-missing-tables">
+           ? `<div class="self-test-missing-tables">
               ${workspaceMissing ? `<span class="pill">${escapeHtml(labels.workspace)}</span>` : ""}
               ${agendaMissing ? `<span class="pill">${escapeHtml(labels.agenda)}</span>` : ""}
             </div>`
@@ -31517,7 +32211,7 @@ function renderSelfTestPlainSummary(result) {
 function renderSelfTestAssetMatrix(steps = []) {
   const findStep = (id) => steps.find((step) => step.id === id);
   const labels = state.language !== "es"
-    ? {
+     ? {
         title: "Asset families tested",
         help: "This follows the CLIO-style pattern: private Storage, signed URL, shared asset row, and local cache only as fallback.",
         ready: "Ready",
@@ -31602,7 +32296,7 @@ function renderSupabaseDiagnostics() {
     </div>
     ${
       checks.length
-        ? `<div class="diagnostic-grid">${checks.map((check) => renderDiagnosticCheck(check, "diagnostics")).join("")}</div>`
+         ? `<div class="diagnostic-grid">${checks.map((check) => renderDiagnosticCheck(check, "diagnostics")).join("")}</div>`
         : ""
     }
     ${renderUploadAttemptsPanel()}
@@ -31613,7 +32307,7 @@ function renderUploadAttemptsPanel() {
   const attempts = consolidateUploadAttempts(state.uploadAttempts || []);
   const summary = summarizeUploadAttempts(attempts);
   const labels = state.language !== "es"
-    ? {
+     ? {
         title: "Attachment upload history",
         empty: "No recent attachment uploads were found for this user.",
         refreshed: state.uploadAttemptsCheckedAt ? `Updated ${formatDate(state.uploadAttemptsCheckedAt)}` : "Not refreshed yet",
@@ -31646,7 +32340,7 @@ function renderUploadAttemptsPanel() {
       </div>
       ${
         attempts.length
-          ? `<div class="upload-attempt-list">${attempts.map((attempt) => renderUploadAttemptItem(attempt, labels)).join("")}</div>`
+           ? `<div class="upload-attempt-list">${attempts.map((attempt) => renderUploadAttemptItem(attempt, labels)).join("")}</div>`
           : `<p class="card-meta">${escapeHtml(labels.empty)}</p>`
       }
     </section>
@@ -31659,7 +32353,7 @@ function renderUploadAttemptItem(attempt, labels) {
   const size = attempt.sizeBytes ? formatFileSize(Number(attempt.sizeBytes)) : "";
   const meta = [attempt.mimeType, size, attempt.startedAt ? formatDate(attempt.startedAt) : ""].filter(Boolean).join(" · ");
   const detail = attempt.status === "failed"
-    ? [attempt.errorCode, attempt.errorMessage].filter(Boolean).join(" · ")
+     ? [attempt.errorCode, attempt.errorMessage].filter(Boolean).join(" · ")
     : attempt.storagePath
       ? `${labels.path}: ${attempt.storagePath}`
       : "";
@@ -31707,7 +32401,7 @@ function summarizeUploadAttempts(attempts = state.uploadAttempts || []) {
   const uploaded = attempts.filter((attempt) => attempt.status === "uploaded").length;
   const active = attempts.filter((attempt) => attempt.status === "uploading" || attempt.status === "pending").length;
   const detail = state.language !== "es"
-    ? `${uploaded}/${total} uploaded · ${failed} failed · ${active} pending`
+     ? `${uploaded}/${total} uploaded · ${failed} failed · ${active} pending`
     : `${uploaded}/${total} subidos · ${failed} fallidos · ${active} pendientes`;
   return {
     total,
@@ -31725,7 +32419,7 @@ function formatSelfTestSummary(result) {
   const warn = steps.filter((step) => step.status === "warn").length;
   const error = steps.filter((step) => step.status === "error").length;
   return state.language !== "es"
-    ? `${ok}/${steps.length} OK · ${warn} attention · ${error} error`
+     ? `${ok}/${steps.length} OK · ${warn} attention · ${error} error`
     : `${ok}/${steps.length} correctos · ${warn} con atención · ${error} con error`;
 }
 
@@ -31766,7 +32460,7 @@ function formatDiagnosticSummary(diagnostics) {
   const warn = checks.filter((check) => check.status === "warn").length;
   const error = checks.filter((check) => check.status === "error").length;
   return state.language !== "es"
-    ? `${ok}/${checks.length} OK · ${warn} attention · ${error} error`
+     ? `${ok}/${checks.length} OK · ${warn} attention · ${error} error`
     : `${ok}/${checks.length} correctos · ${warn} con atención · ${error} con error`;
 }
 
@@ -31774,7 +32468,7 @@ function buildMvpClosureSummary(readiness = calculateDevelopmentReadiness(), tot
   const backlog = buildParallelBacklog();
   const pilotBlockingTitles = new Set(
     state.language !== "es"
-      ? ["Daily briefing", "Capture quality", "Reports and insights", "Multimodal foundation", "Supabase session", "Offline queue"]
+       ? ["Daily briefing", "Capture quality", "Reports and insights", "Multimodal foundation", "Supabase session", "Offline queue"]
       : ["Diario informativo", "Calidad de captura", "Reportes y hallazgos", "Base multimodal", "Sesión Supabase", "Cola sin conexión"],
   );
   const pending = backlog.filter((item) => !item.ready && pilotBlockingTitles.has(item.title)).slice(0, 4);
@@ -31787,17 +32481,17 @@ function buildMvpClosureSummary(readiness = calculateDevelopmentReadiness(), tot
     ready: true,
   }));
   const later = state.language !== "es"
-    ? ["External account connectors", "Advanced predictive AI", "Automatic OCR/transcription", "Direct social publishing", "Massive-scale operations"]
+     ? ["External account connectors", "Advanced predictive AI", "Automatic OCR/transcription", "Direct social publishing", "Massive-scale operations"]
     : ["Conectores externos de cuentas", "IA predictiva avanzada", "OCR/transcripción automática", "Publicación directa en redes", "Operación a escala masiva"];
   const headline = state.language !== "es"
-    ? `Operational base ${totalProgress.mvp}% · product validation ${totalProgress.pilot}% · final product ${totalProgress.full}%`
+     ? `Operational base ${totalProgress.mvp}% · product validation ${totalProgress.pilot}% · final product ${totalProgress.full}%`
     : `Base operativa ${totalProgress.mvp}% · validación de producto ${totalProgress.pilot}% · producto final ${totalProgress.full}%`;
   const status = pending.length
     ? state.language !== "es"
-      ? `${pending.length} product-critical closures remain before expanding usage.`
-      : `Quedan ${pending.length} cierres críticos antes de ampliar el uso.`
+        ? `${pending.length} product-critical closures remain before expanding usage.`
+       : `Quedan ${pending.length} cierres críticos antes de ampliar el uso.`
     : state.language !== "es"
-      ? "The core validation is operationally closed; remaining work belongs to advanced product phases."
+       ? "The core validation is operationally closed; remaining work belongs to advanced product phases."
       : "La validación central está cerrada operativamente; lo restante pertenece a fases avanzadas del producto.";
   return {
     exportedAt: new Date().toISOString(),
@@ -31859,7 +32553,7 @@ async function copyMvpClosureSummary() {
 
 function buildMvpClosureMarkdown(summary) {
   const labels = state.language !== "es"
-    ? { title: "Product Closure", progress: "Progress", readiness: "Readiness", ready: "Ready capabilities", pending: "Critical pending items", later: "Advanced phase", generated: "Generated", scope: "Scope" }
+     ? { title: "Product Closure", progress: "Progress", readiness: "Readiness", ready: "Ready capabilities", pending: "Critical pending items", later: "Advanced phase", generated: "Generated", scope: "Scope" }
     : { title: "Cierre del producto", progress: "Avance", readiness: "Preparación", ready: "Capacidades listas", pending: "Pendientes críticos", later: "Fase avanzada", generated: "Generado", scope: "Alcance" };
   const readyLines = summary.ready.length
     ? summary.ready.map((item) => `- ${item.title}: ${item.detail}`).join("\n")
@@ -31927,7 +32621,7 @@ function renderMvpClosurePanel(readiness, totalProgress) {
     </div>
     ${
       closure.pending.length
-        ? `<div class="mvp-closure-pending">
+         ? `<div class="mvp-closure-pending">
             <strong>${escapeHtml(state.language !== "es" ? "Critical pending items" : "Pendientes críticos")}</strong>
             ${closure.pending
               .map(
@@ -31986,7 +32680,7 @@ function calculatePilotReadiness() {
       label: state.language !== "es" ? "Supabase operation" : "Operación Supabase",
       ok: supabaseGate.ok,
       detail: state.language !== "es"
-        ? `${supabaseGate.score}% · ${supabaseGate.ready}/${supabaseGate.total} gate controls ready`
+         ? `${supabaseGate.score}% · ${supabaseGate.ready}/${supabaseGate.total} gate controls ready`
         : `${supabaseGate.score}% · ${supabaseGate.ready}/${supabaseGate.total} controles de compuerta listos`,
       view: "admin",
       focus: "supabasePilotGatePanel",
@@ -32005,7 +32699,7 @@ function calculatePilotReadiness() {
       label: state.language !== "es" ? "Reports with exportable data" : "Reportes con datos exportables",
       ok: reportExperiences.length >= 3 && reportAcceptance.score >= 85,
       detail: state.language !== "es"
-        ? `${reportExperiences.length} reportable experiences · ${reportAcceptance.score}% acceptance pack`
+         ? `${reportExperiences.length} reportable experiences · ${reportAcceptance.score}% acceptance pack`
         : `${reportExperiences.length} experiencias reportables · ${reportAcceptance.score}% paquete de aceptación`,
       view: "report",
       focus: "reportAcceptancePanel",
@@ -32023,7 +32717,7 @@ function calculatePilotReadiness() {
       label: state.language !== "es" ? "Pilot feedback under control" : "Feedback piloto bajo control",
       ok: feedbackSummary.blockingOpen === 0,
       detail: state.language !== "es"
-        ? `${feedbackSummary.open} open · ${feedbackSummary.blockingOpen} high/blocker`
+         ? `${feedbackSummary.open} open · ${feedbackSummary.blockingOpen} high/blocker`
         : `${feedbackSummary.open} abiertos · ${feedbackSummary.blockingOpen} altos/bloqueantes`,
       view: "admin",
       focus: "pilotFeedbackPanel",
@@ -32033,7 +32727,7 @@ function calculatePilotReadiness() {
       label: state.language !== "es" ? "Pilot test plan progress" : "Avance del plan de pruebas piloto",
       ok: pilotTestSummary.score >= 80,
       detail: state.language !== "es"
-        ? `${pilotTestSummary.completed}/${pilotTestSummary.total} scenarios complete`
+         ? `${pilotTestSummary.completed}/${pilotTestSummary.total} scenarios complete`
         : `${pilotTestSummary.completed}/${pilotTestSummary.total} escenarios completos`,
       view: "admin",
       focus: "pilotTestPlanPanel",
@@ -32043,7 +32737,7 @@ function calculatePilotReadiness() {
       label: state.language !== "es" ? "Pilot cohort within scope" : "Grupo piloto dentro del alcance",
       ok: participantSummary.total > 0 && participantSummary.total <= PILOT_TARGET_USERS,
       detail: state.language !== "es"
-        ? `${participantSummary.total}/${PILOT_TARGET_USERS} participants registered`
+         ? `${participantSummary.total}/${PILOT_TARGET_USERS} participants registered`
         : `${participantSummary.total}/${PILOT_TARGET_USERS} participantes registrados`,
       view: "admin",
       focus: "pilotParticipantsPanel",
@@ -32053,7 +32747,7 @@ function calculatePilotReadiness() {
       label: state.language !== "es" ? "Participant onboarding complete" : "Onboarding de participantes completo",
       ok: participantSummary.needsOnboarding === 0,
       detail: state.language !== "es"
-        ? `${participantSummary.onboarded}/${participantSummary.total} participants ready`
+         ? `${participantSummary.onboarded}/${participantSummary.total} participants ready`
         : `${participantSummary.onboarded}/${participantSummary.total} participantes listos`,
       view: "admin",
       focus: "pilotParticipantsPanel",
@@ -32064,10 +32758,10 @@ function calculatePilotReadiness() {
       ok: qaReady,
       detail: qaReady
         ? state.language !== "es"
-          ? `Quick verification ${qaEvidence.quickVerification.score}% · interface quality ${qaEvidence.interfaceQuality.score}%`
-          : `Verificación rápida ${qaEvidence.quickVerification.score}% · calidad de interfaz ${qaEvidence.interfaceQuality.score}%`
+            ? `Quick verification ${qaEvidence.quickVerification.score}% · interface quality ${qaEvidence.interfaceQuality.score}%`
+           : `Verificación rápida ${qaEvidence.quickVerification.score}% · calidad de interfaz ${qaEvidence.interfaceQuality.score}%`
         : state.language !== "es"
-          ? "Register Quick Verification and Interface Quality before exporting the pilot package"
+           ? "Register Quick Verification and Interface Quality before exporting the pilot package"
           : "Registra Verificación rápida y Calidad de interfaz antes de exportar el paquete piloto",
       view: "admin",
       focus: "pilotClosureRecordPanel",
@@ -32077,7 +32771,7 @@ function calculatePilotReadiness() {
       label: state.language !== "es" ? "User manual and admin guidance" : "Manual y guía de administración",
       ok: manualReviewSummary.score >= 80,
       detail: state.language !== "es"
-        ? `${manualReviewSummary.reviewed}/${manualReviewSummary.total} sections reviewed`
+         ? `${manualReviewSummary.reviewed}/${manualReviewSummary.total} sections reviewed`
         : `${manualReviewSummary.reviewed}/${manualReviewSummary.total} secciones revisadas`,
       view: "manual",
     },
@@ -32256,7 +32950,7 @@ function buildPilotReadinessExportPayload() {
 
 function buildPilotReadinessMarkdown(payload = buildPilotReadinessExportPayload()) {
   const labels = state.language !== "es"
-    ? { title: "Pilot Readiness", generated: "Generated", scope: "Scope", score: "Score", recommendation: "Recommendation", checks: "Checks", ready: "ready", review: "review" }
+     ? { title: "Pilot Readiness", generated: "Generated", scope: "Scope", score: "Score", recommendation: "Recommendation", checks: "Checks", ready: "ready", review: "review" }
     : { title: "Preparación del piloto", generated: "Generado", scope: "Alcance", score: "Puntaje", recommendation: "Recomendación", checks: "Controles", ready: "listo", review: "revisar" };
   return [
     `# ${labels.title}`,
@@ -32305,7 +32999,7 @@ function buildPilotInviteKit() {
           : state.language !== "es" ? "Wait before inviting users" : "Esperar antes de invitar usuarios";
   const invitation =
     state.language !== "es"
-      ? [
+       ? [
           "Hello, I am preparing a controlled pilot of Experience Hub.",
           "The goal is to test capture, reports, multimedia assets, privacy, backups, and exports with real but limited use.",
           "Please use it with non-critical data first, report confusing flows, and export or back up your work before major changes.",
@@ -32317,7 +33011,7 @@ function buildPilotInviteKit() {
         ].join("\n\n");
   const onboarding =
     state.language !== "es"
-      ? [
+       ? [
           "Confirm access and language.",
           "Load or create at least one experience.",
           "Attach one file only if comfortable.",
@@ -32348,7 +33042,7 @@ function buildPilotInviteKit() {
 function buildPilotInviteMarkdown(kit = buildPilotInviteKit()) {
   const labels =
     state.language !== "es"
-      ? { title: "Pilot Invitation Kit", generated: "Generated", cohort: "Recommended cohort", score: "Readiness", invite: "Invitation message", onboarding: "Onboarding checklist", blockers: "Before inviting" }
+       ? { title: "Pilot Invitation Kit", generated: "Generated", cohort: "Recommended cohort", score: "Readiness", invite: "Invitation message", onboarding: "Onboarding checklist", blockers: "Before inviting" }
       : { title: "Kit de invitación piloto", generated: "Generado", cohort: "Grupo recomendado", score: "Preparación", invite: "Mensaje de invitación", onboarding: "Checklist de onboarding", blockers: "Antes de invitar" };
   const blockerLines = kit.blockers.length
     ? kit.blockers.map((item) => `- ${item.label}: ${item.detail}`).join("\n")
@@ -32377,7 +33071,7 @@ function buildPilotInviteMarkdown(kit = buildPilotInviteKit()) {
 
 function getPilotParticipantLabels() {
   return state.language !== "es"
-    ? {
+     ? {
         title: "Groups, account and data",
         subtitle: "Private subgroups inside the same user account.",
         name: "Name",
@@ -32471,7 +33165,7 @@ function renderParticipantAdminRow(item, labels, archived = false) {
         ${archived
           ? `<button class="ghost-button" type="button" data-pilot-participant-reactivate="${escapeHtml(item.id)}">${escapeHtml(labels.reactivate)}</button>`
           : item.isPrimaryUser
-            ? `<span class="pill">${escapeHtml(state.language !== "es" ? "Main account" : "Cuenta principal")}</span>`
+             ? `<span class="pill">${escapeHtml(state.language !== "es" ? "Main account" : "Cuenta principal")}</span>`
             : `<button class="ghost-button subtle-danger" type="button" data-pilot-participant-archive="${escapeHtml(item.id)}">${escapeHtml(labels.archive)}</button>`}
         ${archived ? "" : `<button class="ghost-button" type="button" data-pilot-participant-complete="${escapeHtml(item.id)}">${escapeHtml(labels.statuses[2])}</button>`}
       </div>
@@ -32553,8 +33247,8 @@ async function handlePilotParticipantClick(event) {
     const id = archiveButton.dataset.pilotParticipantArchive;
     const name = getPilotParticipantName(id);
     const message = state.language !== "es"
-      ? `Archive ${name}? It will stop appearing for new captures, but saved experiences and assets will remain.`
-      : `Archivar ${name}? Dejara de aparecer para nuevas capturas, pero sus experiencias y activos guardados se conservaran.`;
+       ? `Archive ${name} It will stop appearing for new captures, but saved experiences and assets will remain.`
+      : `Archivar ${name} Dejara de aparecer para nuevas capturas, pero sus experiencias y activos guardados se conservaran.`;
     if (!confirm(message)) return;
     await updatePilotParticipantLifecycle(id, "archive");
     refreshPilotGroupSurfaces({ renderAdminPanel: true });
@@ -32606,11 +33300,11 @@ function exportPilotParticipantsCsv() {
 
 async function requestAccountClosure() {
   const firstConfirm = state.language !== "es"
-    ? "Request account closure? This does not delete data immediately. Download a backup first."
-    : "Solicitar baja de cuenta? Esto no borra datos de inmediato. Descarga un respaldo primero.";
+     ? "Request account closure This does not delete data immediately. Download a backup first."
+    : "Solicitar baja de cuenta Esto no borra datos de inmediato. Descarga un respaldo primero.";
   if (!confirm(firstConfirm)) return;
   const secondConfirm = state.language !== "es"
-    ? "Confirm that you understand: saved experiences remain until final server-side deletion is approved."
+     ? "Confirm that you understand: saved experiences remain until final server-side deletion is approved."
     : "Confirma que entiendes: las experiencias guardadas se conservan hasta aprobar el borrado final en servidor.";
   if (!confirm(secondConfirm)) return;
   const reason = prompt(state.language !== "es" ? "Optional reason for the request" : "Motivo opcional de la solicitud") || "";
@@ -32626,7 +33320,7 @@ async function requestAccountClosure() {
 }
 function getPilotFeedbackLabels() {
   return state.language !== "es"
-    ? {
+     ? {
         title: "Pilot feedback log",
         subtitle: "Capture issues, confusion, and improvement ideas during the pilot.",
         user: "User or source",
@@ -32760,7 +33454,7 @@ function exportPilotFeedbackCsv() {
 
 function getPilotTestScenarios() {
   return state.language !== "es"
-    ? [
+     ? [
         { key: "capture", title: "Capture a real experience", detail: "Create, edit, attach evidence, and delete only if needed." },
         { key: "report", title: "Generate a report", detail: "Review indicators, charts, findings, and export at least one format." },
         { key: "assets", title: "Review multimodal assets", detail: "Open image, audio, video, and document examples with metadata." },
@@ -32861,7 +33555,7 @@ function buildPilotTestPlanMarkdown() {
     state.language !== "es" ? "# Pilot Test Plan" : "# Plan de pruebas piloto",
     "",
     state.language !== "es"
-      ? `Progress: ${summary.completed}/${summary.total} scenarios complete (${summary.score}%).`
+       ? `Progress: ${summary.completed}/${summary.total} scenarios complete (${summary.score}%).`
       : `Avance: ${summary.completed}/${summary.total} escenarios completos (${summary.score}%).`,
     "",
     ...getPilotTestScenarios().map((item) => {
@@ -32887,13 +33581,13 @@ function buildPilotClosureRecord() {
     readiness.score >= 90 && tests.score >= 80 && participants.total > 0 && participants.total <= PILOT_TARGET_USERS && participants.needsOnboarding === 0 && feedback.blockingOpen === 0
       ? state.language !== "es"
         ? "Proceed with the controlled pilot"
-        : "Proceder con el piloto controlado"
+       : "Proceder con el piloto controlado"
       : readiness.score >= 80 && feedback.blockingOpen === 0
         ? state.language !== "es"
           ? "Proceed with a smaller internal group"
-          : "Proceder con un grupo interno más pequeño"
+         : "Proceder con un grupo interno más pequeño"
         : state.language !== "es"
-          ? "Do not expand the pilot yet"
+           ? "Do not expand the pilot yet"
           : "No ampliar el piloto todavía";
   return {
     generatedAt: new Date().toISOString(),
@@ -32917,7 +33611,7 @@ function renderPilotClosureRecordPanel() {
   const suggestedDecision = signoff.decision || getSuggestedPilotSignoffDecision(record);
   const suggestedOwner = signoff.owner || state.profile?.name || state.profile?.email || (state.language !== "es" ? "Pilot owner" : "Responsable piloto");
   const cards = state.language !== "es"
-    ? [
+     ? [
         ["Readiness", `${record.readiness.score}%`, `${record.readiness.ready}/${record.readiness.total} checks ready`],
         ["Test plan", `${record.tests.score}%`, `${record.tests.completed}/${record.tests.total} scenarios complete`],
         ["Participants", `${record.participants.total}/${PILOT_TARGET_USERS}`, `${record.participants.onboarded} onboarded`],
@@ -32962,7 +33656,7 @@ function renderPilotClosureRecordPanel() {
     </div>
     ${
       record.blockers.length
-        ? `<div class="pilot-closure-blockers">
+         ? `<div class="pilot-closure-blockers">
             <strong>${escapeHtml(state.language !== "es" ? "Pending before expanding" : "Pendiente antes de ampliar")}</strong>
             ${record.blockers.slice(0, 6).map((item) => `<p>${escapeHtml(item)}</p>`).join("")}
           </div>`
@@ -33017,7 +33711,7 @@ function renderPilotClosureRecordPanel() {
     </div>
     ${
       Array.isArray(signoff.history) && signoff.history.length
-        ? `<div class="pilot-closure-history">
+         ? `<div class="pilot-closure-history">
             <strong>${escapeHtml(state.language !== "es" ? "Decision history" : "Historial de decisiones")}</strong>
             ${signoff.history
               .slice(0, 5)
@@ -33099,7 +33793,7 @@ async function handlePilotClosureRecordClick(event) {
 
 function formatPilotSignoffDecision(decision) {
   const labels = state.language !== "es"
-    ? { go: "Proceed", limited: "Proceed with smaller group", hold: "Hold" }
+     ? { go: "Proceed", limited: "Proceed with smaller group", hold: "Hold" }
     : { go: "Proceder", limited: "Proceder con grupo reducido", hold: "Pausar" };
   return labels[decision] || (state.language !== "es" ? "Not recorded" : "Sin registrar");
 }
@@ -33113,12 +33807,12 @@ function getSuggestedPilotSignoffDecision(record = buildPilotClosureRecord()) {
 function formatPilotClosureRecordStatus(record = buildPilotClosureRecord(), signoff = record.signoff || {}) {
   if (signoff.updatedAt) {
     return state.language !== "es"
-      ? `Completed: ${formatPilotSignoffDecision(signoff.decision)} · ${formatDate(signoff.completedAt || signoff.updatedAt)}. You can export the record or package now.`
+       ? `Completed: ${formatPilotSignoffDecision(signoff.decision)} · ${formatDate(signoff.completedAt || signoff.updatedAt)}. You can export the record or package now.`
       : `Completado: ${formatPilotSignoffDecision(signoff.decision)} · ${formatDate(signoff.completedAt || signoff.updatedAt)}. Ya puedes exportar el acta o el paquete.`;
   }
   const suggested = formatPilotSignoffDecision(getSuggestedPilotSignoffDecision(record));
   return state.language !== "es"
-    ? `Suggested decision: ${suggested}. Review owner and notes, then press Save decision.`
+     ? `Suggested decision: ${suggested}. Review owner and notes, then press Save decision.`
     : `Decisión sugerida: ${suggested}. Revisa responsable y notas, luego pulsa Guardar decisión.`;
 }
 
@@ -33131,7 +33825,7 @@ function setPilotClosureRecordStatus(message) {
 
 function buildPilotClosureRecordMarkdown(record = buildPilotClosureRecord()) {
   const labels = state.language !== "es"
-    ? {
+     ? {
         title: "Pilot Closure Record",
         generated: "Generated",
         decision: "Suggested decision",
@@ -33258,7 +33952,7 @@ function formatPilotQaEvidenceLine(item, emptyText) {
 function buildPilotPackagePreview(pkg = buildPilotPackage()) {
   const signed = Boolean(pkg.closureRecord?.signoff?.decision);
   return state.language !== "es"
-    ? [
+     ? [
         { label: "QA evidence", value: pkg.qaEvidence?.interfaceQuality ? `${pkg.qaEvidence.interfaceQuality.score}%` : "Pending", detail: pkg.qaEvidence?.quickVerification ? "Quick verification + interface quality" : "Register QA evidence before pilot" },
         { label: "Readiness", value: `${pkg.readiness.score}%`, detail: `${pkg.readiness.ready}/${pkg.readiness.total} checks ready` },
         { label: "Invitation", value: `${pkg.invitationKit.score}%`, detail: pkg.invitationKit.cohort || "Recommended cohort" },
@@ -33280,7 +33974,7 @@ function buildPilotPackagePreview(pkg = buildPilotPackage()) {
 
 function buildPilotPackageMarkdown(pkg = buildPilotPackage()) {
   const labels = state.language !== "es"
-    ? {
+     ? {
         title: "50-User Pilot Package",
         generated: "Generated",
         qa: "QA evidence",
@@ -33385,7 +34079,7 @@ async function handlePilotInviteKitClick(event) {
 
 function getExternalIntegrationOptions() {
   return state.language !== "es"
-    ? [
+     ? [
         {
           title: "Integrate by MCP or API",
           status: "Recommended first",
@@ -33498,7 +34192,7 @@ function renderExternalIntegrationPanel() {
 
 function getExternalIntegrationContract() {
   return state.language !== "es"
-    ? [
+     ? [
         { label: "Resources", detail: "experiences, assets, devices, calendar events, locations, commands, and generated artifacts." },
         { label: "Normalized signal", detail: "every event or asset keeps sourceType, sourceDevice, sourceId, capturedAt, participantId, payloadType, permissions, and a trace fingerprint." },
         { label: "Authentication", detail: "OAuth/JWT session, scoped tokens, expiration, refresh policy, and revocation path." },
@@ -33522,7 +34216,7 @@ function getExternalIntegrationContract() {
 
 function buildExternalIntegrationMarkdown() {
   const labels = state.language !== "es"
-    ? {
+     ? {
         title: "External Integration Strategy",
         recommendation: "Current recommendation",
         recommendationText: "Start with an API/MCP contract and a shared GitHub workspace. Reuse Clio code only after repository review.",
@@ -33555,7 +34249,7 @@ function buildExternalIntegrationMarkdown() {
 
 function buildExternalIntegrationContractMarkdown() {
   const labels = state.language !== "es"
-    ? {
+     ? {
         title: "Minimum API/MCP Integration Contract",
         purpose: "Purpose",
         purposeText: "Define the minimum agreement before connecting Experience Hub with Clio or another external service.",
@@ -33624,7 +34318,7 @@ function buildParallelWorkstreams(readiness = calculateDevelopmentReadiness()) {
   const manual = calculateManualReviewSummary();
   const integrationReady = true;
   const labels = state.language !== "es"
-    ? {
+     ? {
         functional: "Functional closure",
         technical: "Technical closure",
         pilot: `${PILOT_TARGET_USERS}-user pilot`,
@@ -33698,7 +34392,7 @@ function buildParallelWorkstreams(readiness = calculateDevelopmentReadiness()) {
         score: manual.score,
         status: manualPending ? "review" : "ready",
         detail: state.language !== "es"
-          ? `${manual.reviewed}/${manual.total} manual sections reviewed. Grammar and visible copy are checked during each block.`
+           ? `${manual.reviewed}/${manual.total} manual sections reviewed. Grammar and visible copy are checked during each block.`
           : `${manual.reviewed}/${manual.total} secciones del manual revisadas. La gramática y textos visibles se revisan en cada bloque.`,
         next: { view: "manual", action: labels.open },
       },
@@ -33709,7 +34403,7 @@ function buildParallelWorkstreams(readiness = calculateDevelopmentReadiness()) {
         score: integrationReady ? 100 : 0,
         status: integrationReady ? "ready" : "review",
         detail: state.language !== "es"
-          ? "API/MCP-first strategy, minimum contract, and normalized signal metadata are documented. Repository review remains a future step."
+           ? "API/MCP-first strategy, minimum contract, and normalized signal metadata are documented. Repository review remains a future step."
           : "La estrategia API/MCP, el contrato mínimo y los metadatos de señal normalizada están documentados. La revisión del repositorio queda como paso futuro.",
         next: { view: "admin", focus: "externalIntegrationPanel", action: labels.open },
       },
@@ -33757,7 +34451,7 @@ function renderParallelWorkstreamsPanel(readiness = calculateDevelopmentReadines
 function buildParallelWorkstreamsMarkdown(readiness = calculateDevelopmentReadiness()) {
   const plan = buildParallelWorkstreams(readiness);
   const labels = state.language !== "es"
-    ? { title: "Parallel Closure Plan", owner: "Owner", score: "Score", status: "Status", next: "Next action" }
+     ? { title: "Parallel Closure Plan", owner: "Owner", score: "Score", status: "Status", next: "Next action" }
     : { title: "Plan de cierre paralelo", owner: "Responsable sugerido", score: "Puntaje", status: "Estado", next: "Siguiente acción" };
   return [
     `# ${labels.title}`,
@@ -33854,7 +34548,7 @@ function buildParallelBacklog() {
       qualityAction: "Abrir Captura",
       reportTitle: "Reportes y hallazgos",
       reportDetail: reportExperiences.length
-        ? `${reportExperiences.length} experiencias filtradas. El Paquete de aceptacion confirma la descarga y muestra la ruta local data/exports cuando el servidor guarda el archivo.`
+         ? `${reportExperiences.length} experiencias filtradas. El Paquete de aceptacion confirma la descarga y muestra la ruta local data/exports cuando el servidor guarda el archivo.`
         : "Faltan experiencias en el filtro actual para generar lectura confiable.",
       reportAction: "Abrir Reporte",
       contextTitle: "Impacto ambiental/geopolítico",
@@ -33876,12 +34570,12 @@ function buildParallelBacklog() {
       vectorAction: "Actualizar embeddings",
       blueprintTitle: "Plan maestro de inteligencia humana",
       blueprintDetail: humanKpis.length
-        ? `${humanKpis.length} índices, ${humanCorrelations.length} correlaciones humanas y proyección inicial visibles en Reportes; la biometría importada desde Activos o Vibeapp ya informa Panel, Captura, Reportes y Hallazgos cuando coincide por fecha/hora.`
+         ? `${humanKpis.length} índices, ${humanCorrelations.length} correlaciones humanas y proyección inicial visibles en Reportes; la biometría importada desde Activos o Vibeapp ya informa Panel, Captura, Reportes y Hallazgos cuando coincide por fecha/hora.`
         : "Integrar indicadores humanos, reportes por categoría, correlaciones y memoria viva desde el plan maestro.",
       blueprintAction: "Abrir Reporte",
       mapTitle: "Mapa de Experiencias",
       mapDetail: experienceMapGraph.nodes.length
-        ? `${experienceMapGraph.nodes.length} nodos, ${experienceMapGraph.links.length} relaciones y ${experienceMapRoutes.length} rutas disponibles; las preguntas ya detectan intención y resaltan rutas relevantes.`
+         ? `${experienceMapGraph.nodes.length} nodos, ${experienceMapGraph.links.length} relaciones y ${experienceMapRoutes.length} rutas disponibles; las preguntas ya detectan intención y resaltan rutas relevantes.`
         : "Faltan experiencias para construir el mapa de interrelaciones.",
       mapAction: "Abrir mapa",
       multimodalTitle: "Base multimodal",
@@ -33908,7 +34602,7 @@ function buildParallelBacklog() {
       qualityAction: "Open Capture",
       reportTitle: "Reports and insights",
       reportDetail: reportExperiences.length
-        ? `${reportExperiences.length} filtered experiences. The Acceptance Pack confirms download and shows the local data/exports path when the server saves the file.`
+         ? `${reportExperiences.length} filtered experiences. The Acceptance Pack confirms download and shows the local data/exports path when the server saves the file.`
         : "More experiences are needed in the current filter for reliable analysis.",
       reportAction: "Open Report",
       contextTitle: "Environmental/geopolitical impact",
@@ -33930,12 +34624,12 @@ function buildParallelBacklog() {
       vectorAction: "Update embeddings",
       blueprintTitle: "Human Intelligence Blueprint",
       blueprintDetail: humanKpis.length
-        ? `${humanKpis.length} indexes, ${humanCorrelations.length} human correlations, and an initial outlook are visible in Reports; imported biometrics from Assets or Vibeapp now inform Dashboard, Capture, Reports, and Findings when matched by date/time.`
+         ? `${humanKpis.length} indexes, ${humanCorrelations.length} human correlations, and an initial outlook are visible in Reports; imported biometrics from Assets or Vibeapp now inform Dashboard, Capture, Reports, and Findings when matched by date/time.`
         : "Integrate human KPIs, category reports, correlations, and living memory from the blueprint.",
       blueprintAction: "Open Report",
       mapTitle: "Experience Map",
       mapDetail: experienceMapGraph.nodes.length
-        ? `${experienceMapGraph.nodes.length} nodes, ${experienceMapGraph.links.length} relationships, and ${experienceMapRoutes.length} routes available; questions now detect intent and highlight relevant routes.`
+         ? `${experienceMapGraph.nodes.length} nodes, ${experienceMapGraph.links.length} relationships, and ${experienceMapRoutes.length} routes available; questions now detect intent and highlight relevant routes.`
         : "More experiences are needed to build the relationship map.",
       mapAction: "Open map",
       multimodalTitle: "Multimodal foundation",
@@ -34371,10 +35065,10 @@ function buildInsights(experiences = state.experiences) {
         confidence: 70,
         title: state.language !== "es" ? "Start by capturing three moments" : "Empieza capturando tres momentos",
         description: state.language !== "es"
-          ? "The system needs base experiences to detect energy, context, and learning patterns."
+           ? "The system needs base experiences to detect energy, context, and learning patterns."
           : "El sistema necesita experiencias base para detectar patrones de energía, contexto y aprendizaje.",
         action: state.language !== "es"
-          ? "Add one work, one wellbeing, and one learning experience to activate comparisons."
+           ? "Add one work, one wellbeing, and one learning experience to activate comparisons."
           : "Carga una experiencia de trabajo, una de bienestar y una de aprendizaje para activar comparaciones.",
       },
     ];
@@ -34391,10 +35085,10 @@ function buildInsights(experiences = state.experiences) {
       confidence: 88,
       title: state.language !== "es" ? `${displayCategory(top)} leads your recent log` : `${displayCategory(top)} domina tu registro reciente`,
       description: analysis.focus || (state.language !== "es"
-        ? `${displayCategory(top)} concentrates more time than other categories. Review whether that distribution reflects your current goals.`
+         ? `${displayCategory(top)} concentrates more time than other categories. Review whether that distribution reflects your current goals.`
         : `La categoría ${displayCategory(top)} concentra más tiempo que las demás. Conviene revisar si ese reparto refleja tus objetivos actuales.`),
       action: state.language !== "es"
-        ? `Review whether ${displayCategory(top)} should remain the priority or whether time should move toward another category.`
+         ? `Review whether ${displayCategory(top)} should remain the priority or whether time should move toward another category.`
         : `Revisa si ${displayCategory(top)} debe mantenerse como prioridad o si conviene redistribuir tiempo hacia otra categoría.`,
     },
     {
@@ -34418,10 +35112,10 @@ function buildInsights(experiences = state.experiences) {
       confidence: 81,
       title: state.language !== "es" ? "Turn learnings into actions" : "Convierte aprendizajes en acciones",
       description: state.language !== "es"
-        ? `${learnings.length} experiences contain explicit learning. Add next actions to close the memory-action loop.`
+         ? `${learnings.length} experiences contain explicit learning. Add next actions to close the memory-action loop.`
         : `${learnings.length} experiencias contienen aprendizaje explícito. Agrega acciones pendientes para cerrar el ciclo memoria-acción.`,
       action: state.language !== "es"
-        ? "Filter Learning in the library and turn the three most repeated learnings into next steps."
+         ? "Filter Learning in the library and turn the three most repeated learnings into next steps."
         : "Filtra Aprendizaje en la librería y convierte los tres aprendizajes más repetidos en próximos pasos.",
     },
   ];
@@ -34432,10 +35126,10 @@ function buildInsights(experiences = state.experiences) {
       confidence: 78,
       title: state.language !== "es" ? "High energy linked to clear context" : "Alta energía conectada con contexto claro",
       description: state.language !== "es"
-        ? `${highEnergy.length} experiences show high energy. ${analysis.energyDrivers || "Use those contexts as candidates for proactive routines."}`
+         ? `${highEnergy.length} experiences show high energy. ${analysis.energyDrivers || "Use those contexts as candidates for proactive routines."}`
         : `${highEnergy.length} experiencias aparecen con energía alta. ${analysis.energyDrivers || "Usa esos contextos como candidatos para rutinas proactivas."}`,
       action: state.language !== "es"
-        ? "Repeat the context of experiences with energy 8/10 or higher and measure whether the pattern holds."
+         ? "Repeat the context of experiences with energy 8/10 or higher and measure whether the pattern holds."
         : "Repite el contexto de las experiencias con energía 8/10 o superior y mide si el patrón se mantiene.",
     });
   }
@@ -34446,10 +35140,10 @@ function buildInsights(experiences = state.experiences) {
       confidence: 74,
       title: state.language !== "es" ? "External impact is active in the reading" : "Impacto externo activo en la lectura",
       description: state.language !== "es"
-        ? `Current context analysis is ${state.contextImpact.impactScore}/100: ${state.contextImpact.summary}`
+         ? `Current context analysis is ${state.contextImpact.impactScore}/100: ${state.contextImpact.summary}`
         : `El análisis contextual actual marca ${state.contextImpact.impactScore}/100: ${state.contextImpact.summary}`,
       action: state.language !== "es"
-        ? "Before planning critical experiences, review the place in Dashboard and compare weather/news with registered energy."
+         ? "Before planning critical experiences, review the place in Dashboard and compare weather/news with registered energy."
         : "Antes de planificar experiencias críticas, revisa el lugar en el Panel y compara clima/noticias con energía registrada.",
     });
   }
@@ -34460,7 +35154,7 @@ function buildInsights(experiences = state.experiences) {
       confidence: Math.round(Math.min(92, 62 + analysis.biometricContext.coveragePct * 0.3)),
       title: state.language !== "es" ? "Body context now informs this reading" : "El contexto corporal ya informa esta lectura",
       description: state.language !== "es"
-        ? `${Math.round(analysis.biometricContext.coveragePct)}% of the selected experiences have nearby biometric context. Suggested energy averages ${(analysis.biometricContext.averageSuggestedEnergy || 0).toFixed(1)}/10.`
+         ? `${Math.round(analysis.biometricContext.coveragePct)}% of the selected experiences have nearby biometric context. Suggested energy averages ${(analysis.biometricContext.averageSuggestedEnergy || 0).toFixed(1)}/10.`
         : `${Math.round(analysis.biometricContext.coveragePct)}% de las experiencias seleccionadas tiene contexto biométrico cercano. La energía sugerida promedia ${(analysis.biometricContext.averageSuggestedEnergy || 0).toFixed(1)}/10.`,
       action: analysis.biometricContext.biometricRiskScore >= 40
         ? (state.language !== "es" ? "Before adding demanding activities, review sleep, heart rate, and recovery signals in the Dashboard." : "Antes de sumar actividades exigentes, revisa sueño, frecuencia y recuperación en el Panel.")
@@ -34504,7 +35198,7 @@ function buildExperienceAnalysis(experiences) {
     : (state.language !== "es" ? "There are no strong saturation or low-energy signals in the filtered set." : "No hay señales fuertes de saturación o energía baja en el conjunto filtrado.");
   const energyDrivers = topLocation || topPerson
     ? state.language !== "es"
-      ? `Higher-energy contexts can be compared with ${topLocation ? `location ${topLocation}` : `person ${topPerson}`}.`
+        ? `Higher-energy contexts can be compared with ${topLocation ? `location ${topLocation}` : `person ${topPerson}`}.`
       : `Los contextos de mayor energía se pueden comparar con ${topLocation ? `ubicación ${topLocation}` : `persona ${topPerson}`}.`
     : "";
   const action = saturated.length || biometricContext.biometricRiskScore >= 60
@@ -34572,7 +35266,7 @@ async function answerQuestion() {
   const answerBox = document.getElementById("answerBox");
   if (!question) {
     answerBox.textContent = state.language !== "es"
-      ? "Ask a question about energy, categories, people, locations, or learnings."
+       ? "Ask a question about energy, categories, people, locations, or learnings."
       : "Haz una pregunta sobre energía, categorías, personas, ubicaciones o aprendizajes.";
     return;
   }
@@ -34600,7 +35294,7 @@ async function answerQuestion() {
       <p>${state.contextImpact ? `${state.language !== "es" ? "Current external context" : "Contexto externo actual"}: ${escapeHtml(state.contextImpact.summary)}` : (state.language !== "es" ? "You can enrich this answer by analyzing city-level context impact." : "Puedes enriquecer esta respuesta analizando impacto contextual por ciudad.")}</p>
       ${
         sample.length
-          ? `<div class="question-match-list">
+           ? `<div class="question-match-list">
               ${sample
                 .map(
                   (item) => `
@@ -34669,14 +35363,14 @@ async function syncWorkspaceStructure() {
     status.textContent = ok
       ? state.language !== "es"
         ? `Structure sync: ${result.syncedExperiences} experiences, ${result.syncedParticipants || 0} participants, ${result.syncedEvents} events, ${result.syncedAssets} assets.`
-        : `Estructura sincronizada: ${result.syncedExperiences} experiencias, ${result.syncedParticipants || 0} participantes, ${result.syncedEvents} eventos, ${result.syncedAssets} activos.`
+       : `Estructura sincronizada: ${result.syncedExperiences} experiencias, ${result.syncedParticipants || 0} participantes, ${result.syncedEvents} eventos, ${result.syncedAssets} activos.`
       : state.language !== "es"
-        ? "Migration required: apply database/workspace-events-assets.sql first."
+         ? "Migration required: apply database/workspace-events-assets.sql first."
         : "Migración requerida: aplica primero database/workspace-events-assets.sql.";
     await runSupabaseDiagnostics();
   } catch {
     status.textContent = state.language !== "es"
-      ? "Could not sync structure. Check session and Supabase migration."
+       ? "Could not sync structure. Check session and Supabase migration."
       : "No se pudo sincronizar la estructura. Revisa sesión y migración Supabase.";
   }
 }

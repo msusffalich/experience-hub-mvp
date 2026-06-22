@@ -34,6 +34,7 @@ const LOCAL_USER_ID = process.env.LOCAL_USER_ID || "00000000-0000-0000-0000-0000
 const CONTEXT_TIMEOUT_MS = Number(process.env.CONTEXT_TIMEOUT_MS || 12000);
 const DAILY_NEWS_FRESHNESS_HOURS = Math.max(1, Math.min(Number(process.env.DAILY_NEWS_FRESHNESS_HOURS || 48), 168));
 const MOBILE_DAILY_CONTEXT_CACHE_MINUTES = Math.max(5, Math.min(Number(process.env.MOBILE_DAILY_CONTEXT_CACHE_MINUTES || 30), 180));
+const DEFAULT_OPERATIONAL_LOCATION = process.env.DEFAULT_OPERATIONAL_LOCATION || "Winter Garden, Florida";
 const TRUSTED_NEWS_DOMAINS = (process.env.TRUSTED_NEWS_DOMAINS || [
   "reuters.com",
   "bbc.com",
@@ -84,11 +85,22 @@ const OPENAI_TRANSCRIPTION_MODEL = process.env.OPENAI_TRANSCRIPTION_MODEL || "gp
 const OCR_PROVIDER = process.env.OCR_PROVIDER || "openai";
 const OPENAI_OCR_MODEL = process.env.OPENAI_OCR_MODEL || "gpt-4o-mini";
 const OPENAI_ASSISTANT_MODEL = process.env.OPENAI_ASSISTANT_MODEL || process.env.OPENAI_CHAT_MODEL || OPENAI_OCR_MODEL;
+const OPENAI_REALTIME_API_KEY = process.env.OPENAI_REALTIME_API_KEY || OPENAI_API_KEY;
+const OPENAI_REALTIME_MODEL = process.env.OPENAI_REALTIME_MODEL || "gpt-realtime-2";
+const OPENAI_REALTIME_VOICE = process.env.OPENAI_REALTIME_VOICE || "marin";
+const OPENAI_REALTIME_CLIENT_SECRET_URL = (process.env.OPENAI_REALTIME_CLIENT_SECRET_URL || "https://api.openai.com/v1/realtime/client_secrets").trim();
+const OPENAI_REALTIME_WS_BASE_URL = (process.env.OPENAI_REALTIME_WS_BASE_URL || "wss://api.openai.com/v1/realtime").trim().replace(/\?+$/, "");
+const OPENAI_REALTIME_TOKEN_TIMEOUT_MS = Math.max(1000, Math.min(Number(process.env.OPENAI_REALTIME_TOKEN_TIMEOUT_MS || 12000), 30000));
+const OPENAI_REALTIME_MAX_SESSION_MINUTES = Math.max(1, Math.min(Number(process.env.OPENAI_REALTIME_MAX_SESSION_MINUTES || 10), 60));
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || "claude-haiku-4-5";
 const ANTHROPIC_API_BASE_URL = (process.env.ANTHROPIC_API_BASE_URL || "https://api.anthropic.com").trim().replace(/\/$/, "");
 const MOBILE_ASSISTANT_PROVIDER = (process.env.MOBILE_ASSISTANT_PROVIDER || (OPENAI_API_KEY ? "openai" : "anthropic")).trim().toLowerCase();
 const MOBILE_ASSISTANT_PROVIDER_TIMEOUT_MS = Math.max(1000, Math.min(Number(process.env.MOBILE_ASSISTANT_PROVIDER_TIMEOUT_MS || 12000), 30000));
+const VIBE_BACKEND_BASE_URL = (process.env.VIBE_BACKEND_BASE_URL || process.env.PUBLIC_BASE_URL || "https://experience-hub-web-production.up.railway.app").trim().replace(/\/$/, "");
+const ARNES_ASSISTANT_URL = (process.env.ARNES_ASSISTANT_URL || "").trim();
+const ARNES_ASSISTANT_ENABLED = ["1", "true", "yes"].includes(String(process.env.ARNES_ASSISTANT_ENABLED || "").trim().toLowerCase()) && Boolean(ARNES_ASSISTANT_URL);
+const ARNES_ASSISTANT_TIMEOUT_MS = Math.max(1000, Math.min(Number(process.env.ARNES_ASSISTANT_TIMEOUT_MS || 15000), 60000));
 const SIGNAL_METADATA_SCHEMA_VERSION = "clio-inspired-signal-v1";
 const INTEGRATION_CONTRACT_VERSION = "vibe-signal-contract-v2";
 const OURA_API_BASE_URL = (process.env.OURA_API_BASE_URL || "https://api.ouraring.com").trim().replace(/\/$/, "");
@@ -308,6 +320,12 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (url.pathname === "/api/mobile/assistant/status" && req.method === "GET") {
+    const user = await getRequestUser(req);
+    sendJson(res, 200, await getMobileAssistantStatus(user));
+    return;
+  }
+
   if (
     (url.pathname === "/api/mobile/ai/vision" || url.pathname === "/api/mobile/assistant/vision") &&
     req.method === "POST"
@@ -331,6 +349,13 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (url.pathname === "/api/mobile/realtime/token" && req.method === "POST") {
+    const user = await getRequestUser(req);
+    const body = await readJson(req);
+    sendJson(res, 200, await createMobileRealtimeToken(body, user));
+    return;
+  }
+
   if (url.pathname.startsWith("/api/mobile/oura/") && req.method === "GET") {
     const user = await getRequestUser(req);
     const collection = decodeURIComponent(url.pathname.replace("/api/mobile/oura/", "")).trim();
@@ -347,6 +372,12 @@ async function handleApi(req, res, url) {
   if (url.pathname === "/api/mobile/context/daily" && req.method === "GET") {
     const user = await getRequestUser(req);
     sendJson(res, 200, await getMobileDailyContext(url.searchParams, user));
+    return;
+  }
+
+  if (url.pathname === "/api/mobile/context/health-summary" && req.method === "GET") {
+    const user = await getRequestUser(req);
+    sendJson(res, 200, await getMobileHealthSummary(url.searchParams, user));
     return;
   }
 
@@ -515,6 +546,13 @@ async function handleApi(req, res, url) {
     const user = await getRequestUser(req);
     const body = await readJson(req);
     sendJson(res, 201, await recordAccountClosureRequest(body, user));
+    return;
+  }
+
+  if (url.pathname === "/api/account/data-reset" && req.method === "POST") {
+    const user = await getRequestUser(req);
+    const body = await readJson(req);
+    sendJson(res, 200, await resetUserContentData(body, user));
     return;
   }
 
@@ -719,7 +757,7 @@ async function handleApi(req, res, url) {
   }
 
   if (url.pathname === "/api/context/impact" && req.method === "GET") {
-    const location = url.searchParams.get("location") || "New York";
+    const location = url.searchParams.get("location") || DEFAULT_OPERATIONAL_LOCATION;
     const experienceType = url.searchParams.get("experienceType") || "auto";
     const user = await getOptionalRequestUser(req);
     const profile = await getProfile(user);
@@ -728,7 +766,7 @@ async function handleApi(req, res, url) {
   }
 
   if (url.pathname === "/api/daily-briefing" && req.method === "GET") {
-    const location = url.searchParams.get("location") || "San Juan";
+    const location = url.searchParams.get("location") || DEFAULT_OPERATIONAL_LOCATION;
     const locale = url.searchParams.get("locale") || "es";
     const force = url.searchParams.get("force") === "1";
     const user = await getOptionalRequestUser(req);
@@ -3310,10 +3348,21 @@ async function handleMobileAssistantMessage(body = {}, user = {}) {
     throw new HttpError(400, "assistant_payload_incomplete", "Falta el texto para consultar a V.");
   }
   const history = normalizeAssistantHistory(body.history);
+  const maxTokens = Number(body.maxTokens || body.max_tokens || 700);
+  if (ARNES_ASSISTANT_ENABLED) {
+    try {
+      return await proxyMobileAssistantToArnes(body, { system, text, history, maxTokens, user });
+    } catch (error) {
+      await appendLog("warn", "arnes_assistant_proxy_failed", {
+        userId: user.id,
+        error: sanitizeDiagnosticError(error),
+      });
+    }
+  }
   const result = await callMobileAssistantMessages({
     system,
     messages: [...history, { role: "user", content: text }],
-    maxTokens: Number(body.maxTokens || body.max_tokens || 700),
+    maxTokens,
   });
   await appendLog("info", "mobile_assistant_message", {
     userId: user.id,
@@ -3321,7 +3370,131 @@ async function handleMobileAssistantMessage(body = {}, user = {}) {
     historyTurns: history.length,
     model: result.model,
   });
-  return { ok: true, text: result.text, model: result.model };
+  return { ok: true, text: result.text, answer: result.text, actions: [], model: result.model, source: "native-provider" };
+}
+
+async function getMobileAssistantStatus(user = {}) {
+  const status = {
+    ok: true,
+    schemaVersion: "vibe-mobile-assistant-status-v1",
+    generatedAt: new Date().toISOString(),
+    userId: user.id || LOCAL_USER_ID,
+    arnes: {
+      enabled: ARNES_ASSISTANT_ENABLED,
+      configured: Boolean(ARNES_ASSISTANT_URL),
+      urlHost: safeUrlHost(ARNES_ASSISTANT_URL),
+      timeoutMs: ARNES_ASSISTANT_TIMEOUT_MS,
+      health: "not_checked",
+    },
+    fallback: {
+      enabled: true,
+      provider: MOBILE_ASSISTANT_PROVIDER,
+    },
+    contract: {
+      messageEndpoint: "/api/mobile/assistant/message",
+      statusEndpoint: "/api/mobile/assistant/status",
+      responseFields: ["ok", "text", "answer", "actions", "model", "source"],
+      arnesSourceValue: "arnes",
+      fallbackSourceValue: "native-provider",
+    },
+  };
+  if (!ARNES_ASSISTANT_ENABLED || !ARNES_ASSISTANT_URL) {
+    return status;
+  }
+  try {
+    const healthUrl = buildArnesHealthUrl(ARNES_ASSISTANT_URL);
+    const response = await fetchWithTimeout(healthUrl, { method: "GET" }, Math.min(ARNES_ASSISTANT_TIMEOUT_MS, 5000));
+    const text = await response.text();
+    const payload = parseJsonPayload(text);
+    status.arnes.health = response.ok ? "ok" : "error";
+    status.arnes.httpStatus = response.status;
+    status.arnes.llm = Boolean(payload.llm);
+  } catch (error) {
+    status.arnes.health = "error";
+    status.arnes.error = sanitizeDiagnosticError(error);
+  }
+  return status;
+}
+
+function buildArnesHealthUrl(url = "") {
+  try {
+    const parsed = new URL(url);
+    parsed.pathname = "/health";
+    parsed.search = "";
+    parsed.hash = "";
+    return parsed.toString();
+  } catch {
+    return "https://arnes-production.up.railway.app/health";
+  }
+}
+
+function safeUrlHost(url = "") {
+  try {
+    return new URL(url).host;
+  } catch {
+    return "";
+  }
+}
+
+async function proxyMobileAssistantToArnes(originalBody = {}, options = {}) {
+  const headers = { "Content-Type": "application/json" };
+  if (options.user?.accessToken) {
+    headers.Authorization = `Bearer ${options.user.accessToken}`;
+  }
+  const payload = {
+    ...originalBody,
+    system: options.system,
+    text: options.text,
+    userText: options.text,
+    prompt: options.text,
+    history: options.history,
+    maxTokens: options.maxTokens,
+    user: {
+      id: options.user?.id || LOCAL_USER_ID,
+      email: options.user?.email || "",
+    },
+    backend: {
+      baseUrl: VIBE_BACKEND_BASE_URL,
+      endpoints: {
+        vision: "/api/mobile/ai/vision",
+        dailyContext: "/api/mobile/context/daily",
+        healthSummary: "/api/mobile/context/health-summary",
+      },
+      authMode: "forward-user-bearer",
+    },
+  };
+  const response = await fetchWithTimeout(ARNES_ASSISTANT_URL, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  }, ARNES_ASSISTANT_TIMEOUT_MS);
+  const text = await response.text();
+  let data = {};
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    data = { text };
+  }
+  if (!response.ok) {
+    throw new HttpError(response.status, "arnes_assistant_failed", data || text || response.statusText);
+  }
+  const answer = String(data.answer || data.text || data.message || "").trim();
+  const actions = Array.isArray(data.actions) ? data.actions : [];
+  await appendLog("info", "arnes_assistant_proxy_ok", {
+    userId: options.user?.id || LOCAL_USER_ID,
+    promptLength: options.text.length,
+    historyTurns: options.history.length,
+    actions: actions.length,
+    model: data.model || "arnes",
+  });
+  return {
+    ok: data.ok !== false,
+    text: answer,
+    answer,
+    actions,
+    model: data.model || "arnes",
+    source: "arnes",
+  };
 }
 
 async function handleMobileAssistantVision(body = {}, user = {}) {
@@ -3450,6 +3623,88 @@ async function proxyMobileTranscription(req, contentType = "", user = {}) {
     bytes: filePart.content.length,
   });
   return { text: String(payload.text || ""), ...payload };
+}
+
+async function createMobileRealtimeToken(body = {}, user = {}) {
+  if (!OPENAI_REALTIME_API_KEY) {
+    throw new HttpError(503, "realtime_not_configured", "La voz en tiempo real no esta configurada en Railway. Define OPENAI_REALTIME_API_KEY u OPENAI_API_KEY.");
+  }
+  const model = normalizeRealtimeIdentifier(body.model, OPENAI_REALTIME_MODEL);
+  const voice = normalizeRealtimeIdentifier(body.voice, OPENAI_REALTIME_VOICE);
+  const maxSessionMinutes = Math.max(1, Math.min(Number(body.maxSessionMinutes || body.max_session_minutes || OPENAI_REALTIME_MAX_SESSION_MINUTES), OPENAI_REALTIME_MAX_SESSION_MINUTES));
+  const session = {
+    type: "realtime",
+    model,
+    audio: {
+      output: {
+        voice,
+      },
+    },
+    instructions: String(body.instructions || "Eres V, asistente de captura de experiencias. Responde breve, claro y con tono humano.").slice(0, 1200),
+  };
+  const response = await fetchWithTimeout(OPENAI_REALTIME_CLIENT_SECRET_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${OPENAI_REALTIME_API_KEY}`,
+      "Content-Type": "application/json",
+      "OpenAI-Safety-Identifier": hashUserForProvider(user),
+    },
+    body: JSON.stringify({ session }),
+  }, OPENAI_REALTIME_TOKEN_TIMEOUT_MS);
+  const text = await response.text();
+  const payload = parseJsonPayload(text);
+  if (!response.ok) {
+    throw new HttpError(response.status, "realtime_token_failed", cleanProviderError(payload, text));
+  }
+  const clientSecret = payload.client_secret || payload.clientSecret || payload;
+  const token = String(clientSecret.value || payload.value || payload.token || "").trim();
+  if (!token) {
+    throw new HttpError(502, "realtime_token_missing", "OpenAI no devolvio un token efimero valido.");
+  }
+  const expiresAt = clientSecret.expires_at || clientSecret.expiresAt || payload.expires_at || null;
+  await appendLog("info", "mobile_realtime_token_created", {
+    userId: user.id,
+    model,
+    voice,
+    expiresAt,
+  });
+  return {
+    ok: true,
+    token,
+    expiresAt,
+    model: payload.session?.model || model,
+    voice: payload.session?.audio?.output?.voice || voice,
+    wsUrl: `${OPENAI_REALTIME_WS_BASE_URL}?model=${encodeURIComponent(payload.session?.model || model)}`,
+    session: {
+      id: payload.session?.id || "",
+      type: payload.session?.type || "realtime",
+      maxSessionMinutes,
+    },
+  };
+}
+
+function normalizeRealtimeIdentifier(value, fallback) {
+  const raw = String(value || fallback || "").trim();
+  const safe = raw.replace(/[^a-zA-Z0-9_.:-]/g, "");
+  return safe || fallback;
+}
+
+function hashUserForProvider(user = {}) {
+  return createHash("sha256").update(String(user.id || user.email || LOCAL_USER_ID)).digest("hex").slice(0, 32);
+}
+
+function parseJsonPayload(text = "") {
+  try {
+    return text ? JSON.parse(text) : {};
+  } catch {
+    return {};
+  }
+}
+
+function cleanProviderError(payload = {}, text = "") {
+  const error = payload.error || payload;
+  const message = error.message || error.error_description || error.error || text || "provider_error";
+  return String(message).replace(OPENAI_REALTIME_API_KEY || "__never__", "[openai_key]").slice(0, 240);
 }
 
 async function proxyMobileOuraCollection(collection = "", searchParams = new URLSearchParams(), user = {}) {
@@ -4064,6 +4319,159 @@ async function recordAccountClosureRequest(body = {}, user = { id: LOCAL_USER_ID
     requestedAt: now,
     message: "Solicitud registrada. La cuenta no fue eliminada automaticamente; requiere respaldo, revision y confirmacion final.",
   };
+}
+
+async function resetUserContentData(body = {}, user = { id: LOCAL_USER_ID, email: "local-user@example.com" }) {
+  const confirmation = String(body.confirmation || "").trim();
+  const accepted = new Set(["BORRAR DATOS", "DELETE DATA", "SUPPRIMER LES DONNEES"]);
+  if (!accepted.has(confirmation)) {
+    throw new HttpError(400, "confirmation_required", "Escribe BORRAR DATOS para confirmar la limpieza de contenido.");
+  }
+
+  const now = new Date().toISOString();
+  const includeGroups = Boolean(body.includeGroups);
+  const summary = {
+    ok: true,
+    userId: user.id || LOCAL_USER_ID,
+    resetAt: now,
+    mode: includeGroups ? "content-and-groups" : "content-only",
+    deleted: {},
+    storage: { attempted: 0, deleted: 0, failed: 0 },
+    warnings: [],
+  };
+
+  if (activePersistence() !== "supabase") {
+    await mutateStore((currentStore) => {
+      const before = currentStore.experiences.length;
+      currentStore.experiences = [];
+      summary.deleted.experiences = before;
+      return { ok: true };
+    });
+    await mutateAgendaStore((store) => {
+      const key = user.id || LOCAL_USER_ID;
+      summary.deleted.agendaEvents = Array.isArray(store[key]) ? store[key].length : 0;
+      store[key] = [];
+      return { ok: true };
+    }, user);
+    await writeDailyBriefingStore({});
+    summary.deleted.dailyBriefings = "local-store-cleared";
+    return summary;
+  }
+
+  const workspaceIds = await listUserWorkspaceIdsForReset(user, summary);
+  const storagePaths = await collectUserStoragePathsForReset(user, workspaceIds, summary);
+  if (storagePaths.length) {
+    summary.storage.attempted = storagePaths.length;
+    const result = await deleteSupabaseObjects(storagePaths);
+    summary.storage.deleted = result.deleted;
+    summary.storage.failed = result.failed;
+    summary.warnings.push(...result.warnings);
+  }
+
+  await deleteSupabaseRowsForReset("asset_upload_attempts", { user_id: `eq.${user.id}` }, summary);
+  if (workspaceIds.length) {
+    await deleteSupabaseRowsForReset("assets", { workspace_id: `in.(${workspaceIds.join(",")})` }, summary);
+    await deleteSupabaseRowsForReset("experience_events", { workspace_id: `in.(${workspaceIds.join(",")})` }, summary);
+    await deleteSupabaseRowsForReset("participants", { workspace_id: `in.(${workspaceIds.join(",")})` }, summary);
+  } else {
+    await deleteSupabaseRowsForReset("assets", { owner_user_id: `eq.${user.id}` }, summary);
+  }
+  await deleteSupabaseRowsForReset("agenda_events", { user_id: `eq.${user.id}` }, summary);
+  await deleteSupabaseRowsForReset("daily_briefings", { user_id: `eq.${user.id}` }, summary);
+  await deleteSupabaseRowsForReset("experiences", { user_id: `eq.${user.id}` }, summary);
+
+  if (includeGroups) {
+    await deleteSupabaseRowsForReset("workspace_members", { user_id: `eq.${user.id}` }, summary);
+    await deleteSupabaseRowsForReset("workspaces", { owner_user_id: `eq.${user.id}` }, summary);
+  }
+
+  await appendLog("warn", "user_content_reset_completed", {
+    userId: user.id || LOCAL_USER_ID,
+    email: user.email || "",
+    mode: summary.mode,
+    deleted: summary.deleted,
+    storage: summary.storage,
+  });
+  return summary;
+}
+
+async function listUserWorkspaceIdsForReset(user, summary) {
+  try {
+    const rows = await supabaseRest("workspaces", {
+      searchParams: {
+        owner_user_id: `eq.${user.id}`,
+        select: "workspace_id",
+      },
+    });
+    return rows.map((row) => row.workspace_id).filter(Boolean);
+  } catch (error) {
+    summary.warnings.push(`workspaces_lookup_skipped: ${sanitizeDiagnosticError(error)}`);
+    return [];
+  }
+}
+
+async function collectUserStoragePathsForReset(user, workspaceIds, summary) {
+  const paths = new Set();
+  const addPath = (value) => {
+    const clean = String(value || "").trim();
+    if (clean && clean.startsWith(`${user.id}/`)) paths.add(clean);
+  };
+
+  try {
+    const rows = await supabaseRest("experiences", {
+      searchParams: {
+        user_id: `eq.${user.id}`,
+        select: "attachments",
+      },
+    });
+    rows.forEach((row) => {
+      const attachments = Array.isArray(row.attachments) ? row.attachments : [];
+      attachments.forEach((attachment) => addPath(attachment?.path || attachment?.storagePath));
+    });
+  } catch (error) {
+    summary.warnings.push(`experience_storage_lookup_skipped: ${sanitizeDiagnosticError(error)}`);
+  }
+
+  try {
+    const assetFilter = workspaceIds.length ? { workspace_id: `in.(${workspaceIds.join(",")})` } : { owner_user_id: `eq.${user.id}` };
+    const rows = await supabaseRest("assets", {
+      searchParams: {
+        ...assetFilter,
+        select: "storage_path",
+      },
+    });
+    rows.forEach((row) => addPath(row.storage_path));
+  } catch (error) {
+    summary.warnings.push(`asset_storage_lookup_skipped: ${sanitizeDiagnosticError(error)}`);
+  }
+
+  try {
+    const rows = await supabaseRest("asset_upload_attempts", {
+      searchParams: {
+        user_id: `eq.${user.id}`,
+        select: "storage_path",
+      },
+    });
+    rows.forEach((row) => addPath(row.storage_path));
+  } catch (error) {
+    summary.warnings.push(`upload_attempt_storage_lookup_skipped: ${sanitizeDiagnosticError(error)}`);
+  }
+
+  return [...paths];
+}
+
+async function deleteSupabaseRowsForReset(table, searchParams, summary) {
+  try {
+    const rows = await supabaseRest(table, {
+      method: "DELETE",
+      searchParams,
+      headers: { Prefer: "return=representation" },
+    });
+    summary.deleted[table] = Array.isArray(rows) ? rows.length : 0;
+  } catch (error) {
+    summary.deleted[table] = "skipped";
+    summary.warnings.push(`${table}_delete_skipped: ${sanitizeDiagnosticError(error)}`);
+  }
 }
 
 async function ensureExperienceParticipant(experience, workspaceId, user = { id: LOCAL_USER_ID }) {
@@ -5539,16 +5947,32 @@ function selfTestActionFor(id, detail = "") {
 }
 
 async function deleteSupabaseObject(objectPath) {
-  const response = await fetch(`${SUPABASE_URL}/storage/v1/object/${SUPABASE_STORAGE_BUCKET}`, {
-    method: "DELETE",
-    headers: {
-      ...supabaseServerKeyHeaders(),
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ prefixes: [objectPath] }),
-  });
-  const text = await response.text();
-  if (!response.ok) throw new Error(`supabase_storage_delete_${response.status}: ${text}`);
+  const result = await deleteSupabaseObjects([objectPath]);
+  if (result.failed) throw new Error(result.warnings[0] || "supabase_storage_delete_failed");
+}
+
+async function deleteSupabaseObjects(objectPaths = []) {
+  const uniquePaths = [...new Set(objectPaths.map((item) => String(item || "").trim()).filter(Boolean))];
+  const summary = { deleted: 0, failed: 0, warnings: [] };
+  for (let index = 0; index < uniquePaths.length; index += 100) {
+    const batch = uniquePaths.slice(index, index + 100);
+    const response = await fetch(`${SUPABASE_URL}/storage/v1/object/${SUPABASE_STORAGE_BUCKET}`, {
+      method: "DELETE",
+      headers: {
+        ...supabaseServerKeyHeaders(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ prefixes: batch }),
+    });
+    const text = await response.text();
+    if (!response.ok) {
+      summary.failed += batch.length;
+      summary.warnings.push(`supabase_storage_delete_${response.status}: ${text.slice(0, 180)}`);
+    } else {
+      summary.deleted += batch.length;
+    }
+  }
+  return summary;
 }
 
 async function deleteParticipantRecord(participantId, user = { id: LOCAL_USER_ID }) {
@@ -6104,7 +6528,7 @@ async function executeRoutine(routine, user, options = {}) {
   }
   if (routine.id === "daily-briefing") {
     const experiences = await listExperiences(user);
-    const location = inferPrimaryLocationFrom(experiences) || "San Juan";
+    const location = inferPrimaryLocationFrom(experiences) || DEFAULT_OPERATIONAL_LOCATION;
     const result = await getDailyBriefing(location, "es");
     await appendLog("info", "Routine completed: daily briefing", { userId: user.id, location, options });
     return result;
@@ -7281,16 +7705,59 @@ async function renderReportLabPdf(scriptName, payload) {
     }
     return stdout;
   } catch (error) {
-    const stderr = Buffer.isBuffer(error.stderr) ? error.stderr.toString("utf8") : String(error.stderr || "");
-    const stdout = Buffer.isBuffer(error.stdout) ? error.stdout.toString("utf8") : String(error.stdout || "");
-    const detail = [error.message, stderr, stdout].filter(Boolean).join(" | ").replace(/\s+/g, " ").trim().slice(0, 1800);
-    await appendLog("warn", "ReportLab PDF rendering failed", { scriptName, error: detail });
+    const detail = summarizeReportLabError(error);
+    await appendLog("warn", "ReportLab PDF rendering failed", {
+      scriptName,
+      error: detail,
+      stdoutBytes: error.stdoutBytes || (Buffer.isBuffer(error.stdout) ? error.stdout.length : 0),
+      stderrBytes: error.stderrBytes || (Buffer.isBuffer(error.stderr) ? error.stderr.length : 0),
+    });
     throw new Error(detail || "reportlab_render_failed");
   }
 }
 
+function parsePositiveInteger(value, fallback) {
+  const parsed = Number.parseInt(String(value || ""), 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function summarizeReportLabError(error) {
+  const message = String(error?.message || "reportlab_render_failed");
+  const stderr = summarizeReportLabBuffer(error?.stderr);
+  const stdout = summarizeReportLabBuffer(error?.stdout);
+  return [message, stderr, stdout]
+    .filter(Boolean)
+    .join(" | ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 900);
+}
+
+function summarizeReportLabBuffer(value) {
+  if (!value) return "";
+  const buffer = Buffer.isBuffer(value) ? value : Buffer.from(String(value), "utf8");
+  if (!buffer.length) return "";
+  const prefix = buffer.subarray(0, 12).toString("latin1");
+  if (prefix.startsWith("%PDF")) return "";
+  const sample = buffer.subarray(0, Math.min(buffer.length, 1200));
+  const binaryMarkers = [...sample].filter((byte) => byte === 0 || byte < 7 || (byte > 13 && byte < 32)).length;
+  if (binaryMarkers > 8) return "";
+  return sample.toString("utf8").replace(/\s+/g, " ").trim().slice(0, 700);
+}
+
 function runReportLabProcess(pythonExecutable, scriptPath, payload) {
   return new Promise((resolve, reject) => {
+    let settled = false;
+    const rejectOnce = (error) => {
+      if (settled) return;
+      settled = true;
+      reject(error);
+    };
+    const resolveOnce = (value) => {
+      if (settled) return;
+      settled = true;
+      resolve(value);
+    };
     const child = spawn(pythonExecutable, [scriptPath], {
       windowsHide: true,
       env: {
@@ -7303,46 +7770,56 @@ function runReportLabProcess(pythonExecutable, scriptPath, payload) {
     const stderr = [];
     let stdoutBytes = 0;
     let stderrBytes = 0;
-    const maxBytes = 30_000_000;
+    const maxBytes = parsePositiveInteger(process.env.REPORTLAB_MAX_STDOUT_BYTES, 120_000_000);
+    const maxStderrBytes = parsePositiveInteger(process.env.REPORTLAB_MAX_STDERR_BYTES, 2_000_000);
+    const timeoutMs = parsePositiveInteger(process.env.REPORTLAB_TIMEOUT_MS, 90_000);
     const timeout = setTimeout(() => {
       child.kill("SIGKILL");
       const error = new Error("reportlab_timeout");
       error.stderr = Buffer.concat(stderr);
-      error.stdout = Buffer.concat(stdout);
-      reject(error);
-    }, 45000);
+      error.stdout = Buffer.alloc(0);
+      error.stdoutBytes = stdoutBytes;
+      error.stderrBytes = stderrBytes;
+      rejectOnce(error);
+    }, timeoutMs);
 
     child.stdout.on("data", (chunk) => {
       stdoutBytes += chunk.length;
       if (stdoutBytes <= maxBytes) stdout.push(chunk);
       if (stdoutBytes > maxBytes) {
         child.kill("SIGKILL");
-        const error = new Error("reportlab_stdout_too_large");
+        const error = new Error(`reportlab_pdf_output_too_large:${stdoutBytes}/${maxBytes}`);
         error.stderr = Buffer.concat(stderr);
-        error.stdout = Buffer.concat(stdout);
-        reject(error);
+        error.stdout = Buffer.alloc(0);
+        error.stdoutBytes = stdoutBytes;
+        error.stderrBytes = stderrBytes;
+        rejectOnce(error);
       }
     });
     child.stderr.on("data", (chunk) => {
       stderrBytes += chunk.length;
-      if (stderrBytes <= maxBytes) stderr.push(chunk);
+      if (stderrBytes <= maxStderrBytes) stderr.push(chunk);
     });
     child.on("error", (error) => {
       clearTimeout(timeout);
       error.stderr = Buffer.concat(stderr);
-      error.stdout = Buffer.concat(stdout);
-      reject(error);
+      error.stdout = Buffer.alloc(0);
+      error.stdoutBytes = stdoutBytes;
+      error.stderrBytes = stderrBytes;
+      rejectOnce(error);
     });
     child.on("close", (code) => {
       clearTimeout(timeout);
       if (code === 0) {
-        resolve(Buffer.concat(stdout));
+        resolveOnce(Buffer.concat(stdout));
         return;
       }
       const error = new Error(`reportlab_exit_${code}`);
       error.stderr = Buffer.concat(stderr);
-      error.stdout = Buffer.concat(stdout);
-      reject(error);
+      error.stdout = Buffer.alloc(0);
+      error.stdoutBytes = stdoutBytes;
+      error.stderrBytes = stderrBytes;
+      rejectOnce(error);
     });
     child.stdin.end(JSON.stringify(payload || {}), "utf8");
   });
@@ -7668,6 +8145,15 @@ async function getNewsImpact(place) {
     }
   }
 
+  if (!articles.length) {
+    const broadFallbackQuery = [place.name, place.country, "noticias actualidad eventos economia seguridad"].filter(Boolean).join(" ");
+    articles = await fetchGoogleNewsRss({ query: broadFallbackQuery }, "es", { maxRecords: 5, noFreshness: true });
+    if (articles.length) {
+      source = "Google News RSS";
+      fallbackReason = fallbackReason || "broad_local_news_fallback";
+    }
+  }
+
   const keywords = ["conflict", "protest", "election", "sanctions", "security", "border", "strike", "conflicto", "protesta", "eleccion", "seguridad", "frontera", "huelga"];
   const headlineText = articles.map((article) => article.title || "").join(" ").toLowerCase();
   const riskSignals = keywords.filter((keyword) => headlineText.includes(keyword));
@@ -7753,6 +8239,123 @@ async function getMobileDailyContext(searchParams = new URLSearchParams(), user 
     briefing.cached = true;
   }
   return buildMobileDailyContextResponse(briefing, place);
+}
+
+async function getMobileHealthSummary(searchParams = new URLSearchParams(), user = { id: LOCAL_USER_ID }) {
+  const language = normalizeDailyLanguage(searchParams.get("lang") || searchParams.get("locale") || "es");
+  const range = normalizeMobileHealthRange(searchParams);
+  const experiences = await listExperiences(user);
+  const records = experiences
+    .map((experience) => ({ experience, context: experience?.metadata?.structuredContext || null }))
+    .filter((item) => isMobileHealthContext(item.context))
+    .filter((item) => isTimestampInRange(item.context?.capturedAt || item.experience?.timestamp, range))
+    .sort((a, b) => new Date(b.context?.capturedAt || b.experience?.timestamp || 0) - new Date(a.context?.capturedAt || a.experience?.timestamp || 0));
+  const metricNames = new Set();
+  const connectors = new Set();
+  const payloadTypes = new Set();
+  let signalCount = 0;
+  let energyTotal = 0;
+  let energyCount = 0;
+  records.forEach(({ experience, context }) => {
+    const metrics = context.metrics && typeof context.metrics === "object" ? context.metrics : {};
+    Object.keys(metrics).forEach((key) => metricNames.add(key));
+    if (context.connector) connectors.add(context.connector);
+    if (context.payloadType) payloadTypes.add(context.payloadType);
+    const signals = Array.isArray(context.signals) ? context.signals : [];
+    signalCount += signals.length || Number(metrics.recordCount || 0) || 1;
+    const energy = Number(experience.energy);
+    if (Number.isFinite(energy) && energy > 0) {
+      energyTotal += energy;
+      energyCount += 1;
+    }
+  });
+  const latestItems = records.slice(0, 12).map(({ experience, context }) => {
+    const metrics = context.metrics && typeof context.metrics === "object" ? context.metrics : {};
+    const signals = Array.isArray(context.signals) ? context.signals : [];
+    return {
+      id: experience.id,
+      title: experience.title,
+      capturedAt: context.capturedAt || experience.timestamp,
+      connector: context.connector || "device",
+      payloadType: context.payloadType || "biometric",
+      dataType: context.dataType || context.payloadType || "",
+      summary: context.summary || experience.notes || "",
+      metricNames: Object.keys(metrics).slice(0, 10),
+      signalsPreview: signals.slice(0, 3).map((signal) => ({
+        type: signal.type || signal.metric || signal.name || "",
+        value: signal.value ?? signal.score ?? signal.quantity ?? "",
+        unit: signal.unit || "",
+        date: signal.date || signal.timestamp || signal.startDate || "",
+      })),
+    };
+  });
+  const message = buildMobileHealthSummaryMessage(records.length, signalCount, language);
+  return {
+    ok: true,
+    schemaVersion: "vibe-mobile-health-summary-v1",
+    source: "server-normalized-context",
+    generatedAt: new Date().toISOString(),
+    userId: user.id || LOCAL_USER_ID,
+    range,
+    summary: {
+      status: records.length ? "available" : "empty",
+      records: records.length,
+      signals: signalCount,
+      suggestedEnergy: energyCount ? Number((energyTotal / energyCount).toFixed(1)) : null,
+      connectors: [...connectors].slice(0, 12),
+      payloadTypes: [...payloadTypes].slice(0, 8),
+      metricNames: [...metricNames].slice(0, 18),
+      message,
+    },
+    items: latestItems,
+  };
+}
+
+function normalizeMobileHealthRange(searchParams = new URLSearchParams()) {
+  const now = new Date();
+  const fallbackFrom = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+  const from = normalizeOptionalIsoDate(searchParams.get("from") || searchParams.get("start_date") || searchParams.get("startDate"), fallbackFrom);
+  const to = normalizeOptionalIsoDate(searchParams.get("to") || searchParams.get("end_date") || searchParams.get("endDate"), now);
+  return {
+    from: from.toISOString(),
+    to: to.toISOString(),
+  };
+}
+
+function normalizeOptionalIsoDate(value, fallback) {
+  const date = new Date(value || fallback);
+  return Number.isFinite(date.getTime()) ? date : fallback;
+}
+
+function isMobileHealthContext(context = null) {
+  if (!context || typeof context !== "object") return false;
+  const payloadType = String(context.payloadType || context.dataType || "").toLowerCase();
+  const connector = String(context.connector || "").toLowerCase();
+  return ["biometric", "activity", "sleep"].includes(payloadType)
+    || /oura|health|samsung|galaxy|apple|wearable|biometric/.test(connector);
+}
+
+function isTimestampInRange(timestamp, range = {}) {
+  const value = new Date(timestamp || 0).getTime();
+  const from = new Date(range.from || 0).getTime();
+  const to = new Date(range.to || Date.now()).getTime();
+  return Number.isFinite(value) && value >= from && value <= to;
+}
+
+function buildMobileHealthSummaryMessage(records, signals, language = "es") {
+  if (language === "fr") {
+    return records
+      ? `${records} contexte(s) de sante et ${signals} signal(aux) disponibles pour l'assistant.`
+      : "Aucun contexte de sante recent n'est disponible.";
+  }
+  if (language === "en") {
+    return records
+      ? `${records} health context record(s) and ${signals} signal(s) are available for the assistant.`
+      : "No recent health context is available.";
+  }
+  return records
+    ? `${records} contexto(s) de salud y ${signals} señal(es) disponibles para el asistente.`
+    : "No hay contexto de salud reciente disponible.";
 }
 
 function normalizeMobileDailyFallbackBriefing(briefing = {}, place = {}, language = "es", warning = "mobile_daily_fallback") {
@@ -8097,7 +8700,7 @@ async function deleteStoredDailyBriefing(user, location, language) {
 }
 
 function normalizeDailyLocationKey(location) {
-  return String(location || "san juan")
+  return String(location || DEFAULT_OPERATIONAL_LOCATION)
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
@@ -8447,7 +9050,7 @@ async function fetchGdeltBriefingArticles(section, maxRecords = 6) {
 async function fetchGoogleNewsRss(section, language, options = {}) {
   const url = new URL("https://news.google.com/rss/search");
   let query = normalizeNewsQuery(section.query);
-  query = `${query} when:${DAILY_NEWS_FRESHNESS_HOURS}h`;
+  if (!options.noFreshness) query = `${query} when:${DAILY_NEWS_FRESHNESS_HOURS}h`;
   if (options.trusted) {
     const domainQuery = TRUSTED_NEWS_DOMAINS.slice(0, 10).map((domain) => `site:${domain}`).join(" OR ");
     query = `${query} (${domainQuery})`;
