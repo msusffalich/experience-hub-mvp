@@ -1,4 +1,4 @@
-﻿const APP_VERSION = "20260623-publication-pdf-timeline-654";
+const APP_VERSION = "20260623-auto-impact-energy-655";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -904,9 +904,9 @@ const i18n = {
       apiOnline: "API local activa",
       supabaseOnline: "Supabase activo",
       offline: "Modo local sin conexión",
-      contextEmpty: "Escribe una ciudad para analizar el impacto ambiental y geopolítico.",
+      contextEmpty: "El impacto se actualizará automáticamente cuando haya una ubicación activa.",
       contextLoading: "Analizando mediciones climáticas y noticias geopolíticas del lugar...",
-      contextReady: "Impacto ambiental y geopolítico listo para consultar",
+      contextReady: "Impacto ambiental y geopolítico automático",
       contextUsePrimary: "Usar ubicación principal",
       contextPrimaryApplied: "Ubicación principal aplicada",
       dailyReady: "Actualiza cada 6 horas",
@@ -1028,7 +1028,7 @@ const i18n = {
       voiceCommandHeard: "Comando recibido",
       voiceCommandUnknown: "No entendí el comando. Prueba: Hola V, abrir captura; V, actualizar diario; abrir reporte o nueva experiencia.",
       voiceCommandReady: "Comandos de voz disponibles",
-      voiceCommandHelp: "Puedes decir Hola V o V antes del comando: abrir panel, abrir captura, actualizar diario, analizar contexto, abrir reporte, abrir publicaciones, abrir manual o nueva experiencia.",
+      voiceCommandHelp: "Puedes decir Hola V o V antes del comando: abrir panel, abrir captura, actualizar diario, actualizar contexto, abrir reporte, abrir publicaciones, abrir manual o nueva experiencia.",
       voiceCommandContinuousHelp: "V queda escuchando mientras esta pantalla esté abierta. Di Hola V o V antes de la acción. Pulsa de nuevo para detener.",
       voiceCommandExamplesTitle: "Ejemplos de comandos",
       voiceCommandStatusReady: "Listo para escuchar o probar un ejemplo.",
@@ -1185,7 +1185,7 @@ const i18n = {
       environmentalActive: "Ambiental activo",
       geopoliticalActive: "Geopolítico activo",
       environmentalUnavailable: "Ambiental no disponible",
-      geopoliticalUnavailable: "Geopolítico no disponible",
+      geopoliticalUnavailable: "Sin señales geopolíticas recientes",
       contextFallbackSource: "Fuente de respaldo",
       contextUnavailableReason: "Motivo",
       contextNoArticles: "No se encontraron artículos recientes para este lugar.",
@@ -1741,9 +1741,9 @@ const i18n = {
       apiOnline: "Local API active",
       supabaseOnline: "Supabase active",
       offline: "Local offline mode",
-      contextEmpty: "Enter a city to analyze weather and news.",
+      contextEmpty: "Impact will update automatically when an active location is available.",
       contextLoading: "Analyzing local weather and news...",
-      contextReady: "Environmental and geopolitical impact ready to query",
+      contextReady: "Automatic environmental and geopolitical impact",
       contextUsePrimary: "Use primary location",
       contextPrimaryApplied: "Primary location applied",
       dailyReady: "Refreshes every 6 hours",
@@ -1865,7 +1865,7 @@ const i18n = {
       voiceCommandHeard: "Command received",
       voiceCommandUnknown: "I did not understand the command. Try: Hi V, open capture; V, refresh daily; open report; or new experience.",
       voiceCommandReady: "Voice commands available",
-      voiceCommandHelp: "You can say Hi V or V before the command: open dashboard, open capture, refresh daily, analyze context, open report, open publications, open manual, or new experience.",
+      voiceCommandHelp: "You can say Hi V or V before the command: open dashboard, open capture, refresh daily, update context, open report, open publications, open manual, or new experience.",
       voiceCommandContinuousHelp: "V keeps listening while this screen is open. Say Hi V or V before the action. Press again to stop.",
       voiceCommandExamplesTitle: "Command examples",
       voiceCommandStatusReady: "Ready to listen or test an example.",
@@ -2022,7 +2022,7 @@ const i18n = {
       environmentalActive: "Environmental active",
       geopoliticalActive: "Geopolitical active",
       environmentalUnavailable: "Environmental unavailable",
-      geopoliticalUnavailable: "Geopolitical unavailable",
+      geopoliticalUnavailable: "No recent geopolitical signals",
       contextFallbackSource: "Fallback source",
       contextUnavailableReason: "Reason",
       contextNoArticles: "No recent articles were found for this place.",
@@ -2238,6 +2238,14 @@ i18n.fr = mergeLocale(i18n.en, {
     noLibrary: "Aucune expérience pour ces filtres.",
     noTimeline: "Aucune expérience pour ces filtres.",
     noAttachments: "Aucune pièce multimédia pour le moment.",
+    contextEmpty: "L'impact se mettra à jour automatiquement lorsqu'une localisation active sera disponible.",
+    contextLoading: "Analyse de la météo locale et des signaux géopolitiques...",
+    contextReady: "Impact environnemental et géopolitique automatique",
+    contextUsePrimary: "Utiliser la localisation principale",
+    contextPrimaryApplied: "Localisation principale appliquée",
+    environmentalUnavailable: "Environnement non disponible",
+    geopoliticalUnavailable: "Aucun signal géopolitique récent",
+    contextNoArticles: "Aucun article récent n'a été trouvé pour ce lieu.",
     assetLibraryIntro: "Inventaire des images, vidéos, audios et documents associés aux expériences.",
     assetLibraryEmpty: "Aucun fichier multimodal pour ces filtres.",
     assetLinkedExperience: "Expérience liée",
@@ -2400,8 +2408,8 @@ const automationCatalog = {
       },
       {
         id: "context-scan",
-        name: "Análisis contextual",
-        description: "Analiza clima y noticias del lugar principal detectado en tus experiencias.",
+        name: "Actualización contextual",
+        description: "Actualiza clima y noticias del lugar principal detectado en tus experiencias.",
       },
     ],
     connectors: [
@@ -2503,8 +2511,8 @@ const automationCatalog = {
       },
       {
         id: "context-scan",
-        name: "Context Scan",
-        description: "Analyzes weather and news for the primary location detected in your experiences.",
+        name: "Context Update",
+        description: "Updates weather and news for the primary location detected in your experiences.",
       },
     ],
     connectors: [
@@ -2822,7 +2830,7 @@ const manualContent = {
         "La ficha Cartelera y multimedia agrupa tres zonas: cartelera vigente, imágenes editoriales reales disponibles y seguimiento en Agenda. Si el Diario no trae imágenes confiables, la app lo indica y ofrece búsquedas externas claramente marcadas.",
         "Horóscopo queda fuera del flujo principal hasta que exista una fuente confiable o una lectura personalizada real; así evitamos mostrar contenido genérico como si fuera una función completa.",
         "Cartelera y eventos ofrece accesos rápidos para buscar cine, conciertos, teatro, eventos del día y exposiciones del lugar seleccionado. También permite programar una revisión en Agenda para convertir la lectura del Diario en seguimiento accionable.",
-        "Comando de voz permite ejecutar acciones básicas por voz: abrir secciones, actualizar Diario, analizar contexto, abrir reportes, abrir Publicaciones, abrir Manual, cargar ejemplo o crear una nueva experiencia. Puedes iniciar el comando con Hola V, V o, en inglés, Hi V. Depende de Web Speech del navegador y requiere activar el micrófono desde la app.",
+        "Comando de voz permite ejecutar acciones básicas por voz: abrir secciones, actualizar Diario, actualizar contexto, abrir reportes, abrir Publicaciones, abrir Manual, cargar ejemplo o crear una nueva experiencia. Puedes iniciar el comando con Hola V, V o, en inglés, Hi V. Depende de Web Speech del navegador y requiere activar el micrófono desde la app.",
         "V ya puede registrar contenido simple: toma nota agrega texto al borrador de Captura, guarda esto crea una experiencia rápida y agenda/pon en mi agenda crea un evento multidispositivo en Agenda con hora interpretada cuando la frase la incluye. Si esa frase aparece dentro de una grabación de audio, Captura también la detecta y crea el evento sin salir del formulario.",
         "La tarjeta Voz del Diario muestra el estado del comando y ejemplos clicables. Si el micrófono o Web Speech no están disponibles, puedes probar el mismo flujo con esos ejemplos.",
         "Incluye distribución por categoría y señales recientes de las últimas experiencias.",
@@ -3454,7 +3462,7 @@ const manualContent = {
         "The Listings and multimedia card groups three zones: current listings, real editorial images when available, and Agenda follow-up. If Daily has no reliable images, the app says so and offers clearly marked external searches.",
         "Horoscope is out of the main flow until there is a reliable source or real personalization; this avoids presenting generic text as a complete feature.",
         "Listings and events provides quick links for movie showtimes, concerts, theater, events today, and exhibitions in the selected place. It can also schedule a review in Agenda so the Daily briefing becomes actionable follow-up.",
-        "Voice command runs basic actions by voice: open sections, refresh Daily, analyze context, open reports, open Publications, open Manual, load example, or create a new experience. You can start the command with Hi V, V, or in Spanish, Hola V. It depends on the browser's Web Speech support and requires activating the microphone from the app.",
+        "Voice command runs basic actions by voice: open sections, refresh Daily, update context, open reports, open Publications, open Manual, load example, or create a new experience. You can start the command with Hi V, V, or in Spanish, Hola V. It depends on the browser's Web Speech support and requires activating the microphone from the app.",
         "V can now record simple content: take note adds text to the Capture draft, save this creates a quick experience, and schedule/add to my calendar creates a multi-device Agenda event with interpreted time when the phrase includes it. If that phrase appears inside an audio recording, Capture also detects it and creates the event without leaving the form.",
         "The Daily Voice card shows command status and clickable examples. If microphone access or Web Speech is unavailable, you can test the same flow with those examples.",
         "Includes category distribution and recent signals from the latest experiences.",
@@ -8200,7 +8208,6 @@ function setupActions() {
   document.getElementById("contextPrimaryButton").addEventListener("click", applyPrimaryContextLocation);
   document.getElementById("contextLocationInput").addEventListener("change", handleContextLocationChange);
   document.getElementById("contextLocationInput").addEventListener("blur", handleContextLocationChange);
-  document.getElementById("contextAnalyzeButton").addEventListener("click", analyzeContextImpact);
   document.getElementById("embeddingBackfillButton").addEventListener("click", backfillEmbeddings);
   document.getElementById("workspaceBackfillButton").addEventListener("click", syncWorkspaceStructure);
   document.getElementById("refreshOpsButton").addEventListener("click", refreshOps);
@@ -13805,7 +13812,7 @@ function executeVoiceCommand(transcript) {
     refreshDailyBriefing({ force: true });
     return;
   }
-  if (command.includes("analizar contexto") || command.includes("analyze context") || command.includes("impacto")) {
+  if (command.includes("actualizar contexto") || command.includes("update context") || command.includes("analizar contexto") || command.includes("analyze context") || command.includes("impacto")) {
     showView("dashboard");
     setVoiceCommandStatus(`${t("labels.voiceCommandStatusExecuted")}: ${transcript}`, "success");
     analyzeContextImpact();
@@ -14489,7 +14496,9 @@ async function refreshContextImpactAutomatically(options = {}) {
   }
   const lastRefresh = new Date(state.contextImpactRefreshedAt || 0).getTime();
   const sameLocation = locationsEquivalent(location, state.contextImpactRefreshedFor);
-  const currentReady = state.contextImpact && locationsEquivalent(location, state.contextImpact.location || state.contextImpact.queryLocation);
+  const currentReady = state.contextImpact
+    && locationsEquivalent(location, state.contextImpact.location || state.contextImpact.queryLocation)
+    && hasUsableEnvironmentalImpact(state.contextImpact);
   if (!options.force && sameLocation && currentReady && lastRefresh && Date.now() - lastRefresh < 45 * 60 * 1000) return false;
   if (box && (!options.silent || !state.contextImpact)) box.innerHTML = `<p class="card-meta">${t("labels.contextLoading")}</p>`;
   saveDailyLocationPreference(location);
@@ -14514,31 +14523,6 @@ async function refreshContextImpactAutomatically(options = {}) {
     return false;
   } finally {
     state.contextImpactRefreshInProgress = false;
-  }
-}
-
-async function analyzeContextImpactLegacy() {
-  const input = document.getElementById("contextLocationInput");
-  const box = document.getElementById("contextImpactBox");
-  const location = input.value.trim() || getDailyOperationalLocation();
-  if (!location) {
-    box.innerHTML = `<p class="card-meta">${t("labels.contextEmpty")}</p>`;
-    updateContextStatus();
-    return;
-  }
-  box.innerHTML = `<p class="card-meta">${t("labels.contextLoading")}</p>`;
-  saveDailyLocationPreference(location);
-  syncDailyLocationInputs(location);
-  updateContextStatus("loading");
-  try {
-    const experienceType = getContextExperienceType();
-    const impact = await apiRequest(`/context/impact?location=${encodeURIComponent(location)}&experienceType=${encodeURIComponent(experienceType)}`);
-    state.contextImpact = impact;
-    renderContextImpact();
-    renderReport();
-  } catch (error) {
-    updateContextStatus("error");
-    box.innerHTML = `<p class="card-meta">No se pudo consultar el impacto ambiental/geopolítico ahora. Verifica la conexión o intenta con otra ciudad.</p>`;
   }
 }
 
@@ -14576,13 +14560,13 @@ function renderContextImpact() {
   updateContextStatus("ready", impact);
   const weather = impact.weather.current;
   const articles = impact.geopoliticalNews.articles || [];
-  const weatherStatus = impact.weather.unavailable ? t("labels.environmentalUnavailable") : t("labels.environmentalActive");
+  const weatherStatus = hasUsableEnvironmentalImpact(impact) ? t("labels.environmentalActive") : t("labels.environmentalUnavailable");
   const newsStatus = impact.geopoliticalNews.unavailable ? t("labels.geopoliticalUnavailable") : t("labels.geopoliticalActive");
   const profileImpact = impact.profileImpact;
   box.innerHTML = `
     <div class="impact-status-grid">
       <article class="impact-status-card">
-        <span class="${impact.weather.unavailable ? "status-warn" : "status-ok"}">${weatherStatus}</span>
+        <span class="${hasUsableEnvironmentalImpact(impact) ? "status-ok" : "status-warn"}">${weatherStatus}</span>
         <p class="card-meta">Open-Meteo · ${impact.weather.current?.time ? escapeHtml(impact.weather.current.time) : "consulta bajo demanda"}</p>
       </article>
       <article class="impact-status-card">
@@ -14745,12 +14729,24 @@ function updateContextStatus(status = "idle", impact = null) {
     return;
   }
   if (status === "ready" && impact) {
-    const environmental = impact.weather?.unavailable ? t("labels.environmentalUnavailable") : t("labels.environmentalActive");
+    const environmental = hasUsableEnvironmentalImpact(impact) ? t("labels.environmentalActive") : t("labels.environmentalUnavailable");
     const geopolitical = impact.geopoliticalNews?.unavailable ? t("labels.geopoliticalUnavailable") : t("labels.geopoliticalActive");
     statusEl.textContent = `${environmental} · ${geopolitical}`;
     return;
   }
   statusEl.textContent = t("labels.contextReady");
+}
+
+function hasUsableEnvironmentalImpact(impact = {}) {
+  const weather = impact.weather || {};
+  const current = weather.current || {};
+  const values = [
+    current.temperatureC,
+    current.humidityPct,
+    current.precipitationMm,
+    current.windKmh,
+  ];
+  return values.some((value) => Number.isFinite(Number(value))) || (Array.isArray(weather.forecast) && weather.forecast.length > 0);
 }
 
 function inferPrimaryLocation() {
@@ -20980,11 +20976,11 @@ function hasMeaningfulPeople(value) {
 
 function summarizeBiometricSignalsForExperiences(experiences = []) {
   if (!experiences.length) {
-    return { matched: 0, coveragePct: 0, averageSuggestedEnergy: 0, biometricRiskScore: 0, importedCount: state.biometricImports?.length || 0, rowCount: getAllBiometricRows().length };
+    return { matched: 0, coveragePct: 0, averageSuggestedEnergy: null, biometricRiskScore: 0, importedCount: state.biometricImports?.length || 0, rowCount: getAllBiometricRows().length };
   }
   const signals = getBiometricSignalsForExperiences(experiences).map((item) => item.signal);
   const energySignals = signals.map((signal) => Number(signal.energySuggestion)).filter(Number.isFinite);
-  const averageSuggestedEnergy = energySignals.length ? average(energySignals) : 0;
+  const averageSuggestedEnergy = energySignals.length ? average(energySignals) : null;
   const riskSignals = signals.filter((signal) => {
     const metrics = signal.metrics || {};
     return (Number.isFinite(Number(signal.energySuggestion)) && Number(signal.energySuggestion) <= 4) || metrics.heartAvg >= 105 || (metrics.sleepMinutes > 0 && metrics.sleepMinutes < 360);
@@ -21088,8 +21084,9 @@ function buildBiometricIntelligenceSummary(experiences = state.experiences) {
     ? pct(serverRecords || serverSignals, serverCoverageBase)
     : summary.coveragePct;
   const serverSuggestedEnergy = Number(serverHealth?.suggestedEnergy);
-  const averageSuggestedEnergy = summary.averageSuggestedEnergy
-    || (Number.isFinite(serverSuggestedEnergy) && serverSuggestedEnergy > 0 ? serverSuggestedEnergy : 0);
+  const averageSuggestedEnergy = Number.isFinite(Number(summary.averageSuggestedEnergy)) && Number(summary.averageSuggestedEnergy) > 0
+    ? Number(summary.averageSuggestedEnergy)
+    : (Number.isFinite(serverSuggestedEnergy) && serverSuggestedEnergy > 0 ? serverSuggestedEnergy : null);
   const rowCount = rows.length || serverSignals || serverRecords;
   return {
     status,
@@ -34636,7 +34633,7 @@ function buildParallelBacklog() {
       contextTitle: "Impacto ambiental/geopolítico",
       contextDetail: state.contextImpact
         ? "El análisis contextual ya tiene señales ambientales y geopolíticas activas."
-        : "Analiza una ciudad para activar clima, noticias geopolíticas e impacto contextual.",
+        : "Se actualiza automáticamente con la ubicación activa, clima, noticias e impacto contextual.",
       contextAction: "Analizar contexto",
       supabaseTitle: "Sesión Supabase",
       supabaseDetail: state.session?.access_token ? "Auth y persistencia remota están activos." : "Inicia sesión para persistencia remota, RLS y Storage privado.",
@@ -34690,7 +34687,7 @@ function buildParallelBacklog() {
       contextTitle: "Environmental/geopolitical impact",
       contextDetail: state.contextImpact
         ? "Context analysis already has environmental and geopolitical signals."
-        : "Analyze a city to activate weather, geopolitical news, and context impact.",
+        : "Updates automatically from the active location, weather, news, and context impact.",
       contextAction: "Analyze context",
       supabaseTitle: "Supabase session",
       supabaseDetail: state.session?.access_token ? "Auth and remote persistence are active." : "Sign in for remote persistence, RLS, and private Storage.",
@@ -35231,13 +35228,22 @@ function buildInsights(experiences = state.experiences) {
   }
 
   if (analysis.biometricContext?.status === "active") {
+    const hasReliableBiometricEnergy = Number.isFinite(Number(analysis.biometricContext.averageSuggestedEnergy))
+      && Number(analysis.biometricContext.averageSuggestedEnergy) > 0;
+    const biometricEnergyDescription = hasReliableBiometricEnergy
+      ? (state.language !== "es"
+          ? ` Suggested energy averages ${Number(analysis.biometricContext.averageSuggestedEnergy).toFixed(1)}/10.`
+          : ` La energía sugerida promedia ${Number(analysis.biometricContext.averageSuggestedEnergy).toFixed(1)}/10.`)
+      : (state.language !== "es"
+          ? " There is not enough biometric evidence yet for a reliable energy estimate."
+          : " Todavía no hay evidencia biométrica suficiente para estimar energía con confianza.");
     insights.push({
       type: state.language !== "es" ? "Biometrics" : "Biometría",
       confidence: Math.round(Math.min(92, 62 + analysis.biometricContext.coveragePct * 0.3)),
       title: state.language !== "es" ? "Body context now informs this reading" : "El contexto corporal ya informa esta lectura",
       description: state.language !== "es"
-         ? `${Math.round(analysis.biometricContext.coveragePct)}% of the selected experiences have nearby biometric context. Suggested energy averages ${(analysis.biometricContext.averageSuggestedEnergy || 0).toFixed(1)}/10.`
-        : `${Math.round(analysis.biometricContext.coveragePct)}% de las experiencias seleccionadas tiene contexto biométrico cercano. La energía sugerida promedia ${(analysis.biometricContext.averageSuggestedEnergy || 0).toFixed(1)}/10.`,
+         ? `${Math.round(analysis.biometricContext.coveragePct)}% of the selected experiences have nearby biometric context.${biometricEnergyDescription}`
+        : `${Math.round(analysis.biometricContext.coveragePct)}% de las experiencias seleccionadas tiene contexto biométrico cercano.${biometricEnergyDescription}`,
       action: analysis.biometricContext.biometricRiskScore >= 40
         ? (state.language !== "es" ? "Before adding demanding activities, review sleep, heart rate, and recovery signals in the Dashboard." : "Antes de sumar actividades exigentes, revisa sueño, frecuencia y recuperación en el Panel.")
         : (state.language !== "es" ? "Keep capturing perceived energy; compare it with biometric suggestions to calibrate future reports." : "Sigue capturando energía percibida; compárala con la sugerencia biométrica para calibrar reportes futuros."),
@@ -35373,7 +35379,7 @@ async function answerQuestion() {
         <article><span>${t("metrics.avgEnergy")}</span><strong>${avg}/10</strong></article>
         <article><span>${state.language !== "es" ? "Categories" : "Categorías"}</span><strong>${escapeHtml(categoriesFound || (state.language !== "es" ? "no data" : "sin datos"))}</strong></article>
       </div>
-      <p>${state.contextImpact ? `${state.language !== "es" ? "Current external context" : "Contexto externo actual"}: ${escapeHtml(state.contextImpact.summary)}` : (state.language !== "es" ? "You can enrich this answer by analyzing city-level context impact." : "Puedes enriquecer esta respuesta analizando impacto contextual por ciudad.")}</p>
+      <p>${state.contextImpact ? `${state.language !== "es" ? "Current external context" : "Contexto externo actual"}: ${escapeHtml(state.contextImpact.summary)}` : (state.language !== "es" ? "This answer will be enriched automatically when city-level context is available." : "Esta respuesta se enriquecerá automáticamente cuando haya contexto de ciudad disponible.")}</p>
       ${
         sample.length
            ? `<div class="question-match-list">

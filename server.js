@@ -2952,7 +2952,8 @@ function normalizeOptionalNumber(value) {
 function inferEnergyFromIntegrationPayload(normalized) {
   const payload = isPlainObject(normalized.payload) ? normalized.payload : {};
   const metrics = payload.metrics && typeof payload.metrics === "object" ? payload.metrics : payload;
-  return estimateBiometricEnergyFromMetrics(metrics, normalized.payloadType) || 5;
+  const estimate = estimateBiometricEnergyFromMetrics(metrics, normalized.payloadType);
+  return Number.isFinite(estimate) ? estimate : null;
 }
 
 function estimateBiometricEnergyFromMetrics(metrics = {}, payloadType = "") {
@@ -3024,7 +3025,7 @@ function estimateBiometricEnergyFromMetrics(metrics = {}, payloadType = "") {
     evidence += 1;
     if (temperatureDeviation >= 0.5) score -= 0.6;
   }
-  if (!evidence && ["biometric", "activity", "sleep"].includes(String(payloadType || "").toLowerCase())) return null;
+  if (!evidence) return null;
   return clampServerNumber(Number(score.toFixed(1)), 1, 10);
 }
 
@@ -8102,7 +8103,7 @@ async function getContextImpact(location, profile = {}, experienceType = "auto",
   const profileImpact = buildProfileImpact(profile, experienceType, weather, news);
   const score = Math.min(100, Math.max(0, baseScore + profileImpact.scoreAdjustment));
   return {
-    location: place.name,
+    location: getPlaceDisplayName(place),
     country: place.country,
     latitude: place.latitude,
     longitude: place.longitude,
@@ -8522,7 +8523,7 @@ function normalizeMobileDailyFallbackBriefing(briefing = {}, place = {}, languag
     nextRefreshAt: briefing.nextRefreshAt || new Date(Date.now() + MOBILE_DAILY_CONTEXT_CACHE_MINUTES * 60 * 1000).toISOString(),
     refreshEveryHours: briefing.refreshEveryHours || MOBILE_DAILY_CONTEXT_CACHE_MINUTES / 60,
     locale: briefing.locale || language,
-    location: briefing.location || place.name || "",
+    location: briefing.location || getPlaceDisplayName(place) || "",
     country: briefing.country || place.country || "",
     countryCode: briefing.countryCode || place.countryCode || "",
     sections,
@@ -8549,7 +8550,7 @@ async function buildMobileDailyFallbackBriefing(place = {}, language = "es", war
     nextRefreshAt: new Date(Date.now() + MOBILE_DAILY_CONTEXT_CACHE_MINUTES * 60 * 1000).toISOString(),
     refreshEveryHours: MOBILE_DAILY_CONTEXT_CACHE_MINUTES / 60,
     locale: language,
-    location: place.name || "",
+    location: getPlaceDisplayName(place) || "",
     country: place.country || "",
     countryCode: place.countryCode || "",
     sections: [],
