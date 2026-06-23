@@ -761,7 +761,8 @@ async function handleApi(req, res, url) {
     const experienceType = url.searchParams.get("experienceType") || "auto";
     const user = await getOptionalRequestUser(req);
     const profile = await getProfile(user);
-    sendJson(res, 200, await getContextImpact(location, profile, experienceType));
+    const contextLabel = url.searchParams.get("label") || url.searchParams.get("contextLabel") || "";
+    sendJson(res, 200, await getContextImpact(location, profile, experienceType, { contextLabel }));
     return;
   }
 
@@ -770,7 +771,8 @@ async function handleApi(req, res, url) {
     const locale = url.searchParams.get("locale") || "es";
     const force = url.searchParams.get("force") === "1";
     const user = await getOptionalRequestUser(req);
-    sendJson(res, 200, await getDailyBriefing(location, locale, { user, force }));
+    const contextLabel = url.searchParams.get("label") || url.searchParams.get("contextLabel") || "";
+    sendJson(res, 200, await getDailyBriefing(location, locale, { user, force, contextLabel }));
     return;
   }
 
@@ -2696,15 +2698,20 @@ function buildBiometricImpactFromIngest(results = []) {
   const metricNames = new Set();
   let recordCount = 0;
   let suggestedEnergyTotal = 0;
+  let suggestedEnergyCount = 0;
   for (const result of biometricResults) {
     const context = result.experience?.metadata?.structuredContext || {};
     const metrics = context.metrics && typeof context.metrics === "object" ? context.metrics : {};
     Object.keys(metrics).forEach((key) => metricNames.add(key));
     const signals = Array.isArray(context.signals) ? context.signals : [];
     recordCount += signals.length || Number(metrics.recordCount || 0) || 1;
-    suggestedEnergyTotal += Number(result.experience?.energy || 0);
+    const estimatedEnergy = estimateBiometricEnergyFromMetrics(metrics, result.payloadType || context.payloadType);
+    if (Number.isFinite(estimatedEnergy)) {
+      suggestedEnergyTotal += estimatedEnergy;
+      suggestedEnergyCount += 1;
+    }
   }
-  const averageEnergy = biometricResults.length ? Number((suggestedEnergyTotal / biometricResults.length).toFixed(1)) : 0;
+  const averageEnergy = suggestedEnergyCount ? Number((suggestedEnergyTotal / suggestedEnergyCount).toFixed(1)) : null;
   return {
     status: "updated",
     imports: biometricResults.length,
@@ -2940,11 +2947,94 @@ function normalizeOptionalNumber(value) {
 function inferEnergyFromIntegrationPayload(normalized) {
   const payload = isPlainObject(normalized.payload) ? normalized.payload : {};
   const metrics = payload.metrics && typeof payload.metrics === "object" ? payload.metrics : payload;
-  const readiness = Number(metrics.readinessScore || metrics.readiness || metrics.recoveryScore || 0);
-  if (readiness) return clampServerNumber(Math.round(readiness / 10), 1, 10);
-  const sleepMinutes = Number(metrics.sleepMinutes || metrics.durationMinutes || 0);
-  if (normalized.payloadType === "sleep" && sleepMinutes) return clampServerNumber(Math.round(sleepMinutes / 60), 1, 10);
-  return 5;
+  return estimateBiometricEnergyFromMetrics(metrics, normalized.payloadType) || 5;
+}
+
+function estimateBiometricEnergyFromMetrics(metrics = {}, payloadType = "") {
+  if (!metrics || typeof metrics !== "object") return null;
+  const scoreSignals = [
+    normalizeOptionalNumber(metrics.readinessScore ?? metrics.readiness ?? metrics.recoveryScore),
+    normalizeOptionalNumber(metrics.sleepScore),
+    normalizeOptionalNumber(metrics.activityScore),
+  ].filter((value) => Number.isFinite(value) && value > 0);
+  let score = scoreSignals.length ? average(scoreSignals) / 10 : 5;
+  let evidence = scoreSignals.length;
+  const sleepMinutes = normalizeSleepMinutes(metrics);
+  const steps = normalizeMetricNumber(metrics.steps ?? metrics.stepCount ?? metrics.count);
+  const activeEnergy = normalizeMetricNumber(metrics.activeEnergyKcal ?? metrics.activeCalories ?? metrics.activeEnergy ?? metrics.calories);
+  const workoutMinutes = normalizeMetricNumber(metrics.workoutMinutes ?? metrics.exerciseMinutes ?? metrics.activityMinutes);
+  const heartAvg = normalizeMetricNumber(metrics.heartRateAvg ?? metrics.heartAvg ?? metrics.averageHeartRate);
+  const restingHeart = normalizeMetricNumber(metrics.restingHeartRate ?? metrics.restingHeartRateAvg);
+  const hrvMs = normalizeMetricNumber(metrics.hrvMs ?? metrics.hrv ?? metrics.hrvRmssd);
+  const stressHighSeconds = normalizeMetricNumber(metrics.stressHighSeconds ?? metrics.stressHigh);
+  const recoveryHighSeconds = normalizeMetricNumber(metrics.recoveryHighSeconds ?? metrics.recoveryHigh);
+  const temperatureDeviation = Math.abs(normalizeMetricNumber(metrics.temperatureDeviationC ?? metrics.temperatureDeviation ?? metrics.temperatureTrendDeviationC));
+  if (sleepMinutes > 0) {
+    evidence += 1;
+    const sleepHours = sleepMinutes / 60;
+    if (sleepHours >= 7 && sleepHours <= 9.5) score += 0.9;
+    else if (sleepHours >= 6) score += 0.3;
+    else score -= 1.1;
+  }
+  if (steps > 0) {
+    evidence += 1;
+    if (steps >= 12000) score += 1.0;
+    else if (steps >= 8000) score += 0.7;
+    else if (steps < 2500) score -= 0.4;
+  }
+  if (activeEnergy > 0) {
+    evidence += 1;
+    if (activeEnergy >= 450) score += 0.8;
+    else if (activeEnergy >= 250) score += 0.4;
+  }
+  if (workoutMinutes > 0) {
+    evidence += 1;
+    score += workoutMinutes >= 30 ? 0.7 : 0.3;
+  }
+  if (restingHeart > 0) {
+    evidence += 1;
+    if (restingHeart <= 60) score += 0.4;
+    if (restingHeart >= 80) score -= 0.7;
+  }
+  if (heartAvg > 0) {
+    evidence += 1;
+    if (heartAvg >= 105) score -= 0.8;
+    else if (heartAvg >= 90) score -= 0.2;
+  }
+  if (hrvMs > 0) {
+    evidence += 1;
+    if (hrvMs >= 45) score += 0.4;
+    else if (hrvMs < 25) score -= 0.5;
+  }
+  if (stressHighSeconds > 0) {
+    evidence += 1;
+    if (stressHighSeconds >= 2 * 60 * 60) score -= 0.8;
+    else score -= 0.3;
+  }
+  if (recoveryHighSeconds > 0) {
+    evidence += 1;
+    if (recoveryHighSeconds >= 2 * 60 * 60) score += 0.6;
+  }
+  if (temperatureDeviation > 0) {
+    evidence += 1;
+    if (temperatureDeviation >= 0.5) score -= 0.6;
+  }
+  if (!evidence && ["biometric", "activity", "sleep"].includes(String(payloadType || "").toLowerCase())) return null;
+  return clampServerNumber(Number(score.toFixed(1)), 1, 10);
+}
+
+function normalizeMetricNumber(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
+}
+
+function normalizeSleepMinutes(metrics = {}) {
+  const direct = normalizeMetricNumber(metrics.sleepMinutes ?? metrics.durationMinutes);
+  if (direct) return direct;
+  const seconds = normalizeMetricNumber(metrics.totalSleepDuration ?? metrics.totalSleepSeconds ?? metrics.total_sleep_duration);
+  if (seconds) return seconds > 24 * 60 ? seconds / 60 : seconds;
+  const hours = normalizeMetricNumber(metrics.sleepHours);
+  return hours ? hours * 60 : 0;
 }
 
 function stableIntegrationId(prefix, key) {
@@ -7977,10 +8067,11 @@ function sanitizeFileName(name) {
     .slice(0, 120) || "media";
 }
 
-async function getContextImpact(location, profile = {}, experienceType = "auto") {
+async function getContextImpact(location, profile = {}, experienceType = "auto", options = {}) {
   let place;
   try {
     place = await geocodeLocation(location);
+    place = enrichPlaceWithContextLabel(place, options.contextLabel);
   } catch (error) {
     const weather = unavailableWeatherImpact(error);
     const news = unavailableNewsImpact(error);
@@ -8049,6 +8140,8 @@ function unavailableNewsImpact(reason) {
 }
 
 async function geocodeLocation(location) {
+  const coordinatePlace = parseCoordinateLocation(location);
+  if (coordinatePlace) return coordinatePlace;
   const payload = await fetchGeocode(location);
   const fallbackPayload = payload.results?.length ? payload : await fetchGeocode(String(location).split(",")[0]);
   const result = fallbackPayload.results?.[0];
@@ -8063,6 +8156,58 @@ async function geocodeLocation(location) {
     longitude: result.longitude,
     timezone: result.timezone || "auto",
   };
+}
+
+function enrichPlaceWithContextLabel(place = {}, contextLabel = "") {
+  const label = normalizeOperationalPlaceLabel(contextLabel);
+  if (!label) return place;
+  return {
+    ...place,
+    displayName: place.coordinateOnly ? label : (place.displayName || place.name),
+    newsQueryName: place.newsQueryName || label,
+    contextLabel: label,
+  };
+}
+
+function normalizeOperationalPlaceLabel(value = "") {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  if (parseCoordinateLocation(text)) return "";
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text)) return "";
+  if (/^https?:\/\//i.test(text)) return "";
+  if (/^(todos?|all|none|null|undefined|sin datos|sin ubicacion|no location)$/i.test(text)) return "";
+  return text;
+}
+
+function parseCoordinateLocation(location = "") {
+  const text = String(location || "").trim();
+  const match = text.match(/^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/);
+  if (!match) return null;
+  const latitude = Number(match[1]);
+  const longitude = Number(match[2]);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+  if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) return null;
+  return {
+    name: text,
+    displayName: "Ubicacion movil",
+    country: "",
+    countryCode: "",
+    latitude,
+    longitude,
+    timezone: "auto",
+    coordinateOnly: true,
+    newsQueryName: DEFAULT_OPERATIONAL_LOCATION,
+  };
+}
+
+function getPlaceDisplayName(place = {}) {
+  return normalizeOperationalPlaceLabel(place.displayName || place.contextLabel || "") || place.name || DEFAULT_OPERATIONAL_LOCATION;
+}
+
+function getPlaceNewsQueryName(place = {}) {
+  return normalizeOperationalPlaceLabel(place.newsQueryName || place.contextLabel || place.displayName || "")
+    || (place.coordinateOnly ? DEFAULT_OPERATIONAL_LOCATION : place.name)
+    || DEFAULT_OPERATIONAL_LOCATION;
 }
 
 async function fetchGeocode(location) {
@@ -8111,7 +8256,8 @@ async function getWeatherImpact(place) {
 }
 
 async function getNewsImpact(place) {
-  const query = `${place.name} ${place.country || ""} conflict OR protest OR security OR election`;
+  const placeName = place.newsQueryName || place.name;
+  const query = `${placeName} ${place.country || ""} conflict OR protest OR security OR election`;
   const url = new URL("https://api.gdeltproject.org/api/v2/doc/doc");
   url.searchParams.set("query", query);
   url.searchParams.set("mode", "artlist");
@@ -8137,7 +8283,7 @@ async function getNewsImpact(place) {
   }
 
   if (!articles.length) {
-    const fallbackQuery = [place.name, place.country, "politica economia seguridad gobierno noticias"].filter(Boolean).join(" ");
+    const fallbackQuery = [placeName, place.country, "politica economia seguridad gobierno noticias"].filter(Boolean).join(" ");
     articles = await fetchGoogleNewsRss({ query: fallbackQuery }, "es");
     if (articles.length) {
       source = "Google News RSS";
@@ -8146,7 +8292,7 @@ async function getNewsImpact(place) {
   }
 
   if (!articles.length) {
-    const broadFallbackQuery = [place.name, place.country, "noticias actualidad eventos economia seguridad"].filter(Boolean).join(" ");
+    const broadFallbackQuery = [placeName, place.country, "noticias actualidad eventos economia seguridad"].filter(Boolean).join(" ");
     articles = await fetchGoogleNewsRss({ query: broadFallbackQuery }, "es", { maxRecords: 5, noFreshness: true });
     if (articles.length) {
       source = "Google News RSS";
@@ -8172,19 +8318,20 @@ async function getNewsImpact(place) {
 async function getDailyBriefing(location, locale = "es", options = {}) {
   const language = normalizeDailyLanguage(locale);
   const user = options.user || { id: LOCAL_USER_ID };
+  const cacheLocation = normalizeOperationalPlaceLabel(options.contextLabel) || location || DEFAULT_OPERATIONAL_LOCATION;
   if (!options.force) {
-    const cached = await getStoredDailyBriefing(user, location, language);
+    const cached = await getStoredDailyBriefing(user, cacheLocation, language);
     if (cached && !isStoredDailyBriefingStale(cached)) {
       return { ...cached, cached: true, cacheSource: cached.cacheSource || activePersistence() };
     }
   }
 
   try {
-    const briefing = await buildLiveDailyBriefing(location, language);
+    const briefing = await buildLiveDailyBriefing(location, language, { contextLabel: options.contextLabel });
     await saveStoredDailyBriefing(user, briefing);
     return { ...briefing, cached: false, cacheSource: "live" };
   } catch (error) {
-    const cached = await getStoredDailyBriefing(user, location, language);
+    const cached = await getStoredDailyBriefing(user, cacheLocation, language);
     if (cached) {
       return {
         ...cached,
@@ -8263,8 +8410,8 @@ async function getMobileHealthSummary(searchParams = new URLSearchParams(), user
     if (context.payloadType) payloadTypes.add(context.payloadType);
     const signals = Array.isArray(context.signals) ? context.signals : [];
     signalCount += signals.length || Number(metrics.recordCount || 0) || 1;
-    const energy = Number(experience.energy);
-    if (Number.isFinite(energy) && energy > 0) {
+    const energy = estimateBiometricEnergyFromMetrics(metrics, context.payloadType || context.dataType);
+    if (Number.isFinite(energy)) {
       energyTotal += energy;
       energyCount += 1;
     }
@@ -8538,16 +8685,17 @@ function buildMobileEntertainmentItems(briefing = {}, localSections = [], place 
   return [...articleItems, ...linkItems, ...fallbackItems].slice(0, 8);
 }
 
-async function buildLiveDailyBriefing(location, language = "es") {
-  const place = await geocodeLocation(location);
+async function buildLiveDailyBriefing(location, language = "es", options = {}) {
+  const place = enrichPlaceWithContextLabel(await geocodeLocation(location), options.contextLabel);
   return buildLiveDailyBriefingForPlace(place, language);
 }
 
 async function buildLiveDailyBriefingForPlace(place, language = "es") {
   const normalizedLanguage = normalizeDailyLanguage(language);
   const worldLabel = normalizedLanguage === "en" ? "World" : normalizedLanguage === "fr" ? "Monde" : "Mundo";
-  const placeLabel = [place.name, place.country || place.countryCode].filter(Boolean).join(", ");
-  const queryPlace = [place.name, place.country || place.countryCode].filter(Boolean).join(" ") || `${place.latitude},${place.longitude}`;
+  const displayPlace = getPlaceDisplayName(place);
+  const placeLabel = [displayPlace, place.country || place.countryCode].filter(Boolean).join(", ");
+  const queryPlace = [getPlaceNewsQueryName(place), place.country || place.countryCode].filter(Boolean).join(" ") || DEFAULT_OPERATIONAL_LOCATION;
   const sections = buildBriefingSections(queryPlace, normalizedLanguage);
   const [sectionResults, weatherResult] = await Promise.all([
     Promise.allSettled(sections.map((section) => fetchBriefingSection(section, normalizedLanguage))),
@@ -8561,7 +8709,7 @@ async function buildLiveDailyBriefingForPlace(place, language = "es") {
   return {
     schemaVersion: "20260522-daily-media-specific-35",
     source: "Trusted News RSS + fresh fallback",
-    location: place.name,
+    location: displayPlace,
     country: place.country || place.countryCode || "",
     countryCode: place.countryCode,
     scope: `${placeLabel || location} + ${worldLabel}`,

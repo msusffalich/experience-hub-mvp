@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260622-publication-editorial-653";
+const CACHE_NAME = "experience-hub-pwa-20260623-publication-pdf-timeline-654";
 const APP_SHELL = [
   "/icons/vibe-logo.jpg",
   "/icons/vibe-logo.png",
@@ -61,4 +61,3 @@ self.addEventListener("fetch", (event) => {
       }))
   );
 });
-

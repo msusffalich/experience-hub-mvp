@@ -1,4 +1,4 @@
-﻿const APP_VERSION = "20260622-publication-editorial-653";
+﻿const APP_VERSION = "20260623-publication-pdf-timeline-654";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -57,128 +57,123 @@ const publicationTypes = [
   "Jornada de trabajo",
   "Reporte dashboard",
 ];
+const PUBLICATION_OUTPUT_CHANNEL = "PDF revista premium";
+const publicationChannels = [PUBLICATION_OUTPUT_CHANNEL];
 const publicationTypeGuides = {
   "Publicación social rápida": {
-    purpose: "Para compartir algo breve en WhatsApp, Instagram o Facebook sin convertirlo en informe.",
-    bestFor: "Una noticia personal, una foto destacada, un momento corto, una actualización familiar o social.",
-    mediaPolicy: "Funciona con una imagen o video protagonista. Si incluyes audio o documentos, la app los resume como contexto, no como pieza principal.",
-    channels: ["WhatsApp", "Instagram", "Facebook"],
-    structure: ["Gancho breve", "Momento principal", "Detalle humano", "Cierre simple"],
+    purpose: "Para crear un PDF breve y cuidado a partir de un momento puntual.",
+    bestFor: "Una noticia personal, una foto destacada, un momento corto, una actualización familiar o social que luego podrás adaptar fuera de Vibe.",
+    mediaPolicy: "Funciona con una imagen o video protagonista. Si incluyes audio o documentos, la app los resume como contexto de la historia.",
+    channels: ["PDF revista premium"],
+    structure: ["Portada breve", "Momento principal", "Detalle humano", "Cierre simple"],
   },
   "Reporte narrativo": {
     purpose: "Para contar una experiencia o periodo como historia editada, con contexto, momentos y lectura final.",
     bestFor: "Viajes de varios días, conciertos, reuniones, proyectos, aprendizaje o una etapa con varios eventos.",
     mediaPolicy: "Puede usar imágenes, audio, video y documentos. Las imágenes se muestran; los demás medios se citan con resumen y acción para abrir o descargar.",
-    channels: ["PDF/HTML", "Email", "WhatsApp"],
+    channels: ["PDF revista premium"],
     structure: ["Contexto", "Historia", "Momentos clave", "Evidencia multimedia", "Lectura final"],
   },
   "Álbum experiencial": {
     purpose: "Para preservar memoria visual y emocional, priorizando fotos, videos, audios y recuerdos.",
     bestFor: "Viajes, familia, celebraciones, visitas, paseos, experiencias con muchas imágenes o videos.",
     mediaPolicy: "Es el formato más visual. Imágenes y videos son protagonistas; audio y documentos quedan como notas de apoyo o enlaces de revisión.",
-    channels: ["PDF/HTML", "WhatsApp", "Facebook"],
+    channels: ["PDF revista premium"],
     structure: ["Portada de memoria", "Galería", "Momentos", "Personas y lugares", "Recuerdo final"],
   },
   "Resumen ejecutivo": {
-    purpose: "Para enviar una síntesis clara y accionable a otra persona.",
+    purpose: "Para generar una síntesis clara y accionable en PDF.",
     bestFor: "Salud para médico, trabajo para equipo, aprendizaje para mentor, decisión personal o reporte breve.",
     mediaPolicy: "Prioriza texto claro, evidencia resumida y documentos interpretados. Las imágenes solo se muestran si aportan evidencia o contexto.",
-    channels: ["Email", "PDF/HTML", "WhatsApp"],
+    channels: ["PDF revista premium"],
     structure: ["Resumen", "Hallazgos", "Evidencia", "Riesgos o pendientes", "Próximas acciones"],
   },
   "Guion de story/reel": {
-    purpose: "Para transformar la experiencia en una secuencia corta de escenas.",
-    bestFor: "Instagram, TikTok, reels, presentación rápida, video corto o narración por pasos.",
+    purpose: "Para transformar la experiencia en una secuencia corta de escenas dentro del PDF.",
+    bestFor: "Presentación rápida, video corto, narración por pasos o material que luego editarás en otra herramienta.",
     mediaPolicy: "Funciona mejor con video, imagen y audio breve. Documentos o ZIP no se muestran: se convierten en texto de apoyo si tienen interpretación.",
-    channels: ["Instagram", "Facebook", "WhatsApp"],
+    channels: ["PDF revista premium"],
     structure: ["Escena inicial", "3-5 escenas", "Texto en pantalla", "Audio/voz sugerida", "Cierre"],
   },
   "Carrusel visual": {
-    purpose: "Para convertir una experiencia en láminas breves, visuales y fáciles de recorrer.",
-    bestFor: "Instagram, Facebook, LinkedIn o una secuencia explicativa con varias imágenes, datos o momentos.",
+    purpose: "Para convertir una experiencia en láminas breves, visuales y fáciles de recorrer dentro del PDF.",
+    bestFor: "Secuencia explicativa con varias imágenes, datos o momentos que luego podrá adaptarse a otros canales.",
     mediaPolicy: "Usa imágenes como láminas principales. Audio, video y documentos se transforman en textos cortos, citas o notas de apoyo.",
-    channels: ["Instagram", "Facebook", "LinkedIn"],
+    channels: ["PDF revista premium"],
     structure: ["Portada", "3-7 láminas", "Dato o momento por lámina", "Cierre / llamada a la acción"],
   },
   "Carta / email largo": {
-    purpose: "Para escribir una comunicación más personal, extensa y cuidada.",
-    bestFor: "Email a familia, amigos, equipo de trabajo, mentor, médico o una persona específica.",
+    purpose: "Para escribir una comunicación más personal, extensa y cuidada como documento PDF.",
+    bestFor: "Familia, amigos, equipo de trabajo, mentor, médico o una persona específica, usando el PDF como documento maestro.",
     mediaPolicy: "Prioriza texto editado y enlaces a medios. Las imágenes se pueden incluir como apoyo; audio, video y documentos se listan como anexos.",
-    channels: ["Email", "WhatsApp", "PDF/HTML"],
+    channels: ["PDF revista premium"],
     structure: ["Saludo", "Contexto", "Relato o explicación", "Anexos relevantes", "Cierre"],
   },
   "Dossier PDF": {
     purpose: "Para reunir experiencia, evidencia, multimedia e interpretación en un documento más completo.",
     bestFor: "Viajes de varios días, proyecto, aprendizaje, seguimiento de salud, investigación personal o entrega formal.",
     mediaPolicy: "Acepta todos los medios. Imágenes se incrustan; audio, video, documentos y ZIP quedan como referencias con resumen y acción de revisión.",
-    channels: ["PDF/HTML", "Email", "Blog/Web"],
+    channels: ["PDF revista premium"],
     structure: ["Portada", "Resumen", "Capítulos", "Evidencia", "Recomendaciones", "Anexos"],
   },
   "Ficha de salud": {
     purpose: "Para compartir información de salud en lenguaje claro, con cuidado y sin diagnóstico automático.",
     bestFor: "Resumen para médico, seguimiento personal, biometría, resultados de examen o síntomas narrados.",
     mediaPolicy: "Prioriza documentos interpretados, biometría y notas. Imágenes se incluyen solo si ayudan; audio y video se resumen como relato del usuario.",
-    channels: ["PDF/HTML", "Email"],
+    channels: ["PDF revista premium"],
     structure: ["Motivo", "Datos observados", "Evidencia", "Preguntas para el profesional", "Próximo paso"],
   },
   "Jornada de trabajo": {
     purpose: "Para convertir un día, reunión o periodo laboral en un resumen claro de contexto, acuerdos, decisiones y próximos pasos.",
     bestFor: "Jornadas de trabajo, reuniones, visitas a clientes, proyectos, llamadas, acuerdos, pendientes y seguimiento profesional.",
     mediaPolicy: "Prioriza notas, documentos, imágenes de apoyo, agenda y audios transcritos. La multimedia se usa como evidencia curada, no como copia directa.",
-    channels: ["Email", "PDF/HTML", "LinkedIn"],
+    channels: ["PDF revista premium"],
     structure: ["Contexto de la jornada", "Acuerdos y decisiones", "Pendientes", "Evidencia", "Próxima acción"],
   },
   "Reporte dashboard": {
     purpose: "Para transformar experiencias y activos en un reporte visual con KPIs, cuadros, infografías, narrativa ejecutiva y recomendaciones.",
     bestFor: "Seguimiento semanal, proyectos, salud, aprendizaje, viajes, productividad o cualquier grupo de experiencias que necesite lectura visual.",
     mediaPolicy: "Combina indicadores, tablas, imágenes, documentos interpretados, biometría y línea de tiempo. Videos y audios quedan como evidencia resumida o enlace.",
-    channels: ["PDF/HTML", "Email", "LinkedIn"],
+    channels: ["PDF revista premium"],
     structure: ["Portada ejecutiva", "KPIs", "Dashboard visual", "Hallazgos", "Evidencia multimedia", "Acciones"],
   },
 };
 const publicationStyles = ["Profesional", "Turístico", "Científico", "Familiar", "Minimalista", "Revista Premium", "Bitácora Viva", "Educativo", "Editorial visual", "Clínico claro", "Corporativo", "Social cálido"];
-const publicationChannels = ["WhatsApp", "Instagram", "Facebook", "LinkedIn", "Email", "PDF/HTML", "Blog/Web"];
 const publicationTemplates = [
-  { id: "social-card", type: "Publicación social rápida", style: "Minimalista", channel: "Instagram", tone: "visual" },
-  { id: "executive-brief", type: "Resumen ejecutivo", style: "Profesional", channel: "Email", tone: "business" },
-  { id: "magazine-story", type: "Reporte narrativo", style: "Revista Premium", channel: "PDF/HTML", tone: "editorial" },
-  { id: "memory-album", type: "Álbum experiencial", style: "Bitácora Viva", channel: "PDF/HTML", tone: "album" },
-  { id: "story-script", type: "Guion de story/reel", style: "Turístico", channel: "Instagram", tone: "sequence" },
-  { id: "medical-brief", type: "Resumen ejecutivo", style: "Científico", channel: "PDF/HTML", tone: "clinical" },
-  { id: "travel-magazine", type: "Álbum experiencial", style: "Turístico", channel: "PDF/HTML", tone: "travel" },
-  { id: "learning-dossier", type: "Reporte narrativo", style: "Educativo", channel: "Email", tone: "learning" },
-  { id: "family-memory", type: "Álbum experiencial", style: "Familiar", channel: "WhatsApp", tone: "family" },
-  { id: "instagram-carousel", type: "Carrusel visual", style: "Editorial visual", channel: "Instagram", tone: "carousel" },
-  { id: "linkedin-carousel", type: "Carrusel visual", style: "Corporativo", channel: "LinkedIn", tone: "carouselBusiness" },
-  { id: "personal-letter", type: "Carta / email largo", style: "Social cálido", channel: "Email", tone: "letter" },
-  { id: "formal-dossier", type: "Dossier PDF", style: "Revista Premium", channel: "PDF/HTML", tone: "dossier" },
-  { id: "health-share", type: "Ficha de salud", style: "Clínico claro", channel: "PDF/HTML", tone: "health" },
-  { id: "blog-story", type: "Reporte narrativo", style: "Editorial visual", channel: "Blog/Web", tone: "blog" },
-  { id: "whatsapp-thread", type: publicationTypes[6], style: publicationStyles[11], channel: "WhatsApp", tone: "messageThread" },
-  { id: "facebook-album", type: publicationTypes[2], style: "Familiar", channel: "Facebook", tone: "socialAlbum" },
-  { id: "medical-email", type: publicationTypes[8], style: publicationStyles[9], channel: "Email", tone: "medicalEmail" },
-  { id: "executive-pdf", type: "Resumen ejecutivo", style: "Profesional", channel: "PDF/HTML", tone: "executivePdf" },
-  { id: "learning-portfolio", type: "Dossier PDF", style: "Educativo", channel: "Blog/Web", tone: "learningPortfolio" },
-  { id: "workday-brief", type: "Jornada de trabajo", style: "Corporativo", channel: "Email", tone: "workday" },
-  { id: "workday-pdf", type: "Jornada de trabajo", style: "Profesional", channel: "PDF/HTML", tone: "workdayPdf" },
-  { id: "dashboard-report", type: "Reporte dashboard", style: "Corporativo", channel: "PDF/HTML", tone: "dashboard" },
+  { id: "social-card", type: "Publicación social rápida", style: "Minimalista", channel: PUBLICATION_OUTPUT_CHANNEL, tone: "visual" },
+  { id: "executive-brief", type: "Resumen ejecutivo", style: "Profesional", channel: PUBLICATION_OUTPUT_CHANNEL, tone: "business" },
+  { id: "magazine-story", type: "Reporte narrativo", style: "Revista Premium", channel: PUBLICATION_OUTPUT_CHANNEL, tone: "editorial" },
+  { id: "memory-album", type: "Álbum experiencial", style: "Bitácora Viva", channel: PUBLICATION_OUTPUT_CHANNEL, tone: "album" },
+  { id: "story-script", type: "Guion de story/reel", style: "Turístico", channel: PUBLICATION_OUTPUT_CHANNEL, tone: "sequence" },
+  { id: "medical-brief", type: "Resumen ejecutivo", style: "Científico", channel: PUBLICATION_OUTPUT_CHANNEL, tone: "clinical" },
+  { id: "travel-magazine", type: "Álbum experiencial", style: "Turístico", channel: PUBLICATION_OUTPUT_CHANNEL, tone: "travel" },
+  { id: "learning-dossier", type: "Reporte narrativo", style: "Educativo", channel: PUBLICATION_OUTPUT_CHANNEL, tone: "learning" },
+  { id: "family-memory", type: "Álbum experiencial", style: "Familiar", channel: PUBLICATION_OUTPUT_CHANNEL, tone: "family" },
+  { id: "instagram-carousel", type: "Carrusel visual", style: "Editorial visual", channel: PUBLICATION_OUTPUT_CHANNEL, tone: "carousel" },
+  { id: "linkedin-carousel", type: "Carrusel visual", style: "Corporativo", channel: PUBLICATION_OUTPUT_CHANNEL, tone: "carouselBusiness" },
+  { id: "personal-letter", type: "Carta / email largo", style: "Social cálido", channel: PUBLICATION_OUTPUT_CHANNEL, tone: "letter" },
+  { id: "formal-dossier", type: "Dossier PDF", style: "Revista Premium", channel: PUBLICATION_OUTPUT_CHANNEL, tone: "dossier" },
+  { id: "health-share", type: "Ficha de salud", style: "Clínico claro", channel: PUBLICATION_OUTPUT_CHANNEL, tone: "health" },
+  { id: "blog-story", type: "Reporte narrativo", style: "Editorial visual", channel: PUBLICATION_OUTPUT_CHANNEL, tone: "blog" },
+  { id: "whatsapp-thread", type: publicationTypes[6], style: publicationStyles[11], channel: PUBLICATION_OUTPUT_CHANNEL, tone: "messageThread" },
+  { id: "facebook-album", type: publicationTypes[2], style: "Familiar", channel: PUBLICATION_OUTPUT_CHANNEL, tone: "socialAlbum" },
+  { id: "medical-email", type: publicationTypes[8], style: publicationStyles[9], channel: PUBLICATION_OUTPUT_CHANNEL, tone: "medicalEmail" },
+  { id: "executive-pdf", type: "Resumen ejecutivo", style: "Profesional", channel: PUBLICATION_OUTPUT_CHANNEL, tone: "executivePdf" },
+  { id: "learning-portfolio", type: "Dossier PDF", style: "Educativo", channel: PUBLICATION_OUTPUT_CHANNEL, tone: "learningPortfolio" },
+  { id: "workday-brief", type: "Jornada de trabajo", style: "Corporativo", channel: PUBLICATION_OUTPUT_CHANNEL, tone: "workday" },
+  { id: "workday-pdf", type: "Jornada de trabajo", style: "Profesional", channel: PUBLICATION_OUTPUT_CHANNEL, tone: "workdayPdf" },
+  { id: "dashboard-report", type: "Reporte dashboard", style: "Corporativo", channel: PUBLICATION_OUTPUT_CHANNEL, tone: "dashboard" },
 ];
 const publicationChannelFormatPicker = [
-  { channel: "WhatsApp", templates: ["social-card", "whatsapp-thread", "family-memory"] },
-  { channel: "Instagram", templates: ["instagram-carousel", "story-script", "social-card"] },
-  { channel: "Facebook", templates: ["facebook-album", "family-memory", "travel-magazine"] },
-  { channel: "LinkedIn", templates: ["linkedin-carousel", "dashboard-report", "workday-brief"] },
-  { channel: "Email", templates: ["workday-brief", "personal-letter", "medical-email", "executive-brief"] },
-  { channel: "PDF/HTML", templates: ["dashboard-report", "workday-pdf", "formal-dossier", "executive-pdf", "health-share"] },
-  { channel: "Blog/Web", templates: ["blog-story", "travel-magazine", "learning-portfolio"] },
+  { channel: PUBLICATION_OUTPUT_CHANNEL, templates: ["dashboard-report", "workday-pdf", "formal-dossier", "executive-pdf", "health-share", "travel-magazine", "memory-album", "personal-letter"] },
 ];
 const publicationQuickStarts = [
   {
     id: "whatsapp-brief",
-    labelEs: "WhatsApp breve",
-    labelEn: "Quick WhatsApp",
-    detailEs: "Momento corto para compartir con personas cercanas.",
-    detailEn: "Short moment to share with close people.",
+    labelEs: "Momento breve",
+    labelEn: "Short moment",
+    detailEs: "PDF corto de una experiencia puntual.",
+    detailEn: "Short PDF from one specific experience.",
     templateId: "social-card",
     source: "latest",
   },
@@ -202,19 +197,19 @@ const publicationQuickStarts = [
   },
   {
     id: "email-letter",
-    labelEs: "Email / carta",
-    labelEn: "Email / letter",
+    labelEs: "Carta PDF",
+    labelEn: "PDF letter",
     detailEs: "Texto cuidado con anexos y contexto suficiente.",
-    detailEn: "Polished text with annexes and enough context.",
+    detailEn: "Polished PDF text with annexes and enough context.",
     templateId: "personal-letter",
     source: "report",
   },
   {
     id: "linkedin-learning",
-    labelEs: "LinkedIn aprendizaje",
-    labelEn: "LinkedIn learning",
-    detailEs: "Carrusel profesional con leccion, evidencia y cierre.",
-    detailEn: "Professional carousel with lesson, evidence, and close.",
+    labelEs: "Aprendizaje visual",
+    labelEn: "Visual learning",
+    detailEs: "Secuencia visual con lección, evidencia y cierre.",
+    detailEn: "Visual sequence with lesson, evidence, and close.",
     templateId: "linkedin-carousel",
     source: "report",
   },
@@ -739,7 +734,7 @@ const i18n = {
       publicationFinalDocument: "Documento final",
       publicationFinalDocumentHelp: "Esta es la pieza que se exportará con el texto editado y la multimedia incluida.",
       publicationTemplateGallery: "Diseños de publicación",
-      publicationTemplateHelp: "Elige una maqueta visual. Actualiza el tipo, el estilo, el canal y la apariencia del documento final.",
+      publicationTemplateHelp: "Elige una maqueta visual. Actualiza el tipo, el estilo y la apariencia del PDF final.",
       publicationTemplateSelected: "Diseño seleccionado",
       publicationExportGuide: "Guía de salida",
       publicationExportHtmlUse: "HTML: conserva el diseño visual, la multimedia, los márgenes y las reglas de impresión. Úsalo para abrir en navegador, imprimir o convertir luego a PDF.",
@@ -794,7 +789,7 @@ const i18n = {
       publicationReadability: "Claridad",
       publicationPrivacy: "Privacidad",
       publicationMediaUse: "Multimedia",
-      publicationChannelFit: "Ajuste al canal",
+      publicationChannelFit: "Ajuste al PDF",
       publicationSuggestions: "Sugerencias antes de publicar",
       publicationClosureTitle: "Cierre prepublicación",
       publicationClosureHelp: "Verifica los puntos críticos antes de exportar o compartir.",
@@ -805,17 +800,17 @@ const i18n = {
       publicationClosureApprovalReady: "El borrador está aprobado.",
       publicationClosureApprovalReview: "Aprueba el borrador cuando sea la versión final.",
       publicationClosureText: "Texto y extensión",
-      publicationClosureTextReady: "La extensión funciona para el canal.",
+      publicationClosureTextReady: "La extensión funciona para el PDF.",
       publicationClosureTextReview: "Revisa extensión, claridad y llamado a la acción.",
       publicationClosurePrivacy: "Privacidad",
       publicationClosurePrivacyReady: "La limpieza automática está activa.",
       publicationClosurePrivacyReview: "Activa privacidad y revisa datos sensibles.",
       publicationClosureMedia: "Multimedia",
       publicationClosureMediaReady: "La multimedia seleccionada acompaña la pieza.",
-      publicationClosureMediaReview: "Agrega o selecciona multimedia si el canal lo necesita.",
-      publicationClosureChannel: "Canal",
-      publicationClosureChannelReady: "La pieza está ajustada al canal elegido.",
-      publicationClosureChannelReview: "Ajusta formato, longitud o diseño para el canal.",
+      publicationClosureMediaReview: "Agrega o selecciona multimedia si el PDF necesita más evidencia visual.",
+      publicationClosureChannel: "PDF final",
+      publicationClosureChannelReady: "La pieza está ajustada al PDF final.",
+      publicationClosureChannelReview: "Ajusta formato, longitud o diseño del PDF.",
       reportExecutive: "Resumen ejecutivo",
       reportFindings: "Hallazgos del análisis",
       reportTrend: "Tendencia",
@@ -1576,7 +1571,7 @@ const i18n = {
       publicationFinalDocument: "Final document",
       publicationFinalDocumentHelp: "This is the piece that will be exported with the edited text and included media.",
       publicationTemplateGallery: "Publication designs",
-      publicationTemplateHelp: "Choose a visual layout. It updates the type, style, channel, and final document appearance.",
+      publicationTemplateHelp: "Choose a visual layout. It updates the type, style, and final PDF appearance.",
       publicationTemplateSelected: "Selected design",
       publicationExportGuide: "Output guide",
       publicationExportHtmlUse: "HTML: preserves the visual design, media, margins, and print rules. Use it to open in a browser, print, or convert later to PDF.",
@@ -1631,7 +1626,7 @@ const i18n = {
       publicationReadability: "Clarity",
       publicationPrivacy: "Privacy",
       publicationMediaUse: "Media",
-      publicationChannelFit: "Channel fit",
+      publicationChannelFit: "PDF fit",
       publicationSuggestions: "Suggestions before publishing",
       publicationClosureTitle: "Pre-publication closure",
       publicationClosureHelp: "Check the critical points before exporting or sharing.",
@@ -1642,17 +1637,17 @@ const i18n = {
       publicationClosureApprovalReady: "The draft is approved.",
       publicationClosureApprovalReview: "Approve the draft when it is the final version.",
       publicationClosureText: "Text and length",
-      publicationClosureTextReady: "The length works for the channel.",
+      publicationClosureTextReady: "The length works for the PDF.",
       publicationClosureTextReview: "Review length, clarity, and call to action.",
       publicationClosurePrivacy: "Privacy",
       publicationClosurePrivacyReady: "Automatic cleanup is active.",
       publicationClosurePrivacyReview: "Enable privacy and review sensitive data.",
       publicationClosureMedia: "Media",
       publicationClosureMediaReady: "Selected media supports the piece.",
-      publicationClosureMediaReview: "Add or select media if the channel needs it.",
-      publicationClosureChannel: "Channel",
-      publicationClosureChannelReady: "The piece fits the selected channel.",
-      publicationClosureChannelReview: "Adjust format, length, or design for the channel.",
+      publicationClosureMediaReview: "Add or select media if the PDF needs stronger visual evidence.",
+      publicationClosureChannel: "Final PDF",
+      publicationClosureChannelReady: "The piece fits the final PDF.",
+      publicationClosureChannelReview: "Adjust the PDF format, length, or design.",
       reportExecutive: "Executive summary",
       reportFindings: "Analysis findings",
       reportTrend: "Trend",
@@ -2938,15 +2933,14 @@ const manualContent = {
         "La agenda usa estados del blueprint: planificado, confirmado, reprogramado, cancelado, completado, pendiente de seguimiento y convertido en experiencia.",
         "Los eventos de Agenda se guardan localmente y se sincronizan con el backend para verse en otros dispositivos con la misma sesión. Si la tabla agenda_events aún no existe en Supabase, el servidor usa un respaldo central temporal hasta aplicar database/agenda-events.sql.",
         "Al convertir un evento, la app crea una experiencia vinculada con duración, ubicación, participantes y notas de origen para mantener la continuidad Agenda -> Evento -> Experiencia -> Memoria viva.",
-        "Publicaciones Inteligentes genera borradores locales desde el reporte filtrado o las últimas experiencias. Recomienda automáticamente tipo, estilo y canal según alcance, multimedia y señales del contenido; permite aplicar una receta de composición antes de generar, incluir o excluir multimedia sugerida, aplicar limpieza de privacidad, revisar un kit de salida por canal y exportar como PDF ReportLab, HTML, Markdown o paquete editorial JSON.",
+        "Publicaciones Inteligentes genera un PDF revista premium desde el alcance filtrado o las últimas experiencias. La salida se ordena cronológicamente e integra notas, imágenes, videos, audios, documentos, mediciones y contexto disponible.",
         "El editor de Publicaciones controla la salida real: al cambiar título, resumen o cuerpo se actualizan las páginas visibles, el documento final y el payload que usa ReportLab. Si editas una página específica, esa página queda preservada como edición manual.",
         "Reportes, Hallazgos y Publicaciones muestran progreso de generación: alcance o borrador preparado, verificación automática de conexión, envío a ReportLab, preparación de descarga y PDF final listo con enlace visible. El usuario no tiene que navegar a Administración para recuperar el flujo.",
         "Los tipos de publicación no son iguales: publicación social rápida sirve para mensajes breves, reporte narrativo para contar un periodo, álbum experiencial para memorias visuales, resumen ejecutivo para enviar evidencia clara y guion de story/reel para una secuencia corta.",
-        "Los nuevos formatos amplían el uso por canal: carrusel visual para Instagram, Facebook o LinkedIn; carta/email largo para compartir una memoria personal; dossier PDF para un documento más formal; ficha de salud para explicar información médica o biométrica en lenguaje claro; y blog/web para publicar una historia más extensa.",
-        "El Playbook del canal aparece antes de generar el borrador. Para WhatsApp, Instagram, Facebook, LinkedIn, Email, PDF/HTML y Blog/Web explica audiencia, ritmo, salida y recetas aplicables con un clic.",
-        "El kit de salida por canal separa asunto, texto corto, texto ampliado, leyenda/gancho, manejo multimedia y checklist. Sirve para saber qué copiar, qué revisar y qué acción hacer según WhatsApp, Instagram, Facebook, LinkedIn, Email, Blog/Web o PDF.",
-        "Entregables por canal aclara la pieza maestra, el texto listo para copiar, el paquete multimedia y la limitación real de cada canal. Así el usuario sabe si obtiene PDF final, borrador de email, texto para WhatsApp, carrusel, HTML o solo preparación manual.",
-        "El Estudio de publicación por canal aparece dentro de cada borrador y resume formato recomendado, propósito, decisión multimedia, salida, secuencia editorial y checklist antes de aprobar o exportar.",
+        "Los tipos de publicación ahora son estructuras editoriales para el PDF: álbum, reporte narrativo, resumen ejecutivo, jornada de trabajo, ficha de salud, dossier o dashboard. No publican directo en redes; preparan un documento maestro para editar o distribuir después.",
+        "El flujo recomendado es: elegir alcance, escoger tipo de publicación, revisar o editar el texto, incluir todos/algunos/ningún activo multimedia y descargar el PDF revista premium.",
+        "Las imágenes se incrustan en el PDF cuando tienen URL o datos disponibles. Videos MP4, audios, documentos y ZIP se incorporan como soportes referenciados con resumen, lectura o acción para abrir/descargar desde la app.",
+        "La cronología del PDF usa todas las experiencias del alcance, de la más antigua a la más reciente. Cada bloque conserva fecha, categoría, lugar, personas, energía, nota, eventos internos y activos vinculados cuando existen.",
         "Panel muestra un resumen fijo de datos actuales: experiencias, activos, grupos, modo de persistencia y sincronización pendiente. Si la data previa no aparece, ese bloque permite distinguir rápido entre filtro, sesión, nube o cola pendiente.",
         "Panel incluye Alcance analitico compartido: una sola seleccion de vista completa, ultimos 7/30 dias, salud, trabajo o dispositivos se aplica a Reportes, Hallazgos y Publicaciones antes de abrir la salida elegida.",
         "Reportes, Hallazgos y Publicaciones muestran una tarjeta de alcance usado en esta salida para confirmar grupo, fecha, categoria, origen y cantidad de experiencias antes de leer o exportar.",
@@ -2964,24 +2958,17 @@ const manualContent = {
         "Aprobación humana marca si el borrador está en revisión o aprobado. Cualquier edición, cambio de diseño o curaduría multimedia lo devuelve a revisión.",
         "Historial del borrador registra generación, ediciones, cambios de multimedia, diseño, aprobación y exportaciones recientes.",
         "Multimedia sugerida significa archivos ya adjuntos a las experiencias fuente. La app los propone para la publicación; incluirlos o excluirlos no modifica ni borra la experiencia original.",
-        "La seleccion recomendada de multimedia asigna rol editorial a cada activo antes de exportar: portada, galeria, evidencia, anexo, voz, video, contexto biometrico o solo transporte, segun tipo de pieza y canal.",
+        "La seleccion recomendada de multimedia asigna rol editorial a cada activo antes de exportar: portada, galeria, evidencia, anexo, voz, video, contexto biometrico o solo transporte, segun tipo de pieza.",
         "Cuando un activo tiene etiquetas, nota o texto analítico, Publicaciones lo usa como contexto editorial en la multimedia sugerida y como evidencia editable dentro del borrador.",
         "Las imágenes pueden incrustarse visualmente en el PDF. Audio, video, documentos y ZIP no se fuerzan como imágenes: se muestran con controles o acciones de abrir/descargar en la app y en HTML, y en el PDF se resumen como evidencia o referencia.",
         "Si el texto de una publicación se ve breve, no significa que ese sea el límite del sistema: el borrador depende de la riqueza de las experiencias, notas, transcripciones, OCR, documentos interpretados y edición manual del usuario.",
         "Los títulos de multimedia se muestran con nombre de archivo y experiencia de origen para que el usuario entienda de dónde viene cada activo sin romper la maqueta visual.",
-        "La salida imprimible y el HTML exportado usan márgenes de página, reglas de salto y protección de tarjetas para reducir cortes de paneles o multimedia entre páginas.",
-        "El HTML exportado conserva el diseño visual seleccionado: social, ejecutivo, revista, álbum o guion.",
-        "Guía de salida aclara qué se exporta: HTML para pieza visual/imprimible con multimedia y Markdown para edición, documentación u Obsidian.",
-        "Vista imprimible muestra el mismo HTML final dentro de la app para revisar diseño, márgenes y saltos antes de descargar.",
-        "Copiar texto y Copiar HTML usan el mismo Documento final que se exporta, para pegar manualmente la publicación en email, mensajería, CMS o redes mientras los conectores directos quedan para una fase posterior.",
-        "En Publicaciones, Preparar canal no publica solo: WhatsApp y Email abren un mensaje listo para revisar y enviar; Facebook, Instagram y LinkedIn preparan contenido para pegado manual; Blog/Web y PDF/HTML exportan un archivo revisable. La publicación automática por API queda para una fase posterior con conectores aprobados.",
-        "Formatos de publicación en lenguaje simple: PDF es para leer, imprimir o enviar; HTML conserva el diseño visual; Markdown sirve para editar en notas o documentos; JSON es respaldo técnico para Administración.",
-        "Exportar HTML y Exportar Markdown generan un enlace visible de descarga, además de intentar la descarga automática.",
+        "El PDF premium es la única salida principal de Publicaciones. Si después necesitas adaptar a WhatsApp, email, redes, revista o blog, usa el PDF como documento maestro en tu editor externo.",
         "Si se exporta un borrador en revisión, el archivo incluye esa marca de aprobación para evitar confundirlo con una versión final.",
         "El Editor del borrador permite modificar título, resumen y cuerpo. El Documento final muestra exactamente la pieza que se exportará, combinando el texto editado con la multimedia incluida.",
-        "Diseños de publicación muestra maquetas visuales. Al elegir una, se actualizan tipo, estilo, canal y apariencia del documento final.",
-        "La preparación editorial evalúa claridad, privacidad, uso de multimedia y ajuste al canal. Sus sugerencias ayudan a decidir si el borrador está listo para revisión final o si requiere ajustes.",
-        "Cierre prepublicación muestra una lista operativa antes de exportar: aprobación humana, texto y extensión, privacidad, multimedia y ajuste al canal.",
+        "Diseños de publicación muestra estructuras visuales para el PDF. Al elegir una, se actualizan tipo, estilo y apariencia del documento final.",
+        "La preparación editorial evalúa claridad, privacidad y uso de multimedia. Sus sugerencias ayudan a decidir si el borrador está listo para revisión final o si requiere ajustes.",
+        "Cierre prepublicación muestra una lista operativa antes de exportar: aprobación humana, texto, privacidad y multimedia.",
         "La limpieza de privacidad oculta correos, teléfonos y enlaces detectados. Aun así, el usuario debe revisar nombres, rostros, ubicaciones y datos sensibles antes de publicar.",
         "La línea de tiempo ordena experiencias por fecha y permite filtrar por texto, categoría y estado emocional.",
         "Desde las tarjetas puedes editar, borrar o saltar a la línea de tiempo de una experiencia.",
@@ -3017,8 +3004,8 @@ const manualContent = {
         "El PDF del reporte es ejecutivo: resume lo importante, limita evidencia repetida y deja el detalle completo para JSON o CSV.",
         "El selector Grupo/persona de este reporte filtra el analisis por subgrupo de la cuenta. Si eliges uno, el reporte, PDF y exportaciones usan ese mismo alcance.",
         "Los arranques rapidos de Hallazgos permiten entrar directo a Ultimos 7 dias, Salud, Trabajo, Social, Aprendizaje o Datos de dispositivos. Cada boton aplica filtros, reconstruye hallazgos, plan de accion y exportaciones con el mismo alcance.",
-        "Publicaciones incluye un selector de formatos por canal: WhatsApp, Instagram, Facebook, LinkedIn, Email, PDF/HTML y Blog/Web. Sirve para elegir la estructura correcta antes de generar, sin depender de prueba y error.",
-        "En Reportes y Publicaciones, las acciones principales quedan visibles. Las opciones tecnicas como JSON, CSV, HTML, Markdown, copias y paquetes quedan plegadas para no confundir al usuario.",
+        "Publicaciones incluye estructuras editoriales para PDF premium: album, reporte narrativo, resumen ejecutivo, jornada de trabajo, dashboard, ficha de salud y dossier. Ya no depende de canales sociales dentro de la app.",
+        "En Reportes y Publicaciones, las acciones principales quedan visibles. Las opciones tecnicas quedan plegadas para no confundir al usuario.",
         "La columna Energía muestra el valor 1-10 capturado en cada experiencia. La métrica Energía media muestra el promedio del conjunto filtrado.",
         "La columna Adjuntos muestra cuántos archivos multimedia tiene cada experiencia.",
         "Hallazgos del análisis resume tendencia de energía, foco dominante, riesgo y acción recomendada para el conjunto filtrado.",
@@ -3042,22 +3029,18 @@ const manualContent = {
     {
       title: "Publicaciones Inteligentes",
       items: [
-        "Publicaciones no es otro reporte tecnico. Su objetivo es convertir experiencias seleccionadas en una pieza para compartir: memoria de viaje, resumen de un concierto, album familiar, aprendizaje, actualizacion social o documento para enviar a otra persona.",
-        "El flujo correcto es: elegir grupo/persona y fuente, escoger tipo/estilo/canal, generar borrador, revisar texto y multimedia, aprobar y descargar PDF editado ReportLab.",
-        "El PDF es la salida principal para usuario final. HTML, Markdown, copiar texto y paquete JSON quedan como opciones tecnicas o de edicion, plegadas para no competir con el flujo principal.",
+        "Publicaciones no es otro reporte tecnico. Su objetivo es convertir experiencias seleccionadas en un PDF revista premium: memoria de viaje, resumen de concierto, album familiar, aprendizaje, salud, trabajo o documento para revisar en otra herramienta.",
+        "El flujo correcto es: elegir grupo/persona y fuente, escoger tipo y estilo, generar borrador, revisar texto y multimedia, aprobar y descargar el PDF premium cronologico.",
+        "El PDF es la unica salida principal para usuario final. HTML, Markdown y paquetes tecnicos quedan fuera del flujo normal para no confundir.",
         "La app propone multimedia ya asociada a las experiencias fuente. Puedes incluir o excluir imagenes, videos, audios y documentos sin borrar los activos originales.",
         "El boton Recomendado aplica una curaduria inicial: asigna rol editorial a cada activo y decide si conviene incluirlo para portada, galeria, evidencia, anexo, voz, video, contexto biometrico o solo transporte.",
         "Reportes, Hallazgos y Publicaciones comparten el mismo alcance base: grupo/persona, categoría, origen/conector, fecha desde y fecha hasta. Así puedes trabajar con un grupo de experiencias, un segmento de fechas o una fuente específica sin limitarte a todo el historial o a una sola experiencia.",
-        "El documento final contiene titulo, resumen, cuerpo, momentos seleccionados, multimedia incluida, estado de privacidad y preparacion por canal.",
-        "WhatsApp y Email son salidas asistidas: la app prepara/copiar el contenido y abre el canal cuando el navegador lo permite; el usuario revisa y envia.",
-        "Facebook e Instagram aun no tienen publicacion automatica por API. La app prepara el contenido y abre la red para pegado manual hasta tener conectores aprobados.",
+        "El documento final contiene titulo, resumen, cuerpo editado, cronologia completa, multimedia incluida, estado de privacidad y cierre editorial.",
+        "VibePWA no publica directamente en WhatsApp, Email, Facebook, Instagram o LinkedIn desde este modulo. El PDF queda como documento maestro para editar o distribuir despues.",
         "Antes de compartir, revisa privacidad: nombres, rostros, ubicaciones sensibles, datos medicos, documentos y cualquier informacion que no quieras publicar.",
-        "Una publicacion puede ser corta para redes o mas larga para PDF/HTML. Si quieres una memoria rica, usa Album experiencial o Reporte narrativo y selecciona multimedia relevante.",
-        "Si buscas una salida por canal, usa esta regla rápida: WhatsApp para mensaje breve, Instagram/Facebook para carrusel o álbum visual, LinkedIn para aprendizaje o resumen profesional, Email para carta o ficha explicativa, Blog/Web para historia extendida y PDF/HTML para memoria final o dossier.",
-        "El Playbook del canal muestra recetas aplicables antes de generar: cada receta ajusta tipo, estilo y canal para que el borrador nazca con una estructura coherente.",
-        "Entregables por canal muestra qué sale realmente: pieza maestra, texto para copiar, paquete multimedia y limitación real. Esto evita asumir que la app publica sola cuando el canal todavía requiere revisión o pegado manual.",
-        "La guía de salida de Publicaciones muestra una matriz por canal para elegir formato, uso de medios y acción final. Esa matriz evita confundir plantillas visuales con publicación automática: algunos canales exportan archivo, otros abren borrador y otros requieren copiar/pegar por ahora.",
-        "El Estudio de publicación por canal aparece dentro del borrador y resume formato recomendado, propósito, decisión multimedia, salida, secuencia editorial y checklist para que el usuario sepa qué está creando antes de aprobar.",
+        "Una publicacion puede ser breve o extensa, pero siempre sale como PDF premium. Si quieres una memoria rica, usa Album experiencial o Reporte narrativo y selecciona multimedia relevante.",
+        "Las estructuras disponibles ajustan el tono del PDF: album, resumen ejecutivo, jornada de trabajo, dashboard, ficha de salud, dossier o historia narrativa.",
+        "La cronologia del PDF ordena los eventos de inicio a fin e incluye notas, mediciones y activos vinculados cuando existen.",
         "Publicaciones conserva historial del borrador: generado, editado, multimedia cambiada, diseno cambiado, aprobacion y exportaciones.",
       ],
     },
@@ -3119,7 +3102,7 @@ const manualContent = {
         "Tareas y registros muestra operaciones recientes del servidor local, como recálculo de embeddings, generación de PDF o ejecución de rutinas.",
         "Avance funcional y Avance técnico separan el progreso visible del producto y la estabilidad de infraestructura para poder avanzar en paralelo.",
         "Avance total estimado separa el MVP local del producto completo al 100%; el producto completo incluye conectores externos, IA avanzada, OCR/transcripción automática, publicación directa y agentes predictivos.",
-        "Cierre de publicaciones aparece en Administración como control local activo para aprobación, privacidad, multimedia, ajuste al canal y preparación de exportación.",
+        "Cierre de publicaciones aparece en Administración como control local activo para aprobación, privacidad, multimedia, ajuste del PDF y preparación de exportación.",
         "Verificar Supabase ejecuta un diagnóstico de cierre técnico sobre configuración, Auth del usuario, perfil/RLS, experiencias/RLS, Diario persistente, Storage privado y búsqueda semántica.",
         "Cada resultado del diagnóstico incluye una Acción de cierre para saber qué ejecutar o corregir antes de volver a verificar.",
         "Probar flujo real crea una experiencia y un archivo temporales en Supabase, valida lectura/búsqueda y después los limpia automáticamente.",
@@ -3581,30 +3564,23 @@ const manualContent = {
         "Agenda uses the blueprint states: planned, confirmed, rescheduled, canceled, completed, pending follow-up, and converted into experience.",
         "Agenda events are saved locally and synchronized with the backend so they appear on other devices using the same session. If the agenda_events table does not exist in Supabase yet, the server uses a temporary central fallback until database/agenda-events.sql is applied.",
         "When converting an event, the app creates a linked experience with duration, location, participants, and source notes to preserve the Agenda -> Event -> Experience -> Living memory flow.",
-        "Intelligent Publications generates local drafts from the filtered report or latest experiences. It recommends type, style, and channel from scope, media, and content signals; you can review a composition recipe before generating, include or exclude suggested media, apply privacy cleanup, copy the final text/HTML, and export as PDF, HTML, Markdown, or an editorial JSON package.",
+        "Intelligent Publications generates one premium magazine-style PDF from the filtered scope or latest experiences. The output is chronological and includes notes, images, video references, audio summaries, documents, measurements, and available context.",
         "The Publications editor controls the real output: changing title, summary, or body updates the visible pages, the final document, and the ReportLab payload. If you edit a specific page, that page is preserved as a manual edit.",
         "Reports, Findings, and Publications show generation progress: scope or draft prepared, automatic connection check, sent to ReportLab, download prepared, and final PDF ready with a visible link. The user does not need to navigate to Admin to recover the flow.",
-        "Publication quick start creates the most common outputs with one click: WhatsApp brief, trip/album, health share, email/letter, LinkedIn learning, or PDF dossier. It applies the right type, style, channel, source, and editorial recipe before generating the draft.",
-        "The Channel playbook appears before draft generation. For WhatsApp, Instagram, Facebook, LinkedIn, Email, PDF/HTML, and Blog/Web it explains audience, rhythm, output, and one-click recipes.",
-        "Channel deliverables clarify the master piece, copy-ready text, media package, and real limitation for each channel. The user can tell whether the output is a final PDF, email draft, WhatsApp copy, carousel plan, HTML, or manual publishing preparation.",
-        "The Channel publication studio appears inside each draft and summarizes recommended format, purpose, media decision, output, editorial sequence, and checklist before approval or export.",
+        "Publication quick start creates the most common PDF structures with one click: trip album, health share, workday summary, dashboard report, or PDF dossier. It applies the right type, style, source, and editorial recipe before generating the draft.",
+        "Publication structures are editorial formats for the PDF, not direct posting channels. Use the finished PDF later in the external tool you prefer.",
+        "The final PDF is chronological: it uses the selected experiences from oldest to newest, then attaches images, video references, audio summaries, documents, measurements, and notes where available.",
         "Human approval marks whether the draft is in review or approved. Any edit, design change, or media curation returns it to review.",
         "Draft history records generation, edits, media changes, design changes, approval, and recent exports.",
         "Suggested media means files already attached to the source experiences. The app proposes them for the publication; including or excluding them does not modify or delete the original experience.",
-        "Publications assigns an editorial role to each selected asset before export: cover, gallery, evidence, annex, voice, video, biometric context, or transport-only. You can include all, include none, or apply the recommended selection for the chosen type and channel.",
+        "Publications assigns an editorial role to each selected asset before export: cover, gallery, evidence, annex, voice, video, biometric context, or transport-only. You can include all, include none, or apply the recommended selection for the chosen type.",
         "When an asset has tags, a note, or analytical text, Publications uses it as editorial context in suggested media and as editable evidence inside the draft.",
         "Media titles show the file name and source experience so the user understands where each asset comes from without breaking the visual layout.",
-        "Printable output and exported HTML use page margins, page-break rules, and card protection to reduce panels or media being cut across pages.",
-        "Exported HTML preserves the selected visual design: social, executive, magazine, album, or script.",
-        "Output guide clarifies what gets exported: HTML for a visual/printable piece with media and Markdown for editing, documentation, or Obsidian.",
-        "In Publications, Prepare channel does not auto-post: WhatsApp and Email open a ready draft for you to review and send; Facebook and Instagram copy the content so you can paste it manually until future connectors exist.",
-        "Publication formats in plain language: PDF is for reading, printing, or sending; HTML keeps the visual layout; Markdown is easy to edit in notes or documents; JSON is a technical backup for Admin.",
-        "Printable preview shows the same final HTML inside the app to review design, margins, and page breaks before downloading.",
-        "Export HTML and Export Markdown create a visible download link, while also attempting automatic download.",
+        "The premium PDF is the only main output. It is designed for reading, printing, archiving, or editing later in another publication tool.",
         "If a draft is exported while still in review, the file includes that approval mark so it is not confused with a final version.",
         "The Draft editor lets you edit title, summary, and body. The Final document shows exactly what will be exported, combining the edited text with the included media.",
-        "Publication designs shows visual layouts. Selecting one updates type, style, channel, and the final document appearance.",
-        "Publications also includes a channel-first format picker. The user can start from WhatsApp, Instagram, Facebook, LinkedIn, Email, PDF/HTML, or Blog/Web and apply the best structure before generating.",
+        "Publication designs shows visual structures. Selecting one updates type, style, and the final document appearance.",
+        "The final PDF is chronological: it uses the selected experiences from oldest to newest, then attaches images, video references, audio summaries, documents, measurements, and notes where available.",
         "Findings quick starts open Last 7 days, Health, Work, Social, Learning, or Device data with one click. Each button applies filters and rebuilds findings, action plan, and exports from the same scope.",
         "Dashboard shows a fixed current-data summary: experiences, assets, groups, persistence mode, and pending sync. If previous data is not visible, that block quickly separates filter, session, cloud, or queue causes.",
         "Dashboard automatically restores the Current data and Global Progress blocks even when the browser keeps an older HTML structure. Critical status no longer depends on a preloaded container in the page.",
@@ -3618,8 +3594,8 @@ const manualContent = {
         "External asset labels now normalize payloads such as video, audio, biometrics, or Meta imports without breaking Dashboard because of a missing helper.",
         "The npm run check gate now runs npm run audit:runtime. This audit scans app.js and blocks direct calls to helper functions that are not declared.",
         "The Operating route to 90% block turns that honest progress into concrete closure fronts with owner, state, real gap to 90, and the next action to execute. Vibeapp native and connectors are shown as product horizon, not as PWA blockers.",
-        "Editorial readiness evaluates clarity, privacy, media use, and channel fit. Its suggestions help decide whether the draft is ready for final review or needs edits.",
-        "Pre-publication closure shows an operational checklist before export: human approval, text and length, privacy, media, and channel fit.",
+        "Editorial readiness evaluates clarity, privacy, and media use. Its suggestions help decide whether the draft is ready for final review or needs edits.",
+        "Pre-publication closure shows an operational checklist before export: human approval, text, privacy, and media.",
         "Privacy cleanup hides detected emails, phone numbers, and links. The user must still review names, faces, locations, and sensitive data before publishing.",
         "Timeline sorts experiences by date and filters by text, category, and mood.",
         "Cards let you edit, delete, or jump to the timeline for an experience.",
@@ -3678,20 +3654,18 @@ const manualContent = {
     {
       title: "Intelligent Publications",
       items: [
-        "Publications is not another technical report. Its purpose is to turn selected experiences into something shareable: a travel memory, concert summary, family album, learning recap, social update, or document for another person.",
-        "Use quick start when you do not want to choose every option manually. The buttons create a channel-ready draft and keep the editor, media selection, privacy review, and ReportLab PDF export available for final polish.",
-        "The intended flow is: choose group/person and source, choose type/style/channel, generate draft, review text and media, approve, and download the edited ReportLab PDF.",
-        "PDF is the main final-user output. HTML, Markdown, copied text, and JSON package are technical or editing options, folded away from the primary flow.",
+        "Publications is not another technical report. Its purpose is to turn selected experiences into one premium magazine-style PDF: travel memory, concert recap, family album, learning recap, health note, workday brief, or document for later editing.",
+        "Use quick start when you do not want to choose every option manually. The buttons create a PDF draft and keep the editor, media selection, privacy review, and ReportLab export available for final polish.",
+        "The intended flow is: choose group/person and source, choose type and style, generate draft, review text and media, approve, and download the chronological premium PDF.",
+        "The premium PDF is the only main final-user output. HTML, Markdown, copied text, and JSON packages are technical or editing options folded away from the primary flow.",
         "The app suggests media already linked to the source experiences. You can include or exclude images, videos, audio, and documents without deleting the original assets.",
-        "Recommended media selection assigns editorial roles before export: cover, gallery, evidence, annex, voice, video, biometric context, or transport-only, according to publication type and channel.",
-        "The final document contains title, summary, body, selected moments, included media, privacy state, and channel preparation.",
-        "WhatsApp and Email are assisted outputs: the app prepares or copies content and opens the channel when the browser allows it; the user reviews and sends.",
-        "Facebook and Instagram do not have automatic API publishing yet. The app prepares the content and opens the network for manual paste until approved connectors exist.",
+        "Recommended media selection assigns editorial roles before export: cover, gallery, evidence, annex, voice, video, biometric context, or transport-only, according to the publication type.",
+        "The final document contains title, summary, edited body, chronological timeline, included media, privacy state, and editorial close.",
         "Before sharing, review privacy: names, faces, sensitive locations, health data, documents, and any information you do not want to publish.",
-        "A publication can be short for social channels or longer for PDF/HTML. For a richer memory, use Experience album or Narrative report and select relevant media.",
-        "The Channel playbook shows applicable recipes before generating: each recipe aligns type, style, and channel so the draft starts with a coherent structure.",
-        "Channel deliverables show what actually comes out: master piece, copy-ready text, media package, and real limitation. This avoids implying that the app posts automatically when the channel still requires review or manual paste.",
-        "The Channel publication studio appears inside the draft and explains recommended format, purpose, media decision, output, editorial sequence, and checklist so the user knows what is being created before approval.",
+        "A publication can be brief or extensive, but it always exports as the premium PDF. For a richer memory, use Experience album or Narrative report and select relevant media.",
+        "The publication structures align type, style, and visual treatment so the draft starts from a coherent PDF format.",
+        "VibePWA does not post directly to WhatsApp, email, Facebook, Instagram, or LinkedIn from this module. Use the PDF later in the external editor or channel you prefer.",
+        "The PDF chronology orders experiences from oldest to newest and includes notes, measurements, internal events, and linked assets when available.",
         "Publications keeps draft history: generated, edited, media changed, design changed, approval, and exports.",
       ],
     },
@@ -3958,11 +3932,11 @@ manualContent.fr = [
   {
     title: "Publications intelligentes",
     items: [
-      "Publications ne sert pas a refaire un rapport technique. Son objectif est de transformer des experiences en contenu partageable: souvenir de voyage, album familial, recapitulatif d'apprentissage, note de sante, email ou publication sociale.",
-      "L'utilisateur choisit le groupe, la periode, les experiences, le canal, le style, le type de document et les medias a inclure.",
-      "Les images peuvent devenir couverture ou galerie. Les audios, videos et documents doivent apparaitre comme resumes, preuves, annexes ou liens de telechargement selon le format.",
-      "WhatsApp, email et reseaux sociaux sont des sorties assistees: l'app prepare le contenu, mais l'utilisateur revise et publie. Les APIs directes viendront seulement avec connecteurs approuves.",
-      "Avant export, l'utilisateur valide texte, medias, confidentialite, canal et version PDF finale.",
+      "Publications ne sert pas a refaire un rapport technique. Son objectif est de transformer des experiences en PDF magazine premium: souvenir de voyage, album familial, apprentissage, sante, travail ou document a editer plus tard.",
+      "L'utilisateur choisit groupe, periode, experiences, style, type de document et medias a inclure. La sortie principale reste toujours le PDF premium.",
+      "Les images peuvent devenir couverture ou galerie. Les audios, videos, documents et mesures apparaissent comme resumes, preuves, annexes ou references selon leur valeur pour l'histoire.",
+      "VibePWA ne publie pas directement sur WhatsApp, email ou reseaux sociaux depuis ce module. Le PDF sert de document maitre pour edition ou distribution externe.",
+      "Avant export, l'utilisateur valide texte, medias, confidentialite et version PDF finale.",
     ],
   },
   {
@@ -9051,14 +9025,14 @@ function updatePublicationTypeHelp() {
   const select = document.getElementById("publicationTypeInput");
   if (!box || !select) return;
   const type = select.value || publicationTypes[0];
-  const channel = document.getElementById("publicationChannelInput")?.value || "PDF/HTML";
+  const channel = PUBLICATION_OUTPUT_CHANNEL;
   const style = document.getElementById("publicationStyleInput")?.value || "Profesional";
   const guide = getPublicationTypeGuide(type);
   const title = state.language !== "es" ? displayPublicationType(type) : type;
   const purpose = state.language !== "es" ? translatePublicationGuideText(guide.purpose) : guide.purpose;
   const bestFor = state.language !== "es" ? translatePublicationGuideText(guide.bestFor) : guide.bestFor;
   const mediaPolicy = state.language !== "es" ? translatePublicationGuideText(guide.mediaPolicy) : guide.mediaPolicy;
-  const channelLabel = state.language !== "es" ? "Recommended channels" : "Canales recomendados";
+  const channelLabel = state.language !== "es" ? "Final output" : "Salida final";
   const mediaLabel = state.language !== "es" ? "How media is used" : "Cómo usa la multimedia";
   const structure = (guide.structure || []).map((item) => state.language !== "es" ? translatePublicationGuideText(item) : item);
   box.innerHTML = `
@@ -9068,11 +9042,9 @@ function updatePublicationTypeHelp() {
     <p><b>${escapeHtml(mediaLabel)}:</b> ${escapeHtml(mediaPolicy || "")}</p>
     <p><b>${escapeHtml(channelLabel)}:</b> ${(guide.channels || []).map((item) => `<span class="publication-guide-chip">${escapeHtml(item)}</span>`).join(" ")}</p>
     ${renderPublicationTypeChannelFit(type, channel)}
-    ${renderPublicationChannelPlaybook(channel, type)}
     ${renderPublicationCompositionPlan(type, channel, style)}
     ${renderPublicationPresetSuggestions(type, channel)}
     <ul>${structure.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
-    ${renderPublicationChannelMatrix({ channel: "" })}
   `;
 }
 
@@ -9183,8 +9155,8 @@ function renderPublicationPresetSuggestions(type, channel) {
   if (!suggestions.length) return "";
   const title = state.language !== "es" ? "Suggested formats before generating" : "Formatos sugeridos antes de generar";
   const help = state.language !== "es"
-     ? "Choose one to align type, style, and channel before creating the draft."
-    : "Elige uno para alinear tipo, estilo y canal antes de crear el borrador.";
+     ? "Choose one to align type, style, and PDF structure before creating the draft."
+    : "Elige uno para alinear tipo, estilo y estructura del PDF antes de crear el borrador.";
   return `
     <div class="publication-preset-panel">
       <div>
@@ -9229,16 +9201,8 @@ function getPublicationCompositionProfile(type, channel, style) {
     : isFormal
        ? "Documentos, datos y texto interpretado primero; multimedia solo si aporta evidencia"
       : "Mezcla de narrativa, imágenes destacadas y anexos resumidos";
-  const text = channel === "WhatsApp" || channel === "Instagram"
-     ? "Texto breve, directo y fácil de revisar antes de compartir"
-    : channel === "Email" || channel === "LinkedIn"
-       ? "Texto medio, con contexto y conclusión clara"
-      : "Texto completo, con secciones editadas y lectura final";
-  const action = channel === "WhatsApp" || channel === "Email"
-     ? "Preparar mensaje revisable; el usuario decide enviar"
-    : channel === "PDF/HTML"
-       ? "Generar documento maestro en PDF editado"
-      : "Preparar pieza para copiar, adaptar o publicar manualmente";
+  const text = "Texto completo, con secciones editadas, cronologia y lectura final";
+  const action = "Generar documento maestro en PDF revista premium";
   return { layout, media, text, action, style };
 }
 
@@ -9284,30 +9248,30 @@ function renderPublicationTypeChannelFit(type, channel) {
   const guide = getPublicationTypeGuide(type);
   const recommended = guide.channels || [];
   const exact = recommended.includes(channel);
-  const indirect = channel === "PDF/HTML" || channel === "Blog/Web";
+  const indirect = channel === PUBLICATION_OUTPUT_CHANNEL;
   const status = exact || indirect ? "ok" : "review";
   const label = state.language !== "es"
      ? exact
-       ? "Strong fit"
+       ? "Strong PDF fit"
       : indirect
          ? "Good as master document"
-        : "Review channel fit"
+        : "Review PDF fit"
     : exact
-       ? "Buen encaje"
+       ? "Buen encaje PDF"
       : indirect
          ? "Buen documento maestro"
-        : "Revisar encaje del canal";
+        : "Revisar encaje del PDF";
   const detail = state.language !== "es"
      ? exact
-       ? `${displayPublicationType(type)} is naturally suited for ${channel}.`
+       ? `${displayPublicationType(type)} is naturally suited for the premium PDF.`
       : indirect
-         ? `${displayPublicationType(type)} can be exported as the master piece, then adapted to a posting channel.`
-        : `${displayPublicationType(type)} can still work, but ${channel} usually performs better with: ${recommended.join(", ")}.`
+         ? `${displayPublicationType(type)} can be exported as the master piece and adapted later outside Vibe.`
+        : `${displayPublicationType(type)} can still work, but review the PDF structure before export.`
     : exact
-       ? `${displayPublicationType(type)} esta naturalmente alineado con ${channel}.`
+       ? `${displayPublicationType(type)} esta naturalmente alineado con el PDF premium.`
       : indirect
-         ? `${displayPublicationType(type)} puede salir como pieza maestra y luego adaptarse a un canal de publicacion.`
-        : `${displayPublicationType(type)} puede funcionar, pero ${channel} suele ir mejor con: ${recommended.join(", ")}.`;
+         ? `${displayPublicationType(type)} puede salir como pieza maestra y adaptarse despues fuera de Vibe.`
+        : `${displayPublicationType(type)} puede funcionar, pero revisa la estructura del PDF antes de exportar.`;
   return `
     <div class="publication-fit-panel is-${status}">
       <strong>${escapeHtml(label)}</strong>
@@ -9323,7 +9287,7 @@ function handlePublicationPresetClick(event) {
   if (!template) return;
   document.getElementById("publicationTypeInput").value = template.type;
   document.getElementById("publicationStyleInput").value = template.style;
-  document.getElementById("publicationChannelInput").value = template.channel;
+  document.getElementById("publicationChannelInput").value = PUBLICATION_OUTPUT_CHANNEL;
   updatePublicationTypeHelp();
   document.getElementById("publicationStatus").textContent = state.language !== "es"
      ? "Suggested publication format applied."
@@ -12246,18 +12210,24 @@ function renderBiometricCaptureContext() {
     `;
     return;
   }
-  const difference = signal.energySuggestion ? Math.abs(signal.energySuggestion - energy) : 0;
-  const diffText = difference >= 3
-    ? (state.language !== "es" ? "Your perceived energy differs from the biometric suggestion; keep both as context." : "Tu energía percibida difiere de la sugerencia biométrica; conviene conservar ambas señales.")
-    : (state.language !== "es" ? "Biometric signal is consistent with the current energy value." : "La señal biométrica es consistente con el valor actual de energía.");
+  const suggestedEnergy = Number(signal.energySuggestion);
+  const hasEnergySuggestion = Number.isFinite(suggestedEnergy) && suggestedEnergy > 0;
+  const difference = hasEnergySuggestion ? Math.abs(suggestedEnergy - energy) : 0;
+  const diffText = !hasEnergySuggestion
+    ? (state.language !== "es" ? "There is not enough biometric evidence to suggest an energy value yet." : "Aún no hay evidencia biométrica suficiente para sugerir un valor de energía.")
+    : difference >= 3
+      ? (state.language !== "es" ? "Your perceived energy differs from the biometric suggestion; keep both as context." : "Tu energía percibida difiere de la sugerencia biométrica; conviene conservar ambas señales.")
+      : (state.language !== "es" ? "Biometric signal is consistent with the current energy value." : "La señal biométrica es consistente con el valor actual de energía.");
   box.innerHTML = `
     <div>
       <strong>${escapeHtml(state.language !== "es" ? "Biometric context" : "Contexto biométrico")}: ${escapeHtml(signal.label)}</strong>
       <p>${escapeHtml(signal.detail)} ${escapeHtml(diffText)}</p>
     </div>
-    <button type="button" class="ghost-button small-button" data-biometric-apply-energy="${escapeHtml(String(signal.energySuggestion || ""))}">
-      ${escapeHtml(state.language !== "es" ? `Use ${signal.energySuggestion}/10` : `Usar ${signal.energySuggestion}/10`)}
-    </button>
+    ${hasEnergySuggestion ? `
+      <button type="button" class="ghost-button small-button" data-biometric-apply-energy="${escapeHtml(String(suggestedEnergy))}">
+        ${escapeHtml(state.language !== "es" ? `Use ${suggestedEnergy}/10` : `Usar ${suggestedEnergy}/10`)}
+      </button>
+    ` : ""}
   `;
 }
 
@@ -14296,6 +14266,7 @@ async function refreshDailyBriefing(options = {}) {
   const cachedAt = state.dailyBriefing?.generatedAt ? new Date(state.dailyBriefing.generatedAt).getTime() : 0;
   const stillFresh = cachedAt && !isDailyBriefingStale(state.dailyBriefing);
   const location = options.location || input?.value?.trim() || getDailyOperationalLocation();
+  const contextLabel = resolveOperationalContextLabel(location);
   const sameLocation = locationsEquivalent(location, state.dailyBriefing?.location);
   const sameLanguage = !state.dailyBriefing?.locale || state.dailyBriefing.locale === state.language;
   if (!options.force && stillFresh && sameLocation && sameLanguage) return;
@@ -14304,7 +14275,8 @@ async function refreshDailyBriefing(options = {}) {
   if (status && !options.silent) status.textContent = t("labels.dailyLoading");
   try {
     const forceParam = options.force ? "&force=1" : "";
-    state.dailyBriefing = await apiRequest(`/daily-briefing?location=${encodeURIComponent(location)}&locale=${encodeURIComponent(state.language)}${forceParam}`);
+    const labelParam = contextLabel ? `&label=${encodeURIComponent(contextLabel)}` : "";
+    state.dailyBriefing = await apiRequest(`/daily-briefing?location=${encodeURIComponent(location)}&locale=${encodeURIComponent(state.language)}${forceParam}${labelParam}`);
     saveDailyLocationPreference(state.dailyBriefing?.location || location);
     syncDailyLocationInputs(state.dailyBriefing?.location || location);
     state.selectedDailyArticle = null;
@@ -14406,6 +14378,23 @@ function resolveOperationalContextLocation(preferred = "") {
   return candidates.map(normalizeContextLocationValue).find(isUsableContextLocation) || "";
 }
 
+function resolveOperationalContextLabel(location = "") {
+  const candidates = [
+    state.dailyLocationPreference,
+    document.getElementById("dailyLocationInput")?.value?.trim(),
+    document.getElementById("contextLocationInput")?.value?.trim(),
+    state.dailyBriefing?.location,
+    state.dailyBriefing?.scope,
+    inferPrimaryHumanLocation(),
+    getDefaultOperationalLocation(),
+  ];
+  const label = candidates
+    .map(normalizeContextLocationValue)
+    .find((candidate) => isUsableContextLocation(candidate) && !isCoordinateLocation(candidate));
+  if (label && (!isCoordinateLocation(location) || !locationsEquivalent(label, location))) return label;
+  return isCoordinateLocation(location) ? getDefaultOperationalLocation() : "";
+}
+
 function getMobileContextLocationCandidates() {
   return collectStructuredMobileContexts(state.experiences)
     .flatMap((item) => {
@@ -14426,6 +14415,15 @@ function getMobileContextLocationCandidates() {
 
 function normalizeContextLocationValue(value = "") {
   return String(value || "").trim();
+}
+
+function isCoordinateLocation(value = "") {
+  const text = normalizeContextLocationValue(value);
+  const match = text.match(/^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/);
+  if (!match) return false;
+  const latitude = Number(match[1]);
+  const longitude = Number(match[2]);
+  return Number.isFinite(latitude) && Number.isFinite(longitude) && latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180;
 }
 
 function isUsableContextLocation(value = "") {
@@ -14483,6 +14481,7 @@ async function refreshContextImpactAutomatically(options = {}) {
   const input = document.getElementById("contextLocationInput");
   const box = document.getElementById("contextImpactBox");
   const location = resolveOperationalContextLocation(options.preferredLocation || input?.value?.trim() || "");
+  const contextLabel = resolveOperationalContextLabel(location);
   if (!location) {
     if (box && !options.silent) box.innerHTML = `<p class="card-meta">${t("labels.contextEmpty")}</p>`;
     updateContextStatus();
@@ -14499,7 +14498,8 @@ async function refreshContextImpactAutomatically(options = {}) {
   state.contextImpactRefreshInProgress = true;
   try {
     const experienceType = getContextExperienceType();
-    const impact = await apiRequest(`/context/impact?location=${encodeURIComponent(location)}&experienceType=${encodeURIComponent(experienceType)}`);
+    const labelParam = contextLabel ? `&label=${encodeURIComponent(contextLabel)}` : "";
+    const impact = await apiRequest(`/context/impact?location=${encodeURIComponent(location)}&experienceType=${encodeURIComponent(experienceType)}${labelParam}`);
     state.contextImpact = { ...impact, queryLocation: location };
     state.contextImpactRefreshedAt = new Date().toISOString();
     state.contextImpactRefreshedFor = location;
@@ -14756,6 +14756,15 @@ function updateContextStatus(status = "idle", impact = null) {
 function inferPrimaryLocation() {
   const counts = state.experiences.reduce((acc, item) => {
     if (item.location && item.location !== "Sin ubicación") acc[item.location] = (acc[item.location] || 0) + 1;
+    return acc;
+  }, {});
+  return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || "";
+}
+
+function inferPrimaryHumanLocation() {
+  const counts = state.experiences.reduce((acc, item) => {
+    const value = normalizeContextLocationValue(item.location || "");
+    if (isUsableContextLocation(value) && !isCoordinateLocation(value)) acc[value] = (acc[value] || 0) + 1;
     return acc;
   }, {});
   return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || "";
@@ -16608,15 +16617,36 @@ function aggregateBiometricRows(rows = []) {
 
 function estimateBiometricEnergy(metrics = {}) {
   let score = 5;
+  let evidence = 0;
   const sleepHours = Number(metrics.sleepMinutes || 0) / 60;
-  if (sleepHours >= 7) score += 1;
-  if (sleepHours > 0 && sleepHours < 6) score -= 1;
-  if (metrics.steps >= 8000) score += 1;
-  if (metrics.steps >= 12000) score += 1;
-  if (metrics.activeEnergy >= 450) score += 1;
-  if (metrics.activityCount > 0) score += 1;
-  if (metrics.heartAvg >= 105) score -= 1;
-  return Math.max(1, Math.min(10, Math.round(score)));
+  if (sleepHours > 0) {
+    evidence += 1;
+    if (sleepHours >= 7 && sleepHours <= 9.5) score += 0.9;
+    else if (sleepHours >= 6) score += 0.3;
+    else score -= 1.1;
+  }
+  if (metrics.steps > 0) {
+    evidence += 1;
+    if (metrics.steps >= 12000) score += 1;
+    else if (metrics.steps >= 8000) score += 0.7;
+    else if (metrics.steps < 2500) score -= 0.4;
+  }
+  if (metrics.activeEnergy > 0) {
+    evidence += 1;
+    if (metrics.activeEnergy >= 450) score += 0.8;
+    else if (metrics.activeEnergy >= 250) score += 0.4;
+  }
+  if (metrics.activityCount > 0) {
+    evidence += 1;
+    score += 0.5;
+  }
+  if (metrics.heartAvg > 0) {
+    evidence += 1;
+    if (metrics.heartAvg >= 105) score -= 0.8;
+    else if (metrics.heartAvg >= 90) score -= 0.2;
+  }
+  if (!evidence) return null;
+  return Math.max(1, Math.min(10, Number(score.toFixed(1))));
 }
 
 function formatBiometricSignalDetail(metrics = {}, count = 0) {
@@ -16627,7 +16657,9 @@ function formatBiometricSignalDetail(metrics = {}, count = 0) {
   if (metrics.sleepMinutes) parts.push(state.language !== "es" ? `${(metrics.sleepMinutes / 60).toFixed(1)} h sleep` : `${(metrics.sleepMinutes / 60).toFixed(1)} h sueño`);
   if (metrics.activityCount) parts.push(state.language !== "es" ? `${metrics.activityCount} activity records` : `${metrics.activityCount} registros de actividad`);
   const summary = parts.length ? parts.join(" · ") : (state.language !== "es" ? `${count} biometric records` : `${count} registros biométricos`);
-  return state.language !== "es" ? `${summary}. Suggested energy: ${estimateBiometricEnergy(metrics)}/10.` : `${summary}. Energía sugerida: ${estimateBiometricEnergy(metrics)}/10.`;
+  const energy = estimateBiometricEnergy(metrics);
+  const energyText = energy ? `${energy}/10` : (state.language !== "es" ? "not enough data" : "sin datos suficientes");
+  return state.language !== "es" ? `${summary}. Suggested energy: ${energyText}.` : `${summary}. Energía sugerida: ${energyText}.`;
 }
 
 function extractJsonBiometricRows(payload) {
@@ -20316,8 +20348,8 @@ function buildPredictiveOutlook(experiences, analysis, quality) {
           : "Contexto externo no analizado en este reporte",
       biometricSummary.matched
         ? state.language !== "es"
-           ? `Biometric context: ${biometricSummary.matched} matched experiences, suggested energy ${(biometricSummary.averageSuggestedEnergy || 0).toFixed(1)}/10`
-          : `Contexto biométrico: ${biometricSummary.matched} experiencias vinculadas, energía sugerida ${(biometricSummary.averageSuggestedEnergy || 0).toFixed(1)}/10`
+           ? `Biometric context: ${biometricSummary.matched} matched experiences${biometricSummary.averageSuggestedEnergy ? `, suggested energy ${biometricSummary.averageSuggestedEnergy.toFixed(1)}/10` : ", with no reliable energy estimate yet"}`
+          : `Contexto biométrico: ${biometricSummary.matched} experiencias vinculadas${biometricSummary.averageSuggestedEnergy ? `, energía sugerida ${biometricSummary.averageSuggestedEnergy.toFixed(1)}/10` : ", sin estimación confiable de energía todavía"}`
         : state.language !== "es"
            ? "No biometric context matched this report yet"
           : "Aún no hay contexto biométrico vinculado a este reporte",
@@ -20951,10 +20983,11 @@ function summarizeBiometricSignalsForExperiences(experiences = []) {
     return { matched: 0, coveragePct: 0, averageSuggestedEnergy: 0, biometricRiskScore: 0, importedCount: state.biometricImports?.length || 0, rowCount: getAllBiometricRows().length };
   }
   const signals = getBiometricSignalsForExperiences(experiences).map((item) => item.signal);
-  const averageSuggestedEnergy = signals.length ? average(signals.map((signal) => Number(signal.energySuggestion || 0))) : 0;
+  const energySignals = signals.map((signal) => Number(signal.energySuggestion)).filter(Number.isFinite);
+  const averageSuggestedEnergy = energySignals.length ? average(energySignals) : 0;
   const riskSignals = signals.filter((signal) => {
     const metrics = signal.metrics || {};
-    return Number(signal.energySuggestion || 0) <= 4 || metrics.heartAvg >= 105 || (metrics.sleepMinutes > 0 && metrics.sleepMinutes < 360);
+    return (Number.isFinite(Number(signal.energySuggestion)) && Number(signal.energySuggestion) <= 4) || metrics.heartAvg >= 105 || (metrics.sleepMinutes > 0 && metrics.sleepMinutes < 360);
   }).length;
   return {
     matched: signals.length,
@@ -21054,7 +21087,9 @@ function buildBiometricIntelligenceSummary(experiences = state.experiences) {
   const coveragePct = hasServerHealth && !summary.coveragePct
     ? pct(serverRecords || serverSignals, serverCoverageBase)
     : summary.coveragePct;
-  const averageSuggestedEnergy = summary.averageSuggestedEnergy || Number(serverHealth?.suggestedEnergy || 0);
+  const serverSuggestedEnergy = Number(serverHealth?.suggestedEnergy);
+  const averageSuggestedEnergy = summary.averageSuggestedEnergy
+    || (Number.isFinite(serverSuggestedEnergy) && serverSuggestedEnergy > 0 ? serverSuggestedEnergy : 0);
   const rowCount = rows.length || serverSignals || serverRecords;
   return {
     status,
@@ -21200,6 +21235,9 @@ function renderReportBiometricImpact(experiences = []) {
   const rows = signals.flatMap((item) => item.signal.rows || []);
   const metrics = aggregateBiometricRows(rows);
   const examples = signals.slice(0, 4);
+  const energyLabel = summary.averageSuggestedEnergy
+    ? `${summary.averageSuggestedEnergy.toFixed(1)}/10`
+    : (state.language !== "es" ? "No reliable estimate" : "Sin estimación confiable");
   return `
     <section class="report-biometric-impact">
       <div class="report-section-heading">
@@ -21210,7 +21248,7 @@ function renderReportBiometricImpact(experiences = []) {
         <span class="pill">${escapeHtml(`${Math.round(summary.coveragePct)}% ${labels.coverage}`)}</span>
       </div>
       <div class="biometric-impact-grid">
-        <article><span>${escapeHtml(labels.energy)}</span><strong>${escapeHtml((summary.averageSuggestedEnergy || 0).toFixed(1))}/10</strong></article>
+        <article><span>${escapeHtml(labels.energy)}</span><strong>${escapeHtml(energyLabel)}</strong></article>
         <article><span>${escapeHtml(labels.risk)}</span><strong>${escapeHtml(`${Math.round(summary.biometricRiskScore)}%`)}</strong></article>
         <article><span>${escapeHtml(labels.heart)}</span><strong>${metrics.heartAvg ? Math.round(metrics.heartAvg) : "-"}</strong></article>
         <article><span>${escapeHtml(labels.steps)}</span><strong>${metrics.steps ? Math.round(metrics.steps).toLocaleString() : "-"}</strong></article>
@@ -21289,10 +21327,10 @@ function buildHumanCorrelations(experiences, analysis) {
     buildCorrelationResult({
       source: state.language !== "es" ? "Biometrics -> energy" : "Biometría -> energía",
       title: state.language !== "es" ? "Biometric coverage and perceived energy" : "Cobertura biométrica y energía percibida",
-      score: biometricSummary.coveragePct ? Math.round((biometricSummary.coveragePct * 0.45) + ((biometricSummary.averageSuggestedEnergy || 0) * 5.5)) : 0,
+      score: biometricSummary.coveragePct ? Math.round((biometricSummary.coveragePct * 0.45) + (biometricSummary.averageSuggestedEnergy ? biometricSummary.averageSuggestedEnergy * 5.5 : 0)) : 0,
       detail: state.language !== "es"
-         ? `${biometricSummary.matched} experiences have nearby biometric context; suggested energy average is ${(biometricSummary.averageSuggestedEnergy || 0).toFixed(1)}/10.`
-        : `${biometricSummary.matched} experiencias tienen contexto biométrico cercano; la energía biométrica sugerida promedia ${(biometricSummary.averageSuggestedEnergy || 0).toFixed(1)}/10.`,
+         ? `${biometricSummary.matched} experiences have nearby biometric context${biometricSummary.averageSuggestedEnergy ? `; suggested energy average is ${biometricSummary.averageSuggestedEnergy.toFixed(1)}/10.` : ", but the available signals are not enough for a reliable energy average."}`
+        : `${biometricSummary.matched} experiencias tienen contexto biométrico cercano${biometricSummary.averageSuggestedEnergy ? `; la energía biométrica sugerida promedia ${biometricSummary.averageSuggestedEnergy.toFixed(1)}/10.` : ", pero las señales disponibles no alcanzan para calcular un promedio confiable de energía."}`,
       action: state.language !== "es" ? "Compare perceived energy against biometric signals before changing routines." : "Compara energía percibida contra señales biométricas antes de cambiar rutinas.",
       inverseTone: false,
     }),
@@ -22303,7 +22341,7 @@ function generatePublicationDraft() {
   const source = document.getElementById("publicationSourceInput").value;
   const type = document.getElementById("publicationTypeInput").value;
   const style = document.getElementById("publicationStyleInput").value;
-  const channel = document.getElementById("publicationChannelInput").value;
+  const channel = PUBLICATION_OUTPUT_CHANNEL;
   const privacy = document.getElementById("publicationPrivacyInput").checked;
   const publicationExperiences = getPublicationExperiences();
   const reportExperiences = filterExperiencesByAnalyticalFilters(getReportExperiences(), state.publicationFilters || {});
@@ -22334,11 +22372,12 @@ function generatePublicationDraft() {
 function buildPublicationDraft({ experiences, type, style, channel, privacy }) {
   const analysis = buildExperienceAnalysis(experiences);
   const title = buildPublicationTitle(type, experiences);
-  const media = applyRecommendedPublicationMediaSelection(collectPublicationMedia(experiences), { type, channel });
+  const chronologicalExperiences = [...experiences].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+  const media = applyRecommendedPublicationMediaSelection(collectPublicationMedia(chronologicalExperiences), { type, channel });
   const mediaCount = media.filter((item) => item.included !== false).length;
-  const category = cleanPublicationCategoryLabel(displayCategory(getTopCategory(experiences)));
-  const avgEnergy = experiences.length ? Number(average(experiences.map((item) => Number(item.energy || 0))).toFixed(1)) : 0;
-  const highlights = experiences.slice(0, 5).map((item) => ({
+  const category = cleanPublicationCategoryLabel(displayCategory(getTopCategory(chronologicalExperiences)));
+  const avgEnergy = chronologicalExperiences.length ? Number(average(chronologicalExperiences.map((item) => Number(item.energy || 0))).toFixed(1)) : 0;
+  const highlights = chronologicalExperiences.slice(0, 8).map((item) => ({
     title: cleanPublicationText(item.title || (state.language !== "es" ? "Recorded experience" : "Experiencia registrada")),
     date: item.timestamp,
     category: cleanPublicationCategoryLabel(displayCategory(item.category)),
@@ -22346,10 +22385,11 @@ function buildPublicationDraft({ experiences, type, style, channel, privacy }) {
     location: cleanPublicationLocation(item.location),
     note: cleanPublicationText(item.notes || item.objective || ""),
   }));
-  const rawSummary = buildPublicationSummary(experiences, analysis, category, avgEnergy);
-  const people = filterPublicationPeople(topValues(experiences.flatMap((item) => splitPeople(item.people)), 10)).slice(0, 4);
-  const locations = filterPublicationLocations(topValues(experiences.map((item) => item.location).filter(Boolean), 10)).slice(0, 4);
-  const rawBody = buildPublicationBody({ title, type, style, channel, experiences, analysis, mediaCount, category, avgEnergy, highlights, media, people, locations });
+  const timeline = buildPublicationTimelineItems(chronologicalExperiences, media);
+  const rawSummary = buildPublicationSummary(chronologicalExperiences, analysis, category, avgEnergy);
+  const people = filterPublicationPeople(topValues(chronologicalExperiences.flatMap((item) => splitPeople(item.people)), 10)).slice(0, 4);
+  const locations = filterPublicationLocations(topValues(chronologicalExperiences.map((item) => item.location).filter(Boolean), 10)).slice(0, 4);
+  const rawBody = buildPublicationBody({ title, type, style, channel, experiences: chronologicalExperiences, analysis, mediaCount, category, avgEnergy, highlights, media, people, locations });
   const pages = buildPublicationPages({
     title,
     type,
@@ -22383,6 +22423,7 @@ function buildPublicationDraft({ experiences, type, style, channel, privacy }) {
     body: privacy ? redactSensitiveText(rawBody) : rawBody,
     pages: privacy ? pages.map(redactPublicationPage) : pages,
     highlights: privacy ? highlights.map((item) => ({ ...item, note: redactSensitiveText(item.note), location: redactSensitiveText(item.location) })) : highlights,
+    timeline: privacy ? timeline.map((item) => ({ ...item, title: redactSensitiveText(item.title), note: redactSensitiveText(item.note), location: redactSensitiveText(item.location) })) : timeline,
     media,
     people: privacy ? people.map(redactSensitiveText) : people,
     locations: privacy ? locations.map(redactSensitiveText) : locations,
@@ -22426,8 +22467,8 @@ function buildPublicationPages({ title, type, style, channel, experiences, analy
   const momentLines = buildPublicationMomentLines(highlights);
   const mediaLines = buildPublicationMediaLines(selectedMedia);
   const channelBody = state.language !== "es"
-     ? `Recommended channel: ${channel}. Use this version as ${typeLabel.toLowerCase()} with a ${styleLabel.toLowerCase()} tone. ${translatePublicationGuideText(guide.mediaPolicy || "")}`
-    : `Canal recomendado: ${channel}. Usa esta version como ${typeLabel.toLowerCase()} con tono ${styleLabel.toLowerCase()}. ${guide.mediaPolicy || ""}`;
+     ? `Final output: ${channel}. Use this version as ${typeLabel.toLowerCase()} with a ${styleLabel.toLowerCase()} tone. ${translatePublicationGuideText(guide.mediaPolicy || "")}`
+    : `Salida final: ${channel}. Usa esta version como ${typeLabel.toLowerCase()} con tono ${styleLabel.toLowerCase()}. ${guide.mediaPolicy || ""}`;
   const basePageSpecs = [
     {
       pageType: "cover",
@@ -22514,7 +22555,7 @@ function buildPublicationPages({ title, type, style, channel, experiences, analy
     mediaLines,
     channelBody,
   });
-  return pageSpecs.map((page, index) => ({
+  return pageSpecs.filter((page) => page?.pageType !== "channel").map((page, index) => ({
     id: createId(),
     pageNumber: index + 1,
     ...page,
@@ -22576,7 +22617,7 @@ function applyPublicationPageProfile(basePages, context) {
   if (isQuick) {
     return [
       { ...cover, layoutTemplate: "social-cover" },
-      make("story", "short-message", state.language !== "es" ? "Post text" : "Texto para publicar", state.language !== "es" ? "Short, direct and ready to copy" : "Breve, directo y listo para copiar", `${context.summary}\n\n${context.analysis.action}`),
+      make("story", "short-message", state.language !== "es" ? "Brief PDF text" : "Texto breve del PDF", state.language !== "es" ? "Short, direct, and ready for the premium PDF" : "Breve, directo y listo para el PDF premium", `${context.summary}\n\n${context.analysis.action}`),
       make("media", "hero-media", state.language !== "es" ? "Main media" : "Multimedia principal", state.language !== "es" ? "Use one strong image/video when available" : "Usa una imagen/video fuerte si esta disponible", context.mediaLines, context.selectedMedia.slice(0, 3).map((item) => item.id)),
       channel,
       closing,
@@ -22587,7 +22628,7 @@ function applyPublicationPageProfile(basePages, context) {
       { ...cover, layoutTemplate: "carousel-cover" },
       make("slides", "carousel-sequence", state.language !== "es" ? "Carousel sequence" : "Secuencia del carrusel", state.language !== "es" ? "One idea per slide" : "Una idea por lamina", buildPublicationCarouselSlides(context)),
       make("media", "visual-grid", state.language !== "es" ? "Visual assets" : "Activos visuales", state.language !== "es" ? "Images first; other media become notes" : "Imagenes primero; otros medios quedan como notas", context.mediaLines, context.mediaIds),
-      make("captions", "caption-bank", state.language !== "es" ? "Caption bank" : "Textos para copiar", state.language !== "es" ? "Short texts for social channels" : "Textos breves para canales sociales", buildPublicationCaptionBank(context)),
+      make("captions", "caption-bank", state.language !== "es" ? "Short text alternatives" : "Textos breves alternativos", state.language !== "es" ? "Optional short versions for later adaptation" : "Versiones cortas opcionales para adaptar despues", buildPublicationCaptionBank(context)),
       channel,
     ];
   }
@@ -22793,7 +22834,7 @@ function buildPublicationPageStory(body, analysis) {
 
 function normalizePublicationPages(draft) {
   if (Array.isArray(draft?.pages) && draft.pages.length) {
-    return draft.pages.map((page, index) => ({
+    return draft.pages.filter((page) => page?.pageType !== "channel").map((page, index) => ({
       id: page.id || createId(),
       pageNumber: page.pageNumber || index + 1,
       pageType: page.pageType || "story",
@@ -23102,24 +23143,66 @@ function collectPublicationMedia(experiences) {
     .slice(0, 24);
 }
 
+function buildPublicationTimelineItems(experiences = [], media = []) {
+  const mediaByExperience = (media || []).reduce((acc, item) => {
+    const key = item.experienceId || "";
+    if (!key) return acc;
+    if (!acc.has(key)) acc.set(key, []);
+    acc.get(key).push(item);
+    return acc;
+  }, new Map());
+  return [...experiences]
+    .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+    .map((experience, index) => {
+      const linkedMedia = (mediaByExperience.get(experience.id) || []).filter((item) => item.included !== false);
+      const internalEvents = Array.isArray(experience.events) ? experience.events : [];
+      return {
+        id: experience.id || createId(),
+        order: index + 1,
+        title: cleanPublicationText(experience.title || (state.language !== "es" ? "Recorded experience" : "Experiencia registrada")),
+        date: experience.timestamp || "",
+        category: cleanPublicationCategoryLabel(displayCategory(experience.category)),
+        location: cleanPublicationLocation(experience.location),
+        people: splitPeople(experience.people).join(", "),
+        objective: cleanPublicationText(experience.objective || ""),
+        note: cleanPublicationText(experience.notes || experience.objective || ""),
+        energy: Number(experience.energy || 0),
+        duration: Number(experience.duration || 0),
+        internalEvents: internalEvents.map((event, eventIndex) => ({
+          title: cleanPublicationText(event.title || event.name || `${state.language !== "es" ? "Event" : "Evento"} ${eventIndex + 1}`),
+          note: cleanPublicationText(event.note || event.description || ""),
+          time: event.time || event.timestamp || "",
+        })),
+        mediaIds: linkedMedia.map((item) => item.id),
+        mediaSummary: linkedMedia.map((item) => ({
+          id: item.id,
+          name: item.name,
+          kind: getPublicationMediaKindLabel(item),
+          type: item.type,
+          text: cleanPublicationText(item.translatedText || item.analyticalText || item.manualNote || item.originalText || ""),
+        })),
+      };
+    });
+}
+
 function buildPublicationTitle(type, experiences) {
   const category = displayCategory(getTopCategory(experiences));
   if (state.language !== "es") {
-    if (type === "Resumen ejecutivo") return `Executive summary: ${category}`;
-    if (type === "Álbum experiencial") return `Experience album: ${category}`;
-    if (type === "Guion de story/reel") return `Story script: ${category}`;
-    if (type === "Publicación social rápida") return `Quick update: ${category}`;
-    if (type === "Jornada de trabajo") return `Workday brief: ${category}`;
-    if (type === "Reporte dashboard") return `Executive dashboard: ${category}`;
-    return `Narrative report: ${category}`;
+    if (type === "Resumen ejecutivo") return `Premium PDF - Executive summary: ${category}`;
+    if (type === "Álbum experiencial") return `Premium PDF - Experience album: ${category}`;
+    if (type === "Guion de story/reel") return `Premium PDF - Story script: ${category}`;
+    if (type === "Publicación social rápida") return `Premium PDF - Quick update: ${category}`;
+    if (type === "Jornada de trabajo") return `Premium PDF - Workday brief: ${category}`;
+    if (type === "Reporte dashboard") return `Premium PDF - Executive dashboard: ${category}`;
+    return `Premium PDF - Narrative report: ${category}`;
   }
-  if (type === "Resumen ejecutivo") return `Resumen ejecutivo: ${category}`;
-  if (type === "Álbum experiencial") return `Álbum experiencial: ${category}`;
-  if (type === "Guion de story/reel") return `Guion de story/reel: ${category}`;
-  if (type === "Publicación social rápida") return `Publicación rápida: ${category}`;
-  if (type === "Jornada de trabajo") return `Resumen de jornada: ${category}`;
-  if (type === "Reporte dashboard") return `Dashboard ejecutivo: ${category}`;
-  return `Reporte narrativo: ${category}`;
+  if (type === "Resumen ejecutivo") return `PDF revista premium - Resumen ejecutivo: ${category}`;
+  if (type === "Álbum experiencial") return `PDF revista premium - Álbum experiencial: ${category}`;
+  if (type === "Guion de story/reel") return `PDF revista premium - Guion de story/reel: ${category}`;
+  if (type === "Publicación social rápida") return `PDF revista premium - Publicación rápida: ${category}`;
+  if (type === "Jornada de trabajo") return `PDF revista premium - Resumen de jornada: ${category}`;
+  if (type === "Reporte dashboard") return `PDF revista premium - Dashboard ejecutivo: ${category}`;
+  return `PDF revista premium - Reporte narrativo: ${category}`;
 }
 
 function buildPublicationSummary(experiences, analysis, category, avgEnergy) {
@@ -23130,21 +23213,21 @@ function buildPublicationSummary(experiences, analysis, category, avgEnergy) {
 
 function buildPublicationPurpose(type, channel) {
   if (state.language !== "es") {
-    if (type === "Álbum experiencial") return `Living memory for ${channel}: places, people, media, and key moments.`;
-    if (type === "Guion de story/reel") return `Short visual sequence for ${channel}: hook, moments, and closing line.`;
-    if (type === "Publicación social rápida") return `Shareable update for ${channel}: concise story with selected media.`;
-    if (type === "Resumen ejecutivo") return `Clear brief for ${channel}: what happened, what matters, and what follows.`;
-    if (type === "Jornada de trabajo") return `Workday brief for ${channel}: agreements, decisions, pending items, and evidence.`;
-    if (type === "Reporte dashboard") return `Visual dashboard for ${channel}: KPIs, charts, evidence, and action-ready recommendations.`;
-    return `Narrative piece for ${channel}: context, highlights, evidence, and final memory.`;
+    if (type === "Álbum experiencial") return "Living memory in premium PDF: places, people, media, and key moments.";
+    if (type === "Guion de story/reel") return "Visual sequence in premium PDF: hook, moments, and closing line.";
+    if (type === "Publicación social rápida") return "Shareable update in premium PDF: concise story with selected media.";
+    if (type === "Resumen ejecutivo") return "Clear premium PDF brief: what happened, what matters, and what follows.";
+    if (type === "Jornada de trabajo") return "Workday premium PDF: agreements, decisions, pending items, and evidence.";
+    if (type === "Reporte dashboard") return "Visual premium PDF dashboard: KPIs, charts, evidence, and action-ready recommendations.";
+    return "Narrative premium PDF: context, chronological events, evidence, and final memory.";
   }
-  if (type === "Álbum experiencial") return `Memoria vivida para ${channel}: lugares, personas, multimedia y momentos clave.`;
-  if (type === "Guion de story/reel") return `Secuencia visual breve para ${channel}: gancho, momentos y cierre.`;
-  if (type === "Publicación social rápida") return `Actualización compartible para ${channel}: historia corta con multimedia seleccionada.`;
-  if (type === "Resumen ejecutivo") return `Resumen claro para ${channel}: qué pasó, por qué importa y qué sigue.`;
-  if (type === "Jornada de trabajo") return `Resumen laboral para ${channel}: acuerdos, decisiones, pendientes y evidencia.`;
-  if (type === "Reporte dashboard") return `Dashboard visual para ${channel}: KPIs, cuadros, evidencia y recomendaciones accionables.`;
-  return `Pieza narrativa para ${channel}: contexto, momentos, evidencia y memoria final.`;
+  if (type === "Álbum experiencial") return "Memoria vivida en PDF premium: lugares, personas, multimedia y momentos clave.";
+  if (type === "Guion de story/reel") return "Secuencia visual en PDF premium: gancho, momentos y cierre.";
+  if (type === "Publicación social rápida") return "Actualización compartible en PDF premium: historia corta con multimedia seleccionada.";
+  if (type === "Resumen ejecutivo") return "Resumen claro en PDF premium: qué pasó, por qué importa y qué sigue.";
+  if (type === "Jornada de trabajo") return "Resumen laboral en PDF premium: acuerdos, decisiones, pendientes y evidencia.";
+  if (type === "Reporte dashboard") return "Dashboard visual en PDF premium: KPIs, cuadros, evidencia y recomendaciones accionables.";
+  return "Pieza narrativa en PDF premium: contexto, eventos cronológicos, evidencia y memoria final.";
 }
 
 function buildPublicationBodyLegacy({ title, type, style, channel, experiences, analysis, mediaCount, category, avgEnergy, highlights, media }) {
@@ -23194,8 +23277,8 @@ function buildPublicationBody({ title, type, style, channel, experiences, analys
   const dateRange = formatPublicationDateRange(experiences);
   const interpretation = buildPublicationInterpretationSummary(media);
   const intro = state.language !== "es"
-     ? `This piece turns ${experiences.length} experience(s) from ${dateRange} into a readable story for ${channel}. The focus is ${category}, with ${mediaCount} selected media item(s).`
-    : `Esta pieza convierte ${experiences.length} experiencia(s) de ${dateRange} en una historia legible para ${channel}. El foco es ${category}, con ${mediaCount} elemento(s) multimedia seleccionados.`;
+     ? `This premium PDF turns ${experiences.length} experience(s) from ${dateRange} into a chronological, readable story. The focus is ${category}, with ${mediaCount} selected media item(s).`
+    : `Este PDF premium convierte ${experiences.length} experiencia(s) de ${dateRange} en una historia cronológica y legible. El foco es ${category}, con ${mediaCount} elemento(s) multimedia seleccionados.`;
   const narrative = state.language !== "es"
      ? `${analysis.focus} Average energy was ${avgEnergy}/10. The value of the publication is not to copy every record, but to explain what happened, what changed, and why the selected moments matter.`
     : `${analysis.focus} La energia media fue ${avgEnergy}/10. El valor de la publicacion no es copiar cada registro, sino explicar que paso, que cambio y por que importan los momentos seleccionados.`;
@@ -23479,10 +23562,10 @@ function setInsightsProgress({ title = "", detail = "", percent = 0, stateName =
 }
 
 function renderPublicationQuickStart() {
-  const title = state.language !== "es" ? "Start with one clear output" : "Empieza con una salida clara";
+  const title = state.language !== "es" ? "Start with one premium PDF" : "Empieza con un PDF premium";
   const help = state.language !== "es"
-     ? "Pick the closest result. Vibe applies the format, channel, style, and source automatically; you can adjust details later."
-    : "Elige el resultado mas cercano. Vibe aplica formato, canal, estilo y fuente automaticamente; luego puedes ajustar detalles.";
+     ? "Pick the closest structure. Vibe generates one chronological premium PDF with notes, images, videos, documents, and measurements."
+    : "Elige la estructura mas cercana. Vibe genera un solo PDF premium cronologico con notas, imagenes, videos, documentos y mediciones.";
   const featured = publicationQuickStarts.filter((item) => ["travel-memory", "workday-summary", "dashboard-report", "pdf-dossier"].includes(item.id));
   return `
     <section class="publication-quick-panel">
@@ -23502,7 +23585,7 @@ function renderPublicationQuickStart() {
             <button type="button" data-publication-quick="${escapeHtml(item.id)}">
               <strong>${escapeHtml(label)}</strong>
               <span>${escapeHtml(detail)}</span>
-              <small>${escapeHtml(`${displayPublicationType(template.type)} · ${displayPublicationStyle(template.style)} · ${template.channel}`)}</small>
+              <small>${escapeHtml(`${displayPublicationType(template.type)} · ${displayPublicationStyle(template.style)} · ${PUBLICATION_OUTPUT_CHANNEL}`)}</small>
             </button>
           `;
         }).join("")}
@@ -23510,8 +23593,8 @@ function renderPublicationQuickStart() {
     </section>
     <details class="user-advanced-drawer publication-action-drawer">
       <summary>
-        <span>${escapeHtml(state.language !== "es" ? "More formats" : "Mas formatos")}</span>
-        <small>${escapeHtml(state.language !== "es" ? "Use only when the recommended options do not fit." : "Usalo solo si las opciones recomendadas no encajan.")}</small>
+        <span>${escapeHtml(state.language !== "es" ? "More PDF structures" : "Mas estructuras PDF")}</span>
+        <small>${escapeHtml(state.language !== "es" ? "All options export to the same premium PDF output." : "Todas las opciones exportan la misma salida PDF premium.")}</small>
       </summary>
       ${renderPublicationChannelFormatPicker()}
     </details>
@@ -23519,10 +23602,10 @@ function renderPublicationQuickStart() {
 }
 
 function renderPublicationChannelFormatPicker() {
-  const title = state.language !== "es" ? "Choose a format by channel" : "Elegir formato por canal";
+  const title = state.language !== "es" ? "Choose a PDF structure" : "Elegir estructura del PDF";
   const help = state.language !== "es"
-     ? "Start from the channel first. Each option applies the format, style, and channel before you generate or regenerate the publication."
-    : "Empieza por el canal. Cada opcion aplica formato, estilo y canal antes de generar o regenerar la publicacion.";
+     ? "These are editorial structures only. The final output is always a chronological premium PDF."
+    : "Estas son estructuras editoriales. La salida final siempre es un PDF premium cronologico.";
   return `
     <section class="publication-format-picker">
       <div class="publication-section-heading">
@@ -23530,7 +23613,7 @@ function renderPublicationChannelFormatPicker() {
           <h3>${escapeHtml(title)}</h3>
           <p class="card-meta">${escapeHtml(help)}</p>
         </div>
-        <span>${escapeHtml(state.language !== "es" ? "By channel" : "Por canal")}</span>
+        <span>${escapeHtml(PUBLICATION_OUTPUT_CHANNEL)}</span>
       </div>
       <div class="publication-format-channel-grid">
         ${publicationChannelFormatPicker.map((group) => {
@@ -23539,7 +23622,7 @@ function renderPublicationChannelFormatPicker() {
             .filter(Boolean);
           return `
             <article>
-              <strong>${escapeHtml(group.channel)}</strong>
+              <strong>${escapeHtml(PUBLICATION_OUTPUT_CHANNEL)}</strong>
               <div>
                 ${templates.map((template) => `
                   <button type="button" data-publication-format-template="${escapeHtml(template.id)}">
@@ -23584,12 +23667,12 @@ function renderPublicationScopeRecommendation() {
       <div class="publication-recommendation-grid">
         <article><span>${escapeHtml(state.language !== "es" ? "Scope" : "Alcance")}</span><b>${recommendation.experiences.length}</b><small>${escapeHtml(state.language !== "es" ? "experiences" : "experiencias")}</small></article>
         <article><span>${escapeHtml(state.language !== "es" ? "Media" : "Multimedia")}</span><b>${recommendation.media.length}</b><small>${escapeHtml(mediaLabel)}</small></article>
-        <article><span>${escapeHtml(state.language !== "es" ? "Format" : "Formato")}</span><b>${escapeHtml(displayPublicationType(recommendation.type))}</b><small>${escapeHtml(displayPublicationStyle(recommendation.style))} · ${escapeHtml(recommendation.channel)}</small></article>
+        <article><span>${escapeHtml(state.language !== "es" ? "Format" : "Formato")}</span><b>${escapeHtml(displayPublicationType(recommendation.type))}</b><small>${escapeHtml(displayPublicationStyle(recommendation.style))} · ${escapeHtml(PUBLICATION_OUTPUT_CHANNEL)}</small></article>
       </div>
       <button class="ghost-button" type="button"
         data-publication-recommend-type="${escapeHtml(recommendation.type)}"
         data-publication-recommend-style="${escapeHtml(recommendation.style)}"
-        data-publication-recommend-channel="${escapeHtml(recommendation.channel)}">
+        data-publication-recommend-channel="${escapeHtml(PUBLICATION_OUTPUT_CHANNEL)}">
         ${escapeHtml(state.language !== "es" ? "Apply recommendation" : "Aplicar recomendación")}
       </button>
     </section>
@@ -23601,7 +23684,7 @@ function handlePublicationRecommendationClick(event) {
   if (!button) return;
   document.getElementById("publicationTypeInput").value = button.dataset.publicationRecommendType || "Reporte narrativo";
   document.getElementById("publicationStyleInput").value = button.dataset.publicationRecommendStyle || "Revista Premium";
-  document.getElementById("publicationChannelInput").value = button.dataset.publicationRecommendChannel || "PDF/HTML";
+  document.getElementById("publicationChannelInput").value = PUBLICATION_OUTPUT_CHANNEL;
   updatePublicationTypeHelp();
   renderPublications();
   document.getElementById("publicationStatus").textContent = state.language !== "es"
@@ -23617,7 +23700,7 @@ function applyPublicationTemplateToInputs(template = {}, source = "report") {
   const sourceInput = document.getElementById("publicationSourceInput");
   if (typeInput) typeInput.value = template.type || typeInput.value;
   if (styleInput) styleInput.value = template.style || styleInput.value;
-  if (channelInput) channelInput.value = template.channel || channelInput.value;
+  if (channelInput) channelInput.value = PUBLICATION_OUTPUT_CHANNEL;
   if (sourceInput) sourceInput.value = source || "report";
   updatePublicationTypeHelp();
   return true;
@@ -23665,7 +23748,7 @@ function renderPublicationPreview(draft) {
       <div class="publication-body">
         <div class="pill-row">
           <span class="pill">${escapeHtml(displayPublicationStyle(draft.style))}</span>
-          <span class="pill">${escapeHtml(draft.channel)}</span>
+          <span class="pill">${escapeHtml(PUBLICATION_OUTPUT_CHANNEL)}</span>
           <span class="pill ${draft.approvalStatus === "approved" ? "pill-approved" : "pill-review"}">${escapeHtml(displayPublicationApprovalStatus(draft.approvalStatus))}</span>
           ${draft.privacy ? `<span class="pill">${escapeHtml(t("labels.publicationPrivacyApplied"))}</span>` : ""}
         </div>
@@ -23687,8 +23770,6 @@ function renderPublicationPreview(draft) {
           ${renderPublicationUseGuide(draft)}
           ${renderPublicationTemplateGallery(draft)}
           ${renderPublicationPageEditor(draft)}
-          ${renderPublicationChannelStudio(draft)}
-          ${renderPublicationDistributionKit(draft)}
           ${renderPublicationExportGuide(draft)}
           ${renderPublicationReadiness(draft)}
           ${renderPublicationClosureChecklist(draft)}
@@ -23831,7 +23912,7 @@ function renderPublicationChannelStudio(draft) {
     <section class="publication-channel-studio">
       <div class="publication-section-heading">
         <div>
-          <h3>${escapeHtml(state.language !== "es" ? "Channel publication studio" : "Estudio de publicación por canal")}</h3>
+          <h3>${escapeHtml(state.language !== "es" ? "Premium PDF studio" : "Estudio del PDF premium")}</h3>
           <p class="card-meta">${escapeHtml(state.language !== "es" ? "A practical guide for deciding what this piece is, what media it uses, and how it should leave the app." : "Guía práctica para decidir qué pieza estás creando, qué multimedia usa y cómo debe salir de la app.")}</p>
         </div>
         <span>${escapeHtml(studio.channel)}</span>
@@ -23936,7 +24017,7 @@ function renderPublicationExportGuide(draft) {
       </div>
       ${renderPublicationChannelMatrix(draft)}
       <p class="card-meta">${escapeHtml(getPublicationFormatHelpText())}</p>
-      <p class="card-meta">${escapeHtml(state.language !== "es" ? "Direct posting to Facebook and Instagram is planned for a later connector. For now, use Prepare channel, review, and paste." : "La publicación directa en Facebook e Instagram queda para un conector futuro. Por ahora usa Preparar canal, revisa y pega.")}</p>
+      <p class="card-meta">${escapeHtml(state.language !== "es" ? "Vibe now creates the premium PDF only. Adapt or distribute it later in your preferred external tool." : "Vibe ahora crea solo el PDF premium. Adáptalo o distribúyelo después en la herramienta externa que prefieras.")}</p>
     </section>
   `;
 }
@@ -23996,7 +24077,7 @@ function renderPublicationDistributionKit(draft) {
     <section class="publication-distribution-kit">
       <div class="publication-section-heading">
         <div>
-          <h3>${escapeHtml(state.language !== "es" ? "3. Channel distribution kit" : "3. Kit de salida por canal")}</h3>
+          <h3>${escapeHtml(state.language !== "es" ? "3. Premium PDF package" : "3. Paquete PDF premium")}</h3>
           <p class="card-meta">${escapeHtml(kit.brief)}</p>
         </div>
         <span>${escapeHtml(draft.channel || "Canal")}</span>
@@ -24382,8 +24463,8 @@ function buildPublicationChannelChecklist(draft, profile, media) {
 
 function getPublicationFormatHelpText() {
   return state.language !== "es"
-     ? "Format guide: PDF is for reading, printing, or sending. HTML keeps the visual layout. Markdown is easy to edit in notes or documents. JSON is a technical backup for Admin."
-    : "Guía de formatos: PDF es para leer, imprimir o enviar. HTML conserva el diseño visual. Markdown es fácil de editar en notas o documentos. JSON es un respaldo técnico para Administración.";
+     ? "The final publication output is a premium chronological PDF. Use other tools later if you want to adapt the PDF to social channels."
+    : "La salida final de Publicaciones es un PDF premium cronológico. Usa otras herramientas después si quieres adaptarlo a canales sociales.";
 }
 
 function getPublicationChannelStatus(channel) {
@@ -24395,7 +24476,7 @@ function getPublicationChannelStatus(channel) {
         instagram: "Not automatic yet: the app prepares and copies the content. You paste it into Instagram.",
         linkedin: "Not automatic yet: the app prepares and copies the content. You paste it into LinkedIn.",
         blog: "Ready as export: the app prepares HTML/Markdown/PDF so you can publish it in a blog or website.",
-        file: "Ready: the app downloads the publication as PDF or HTML.",
+        file: "Ready: the app downloads one premium chronological PDF.",
       }
     : {
         whatsapp: "Listo: la app abre WhatsApp con el texto preparado. Tú revisas y envías.",
@@ -24404,7 +24485,7 @@ function getPublicationChannelStatus(channel) {
         instagram: "Aún no es automático: la app prepara y copia el contenido. Tú lo pegas en Instagram.",
         linkedin: "Aún no es automático: la app prepara y copia el contenido. Tú lo pegas en LinkedIn.",
         blog: "Listo como exportación: la app prepara HTML/Markdown/PDF para publicarlo en un blog o sitio web.",
-        file: "Listo: la app descarga la publicación como PDF o HTML.",
+        file: "Listo: la app descarga un único PDF premium cronológico.",
       };
   if (channel === "WhatsApp") return { level: "assisted", detail: labels.whatsapp };
   if (channel === "Email") return { level: "assisted", detail: labels.email };
@@ -24885,13 +24966,14 @@ function getPublicationWordLimit(channel) {
     LinkedIn: 300,
     Email: 420,
     "PDF/HTML": 650,
+    "PDF revista premium": 1200,
     "Blog/Web": 900,
   };
   return limits[channel] || 280;
 }
 
 function channelBenefitsFromMedia(channel) {
-  return ["Instagram", "Facebook", "LinkedIn", "PDF/HTML", "Blog/Web"].includes(channel);
+  return ["Instagram", "Facebook", "LinkedIn", "PDF/HTML", "PDF revista premium", "Blog/Web"].includes(channel);
 }
 
 function scorePublicationChannelFit(draft, words, includedMedia) {
@@ -24935,7 +25017,7 @@ function buildPublicationSuggestions({ draft, words, includedMedia, totalMedia, 
            : "Selecciona los activos multimedia más fuertes para que la publicación no dependa solo del texto."
         : state.language !== "es"
            ? "Add media to the source experiences when the channel needs a more visual piece."
-          : "Agrega multimedia a las experiencias fuente cuando el canal necesite una pieza más visual.",
+          : "Agrega multimedia a las experiencias fuente cuando el PDF necesite una pieza más visual.",
     );
   }
   if (channelScore.score < 75 || readability.score < 75) {
@@ -25212,15 +25294,15 @@ function handlePublicationTemplateClick(event) {
   draft.templateId = template.id;
   draft.type = template.type;
   draft.style = template.style;
-  draft.channel = template.channel;
+  draft.channel = PUBLICATION_OUTPUT_CHANNEL;
   draft.approvalStatus = "review";
   draft.approvedAt = "";
-  addPublicationHistory(draft, "template", `${displayPublicationType(template.type)} · ${displayPublicationStyle(template.style)} · ${template.channel}`);
+  addPublicationHistory(draft, "template", `${displayPublicationType(template.type)} · ${displayPublicationStyle(template.style)} · ${PUBLICATION_OUTPUT_CHANNEL}`);
   state.currentPublicationDraft = draft;
   state.publicationDrafts = state.publicationDrafts.map((item) => (item.id === draft.id ? draft : item));
   document.getElementById("publicationTypeInput").value = template.type;
   document.getElementById("publicationStyleInput").value = template.style;
-  document.getElementById("publicationChannelInput").value = template.channel;
+  document.getElementById("publicationChannelInput").value = PUBLICATION_OUTPUT_CHANNEL;
   draft.body = applyPublicationTemplateStructure(draft, template);
   draft.media = refreshPublicationMediaRoles(draft.media || [], draft);
   draft.pages = syncPublicationPagesWithMedia(draft);
@@ -25486,8 +25568,8 @@ function buildPublicationHtml(draft) {
   const deliverablesText = (kit.deliverables || [])
     .map((row) => `${row.label}: ${row.value}. ${row.detail}`)
     .join("\n");
-  const studioHtml = `<section class="publication-export-page"><p class="meta">${escapeHtml(state.language !== "es" ? "Channel publication studio" : "Estudio de publicacion por canal")}</p><h2>${escapeHtml(studio.format)}</h2><p>${escapeHtml(studio.outputAction)}</p><pre>${escapeHtml(`${studio.mediaDecision}\n\n${studio.editorFocus}\n\n${studio.checklist.join("\n")}`)}</pre></section>`;
-  const kitHtml = `<section class="publication-export-page"><p class="meta">${escapeHtml(state.language !== "es" ? "Channel distribution kit" : "Kit de salida por canal")}</p><h2>${escapeHtml(kit.format)}</h2><p>${escapeHtml(kit.brief)}</p><pre>${escapeHtml(`${deliverablesText}\n\n${kit.subject}\n\n${kit.shortCopy}\n\n${kit.longCopy}`)}</pre></section>`;
+  const studioHtml = `<section class="publication-export-page"><p class="meta">${escapeHtml(state.language !== "es" ? "Premium PDF studio" : "Estudio del PDF premium")}</p><h2>${escapeHtml(studio.format)}</h2><p>${escapeHtml(studio.outputAction)}</p><pre>${escapeHtml(`${studio.mediaDecision}\n\n${studio.editorFocus}\n\n${studio.checklist.join("\n")}`)}</pre></section>`;
+  const kitHtml = `<section class="publication-export-page"><p class="meta">${escapeHtml(state.language !== "es" ? "Premium PDF package" : "Paquete PDF premium")}</p><h2>${escapeHtml(kit.format)}</h2><p>${escapeHtml(kit.brief)}</p><pre>${escapeHtml(`${deliverablesText}\n\n${kit.subject}\n\n${kit.shortCopy}\n\n${kit.longCopy}`)}</pre></section>`;
   const mediaHtml = approvedMedia.length
      ? `<section><h2>${escapeHtml(t("labels.publicationMedia"))}</h2><div class="media">${approvedMedia
         .map((item) =>
@@ -25645,7 +25727,7 @@ function buildPublicationMarkdown(draft) {
 
 ${draft.summary}
 
-## ${state.language !== "es" ? "Channel publication studio" : "Estudio de publicacion por canal"}
+## ${state.language !== "es" ? "Premium PDF studio" : "Estudio del PDF premium"}
 
 - ${state.language !== "es" ? "Recommended format" : "Formato recomendado"}: ${studio.format}
 - ${state.language !== "es" ? "Media decision" : "Decision multimedia"}: ${studio.mediaDecision}
@@ -25656,7 +25738,7 @@ ${draft.summary}
 
 ${(kit.deliverables || []).map((row) => `- ${row.label}: ${row.value}. ${row.detail}`).join("\n")}
 
-## ${state.language !== "es" ? "Channel distribution kit" : "Kit de salida por canal"}
+## ${state.language !== "es" ? "Premium PDF package" : "Paquete PDF premium"}
 
 - ${state.language !== "es" ? "Format" : "Formato"}: ${kit.format}
 - ${state.language !== "es" ? "Action" : "Accion"}: ${kit.action}
@@ -29890,13 +29972,13 @@ function renderAdminOperationalFocusPanel() {
         outputScopeContext: "Output scope context",
         outputScopeContextDetail: "Reports, Findings, and Publications now show the exact scope used by that output before the user reads, downloads, or shares it.",
         reportPdf: "Cleaner reports, publications, and findings",
-        reportPdfDetail: "Reports now use an executive PDF, participant scope, and folded technical exports. Publications recommend type/style/channel from the selected scope, explain format fit, edited text, media actions, and apply recommended editorial roles for images, audio, video, documents, biometrics, and ZIP files. Findings are organized by 8 human themes and can be downloaded.",
-        publicationStudio: "Publication channel studio",
-        publicationStudioDetail: "Publication drafts now show the channel decision layer. Before generating, the Channel playbook explains audience, rhythm, output, and one-click recipes; after generating, deliverables and the studio carry that decision into the ReportLab payload.",
+        reportPdfDetail: "Reports now use an executive PDF, participant scope, and folded technical exports. Publications now generate one premium chronological PDF with selected notes, images, videos, documents, biometric context, and ZIP references. Findings are organized by 8 human themes and can be downloaded.",
+        publicationStudio: "Premium publication PDF",
+        publicationStudioDetail: "Publications no longer ask the user to choose channels. The user chooses a publication type and Vibe builds one chronological ReportLab PDF for later editing or distribution in external tools.",
         publicationQuickStart: "Publication quick start",
-        publicationQuickStartDetail: "Publications now has one-click starts for WhatsApp, trip album, health share, email, LinkedIn learning, and PDF dossier. Each option applies type, style, channel, source, and editorial recipe before generating the draft.",
-        publicationChannelPicker: "Channel-first publication picker",
-        publicationChannelPickerDetail: "Publications now lets the user choose a format from the channel first: WhatsApp, Instagram, Facebook, LinkedIn, Email, PDF/HTML, and Blog/Web each expose recommended structures before draft generation.",
+        publicationQuickStartDetail: "Publications now has one-click starts for trip album, health share, workday summary, dashboard report, and PDF dossier. Each option applies type, style, source, and editorial recipe before generating the premium PDF draft.",
+        publicationChannelPicker: "Premium PDF structures",
+        publicationChannelPickerDetail: "Publications now offers editorial structures only; the final output is always the same premium chronological PDF.",
         publicationLiveEditor: "Publication editor tied to export",
         publicationLiveEditorDetail: "Editing title, summary, or body now updates the visible pages, final document, Markdown, package, and ReportLab payload; page-level edits remain protected as manual edits.",
         publicationProgress: "Publication generation progress",
@@ -29973,13 +30055,13 @@ function renderAdminOperationalFocusPanel() {
     labels.outputScopeContext = "Contexto de alcance por salida";
     labels.outputScopeContextDetail = "Reportes, Hallazgos y Publicaciones muestran el alcance exacto usado antes de leer, descargar o compartir la salida.";
     labels.reportPdf = "Reportes, publicaciones y hallazgos limpios";
-    labels.reportPdfDetail = "Reportes usa PDF ejecutivo, alcance por persona y exportaciones técnicas plegadas. Publicaciones recomienda tipo/estilo/canal desde el alcance seleccionado y suma matriz por canal: carrusel, carta/email, dossier, ficha de salud, blog/web, LinkedIn y PDF/HTML, con curaduria recomendada por rol editorial para imagenes, audio, video, documentos, biometria y ZIP. Hallazgos se organiza en 8 ejes humanos y se puede descargar.";
-    labels.publicationStudio = "Estudio de publicaci\u00f3n por canal";
-    labels.publicationStudioDetail = "Publicaciones ahora muestra una capa de decisi\u00f3n por canal. Antes de generar, el Playbook explica audiencia, ritmo, salida y recetas aplicables; despu\u00e9s de generar, Entregables y Estudio llevan esa decisi\u00f3n al payload del PDF ReportLab.";
+    labels.reportPdfDetail = "Reportes usa PDF ejecutivo, alcance por persona y exportaciones técnicas plegadas. Publicaciones genera un unico PDF premium cronologico con notas, imagenes, videos, documentos, contexto biometrico y referencias ZIP seleccionadas. Hallazgos se organiza en 8 ejes humanos y se puede descargar.";
+    labels.publicationStudio = "PDF premium de publicaciones";
+    labels.publicationStudioDetail = "Publicaciones ya no pide escoger canales. El usuario elige tipo de publicacion y Vibe construye un PDF ReportLab cronologico para editar o distribuir despues en herramientas externas.";
     labels.publicationQuickStart = "Arranque rapido de publicaciones";
-    labels.publicationQuickStartDetail = "Publicaciones ahora tiene arranques de un clic para WhatsApp, viaje/album, salud, email, LinkedIn aprendizaje y dossier PDF. Cada opcion aplica tipo, estilo, canal, fuente y receta editorial antes de generar el borrador.";
-    labels.publicationChannelPicker = "Selector de publicacion por canal";
-    labels.publicationChannelPickerDetail = "Publicaciones permite elegir el formato desde el canal primero: WhatsApp, Instagram, Facebook, LinkedIn, Email, PDF/HTML y Blog/Web muestran estructuras recomendadas antes de generar.";
+    labels.publicationQuickStartDetail = "Publicaciones ahora tiene arranques de un clic para viaje/album, salud, jornada de trabajo, reporte dashboard y dossier PDF. Cada opcion aplica tipo, estilo, fuente y receta editorial antes de generar el borrador premium.";
+    labels.publicationChannelPicker = "Estructuras PDF premium";
+    labels.publicationChannelPickerDetail = "Publicaciones permite elegir una estructura editorial; la salida final siempre es un PDF premium cronologico.";
     labels.publicationLiveEditor = "Editor conectado a la exportacion";
     labels.publicationLiveEditorDetail = "Editar titulo, resumen o cuerpo actualiza paginas visibles, documento final, Markdown, paquete y payload ReportLab; las paginas editadas manualmente quedan protegidas.";
     labels.publicationProgress = "Progreso de generacion de publicaciones";
@@ -31456,8 +31538,8 @@ function renderAdminUnsafe() {
       state.language !== "es" ? "Publication closure" : "Cierre de publicaciones",
       okStatus,
       state.language !== "es"
-         ? "Pre-publication checklist for approval, privacy, media, channel fit, and export readiness"
-        : "Lista prepublicación para aprobación, privacidad, multimedia, ajuste al canal y preparación de exportación",
+         ? "Pre-publication checklist for approval, privacy, media, PDF fit, and export readiness"
+        : "Lista prepublicación para aprobación, privacidad, multimedia, ajuste del PDF y preparación de exportación",
     ],
     [
       state.language !== "es" ? "Daily interactive modules" : "Módulos interactivos del Diario",
@@ -34588,7 +34670,7 @@ function buildParallelBacklog() {
       agendaDetail: "Primer MVP activo: calendario visual diario/semanal, eventos locales, estados, conflictos, días bloqueados, importación/exportación .ics y conversión de evento en experiencia.",
       agendaAction: "Abrir Agenda",
       publicationTitle: "Publicaciones Inteligentes",
-      publicationDetail: "MVP activo: aprobación humana, diseños visuales, editor de borradores, documento final, curaduría multimedia, kit de salida por canal, cierre prepublicación, paquete editorial y exportación HTML/Markdown/PDF.",
+      publicationDetail: "Operativo: aprobación humana, estructuras visuales, editor de borradores, documento final, curaduría multimedia, cronología completa y PDF revista premium.",
       publicationAction: "Abrir Publicaciones",
     },
     en: {
@@ -34642,7 +34724,7 @@ function buildParallelBacklog() {
       agendaDetail: "First MVP active: visual day/week calendar, local events, states, conflicts, blocked days, .ics import/export, and event-to-experience conversion.",
       agendaAction: "Open Agenda",
       publicationTitle: "Intelligent Publications",
-      publicationDetail: "Active MVP: human approval, visual designs, draft editor, final document, media curation, channel distribution kit, pre-publication closure, editorial package, and HTML/Markdown/PDF export.",
+      publicationDetail: "Operational: human approval, visual structures, draft editor, final document, media curation, complete timeline, and premium magazine-style PDF.",
       publicationAction: "Open Publications",
     },
   }[state.language] || {};
@@ -35753,3 +35835,4 @@ function toDatetimeLocal(value) {
   const offset = date.getTimezoneOffset() * 60000;
   return new Date(date.getTime() - offset).toISOString().slice(0, 16);
 }
+

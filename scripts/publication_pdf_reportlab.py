@@ -524,7 +524,7 @@ def media_gallery(media):
     images = [item for item in media if str(item.get("type") or "").startswith("image/") and item.get("included", True) is not False]
     non_images = [item for item in media if item not in images and item.get("included", True) is not False]
     rendered = 0
-    for item in images[:4]:
+    for item in images[:12]:
         image = image_flowable_from_media(item)
         if image:
             flow.append(KeepTogether([
@@ -541,7 +541,7 @@ def media_gallery(media):
         flow.append(Spacer(1, 8))
     if non_images:
         flow.append(Spacer(1, 4))
-        for item in non_images[:5]:
+        for item in non_images[:18]:
             body = item.get("manualNote") or item.get("analyticalText") or item.get("translatedText") or item.get("experienceTitle") or "Disponible para revisar."
             flow.append(KeepTogether([
                 text_card(
@@ -553,6 +553,85 @@ def media_gallery(media):
             ]))
     if not media:
         flow.append(text_card("Multimedia", "No hay multimedia seleccionada para esta publicación.", colors.HexColor("#f2b84b")))
+    return flow
+
+
+def timeline_items_from_draft(draft, highlights):
+    items = draft.get("timeline") or []
+    if items:
+        return sorted(items, key=lambda item: str(item.get("date") or ""))
+    fallback = []
+    for index, item in enumerate(highlights or [], 1):
+        fallback.append({
+            "order": index,
+            "title": item.get("title") or "Momento",
+            "date": item.get("date") or "",
+            "category": item.get("category") or "",
+            "location": item.get("location") or "",
+            "note": item.get("note") or "",
+            "energy": item.get("energy"),
+            "mediaSummary": [],
+        })
+    return sorted(fallback, key=lambda item: str(item.get("date") or ""))
+
+
+def format_timeline_date(value):
+    text = str(value or "").strip()
+    if not text:
+        return "-"
+    return text[:16].replace("T", " ")
+
+
+def timeline_card(item, media_lookup):
+    title = clean_html(item.get("title") or "Momento registrado")
+    date = format_timeline_date(item.get("date"))
+    category = clean_html(item.get("category") or "")
+    location = clean_html(item.get("location") or "")
+    note = clean_html(item.get("note") or item.get("objective") or "")
+    energy = item.get("energy")
+    media_ids = item.get("mediaIds") or []
+    media_rows = []
+    for media_id in media_ids[:8]:
+        asset = media_lookup.get(media_id)
+        if not asset:
+            continue
+        kind = human_kind(asset)
+        name = clean_html(asset.get("name") or friendly_media_name(asset))
+        reading = clean_html(asset.get("translatedText") or asset.get("analyticalText") or asset.get("manualNote") or asset.get("originalText") or "")
+        media_rows.append(f"{kind}: {name}. {short(reading, 150) if reading else media_action_note(asset)}")
+    for raw in item.get("mediaSummary") or []:
+        if len(media_rows) >= 8:
+            break
+        media_rows.append(f"{clean_html(raw.get('kind') or 'Activo')}: {clean_html(raw.get('name') or '')}. {short(raw.get('text') or '', 150)}")
+    event_lines = []
+    for event in item.get("internalEvents") or []:
+        event_title = clean_html(event.get("title") or "")
+        event_note = clean_html(event.get("note") or "")
+        if event_title or event_note:
+            event_lines.append(f"{event_title}: {event_note}".strip(": "))
+    body_parts = [
+        f"Fecha: {date}",
+        f"Categoria: {category}" if category else "",
+        f"Lugar: {location}" if location else "",
+        f"Energia percibida: {energy}/10" if energy not in (None, "", 0) else "",
+        f"Nota: {short(note, 260)}" if note else "",
+    ]
+    if event_lines:
+        body_parts.append("Eventos internos: " + " | ".join(event_lines[:4]))
+    if media_rows:
+        body_parts.append("Activos vinculados: " + " | ".join(media_rows))
+    return text_card(title, "\n".join([part for part in body_parts if part]), BLUE)
+
+
+def build_chronological_timeline_section(draft, highlights, media):
+    items = timeline_items_from_draft(draft, highlights)
+    media_lookup = {item.get("id"): item for item in media if item.get("id")}
+    flow = [section_heading("Cronologia completa", "Eventos, notas, mediciones y activos ordenados de inicio a fin.")]
+    if not items:
+        flow.append(text_card("Sin eventos", "No hay eventos cronologicos disponibles para esta publicacion.", GOLD))
+        return flow
+    for item in items:
+        flow.append(KeepTogether([timeline_card(item, media_lookup), Spacer(1, 8)]))
     return flow
 
 
@@ -756,7 +835,7 @@ def distribution_kit(draft, media, all_media):
         for item in deliverables[:6]
     ]
     return [
-        section_heading("Kit de salida por canal", f"{channel}: {format_name}. Accion: {action}."),
+        section_heading("Paquete PDF premium", f"{format_name}. Accion: {action}."),
         section_heading("Entregables del canal", "Que recibe el usuario, que puede copiar y que queda como revision manual.") if deliverable_rows else Spacer(1, 0),
         editorial_cards([
             (label, f"{value}. {detail}", colors.HexColor("#0d7c66") if index % 2 else GOLD)
@@ -1104,7 +1183,7 @@ def build_paged_publication(title, summary, draft, stats, highlights, all_media,
     first_image = next((item for item in media if str(item.get("type") or "").startswith("image/")), None)
     story_lines = editorial_story_from_draft(draft, summary, draft.get("body") or "")
     flow = [
-        hero(title, "Publicacion editada, narrada y lista para revision."),
+        hero(title, "PDF revista premium - memoria cronologica editada."),
         Spacer(1, 14),
     ]
     if first_image:
@@ -1116,12 +1195,12 @@ def build_paged_publication(title, summary, draft, stats, highlights, all_media,
             ("Enfoque", "\n".join(context_lines), GOLD),
             ("Resumen", summary, RUST),
             ("Material usado", media_selection_label(all_media, media), colors.HexColor("#0d7c66")),
-            ("Revision", "Pieza publica sin lenguaje tecnico ni inventario interno.", BLUE),
+            ("Salida", "PDF cronologico con notas, imagenes, videos, documentos y mediciones disponibles.", BLUE),
         ]),
         PageBreak(),
         *build_story_section(title, summary, story_lines),
         PageBreak(),
-        *build_moment_section(highlights),
+        *build_chronological_timeline_section(draft, highlights, media),
     ])
     if media:
         flow.extend([
