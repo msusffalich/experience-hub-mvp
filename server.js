@@ -3,7 +3,7 @@ import { readFile, mkdir, writeFile, unlink } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { inflateRawSync } from "node:zlib";
+import { gzipSync, inflateRawSync } from "node:zlib";
 import { createCipheriv, createDecipheriv, createHash, randomBytes, randomUUID } from "node:crypto";
 import { execFile, spawn } from "node:child_process";
 import { promisify } from "node:util";
@@ -234,7 +234,7 @@ const server = createServer(async (req, res) => {
       return;
     }
 
-    await serveStatic(res, url.pathname);
+    await serveStatic(req, res, url.pathname);
   } catch (error) {
     const errorMessage = formatHttpErrorMessage(error);
     sendJson(res, error.statusCode || 500, {
@@ -836,7 +836,7 @@ async function loadDotEnv() {
   }
 }
 
-async function serveStatic(res, pathname) {
+async function serveStatic(req, res, pathname) {
   if (pathname === "/applink/meta") {
     res.writeHead(200, {
       "Content-Type": "text/html; charset=utf-8",
@@ -859,11 +859,16 @@ async function serveStatic(res, pathname) {
     ? "application/json; charset=utf-8"
     : mimeTypes[ext] || "application/octet-stream";
   const content = await readFile(filePath);
+  const acceptsGzip = /\bgzip\b/.test(req.headers["accept-encoding"] || "");
+  const compressible = /^(text\/|application\/javascript|application\/json|application\/manifest\+json)/.test(contentType);
+  const body = acceptsGzip && compressible && content.length > 1024 ? gzipSync(content) : content;
   res.writeHead(200, {
     "Content-Type": contentType,
     "Cache-Control": "no-store",
+    "Content-Length": Buffer.byteLength(body),
+    ...(body !== content ? { "Content-Encoding": "gzip", "Vary": "Accept-Encoding" } : {}),
   });
-  res.end(content);
+  res.end(body);
 }
 
 function buildIntegrationContract() {
