@@ -1,4 +1,4 @@
-const APP_VERSION = "20260623-auto-impact-energy-655";
+const APP_VERSION = "20260624-vibeapp-contract-656";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";

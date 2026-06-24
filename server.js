@@ -3805,14 +3805,15 @@ function cleanProviderError(payload = {}, text = "") {
 
 async function proxyMobileOuraCollection(collection = "", searchParams = new URLSearchParams(), user = {}) {
   const normalizedCollection = String(collection || "").trim();
-  const allowed = new Set(["daily_readiness", "daily_sleep", "sleep"]);
+  const manifest = buildOuraConnectorManifest();
+  const allowed = new Set(manifest.dataTypes.map((item) => item.dataType));
   if (!allowed.has(normalizedCollection)) {
     throw new HttpError(404, "oura_collection_not_supported", {
       collection: normalizedCollection,
       allowed: [...allowed],
     });
   }
-  const dataTypeConfig = buildOuraConnectorManifest().dataTypes.find((item) => item.dataType === normalizedCollection);
+  const dataTypeConfig = manifest.dataTypes.find((item) => item.dataType === normalizedCollection);
   if (!dataTypeConfig) throw new HttpError(404, "oura_collection_not_configured");
   const storedTokens = await getStoredOuraTokens(user.id);
   if (!storedTokens?.access_token) {

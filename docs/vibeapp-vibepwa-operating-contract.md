@@ -1,6 +1,15 @@
 # Vibeapp / VibePWA Operating Contract
 
-Version: 2026-06-16
+Version: 2026-06-24
+
+Current native reference: Vibeapp iOS build `0.5.33+646`.
+
+Latest sync notes:
+
+- Vibeapp build 646 is installed on a physical iPhone and includes **Probar Arnes** in `Cuenta -> Asistente V`.
+- `GET /api/mobile/assistant/status` is the read-only diagnostic endpoint used by that button. It must require the user's Supabase bearer and must not spend LLM tokens.
+- Arnes key rotation was completed on 2026-06-19. VibePWA must never receive, store, or write that key in notes, USB files, or chat.
+- Android remains in standby until a real device is available.
 
 ## Product Roles
 
@@ -71,6 +80,27 @@ Supabase and the backend are the single source of truth. Both apps must converge
   - This is the endpoint Arnes should use for health context. It returns a privacy-limited summary and recent signal previews, not raw complete health exports.
 - `GET /api/mobile/oura/{collection}`
   - Server-side Oura proxy, when OAuth/token storage is active.
+  - Supported collections follow the backend Oura manifest, currently: `daily_readiness`, `daily_sleep`, `sleep`, `daily_activity`, `daily_stress`, `daily_resilience`, `daily_spo2`, `heartrate`, `workout`, `daily_cardiovascular_age`, `vo2_max`, and `ring_battery_level`.
+
+## Current Mobile Endpoint Matrix
+
+| Endpoint | Method | Auth | Current contract status |
+|---|---:|---|---|
+| `/api/config` | GET | Public | Available. Exposes safe runtime configuration only. |
+| `/api/health` | GET | Public | Available. Health/status endpoint. |
+| `/api/mobile/auth/sign-in` | POST | Email/password | Available. Returns Supabase access/refresh token for Vibeapp. |
+| `/api/mobile/assistant/message` | POST | Supabase bearer | Available. Routes to Arnes when enabled, otherwise `native-provider`. |
+| `/api/mobile/assistant/status` | GET | Supabase bearer | Available. Read-only Arnes diagnostic for Vibeapp build 646. |
+| `/api/mobile/ai/vision` | POST | Supabase bearer | Available. Backend-only provider key; returns `{ text }`. Legacy `/api/mobile/assistant/vision` remains accepted temporarily. |
+| `/api/mobile/ai/transcribe` | POST | Supabase bearer | Available. Multipart audio proxy; provider key remains backend-only. |
+| `/api/mobile/realtime/token` | POST | Supabase bearer | Available. Returns OpenAI Realtime ephemeral token and `wsUrl`; provider key remains backend-only. |
+| `/api/mobile/context/daily` | GET | Supabase bearer | Available. Requires `lat` and `lon`; returns mobile daily context. |
+| `/api/mobile/context/health-summary` | GET | Supabase bearer | Available. Privacy-limited summary of normalized health context already ingested. |
+| `/api/mobile/participants` | GET | Supabase bearer | Available. Returns active groups/persons for capture association. |
+| `/api/mobile/oura/{collection}` | GET | Supabase bearer | Available for Oura manifest collections when OAuth/token storage is active. |
+| `/api/integration/ingest` | POST | Supabase bearer | Available. Normalized external/mobile signal ingest. |
+| `/api/media` | POST | Supabase bearer | Available. Binary media upload path. |
+| `/api/experiences` | GET/POST | Supabase bearer | Available. Shared experience persistence. |
 
 ## Arnes Assistant Layer
 
