@@ -7652,7 +7652,12 @@ function applyLanguage() {
   manualReviewFilter.options[2].textContent = state.language !== "es" ? "Reviewed" : "Revisadas";
   document.getElementById("manualClearSearchButton").textContent = state.language !== "es" ? "Clear search" : "Limpiar búsqueda";
   document.getElementById("manualExportMarkdownButton").textContent = state.language !== "es" ? "Export Markdown" : "Exportar Markdown";
-  document.getElementById("manualExportPdfButton").textContent = state.language !== "es" ? "Download edited ReportLab PDF" : "Descargar PDF editado ReportLab";
+  document.getElementById("manualExportPdfButton").textContent = languageText(
+    "Descargar manual PDF",
+    "Download manual PDF",
+    "Télécharger le manuel PDF",
+    "Baixar manual PDF",
+  );
   document.getElementById("manualExportHtmlButton").textContent = state.language !== "es" ? "Printable HTML" : "HTML imprimible";
   document.getElementById("manualMarkAllButton").textContent = state.language !== "es" ? "Mark all" : "Marcar todo";
   document.getElementById("manualResetReviewButton").textContent = state.language !== "es" ? "Reset review" : "Reiniciar revisión";
@@ -28340,9 +28345,9 @@ function buildManualPrintableHtml() {
 
 async function exportManualPdf() {
   const html = buildManualPrintableHtml();
-  notify(state.language !== "es" ? "Generating edited manual PDF..." : "Generando PDF editado del manual...", "info");
+  notify(languageText("Generando manual PDF...", "Generating manual PDF...", "Génération du manuel PDF...", "Gerando manual PDF..."), "info");
   if (!state.apiOnline) {
-    notify(state.language !== "es" ? "PDF requires the API. No HTML fallback was downloaded." : "El PDF requiere la API. No se descargo HTML como sustituto.", "error");
+    notify(languageText("No se pudo generar el PDF porque el servidor no está disponible.", "The PDF could not be generated because the server is unavailable.", "Le PDF n'a pas pu être généré car le serveur n'est pas disponible.", "Nao foi possivel gerar o PDF porque o servidor nao esta disponivel."), "error");
     return;
   }
   try {
@@ -28353,11 +28358,11 @@ async function exportManualPdf() {
     });
     if (!response.ok) throw new Error(await response.text());
     downloadBlob(await response.blob(), "manual-vibe.pdf");
-    notify(state.language !== "es" ? "Edited manual PDF generated." : "PDF editado del manual generado.", "success");
+    notify(languageText("Manual PDF generado.", "Manual PDF generated.", "Manuel PDF généré.", "Manual PDF gerado."), "success");
   } catch (error) {
     console.warn("Manual PDF export failed", error);
     const detail = getExportErrorDetail(error);
-    notify(state.language !== "es" ? `ReportLab PDF failed. Detail: ${detail}` : `Fallo el PDF ReportLab. Detalle: ${detail}`, "error");
+    notify(languageText(`No se pudo generar el manual PDF. Detalle: ${detail}`, `Could not generate the manual PDF. Detail: ${detail}`, `Impossible de générer le manuel PDF. Détail: ${detail}`, `Nao foi possivel gerar o manual PDF. Detalhe: ${detail}`), "error");
   }
 }
 
