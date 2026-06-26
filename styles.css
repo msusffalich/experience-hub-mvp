@@ -4265,6 +4265,10 @@ button,
   background: #f8fafc;
 }
 
+.insight-axis-grid > .report-biometric-impact {
+  grid-column: 1 / -1;
+}
+
 .report-biometric-impact h3,
 .report-biometric-impact p {
   margin: 0;

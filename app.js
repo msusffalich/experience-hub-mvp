@@ -1,7 +1,13 @@
-const APP_VERSION = "20260624-vibeapp-contract-656";
+const APP_VERSION = "20260626-product-flow-cleanup-657";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
+const SUPPORTED_LANGUAGES = [
+  { code: "es", short: "ES", label: "Español" },
+  { code: "en", short: "EN", label: "English" },
+  { code: "fr", short: "FR", label: "Français" },
+  { code: "pt", short: "PT", label: "Português" },
+];
 const categories = [
   "Trabajo",
   "Viajes / Paseos",
@@ -861,8 +867,8 @@ const i18n = {
       ],
       experienceMapScope: "Relaciones vivas",
       experienceMapQuestions: "Preguntas al mapa",
-      experienceMapBridgeTitle: "Obsidian + Codex",
-      experienceMapBridgeText: "Exporta nodos y enlaces como Markdown para una bóveda de Obsidian; usa Codex para consultar patrones dentro de la app.",
+      experienceMapBridgeTitle: "Mapa propio + exportación Markdown",
+      experienceMapBridgeText: "El mapa se genera dentro de VibePWA. Puedes exportar nodos y enlaces como Markdown compatible con Obsidian si quieres trabajar una copia externa.",
       experienceMapEmpty: "Carga experiencias para construir el mapa de interrelaciones.",
       experienceMapNodes: "Nodos",
       experienceMapLinks: "Relaciones",
@@ -875,7 +881,7 @@ const i18n = {
       experienceMapOpenTimeline: "Ver en línea de tiempo",
       experienceMapAnswerEmpty: "Haz una pregunta sobre relaciones entre experiencias, lugares, personas, energía, objetivos o categorías.",
       experienceMapAnswerReady: "Lectura del mapa",
-      experienceMapExported: "Mapa exportado para Obsidian con rutas, factores y preguntas sugeridas.",
+      experienceMapExported: "Mapa exportado como Markdown compatible con Obsidian, con rutas, factores y preguntas sugeridas.",
       experienceMapRoutes: "Rutas del mapa",
       experienceMapRouteEmpty: "Aún no hay suficientes experiencias relacionadas para detectar rutas.",
       experienceMapRouteEnergy: "Ruta de energía alta",
@@ -1690,8 +1696,8 @@ const i18n = {
       reportPredictiveLimit: "This outlook uses local rules and available data; it is not a diagnosis or clinical prediction. Advanced predictive AI remains planned for a later phase.",
       experienceMapScope: "Living relationships",
       experienceMapQuestions: "Map questions",
-      experienceMapBridgeTitle: "Obsidian + Codex",
-      experienceMapBridgeText: "Export nodes and links as Markdown for an Obsidian vault; use Codex to query patterns inside the app.",
+      experienceMapBridgeTitle: "Native map + Markdown export",
+      experienceMapBridgeText: "The map is generated inside VibePWA. You can export nodes and links as Obsidian-compatible Markdown if you want an external working copy.",
       experienceMapEmpty: "Add experiences to build the relationship map.",
       experienceMapNodes: "Nodes",
       experienceMapLinks: "Links",
@@ -1704,7 +1710,7 @@ const i18n = {
       experienceMapOpenTimeline: "View in timeline",
       experienceMapAnswerEmpty: "Ask about relationships between experiences, places, people, energy, goals, or categories.",
       experienceMapAnswerReady: "Map reading",
-      experienceMapExported: "Map exported for Obsidian with routes, factors, and suggested questions.",
+      experienceMapExported: "Map exported as Obsidian-compatible Markdown with routes, factors, and suggested questions.",
       experienceMapRoutes: "Map routes",
       experienceMapRouteEmpty: "There are not enough related experiences yet to detect routes.",
       experienceMapRouteEnergy: "High-energy route",
@@ -2306,6 +2312,146 @@ i18n.fr = mergeLocale(i18n.en, {
     narrative: (count, media, category, energy) =>
       `La bibliothèque contient ${count} expériences avec ${media} images ou vidéos enregistrées. La catégorie dominante est ${category}, et l'énergie moyenne est ${energy}/10.`,
     next: "La prochaine étape naturelle est l'export PDF, la recherche sémantique et les rapports par semaine, objectif ou personne.",
+  },
+});
+
+i18n.pt = mergeLocale(i18n.es, {
+  languageLabel: "Idioma",
+  nav: {
+    auth: "Acesso",
+    dashboard: "Início",
+    capture: "Capturar",
+    library: "Biblioteca",
+    assetLibrary: "Arquivos",
+    agenda: "Agenda",
+    timeline: "Linha do tempo",
+    experienceMap: "Mapa",
+    report: "Relatórios",
+    publications: "Publicar",
+    insights: "Descobertas",
+    automation: "Automações",
+    manual: "Ajuda",
+    admin: "Operação",
+  },
+  viewTitles: {
+    auth: "Acesso seguro",
+    dashboard: "Início",
+    capture: "Captura rápida",
+    library: "Biblioteca de experiências",
+    assetLibrary: "Arquivos multimodais",
+    agenda: "Agenda inteligente",
+    timeline: "Linha do tempo contextual",
+    experienceMap: "Mapa de relações",
+    report: "Relatório de experiências",
+    publications: "Publicações inteligentes",
+    insights: "Descobertas acionáveis",
+    automation: "Capacidades, rotinas e MCP",
+    manual: "Manual do Usuário",
+    admin: "Operação e administração",
+  },
+  buttons: {
+    reset: "Carregar exemplo",
+    clearDemo: "Remover exemplo",
+    voiceCommand: "Comando de voz",
+    reloadApp: "Atualizar app",
+    refreshDaily: "Atualizar diário",
+    clearLocalData: "Limpar dados locais",
+    export: "Backup de dados",
+    restoreBackup: "Restaurar backup",
+    save: "Salvar experiência",
+    clear: "Limpar",
+    downloadReport: "Baixar relatório",
+    importBiometricAsset: "Importar histórico",
+    downloadPdf: "PDF",
+    edit: "Editar",
+    delete: "Excluir",
+    signIn: "Entrar",
+    signUp: "Criar conta",
+    signOut: "Sair",
+    resetPassword: "Recuperar senha",
+    resendConfirmation: "Reenviar confirmação",
+    showPassword: "Mostrar",
+    hidePassword: "Ocultar",
+    refreshOps: "Atualizar operação",
+    verifySupabase: "Verificar nuvem",
+    testSupabaseFlow: "Testar fluxo completo",
+    syncOffline: "Sincronizar offline",
+    saveProfile: "Salvar perfil",
+    enable: "Ativar",
+    runNow: "Executar",
+  },
+  metrics: {
+    experiences: "Experiências",
+    hours: "Horas registradas",
+    avgEnergy: "Energia média",
+    topCategory: "Categoria principal",
+    media: "Anexos multimídia",
+    total: "Total de experiências",
+    capturedHours: "Horas capturadas",
+  },
+  labels: {
+    themeControl: "Tela",
+    themeOptions: {
+      current: "Atual",
+      light: "Claro",
+      dark: "Escuro",
+    },
+    categoryAll: "Todas as categorias",
+    noMedia: "Sem anexos",
+    energyDefinition: "Energia é uma autoavaliação de 1 a 10 sobre vitalidade, foco ou disponibilidade pessoal durante a experiência.",
+    mediaDefinition: "Anexos multimídia são imagens, vídeos ou áudios salvos junto a uma experiência.",
+    attachments: "anexos",
+    results: "resultados",
+    items: "itens",
+    noLibrary: "Não há experiências na biblioteca para esses filtros.",
+    noTimeline: "Não há experiências para esses filtros.",
+    noAttachments: "Ainda não há anexos multimídia.",
+    assetLibraryIntro: "Inventário de imagens, vídeos, áudios e documentos associados a experiências.",
+    assetLibraryEmpty: "Não há arquivos multimodais para esses filtros.",
+    biometricAssetPanelTitle: "Backup biométrico",
+    biometricAssetPanelHelp: "Vibeapp é a fonte normal de biometria, localização, clima, notícias e contexto móvel. Use esta importação apenas para histórico, backup ou recuperação.",
+    biometricAssetImported: "Biometria importada: {count} registros, {metrics} sinais detectados.",
+    biometricAssetImportFailed: "Não foi possível importar a biometria. Use CSV, JSON ou export.xml legível.",
+    biometricAssetExperienceTitle: "Contexto biométrico",
+    biometricAssetNoMetrics: "sem sinais identificados",
+    publicationStatus: "Rascunhos locais com revisão humana",
+    publicationEmpty: "Gere um rascunho para transformar experiências em um PDF narrativo revisável.",
+    publicationGenerated: "Rascunho gerado. Revise o conteúdo antes de exportar.",
+    publicationMedia: "Multimídia sugerida",
+    publicationMediaHelp: "Arquivos vinculados às experiências fonte. Você pode incluir ou excluir sem apagar os originais.",
+    publicationMediaEmpty: "Não há multimídia associada às experiências fonte.",
+    publicationFinalDocument: "Documento final",
+    publicationFinalDocumentHelp: "Esta é a peça que será exportada como PDF com texto editado e multimídia incluída.",
+    publicationProgressPdfStart: "Gerando PDF final",
+    publicationProgressPdfStartDetail: "Validando texto editado, páginas, multimídia e payload ReportLab.",
+    publicationProgressPdfServer: "Enviando ao servidor",
+    publicationProgressPdfServerDetail: "O servidor monta o PDF ReportLab final.",
+    publicationProgressPdfDownload: "Preparando download",
+    publicationProgressPdfDownloadDetail: "O PDF está pronto para baixar.",
+    publicationProgressApiUnavailable: "A API não está disponível para gerar o PDF.",
+    publicationChannelFit: "Ajuste ao PDF",
+    publicationReadability: "Clareza do texto",
+    publicationPrivacy: "Privacidade",
+    publicationMediaUse: "Uso de multimídia",
+    publicationReadiness: "Preparação da publicação",
+    publicationReady: "Pronto para revisão",
+    publicationNeedsReview: "Revisar antes de exportar",
+    publicationSuggestions: "Sugestões",
+    publicationPrivacyApplied: "Privacidade aplicada",
+    reportMultimodalEvidence: "Evidência multimodal",
+    manualUpdated: "Atualizado com a versão funcional atual",
+    profileSettings: "Conta e preferências",
+    profileSaved: "Perfil salvo",
+    offlineQueueTitle: "Fila offline",
+    offlineQueueEmpty: "Sem alterações pendentes. Tudo está sincronizado ou sem mudanças locais.",
+    noNotifications: "Sem alertas",
+    environmentalUnavailable: "Ambiental não disponível",
+    geopoliticalUnavailable: "Geopolítico não disponível",
+  },
+  report: {
+    narrative: (count, media, category, energy) =>
+      `A biblioteca contém ${count} experiências com ${media} imagens ou vídeos salvos. A categoria dominante é ${category}, e a energia média é ${energy}/10.`,
+    next: "O próximo passo natural é gerar PDF, busca semântica e relatórios por semana, objetivo ou pessoa.",
   },
 });
 
@@ -3995,6 +4141,274 @@ manualContent.fr = [
   },
 ];
 
+manualContent.es = [
+  {
+    title: "Resumen general",
+    body: [
+      "Vibe es un ecosistema de experiencias humanas compuesto por Vibeapp y VibePWA. Vibeapp captura el momento desde el movil o tablet; VibePWA organiza, analiza, reporta y opera la memoria completa desde la web.",
+      "El objetivo no es guardar archivos sueltos, sino convertir notas, voz, fotos, videos, ubicacion, agenda, clima, noticias y biometria en una memoria viva, consultable y util para decisiones personales o profesionales.",
+      "La nube y Supabase son la fuente unica de verdad. Si un dato no llega al servidor, todavia no debe considerarse disponible para todos los dispositivos.",
+    ],
+  },
+  {
+    title: "Uso diario recomendado",
+    body: [
+      "Usa Vibeapp para capturar rapidamente: texto, voz, foto, video, ubicacion, biometria disponible y contexto del dia.",
+      "Usa VibePWA para revisar libreria, activos, agenda, mapa, reportes, hallazgos, publicaciones, manual y administracion.",
+      "En VibePWA, Inicio muestra el estado normal del usuario. Operacion y Administracion concentran controles tecnicos, diagnosticos, respaldos y mantenimiento.",
+    ],
+  },
+  {
+    title: "Mapa de Experiencias",
+    body: [
+      "El Mapa de Experiencias es propio de VibePWA: visualiza relaciones entre experiencias, fechas, grupos/personas, lugares, temas, activos, energia, biometria y contexto.",
+      "El mapa se actualiza con los datos reales sincronizados en la app. No depende de Obsidian para existir ni para analizar las conexiones.",
+      "Obsidian es solo una exportacion avanzada en Markdown compatible con una boveda externa. Si una boveda antigua tenia datos de prueba, reemplazala exportando nuevamente el mapa real o limpiando esa copia externa.",
+    ],
+  },
+  {
+    title: "Captura, grupos y sincronizacion",
+    body: [
+      "Cada experiencia debe quedar asociada a una cuenta y, si aplica, a un grupo/persona privado del usuario: Miguel, Familia, Viaje, Proyecto o Equipo.",
+      "Los grupos/personas se crean y administran en VibePWA. Vibeapp solo lee los grupos activos para asociar nuevas capturas.",
+      "La sincronizacion es correcta cuando texto, eventos, activos y contexto aparecen desde otro dispositivo sin pasos manuales. Si queda pendiente, la app debe indicar el motivo y reintentar.",
+    ],
+  },
+  {
+    title: "Clima, noticias y biometria",
+    body: [
+      "Vibeapp es la fuente normal de ubicacion, clima, noticias, biometria y contexto movil porque esta cerca del usuario y puede usar permisos nativos.",
+      "VibePWA y el backend reciben, normalizan, guardan y muestran ese contexto. VibePWA tambien permite importar archivos historicos como respaldo o recuperacion, pero ese no es el flujo diario normal.",
+      "La biometria debe mostrar datos concretos: frecuencia cardiaca promedio, pasos, energia activa, actividad, sueno si existe y cobertura. La energia sugerida es una lectura derivada; si no hay sueno, no se usa cero ni se penaliza el calculo.",
+    ],
+  },
+  {
+    title: "Reportes, hallazgos y publicaciones",
+    body: [
+      "Reportes explica el alcance elegido con indicadores, tendencias, evidencias, eventos, contexto ambiental/geopolitico y biometria concreta.",
+      "Hallazgos organiza las experiencias en ejes humanos y propone acciones con tono claro, humano y accionable.",
+      "Publicaciones ya no maneja canales internos. El usuario elige alcance, tipo, estilo y multimedia; Vibe genera un PDF premium cronologico y editado que luego puede distribuirse o editarse fuera de la app.",
+    ],
+  },
+  {
+    title: "Operacion, privacidad y baja",
+    body: [
+      "Operacion concentra diagnosticos, sincronizacion, respaldos, limpieza de datos, conectores y controles de producto. No deberia invadir el flujo diario.",
+      "Archivar un grupo/persona impide usarlo en nuevas capturas, pero no borra experiencias historicas. El borrado de datos requiere confirmacion expresa y respaldo previo.",
+      "La baja de cuenta es un flujo separado: primero respaldo, luego confirmacion de identidad y finalmente eliminacion controlada de datos de nube segun politica operativa.",
+    ],
+  },
+  {
+    title: "Solucion de problemas",
+    body: [
+      "Si un panel no carga, usa Actualizar app una vez. Si persiste, entra a Operacion y revisa estado de servidor, cola sin conexion y ultima sincronizacion.",
+      "Si un PDF falla, verifica que la API este activa y vuelve a generar. El producto no debe descargar HTML como sustituto normal del PDF final.",
+      "Si una lectura de contexto no aparece, confirma que Vibeapp la envio al servidor y que VibePWA la esta leyendo desde la cuenta correcta.",
+    ],
+  },
+];
+
+manualContent.en = [
+  {
+    title: "Overview",
+    body: [
+      "Vibe is a human-experience ecosystem made of Vibeapp and VibePWA. Vibeapp captures the moment from phone or tablet; VibePWA organizes, analyzes, reports, and operates the full memory from the web.",
+      "The goal is not to store loose files. The goal is to turn notes, voice, photos, videos, location, agenda, weather, news, and biometrics into a living memory that can support decisions.",
+      "Supabase and the backend are the single source of truth. If a record has not reached the server, it is not yet considered available across devices.",
+    ],
+  },
+  {
+    title: "Recommended Daily Use",
+    body: [
+      "Use Vibeapp for fast capture: text, voice, photo, video, location, available biometrics, and daily context.",
+      "Use VibePWA to review Library, Assets, Agenda, Map, Reports, Findings, Publications, Manual, and Administration.",
+      "In VibePWA, Home is for normal user work. Operation and Administration hold diagnostics, backups, maintenance, and product controls.",
+    ],
+  },
+  {
+    title: "Experience Map",
+    body: [
+      "The Experience Map belongs to VibePWA: it visualizes relationships between experiences, dates, groups/persons, places, themes, assets, energy, biometrics, and context.",
+      "The map updates from real synchronized app data. It does not depend on Obsidian to exist or to analyze connections.",
+      "Obsidian is only an advanced Markdown-compatible export for an external vault. If an old vault had demo data, replace it by exporting the real map again or clean that external copy.",
+    ],
+  },
+  {
+    title: "Capture, Groups, and Sync",
+    body: [
+      "Every experience belongs to an account and, when useful, to a private group/person such as Family, Trip, Project, or Team.",
+      "Groups/persons are created and managed in VibePWA. Vibeapp reads active groups so new captures are correctly associated.",
+      "Sync is complete when text, events, assets, and context appear on another device without manual intervention. If something is pending, the app must explain why and retry.",
+    ],
+  },
+  {
+    title: "Weather, News, and Biometrics",
+    body: [
+      "Vibeapp is the normal source for location, weather, news, biometrics, and mobile context because it is close to the user and can use native permissions.",
+      "VibePWA and the backend receive, normalize, store, and display that context. VibePWA can import historical files for backup or recovery, but that is not the normal daily path.",
+      "Biometrics should show concrete values: average heart rate, steps, active energy, activity, sleep when available, and coverage. Suggested energy is derived; missing sleep is not treated as zero and does not penalize the score.",
+    ],
+  },
+  {
+    title: "Reports, Findings, and Publications",
+    body: [
+      "Reports explain the selected scope with indicators, trends, evidence, events, environmental/geopolitical context, and concrete biometrics.",
+      "Findings organize experiences into human axes and propose clear, humane, actionable next steps.",
+      "Publications no longer manage internal channels. The user chooses scope, type, style, and media; Vibe generates one edited chronological premium PDF for external editing or distribution.",
+    ],
+  },
+  {
+    title: "Operation, Privacy, and Closure",
+    body: [
+      "Operation concentrates diagnostics, sync, backups, data cleanup, connectors, and product controls. It should not invade daily use.",
+      "Archiving a group/person prevents new captures from using it, but it does not delete historical experiences. Deleting data requires explicit confirmation and a backup first.",
+      "Account closure is separate: backup, identity confirmation, and controlled cloud deletion according to the operational policy.",
+    ],
+  },
+  {
+    title: "Troubleshooting",
+    body: [
+      "If a panel does not load, use Update app once. If it persists, open Operation and review server state, offline queue, and last sync.",
+      "If a PDF fails, verify that the API is active and generate it again. The product should not download HTML as the normal substitute for the final PDF.",
+      "If context is missing, confirm that Vibeapp sent it to the server and that VibePWA is reading the correct account.",
+    ],
+  },
+];
+
+manualContent.fr = [
+  {
+    title: "Resume general",
+    body: [
+      "Vibe est un ecosysteme d'experiences humaines compose de Vibeapp et VibePWA. Vibeapp capture le moment depuis le telephone ou la tablette; VibePWA organise, analyse, rapporte et opere la memoire complete depuis le web.",
+      "L'objectif n'est pas de stocker des fichiers isoles, mais de transformer notes, voix, photos, videos, localisation, agenda, meteo, actualites et biometrie en memoire vivante et utile.",
+      "Supabase et le backend sont la source unique de verite. Si une donnee n'est pas arrivee au serveur, elle n'est pas encore consideree disponible sur tous les appareils.",
+    ],
+  },
+  {
+    title: "Usage quotidien recommande",
+    body: [
+      "Utilise Vibeapp pour la capture rapide: texte, voix, photo, video, localisation, biometrie disponible et contexte du jour.",
+      "Utilise VibePWA pour revoir bibliotheque, actifs, agenda, carte, rapports, enseignements, publications, manuel et administration.",
+      "Dans VibePWA, Accueil sert au travail normal de l'utilisateur. Operation et Administration concentrent diagnostics, sauvegardes, maintenance et controles produit.",
+    ],
+  },
+  {
+    title: "Carte des experiences",
+    body: [
+      "La Carte des experiences appartient a VibePWA: elle visualise les relations entre experiences, dates, groupes/personnes, lieux, themes, actifs, energie, biometrie et contexte.",
+      "La carte se met a jour avec les donnees reelles synchronisees dans l'app. Elle ne depend pas d'Obsidian pour exister ni pour analyser les connexions.",
+      "Obsidian est seulement une exportation avancee compatible Markdown pour une voute externe. Si une ancienne voute contenait des donnees de test, remplace-la en exportant de nouveau la carte reelle ou nettoie cette copie externe.",
+    ],
+  },
+  {
+    title: "Capture, groupes et synchronisation",
+    body: [
+      "Chaque experience appartient a un compte et, si utile, a un groupe/personne prive: Famille, Voyage, Projet ou Equipe.",
+      "Les groupes/personnes sont crees et geres dans VibePWA. Vibeapp lit les groupes actifs pour associer correctement les nouvelles captures.",
+      "La synchronisation est complete lorsque texte, evenements, actifs et contexte apparaissent sur un autre appareil sans intervention manuelle.",
+    ],
+  },
+  {
+    title: "Meteo, actualites et biometrie",
+    body: [
+      "Vibeapp est la source normale pour localisation, meteo, actualites, biometrie et contexte mobile car elle est proche de l'utilisateur et peut utiliser les permissions natives.",
+      "VibePWA et le backend recoivent, normalisent, stockent et affichent ce contexte. VibePWA peut importer des fichiers historiques comme sauvegarde ou recuperation, mais ce n'est pas le flux quotidien normal.",
+      "La biometrie doit afficher des valeurs concretes: frequence cardiaque moyenne, pas, energie active, activite, sommeil si disponible et couverture. L'energie suggeree est derivee; l'absence de sommeil n'est pas traitee comme zero.",
+    ],
+  },
+  {
+    title: "Rapports, enseignements et publications",
+    body: [
+      "Les rapports expliquent le perimetre choisi avec indicateurs, tendances, preuves, evenements, contexte environnemental/geopolitique et biometrie concrete.",
+      "Les enseignements organisent les experiences en axes humains et proposent des actions claires, humaines et utiles.",
+      "Les publications ne gerent plus de canaux internes. L'utilisateur choisit le perimetre, le type, le style et les medias; Vibe genere un PDF premium chronologique et edite.",
+    ],
+  },
+  {
+    title: "Operation, confidentialite et cloture",
+    body: [
+      "Operation concentre diagnostics, synchronisation, sauvegardes, nettoyage de donnees, connecteurs et controles produit.",
+      "Archiver un groupe/personne l'empeche d'etre utilise pour de nouvelles captures, mais ne supprime pas les experiences historiques.",
+      "La cloture du compte est separee: sauvegarde, confirmation d'identite et suppression controlee des donnees cloud selon la politique operationnelle.",
+    ],
+  },
+  {
+    title: "Resolution de problemes",
+    body: [
+      "Si un panneau ne charge pas, utilise Mettre a jour l'app une fois. Si le probleme continue, ouvre Operation et verifie serveur, file hors ligne et derniere synchronisation.",
+      "Si un PDF echoue, verifie que l'API est active et relance la generation. Le produit ne doit pas telecharger HTML comme substitut normal du PDF final.",
+      "Si un contexte manque, confirme que Vibeapp l'a envoye au serveur et que VibePWA lit le bon compte.",
+    ],
+  },
+];
+
+manualContent.pt = [
+  {
+    title: "Mapa de Experiencias",
+    body: [
+      "O Mapa de Experiencias pertence ao VibePWA: visualiza relacoes entre experiencias, datas, grupos/pessoas, lugares, temas, arquivos, energia, biometria e contexto.",
+      "O mapa e atualizado com os dados reais sincronizados no app. Ele nao depende do Obsidian para existir nem para analisar conexoes.",
+      "Obsidian e apenas uma exportacao avancada em Markdown compativel com um cofre externo. Se um cofre antigo tinha dados de teste, substitua exportando novamente o mapa real ou limpe essa copia externa.",
+    ],
+  },
+  {
+    title: "Resumo geral",
+    body: [
+      "Vibe é um ecossistema de experiências humanas composto por Vibeapp e VibePWA. Vibeapp captura o momento no celular ou tablet; VibePWA organiza, analisa, relata e opera a memória completa pela web.",
+      "O objetivo não é guardar arquivos soltos, mas transformar notas, voz, fotos, vídeos, localização, agenda, clima, notícias e biometria em uma memória viva, consultável e útil.",
+      "Supabase e o backend são a fonte única de verdade. Se um dado não chegou ao servidor, ele ainda não deve ser considerado disponível em todos os dispositivos.",
+    ],
+  },
+  {
+    title: "Uso diário recomendado",
+    body: [
+      "Use Vibeapp para captura rápida: texto, voz, foto, vídeo, localização, biometria disponível e contexto do dia.",
+      "Use VibePWA para revisar Biblioteca, Arquivos, Agenda, Mapa, Relatórios, Descobertas, Publicações, Manual e Administração.",
+      "Em VibePWA, Início é para o uso normal. Operação e Administração concentram diagnósticos, backups, manutenção e controles do produto.",
+    ],
+  },
+  {
+    title: "Captura, grupos e sincronização",
+    body: [
+      "Cada experiência pertence a uma conta e, quando útil, a um grupo/pessoa privado do usuário: Família, Viagem, Projeto ou Equipe.",
+      "Os grupos/pessoas são criados e administrados em VibePWA. Vibeapp lê os grupos ativos para associar corretamente as novas capturas.",
+      "A sincronização está completa quando texto, eventos, arquivos e contexto aparecem em outro dispositivo sem intervenção manual.",
+    ],
+  },
+  {
+    title: "Clima, notícias e biometria",
+    body: [
+      "Vibeapp é a fonte normal de localização, clima, notícias, biometria e contexto móvel porque está perto do usuário e pode usar permissões nativas.",
+      "VibePWA e o backend recebem, normalizam, armazenam e exibem esse contexto. VibePWA pode importar arquivos históricos como backup ou recuperação, mas esse não é o fluxo diário normal.",
+      "A biometria deve mostrar valores concretos: frequência cardíaca média, passos, energia ativa, atividade, sono quando existir e cobertura. A energia sugerida é derivada; ausência de sono não é tratada como zero.",
+    ],
+  },
+  {
+    title: "Relatórios, descobertas e publicações",
+    body: [
+      "Relatórios explicam o escopo escolhido com indicadores, tendências, evidências, eventos, contexto ambiental/geopolítico e biometria concreta.",
+      "Descobertas organizam as experiências em eixos humanos e propõem ações claras, humanas e acionáveis.",
+      "Publicações não gerenciam mais canais internos. O usuário escolhe escopo, tipo, estilo e multimídia; Vibe gera um PDF premium cronológico e editado.",
+    ],
+  },
+  {
+    title: "Operação, privacidade e encerramento",
+    body: [
+      "Operação concentra diagnósticos, sincronização, backups, limpeza de dados, conectores e controles do produto.",
+      "Arquivar um grupo/pessoa impede seu uso em novas capturas, mas não apaga experiências históricas.",
+      "O encerramento da conta é separado: backup, confirmação de identidade e exclusão controlada dos dados em nuvem conforme a política operacional.",
+    ],
+  },
+  {
+    title: "Solução de problemas",
+    body: [
+      "Se um painel não carregar, use Atualizar app uma vez. Se continuar, abra Operação e revise servidor, fila offline e última sincronização.",
+      "Se um PDF falhar, verifique se a API está ativa e gere novamente. O produto não deve baixar HTML como substituto normal do PDF final.",
+      "Se um contexto não aparecer, confirme que Vibeapp o enviou ao servidor e que VibePWA está lendo a conta correta.",
+    ],
+  },
+];
+
 const demoExperiences = [
   {
     id: createId(),
@@ -5195,7 +5609,7 @@ function normalizeDisplayTheme(theme) {
 }
 
 function normalizeLanguage(language) {
-  return ["es", "en", "fr"].includes(language) ? language : "es";
+  return SUPPORTED_LANGUAGES.some((item) => item.code === language) ? language : "es";
 }
 
 function loadSession() {
@@ -5316,7 +5730,7 @@ function t(path) {
   const language = normalizeLanguage(state.language);
   let value = i18n[language] || i18n.es;
   for (const part of parts) value = value?.[part];
-  if (value === undefined && language === "fr") {
+  if (value === undefined && (language === "fr" || language === "pt")) {
     value = i18n.en;
     for (const part of parts) value = value?.[part];
   }
@@ -5327,7 +5741,8 @@ function t(path) {
   return value ? value : path;
 }
 
-function languageText(es, en, fr = en) {
+function languageText(es, en, fr = en, pt = es) {
+  if (state.language === "pt") return pt;
   if (state.language === "fr") return fr;
   return state.language === "es" ? es : en;
 }
@@ -7063,6 +7478,10 @@ window.signOut = signOut;
 
 function setupLanguage() {
   const select = document.getElementById("languageSelect");
+  if (!select) return;
+  select.innerHTML = SUPPORTED_LANGUAGES
+    .map((language) => `<option value="${language.code}">${language.short}</option>`)
+    .join("");
   select.value = state.language;
   select.addEventListener("change", async (event) => {
     state.language = normalizeLanguage(event.target.value);
@@ -16612,36 +17031,44 @@ function aggregateBiometricRows(rows = []) {
 }
 
 function estimateBiometricEnergy(metrics = {}) {
-  let score = 5;
   let evidence = 0;
+  let score = null;
+  const ensureScore = () => {
+    if (!Number.isFinite(score)) score = 6;
+  };
   const sleepHours = Number(metrics.sleepMinutes || 0) / 60;
   if (sleepHours > 0) {
     evidence += 1;
+    ensureScore();
     if (sleepHours >= 7 && sleepHours <= 9.5) score += 0.9;
     else if (sleepHours >= 6) score += 0.3;
     else score -= 1.1;
   }
   if (metrics.steps > 0) {
     evidence += 1;
+    ensureScore();
     if (metrics.steps >= 12000) score += 1;
     else if (metrics.steps >= 8000) score += 0.7;
     else if (metrics.steps < 2500) score -= 0.4;
   }
   if (metrics.activeEnergy > 0) {
     evidence += 1;
+    ensureScore();
     if (metrics.activeEnergy >= 450) score += 0.8;
     else if (metrics.activeEnergy >= 250) score += 0.4;
   }
   if (metrics.activityCount > 0) {
     evidence += 1;
+    ensureScore();
     score += 0.5;
   }
   if (metrics.heartAvg > 0) {
     evidence += 1;
+    ensureScore();
     if (metrics.heartAvg >= 105) score -= 0.8;
     else if (metrics.heartAvg >= 90) score -= 0.2;
   }
-  if (!evidence) return null;
+  if (!evidence || !Number.isFinite(score)) return null;
   return Math.max(1, Math.min(10, Number(score.toFixed(1))));
 }
 
@@ -20979,11 +21406,14 @@ function summarizeBiometricSignalsForExperiences(experiences = []) {
     return { matched: 0, coveragePct: 0, averageSuggestedEnergy: null, biometricRiskScore: 0, importedCount: state.biometricImports?.length || 0, rowCount: getAllBiometricRows().length };
   }
   const signals = getBiometricSignalsForExperiences(experiences).map((item) => item.signal);
-  const energySignals = signals.map((signal) => Number(signal.energySuggestion)).filter(Number.isFinite);
+  const energySignals = signals
+    .map((signal) => Number(signal.energySuggestion))
+    .filter((value) => Number.isFinite(value) && value > 0);
   const averageSuggestedEnergy = energySignals.length ? average(energySignals) : null;
   const riskSignals = signals.filter((signal) => {
     const metrics = signal.metrics || {};
-    return (Number.isFinite(Number(signal.energySuggestion)) && Number(signal.energySuggestion) <= 4) || metrics.heartAvg >= 105 || (metrics.sleepMinutes > 0 && metrics.sleepMinutes < 360);
+    const suggestedEnergy = Number(signal.energySuggestion);
+    return (Number.isFinite(suggestedEnergy) && suggestedEnergy > 0 && suggestedEnergy <= 4) || metrics.heartAvg >= 105 || (metrics.sleepMinutes > 0 && metrics.sleepMinutes < 360);
   }).length;
   return {
     matched: signals.length,
@@ -21104,6 +21534,8 @@ function buildBiometricIntelligenceSummary(experiences = state.experiences) {
       heartAvg: metrics.heartAvg || 0,
       steps: metrics.steps || 0,
       sleepMinutes: metrics.sleepMinutes || 0,
+      activeEnergy: metrics.activeEnergy || 0,
+      activityCount: metrics.activityCount || 0,
     },
     sources,
     recentMatches,
@@ -21132,6 +21564,8 @@ function renderDashboardBiometricContext() {
         method: "Vibeapp is the primary source. VibePWA reviews this context and imports historical files only as backup. It is not a medical diagnosis.",
         heart: "Heart",
         steps: "Steps",
+        active: "Active energy",
+        activity: "Activity",
         sleep: "Sleep",
       }
     : {
@@ -21147,6 +21581,8 @@ function renderDashboardBiometricContext() {
         method: "Vibeapp es la fuente principal. VibePWA revisa este contexto e importa historicos solo como respaldo. No es diagnostico medico.",
         heart: "Frecuencia",
         steps: "Pasos",
+        active: "Energía activa",
+        activity: "Actividad",
         sleep: "Sueño",
       };
   box.innerHTML = `
@@ -21168,6 +21604,8 @@ function renderDashboardBiometricContext() {
       <article><span>${escapeHtml(labels.records)}</span><strong>${escapeHtml(String(summary.rowCount))}</strong></article>
       <article><span>${escapeHtml(labels.heart)}</span><strong>${summary.metrics.heartAvg ? Math.round(summary.metrics.heartAvg) : "-"}</strong></article>
       <article><span>${escapeHtml(labels.steps)}</span><strong>${summary.metrics.steps ? Math.round(summary.metrics.steps).toLocaleString() : "-"}</strong></article>
+      <article><span>${escapeHtml(labels.active)}</span><strong>${summary.metrics.activeEnergy ? `${Math.round(summary.metrics.activeEnergy)} kcal` : "-"}</strong></article>
+      <article><span>${escapeHtml(labels.activity)}</span><strong>${summary.metrics.activityCount ? String(summary.metrics.activityCount) : "-"}</strong></article>
       <article><span>${escapeHtml(labels.sleep)}</span><strong>${summary.metrics.sleepMinutes ? `${(summary.metrics.sleepMinutes / 60).toFixed(1)} h` : "-"}</strong></article>
     </div>
     <div class="dashboard-biometric-matches">
@@ -21188,7 +21626,95 @@ function renderDashboardBiometricContext() {
   `;
 }
 
+function getBiometricContextLabels(options = {}) {
+  const title = options.title || languageText("Contexto biométrico", "Biometric context", "Contexte biométrique", "Contexto biométrico");
+  return {
+    title,
+    noImports: languageText(
+      "Aún no hay biometría disponible para este alcance. Cuando Vibeapp o un archivo histórico envíen datos, este panel mostrará señales concretas.",
+      "No biometrics are available for this scope yet. When Vibeapp or a historical file sends data, this panel will show concrete signals.",
+      "Aucune biométrie n'est disponible pour ce périmètre. Quand Vibeapp ou un fichier historique enverra des données, ce panneau affichera les signaux concrets.",
+      "Ainda não há biometria disponível para este escopo. Quando Vibeapp ou um arquivo histórico enviar dados, este painel mostrará sinais concretos.",
+    ),
+    coverage: languageText("Cobertura", "Coverage", "Couverture", "Cobertura"),
+    energy: languageText("Energía sugerida", "Suggested energy", "Énergie suggérée", "Energia sugerida"),
+    risk: languageText("Señal de riesgo", "Risk signal", "Signal de risque", "Sinal de risco"),
+    records: languageText("Registros", "Records", "Registres", "Registros"),
+    heart: languageText("Frecuencia promedio", "Average heart rate", "Fréquence moyenne", "Frequência média"),
+    steps: languageText("Pasos", "Steps", "Pas", "Passos"),
+    active: languageText("Energía activa", "Active energy", "Énergie active", "Energia ativa"),
+    activity: languageText("Actividad", "Activity", "Activité", "Atividade"),
+    sleep: languageText("Sueño", "Sleep", "Sommeil", "Sono"),
+    sources: languageText("Fuentes", "Sources", "Sources", "Fontes"),
+    matches: languageText("Coincidencias recientes", "Recent matches", "Correspondances récentes", "Correspondências recentes"),
+    noMatches: languageText("No hay coincidencias recientes en este alcance.", "No recent matches in this scope.", "Aucune correspondance récente dans ce périmètre.", "Não há correspondências recentes neste escopo."),
+    method: languageText(
+      "Vibe cruza las señales por fecha y hora con las experiencias del alcance. Es contexto de decisión, no diagnóstico médico.",
+      "Vibe matches signals by date and time with the experiences in scope. This is decision context, not a medical diagnosis.",
+      "Vibe croise les signaux par date et heure avec les expériences du périmètre. C'est un contexte de décision, pas un diagnostic médical.",
+      "Vibe cruza os sinais por data e hora com as experiências do escopo. É contexto de decisão, não diagnóstico médico.",
+    ),
+    noReliableEnergy: languageText("Sin estimación confiable", "No reliable estimate", "Estimation non fiable", "Sem estimativa confiável"),
+  };
+}
+
+function renderBiometricContextPanel(experiences = [], options = {}) {
+  const scopedExperiences = Array.isArray(experiences) ? experiences : [];
+  const labels = getBiometricContextLabels(options);
+  const summary = buildBiometricIntelligenceSummary(scopedExperiences);
+  const hasData = summary.status !== "missing" && (summary.rowCount > 0 || summary.recentMatches.length || summary.importedCount > 0);
+  if (!hasData) {
+    return `<section class="report-biometric-impact is-empty"><h3>${escapeHtml(labels.title)}</h3><p>${escapeHtml(labels.noImports)}</p><small>${escapeHtml(labels.method)}</small></section>`;
+  }
+  const energyLabel = summary.averageSuggestedEnergy
+    ? `${summary.averageSuggestedEnergy.toFixed(1)}/10`
+    : labels.noReliableEnergy;
+  const metrics = summary.metrics || {};
+  return `
+    <section class="report-biometric-impact">
+      <div class="report-section-heading">
+        <div>
+          <span class="report-kicker">${escapeHtml(labels.title)}</span>
+          <h3>${escapeHtml(summary.headline)}</h3>
+          <p class="card-meta">${escapeHtml(summary.riskLabel)} ${escapeHtml(labels.method)}</p>
+        </div>
+        <span class="pill">${escapeHtml(`${Math.round(summary.coveragePct || 0)}% ${labels.coverage}`)}</span>
+      </div>
+      <div class="biometric-impact-grid">
+        <article><span>${escapeHtml(labels.energy)}</span><strong>${escapeHtml(energyLabel)}</strong></article>
+        <article><span>${escapeHtml(labels.risk)}</span><strong>${escapeHtml(`${Math.round(summary.biometricRiskScore || 0)}%`)}</strong></article>
+        <article><span>${escapeHtml(labels.records)}</span><strong>${escapeHtml(String(summary.rowCount || 0))}</strong></article>
+        <article><span>${escapeHtml(labels.heart)}</span><strong>${metrics.heartAvg ? Math.round(metrics.heartAvg) : "-"}</strong></article>
+        <article><span>${escapeHtml(labels.steps)}</span><strong>${metrics.steps ? Math.round(metrics.steps).toLocaleString() : "-"}</strong></article>
+        <article><span>${escapeHtml(labels.active)}</span><strong>${metrics.activeEnergy ? `${Math.round(metrics.activeEnergy)} kcal` : "-"}</strong></article>
+        <article><span>${escapeHtml(labels.activity)}</span><strong>${metrics.activityCount ? String(metrics.activityCount) : "-"}</strong></article>
+        <article><span>${escapeHtml(labels.sleep)}</span><strong>${metrics.sleepMinutes ? `${(metrics.sleepMinutes / 60).toFixed(1)} h` : "-"}</strong></article>
+      </div>
+      <p class="card-meta">${escapeHtml(labels.sources)}: ${escapeHtml(summary.sources.join(", ") || "-")}</p>
+      <div class="biometric-impact-examples">
+        <span class="card-meta">${escapeHtml(labels.matches)}</span>
+        ${summary.recentMatches.length
+          ? summary.recentMatches
+              .map(({ experience, signal }) => `
+                <article>
+                  <strong>${escapeHtml(experience.title || "")}</strong>
+                  <p>${escapeHtml(signal.detail || signal.label || "")}</p>
+                </article>
+              `)
+              .join("")
+          : `<p>${escapeHtml(labels.noMatches)}</p>`}
+      </div>
+    </section>
+  `;
+}
+
 function renderReportBiometricImpact(experiences = []) {
+  return renderBiometricContextPanel(experiences, {
+    title: languageText("Impacto biométrico", "Biometric impact", "Impact biométrique", "Impacto biométrico"),
+  });
+}
+
+function renderReportBiometricImpactLegacy(experiences = []) {
   const labels = state.language !== "es"
      ? {
         title: "Biometric impact",
@@ -23753,6 +24279,9 @@ function renderPublicationPreview(draft) {
         ${renderPublicationApproval(draft)}
         ${renderPublicationEditor(draft)}
         ${renderPublicationMedia(draft.media || [])}
+        ${renderBiometricContextPanel(draft.experiences || [], {
+          title: languageText("Biometría incluida en la publicación", "Biometrics included in the publication", "Biométrie incluse dans la publication", "Biometria incluída na publicação"),
+        })}
         ${renderPublicationFinalDocument(draft)}
         <div class="publication-stats">
           <article><span>${t("metrics.experiences")}</span><strong>${draft.stats.experiences}</strong></article>
@@ -24814,7 +25343,7 @@ function renderPublicationClosureChecklist(draft) {
   const readiness = buildPublicationReadiness(draft);
   const channelStatus = getPublicationChannelStatus(draft.channel);
   const words = countWords(`${draft.summary} ${draft.body}`);
-  const limit = getPublicationWordLimit(draft.channel);
+  const limit = getPublicationWordLimit(PUBLICATION_OUTPUT_CHANNEL);
   const totalMedia = (draft.media || []).length;
   const includedMedia = getApprovedPublicationMedia(draft).length;
   const textReady = words >= 45 && words <= limit;
@@ -24888,12 +25417,11 @@ function buildPublicationReadiness(draft) {
   const words = countWords(`${draft.summary} ${draft.body}`);
   const includedMedia = getApprovedPublicationMedia(draft).length;
   const totalMedia = (draft.media || []).length;
-  const readability = scorePublicationReadability(words, draft.channel);
+  const readability = scorePublicationReadability(words, PUBLICATION_OUTPUT_CHANNEL);
   const privacyScore = draft.privacy ? 92 : 48;
-  const mediaScore = totalMedia ? Math.round((includedMedia / totalMedia) * 100) : channelBenefitsFromMedia(draft.channel) ? 45 : 80;
+  const mediaScore = totalMedia ? Math.round((includedMedia / totalMedia) * 100) : channelBenefitsFromMedia(PUBLICATION_OUTPUT_CHANNEL) ? 45 : 80;
   const channelScore = scorePublicationChannelFit(draft, words, includedMedia);
-  const directStatus = getPublicationChannelStatus(draft.channel);
-  const directScore = directStatus.level === "future" ? 55 : 90;
+  const directScore = 92;
   const score = Math.round((readability.score + privacyScore + mediaScore + channelScore.score + directScore) / 5);
   const suggestions = buildPublicationSuggestions({ draft, words, includedMedia, totalMedia, readability, privacyScore, mediaScore, channelScore });
   return {
@@ -24924,9 +25452,11 @@ function buildPublicationReadiness(draft) {
       },
       { label: t("labels.publicationChannelFit"), score: channelScore.score, detail: channelScore.detail },
       {
-        label: state.language !== "es" ? "Direct channel status" : "Estado del canal directo",
+        label: state.language !== "es" ? "Final output" : "Salida final",
         score: directScore,
-        detail: directStatus.detail,
+        detail: state.language !== "es"
+          ? "The app now generates one edited chronological premium PDF. Distribution happens outside Vibe."
+          : "La app genera un unico PDF premium cronologico y editado. La distribucion se hace fuera de Vibe.",
       },
     ],
     suggestions,
@@ -24974,28 +25504,26 @@ function channelBenefitsFromMedia(channel) {
 }
 
 function scorePublicationChannelFit(draft, words, includedMedia) {
-  const limit = getPublicationWordLimit(draft.channel);
+  const limit = getPublicationWordLimit(PUBLICATION_OUTPUT_CHANNEL);
   let score = words <= limit ? 88 : 60;
-  if (channelBenefitsFromMedia(draft.channel)) score += includedMedia ? 8 : -18;
-  if (draft.channel === "WhatsApp" && words <= 160) score += 6;
-  if (draft.channel === "Email" && words >= 90) score += 5;
+  if (channelBenefitsFromMedia(PUBLICATION_OUTPUT_CHANNEL)) score += includedMedia ? 8 : -18;
   score = Math.max(35, Math.min(100, score));
   return {
     score,
     detail:
       state.language !== "es"
-         ? `${displayPublicationType(draft.type)} adapted for ${draft.channel}.`
-        : `${displayPublicationType(draft.type)} adaptada para ${draft.channel}.`,
+         ? `${displayPublicationType(draft.type)} prepared as an edited chronological premium PDF.`
+        : `${displayPublicationType(draft.type)} preparada como PDF premium cronologico y editado.`,
   };
 }
 
 function buildPublicationSuggestions({ draft, words, includedMedia, totalMedia, readability, privacyScore, mediaScore, channelScore }) {
   const suggestions = [];
-  const limit = getPublicationWordLimit(draft.channel);
+  const limit = getPublicationWordLimit(PUBLICATION_OUTPUT_CHANNEL);
   if (words > limit) {
     suggestions.push(
       state.language !== "es"
-         ? "Shorten the draft or move detail into a longer report before publishing."
+         ? "Shorten the draft or move detail into a longer section before generating the PDF."
         : "Reduce el borrador o mueve el detalle a un reporte más largo antes de publicar.",
     );
   }
@@ -25013,15 +25541,15 @@ function buildPublicationSuggestions({ draft, words, includedMedia, totalMedia, 
             ? "Select the strongest media assets so the publication feels less text-heavy."
            : "Selecciona los activos multimedia más fuertes para que la publicación no dependa solo del texto."
         : state.language !== "es"
-           ? "Add media to the source experiences when the channel needs a more visual piece."
+           ? "Add media to the source experiences when the PDF needs a more visual story."
           : "Agrega multimedia a las experiencias fuente cuando el PDF necesite una pieza más visual.",
     );
   }
   if (channelScore.score < 75 || readability.score < 75) {
     suggestions.push(
       state.language !== "es"
-         ? "Review tone, length, and call to action for the selected channel."
-        : "Revisa el tono, la extensión y el llamado a la acción según el canal seleccionado.",
+         ? "Review tone, length, and editorial order before generating the final PDF."
+        : "Revisa el tono, la extension y el orden editorial antes de generar el PDF final.",
     );
   }
   if (!suggestions.length) {
@@ -25181,7 +25709,7 @@ async function handlePublicationDistributionCopy(event) {
   addPublicationHistory(draft, "exported", state.language !== "es" ? `Copied ${key}` : `Copiado ${key}`);
   persistPublicationDraft(draft);
   document.getElementById("publicationStatus").textContent = copied
-    ? (state.language !== "es" ? "Text copied for the selected channel." : "Texto copiado para el canal seleccionado.")
+    ? (state.language !== "es" ? "Text copied from the final PDF draft." : "Texto copiado desde el borrador final del PDF.")
     : (state.language !== "es" ? "Could not copy automatically. Select the text manually." : "No se pudo copiar automaticamente. Selecciona el texto manualmente.");
 }
 
@@ -25599,6 +26127,13 @@ function buildPublicationHtml(draft) {
       return `<section class="publication-export-page page-${escapeHtml(page.pageType)}"><p class="meta">${escapeHtml(state.language !== "es" ? `Page ${page.pageNumber}` : `Pagina ${page.pageNumber}`)} - ${escapeHtml(getPublicationPageTypeLabel(page.pageType))}</p><h2>${escapeHtml(page.title)}</h2>${page.subtitle ? `<p class="approval">${escapeHtml(page.subtitle)}</p>` : ""}${pageMediaHtml}<pre>${escapeHtml(page.body)}</pre></section>`;
     })
     .join("");
+  const biometricSummary = buildBiometricIntelligenceSummary(draft.experiences || []);
+  const biometricLabels = getBiometricContextLabels({
+    title: languageText("Biometría incluida", "Included biometrics", "Biométrie incluse", "Biometria incluída"),
+  });
+  const biometricHtml = biometricSummary.status !== "missing" && (biometricSummary.rowCount > 0 || biometricSummary.importedCount > 0)
+    ? `<section class="publication-export-page"><p class="meta">${escapeHtml(biometricLabels.title)}</p><h2>${escapeHtml(biometricSummary.headline)}</h2><p>${escapeHtml(biometricSummary.riskLabel)} ${escapeHtml(biometricLabels.method)}</p><div class="metrics"><span>${escapeHtml(biometricLabels.coverage)}: ${Math.round(biometricSummary.coveragePct || 0)}%</span><span>${escapeHtml(biometricLabels.energy)}: ${biometricSummary.averageSuggestedEnergy ? `${biometricSummary.averageSuggestedEnergy.toFixed(1)}/10` : biometricLabels.noReliableEnergy}</span><span>${escapeHtml(biometricLabels.records)}: ${biometricSummary.rowCount || 0}</span><span>${escapeHtml(biometricLabels.heart)}: ${biometricSummary.metrics?.heartAvg ? Math.round(biometricSummary.metrics.heartAvg) : "-"}</span><span>${escapeHtml(biometricLabels.steps)}: ${biometricSummary.metrics?.steps ? Math.round(biometricSummary.metrics.steps).toLocaleString() : "-"}</span><span>${escapeHtml(biometricLabels.active)}: ${biometricSummary.metrics?.activeEnergy ? `${Math.round(biometricSummary.metrics.activeEnergy)} kcal` : "-"}</span></div></section>`
+    : "";
   return `<!doctype html>
 <html lang="${state.language}">
 <head><meta charset="utf-8" /><title>${escapeHtml(draft.title)}</title>
@@ -25613,7 +26148,8 @@ article{max-width:860px;margin:auto}
 .publication-export-page{padding:24px;border:1px solid #dce3de;border-radius:8px;background:#fff;break-inside:avoid;page-break-inside:avoid}
 section{margin-top:18px}
 pre{white-space:pre-wrap;font-family:inherit;border:1px solid #dce3de;border-radius:8px;padding:16px;break-inside:auto}
-.media{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.media,.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.metrics span{padding:10px 12px;border:1px solid #dce3de;border-radius:8px;background:#f7fafc;font-weight:700}
 .media figure{margin:0;break-inside:avoid;page-break-inside:avoid}
 .media img,.media video{width:100%;border-radius:8px}
 .media audio{width:100%}
@@ -25625,7 +26161,7 @@ figcaption{color:#627069;font-size:12px;margin-top:4px;overflow-wrap:anywhere}
 .template-story-script pre{border-left:5px solid #c87913}.template-story-script .cover{background:#fff7ed}
 @media print{.cover,.media figure{break-inside:avoid;page-break-inside:avoid}h1,h2,h3{break-after:avoid;page-break-after:avoid}p,pre{orphans:3;widows:3}}
 </style></head>
-<body class="${escapeHtml(exportClass)}"><article><section class="cover"><p class="meta">${escapeHtml(displayPublicationType(draft.type))} · ${escapeHtml(displayPublicationStyle(draft.style))} · ${escapeHtml(draft.channel)}</p><h1>${escapeHtml(draft.title)}</h1></section><p class="approval"><strong>${escapeHtml(t("labels.publicationApprovalTitle"))}:</strong> ${escapeHtml(approvalText)}${escapeHtml(approvedDate)}</p><p>${escapeHtml(draft.summary)}</p>${studioHtml}${kitHtml}${pageHtml || mediaHtml}<p class="meta">${escapeHtml(t("labels.publicationPrivacyNote"))}</p></article></body></html>`;
+<body class="${escapeHtml(exportClass)}"><article><section class="cover"><p class="meta">${escapeHtml(displayPublicationType(draft.type))} · ${escapeHtml(displayPublicationStyle(draft.style))} · ${escapeHtml(PUBLICATION_OUTPUT_CHANNEL)}</p><h1>${escapeHtml(draft.title)}</h1></section><p class="approval"><strong>${escapeHtml(t("labels.publicationApprovalTitle"))}:</strong> ${escapeHtml(approvalText)}${escapeHtml(approvedDate)}</p><p>${escapeHtml(draft.summary)}</p>${biometricHtml}${pageHtml || mediaHtml}<p class="meta">${escapeHtml(t("labels.publicationPrivacyNote"))}</p></article></body></html>`;
 }
 
 function exportCurrentPublicationMarkdown() {
@@ -26349,6 +26885,9 @@ function renderInsights() {
       <p>${escapeHtml(state.language !== "es" ? "This view turns experiences, energy, people, places, events, and assets into a clear reading. Use the thematic axes first; then review the prioritized findings." : "Esta vista convierte experiencias, energía, personas, lugares, eventos y activos en una lectura clara. Primero revisa los ejes temáticos; luego los hallazgos priorizados.")}</p>
     </section>
     <section class="insight-axis-grid" aria-label="${escapeHtml(state.language !== "es" ? "Analysis themes" : "Ejes de análisis")}">
+      ${renderBiometricContextPanel(sourceExperiences, {
+        title: languageText("Biometría para hallazgos", "Biometrics for findings", "Biométrie pour les enseignements", "Biometria para descobertas"),
+      })}
       ${thematicAxes.map(renderInsightAxisCard).join("")}
     </section>
     ${renderInsightActionPlan(actionPlan)}
@@ -26504,9 +27043,12 @@ function buildInsightActionPlan(experiences = getInsightsExperiences(), insights
   const biometricMatches = list
     .map((item) => buildBiometricSignalForTimestamp(item.timestamp, item.duration))
     .filter((signal) => signal?.matched);
-  const biometricAverage = biometricMatches.length
-    ? Number(average(biometricMatches.map((signal) => Number(signal.energySuggestion || 0))).toFixed(1))
-    : 0;
+  const biometricEnergyValues = biometricMatches
+    .map((signal) => Number(signal.energySuggestion))
+    .filter((value) => Number.isFinite(value) && value > 0);
+  const biometricAverage = biometricEnergyValues.length
+    ? Number(average(biometricEnergyValues).toFixed(1))
+    : null;
   const actions = [];
   const addAction = (action) => {
     if (!action?.title || actions.some((item) => item.title === action.title)) return;

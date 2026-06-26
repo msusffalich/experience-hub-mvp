@@ -2963,8 +2963,11 @@ function estimateBiometricEnergyFromMetrics(metrics = {}, payloadType = "") {
     normalizeOptionalNumber(metrics.sleepScore),
     normalizeOptionalNumber(metrics.activityScore),
   ].filter((value) => Number.isFinite(value) && value > 0);
-  let score = scoreSignals.length ? average(scoreSignals) / 10 : 5;
+  let score = scoreSignals.length ? average(scoreSignals) / 10 : null;
   let evidence = scoreSignals.length;
+  const ensureScore = () => {
+    if (!Number.isFinite(score)) score = 6;
+  };
   const sleepMinutes = normalizeSleepMinutes(metrics);
   const steps = normalizeMetricNumber(metrics.steps ?? metrics.stepCount ?? metrics.count);
   const activeEnergy = normalizeMetricNumber(metrics.activeEnergyKcal ?? metrics.activeCalories ?? metrics.activeEnergy ?? metrics.calories);
@@ -2976,6 +2979,7 @@ function estimateBiometricEnergyFromMetrics(metrics = {}, payloadType = "") {
   const recoveryHighSeconds = normalizeMetricNumber(metrics.recoveryHighSeconds ?? metrics.recoveryHigh);
   const temperatureDeviation = Math.abs(normalizeMetricNumber(metrics.temperatureDeviationC ?? metrics.temperatureDeviation ?? metrics.temperatureTrendDeviationC));
   if (sleepMinutes > 0) {
+    ensureScore();
     evidence += 1;
     const sleepHours = sleepMinutes / 60;
     if (sleepHours >= 7 && sleepHours <= 9.5) score += 0.9;
@@ -2983,49 +2987,58 @@ function estimateBiometricEnergyFromMetrics(metrics = {}, payloadType = "") {
     else score -= 1.1;
   }
   if (steps > 0) {
+    ensureScore();
     evidence += 1;
     if (steps >= 12000) score += 1.0;
     else if (steps >= 8000) score += 0.7;
     else if (steps < 2500) score -= 0.4;
   }
   if (activeEnergy > 0) {
+    ensureScore();
     evidence += 1;
     if (activeEnergy >= 450) score += 0.8;
     else if (activeEnergy >= 250) score += 0.4;
   }
   if (workoutMinutes > 0) {
+    ensureScore();
     evidence += 1;
     score += workoutMinutes >= 30 ? 0.7 : 0.3;
   }
   if (restingHeart > 0) {
+    ensureScore();
     evidence += 1;
     if (restingHeart <= 60) score += 0.4;
     if (restingHeart >= 80) score -= 0.7;
   }
   if (heartAvg > 0) {
+    ensureScore();
     evidence += 1;
     if (heartAvg >= 105) score -= 0.8;
     else if (heartAvg >= 90) score -= 0.2;
   }
   if (hrvMs > 0) {
+    ensureScore();
     evidence += 1;
     if (hrvMs >= 45) score += 0.4;
     else if (hrvMs < 25) score -= 0.5;
   }
   if (stressHighSeconds > 0) {
+    ensureScore();
     evidence += 1;
     if (stressHighSeconds >= 2 * 60 * 60) score -= 0.8;
     else score -= 0.3;
   }
   if (recoveryHighSeconds > 0) {
+    ensureScore();
     evidence += 1;
     if (recoveryHighSeconds >= 2 * 60 * 60) score += 0.6;
   }
   if (temperatureDeviation > 0) {
+    ensureScore();
     evidence += 1;
     if (temperatureDeviation >= 0.5) score -= 0.6;
   }
-  if (!evidence) return null;
+  if (!evidence || !Number.isFinite(score)) return null;
   return clampServerNumber(Number(score.toFixed(1)), 1, 10);
 }
 
