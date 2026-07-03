@@ -1,4 +1,4 @@
-const APP_VERSION = "20260626-product-flow-cleanup-657";
+const APP_VERSION = "20260703-offline-server-sync-658";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -1129,7 +1129,7 @@ const i18n = {
       offlineQueueEmpty: "No hay cambios pendientes. Todo lo local está sincronizado o no se ha modificado.",
       offlineQueuePending: "Cambios pendientes por sincronizar",
       offlineQueueRetry: "Reintentar ahora",
-      offlineQueueReconcile: "Limpiar ya guardados",
+      offlineQueueReconcile: "Actualizar con servidor",
       offlineQueueOpenAuth: "Abrir acceso",
       offlineQueueRetryOne: "Reintentar este",
       offlineQueueReview: "Revisar",
@@ -1966,7 +1966,7 @@ const i18n = {
       offlineQueueEmpty: "No pending changes. Local data is synced or has not changed.",
       offlineQueuePending: "Pending changes to sync",
       offlineQueueRetry: "Retry now",
-      offlineQueueReconcile: "Clean saved items",
+      offlineQueueReconcile: "Update with server",
       offlineQueueOpenAuth: "Open access",
       offlineQueueRetryOne: "Retry this",
       offlineQueueReview: "Review",
@@ -5883,7 +5883,7 @@ async function hydrateFromApi() {
       await Promise.all(localOnly.slice(0, 50).map((item) => saveAgendaEventToApi(item, { silent: true })));
     }
     applyLatestServerDailyBriefing(latestDailyBriefing?.briefing);
-    await syncOfflineQueue({ silent: true });
+    await syncOfflineQueue({ silent: true, skipServerRefresh: true });
     await loadBackendRoutines();
     await updateServerSyncStateBaseline({ silent: true });
     scheduleAutomaticAssetBacklogProcessing({ reason: "hydrate", delayMs: 1200, silent: true });
@@ -6687,9 +6687,65 @@ async function reconcileOfflineQueueFromSupabase(options = {}) {
   }
 }
 
+async function refreshSharedDataFromServer(options = {}) {
+  if (!state.session?.access_token && (state.config?.persistence === "supabase" || state.persistence === "supabase")) {
+    return { refreshed: false, resolved: 0, reason: "auth_required" };
+  }
+  const [experiences, agendaEvents, latestDailyBriefing] = await Promise.all([
+    apiRequest("/experiences"),
+    apiRequest("/agenda").catch(() => null),
+    apiRequest(`/daily-briefing/latest?locale=${encodeURIComponent(state.language)}`).catch(() => null),
+  ]);
+  let resolved = 0;
+  if (Array.isArray(experiences)) {
+    const remoteExperiences = normalizeExperiences(experiences);
+    resolved = reconcileOfflineQueueWithRemote(remoteExperiences);
+    state.experiences = mergeLocalMediaCacheForExperiences(remoteExperiences, state.experiences);
+    hydrateBiometricImportsFromExperiences(state.experiences);
+    saveExperiences();
+  }
+  if (Array.isArray(agendaEvents)) {
+    state.agendaEvents = mergeRemoteAgendaEvents(agendaEvents, state.agendaEvents);
+    saveAgendaEvents();
+  }
+  applyLatestServerDailyBriefing(latestDailyBriefing?.briefing);
+  if (!options.skipSyncState) await updateServerSyncStateBaseline({ silent: true });
+  return {
+    refreshed: true,
+    resolved,
+    experiences: Array.isArray(experiences) ? experiences.length : 0,
+    agendaEvents: Array.isArray(agendaEvents) ? agendaEvents.length : 0,
+  };
+}
+
 async function syncOfflineQueue(options = {}) {
   if (!state.offlineQueue.length) {
-    if (!options.silent) document.getElementById("embeddingStatus").textContent = state.language !== "es" ? "No pending changes." : "No hay cambios pendientes.";
+    if (!options.skipServerRefresh && (state.config?.persistence === "supabase" || state.persistence === "supabase") && state.session?.access_token) {
+      if (!options.silent) document.getElementById("embeddingStatus").textContent = languageText("Actualizando con el servidor...", "Updating with server...", "Mise a jour avec le serveur...", "Atualizando com o servidor...");
+      try {
+        await apiRequest("/health", { skipAuth: true });
+        markApiOnline();
+        const refreshed = await refreshSharedDataFromServer({ silent: true });
+        if (!options.silent) {
+          document.getElementById("embeddingStatus").textContent = languageText(
+            `Cola actualizada con servidor. ${refreshed.experiences || 0} experiencias verificadas.`,
+            `Queue updated with server. ${refreshed.experiences || 0} experiences verified.`,
+            `File mise a jour avec le serveur. ${refreshed.experiences || 0} experiences verifiees.`,
+            `Fila atualizada com o servidor. ${refreshed.experiences || 0} experiencias verificadas.`,
+          );
+        }
+        renderAll();
+        renderPersistenceGateBanner();
+        renderAuthStatus();
+        renderOfflineQueuePanel();
+        return;
+      } catch (error) {
+        markApiConnectivityFailure(error);
+        if (!options.silent) document.getElementById("embeddingStatus").textContent = languageText("No se pudo actualizar la cola con el servidor.", "The queue could not be updated with the server.", "La file n'a pas pu etre mise a jour avec le serveur.", "Nao foi possivel atualizar a fila com o servidor.");
+      }
+    } else if (!options.silent) {
+      document.getElementById("embeddingStatus").textContent = state.language !== "es" ? "No pending changes." : "No hay cambios pendientes.";
+    }
     renderPersistenceGateBanner();
     renderAuthStatus();
     renderAdmin();
@@ -6710,13 +6766,17 @@ async function syncOfflineQueue(options = {}) {
     markApiOnline();
     if (state.config?.persistence === "supabase" || state.persistence === "supabase") {
       try {
-        const resolved = await reconcileOfflineQueueFromSupabase({ silent: true });
+        const serverRefresh = options.skipServerRefresh
+          ? { resolved: await reconcileOfflineQueueFromSupabase({ silent: true }) }
+          : await refreshSharedDataFromServer({ silent: true });
+        const resolved = Number(serverRefresh.resolved || 0);
         if (!state.offlineQueue.length) {
           if (!options.silent) {
             document.getElementById("embeddingStatus").textContent = state.language !== "es"
                ? `${resolved} pending changes were already available in the cloud.`
               : `${resolved} pendientes ya estaban disponibles en la nube.`;
           }
+          if (!options.skipServerRefresh) renderAll();
           renderPersistenceGateBanner();
           renderAuthStatus();
           renderOfflineQueuePanel();
@@ -6745,7 +6805,15 @@ async function syncOfflineQueue(options = {}) {
   }
   state.offlineQueue = remaining;
   saveOfflineQueue();
+  if (!options.skipServerRefresh && (state.config?.persistence === "supabase" || state.persistence === "supabase")) {
+    try {
+      await refreshSharedDataFromServer({ silent: true });
+    } catch {
+      // Keep the local retry result; the next explicit sync will refresh the server snapshot.
+    }
+  }
   if (remaining.length) scheduleAttachmentRetry({ delayMs: options.auto ? 30000 : 5000 });
+  renderAll();
   renderPersistenceGateBanner();
   renderAuthStatus();
   renderOfflineQueuePanel();
@@ -8780,7 +8848,7 @@ function handleOfflineQueueAction(event) {
     return;
   }
   if (action === "reconcile") {
-    reconcileOfflineQueueFromSupabase();
+    syncOfflineQueue();
     return;
   }
   if (action === "auth") {
