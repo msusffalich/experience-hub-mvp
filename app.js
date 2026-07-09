@@ -1,4 +1,4 @@
-const APP_VERSION = "20260703-offline-server-sync-658";
+const APP_VERSION = "20260709-publication-video-package-659";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -26026,7 +26026,6 @@ async function exportCurrentPublicationPdf() {
     return;
   }
   const warning = draft.approvalStatus !== "approved" ? t("labels.publicationExportReviewWarning") : "";
-  const html = buildPublicationHtml(draft);
   if (!state.apiOnline) {
     setPublicationProgress({
       title: t("labels.publicationProgressApiCheck"),
@@ -26047,24 +26046,12 @@ async function exportCurrentPublicationPdf() {
       detail: t("labels.publicationProgressPdfStartDetail"),
       percent: 15,
     });
-    const exportDraft = buildPublicationExportDraft(draft);
-    setPublicationProgress({
-      title: t("labels.publicationProgressPdfServer"),
-      detail: t("labels.publicationProgressPdfServerDetail"),
-      percent: 45,
-    });
-    const response = await fetch(`${API_BASE}/publication/pdf`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...authHeader() },
-      body: JSON.stringify({ html, draft: exportDraft, title: draft.title, language: state.language }),
-    });
-    if (!response.ok) throw new Error(await response.text());
+    const blob = await generatePublicationPdfBlob(draft);
     setPublicationProgress({
       title: t("labels.publicationProgressPdfDownload"),
       detail: t("labels.publicationProgressPdfDownloadDetail"),
       percent: 80,
     });
-    const blob = await response.blob();
     addPublicationHistory(draft, "exported", "PDF ReportLab");
     persistPublicationDraft(draft);
     downloadPublicationBlob(blob, "publicacion-inteligente.pdf", warning);
@@ -26077,6 +26064,23 @@ async function exportCurrentPublicationPdf() {
     failPublicationProgress(document.getElementById("publicationStatus").textContent);
     notify(document.getElementById("publicationStatus").textContent, "error");
   }
+}
+
+async function generatePublicationPdfBlob(draft) {
+  const html = buildPublicationHtml(draft);
+  const exportDraft = buildPublicationExportDraft(draft);
+  setPublicationProgress({
+    title: t("labels.publicationProgressPdfServer"),
+    detail: t("labels.publicationProgressPdfServerDetail"),
+    percent: 45,
+  });
+  const response = await fetch(`${API_BASE}/publication/pdf`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeader() },
+    body: JSON.stringify({ html, draft: exportDraft, title: draft.title, language: state.language }),
+  });
+  if (!response.ok) throw new Error(await response.text());
+  return response.blob();
 }
 
 function previewCurrentPublicationHtml() {
@@ -26249,7 +26253,7 @@ function exportCurrentPublicationMarkdown() {
   downloadPublicationBlob(new Blob([buildPublicationMarkdown(draft)], { type: "text/markdown;charset=utf-8" }), "publicacion-inteligente.md", warning);
 }
 
-function exportCurrentPublicationPackage() {
+async function exportCurrentPublicationPackage() {
   const draft = state.currentPublicationDraft || state.publicationDrafts[0];
   if (!draft) {
     document.getElementById("publicationStatus").textContent = t("labels.publicationEmpty");
@@ -26257,9 +26261,32 @@ function exportCurrentPublicationPackage() {
   }
   const warning = draft.approvalStatus !== "approved" ? t("labels.publicationExportReviewWarning") : "";
   const media = getApprovedPublicationMedia(draft);
+  const videos = media.filter((item) => String(item.type || "").startsWith("video/") && (item.url || item.dataUrl));
+  if (!videos.length) {
+    document.getElementById("publicationStatus").textContent = languageText(
+      "No hay videos seleccionados; se descargara solo el PDF.",
+      "No selected videos; only the PDF will be downloaded.",
+      "Aucune video selectionnee; seul le PDF sera telecharge.",
+      "Nao ha videos selecionados; somente o PDF sera baixado.",
+    );
+    await exportCurrentPublicationPdf();
+    return;
+  }
+  if (!(await ensureApiOnlineForExport())) {
+    document.getElementById("publicationStatus").textContent = t("labels.publicationProgressApiUnavailable");
+    failPublicationProgress(document.getElementById("publicationStatus").textContent);
+    notify(document.getElementById("publicationStatus").textContent, "error");
+    return;
+  }
+  setPublicationProgress({
+    title: languageText("Generando paquete PDF + videos", "Generating PDF + videos package", "Generation du paquet PDF + videos", "Gerando pacote PDF + videos"),
+    detail: languageText("Preparando PDF editado y videos seleccionados.", "Preparing the edited PDF and selected videos.", "Preparation du PDF edite et des videos selectionnees.", "Preparando PDF editado e videos selecionados."),
+    percent: 12,
+  });
   const exportDraft = buildPublicationExportDraft(draft);
-  const payload = {
+  const manifest = {
     exportedAt: new Date().toISOString(),
+    appVersion: APP_VERSION,
     language: state.language,
     approvalStatus: draft.approvalStatus,
     approvedAt: draft.approvedAt || null,
@@ -26273,8 +26300,6 @@ function exportCurrentPublicationPackage() {
     pages: exportDraft.pages,
     distributionKit: exportDraft.distributionKit,
     channelStudio: exportDraft.channelStudio,
-    html: buildPublicationHtml(draft),
-    markdown: buildPublicationMarkdown(draft),
     media: media.map((item) => ({
       name: item.name,
       type: item.type,
@@ -26290,14 +26315,201 @@ function exportCurrentPublicationPackage() {
     })),
     history: draft.history || [],
   };
-  addPublicationHistory(draft, "exported", state.language !== "es" ? "Editorial package" : "Paquete editorial");
-  persistPublicationDraft(draft);
-  downloadPublicationBlob(
-    new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" }),
-    "paquete-editorial-publicacion.json",
-    warning,
-  );
-  document.getElementById("publicationStatus").textContent = warning || t("labels.publicationPackageExported");
+  try {
+    const pdfBlob = await generatePublicationPdfBlob(draft);
+    setPublicationProgress({
+      title: languageText("Agregando videos al paquete", "Adding videos to package", "Ajout des videos au paquet", "Adicionando videos ao pacote"),
+      detail: `${videos.length} video(s)`,
+      percent: 62,
+    });
+    const videoFiles = await Promise.all(videos.map((item, index) => buildPublicationVideoZipFile(item, index)));
+    const readme = buildPublicationPackageReadme(draft, videos, warning);
+    const files = [
+      { path: "publicacion.pdf", blob: pdfBlob },
+      { path: "README.txt", blob: new Blob([readme], { type: "text/plain;charset=utf-8" }) },
+      { path: "manifest.json", blob: new Blob([JSON.stringify(manifest, null, 2)], { type: "application/json;charset=utf-8" }) },
+      { path: "publicacion.md", blob: new Blob([buildPublicationMarkdown(draft)], { type: "text/markdown;charset=utf-8" }) },
+      ...videoFiles,
+    ];
+    setPublicationProgress({
+      title: languageText("Comprimiendo paquete", "Creating package", "Creation du paquet", "Criando pacote"),
+      detail: languageText("El ZIP conserva el PDF y los videos originales.", "The ZIP keeps the PDF and original videos.", "Le ZIP conserve le PDF et les videos originales.", "O ZIP mantem o PDF e os videos originais."),
+      percent: 86,
+    });
+    const zipBlob = await createStoredZipBlob(files);
+    addPublicationHistory(draft, "exported", state.language !== "es" ? "PDF + video ZIP package" : "Paquete ZIP PDF + videos");
+    persistPublicationDraft(draft);
+    const filename = `${slugifyFilename(draft.title || "publicacion")}-pdf-videos.zip`;
+    downloadPublicationBlob(zipBlob, filename, warning);
+    finishPublicationProgress(filename);
+    document.getElementById("publicationStatus").textContent = warning || languageText("Paquete ZIP con PDF y videos generado.", "ZIP package with PDF and videos generated.", "Paquet ZIP avec PDF et videos genere.", "Pacote ZIP com PDF e videos gerado.");
+  } catch (error) {
+    console.warn("Publication video package export failed", error);
+    const detail = getExportErrorDetail(error);
+    document.getElementById("publicationStatus").textContent = languageText(
+      `No se pudo generar el paquete con videos. Detalle: ${detail}`,
+      `The video package could not be generated. Detail: ${detail}`,
+      `Le paquet avec videos n'a pas pu etre genere. Detail: ${detail}`,
+      `Nao foi possivel gerar o pacote com videos. Detalhe: ${detail}`,
+    );
+    failPublicationProgress(document.getElementById("publicationStatus").textContent);
+    notify(document.getElementById("publicationStatus").textContent, "error");
+  }
+}
+
+async function buildPublicationVideoZipFile(item, index) {
+  const blob = await fetchPublicationMediaBlob(item);
+  const extension = getFileExtension(item.name || "") || extensionFromMime(item.type || blob.type || "video/mp4") || "mp4";
+  const baseName = slugifyFilename(`${String(index + 1).padStart(2, "0")}-${item.experienceTitle || item.name || "video"}`);
+  return {
+    path: `videos/${baseName}.${extension}`,
+    blob,
+  };
+}
+
+async function fetchPublicationMediaBlob(item) {
+  if (item.dataUrl) return dataUrlToBlob(item.dataUrl, item.type || "application/octet-stream");
+  if (!item.url) throw new Error("video_source_missing");
+  const response = await fetch(item.url);
+  if (!response.ok) throw new Error(`video_fetch_failed_${response.status}`);
+  return response.blob();
+}
+
+function extensionFromMime(type = "") {
+  const normalized = String(type || "").toLowerCase();
+  if (normalized.includes("quicktime")) return "mov";
+  if (normalized.includes("webm")) return "webm";
+  if (normalized.includes("mp4")) return "mp4";
+  if (normalized.includes("mpeg")) return "mpeg";
+  return "";
+}
+
+function buildPublicationPackageReadme(draft, videos, warning = "") {
+  const lines = [
+    draft.title || "Publicacion Vibe",
+    "",
+    languageText(
+      "Este paquete contiene el PDF editado y los videos seleccionados para la publicacion.",
+      "This package contains the edited PDF and the selected videos for the publication.",
+      "Ce paquet contient le PDF edite et les videos selectionnees pour la publication.",
+      "Este pacote contem o PDF editado e os videos selecionados para a publicacao.",
+    ),
+    warning ? `${languageText("Nota", "Note", "Note", "Nota")}: ${warning}` : "",
+    "",
+    "Archivos:",
+    "- publicacion.pdf",
+    "- publicacion.md",
+    "- manifest.json",
+    ...videos.map((item, index) => `- videos/${String(index + 1).padStart(2, "0")}-${slugifyFilename(item.experienceTitle || item.name || "video")}.${getFileExtension(item.name || "") || extensionFromMime(item.type || "video/mp4") || "mp4"}: ${buildPublicationExportCaption(item)}`),
+    "",
+    languageText(
+      "El PDF narra la historia; los videos quedan como evidencia multimedia completa.",
+      "The PDF tells the story; the videos remain as complete multimedia evidence.",
+      "Le PDF raconte l'histoire; les videos restent comme preuve multimedia complete.",
+      "O PDF conta a historia; os videos ficam como evidencia multimidia completa.",
+    ),
+  ];
+  return lines.filter((line) => line !== "").join("\n");
+}
+
+async function createStoredZipBlob(files = []) {
+  const encoder = new window.TextEncoder();
+  const localParts = [];
+  const centralParts = [];
+  let offset = 0;
+  for (const file of files) {
+    const pathBytes = encoder.encode(file.path);
+    const data = new Uint8Array(await file.blob.arrayBuffer());
+    const crc = crc32(data);
+    const { time, date } = zipDosDateTime(new Date());
+    const localHeader = zipHeader(30);
+    writeZipUint32(localHeader, 0, 0x04034b50);
+    writeZipUint16(localHeader, 4, 20);
+    writeZipUint16(localHeader, 6, 0x0800);
+    writeZipUint16(localHeader, 8, 0);
+    writeZipUint16(localHeader, 10, time);
+    writeZipUint16(localHeader, 12, date);
+    writeZipUint32(localHeader, 14, crc);
+    writeZipUint32(localHeader, 18, data.length);
+    writeZipUint32(localHeader, 22, data.length);
+    writeZipUint16(localHeader, 26, pathBytes.length);
+    writeZipUint16(localHeader, 28, 0);
+    localParts.push(localHeader, pathBytes, data);
+
+    const centralHeader = zipHeader(46);
+    writeZipUint32(centralHeader, 0, 0x02014b50);
+    writeZipUint16(centralHeader, 4, 20);
+    writeZipUint16(centralHeader, 6, 20);
+    writeZipUint16(centralHeader, 8, 0x0800);
+    writeZipUint16(centralHeader, 10, 0);
+    writeZipUint16(centralHeader, 12, time);
+    writeZipUint16(centralHeader, 14, date);
+    writeZipUint32(centralHeader, 16, crc);
+    writeZipUint32(centralHeader, 20, data.length);
+    writeZipUint32(centralHeader, 24, data.length);
+    writeZipUint16(centralHeader, 28, pathBytes.length);
+    writeZipUint16(centralHeader, 30, 0);
+    writeZipUint16(centralHeader, 32, 0);
+    writeZipUint16(centralHeader, 34, 0);
+    writeZipUint16(centralHeader, 36, 0);
+    writeZipUint32(centralHeader, 38, 0);
+    writeZipUint32(centralHeader, 42, offset);
+    centralParts.push(centralHeader, pathBytes);
+    offset += localHeader.length + pathBytes.length + data.length;
+  }
+  const centralSize = centralParts.reduce((sum, part) => sum + part.length, 0);
+  const end = zipHeader(22);
+  writeZipUint32(end, 0, 0x06054b50);
+  writeZipUint16(end, 4, 0);
+  writeZipUint16(end, 6, 0);
+  writeZipUint16(end, 8, files.length);
+  writeZipUint16(end, 10, files.length);
+  writeZipUint32(end, 12, centralSize);
+  writeZipUint32(end, 16, offset);
+  writeZipUint16(end, 20, 0);
+  return new Blob([...localParts, ...centralParts, end], { type: "application/zip" });
+}
+
+function zipHeader(size) {
+  return new Uint8Array(size);
+}
+
+function writeZipUint16(bytes, offset, value) {
+  bytes[offset] = value & 0xff;
+  bytes[offset + 1] = (value >>> 8) & 0xff;
+}
+
+function writeZipUint32(bytes, offset, value) {
+  bytes[offset] = value & 0xff;
+  bytes[offset + 1] = (value >>> 8) & 0xff;
+  bytes[offset + 2] = (value >>> 16) & 0xff;
+  bytes[offset + 3] = (value >>> 24) & 0xff;
+}
+
+function zipDosDateTime(date) {
+  const safe = date instanceof Date && !Number.isNaN(date.getTime()) ? date : new Date();
+  const time = (safe.getHours() << 11) | (safe.getMinutes() << 5) | Math.floor(safe.getSeconds() / 2);
+  const year = Math.max(1980, safe.getFullYear());
+  const dosDate = ((year - 1980) << 9) | ((safe.getMonth() + 1) << 5) | safe.getDate();
+  return { time, date: dosDate };
+}
+
+let zipCrcTable = null;
+
+function crc32(data) {
+  if (!zipCrcTable) {
+    zipCrcTable = new window.Uint32Array(256);
+    for (let index = 0; index < 256; index += 1) {
+      let value = index;
+      for (let bit = 0; bit < 8; bit += 1) value = value & 1 ? 0xedb88320 ^ (value >>> 1) : value >>> 1;
+      zipCrcTable[index] = value >>> 0;
+    }
+  }
+  let crc = 0xffffffff;
+  for (let index = 0; index < data.length; index += 1) {
+    crc = zipCrcTable[(crc ^ data[index]) & 0xff] ^ (crc >>> 8);
+  }
+  return (crc ^ 0xffffffff) >>> 0;
 }
 
 function buildPublicationMarkdown(draft) {
