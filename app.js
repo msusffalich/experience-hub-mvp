@@ -1,4 +1,4 @@
-const APP_VERSION = "20260709-publication-video-package-659";
+const APP_VERSION = "20260710-visible-video-package-660";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -488,7 +488,7 @@ const i18n = {
       previewPublication: "Vista imprimible",
       copyPublicationText: "Copiar texto",
       copyPublicationHtml: "Copiar HTML",
-      exportPublicationPackage: "Paquete editorial",
+      exportPublicationPackage: "Descargar PDF + videos",
       downloadPdf: "PDF",
       edit: "Editar",
       delete: "Borrar",
@@ -1325,7 +1325,7 @@ const i18n = {
       previewPublication: "Printable preview",
       copyPublicationText: "Copy text",
       copyPublicationHtml: "Copy HTML",
-      exportPublicationPackage: "Editorial package",
+      exportPublicationPackage: "Download PDF + videos",
       downloadPdf: "PDF",
       edit: "Edit",
       delete: "Delete",
@@ -2177,7 +2177,7 @@ i18n.fr = mergeLocale(i18n.en, {
     previewPublication: "Aperçu imprimable",
     copyPublicationText: "Copier le texte",
     copyPublicationHtml: "Copier HTML",
-    exportPublicationPackage: "Dossier éditorial",
+    exportPublicationPackage: "Télécharger PDF + vidéos",
     downloadPdf: "PDF",
     edit: "Modifier",
     delete: "Supprimer",
@@ -7780,7 +7780,7 @@ function applyLanguage() {
   document.getElementById("reportExportTitle").textContent = state.language !== "es" ? "Technical report options" : "Opciones técnicas del reporte";
   document.getElementById("reportExportHelp").textContent = state.language !== "es" ? "JSON, CSV, HTML, and acceptance evidence" : "JSON, CSV, HTML y evidencia de aceptación";
   document.getElementById("publicationMoreTitle").textContent = state.language !== "es" ? "Technical options" : "Opciones técnicas";
-  document.getElementById("publicationMoreHelp").textContent = state.language !== "es" ? "HTML, Markdown, copies, and editorial package" : "HTML, Markdown, copias y paquete editorial";
+  document.getElementById("publicationMoreHelp").textContent = state.language !== "es" ? "HTML, Markdown, and copies" : "HTML, Markdown y copias";
   document.getElementById("reportParticipantLabel").textContent = state.language !== "es" ? "Group/person in this report" : "Grupo/persona de este reporte";
   document.getElementById("insightsParticipantLabel").textContent = state.language !== "es" ? "Group / person" : "Grupo / persona";
   document.getElementById("publicationParticipantLabel").textContent = state.language !== "es" ? "Source group / person" : "Grupo / persona fuente";
@@ -7886,7 +7886,7 @@ function applyFrenchStaticTextOverrides() {
   setText("reportExportTitle", "Options techniques du rapport");
   setText("reportExportHelp", "JSON, CSV, HTML et preuves d'acceptation");
   setText("publicationMoreTitle", "Options techniques");
-  setText("publicationMoreHelp", "HTML, Markdown, copies et dossier éditorial");
+  setText("publicationMoreHelp", "HTML, Markdown et copies");
   setText("reportParticipantLabel", "Groupe/personne dans ce rapport");
   setText("insightsParticipantLabel", "Groupe / personne");
   setText("publicationParticipantLabel", "Groupe / personne source");
