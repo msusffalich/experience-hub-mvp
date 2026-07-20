@@ -10349,6 +10349,18 @@ button.asset-processing-summary-card {
   line-height: 1.45;
 }
 
+.obsidian-local-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.obsidian-local-actions .card-meta {
+  flex: 1 1 220px;
+}
+
 .experience-map-routes {
   margin-top: 14px;
 }

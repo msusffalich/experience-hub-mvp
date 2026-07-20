@@ -1,4 +1,4 @@
-const APP_VERSION = "20260720-obsidian-vault-export-661";
+const APP_VERSION = "20260720-local-obsidian-vault-662";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -4743,6 +4743,15 @@ const state = {
   mobileHealthSummary: null,
   dashboardContextRefreshedAt: "",
   dashboardContextRefreshInProgress: false,
+  localObsidianVault: {
+    handle: null,
+    connected: false,
+    permission: "unknown",
+    name: "",
+    lastSavedPath: "",
+    lastSavedAt: "",
+    lastError: "",
+  },
   contextImpactRefreshedAt: "",
   contextImpactRefreshedFor: "",
   contextImpactRefreshInProgress: false,
@@ -4872,6 +4881,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     setupLanguage();
     applyDisplayTheme();
     applyLanguage();
+    await loadStoredLocalObsidianVault();
     normalizeVisibleVersionUrl();
     try {
       await handleIntegrationReturnFromUrl();
@@ -8619,6 +8629,8 @@ function setupActions() {
     if (event.key === "Enter") answerExperienceMapQuestion();
   });
   document.getElementById("experienceMapExportButton").addEventListener("click", exportExperienceMapMarkdown);
+  document.getElementById("connectLocalObsidianVaultButton")?.addEventListener("click", connectLocalObsidianVault);
+  document.getElementById("forgetLocalObsidianVaultButton")?.addEventListener("click", forgetLocalObsidianVault);
   document.getElementById("manualSearchInput").addEventListener("input", (event) => {
     state.manualFilters.query = event.target.value.trim().toLowerCase();
     renderManual();
@@ -12087,6 +12099,7 @@ async function refreshOuraConnectionStatus(options = {}) {
 function renderAll() {
   updateDashboardParticipantControl();
   updatePilotParticipantControls();
+  renderLocalObsidianVaultStatus();
   renderActiveView();
   renderCoreMvpReturnBanner();
   renderPersistenceGateBanner();
@@ -26795,11 +26808,327 @@ function inferObsidianTargetForFilename(filename = "") {
   return "inbox";
 }
 
+const LOCAL_OBSIDIAN_DB_NAME = "vibepwa-local-obsidian";
+const LOCAL_OBSIDIAN_STORE_NAME = "handles";
+const LOCAL_OBSIDIAN_HANDLE_KEY = "vault";
+
+function supportsLocalObsidianVault() {
+  return Boolean(window.showDirectoryPicker && window.indexedDB);
+}
+
+function openLocalObsidianDb() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(LOCAL_OBSIDIAN_DB_NAME, 1);
+    request.onupgradeneeded = () => {
+      request.result.createObjectStore(LOCAL_OBSIDIAN_STORE_NAME);
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error || new Error("indexeddb_open_failed"));
+  });
+}
+
+async function readLocalObsidianHandle() {
+  if (!supportsLocalObsidianVault()) return null;
+  const db = await openLocalObsidianDb();
+  try {
+    return await new Promise((resolve, reject) => {
+      const tx = db.transaction(LOCAL_OBSIDIAN_STORE_NAME, "readonly");
+      const request = tx.objectStore(LOCAL_OBSIDIAN_STORE_NAME).get(LOCAL_OBSIDIAN_HANDLE_KEY);
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error || new Error("indexeddb_read_failed"));
+    });
+  } finally {
+    db.close();
+  }
+}
+
+async function writeLocalObsidianHandle(handle) {
+  if (!supportsLocalObsidianVault()) return;
+  const db = await openLocalObsidianDb();
+  try {
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(LOCAL_OBSIDIAN_STORE_NAME, "readwrite");
+      tx.objectStore(LOCAL_OBSIDIAN_STORE_NAME).put(handle, LOCAL_OBSIDIAN_HANDLE_KEY);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error || new Error("indexeddb_write_failed"));
+    });
+  } finally {
+    db.close();
+  }
+}
+
+async function deleteLocalObsidianHandle() {
+  if (!supportsLocalObsidianVault()) return;
+  const db = await openLocalObsidianDb();
+  try {
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(LOCAL_OBSIDIAN_STORE_NAME, "readwrite");
+      tx.objectStore(LOCAL_OBSIDIAN_STORE_NAME).delete(LOCAL_OBSIDIAN_HANDLE_KEY);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error || new Error("indexeddb_delete_failed"));
+    });
+  } finally {
+    db.close();
+  }
+}
+
+async function ensureLocalObsidianPermission(handle, mode = "readwrite") {
+  if (!handle?.queryPermission || !handle?.requestPermission) return "denied";
+  const options = { mode };
+  let permission = await handle.queryPermission(options);
+  if (permission !== "granted") permission = await handle.requestPermission(options);
+  return permission;
+}
+
+async function loadStoredLocalObsidianVault() {
+  if (!supportsLocalObsidianVault()) {
+    state.localObsidianVault = {
+      ...(state.localObsidianVault || {}),
+      connected: false,
+      permission: "unsupported",
+      lastError: "unsupported_browser",
+    };
+    renderLocalObsidianVaultStatus();
+    return;
+  }
+  try {
+    const handle = await readLocalObsidianHandle();
+    if (!handle) {
+      renderLocalObsidianVaultStatus();
+      return;
+    }
+    const permission = await ensureLocalObsidianPermission(handle);
+    state.localObsidianVault = {
+      ...(state.localObsidianVault || {}),
+      handle,
+      connected: permission === "granted",
+      permission,
+      name: handle.name || "obsidian-vault-vibe",
+      lastError: permission === "granted" ? "" : "permission_required",
+    };
+  } catch (error) {
+    state.localObsidianVault = {
+      ...(state.localObsidianVault || {}),
+      connected: false,
+      permission: "error",
+      lastError: error.message,
+    };
+  }
+  renderLocalObsidianVaultStatus();
+}
+
+async function connectLocalObsidianVault() {
+  if (!supportsLocalObsidianVault()) {
+    notify(
+      languageText(
+        "Este navegador no permite conectar carpetas locales. Usa Chrome o Edge en el PC.",
+        "This browser cannot connect local folders. Use Chrome or Edge on the PC.",
+        "Ce navigateur ne peut pas connecter de dossiers locaux. Utilise Chrome ou Edge sur le PC.",
+        "Este navegador nao permite conectar pastas locais. Use Chrome ou Edge no PC.",
+      ),
+      "warn",
+    );
+    renderLocalObsidianVaultStatus();
+    return;
+  }
+  try {
+    const handle = await window.showDirectoryPicker({
+      id: "vibe-obsidian-vault",
+      mode: "readwrite",
+      startIn: "documents",
+    });
+    const permission = await ensureLocalObsidianPermission(handle);
+    if (permission !== "granted") throw new Error("permission_denied");
+    await writeLocalObsidianHandle(handle);
+    state.localObsidianVault = {
+      ...(state.localObsidianVault || {}),
+      handle,
+      connected: true,
+      permission,
+      name: handle.name || "obsidian-vault-vibe",
+      lastError: "",
+    };
+    renderLocalObsidianVaultStatus();
+    notify(
+      languageText(
+        `Bóveda local conectada: ${state.localObsidianVault.name}. Los Markdown se guardarán ahí.`,
+        `Local vault connected: ${state.localObsidianVault.name}. Markdown exports will be saved there.`,
+        `Bóveda locale connectée : ${state.localObsidianVault.name}. Les exports Markdown y seront enregistrés.`,
+        `Cofre local conectado: ${state.localObsidianVault.name}. Os Markdown serao salvos ali.`,
+      ),
+      "success",
+    );
+  } catch (error) {
+    state.localObsidianVault = {
+      ...(state.localObsidianVault || {}),
+      connected: false,
+      permission: "denied",
+      lastError: error.message,
+    };
+    renderLocalObsidianVaultStatus();
+    notify(
+      languageText(
+        "No se conectó la bóveda local. La descarga normal sigue disponible.",
+        "The local vault was not connected. Normal download remains available.",
+        "La bóveda locale n'a pas été connectée. Le téléchargement normal reste disponible.",
+        "O cofre local nao foi conectado. O download normal continua disponivel.",
+      ),
+      "warn",
+    );
+  }
+}
+
+async function forgetLocalObsidianVault() {
+  await deleteLocalObsidianHandle().catch(() => {});
+  state.localObsidianVault = {
+    handle: null,
+    connected: false,
+    permission: "unknown",
+    name: "",
+    lastSavedPath: "",
+    lastSavedAt: "",
+    lastError: "",
+  };
+  renderLocalObsidianVaultStatus();
+  notify(languageText("Conexión local de Obsidian eliminada.", "Local Obsidian connection removed.", "Connexion locale Obsidian supprimée.", "Conexao local do Obsidian removida."), "ok");
+}
+
+function getLocalObsidianStatusText() {
+  const vault = state.localObsidianVault || {};
+  if (!supportsLocalObsidianVault()) {
+    return languageText(
+      "Conexión local no disponible en este navegador.",
+      "Local vault connection is not available in this browser.",
+      "La connexion locale n'est pas disponible dans ce navigateur.",
+      "A conexao local nao esta disponivel neste navegador.",
+    );
+  }
+  if (vault.connected) {
+    const saved = vault.lastSavedPath
+      ? languageText(`Último guardado: ${vault.lastSavedPath}`, `Last saved: ${vault.lastSavedPath}`, `Dernier enregistrement : ${vault.lastSavedPath}`, `Ultimo salvo: ${vault.lastSavedPath}`)
+      : languageText("Lista para recibir exportaciones Markdown.", "Ready for Markdown exports.", "Prête pour les exports Markdown.", "Pronta para exportacoes Markdown.");
+    return `${languageText("Bóveda PC conectada", "PC vault connected", "Bóveda PC connectée", "Cofre PC conectado")}: ${vault.name || "obsidian-vault-vibe"} · ${saved}`;
+  }
+  if (vault.lastError) {
+    return languageText(
+      "Bóveda PC no conectada. Pulsa Conectar y elige la carpeta local de Obsidian.",
+      "PC vault not connected. Press Connect and choose the local Obsidian folder.",
+      "Bóveda PC non connectée. Appuie sur Connecter et choisis le dossier local Obsidian.",
+      "Cofre PC nao conectado. Clique em Conectar e escolha a pasta local do Obsidian.",
+    );
+  }
+  return languageText(
+    "Bóveda PC no conectada. Las exportaciones solo se descargarán.",
+    "PC vault not connected. Exports will only be downloaded.",
+    "Bóveda PC non connectée. Les exports seront seulement téléchargés.",
+    "Cofre PC nao conectado. As exportacoes apenas serao baixadas.",
+  );
+}
+
+function renderLocalObsidianVaultStatus() {
+  const status = document.getElementById("localObsidianVaultStatus");
+  const connect = document.getElementById("connectLocalObsidianVaultButton");
+  const forget = document.getElementById("forgetLocalObsidianVaultButton");
+  if (status) status.textContent = getLocalObsidianStatusText();
+  if (connect) {
+    connect.textContent = state.localObsidianVault?.connected
+      ? languageText("Cambiar bóveda del PC", "Change PC vault", "Changer la bóveda PC", "Trocar cofre do PC")
+      : languageText("Conectar bóveda del PC", "Connect PC vault", "Connecter la bóveda PC", "Conectar cofre do PC");
+    connect.disabled = !supportsLocalObsidianVault();
+  }
+  if (forget) {
+    forget.textContent = languageText("Quitar conexión local", "Remove local connection", "Supprimer la connexion locale", "Remover conexao local");
+    forget.hidden = !state.localObsidianVault?.connected;
+  }
+}
+
+function getLocalObsidianTargetPath(target) {
+  const map = {
+    publications: ["40_Publications"],
+    moc: ["20_Maps_of_Content"],
+    manual: ["50_Reference"],
+    experiences: ["02_Experiences"],
+    biometrics: ["04_Assets", "Biometrics"],
+    assets: ["04_Assets"],
+    inbox: ["00_Inbox"],
+  };
+  return map[target] || map.inbox;
+}
+
+function sanitizeLocalObsidianFilename(filename = "") {
+  const clean = String(filename || "vibe-export.md")
+    .replace(/[<>:"/\\|?*\u0000-\u001f]/g, "-")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 140);
+  return /\.m(?:d|arkdown)$/i.test(clean) ? clean : `${clean || "vibe-export"}.md`;
+}
+
+async function getOrCreateDirectoryHandle(rootHandle, segments = []) {
+  let current = rootHandle;
+  for (const segment of segments) {
+    current = await current.getDirectoryHandle(segment, { create: true });
+  }
+  return current;
+}
+
+async function saveMarkdownToLocalObsidianVault(markdown, filename, options = {}) {
+  const vault = state.localObsidianVault || {};
+  if (!vault.handle || !supportsLocalObsidianVault()) return null;
+  const permission = await ensureLocalObsidianPermission(vault.handle);
+  if (permission !== "granted") {
+    state.localObsidianVault = { ...vault, connected: false, permission, lastError: "permission_required" };
+    renderLocalObsidianVaultStatus();
+    return null;
+  }
+  const target = options.target || inferObsidianTargetForFilename(filename);
+  const targetDir = await getOrCreateDirectoryHandle(vault.handle, getLocalObsidianTargetPath(target));
+  const safeFilename = sanitizeLocalObsidianFilename(filename);
+  const fileHandle = await targetDir.getFileHandle(safeFilename, { create: true });
+  const writable = await fileHandle.createWritable();
+  await writable.write(markdown);
+  await writable.close();
+  const relativePath = [...getLocalObsidianTargetPath(target), safeFilename].join("/");
+  state.localObsidianVault = {
+    ...vault,
+    connected: true,
+    permission: "granted",
+    lastSavedPath: relativePath,
+    lastSavedAt: new Date().toISOString(),
+    lastError: "",
+  };
+  renderLocalObsidianVaultStatus();
+  return { ok: true, relativePath };
+}
+
 async function syncMarkdownBlobToObsidian(blob, filename, options = {}) {
   if (!isMarkdownExport(blob, filename)) return;
+  let markdown = "";
+  let localSaved = null;
   try {
-    const markdown = await blob.text();
+    markdown = await blob.text();
     if (!markdown.trim()) return;
+    localSaved = await saveMarkdownToLocalObsidianVault(markdown, filename, options);
+    if (localSaved?.ok) {
+      state.lastObsidianExport = {
+        ok: true,
+        local: true,
+        filename,
+        relativePath: localSaved.relativePath,
+        savedAt: new Date().toISOString(),
+      };
+      if (/publicacion|publication|mapa|obsidian|manual/i.test(filename)) {
+        notify(
+          languageText(
+            `Markdown guardado en la bóveda del PC: ${localSaved.relativePath}`,
+            `Markdown saved to the PC vault: ${localSaved.relativePath}`,
+            `Markdown enregistré dans la bóveda du PC : ${localSaved.relativePath}`,
+            `Markdown salvo no cofre do PC: ${localSaved.relativePath}`,
+          ),
+          "success",
+        );
+      }
+    }
     const response = await fetch(`${API_BASE}/obsidian/export`, {
       method: "POST",
       headers: {
@@ -26814,8 +27143,11 @@ async function syncMarkdownBlobToObsidian(blob, filename, options = {}) {
       }),
     });
     if (!response.ok) throw new Error(`obsidian_export_${response.status}`);
-    state.lastObsidianExport = await response.json();
-    if (/publicacion|publication|mapa|obsidian/i.test(filename)) {
+    const serverExport = await response.json();
+    state.lastObsidianExport = localSaved?.ok
+      ? { ...state.lastObsidianExport, server: serverExport }
+      : serverExport;
+    if (!localSaved?.ok && /publicacion|publication|mapa|obsidian/i.test(filename)) {
       notify(
         state.language !== "es"
           ? `Markdown saved to Obsidian: ${state.lastObsidianExport.relativePath || filename}`
@@ -26824,12 +27156,14 @@ async function syncMarkdownBlobToObsidian(blob, filename, options = {}) {
       );
     }
   } catch (error) {
-    state.lastObsidianExport = {
-      ok: false,
-      filename,
-      error: error.message,
-      savedAt: new Date().toISOString(),
-    };
+    if (!localSaved?.ok) {
+      state.lastObsidianExport = {
+        ok: false,
+        filename,
+        error: error.message,
+        savedAt: new Date().toISOString(),
+      };
+    }
     console.warn("Obsidian Markdown export failed", error);
   }
 }

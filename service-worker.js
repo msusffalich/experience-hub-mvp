@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260720-obsidian-vault-export-661";
+﻿const CACHE_NAME = "experience-hub-pwa-20260720-local-obsidian-vault-662";
 const APP_SHELL = [
   "/icons/vibe-logo.jpg",
   "/icons/vibe-logo.png",
@@ -61,3 +61,4 @@ self.addEventListener("fetch", (event) => {
       }))
   );
 });
+
