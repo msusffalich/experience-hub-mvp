@@ -1,0 +1,33 @@
+{
+  "version": "1.0",
+  "vaultName": "obsidian-vault-vibe",
+  "defaultInbox": "00_Inbox",
+  "targets": {
+    "experience": "02_Experiences",
+    "event": "03_Events",
+    "asset_image": "04_Assets/Images",
+    "asset_video": "04_Assets/Videos",
+    "asset_audio": "04_Assets/Audio",
+    "asset_document": "04_Assets/Documents",
+    "asset_biometric": "04_Assets/Biometrics",
+    "atomic_note": "10_Atomic_Notes",
+    "moc": "20_Maps_of_Content",
+    "project": "30_Projects",
+    "publication": "40_Publications",
+    "reference": "50_Reference"
+  },
+  "naming": {
+    "experience": "{{date}} - {{title}}.md",
+    "event": "{{date}} - {{experience_title}} - Evento {{event_number}}.md",
+    "asset": "{{date}} - {{asset_type}} - {{asset_name}}.md",
+    "publication": "{{date}} - {{publication_type}} - {{title}}.md"
+  },
+  "requiredFrontmatter": [
+    "vibe_id",
+    "type",
+    "created_at",
+    "updated_at",
+    "source",
+    "sync_status"
+  ]
+}

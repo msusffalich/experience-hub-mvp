@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260710-visible-video-package-660";
+const CACHE_NAME = "experience-hub-pwa-20260720-obsidian-vault-export-661";
 const APP_SHELL = [
   "/icons/vibe-logo.jpg",
   "/icons/vibe-logo.png",

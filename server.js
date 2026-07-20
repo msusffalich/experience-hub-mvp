@@ -116,6 +116,35 @@ const OURA_AUTHORIZE_SCOPE_MODE = (process.env.OURA_AUTHORIZE_SCOPE_MODE || "cor
 const OURA_TOKEN_AUTH_MODE = (process.env.OURA_TOKEN_AUTH_MODE || "body").trim().toLowerCase();
 const OURA_TOKEN_EXCHANGE_FALLBACK = ["1", "true", "yes"].includes(String(process.env.OURA_TOKEN_EXCHANGE_FALLBACK || "").trim().toLowerCase());
 const OURA_DEFAULT_SYNC_DAYS = Math.max(1, Math.min(Number(process.env.OURA_DEFAULT_SYNC_DAYS || 14), 365));
+const OBSIDIAN_VAULT_PATH = (process.env.OBSIDIAN_VAULT_PATH || path.join(__dirname, "obsidian-vault-vibe")).trim();
+const OBSIDIAN_EXPORT_TARGETS = {
+  inbox: "00_Inbox",
+  experiences: "02_Experiences",
+  experience: "02_Experiences",
+  events: "03_Events",
+  event: "03_Events",
+  assets: "04_Assets",
+  asset: "04_Assets",
+  images: "04_Assets/Images",
+  image: "04_Assets/Images",
+  videos: "04_Assets/Videos",
+  video: "04_Assets/Videos",
+  audio: "04_Assets/Audio",
+  documents: "04_Assets/Documents",
+  document: "04_Assets/Documents",
+  biometrics: "04_Assets/Biometrics",
+  biometric: "04_Assets/Biometrics",
+  notes: "10_Atomic_Notes",
+  atomic_note: "10_Atomic_Notes",
+  moc: "20_Maps_of_Content",
+  map: "20_Maps_of_Content",
+  projects: "30_Projects",
+  project: "30_Projects",
+  publications: "40_Publications",
+  publication: "40_Publications",
+  reference: "50_Reference",
+  manual: "50_Reference",
+};
 const execFileAsync = promisify(execFile);
 const PYTHON_EXECUTABLE_CANDIDATES = [
   process.env.PYTHON_EXECUTABLE,
@@ -753,6 +782,13 @@ async function handleApi(req, res, url) {
   if (url.pathname === "/api/exports/file" && req.method === "POST") {
     const body = await readJson(req);
     sendJson(res, 201, await saveExportFile(body));
+    return;
+  }
+
+  if (url.pathname === "/api/obsidian/export" && req.method === "POST") {
+    const user = await getOptionalRequestUser(req);
+    const body = await readJson(req);
+    sendJson(res, 201, await saveObsidianExport(body, user));
     return;
   }
 
@@ -9829,6 +9865,104 @@ async function saveExportFile(body = {}) {
     relativePath: path.relative(__dirname, filePath),
     savedAt: new Date().toISOString(),
   };
+}
+
+async function saveObsidianExport(body = {}, user = null) {
+  if (!OBSIDIAN_VAULT_PATH) {
+    throw new HttpError(503, "obsidian_vault_not_configured");
+  }
+  const content = typeof body.markdown === "string"
+    ? body.markdown
+    : typeof body.content === "string"
+      ? body.content
+      : "";
+  if (!content.trim()) throw new HttpError(400, "obsidian_markdown_required");
+
+  const vaultRoot = path.resolve(OBSIDIAN_VAULT_PATH);
+  await mkdir(vaultRoot, { recursive: true });
+  const targetKey = String(body.target || inferObsidianTargetFromFilename(body.filename || "") || "inbox").trim().toLowerCase();
+  const targetRelative = OBSIDIAN_EXPORT_TARGETS[targetKey] || OBSIDIAN_EXPORT_TARGETS.inbox;
+  const targetDir = path.resolve(vaultRoot, targetRelative);
+  if (!isPathInside(targetDir, vaultRoot)) throw new HttpError(400, "obsidian_invalid_target");
+  await mkdir(targetDir, { recursive: true });
+
+  const filename = sanitizeObsidianFilename(body.filename || "vibe-export.md");
+  const requestedPath = path.resolve(targetDir, filename);
+  if (!isPathInside(requestedPath, targetDir)) throw new HttpError(400, "obsidian_invalid_filename");
+  const finalPath = await uniqueObsidianPath(requestedPath);
+  const finalContent = ensureObsidianFrontmatter(content, {
+    userId: user?.id || LOCAL_USER_ID,
+    target: targetKey,
+    source: body.source || "vibepwa",
+  });
+  await writeFile(finalPath, finalContent, "utf-8");
+  return {
+    ok: true,
+    filename: path.basename(finalPath),
+    path: finalPath,
+    relativePath: path.relative(vaultRoot, finalPath).replace(/\\/g, "/"),
+    target: targetKey,
+    vaultPath: vaultRoot,
+    savedAt: new Date().toISOString(),
+  };
+}
+
+function inferObsidianTargetFromFilename(filename = "") {
+  const normalized = String(filename || "").toLowerCase();
+  if (/publicacion|publication/.test(normalized)) return "publications";
+  if (/hallazgo|insight|finding/.test(normalized)) return "moc";
+  if (/mapa|map|obsidian/.test(normalized)) return "moc";
+  if (/manual|guia|guide/.test(normalized)) return "manual";
+  if (/experiencia|experience|reporte|report/.test(normalized)) return "experiences";
+  if (/activo|asset|multimedia|biometr/.test(normalized)) return "assets";
+  return "inbox";
+}
+
+function sanitizeObsidianFilename(filename = "") {
+  const base = path.basename(String(filename || "vibe-export.md")).replace(/\.(markdown)$/i, ".md");
+  const clean = base
+    .replace(/[<>:"/\\|?*\u0000-\u001F]/g, "-")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 140);
+  const withExtension = clean || "vibe-export.md";
+  return /\.md$/i.test(withExtension) ? withExtension : `${withExtension}.md`;
+}
+
+function ensureObsidianFrontmatter(content = "", meta = {}) {
+  if (/^\s*---\s*\n/.test(content)) return content;
+  const now = new Date().toISOString();
+  const lines = [
+    "---",
+    `vibe_id: ${JSON.stringify(meta.vibeId || `obsidian-${Date.now()}`)}`,
+    "type: markdown_export",
+    `source: ${JSON.stringify(meta.source || "vibepwa")}`,
+    `user_id: ${JSON.stringify(meta.userId || LOCAL_USER_ID)}`,
+    `target: ${JSON.stringify(meta.target || "inbox")}`,
+    `created_at: ${JSON.stringify(now)}`,
+    `updated_at: ${JSON.stringify(now)}`,
+    "sync_status: exported",
+    "---",
+    "",
+  ];
+  return `${lines.join("\n")}${content}`;
+}
+
+async function uniqueObsidianPath(filePath) {
+  if (!existsSync(filePath)) return filePath;
+  const directory = path.dirname(filePath);
+  const extension = path.extname(filePath) || ".md";
+  const stem = path.basename(filePath, extension);
+  for (let index = 2; index < 500; index += 1) {
+    const candidate = path.join(directory, `${stem} ${index}${extension}`);
+    if (!existsSync(candidate)) return candidate;
+  }
+  return path.join(directory, `${stem} ${Date.now()}${extension}`);
+}
+
+function isPathInside(childPath, parentPath) {
+  const relative = path.relative(parentPath, childPath);
+  return relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative));
 }
 
 function sanitizeExportFilename(filename) {

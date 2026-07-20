@@ -1,4 +1,4 @@
-const APP_VERSION = "20260710-visible-video-package-660";
+const APP_VERSION = "20260720-obsidian-vault-export-661";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -3035,6 +3035,7 @@ const manualContent = {
         "La Librería, la Línea de tiempo y las tiras multimedia muestran documentos como fichas documentales, no como imágenes, para evitar vistas rotas cuando el archivo es PDF, DOCX, TXT, Markdown, CSV o JSON.",
         "Las notas de OneNote, Apple Notes, Google Keep, Notion, Evernote u otras apps se manejarán primero por exportación estándar: Markdown, TXT, HTML, PDF, DOCX, CSV o JSON, según permita cada herramienta.",
         "Obsidian se prioriza mediante Markdown. Notion se puede manejar por exportación Markdown, HTML o CSV; su API queda para fase posterior. OneNote, Apple Notes y Google Keep se tratarán mediante exportación manual a PDF, HTML, TXT o DOCX cuando esté disponible.",
+        "Cuando la bóveda Obsidian está configurada en el servidor, las exportaciones Markdown también se guardan automáticamente en la carpeta correspondiente: Publicaciones, Mapa, Experiencias, Biometría o Inbox.",
         "Formatos nativos propietarios, como bases internas de apps de notas o ENEX de Evernote, no son requisito del MVP; se evaluarán después de estabilizar documentos estándar, OCR, transcripción y conectores.",
         "La búsqueda de activos encuentra coincidencias por nombre, experiencia, categoría, persona, lugar, formato, dispositivo, etiquetas, texto analítico y fecha. También puedes acotar por rango Desde/Hasta.",
         "Cada activo muestra preparación de almacenamiento: si está en servidor/Supabase, si conserva vista previa local y si está pendiente de sincronizar para uso privado multidispositivo.",
@@ -3667,6 +3668,7 @@ const manualContent = {
         "Library, Timeline, and media strips show documents as document cards, not as images, to avoid broken previews when the file is PDF, DOCX, TXT, Markdown, CSV, or JSON.",
         "Notes from OneNote, Apple Notes, Google Keep, Notion, Evernote, or other note apps will first be handled through standard export formats: Markdown, TXT, HTML, PDF, DOCX, CSV, or JSON, depending on what each tool allows.",
         "Obsidian is prioritized through Markdown. Notion can be handled through Markdown, HTML, or CSV export; its API remains a later phase. OneNote, Apple Notes, and Google Keep will use manual export to PDF, HTML, TXT, or DOCX when available.",
+        "When the Obsidian vault is configured on the server, Markdown exports are also saved automatically in the right folder: Publications, Map, Experiences, Biometrics, or Inbox.",
         "Proprietary native formats, such as internal note-app databases or Evernote ENEX, are not MVP requirements; they will be evaluated after standard documents, OCR, transcription, and connectors are stable.",
         "Asset search matches name, experience, category, person, place, format, device, tags, analytical text, and date. You can also narrow results with the From/To range.",
         "Each asset shows storage readiness: whether it is on server/Supabase, keeps a local preview, or is pending sync for private multi-device use.",
@@ -4298,6 +4300,7 @@ manualContent.fr = [
       "La Carte des experiences appartient a VibePWA: elle visualise les relations entre experiences, dates, groupes/personnes, lieux, themes, actifs, energie, biometrie et contexte.",
       "La carte se met a jour avec les donnees reelles synchronisees dans l'app. Elle ne depend pas d'Obsidian pour exister ni pour analyser les connexions.",
       "Obsidian est seulement une exportation avancee compatible Markdown pour une voute externe. Si une ancienne voute contenait des donnees de test, remplace-la en exportant de nouveau la carte reelle ou nettoie cette copie externe.",
+      "Quand la voute Obsidian est configuree sur le serveur, les exports Markdown sont aussi enregistres automatiquement dans le bon dossier: Publications, Carte, Experiences, Biometrie ou Inbox.",
     ],
   },
   {
@@ -4349,6 +4352,7 @@ manualContent.pt = [
       "O Mapa de Experiencias pertence ao VibePWA: visualiza relacoes entre experiencias, datas, grupos/pessoas, lugares, temas, arquivos, energia, biometria e contexto.",
       "O mapa e atualizado com os dados reais sincronizados no app. Ele nao depende do Obsidian para existir nem para analisar conexoes.",
       "Obsidian e apenas uma exportacao avancada em Markdown compativel com um cofre externo. Se um cofre antigo tinha dados de teste, substitua exportando novamente o mapa real ou limpe essa copia externa.",
+      "Quando o cofre Obsidian esta configurado no servidor, as exportacoes Markdown tambem sao salvas automaticamente na pasta correta: Publicacoes, Mapa, Experiencias, Biometria ou Inbox.",
     ],
   },
   {
@@ -26599,6 +26603,7 @@ function downloadPublicationBlob(blob, filename, warning = "") {
   document.getElementById("publicationStatus").textContent = warning || t("labels.publicationDownloadReady");
   const link = previewBox.querySelector("a[download]");
   link.click();
+  syncMarkdownBlobToObsidian(blob, filename, { source: "publication" });
 }
 
 function formatPublicationMediaMarkdown(media) {
@@ -26770,6 +26775,63 @@ function downloadBlob(blob, filename, serverContent = null) {
   link.click();
   setTimeout(() => link.remove(), 1000);
   if (serverContent !== null) saveExportToProjectFolder(filename, serverContent);
+  syncMarkdownBlobToObsidian(blob, filename, { source: "download" });
+}
+
+function isMarkdownExport(blob, filename = "") {
+  return /\.m(?:d|arkdown)$/i.test(String(filename || ""))
+    || String(blob?.type || "").toLowerCase().includes("text/markdown");
+}
+
+function inferObsidianTargetForFilename(filename = "") {
+  const normalized = String(filename || "").toLowerCase();
+  if (/publicacion|publication/.test(normalized)) return "publications";
+  if (/hallazgo|insight|finding/.test(normalized)) return "moc";
+  if (/mapa|map|obsidian/.test(normalized)) return "moc";
+  if (/manual|guia|guide/.test(normalized)) return "manual";
+  if (/experiencia|experience|reporte|report/.test(normalized)) return "experiences";
+  if (/biometr|health|oura|apple-health/.test(normalized)) return "biometrics";
+  if (/activo|asset|multimedia/.test(normalized)) return "assets";
+  return "inbox";
+}
+
+async function syncMarkdownBlobToObsidian(blob, filename, options = {}) {
+  if (!isMarkdownExport(blob, filename)) return;
+  try {
+    const markdown = await blob.text();
+    if (!markdown.trim()) return;
+    const response = await fetch(`${API_BASE}/obsidian/export`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(state.session?.access_token ? { Authorization: `Bearer ${state.session.access_token}` } : {}),
+      },
+      body: JSON.stringify({
+        target: options.target || inferObsidianTargetForFilename(filename),
+        filename,
+        markdown,
+        source: options.source || "vibepwa",
+      }),
+    });
+    if (!response.ok) throw new Error(`obsidian_export_${response.status}`);
+    state.lastObsidianExport = await response.json();
+    if (/publicacion|publication|mapa|obsidian/i.test(filename)) {
+      notify(
+        state.language !== "es"
+          ? `Markdown saved to Obsidian: ${state.lastObsidianExport.relativePath || filename}`
+          : `Markdown guardado en Obsidian: ${state.lastObsidianExport.relativePath || filename}`,
+        "success",
+      );
+    }
+  } catch (error) {
+    state.lastObsidianExport = {
+      ok: false,
+      filename,
+      error: error.message,
+      savedAt: new Date().toISOString(),
+    };
+    console.warn("Obsidian Markdown export failed", error);
+  }
 }
 
 async function saveExportToProjectFolder(filename, content) {
