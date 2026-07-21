@@ -226,7 +226,13 @@ function mergeAutoBlock(existing = "", incoming = "") {
   if (existingStart < 0 || existingEnd < 0 || incomingStart < 0 || incomingEnd < 0) return null;
   const incomingAuto = incoming.slice(0, incomingEnd + AUTO_END.length);
   const preservedHuman = normalizeHumanHeadings(existing.slice(existingEnd + AUTO_END.length));
-  const mergedAuto = hasCuratedLearnings(preservedHuman) ? setFrontmatterField(incomingAuto, "learnings", "ok") : incomingAuto;
+  const mergedAuto = hasCuratedLearnings(preservedHuman)
+    ? setFrontmatterField(
+        setFrontmatterField(incomingAuto, "learnings", "ok"),
+        "updated_at",
+        localDateTime(new Date().toISOString()),
+      )
+    : incomingAuto;
   return `${mergedAuto}${preservedHuman}`.trim();
 }
 

@@ -9943,7 +9943,11 @@ function mergeObsidianAutoBlock(existingContent = "", incomingContent = "") {
   const incomingAutomatic = incoming.slice(0, incomingEnd + OBSIDIAN_AUTO_END.length);
   const preservedHuman = normalizeObsidianHumanHeadings(existing.slice(existingEnd + OBSIDIAN_AUTO_END.length));
   const mergedAutomatic = hasCuratedObsidianLearnings(preservedHuman)
-    ? setObsidianFrontmatterField(incomingAutomatic, "learnings", "ok")
+    ? setObsidianFrontmatterField(
+        setObsidianFrontmatterField(incomingAutomatic, "learnings", "ok"),
+        "updated_at",
+        new Date().toISOString(),
+      )
     : incomingAutomatic;
   return `${mergedAutomatic}${preservedHuman}`.trim();
 }

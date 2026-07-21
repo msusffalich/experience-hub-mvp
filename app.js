@@ -1,4 +1,4 @@
-const APP_VERSION = "20260721-obsidian-learnings-671";
+const APP_VERSION = "20260721-obsidian-export-button-672";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -20463,7 +20463,11 @@ function mergeObsidianAutoBlock(existingMarkdown = "", incomingMarkdown = "") {
   const incomingAuto = incoming.slice(0, incomingEnd + OBSIDIAN_AUTO_END.length);
   const preservedHuman = normalizeObsidianHumanHeadings(existing.slice(existingEnd + OBSIDIAN_AUTO_END.length));
   const mergedAuto = hasCuratedObsidianLearnings(preservedHuman)
-    ? setObsidianFrontmatterField(incomingAuto, "learnings", "ok")
+    ? setObsidianFrontmatterField(
+        setObsidianFrontmatterField(incomingAuto, "learnings", "ok"),
+        "updated_at",
+        getLocalDateTimeWithOffset(new Date().toISOString()),
+      )
     : incomingAuto;
   return `${mergedAuto}${preservedHuman}`.trim();
 }
@@ -20949,104 +20953,128 @@ async function exportExperienceNotesToLocalObsidianVault(experiences = []) {
 }
 
 async function exportExperienceMapMarkdown() {
-  const graph = buildExperienceMapGraph();
-  const allExperiences = getExperienceMapMarkdownScope(graph);
-  const contextSignals = allExperiences.filter((experience) => !isObsidianExportableExperience(experience));
-  const experiences = allExperiences.filter(isObsidianExportableExperience);
-  const routes = buildExperienceMapRoutes(graph, { excludeContextSignals: true });
-  const topFactors = [...graph.factors]
-    .filter((factor) => !isLowValueObsidianFactor(factor.label))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 10);
-  const knowledgeSummary = summarizeExperienceMapForKnowledge(experiences, graph, routes, topFactors);
-  const questions = [
-    t("labels.experienceMapQuestionEnergy"),
-    t("labels.experienceMapQuestionSaturation"),
-    t("labels.experienceMapQuestionLearning"),
-    t("labels.experienceMapQuestionSocial"),
-  ];
-  const exportedAt = new Date().toISOString();
-  const exportedLocal = getLocalDateTimeWithOffset(exportedAt);
-  const lines = [
-    state.language !== "es" ? "# Experience Knowledge Map" : "# Mapa de conocimiento de experiencias",
-    "",
-    "---",
-    `generated: ${exportedAt}`,
-    `created_at: ${JSON.stringify(exportedLocal)}`,
-    `updated_at: ${JSON.stringify(exportedLocal)}`,
-    "source: \"vibepwa\"",
-    "fuente: \"generado\"",
-    "fiabilidad: \"pendiente\"",
-    "sync_status: exported",
-    `language: ${state.language}`,
-    `relation_filter: ${graph.relationFilter}`,
-    `experiences: ${experiences.length}`,
-    `context_signals: ${contextSignals.length}`,
-    `relationships: ${graph.links.length}`,
-    `routes: ${routes.length}`,
-    "type: vibe_experience_knowledge_map",
-    "---",
-    "",
-    state.language !== "es" ? "## Executive Reading" : "## Lectura ejecutiva",
-    "",
-    knowledgeSummary.text,
-    "",
-    `- Experiencias en alcance: ${experiences.length}`,
-    `- Energia media registrada: ${knowledgeSummary.avgEnergy ? `${knowledgeSummary.avgEnergy}/10` : "sin dato suficiente"}`,
-    `- Categoria dominante: ${cleanObsidianMarkdownText(knowledgeSummary.topCategory)}`,
-    `- Experiencias con narrativa suficiente: ${knowledgeSummary.withNotes}`,
-    `- Experiencias con multimedia: ${knowledgeSummary.withMedia}`,
-    "",
-    state.language !== "es" ? "## Cross-Device Context" : "## Contexto transversal recibido",
-    "",
-    ...summarizeObsidianContextSignals(contextSignals),
-    "",
-    state.language !== "es" ? "## How to Use This Note" : "## Como usar esta nota",
-    "",
-    "- Usa los enlaces [[...]] para crear notas atomicas de experiencias, lugares, personas y factores.",
-    "- Revisa primero rutas y patrones; luego baja al detalle cronologico.",
-    "- Convierte las preguntas sugeridas en nuevas notas o tareas de seguimiento.",
-    "",
-    state.language !== "es" ? "## Suggested Questions" : "## Preguntas sugeridas",
-    "",
-    ...questions.map((question) => `- ${cleanObsidianMarkdownText(question)}`),
-    "",
-    state.language !== "es" ? "## Detected Routes and Interpretation" : "## Rutas detectadas e interpretacion",
-    "",
-    ...renderExperienceMapMarkdownRoutes(routes),
-    state.language !== "es" ? "## Top Factors" : "## Factores principales",
-    "",
-    ...renderExperienceMapMarkdownFactors(topFactors),
-    "",
-    state.language !== "es" ? "## Chronological Timeline" : "## Linea cronologica",
-    "",
-    ...renderExperienceMapMarkdownTimeline(experiences),
-    "",
-    state.language !== "es" ? "## Experience Notes" : "## Notas de experiencias",
-    "",
-    ...experiences.flatMap((experience) => renderExperienceMapMarkdownExperience(experience)),
-    "",
-    state.language !== "es" ? "## Useful Backlinks" : "## Enlaces utiles",
-    "",
-    ...renderExperienceMapMarkdownRelations(graph),
-  ];
-  downloadBlob(new Blob([lines.join("\n")], { type: "text/markdown;charset=utf-8" }), "mapa-de-conocimiento-vibe-obsidian.md");
-  exportExperienceNotesToLocalObsidianVault(experiences)
-    .then((result) => {
-      if (result?.ok && result.count === result.expected) {
-        notify(`Obsidian sincronizado: mapa y ${result.count} notas de experiencia.`, "success");
-      } else if (result?.errors?.length) {
-        notify(`Obsidian requiere revision: ${result.count}/${result.expected} notas guardadas.`, "warn");
-      }
-    })
-    .catch((error) => {
-      console.warn("Obsidian experience note export failed", error);
-      notify("No se pudieron guardar las notas individuales en Obsidian. El mapa fue exportado.", "warn");
-    });
+  const button = document.getElementById("experienceMapExportButton");
   const box = document.getElementById("experienceMapAnswer");
+  const originalText = button?.textContent || "";
+  if (button) {
+    button.disabled = true;
+    button.textContent = state.language !== "es" ? "Exporting..." : "Exportando...";
+  }
   if (box) box.textContent = state.language !== "es"
-    ? "Knowledge map exported with narrative, timeline, evidence, and useful backlinks."
-    : "Mapa de conocimiento exportado con narrativa, cronologia, evidencia y enlaces utiles.";
+    ? "Generating the Markdown map and preparing experience notes..."
+    : "Generando el mapa Markdown y preparando notas de experiencias...";
+  try {
+    const graph = buildExperienceMapGraph();
+    const allExperiences = getExperienceMapMarkdownScope(graph);
+    const contextSignals = allExperiences.filter((experience) => !isObsidianExportableExperience(experience));
+    const experiences = allExperiences.filter(isObsidianExportableExperience);
+    const routes = buildExperienceMapRoutes(graph, { excludeContextSignals: true });
+    const topFactors = [...graph.factors]
+      .filter((factor) => !isLowValueObsidianFactor(factor.label))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+    const knowledgeSummary = summarizeExperienceMapForKnowledge(experiences, graph, routes, topFactors);
+    const questions = [
+      t("labels.experienceMapQuestionEnergy"),
+      t("labels.experienceMapQuestionSaturation"),
+      t("labels.experienceMapQuestionLearning"),
+      t("labels.experienceMapQuestionSocial"),
+    ];
+    const exportedAt = new Date().toISOString();
+    const exportedLocal = getLocalDateTimeWithOffset(exportedAt);
+    const lines = [
+      state.language !== "es" ? "# Experience Knowledge Map" : "# Mapa de conocimiento de experiencias",
+      "",
+      "---",
+      `generated: ${exportedAt}`,
+      `created_at: ${JSON.stringify(exportedLocal)}`,
+      `updated_at: ${JSON.stringify(exportedLocal)}`,
+      "source: \"vibepwa\"",
+      "fuente: \"generado\"",
+      "fiabilidad: \"pendiente\"",
+      "sync_status: exported",
+      `language: ${state.language}`,
+      `relation_filter: ${graph.relationFilter}`,
+      `experiences: ${experiences.length}`,
+      `context_signals: ${contextSignals.length}`,
+      `relationships: ${graph.links.length}`,
+      `routes: ${routes.length}`,
+      "type: vibe_experience_knowledge_map",
+      "---",
+      "",
+      state.language !== "es" ? "## Executive Reading" : "## Lectura ejecutiva",
+      "",
+      knowledgeSummary.text,
+      "",
+      `- Experiencias en alcance: ${experiences.length}`,
+      `- Energia media registrada: ${knowledgeSummary.avgEnergy ? `${knowledgeSummary.avgEnergy}/10` : "sin dato suficiente"}`,
+      `- Categoria dominante: ${cleanObsidianMarkdownText(knowledgeSummary.topCategory)}`,
+      `- Experiencias con narrativa suficiente: ${knowledgeSummary.withNotes}`,
+      `- Experiencias con multimedia: ${knowledgeSummary.withMedia}`,
+      "",
+      state.language !== "es" ? "## Cross-Device Context" : "## Contexto transversal recibido",
+      "",
+      ...summarizeObsidianContextSignals(contextSignals),
+      "",
+      state.language !== "es" ? "## How to Use This Note" : "## Como usar esta nota",
+      "",
+      "- Usa los enlaces [[...]] para crear notas atomicas de experiencias, lugares, personas y factores.",
+      "- Revisa primero rutas y patrones; luego baja al detalle cronologico.",
+      "- Convierte las preguntas sugeridas en nuevas notas o tareas de seguimiento.",
+      "",
+      state.language !== "es" ? "## Suggested Questions" : "## Preguntas sugeridas",
+      "",
+      ...questions.map((question) => `- ${cleanObsidianMarkdownText(question)}`),
+      "",
+      state.language !== "es" ? "## Detected Routes and Interpretation" : "## Rutas detectadas e interpretacion",
+      "",
+      ...renderExperienceMapMarkdownRoutes(routes),
+      state.language !== "es" ? "## Top Factors" : "## Factores principales",
+      "",
+      ...renderExperienceMapMarkdownFactors(topFactors),
+      "",
+      state.language !== "es" ? "## Chronological Timeline" : "## Linea cronologica",
+      "",
+      ...renderExperienceMapMarkdownTimeline(experiences),
+      "",
+      state.language !== "es" ? "## Experience Notes" : "## Notas de experiencias",
+      "",
+      ...experiences.flatMap((experience) => renderExperienceMapMarkdownExperience(experience)),
+      "",
+      state.language !== "es" ? "## Useful Backlinks" : "## Enlaces utiles",
+      "",
+      ...renderExperienceMapMarkdownRelations(graph),
+    ];
+    const markdown = lines.join("\n");
+    const filename = "mapa-de-conocimiento-vibe-obsidian.md";
+    const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
+    downloadBlob(blob, filename, null, { skipObsidian: true });
+    const mapSync = await syncMarkdownBlobToObsidian(blob, filename, { source: "experience-map", target: "generated_map" });
+    const notesResult = await exportExperienceNotesToLocalObsidianVault(experiences);
+    const mapStatus = mapSync?.ok
+      ? state.language !== "es" ? `map saved at ${mapSync.relativePath || filename}` : `mapa guardado en ${mapSync.relativePath || filename}`
+      : state.language !== "es" ? "map downloaded; vault sync pending" : "mapa descargado; sincronizacion a boveda pendiente";
+    const notesStatus = notesResult?.ok && notesResult.count === notesResult.expected
+      ? state.language !== "es" ? `${notesResult.count} experience notes saved` : `${notesResult.count} notas de experiencia guardadas`
+      : state.language !== "es" ? `${notesResult?.count || 0}/${notesResult?.expected || experiences.length} notes saved` : `${notesResult?.count || 0}/${notesResult?.expected || experiences.length} notas guardadas`;
+    const message = state.language !== "es"
+      ? `Obsidian export finished: ${mapStatus}; ${notesStatus}.`
+      : `Exportacion Obsidian terminada: ${mapStatus}; ${notesStatus}.`;
+    if (box) box.textContent = message;
+    notify(message, notesResult?.errors?.length || !mapSync?.ok ? "warn" : "success");
+  } catch (error) {
+    console.warn("Experience map Markdown export failed", error);
+    const message = state.language !== "es"
+      ? `The Markdown export did not finish: ${error.message}`
+      : `La exportacion Markdown no termino: ${error.message}`;
+    if (box) box.textContent = message;
+    notify(message, "error");
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.textContent = originalText || t("buttons.exportObsidian");
+    }
+  }
 }
 
 function renderReport() {
@@ -27450,7 +27478,7 @@ function csvCell(value) {
   return `"${String(value || "").replace(/"/g, '""')}"`;
 }
 
-function downloadBlob(blob, filename, serverContent = null) {
+function downloadBlob(blob, filename, serverContent = null, options = {}) {
   const url = URL.createObjectURL(blob);
   if (state.lastDownloadUrl) URL.revokeObjectURL(state.lastDownloadUrl);
   state.lastDownloadUrl = url;
@@ -27469,7 +27497,7 @@ function downloadBlob(blob, filename, serverContent = null) {
   link.click();
   setTimeout(() => link.remove(), 1000);
   if (serverContent !== null) saveExportToProjectFolder(filename, serverContent);
-  syncMarkdownBlobToObsidian(blob, filename, { source: "download" });
+  if (!options.skipObsidian) syncMarkdownBlobToObsidian(blob, filename, { source: "download" });
 }
 
 function isMarkdownExport(blob, filename = "") {
@@ -27877,6 +27905,9 @@ async function syncMarkdownBlobToObsidian(blob, filename, options = {}) {
         "success",
       );
     }
+    return localSaved?.ok
+      ? { ok: true, local: true, relativePath: localSaved.relativePath, server: serverExport }
+      : { ok: true, ...serverExport };
   } catch (error) {
     if (!localSaved?.ok) {
       state.lastObsidianExport = {
@@ -27887,6 +27918,9 @@ async function syncMarkdownBlobToObsidian(blob, filename, options = {}) {
       };
     }
     console.warn("Obsidian Markdown export failed", error);
+    return localSaved?.ok
+      ? { ok: true, local: true, relativePath: localSaved.relativePath, serverError: error.message }
+      : { ok: false, error: error.message };
   }
 }
 

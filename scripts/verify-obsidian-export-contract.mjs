@@ -46,7 +46,7 @@ const saveObsidianExport = between(
   "function inferObsidianTargetFromFilename",
 );
 
-assert(app.includes('const APP_VERSION = "20260721-obsidian-learnings-671";'), "APP_VERSION must identify the Obsidian contract build.");
+assert(app.includes('const APP_VERSION = "20260721-obsidian-export-button-672";'), "APP_VERSION must identify the Obsidian contract build.");
 assert(app.includes("function getLocalDateKey") && app.includes("function getLocalDateTimeWithOffset"), "Obsidian export must use local date helpers.");
 assert(experienceNoteBuilder.includes("getLocalDateKey(experience.timestamp)"), "Experience notes must use local dates, not UTC dates.");
 assert(!experienceNoteBuilder.includes("toISOString().slice(0, 10)"), "Experience notes must not derive date from UTC toISOString().slice(0, 10).");
@@ -67,14 +67,15 @@ assert(app.includes("function isObsidianExportableExperience") && app.includes("
 assert(localTargetMap.includes('generated_map: ["05_Generated"]'), "Generated maps must be routed to 05_Generated in the local vault.");
 assert(serverTargets.includes('generated_map: "05_Generated"'), "Generated maps must be routed to 05_Generated on the server.");
 assert(mapExporter.includes("fuente:") && mapExporter.includes("generado") && mapExporter.includes("fiabilidad:") && mapExporter.includes("pendiente"), "Generated map frontmatter must declare generated source and reliability.");
-assert(mapExporter.includes("Obsidian sincronizado") && mapExporter.includes("result.count === result.expected"), "Map export must report verifiable note counts.");
+assert(mapExporter.includes("Exportacion Obsidian terminada") && mapExporter.includes("notesResult.count === notesResult.expected"), "Map export must report verifiable note counts.");
 assert(app.includes("upsert: options.upsert !== false"), "General Markdown sync must request upsert by default for regenerated artifacts.");
 assert(app.includes("preserveHuman: true") && !experienceNoteBuilder.includes("upsert: true"), "Experience-note export must preserve human curation instead of forcing upsert.");
 assert(app.includes("mergeObsidianAutoBlock(existingMarkdown, safeMarkdown)"), "Local Obsidian save must merge the automatic block instead of overwriting curated experience notes.");
 assert(saveObsidianExport.includes("shouldPreserveHumanObsidianContent") && saveObsidianExport.includes("mergeObsidianAutoBlock(existingContent, finalContent)"), "Server Obsidian export must preserve human curation for experience notes.");
 assert(server.includes("function mergeObsidianAutoBlock") && server.includes("await uniqueObsidianPath(requestedPath)"), "Server must version legacy experience notes that do not have auto-block markers.");
-assert(app.includes("hasCuratedObsidianLearnings(preservedHuman)") && app.includes('setObsidianFrontmatterField(incomingAuto, "learnings", "ok")'), "Local merge must mark learnings ok when human curation adds learning content.");
-assert(server.includes("hasCuratedObsidianLearnings(preservedHuman)") && server.includes('setObsidianFrontmatterField(incomingAutomatic, "learnings", "ok")'), "Server merge must mark learnings ok when human curation adds learning content.");
+assert(app.includes("hasCuratedObsidianLearnings(preservedHuman)") && app.includes('"learnings", "ok"') && app.includes('"updated_at"'), "Local merge must mark learnings ok and refresh updated_at when human curation adds learning content.");
+assert(server.includes("hasCuratedObsidianLearnings(preservedHuman)") && server.includes('"learnings", "ok"') && server.includes('"updated_at"'), "Server merge must mark learnings ok and refresh updated_at when human curation adds learning content.");
+assert(mapExporter.includes("Exportando...") && mapExporter.includes("skipObsidian: true") && mapExporter.includes('target: "generated_map"'), "Experience-map Markdown button must show progress and sync the map explicitly instead of silently doing nothing.");
 assert(saveObsidianExport.includes("obsidian_markdown_required"), "Server must reject empty Markdown exports.");
 assert(integrationExperienceBuilder.includes('rawCategory ? normalizeCategoryName(rawCategory) : "Sin categoría"'), "External experience ingest must not default category to Trabajo.");
 assert(integrationExperienceBuilder.includes("Number.isFinite(Number(rawEnergy))") && integrationExperienceBuilder.includes(": null"), "External experience ingest must not default energy to 5.");
@@ -113,7 +114,7 @@ function testMergeAutoBlock(existingMarkdown = "", incomingMarkdown = "") {
   const incomingAuto = incomingMarkdown.slice(0, incomingEnd + AUTO_END.length);
   const preservedHuman = existingMarkdown.slice(existingEnd + AUTO_END.length);
   const mergedAuto = testHasCuratedLearnings(preservedHuman)
-    ? testSetFrontmatterField(incomingAuto, "learnings", "ok")
+    ? testSetFrontmatterField(testSetFrontmatterField(incomingAuto, "learnings", "ok"), "updated_at", "2026-07-21T12:00:00-04:00")
     : incomingAuto;
   return `${mergedAuto}${preservedHuman}`.trim();
 }
@@ -142,6 +143,7 @@ const mergedCuratedNote = testMergeAutoBlock(existingCuratedNote, incomingMachin
 assert(mergedCuratedNote?.includes("new automatic content"), "Behavior check: merge must update the automatic block.");
 assert(mergedCuratedNote?.includes("Aprendizaje humano preservado"), "Behavior check: merge must preserve human learning text.");
 assert(mergedCuratedNote?.includes('learnings: "ok"'), "Behavior check: merge must mark frontmatter learnings ok when human learning exists.");
+assert(mergedCuratedNote?.includes('updated_at: "2026-07-21T12:00:00-04:00"'), "Behavior check: merge must refresh updated_at when human learning exists.");
 
 const existingEmptyLearningNote = `---
 learnings: "pending"
