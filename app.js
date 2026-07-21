@@ -3134,6 +3134,17 @@ const manualContent = {
       ],
     },
     {
+      title: "Narrativa humana, artefactos y contexto",
+      items: [
+        "Narrativa humana es el lenguaje del usuario que cuenta que vivio: texto escrito, nota manual, voz transcrita o voz de un video narrado.",
+        "El formato del archivo no decide. Decide el origen del significado: si lo relato una persona, puede ser narrativa; si lo derivo la maquina, es contexto o evidencia.",
+        "Fotos descritas por IA, OCR, vision automatica, biometria, ubicacion, clima, noticias, metadatos y nombres de archivo no cuentan como narrativa. Enriquecen la experiencia como activos o contexto.",
+        "Un paper, informe o documento producido por el usuario es un artefacto. Si el usuario cuenta como fue hacerlo, esa reflexion si es narrativa y el documento queda adjunto.",
+        "En el mapa y en Obsidian, narrative: ok solo aparece cuando existe lenguaje humano con contenido real. Las experiencias sin relato quedan como narrativa pendiente hasta que el usuario escriba o grabe que paso.",
+        "El siguiente flujo recomendado de captura es simple: registra el activo y agrega una frase o audio breve respondiendo que paso, por que importo o que aprendiste.",
+      ],
+    },
+    {
       title: "Mapa de Experiencias",
       items: [
         "Mapa de Experiencias visualiza interrelaciones entre experiencias a través del tiempo, categorías, personas, lugares, objetivos y energía.",
@@ -3766,6 +3777,17 @@ const manualContent = {
       ],
     },
     {
+      title: "Human narrative, artifacts, and context",
+      items: [
+        "Human narrative is the user's own language explaining what they lived: written text, manual note, transcribed voice, or the spoken track of a narrated video.",
+        "The file format does not decide. The source of meaning decides: if a person told it, it can be narrative; if the machine derived it, it is context or evidence.",
+        "AI photo descriptions, OCR, automatic vision, biometrics, location, weather, news, metadata, and file names do not count as narrative. They enrich the experience as assets or context.",
+        "A paper, report, or document created by the user is an artifact. If the user explains what it was like to create it, that reflection is narrative and the document stays attached.",
+        "In the map and in Obsidian, narrative: ok appears only when real human language exists. Experiences without a human account remain pending until the user writes or records what happened.",
+        "The recommended capture flow is simple: register the asset and add a short sentence or audio answering what happened, why it mattered, or what you learned.",
+      ],
+    },
+    {
       title: "Experience Map",
       items: [
         "Experience Map visualizes relationships between experiences across time, categories, people, places, goals, and energy.",
@@ -4169,6 +4191,15 @@ manualContent.es = [
     ],
   },
   {
+    title: "Narrativa humana",
+    body: [
+      "Narrativa es lenguaje humano que cuenta que viviste: texto escrito, nota manual, voz transcrita o voz de un video narrado.",
+      "Vision IA, OCR, biometria, ubicacion, clima, noticias, metadatos y nombres de archivo son contexto o evidencia. No marcan narrative: ok.",
+      "Un informe, paper o documento es artefacto; la reflexion humana sobre haberlo creado si puede ser narrativa.",
+      "El mapa y Obsidian cuentan narrativa real solo sobre notas exportables con relato humano. Si falta relato, la experiencia queda pendiente hasta que escribas o grabes que paso.",
+    ],
+  },
+  {
     title: "Mapa de Experiencias",
     body: [
       "El Mapa de Experiencias es propio de VibePWA: visualiza relaciones entre experiencias, fechas, grupos/personas, lugares, temas, activos, energia, biometria y contexto.",
@@ -4236,6 +4267,15 @@ manualContent.en = [
     ],
   },
   {
+    title: "Human Narrative",
+    body: [
+      "Narrative is human language explaining what you lived: written text, manual note, transcribed voice, or the spoken track of a narrated video.",
+      "AI vision, OCR, biometrics, location, weather, news, metadata, and file names are context or evidence. They do not mark narrative: ok.",
+      "A report, paper, or document is an artifact; the human reflection about creating it can be narrative.",
+      "The map and Obsidian count real narrative only on exportable notes with a human account. If the account is missing, the experience remains pending until you write or record what happened.",
+    ],
+  },
+  {
     title: "Experience Map",
     body: [
       "The Experience Map belongs to VibePWA: it visualizes relationships between experiences, dates, groups/persons, places, themes, assets, energy, biometrics, and context.",
@@ -4300,6 +4340,15 @@ manualContent.fr = [
       "Utilise Vibeapp pour la capture rapide: texte, voix, photo, video, localisation, biometrie disponible et contexte du jour.",
       "Utilise VibePWA pour revoir bibliotheque, actifs, agenda, carte, rapports, enseignements, publications, manuel et administration.",
       "Dans VibePWA, Accueil sert au travail normal de l'utilisateur. Operation et Administration concentrent diagnostics, sauvegardes, maintenance et controles produit.",
+    ],
+  },
+  {
+    title: "Narration humaine",
+    body: [
+      "La narration est le langage humain qui raconte ce que tu as vecu: texte ecrit, note manuelle, voix transcrite ou voix d'une video narree.",
+      "Vision IA, OCR, biometrie, localisation, meteo, actualites, metadonnees et noms de fichiers sont du contexte ou de la preuve. Ils ne marquent pas narrative: ok.",
+      "Un rapport, paper ou document est un artefact; la reflexion humaine sur sa creation peut etre narrative.",
+      "La carte et Obsidian comptent la narration reelle seulement dans les notes exportables qui ont un recit humain. Sans recit, l'experience reste en attente.",
     ],
   },
   {
@@ -4385,6 +4434,15 @@ manualContent.pt = [
       "Use Vibeapp para captura rápida: texto, voz, foto, vídeo, localização, biometria disponível e contexto do dia.",
       "Use VibePWA para revisar Biblioteca, Arquivos, Agenda, Mapa, Relatórios, Descobertas, Publicações, Manual e Administração.",
       "Em VibePWA, Início é para o uso normal. Operação e Administração concentram diagnósticos, backups, manutenção e controles do produto.",
+    ],
+  },
+  {
+    title: "Narrativa humana",
+    body: [
+      "Narrativa e linguagem humana contando o que voce viveu: texto escrito, nota manual, voz transcrita ou voz de um video narrado.",
+      "Visao IA, OCR, biometria, localizacao, clima, noticias, metadados e nomes de arquivo sao contexto ou evidencia. Nao marcam narrative: ok.",
+      "Um relatorio, paper ou documento e artefato; a reflexao humana sobre cria-lo pode ser narrativa.",
+      "O mapa e o Obsidian contam narrativa real apenas nas notas exportaveis com relato humano. Sem relato, a experiencia fica pendente ate voce escrever ou gravar o que aconteceu.",
     ],
   },
   {
