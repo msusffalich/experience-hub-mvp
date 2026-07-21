@@ -47,7 +47,7 @@ const saveObsidianExport = between(
   "function inferObsidianTargetFromFilename",
 );
 
-assert(app.includes('const APP_VERSION = "20260721-obsidian-export-button-675";'), "APP_VERSION must identify the Obsidian contract build.");
+assert(app.includes('const APP_VERSION = "20260721-obsidian-export-rules-676";'), "APP_VERSION must identify the Obsidian contract build.");
 assert(app.includes("function getLocalDateKey") && app.includes("function getLocalDateTimeWithOffset"), "Obsidian export must use local date helpers.");
 assert(experienceNoteBuilder.includes("getLocalDateKey(experience.timestamp)"), "Experience notes must use local dates, not UTC dates.");
 assert(!experienceNoteBuilder.includes("toISOString().slice(0, 10)"), "Experience notes must not derive date from UTC toISOString().slice(0, 10).");
@@ -55,9 +55,10 @@ assert(experienceNoteBuilder.includes("created_at") && experienceNoteBuilder.inc
 assert(experienceNoteBuilder.includes("datetime_local") && experienceNoteBuilder.includes("timezone"), "Experience notes must include local datetime and timezone.");
 assert(experienceNoteBuilder.includes("getExperienceCategoryForExport") && experienceNoteBuilder.includes("category: ${category ?"), "Experience notes must omit untrusted categories instead of inventing them.");
 assert(experienceNoteBuilder.includes("getExperienceEnergyForExport") && !experienceNoteBuilder.includes("Number(experience.energy || 0)") && !experienceNoteBuilder.includes("Number(experience.energy || 5)"), "Experience notes must not fabricate energy values.");
-assert(experienceNoteBuilder.includes("narrativeStatus") && experienceNoteBuilder.includes("multimodalStatus"), "Experience notes must emit Dataview status fields.");
+assert(experienceNoteBuilder.includes("getExperienceNarrativeStatus(experience)") && experienceNoteBuilder.includes("multimodalStatus"), "Experience notes must emit Dataview status fields from the shared narrative rule.");
 assert(experienceNoteBuilder.includes("...(people.length ?") && !experienceNoteBuilder.includes("people: []"), "Experience notes must omit people when no real people are known instead of emitting an empty array.");
-assert(experienceNoteBuilder.includes("narrativeStatus") && !experienceNoteBuilder.includes("Sin resumen narrativo suficiente"), "Experience notes must mark missing narrative as pending, not export filler text.");
+assert(app.includes("function isLowValueObsidianNarrative") && app.includes("function getExperienceNarrativeTextForExport") && app.includes("function getExperienceNarrativeStatus"), "Obsidian export must have one shared rule for real narrative text.");
+assert(experienceNoteBuilder.includes("getExperienceNarrativeTextForExport(experience)") && !experienceNoteBuilder.includes("Sin resumen narrativo suficiente"), "Experience notes must mark missing narrative as pending, not export filler text.");
 assert(experienceNoteBuilder.includes("getObsidianCategoryWikiLink"), "Experience notes must sanitize category wiki links.");
 assert(experienceNoteBuilder.includes("wrapObsidianAutoBlock") && app.includes("OBSIDIAN_HUMAN_HEADING") && app.includes("String.fromCharCode(0x00ed)"), "Experience notes must write the human curation heading with the UTF-8 accented i.");
 const autoBlockStart = experienceNoteBuilder.indexOf("...wrapObsidianAutoBlock");
@@ -65,6 +66,7 @@ const autoBlockEnd = experienceNoteBuilder.indexOf("OBSIDIAN_HUMAN_HEADING", aut
 const autoBlockBuilder = autoBlockStart >= 0 && autoBlockEnd > autoBlockStart ? experienceNoteBuilder.slice(autoBlockStart, autoBlockEnd) : "";
 assert(autoBlockBuilder.includes("## Enlaces") && autoBlockBuilder.includes("...links.map"), "Generated Obsidian backlinks must stay inside the automatic block so they update on reexport.");
 assert(app.includes("function isObsidianExportableExperience") && app.includes("function isTechnicalMediaOnlyExperience"), "Obsidian export must exclude technical media-only captures from experience notes.");
+assert(app.includes("getExperienceNarrativeStatus(experience) === \"pending\"") && app.includes("image_picker") && app.includes("native-media"), "Technical media-only captures must require a missing real narrative before they are excluded.");
 assert(localTargetMap.includes('generated_map: ["05_Generated"]'), "Generated maps must be routed to 05_Generated in the local vault.");
 assert(serverTargets.includes('generated_map: "05_Generated"'), "Generated maps must be routed to 05_Generated on the server.");
 assert(mapExporter.includes("fuente:") && mapExporter.includes("generado") && mapExporter.includes("fiabilidad:") && mapExporter.includes("pendiente"), "Generated map frontmatter must declare generated source and reliability.");
@@ -82,6 +84,8 @@ assert(app.includes('experienceMapExportButton")?.addEventListener("click", expo
 assert(index.includes('id="localObsidianVaultStatus"') && index.includes('id="connectLocalObsidianVaultButton"') && index.includes('id="forgetLocalObsidianVaultButton"'), "Experience map must show a clear Obsidian vault connection state and actions.");
 assert(app.includes("experience-map-board") && app.includes("renderExperienceMapBoardExperience") && app.includes("renderExperienceMapBoardFactor"), "Experience map must render as a readable board instead of only a dense SVG node graph.");
 assert(!app.includes("EXPERIENCE_CATEGORIES"), "Experience category validation must use the real categories array, not an undefined constant.");
+assert(app.includes("getExperienceNarrativeStatus(item) === \"ok\"") && !app.includes("cleanObsidianMarkdownText(item.notes).length > 30"), "Map narrative metrics must use the same real-narrative rule as exported notes.");
+assert(app.includes("function getMeaningfulAssetAnalysisSnippets") && app.includes("Lectura relevante de activos"), "Map export must suppress generic OCR/review boilerplate and show only meaningful asset readings.");
 assert(saveObsidianExport.includes("obsidian_markdown_required"), "Server must reject empty Markdown exports.");
 assert(integrationExperienceBuilder.includes('rawCategory ? normalizeCategoryName(rawCategory) : "Sin categoría"'), "External experience ingest must not default category to Trabajo.");
 assert(integrationExperienceBuilder.includes("Number.isFinite(Number(rawEnergy))") && integrationExperienceBuilder.includes(": null"), "External experience ingest must not default energy to 5.");

@@ -1,4 +1,4 @@
-const APP_VERSION = "20260721-obsidian-export-button-675";
+const APP_VERSION = "20260721-obsidian-export-rules-676";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -6275,7 +6275,7 @@ function getExperienceEnergyForExport(experience = {}) {
   if (!Number.isFinite(raw) || raw < 1 || raw > 10) return null;
   const source = String(experience.metadata?.energySource || experience.energySource || "").toLowerCase();
   if (source === "default" || source === "placeholder") return null;
-  if ((raw === 5 || raw === 7) && isExperienceMapContextSignal(experience)) return null;
+  if ((raw === 5 || raw === 7) && (isExperienceMapContextSignal(experience) || isTechnicalMediaOnlyExperience(experience))) return null;
   return raw;
 }
 
@@ -20565,6 +20565,71 @@ function isCoordinateText(value) {
   return /^-?\d{1,3}\.\d+,\s*-?\d{1,3}\.\d+$/.test(cleanObsidianMarkdownText(value));
 }
 
+function isLowValueObsidianNarrative(value) {
+  const clean = cleanObsidianMarkdownText(value).toLowerCase();
+  if (!clean || clean.length < 24) return true;
+  if (/^(img|image|video|vid|audio|recording|foto|photo)[-_ ]?\d*/i.test(clean)) return true;
+  if (/\b(image_picker|camera_capture|native-media|vibeapp-native|vibe-glasses)\b/i.test(clean)) return true;
+  if (/\.(jpe?g|png|heic|webp|gif|mp4|mov|webm|m4v|mp3|wav|m4a|aac|pdf|docx?|txt|csv|json|zip)$/i.test(clean)) return true;
+  if (/^(foto|imagen|video|audio)\s+capturad[oa]\s+desde\s+vibeapp/i.test(clean)) return true;
+  if (/^(dato del usuario|user data|registrar y comprender esta experiencia)$/i.test(clean)) return true;
+  if (/sin resumen narrativo suficiente|narrativa pendiente/i.test(clean)) return true;
+  if (/extracci[oó]n local autom[aá]tica|revisi[oó]n multimodal guiada|estado mvp actual|uso sugerido|evidencia consultable|revisar antes de publicar/i.test(clean)) return true;
+  if (/ocr|transcripci[oó]n|descripci[oó]n visual|procesador externo/i.test(clean) && clean.length < 180) return true;
+  return false;
+}
+
+function getExperienceNarrativeCandidates(experience = {}) {
+  const attachments = Array.isArray(experience.attachments) ? experience.attachments : [];
+  return [
+    experience.notes,
+    experience.summary,
+    experience.description,
+    experience.narrative,
+    experience.transcript,
+    ...attachments.flatMap((asset) => [
+      asset.transcript,
+      asset.extractedText,
+      asset.translatedText,
+      asset.analyticalText,
+      asset.manualNote,
+      asset.caption,
+    ]),
+  ]
+    .map((value) => cleanObsidianMarkdownText(value))
+    .filter((value) => value && !isLowValueObsidianNarrative(value));
+}
+
+function getExperienceNarrativeTextForExport(experience = {}) {
+  return getExperienceNarrativeCandidates(experience)[0] || "";
+}
+
+function getExperienceNarrativeStatus(experience = {}) {
+  return getExperienceNarrativeTextForExport(experience) ? "ok" : "pending";
+}
+
+function getMeaningfulAssetAnalysisSnippets(attachments = [], limit = 3) {
+  const seen = new Set();
+  return (Array.isArray(attachments) ? attachments : [])
+    .flatMap((asset) => [
+      asset.transcript,
+      asset.extractedText,
+      asset.translatedText,
+      asset.analyticalText,
+      asset.manualNote,
+      asset.caption,
+    ])
+    .map((value) => cleanObsidianMarkdownText(value))
+    .filter((value) => value && !isLowValueObsidianNarrative(value))
+    .filter((value) => {
+      const key = value.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, limit);
+}
+
 function cleanObsidianPersonLabel(value) {
   const clean = cleanObsidianMarkdownText(value);
   if (!clean) return "";
@@ -20639,17 +20704,24 @@ function isExperienceMapContextSignal(experience) {
 
 function isTechnicalMediaOnlyExperience(experience = {}) {
   const title = cleanObsidianMarkdownText(experience.title).toLowerCase();
-  const notes = cleanObsidianMarkdownText(experience.notes);
   const source = String(experience.sourceType || experience.source || experience.metadata?.sourceType || "").toLowerCase();
   const attachments = experience.attachments || [];
   return (
     attachments.length > 0 &&
-    notes.length < 20 &&
+    getExperienceNarrativeStatus(experience) === "pending" &&
     (
       title.includes("foto capturado desde vibeapp") ||
       title.includes("foto capturada desde vibeapp") ||
+      title.includes("imagen capturada desde vibeapp") ||
+      title.includes("video capturado desde vibeapp") ||
+      title.includes("audio capturado desde vibeapp") ||
       title.includes("image_picker") ||
+      title.includes("camera_capture") ||
+      title.includes("native-media") ||
+      /\.(jpe?g|png|heic|webp|gif|mp4|mov|webm|m4v|mp3|wav|m4a|aac)$/i.test(title) ||
       source.includes("image_picker") ||
+      source.includes("camera") ||
+      source.includes("media") ||
       String(experience.id || "").startsWith("native-media-")
     )
   );
@@ -20726,7 +20798,7 @@ function summarizeExperienceMapForKnowledge(experiences, graph, routes, topFacto
     return acc;
   }, {});
   const topCategory = Object.entries(categories).sort((a, b) => b[1] - a[1])[0]?.[0] || "Sin categoria dominante";
-  const withNotes = experiences.filter((item) => cleanObsidianMarkdownText(item.notes).length > 30).length;
+  const withNotes = experiences.filter((item) => getExperienceNarrativeStatus(item) === "ok").length;
   const withMedia = experiences.filter((item) => (item.attachments || []).length).length;
   const routeNames = routes.map((route) => cleanObsidianMarkdownText(route.title)).join(", ") || "sin rutas consolidadas";
   const factorNames = topFactors
@@ -20772,11 +20844,8 @@ function renderExperienceMapMarkdownExperience(experience) {
   const energy = getExperienceEnergyForExport(experience);
   const events = getExperienceEventTimeline(experience);
   const attachments = experience.attachments || [];
-  const notes = cleanObsidianMarkdownText(experience.notes);
-  const analyticalText = attachments
-    .map((asset) => cleanObsidianMarkdownText(asset.extractedText || asset.analyticalText || asset.translatedText || asset.manualNote))
-    .filter(Boolean)
-    .slice(0, 3);
+  const notes = getExperienceNarrativeTextForExport(experience);
+  const analyticalText = getMeaningfulAssetAnalysisSnippets(attachments, 3);
   return [
     `### ${obsidianExperienceWikiLink(experience, title)}`,
     "",
@@ -20802,7 +20871,7 @@ function renderExperienceMapMarkdownExperience(experience) {
     ...(attachments.length
       ? attachments.map((asset) => `- ${cleanObsidianMarkdownText(asset.name || asset.fileName || asset.kind || "Activo")}${obsidianSeparator()}${cleanObsidianMarkdownText(asset.kind || asset.type || "multimedia")}${asset.eventTitle ? `${obsidianSeparator()}evento: ${cleanObsidianMarkdownText(asset.eventTitle)}` : ""}`)
       : ["- Sin activos vinculados."]),
-    ...(analyticalText.length ? ["", "**Texto extraido o interpretado**", "", ...analyticalText.map((text) => `- ${truncateText(text, 260)}`)] : []),
+    ...(analyticalText.length ? ["", "**Lectura relevante de activos**", "", ...analyticalText.map((text) => `- ${truncateText(text, 420)}`)] : []),
     "",
   ];
 }
@@ -20886,13 +20955,10 @@ function buildObsidianExperienceNoteMarkdown(experience = {}) {
   const people = getExperiencePeopleForExport(experience);
   const events = getExperienceEventTimeline(experience);
   const attachments = experience.attachments || [];
-  const notes = cleanObsidianMarkdownText(experience.notes);
-  const narrativeStatus = notes.length > 20 ? "ok" : "pending";
+  const notes = getExperienceNarrativeTextForExport(experience);
+  const narrativeStatus = getExperienceNarrativeStatus(experience);
   const multimodalStatus = attachments.length ? "ok" : "pending";
-  const analyticalText = attachments
-    .map((asset) => cleanObsidianMarkdownText(asset.extractedText || asset.analyticalText || asset.translatedText || asset.manualNote))
-    .filter(Boolean)
-    .slice(0, 5);
+  const analyticalText = getMeaningfulAssetAnalysisSnippets(attachments, 5);
   const links = [
     "[[MOC - Vibe]]",
     "[[mapa-de-conocimiento-vibe-obsidian|Mapa de conocimiento]]",
@@ -20949,7 +21015,7 @@ function buildObsidianExperienceNoteMarkdown(experience = {}) {
       "",
       "## Lectura automatica",
       "",
-      ...(analyticalText.length ? analyticalText.map((text) => `- ${truncateText(text, 360)}`) : []),
+      ...(analyticalText.length ? analyticalText.map((text) => `- ${truncateText(text, 420)}`) : ["- Sin lectura automatica relevante todavia."]),
       "",
       "## Enlaces",
       "",
@@ -21061,7 +21127,7 @@ async function exportExperienceMapMarkdown() {
       `- Experiencias en alcance: ${experiences.length}`,
       `- Energia media registrada: ${knowledgeSummary.avgEnergy ? `${knowledgeSummary.avgEnergy}/10` : "sin dato suficiente"}`,
       `- Categoria dominante: ${cleanObsidianMarkdownText(knowledgeSummary.topCategory)}`,
-      `- Experiencias con narrativa suficiente: ${knowledgeSummary.withNotes}`,
+      `- Experiencias con narrativa real: ${knowledgeSummary.withNotes}`,
       `- Experiencias con multimedia: ${knowledgeSummary.withMedia}`,
       "",
       state.language !== "es" ? "## Cross-Device Context" : "## Contexto transversal recibido",

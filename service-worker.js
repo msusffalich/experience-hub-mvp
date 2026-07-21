@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260721-obsidian-export-button-675";
+const CACHE_NAME = "experience-hub-pwa-20260721-obsidian-export-rules-676";
 const APP_SHELL = [
   "/icons/vibe-logo.jpg",
   "/icons/vibe-logo.png",
