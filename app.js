@@ -1,4 +1,4 @@
-const APP_VERSION = "20260721-obsidian-route-cleanup-665";
+const APP_VERSION = "20260721-obsidian-experience-notes-666";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -20460,6 +20460,26 @@ function obsidianWikiLink(label, alias = "") {
   return cleanAlias && cleanAlias !== cleanLabel ? `[[${cleanLabel}|${cleanAlias}]]` : `[[${cleanLabel}]]`;
 }
 
+function getObsidianExperienceNoteStem(experience = {}) {
+  const date = Number.isNaN(new Date(experience.timestamp).getTime())
+    ? new Date().toISOString().slice(0, 10)
+    : new Date(experience.timestamp).toISOString().slice(0, 10);
+  const title = cleanObsidianMarkdownText(experience.title || experience.label || "experiencia");
+  return `${date} - ${slugifyFilename(title).slice(0, 80) || "experiencia"}`;
+}
+
+function obsidianExperienceWikiLink(experience = {}, alias = "") {
+  const label = getObsidianExperienceNoteStem(experience);
+  const cleanAlias = cleanObsidianMarkdownText(alias || experience.title || experience.label || label, label);
+  return obsidianWikiLink(label, cleanAlias);
+}
+
+function resolveObsidianExperienceFromNode(node = {}) {
+  return state.experiences.find((item) => item.id === node.id)
+    || state.experiences.find((item) => cleanObsidianMarkdownText(item.title) === cleanObsidianMarkdownText(node.label))
+    || node;
+}
+
 function getExperienceMapMarkdownScope(graph) {
   const ids = new Set((graph.experiences || []).map((node) => node.id));
   return state.experiences
@@ -20510,7 +20530,7 @@ function renderExperienceMapMarkdownTimeline(experiences) {
       .filter(Boolean)
       .filter((item) => !isLowValueObsidianFactor(item))
       .join(obsidianSeparator());
-    return `- **${formatShortDate(experience.timestamp)}**${obsidianSeparator()}${obsidianWikiLink(title)}${obsidianSeparator()}${category}${obsidianSeparator()}Energia ${Number(experience.energy || 0)}/10${context ? `${obsidianSeparator()}${context}` : ""}`;
+    return `- **${formatShortDate(experience.timestamp)}**${obsidianSeparator()}${obsidianExperienceWikiLink(experience, title)}${obsidianSeparator()}${category}${obsidianSeparator()}Energia ${Number(experience.energy || 0)}/10${context ? `${obsidianSeparator()}${context}` : ""}`;
   });
 }
 
@@ -20525,7 +20545,7 @@ function renderExperienceMapMarkdownExperience(experience) {
     .filter(Boolean)
     .slice(0, 3);
   return [
-    `### ${obsidianWikiLink(title)}`,
+    `### ${obsidianExperienceWikiLink(experience, title)}`,
     "",
     `- **Fecha:** ${formatDate(experience.timestamp)}`,
     `- **Categoria:** ${category}`,
@@ -20560,7 +20580,7 @@ function renderExperienceMapMarkdownRoutes(routes) {
     const names = route.items
       .filter((item) => !isLowValueObsidianFactor(item.label))
       .slice(0, 12)
-      .map((item) => obsidianWikiLink(item.label))
+      .map((item) => obsidianExperienceWikiLink(resolveObsidianExperienceFromNode(item), item.label))
       .join(obsidianSeparator());
     return [
       `### ${cleanObsidianMarkdownText(route.title)}`,
@@ -20596,6 +20616,7 @@ function renderExperienceMapMarkdownFactors(topFactors) {
 }
 
 function renderExperienceMapMarkdownRelations(graph) {
+  const nodeById = new Map(graph.nodes.map((node) => [node.id, node]));
   const nodeLabel = new Map(graph.nodes.map((node) => [node.id, cleanObsidianMarkdownText(node.label)]));
   const seen = new Set();
   const useful = graph.links
@@ -20606,14 +20627,103 @@ function renderExperienceMapMarkdownRelations(graph) {
       const key = `${source}|${link.type}|${target}`;
       if (seen.has(key)) return "";
       seen.add(key);
-      return `- ${obsidianWikiLink(source)} -> **${getRelationTypeLabel(link.type)}** -> ${obsidianWikiLink(target)}`;
+      const sourceNode = nodeById.get(link.source);
+      const targetNode = nodeById.get(link.target);
+      const sourceLink = sourceNode?.kind === "experience"
+        ? obsidianExperienceWikiLink(resolveObsidianExperienceFromNode(sourceNode), source)
+        : obsidianWikiLink(source);
+      const targetLink = targetNode?.kind === "experience"
+        ? obsidianExperienceWikiLink(resolveObsidianExperienceFromNode(targetNode), target)
+        : obsidianWikiLink(target);
+      return `- ${sourceLink} -> **${getRelationTypeLabel(link.type)}** -> ${targetLink}`;
     })
     .filter(Boolean)
     .slice(0, 80);
   return useful.length ? useful : ["- Sin relaciones exportables."];
 }
 
-function exportExperienceMapMarkdown() {
+function buildObsidianExperienceNoteMarkdown(experience = {}) {
+  const title = cleanObsidianMarkdownText(experience.title, "Experiencia");
+  const category = cleanObsidianMarkdownText(displayCategory(experience.category));
+  const events = getExperienceEventTimeline(experience);
+  const attachments = experience.attachments || [];
+  const notes = cleanObsidianMarkdownText(experience.notes);
+  const analyticalText = attachments
+    .map((asset) => cleanObsidianMarkdownText(asset.extractedText || asset.analyticalText || asset.translatedText || asset.manualNote))
+    .filter(Boolean)
+    .slice(0, 5);
+  const links = [
+    "[[MOC - Vibe]]",
+    "[[mapa-de-conocimiento-vibe-obsidian|Mapa de conocimiento]]",
+    category ? obsidianWikiLink(category) : "",
+  ].filter(Boolean);
+  const lines = [
+    "---",
+    `vibe_id: ${JSON.stringify(experience.id || getObsidianExperienceNoteStem(experience))}`,
+    "type: experience",
+    `title: ${JSON.stringify(title)}`,
+    `date: ${JSON.stringify(new Date(experience.timestamp || Date.now()).toISOString().slice(0, 10))}`,
+    `category: ${JSON.stringify(category)}`,
+    `energy: ${JSON.stringify(Number(experience.energy || 0))}`,
+    `source: ${JSON.stringify(getExperienceSourceKey(experience))}`,
+    "sync_status: exported",
+    "---",
+    "",
+    `# ${title}`,
+    "",
+    "Tipo: experiencia",
+    `Fecha: ${formatDate(experience.timestamp)}`,
+    `Grupo/persona: ${cleanObsidianPersonLabel(experience.people) || "sin registrar"}`,
+    `Categoria: ${category || "sin registrar"}`,
+    `Lugar: ${cleanObsidianLocationLabel(experience.location) || "sin registrar"}`,
+    `Fuente: ${getExperienceSourceKey(experience) || "Vibe"}`,
+    "",
+    "## Resumen",
+    "",
+    notes || "Sin resumen narrativo suficiente todavía.",
+    "",
+    "## Eventos internos",
+    "",
+    ...(events.length
+      ? events.map((event) => `- ${event.order || ""}. ${cleanObsidianMarkdownText(event.title || event.text || event.description, "Evento")}`)
+      : ["- Sin eventos internos registrados."]),
+    "",
+    "## Activos vinculados",
+    "",
+    ...(attachments.length
+      ? attachments.map((asset) => `- ${cleanObsidianMarkdownText(asset.name || asset.fileName || asset.kind || "Activo")}${obsidianSeparator()}${cleanObsidianMarkdownText(asset.kind || asset.type || "multimedia")}`)
+      : ["- Sin activos vinculados."]),
+    "",
+    "## Lectura humana",
+    "",
+    ...(analyticalText.length ? analyticalText.map((text) => `- ${truncateText(text, 360)}`) : ["- Sin lectura interpretada disponible todavía."]),
+    "",
+    "## Aprendizajes",
+    "",
+    "- Pendiente de completar al revisar esta experiencia.",
+    "",
+    "## Enlaces",
+    "",
+    ...links.map((link) => `- ${link}`),
+    "",
+  ];
+  return lines.join("\n").trim() + "\n";
+}
+
+async function exportExperienceNotesToLocalObsidianVault(experiences = []) {
+  if (!state.localObsidianVault?.connected || !supportsLocalObsidianVault()) return { ok: false, skipped: true, count: 0 };
+  let count = 0;
+  for (const experience of experiences) {
+    const markdown = buildObsidianExperienceNoteMarkdown(experience);
+    const filename = `${getObsidianExperienceNoteStem(experience)}.md`;
+    if (!markdown.trim()) throw new Error("obsidian_experience_markdown_empty");
+    await saveMarkdownToLocalObsidianVault(markdown, filename, { target: "experiences" });
+    count += 1;
+  }
+  return { ok: true, count };
+}
+
+async function exportExperienceMapMarkdown() {
   const graph = buildExperienceMapGraph();
   const allExperiences = getExperienceMapMarkdownScope(graph);
   const contextSignals = allExperiences.filter((experience) => isExperienceMapContextSignal(experience));
@@ -20689,6 +20799,16 @@ function exportExperienceMapMarkdown() {
     ...renderExperienceMapMarkdownRelations(graph),
   ];
   downloadBlob(new Blob([lines.join("\n")], { type: "text/markdown;charset=utf-8" }), "mapa-de-conocimiento-vibe-obsidian.md");
+  exportExperienceNotesToLocalObsidianVault(experiences)
+    .then((result) => {
+      if (result?.ok && result.count) {
+        notify(`Notas de experiencia guardadas en Obsidian: ${result.count}`, "success");
+      }
+    })
+    .catch((error) => {
+      console.warn("Obsidian experience note export failed", error);
+      notify("No se pudieron guardar las notas individuales en Obsidian. El mapa fue exportado.", "warn");
+    });
   const box = document.getElementById("experienceMapAnswer");
   if (box) box.textContent = state.language !== "es"
     ? "Knowledge map exported with narrative, timeline, evidence, and useful backlinks."
@@ -27400,6 +27520,8 @@ async function getOrCreateDirectoryHandle(rootHandle, segments = []) {
 }
 
 async function saveMarkdownToLocalObsidianVault(markdown, filename, options = {}) {
+  const safeMarkdown = String(markdown || "").trim();
+  if (!safeMarkdown) throw new Error("obsidian_markdown_required");
   const vault = state.localObsidianVault || {};
   if (!vault.handle || !supportsLocalObsidianVault()) return null;
   const permission = await ensureLocalObsidianPermission(vault.handle);
@@ -27413,7 +27535,7 @@ async function saveMarkdownToLocalObsidianVault(markdown, filename, options = {}
   const safeFilename = sanitizeLocalObsidianFilename(filename);
   const fileHandle = await targetDir.getFileHandle(safeFilename, { create: true });
   const writable = await fileHandle.createWritable();
-  await writable.write(markdown);
+  await writable.write(safeMarkdown.endsWith("\n") ? safeMarkdown : `${safeMarkdown}\n`);
   await writable.close();
   const relativePath = [...getLocalObsidianTargetPath(target), safeFilename].join("/");
   state.localObsidianVault = {
