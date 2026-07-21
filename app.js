@@ -1,4 +1,4 @@
-const APP_VERSION = "20260720-obsidian-knowledge-map-663";
+const APP_VERSION = "20260721-obsidian-clean-map-664";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -20386,6 +20386,69 @@ function cleanObsidianMarkdownText(value, fallback = "") {
   return text || fallback;
 }
 
+function obsidianSeparator() {
+  return " \u00b7 ";
+}
+
+function isCoordinateText(value) {
+  return /^-?\d{1,3}\.\d+,\s*-?\d{1,3}\.\d+$/.test(cleanObsidianMarkdownText(value));
+}
+
+function cleanObsidianPersonLabel(value) {
+  const clean = cleanObsidianMarkdownText(value);
+  if (!clean) return "";
+  if (clean === PRIMARY_PARTICIPANT_ID) return "Miguel";
+  if (/^primary-user-/i.test(clean)) return clean.replace(/^primary-user-/i, "").replace(/[-_]+/g, " ");
+  return clean;
+}
+
+function cleanObsidianLocationLabel(value) {
+  const clean = cleanObsidianMarkdownText(value);
+  if (!clean) return "";
+  return isCoordinateText(clean) ? `GPS ${clean}` : clean;
+}
+
+function isExperienceMapContextSignal(experience) {
+  const title = cleanObsidianMarkdownText(experience?.title).toLowerCase();
+  const objective = cleanObsidianMarkdownText(experience?.objective).toLowerCase();
+  const category = cleanObsidianMarkdownText(displayCategory(experience?.category)).toLowerCase();
+  return (
+    title.includes("ubicacion desde vibeapp-native") ||
+    title.includes("ubicaci\u00f3n desde vibeapp-native") ||
+    title.includes("importacion biometrica desde vibeapp") ||
+    title.includes("importaci\u00f3n biom\u00e9trica desde vibeapp") ||
+    objective.includes("contexto transversal de dispositivo") ||
+    objective.includes("biometria transversal") ||
+    objective.includes("biometr\u00eda transversal") ||
+    (category === "salud" && title.includes("biometr"))
+  );
+}
+
+function isLowValueObsidianFactor(value) {
+  const clean = cleanObsidianMarkdownText(value).toLowerCase();
+  return (
+    !clean ||
+    clean === PRIMARY_PARTICIPANT_ID ||
+    clean === "sin personas" ||
+    clean === "sin ubicacion" ||
+    clean === "sin ubicaci\u00f3n" ||
+    clean.includes("conservar contexto transversal de dispositivo") ||
+    isCoordinateText(clean)
+  );
+}
+
+function summarizeObsidianContextSignals(experiences) {
+  const locationSignals = experiences.filter((item) => cleanObsidianMarkdownText(item.title).toLowerCase().includes("ubicaci"));
+  const biometricSignals = experiences.filter((item) => cleanObsidianMarkdownText(item.title).toLowerCase().includes("biometr"));
+  const mediaSignals = experiences.filter((item) => (item.attachments || []).length);
+  return [
+    `- Ubicaciones recibidas desde Vibeapp: ${locationSignals.length}`,
+    `- Lecturas biom\u00e9tricas importadas: ${biometricSignals.length}`,
+    `- Registros con activos o evidencia: ${mediaSignals.length}`,
+    "- Estas se\u00f1ales se usan como contexto por fecha/hora; no sustituyen la narrativa principal de la experiencia.",
+  ];
+}
+
 function obsidianWikiLink(label, alias = "") {
   const cleanLabel = cleanObsidianMarkdownText(label, "Sin titulo").replace(/[\[\]#|]/g, "").slice(0, 90).trim() || "Sin titulo";
   const cleanAlias = cleanObsidianMarkdownText(alias || cleanLabel, cleanLabel).replace(/[\[\]|]/g, "").slice(0, 90);
@@ -20410,7 +20473,11 @@ function summarizeExperienceMapForKnowledge(experiences, graph, routes, topFacto
   const withNotes = experiences.filter((item) => cleanObsidianMarkdownText(item.notes).length > 30).length;
   const withMedia = experiences.filter((item) => (item.attachments || []).length).length;
   const routeNames = routes.map((route) => cleanObsidianMarkdownText(route.title)).join(", ") || "sin rutas consolidadas";
-  const factorNames = topFactors.slice(0, 4).map((factor) => cleanObsidianMarkdownText(factor.label)).join(", ") || "sin factores repetidos";
+  const factorNames = topFactors
+    .filter((factor) => !isLowValueObsidianFactor(factor.label))
+    .slice(0, 4)
+    .map((factor) => cleanObsidianMarkdownText(factor.label))
+    .join(", ") || "sin factores repetidos";
   return {
     avgEnergy,
     topCategory,
@@ -20430,11 +20497,15 @@ function renderExperienceMapMarkdownTimeline(experiences) {
   return experiences.map((experience) => {
     const title = cleanObsidianMarkdownText(experience.title, "Experiencia");
     const category = cleanObsidianMarkdownText(displayCategory(experience.category));
-    const context = [experience.location, experience.people, experience.objective]
-      .map((item) => cleanObsidianMarkdownText(item))
+    const context = [
+      cleanObsidianLocationLabel(experience.location),
+      cleanObsidianPersonLabel(experience.people),
+      cleanObsidianMarkdownText(experience.objective),
+    ]
       .filter(Boolean)
-      .join(" · ");
-    return `- **${formatShortDate(experience.timestamp)}** · ${obsidianWikiLink(title)} · ${category} · Energia ${Number(experience.energy || 0)}/10${context ? ` · ${context}` : ""}`;
+      .filter((item) => !isLowValueObsidianFactor(item))
+      .join(obsidianSeparator());
+    return `- **${formatShortDate(experience.timestamp)}**${obsidianSeparator()}${obsidianWikiLink(title)}${obsidianSeparator()}${category}${obsidianSeparator()}Energia ${Number(experience.energy || 0)}/10${context ? `${obsidianSeparator()}${context}` : ""}`;
   });
 }
 
@@ -20454,8 +20525,8 @@ function renderExperienceMapMarkdownExperience(experience) {
     `- **Fecha:** ${formatDate(experience.timestamp)}`,
     `- **Categoria:** ${category}`,
     `- **Energia:** ${Number(experience.energy || 0)}/10`,
-    experience.location ? `- **Lugar:** ${cleanObsidianMarkdownText(experience.location)}` : "- **Lugar:** sin registrar",
-    experience.people ? `- **Grupo/persona:** ${cleanObsidianMarkdownText(experience.people)}` : "- **Grupo/persona:** sin registrar",
+    experience.location ? `- **Lugar:** ${cleanObsidianLocationLabel(experience.location)}` : "- **Lugar:** sin registrar",
+    experience.people ? `- **Grupo/persona:** ${cleanObsidianPersonLabel(experience.people)}` : "- **Grupo/persona:** sin registrar",
     experience.objective ? `- **Intencion:** ${cleanObsidianMarkdownText(experience.objective)}` : "- **Intencion:** sin registrar",
     "",
     "**Narrativa registrada**",
@@ -20471,7 +20542,7 @@ function renderExperienceMapMarkdownExperience(experience) {
     "**Activos y evidencia**",
     "",
     ...(attachments.length
-      ? attachments.map((asset) => `- ${cleanObsidianMarkdownText(asset.name || asset.fileName || asset.kind || "Activo")} · ${cleanObsidianMarkdownText(asset.kind || asset.type || "multimedia")}${asset.eventTitle ? ` · evento: ${cleanObsidianMarkdownText(asset.eventTitle)}` : ""}`)
+      ? attachments.map((asset) => `- ${cleanObsidianMarkdownText(asset.name || asset.fileName || asset.kind || "Activo")}${obsidianSeparator()}${cleanObsidianMarkdownText(asset.kind || asset.type || "multimedia")}${asset.eventTitle ? `${obsidianSeparator()}evento: ${cleanObsidianMarkdownText(asset.eventTitle)}` : ""}`)
       : ["- Sin activos vinculados."]),
     ...(analyticalText.length ? ["", "**Texto extraido o interpretado**", "", ...analyticalText.map((text) => `- ${truncateText(text, 260)}`)] : []),
     "",
@@ -20481,7 +20552,11 @@ function renderExperienceMapMarkdownExperience(experience) {
 function renderExperienceMapMarkdownRoutes(routes) {
   if (!routes.length) return ["- No hay rutas consolidadas todavia."];
   return routes.flatMap((route) => {
-    const names = route.items.map((item) => obsidianWikiLink(item.label)).join(" · ");
+    const names = route.items
+      .filter((item) => !isLowValueObsidianFactor(item.label))
+      .slice(0, 12)
+      .map((item) => obsidianWikiLink(item.label))
+      .join(obsidianSeparator());
     return [
       `### ${cleanObsidianMarkdownText(route.title)}`,
       "",
@@ -20506,10 +20581,13 @@ function buildExperienceMapRouteInterpretation(route) {
 
 function renderExperienceMapMarkdownFactors(topFactors) {
   if (!topFactors.length) return ["- Sin factores repetidos todavia."];
-  return topFactors.map((factor) => {
-    const label = cleanObsidianMarkdownText(factor.label);
-    return `- ${obsidianWikiLink(label)} · ${getRelationTypeLabel(factor.type)} · ${factor.count} relaciones`;
-  });
+  const useful = topFactors.filter((factor) => !isLowValueObsidianFactor(factor.label)).slice(0, 12);
+  return useful.length
+    ? useful.map((factor) => {
+      const label = cleanObsidianMarkdownText(factor.label);
+      return `- ${obsidianWikiLink(label)}${obsidianSeparator()}${getRelationTypeLabel(factor.type)}${obsidianSeparator()}${factor.count} relaciones`;
+    })
+    : ["- Sin factores humanos relevantes todavia."];
 }
 
 function renderExperienceMapMarkdownRelations(graph) {
@@ -20519,6 +20597,7 @@ function renderExperienceMapMarkdownRelations(graph) {
     .map((link) => {
       const source = nodeLabel.get(link.source) || link.source;
       const target = nodeLabel.get(link.target) || link.target;
+      if (isLowValueObsidianFactor(source) || isLowValueObsidianFactor(target)) return "";
       const key = `${source}|${link.type}|${target}`;
       if (seen.has(key)) return "";
       seen.add(key);
@@ -20533,7 +20612,9 @@ function exportExperienceMapMarkdown() {
   const graph = buildExperienceMapGraph();
   const routes = buildExperienceMapRoutes(graph);
   const topFactors = [...graph.factors].sort((a, b) => b.count - a.count).slice(0, 10);
-  const experiences = getExperienceMapMarkdownScope(graph);
+  const allExperiences = getExperienceMapMarkdownScope(graph);
+  const contextSignals = allExperiences.filter((experience) => isExperienceMapContextSignal(experience));
+  const experiences = allExperiences.filter((experience) => !isExperienceMapContextSignal(experience));
   const knowledgeSummary = summarizeExperienceMapForKnowledge(experiences, graph, routes, topFactors);
   const questions = [
     t("labels.experienceMapQuestionEnergy"),
@@ -20550,6 +20631,7 @@ function exportExperienceMapMarkdown() {
     `language: ${state.language}`,
     `relation_filter: ${graph.relationFilter}`,
     `experiences: ${experiences.length}`,
+    `context_signals: ${contextSignals.length}`,
     `relationships: ${graph.links.length}`,
     `routes: ${routes.length}`,
     "type: vibe_experience_knowledge_map",
@@ -20564,6 +20646,10 @@ function exportExperienceMapMarkdown() {
     `- Categoria dominante: ${cleanObsidianMarkdownText(knowledgeSummary.topCategory)}`,
     `- Experiencias con narrativa suficiente: ${knowledgeSummary.withNotes}`,
     `- Experiencias con multimedia: ${knowledgeSummary.withMedia}`,
+    "",
+    state.language !== "es" ? "## Cross-Device Context" : "## Contexto transversal recibido",
+    "",
+    ...summarizeObsidianContextSignals(contextSignals),
     "",
     state.language !== "es" ? "## How to Use This Note" : "## Como usar esta nota",
     "",
