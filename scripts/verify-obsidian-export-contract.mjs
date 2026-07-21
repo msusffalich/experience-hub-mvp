@@ -47,7 +47,7 @@ const saveObsidianExport = between(
   "function inferObsidianTargetFromFilename",
 );
 
-assert(app.includes('const APP_VERSION = "20260721-obsidian-map-trust-680";'), "APP_VERSION must identify the Obsidian map trust build.");
+assert(app.includes('const APP_VERSION = "20260721-obsidian-human-narrative-681";'), "APP_VERSION must identify the human-narrative Obsidian build.");
 assert(app.includes("RECOMMENDED_OBSIDIAN_VAULT_PATH") && app.includes("obsidian-vault-vibe"), "The app must show the exact expected local Obsidian vault path.");
 assert(app.includes("function hasObsidianMarkerDirectory") && app.includes('hasChildDirectoryHandle(handle, ".obsidian")'), "Local vault selection must validate the real Obsidian .obsidian marker.");
 assert(app.includes("function resolveLocalObsidianVaultHandle") && app.includes("obsidian_vault_marker_missing"), "Local vault selection must reject folders that are not Obsidian vaults.");
@@ -64,6 +64,15 @@ assert(experienceNoteBuilder.includes("getExperienceEnergyForExport") && !experi
 assert(experienceNoteBuilder.includes("getExperienceNarrativeStatus(experience)") && experienceNoteBuilder.includes("multimodalStatus"), "Experience notes must emit Dataview status fields from the shared narrative rule.");
 assert(experienceNoteBuilder.includes("...(people.length ?") && !experienceNoteBuilder.includes("people: []"), "Experience notes must omit people when no real people are known instead of emitting an empty array.");
 assert(app.includes("function isLowValueObsidianNarrative") && app.includes("function getExperienceNarrativeTextForExport") && app.includes("function getExperienceNarrativeStatus"), "Obsidian export must have one shared rule for real narrative text.");
+const narrativeCandidates = between(
+  app,
+  "function getExperienceNarrativeCandidates",
+  "function getExperienceNarrativeTextForExport",
+);
+assert(app.includes("function isHumanVoiceAsset"), "Obsidian export must distinguish human voice/audio assets from automatic asset analysis.");
+assert(narrativeCandidates.includes("humanAssetNarratives"), "Narrative candidates must be restricted to human text, manual notes, and human voice transcripts.");
+assert(!narrativeCandidates.includes("experience.summary") && !narrativeCandidates.includes("experience.description"), "Narrative candidates must not count generated summaries or generic descriptions as human narrative.");
+assert(!narrativeCandidates.includes("asset.extractedText") && !narrativeCandidates.includes("asset.translatedText") && !narrativeCandidates.includes("asset.analyticalText") && !narrativeCandidates.includes("asset.caption"), "Narrative candidates must not count OCR, translations, visual captions, or automatic analysis as human narrative.");
 assert(experienceNoteBuilder.includes("getExperienceNarrativeTextForExport(experience)") && !experienceNoteBuilder.includes("Sin resumen narrativo suficiente"), "Experience notes must mark missing narrative as pending, not export filler text.");
 assert(experienceNoteBuilder.includes("getObsidianCategoryWikiLink"), "Experience notes must sanitize category wiki links.");
 assert(experienceNoteBuilder.includes("wrapObsidianAutoBlock") && app.includes("OBSIDIAN_HUMAN_HEADING") && app.includes("String.fromCharCode(0x00ed)"), "Experience notes must write the human curation heading with the UTF-8 accented i.");
@@ -86,6 +95,9 @@ assert(app.includes("hasCuratedObsidianLearnings(preservedHuman)") && app.includ
 assert(server.includes("hasCuratedObsidianLearnings(preservedHuman)") && server.includes('"learnings", "ok"') && server.includes('"updated_at"'), "Server merge must mark learnings ok and refresh updated_at when human curation adds learning content.");
 assert(mapExporter.includes("Exportando...") && mapExporter.includes("requestAnimationFrame") && mapExporter.includes("skipObsidian: true") && mapExporter.includes('target: "generated_map"'), "Experience-map Markdown button must show progress and sync the map explicitly instead of silently doing nothing.");
 assert(mapExporter.indexOf("exportExperienceNotesToLocalObsidianVault(experiences)") < mapExporter.indexOf("syncMarkdownBlobToObsidian(blob, filename"), "Obsidian export must save experience notes before saving the generated map.");
+assert(mapExporter.indexOf("exportExperienceNotesToLocalObsidianVault(experiences)") < mapExporter.indexOf("summarizeExperienceMapForKnowledge"), "Generated map metrics must be calculated after the saved note set is known.");
+assert(mapExporter.includes("const savedIds = new Set(notesResult.savedIds || [])") && mapExporter.includes("const mapExperiences = experiences.filter") && mapExporter.includes("filterExperienceMapRoutesForSavedNotes(rawRoutes, savedIds)"), "Generated map must count only the same exported experience-note set.");
+assert(mapExporter.includes("withNotes: notesResult.narrativeOk") && mapExporter.includes("renderExperienceMapMarkdownTimeline(mapExperiences)") && mapExporter.includes("renderExperienceMapMarkdownRelations(graph, savedIds)"), "Generated map narrative metrics, timeline, and backlinks must use the saved-note set.");
 assert(mapExporter.includes("obsidian_notes_incomplete") && mapExporter.includes("obsidian_map_not_saved"), "Obsidian export must fail visibly instead of accepting a partial map-only export.");
 assert(app.includes("buildObsidianExcludedExperienceNoteCandidates(allExperiences)") && app.includes("Notas candidatas a revisar"), "Obsidian export must report stale-note candidates for human review.");
 assert(!app.includes("function deleteMarkdownFromLocalObsidianVault") && !app.includes("removeEntry(safeFilename)") && !app.includes("deleteObsidianExperienceNoteIfExists"), "VibePWA must not automatically delete append-only experience notes.");

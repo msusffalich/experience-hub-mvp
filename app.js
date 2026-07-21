@@ -1,4 +1,4 @@
-const APP_VERSION = "20260721-obsidian-map-trust-680";
+const APP_VERSION = "20260721-obsidian-human-narrative-681";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -20582,22 +20582,44 @@ function isLowValueObsidianNarrative(value) {
   return false;
 }
 
+function isHumanVoiceAsset(asset = {}) {
+  const descriptor = [
+    asset.kind,
+    asset.type,
+    asset.mimeType,
+    asset.contentType,
+    asset.source,
+    asset.sourceType,
+    asset.origin,
+    asset.captureType,
+    asset.name,
+    asset.fileName,
+  ]
+    .map((value) => String(value || "").toLowerCase())
+    .join(" ");
+  return (
+    descriptor.includes("audio") ||
+    descriptor.includes("voice") ||
+    descriptor.includes("microphone") ||
+    /^audio\//.test(String(asset.mimeType || asset.contentType || "").toLowerCase()) ||
+    /\.(webm|mp3|wav|m4a|aac|ogg)$/i.test(String(asset.name || asset.fileName || ""))
+  );
+}
+
 function getExperienceNarrativeCandidates(experience = {}) {
   const attachments = Array.isArray(experience.attachments) ? experience.attachments : [];
+  const humanAssetNarratives = attachments.flatMap((asset) => [
+    asset.manualNote,
+    ...(isHumanVoiceAsset(asset) ? [asset.transcript] : []),
+  ]);
   return [
     experience.notes,
-    experience.summary,
-    experience.description,
     experience.narrative,
     experience.transcript,
-    ...attachments.flatMap((asset) => [
-      asset.transcript,
-      asset.extractedText,
-      asset.translatedText,
-      asset.analyticalText,
-      asset.manualNote,
-      asset.caption,
-    ]),
+    experience.manualNote,
+    experience.voiceTranscript,
+    experience.dictation,
+    ...humanAssetNarratives,
   ]
     .map((value) => cleanObsidianMarkdownText(value))
     .filter((value) => value && !isLowValueObsidianNarrative(value));
@@ -20809,7 +20831,32 @@ function getExperienceCategoryForKnowledge(experience = {}) {
   return category;
 }
 
-function summarizeExperienceMapForKnowledge(experiences, graph, routes, topFactors) {
+function getObsidianFrontmatterField(markdown = "", field = "") {
+  const match = String(markdown || "").match(new RegExp(`^${field}:\\s*(.+)$`, "m"));
+  if (!match) return "";
+  return match[1].trim().replace(/^["']|["']$/g, "");
+}
+
+function filterExperienceMapRoutesForSavedNotes(routes = [], savedIds = new Set()) {
+  return routes
+    .map((route) => {
+      const items = route.items.filter((item) => savedIds.has(item.id));
+      const trustedEnergy = items.map((item) => getExperienceEnergyForKnowledge(resolveObsidianExperienceFromNode(item))).filter((value) => value !== null);
+      const avgEnergy = trustedEnergy.length ? average(trustedEnergy).toFixed(1) : null;
+      const categories = items.reduce((acc, item) => {
+        const category = getExperienceCategoryForKnowledge(resolveObsidianExperienceFromNode(item));
+        if (!category) return acc;
+        const key = displayCategory(category);
+        acc[key] = (acc[key] || 0) + 1;
+        return acc;
+      }, {});
+      const dominant = Object.entries(categories).sort((a, b) => b[1] - a[1])[0]?.[0] || "";
+      return { ...route, items, avgEnergy, dominant };
+    })
+    .filter((route) => route.items.length >= 2);
+}
+
+function summarizeExperienceMapForKnowledge(experiences, graph, routes, topFactors, options = {}) {
   const realEnergy = experiences.map(getExperienceEnergyForKnowledge).filter((value) => value !== null);
   const avgEnergy = realEnergy.length ? average(realEnergy).toFixed(1) : null;
   const categories = experiences.reduce((acc, item) => {
@@ -20820,7 +20867,8 @@ function summarizeExperienceMapForKnowledge(experiences, graph, routes, topFacto
     return acc;
   }, {});
   const topCategory = Object.entries(categories).sort((a, b) => b[1] - a[1])[0]?.[0] || null;
-  const withNotes = experiences.filter((item) => getExperienceNarrativeStatus(item) === "ok").length;
+  const experienceCount = Number.isFinite(options.experienceCount) ? options.experienceCount : experiences.length;
+  const withNotes = Number.isFinite(options.withNotes) ? options.withNotes : experiences.filter((item) => getExperienceNarrativeStatus(item) === "ok").length;
   const withMedia = experiences.filter((item) => (item.attachments || []).length).length;
   const routeNames = routes.map((route) => cleanObsidianMarkdownText(route.title)).join(", ") || "sin rutas consolidadas";
   const factorNames = topFactors
@@ -20836,7 +20884,7 @@ function summarizeExperienceMapForKnowledge(experiences, graph, routes, topFacto
     routeNames,
     factorNames,
     text:
-      `El mapa reune ${experiences.length} experiencias conectadas por ${graph.links.length} relaciones. ` +
+      `El mapa reune ${experienceCount} experiencias conectadas por ${graph.links.length} relaciones. ` +
       `${topCategory ? `La categoria con mayor presencia confiable es ${cleanObsidianMarkdownText(topCategory)}` : "No hay categoria dominante confiable"}${avgEnergy ? `, con energia media registrada ${avgEnergy}/10` : ", sin energia registrada suficiente"}. ` +
       `Las rutas detectadas son ${routeNames}. Los factores que mas ordenan la lectura son ${factorNames}.`,
   };
@@ -20939,7 +20987,7 @@ function renderExperienceMapMarkdownFactors(topFactors) {
     : ["- Sin factores humanos relevantes todavia."];
 }
 
-function renderExperienceMapMarkdownRelations(graph) {
+function renderExperienceMapMarkdownRelations(graph, allowedExperienceIds = null) {
   const nodeById = new Map(graph.nodes.map((node) => [node.id, node]));
   const nodeLabel = new Map(graph.nodes.map((node) => [node.id, cleanObsidianMarkdownText(node.label)]));
   const seen = new Set();
@@ -20953,6 +21001,8 @@ function renderExperienceMapMarkdownRelations(graph) {
       seen.add(key);
       const sourceNode = nodeById.get(link.source);
       const targetNode = nodeById.get(link.target);
+      if (allowedExperienceIds && sourceNode?.kind === "experience" && !allowedExperienceIds.has(sourceNode.id)) return "";
+      if (allowedExperienceIds && targetNode?.kind === "experience" && !allowedExperienceIds.has(targetNode.id)) return "";
       if (sourceNode?.kind === "experience" && !isObsidianExportableExperience(resolveObsidianExperienceFromNode(sourceNode))) return "";
       if (targetNode?.kind === "experience" && !isObsidianExportableExperience(resolveObsidianExperienceFromNode(targetNode))) return "";
       const sourceLink = sourceNode?.kind === "experience"
@@ -21061,6 +21111,8 @@ async function exportExperienceNotesToLocalObsidianVault(experiences = []) {
     throw new Error("obsidian_vault_not_connected");
   }
   let count = 0;
+  let narrativeOk = 0;
+  const savedIds = [];
   const errors = [];
   for (const experience of experiences) {
     const markdown = buildObsidianExperienceNoteMarkdown(experience);
@@ -21085,11 +21137,13 @@ async function exportExperienceNotesToLocalObsidianVault(experiences = []) {
       });
       if (!response.ok) throw new Error(`obsidian_experience_export_${response.status}`);
       count += 1;
+      if (getObsidianFrontmatterField(localSaved.markdown, "narrative") === "ok") narrativeOk += 1;
+      savedIds.push(experience.id);
     } catch (error) {
       errors.push({ id: experience.id, title: experience.title, error: error.message });
     }
   }
-  return { ok: errors.length === 0, count, expected: experiences.length, errors };
+  return { ok: errors.length === 0, count, expected: experiences.length, narrativeOk, savedIds, errors };
 }
 
 function buildObsidianExcludedExperienceNoteCandidates(experiences = []) {
@@ -21130,12 +21184,22 @@ async function exportExperienceMapMarkdown() {
     const contextSignals = allExperiences.filter((experience) => !isObsidianExportableExperience(experience));
     const experiences = allExperiences.filter(isObsidianExportableExperience);
     const cleanupResult = buildObsidianExcludedExperienceNoteCandidates(allExperiences);
-    const routes = buildExperienceMapRoutes(graph, { excludeContextSignals: true });
+    const rawRoutes = buildExperienceMapRoutes(graph, { excludeContextSignals: true });
+    const notesResult = await exportExperienceNotesToLocalObsidianVault(experiences);
+    if (!notesResult?.ok || notesResult.count !== notesResult.expected) {
+      throw new Error(`obsidian_notes_incomplete_${notesResult?.count || 0}_of_${notesResult?.expected || experiences.length}`);
+    }
+    const savedIds = new Set(notesResult.savedIds || []);
+    const mapExperiences = experiences.filter((experience) => savedIds.has(experience.id));
+    const routes = filterExperienceMapRoutesForSavedNotes(rawRoutes, savedIds);
     const topFactors = [...graph.factors]
       .filter((factor) => !isLowValueObsidianFactor(factor.label))
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
-    const knowledgeSummary = summarizeExperienceMapForKnowledge(experiences, graph, routes, topFactors);
+    const knowledgeSummary = summarizeExperienceMapForKnowledge(mapExperiences, graph, routes, topFactors, {
+      experienceCount: notesResult.count,
+      withNotes: notesResult.narrativeOk,
+    });
     const questions = [
       t("labels.experienceMapQuestionEnergy"),
       t("labels.experienceMapQuestionSaturation"),
@@ -21157,7 +21221,7 @@ async function exportExperienceMapMarkdown() {
       "sync_status: exported",
       `language: ${state.language}`,
       `relation_filter: ${graph.relationFilter}`,
-      `experiences: ${experiences.length}`,
+      `experiences: ${mapExperiences.length}`,
       `context_signals: ${contextSignals.length}`,
       `relationships: ${graph.links.length}`,
       `routes: ${routes.length}`,
@@ -21168,7 +21232,7 @@ async function exportExperienceMapMarkdown() {
       "",
       knowledgeSummary.text,
       "",
-      `- Experiencias en alcance: ${experiences.length}`,
+      `- Experiencias en alcance: ${mapExperiences.length}`,
       `- Energia media registrada: ${knowledgeSummary.avgEnergy ? `${knowledgeSummary.avgEnergy}/10` : "sin dato suficiente"}`,
       `- Categoria dominante: ${knowledgeSummary.topCategory ? cleanObsidianMarkdownText(knowledgeSummary.topCategory) : "sin dato confiable"}`,
       `- Experiencias con narrativa real: ${knowledgeSummary.withNotes}`,
@@ -21203,23 +21267,19 @@ async function exportExperienceMapMarkdown() {
       "",
       state.language !== "es" ? "## Chronological Timeline" : "## Linea cronologica",
       "",
-      ...renderExperienceMapMarkdownTimeline(experiences),
+      ...renderExperienceMapMarkdownTimeline(mapExperiences),
       "",
       state.language !== "es" ? "## Experience Notes" : "## Notas de experiencias",
       "",
-      ...experiences.flatMap((experience) => renderExperienceMapMarkdownExperience(experience)),
+      ...mapExperiences.flatMap((experience) => renderExperienceMapMarkdownExperience(experience)),
       "",
       state.language !== "es" ? "## Useful Backlinks" : "## Enlaces utiles",
       "",
-      ...renderExperienceMapMarkdownRelations(graph),
+      ...renderExperienceMapMarkdownRelations(graph, savedIds),
     ];
     const markdown = lines.join("\n");
     const filename = "mapa-de-conocimiento-vibe-obsidian.md";
     const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
-    const notesResult = await exportExperienceNotesToLocalObsidianVault(experiences);
-    if (!notesResult?.ok || notesResult.count !== notesResult.expected) {
-      throw new Error(`obsidian_notes_incomplete_${notesResult?.count || 0}_of_${notesResult?.expected || experiences.length}`);
-    }
     downloadBlob(blob, filename, null, { skipObsidian: true });
     const mapSync = await syncMarkdownBlobToObsidian(blob, filename, { source: "experience-map", target: "generated_map" });
     if (!mapSync?.ok) throw new Error("obsidian_map_not_saved");
@@ -28090,7 +28150,7 @@ async function saveMarkdownToLocalObsidianVault(markdown, filename, options = {}
     lastError: "",
   };
   renderLocalObsidianVaultStatus();
-  return { ok: true, relativePath };
+  return { ok: true, relativePath, filename: finalFilename, markdown: finalMarkdown };
 }
 
 async function syncMarkdownBlobToObsidian(blob, filename, options = {}) {
