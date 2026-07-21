@@ -1,4 +1,4 @@
-const APP_VERSION = "20260721-obsidian-export-button-674";
+const APP_VERSION = "20260721-obsidian-export-button-675";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -6260,7 +6260,7 @@ function displayCategory(category) {
 
 function isRealExperienceCategory(category) {
   const normalized = normalizeCategoryName(category);
-  return Boolean(normalized && EXPERIENCE_CATEGORIES.includes(normalized));
+  return Boolean(normalized && categories.includes(normalized));
 }
 
 function getExperienceCategoryForExport(experience = {}) {
@@ -19562,33 +19562,82 @@ function renderExperienceMapStats(graph) {
 }
 
 function renderExperienceMapSvg(graph) {
-  const width = 920;
-  const height = 560;
-  const positioned = positionExperienceMapNodes(graph.nodes, width, height);
-  const nodeById = new Map(positioned.map((node) => [node.id, node]));
-  const routeNodeIds = new Set((getSelectedExperienceMapRoute(graph)?.items || []).map((item) => item.id));
+  const route = getSelectedExperienceMapRoute(graph);
+  const routeNodeIds = new Set((route?.items || []).map((item) => item.id));
+  const recent = [...graph.experiences].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 10);
+  const factors = [...graph.factors].sort((a, b) => b.count - a.count).slice(0, 8);
+  const routes = buildExperienceMapRoutes(graph).slice(0, 4);
   return `
-    <svg class="experience-map-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(t("viewTitles.experienceMap"))}">
-      <defs>
-        <filter id="mapNodeShadow" x="-30%" y="-30%" width="160%" height="160%">
-          <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#17201b" flood-opacity="0.14"></feDropShadow>
-        </filter>
-      </defs>
-      <g class="map-links">
-        ${graph.links
-          .map((link) => {
-            const source = nodeById.get(link.source);
-            const target = nodeById.get(link.target);
-            if (!source || !target) return "";
-            const routeActive = routeNodeIds.has(link.source) && routeNodeIds.has(link.target) ? "route-active" : "";
-            return `<line class="map-link link-${escapeHtml(link.type)} ${routeActive}" x1="${source.x}" y1="${source.y}" x2="${target.x}" y2="${target.y}"></line>`;
-          })
-          .join("")}
-      </g>
-      <g class="map-nodes">
-        ${positioned.map((node) => renderExperienceMapNode(node, graph, routeNodeIds)).join("")}
-      </g>
-    </svg>
+    <div class="experience-map-board" role="img" aria-label="${escapeHtml(t("viewTitles.experienceMap"))}">
+      <section class="map-board-column map-board-column-main">
+        <div class="map-board-heading">
+          <span>${state.language !== "es" ? "Recent experiences" : "Experiencias recientes"}</span>
+          <strong>${recent.length}</strong>
+        </div>
+        <div class="map-board-list">
+          ${recent.map((node) => renderExperienceMapBoardExperience(node, graph, routeNodeIds)).join("")}
+        </div>
+      </section>
+      <section class="map-board-column">
+        <div class="map-board-heading">
+          <span>${state.language !== "es" ? "Main connectors" : "Conectores principales"}</span>
+          <strong>${factors.length}</strong>
+        </div>
+        <div class="map-factor-list">
+          ${factors.length ? factors.map((node) => renderExperienceMapBoardFactor(node, graph)).join("") : `<p class="card-meta">${state.language !== "es" ? "Add more repeated places, people or goals to see connectors." : "Agrega lugares, personas u objetivos repetidos para ver conectores."}</p>`}
+        </div>
+      </section>
+      <section class="map-board-column">
+        <div class="map-board-heading">
+          <span>${state.language !== "es" ? "Reading routes" : "Rutas de lectura"}</span>
+          <strong>${routes.length}</strong>
+        </div>
+        <div class="map-route-mini-list">
+          ${routes.length ? routes.map((item) => renderExperienceMapBoardRoute(item)).join("") : `<p class="card-meta">${t("labels.experienceMapRouteEmpty")}</p>`}
+        </div>
+      </section>
+    </div>
+  `;
+}
+
+function renderExperienceMapBoardExperience(node, graph, routeNodeIds = new Set()) {
+  const selected = node.id === state.selectedExperienceMapNodeId ? "selected" : "";
+  const connected = state.selectedExperienceMapNodeId && isMapNodeConnected(node.id, state.selectedExperienceMapNodeId, graph.links) ? "connected" : "";
+  const routeActive = routeNodeIds.has(node.id) ? "route-active" : "";
+  const energy = getExperienceEnergyForExport(node);
+  const meta = [
+    formatShortDate(node.timestamp),
+    displayCategory(node.category),
+    energy ? `${state.language !== "es" ? "Energy" : "Energia"} ${energy}/10` : "",
+  ].filter(Boolean).join(" · ");
+  return `
+    <article class="map-board-card experience energy-${getEnergyBand(node.energy)} ${selected} ${connected} ${routeActive}" data-map-node-id="${escapeHtml(node.id)}" tabindex="0">
+      <strong>${escapeHtml(truncateText(node.label, 64))}</strong>
+      <span>${escapeHtml(meta)}</span>
+      ${node.location ? `<small>${escapeHtml(truncateText(node.location, 72))}</small>` : ""}
+    </article>
+  `;
+}
+
+function renderExperienceMapBoardFactor(node, graph) {
+  const selected = node.id === state.selectedExperienceMapNodeId ? "selected" : "";
+  const connected = state.selectedExperienceMapNodeId && isMapNodeConnected(node.id, state.selectedExperienceMapNodeId, graph.links) ? "connected" : "";
+  return `
+    <button class="map-factor-chip factor-${escapeHtml(node.type)} ${selected} ${connected}" type="button" data-map-node-id="${escapeHtml(node.id)}">
+      <span>${escapeHtml(getRelationTypeLabel(node.type))}</span>
+      <strong>${escapeHtml(truncateText(node.label, 48))}</strong>
+      <small>${node.count} ${state.language !== "es" ? "links" : "vinculos"}</small>
+    </button>
+  `;
+}
+
+function renderExperienceMapBoardRoute(route) {
+  const selected = route.id === state.selectedExperienceMapRouteId ? "selected" : "";
+  return `
+    <button class="map-route-mini ${escapeHtml(route.tone)} ${selected}" type="button" data-map-route-id="${escapeHtml(route.id)}">
+      <strong>${escapeHtml(route.title)}</strong>
+      <span>${route.items.length} ${state.language !== "es" ? "experiences" : "experiencias"} · ${route.avgEnergy}/10</span>
+    </button>
   `;
 }
 

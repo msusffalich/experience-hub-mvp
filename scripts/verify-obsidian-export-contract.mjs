@@ -47,7 +47,7 @@ const saveObsidianExport = between(
   "function inferObsidianTargetFromFilename",
 );
 
-assert(app.includes('const APP_VERSION = "20260721-obsidian-export-button-674";'), "APP_VERSION must identify the Obsidian contract build.");
+assert(app.includes('const APP_VERSION = "20260721-obsidian-export-button-675";'), "APP_VERSION must identify the Obsidian contract build.");
 assert(app.includes("function getLocalDateKey") && app.includes("function getLocalDateTimeWithOffset"), "Obsidian export must use local date helpers.");
 assert(experienceNoteBuilder.includes("getLocalDateKey(experience.timestamp)"), "Experience notes must use local dates, not UTC dates.");
 assert(!experienceNoteBuilder.includes("toISOString().slice(0, 10)"), "Experience notes must not derive date from UTC toISOString().slice(0, 10).");
@@ -80,6 +80,8 @@ assert(mapExporter.includes("Exportando...") && mapExporter.includes("requestAni
 assert(index.includes('onclick="window.exportExperienceMapMarkdown?.()"') && app.includes("window.exportExperienceMapMarkdown = exportExperienceMapMarkdown"), "Experience-map Markdown button must have a direct browser click fallback.");
 assert(app.includes('experienceMapExportButton")?.addEventListener("click", exportExperienceMapMarkdown') && app.includes('button?.dataset.exporting === "1"'), "Experience-map Markdown button must also have a programmatic listener guarded against duplicate execution.");
 assert(index.includes('id="localObsidianVaultStatus"') && index.includes('id="connectLocalObsidianVaultButton"') && index.includes('id="forgetLocalObsidianVaultButton"'), "Experience map must show a clear Obsidian vault connection state and actions.");
+assert(app.includes("experience-map-board") && app.includes("renderExperienceMapBoardExperience") && app.includes("renderExperienceMapBoardFactor"), "Experience map must render as a readable board instead of only a dense SVG node graph.");
+assert(!app.includes("EXPERIENCE_CATEGORIES"), "Experience category validation must use the real categories array, not an undefined constant.");
 assert(saveObsidianExport.includes("obsidian_markdown_required"), "Server must reject empty Markdown exports.");
 assert(integrationExperienceBuilder.includes('rawCategory ? normalizeCategoryName(rawCategory) : "Sin categoría"'), "External experience ingest must not default category to Trabajo.");
 assert(integrationExperienceBuilder.includes("Number.isFinite(Number(rawEnergy))") && integrationExperienceBuilder.includes(": null"), "External experience ingest must not default energy to 5.");
