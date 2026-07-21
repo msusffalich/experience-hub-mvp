@@ -1,4 +1,4 @@
-const APP_VERSION = "20260721-obsidian-vault-guard-679";
+const APP_VERSION = "20260721-obsidian-map-trust-680";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -19755,10 +19755,13 @@ function buildExperienceMapRoutes(graph, options = {}) {
   return routeConfigs
     .map((config) => {
       const items = ordered.filter(config.matcher).filter((item) => !isLowValueObsidianFactor(item.label)).slice(-8);
-      const avgEnergy = items.length ? average(items.map((item) => Number(item.energy || 0))).toFixed(1) : "0.0";
+      const trustedEnergy = items.map(getExperienceEnergyForKnowledge).filter((value) => value !== null);
+      const avgEnergy = trustedEnergy.length ? average(trustedEnergy).toFixed(1) : null;
       const categories = items.reduce((acc, item) => {
-        const category = displayCategory(item.category);
-        acc[category] = (acc[category] || 0) + 1;
+        const category = getExperienceCategoryForKnowledge(item);
+        if (!category) return acc;
+        const key = displayCategory(category);
+        acc[key] = (acc[key] || 0) + 1;
         return acc;
       }, {});
       const dominant = Object.entries(categories).sort((a, b) => b[1] - a[1])[0]?.[0] || "";
@@ -20787,17 +20790,36 @@ function getExperienceMapMarkdownScope(graph) {
     .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 }
 
+function hasExplicitObsidianSignalSource(experience = {}, key = "") {
+  const source = String(experience.metadata?.[key] || experience[key] || "").toLowerCase().trim();
+  return Boolean(source && !["default", "placeholder", "auto", "automatic", "system", "unknown"].includes(source));
+}
+
+function getExperienceEnergyForKnowledge(experience = {}) {
+  const energy = getExperienceEnergyForExport(experience);
+  if (energy === null) return null;
+  if ((energy === 5 || energy === 7) && !hasExplicitObsidianSignalSource(experience, "energySource")) return null;
+  return energy;
+}
+
+function getExperienceCategoryForKnowledge(experience = {}) {
+  const category = getExperienceCategoryForExport(experience);
+  if (!category) return null;
+  if (!hasExplicitObsidianSignalSource(experience, "categorySource")) return null;
+  return category;
+}
+
 function summarizeExperienceMapForKnowledge(experiences, graph, routes, topFactors) {
-  const realEnergy = experiences.map(getExperienceEnergyForExport).filter((value) => value !== null);
+  const realEnergy = experiences.map(getExperienceEnergyForKnowledge).filter((value) => value !== null);
   const avgEnergy = realEnergy.length ? average(realEnergy).toFixed(1) : null;
   const categories = experiences.reduce((acc, item) => {
-    const category = getExperienceCategoryForExport(item);
+    const category = getExperienceCategoryForKnowledge(item);
     if (!category) return acc;
     const key = displayCategory(category);
     acc[key] = (acc[key] || 0) + 1;
     return acc;
   }, {});
-  const topCategory = Object.entries(categories).sort((a, b) => b[1] - a[1])[0]?.[0] || "Sin categoria dominante";
+  const topCategory = Object.entries(categories).sort((a, b) => b[1] - a[1])[0]?.[0] || null;
   const withNotes = experiences.filter((item) => getExperienceNarrativeStatus(item) === "ok").length;
   const withMedia = experiences.filter((item) => (item.attachments || []).length).length;
   const routeNames = routes.map((route) => cleanObsidianMarkdownText(route.title)).join(", ") || "sin rutas consolidadas";
@@ -20815,7 +20837,7 @@ function summarizeExperienceMapForKnowledge(experiences, graph, routes, topFacto
     factorNames,
     text:
       `El mapa reune ${experiences.length} experiencias conectadas por ${graph.links.length} relaciones. ` +
-      `La categoria con mayor presencia es ${cleanObsidianMarkdownText(topCategory)}${avgEnergy ? `, con energia media registrada ${avgEnergy}/10` : ", sin energia registrada suficiente"}. ` +
+      `${topCategory ? `La categoria con mayor presencia confiable es ${cleanObsidianMarkdownText(topCategory)}` : "No hay categoria dominante confiable"}${avgEnergy ? `, con energia media registrada ${avgEnergy}/10` : ", sin energia registrada suficiente"}. ` +
       `Las rutas detectadas son ${routeNames}. Los factores que mas ordenan la lectura son ${factorNames}.`,
   };
 }
@@ -20889,7 +20911,7 @@ function renderExperienceMapMarkdownRoutes(routes) {
       "",
       cleanObsidianMarkdownText(route.description),
       "",
-      `- **Energia media:** ${route.avgEnergy}/10`,
+      `- **Energia media:** ${route.avgEnergy ? `${route.avgEnergy}/10` : "sin dato suficiente"}`,
       route.dominant ? `- **Categoria dominante:** ${cleanObsidianMarkdownText(route.dominant)}` : "",
       `- **Experiencias vinculadas:** ${names}`,
       `- **Lectura:** ${buildExperienceMapRouteInterpretation(route)}`,
@@ -21148,7 +21170,7 @@ async function exportExperienceMapMarkdown() {
       "",
       `- Experiencias en alcance: ${experiences.length}`,
       `- Energia media registrada: ${knowledgeSummary.avgEnergy ? `${knowledgeSummary.avgEnergy}/10` : "sin dato suficiente"}`,
-      `- Categoria dominante: ${cleanObsidianMarkdownText(knowledgeSummary.topCategory)}`,
+      `- Categoria dominante: ${knowledgeSummary.topCategory ? cleanObsidianMarkdownText(knowledgeSummary.topCategory) : "sin dato confiable"}`,
       `- Experiencias con narrativa real: ${knowledgeSummary.withNotes}`,
       `- Experiencias con multimedia: ${knowledgeSummary.withMedia}`,
       "",

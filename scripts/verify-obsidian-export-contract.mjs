@@ -47,7 +47,7 @@ const saveObsidianExport = between(
   "function inferObsidianTargetFromFilename",
 );
 
-assert(app.includes('const APP_VERSION = "20260721-obsidian-vault-guard-679";'), "APP_VERSION must identify the Obsidian vault guard build.");
+assert(app.includes('const APP_VERSION = "20260721-obsidian-map-trust-680";'), "APP_VERSION must identify the Obsidian map trust build.");
 assert(app.includes("RECOMMENDED_OBSIDIAN_VAULT_PATH") && app.includes("obsidian-vault-vibe"), "The app must show the exact expected local Obsidian vault path.");
 assert(app.includes("function hasObsidianMarkerDirectory") && app.includes('hasChildDirectoryHandle(handle, ".obsidian")'), "Local vault selection must validate the real Obsidian .obsidian marker.");
 assert(app.includes("function resolveLocalObsidianVaultHandle") && app.includes("obsidian_vault_marker_missing"), "Local vault selection must reject folders that are not Obsidian vaults.");
@@ -97,6 +97,9 @@ assert(app.includes("experience-map-board") && app.includes("renderExperienceMap
 assert(!app.includes("EXPERIENCE_CATEGORIES"), "Experience category validation must use the real categories array, not an undefined constant.");
 assert(app.includes("getExperienceNarrativeStatus(item) === \"ok\"") && !app.includes("cleanObsidianMarkdownText(item.notes).length > 30"), "Map narrative metrics must use the same real-narrative rule as exported notes.");
 assert(app.includes("function getMeaningfulAssetAnalysisSnippets") && app.includes("Lectura relevante de activos"), "Map export must suppress generic OCR/review boilerplate and show only meaningful asset readings.");
+assert(app.includes("function getExperienceEnergyForKnowledge") && app.includes("function getExperienceCategoryForKnowledge"), "Map export must separate trusted analytical values from raw/default experience values.");
+assert(mapExporter.includes('Categoria dominante: ${knowledgeSummary.topCategory ?') && mapExporter.includes("sin dato confiable"), "Generated map must not claim a dominant category when source confidence is missing.");
+assert(mapExporter.includes('Energia media registrada: ${knowledgeSummary.avgEnergy ?') && mapExporter.includes("sin dato suficiente"), "Generated map must not claim average energy when source confidence is missing.");
 assert(saveObsidianExport.includes("obsidian_markdown_required"), "Server must reject empty Markdown exports.");
 assert(integrationExperienceBuilder.includes('rawCategory ? normalizeCategoryName(rawCategory) : "Sin categoría"'), "External experience ingest must not default category to Trabajo.");
 assert(integrationExperienceBuilder.includes("Number.isFinite(Number(rawEnergy))") && integrationExperienceBuilder.includes(": null"), "External experience ingest must not default energy to 5.");
