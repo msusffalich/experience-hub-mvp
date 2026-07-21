@@ -1,4 +1,4 @@
-const APP_VERSION = "20260721-obsidian-clean-map-664";
+const APP_VERSION = "20260721-obsidian-route-cleanup-665";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -19610,8 +19610,13 @@ function handleExperienceMapRouteClick(event) {
   renderExperienceMap();
 }
 
-function buildExperienceMapRoutes(graph) {
-  const ordered = [...graph.experiences].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+function buildExperienceMapRoutes(graph, options = {}) {
+  const contextSignalIds = options.excludeContextSignals
+    ? new Set(state.experiences.filter((item) => isExperienceMapContextSignal(item)).map((item) => item.id))
+    : new Set();
+  const ordered = [...graph.experiences]
+    .filter((item) => !contextSignalIds.has(item.id))
+    .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
   if (ordered.length < 2) return [];
   const routeConfigs = [
     {
@@ -19663,7 +19668,7 @@ function buildExperienceMapRoutes(graph) {
   ];
   return routeConfigs
     .map((config) => {
-      const items = ordered.filter(config.matcher).slice(-8);
+      const items = ordered.filter(config.matcher).filter((item) => !isLowValueObsidianFactor(item.label)).slice(-8);
       const avgEnergy = items.length ? average(items.map((item) => Number(item.energy || 0))).toFixed(1) : "0.0";
       const categories = items.reduce((acc, item) => {
         const category = displayCategory(item.category);
@@ -20610,11 +20615,14 @@ function renderExperienceMapMarkdownRelations(graph) {
 
 function exportExperienceMapMarkdown() {
   const graph = buildExperienceMapGraph();
-  const routes = buildExperienceMapRoutes(graph);
-  const topFactors = [...graph.factors].sort((a, b) => b.count - a.count).slice(0, 10);
   const allExperiences = getExperienceMapMarkdownScope(graph);
   const contextSignals = allExperiences.filter((experience) => isExperienceMapContextSignal(experience));
   const experiences = allExperiences.filter((experience) => !isExperienceMapContextSignal(experience));
+  const routes = buildExperienceMapRoutes(graph, { excludeContextSignals: true });
+  const topFactors = [...graph.factors]
+    .filter((factor) => !isLowValueObsidianFactor(factor.label))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
   const knowledgeSummary = summarizeExperienceMapForKnowledge(experiences, graph, routes, topFactors);
   const questions = [
     t("labels.experienceMapQuestionEnergy"),
