@@ -1,4 +1,4 @@
-const APP_VERSION = "20260721-obsidian-export-button-673";
+const APP_VERSION = "20260721-obsidian-export-button-674";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -8666,6 +8666,7 @@ function setupActions() {
   document.getElementById("experienceMapQuestionInput").addEventListener("keydown", (event) => {
     if (event.key === "Enter") answerExperienceMapQuestion();
   });
+  document.getElementById("experienceMapExportButton")?.addEventListener("click", exportExperienceMapMarkdown);
   document.getElementById("connectLocalObsidianVaultButton")?.addEventListener("click", connectLocalObsidianVault);
   document.getElementById("forgetLocalObsidianVaultButton")?.addEventListener("click", forgetLocalObsidianVault);
   document.getElementById("manualSearchInput").addEventListener("input", (event) => {
@@ -20955,7 +20956,9 @@ async function exportExperienceMapMarkdown() {
   const button = document.getElementById("experienceMapExportButton");
   const box = document.getElementById("experienceMapAnswer");
   const originalText = button?.textContent || "";
+  if (button?.dataset.exporting === "1") return;
   if (button) {
+    button.dataset.exporting = "1";
     button.disabled = true;
     button.textContent = state.language !== "es" ? "Exporting..." : "Exportando...";
   }
@@ -21072,10 +21075,13 @@ async function exportExperienceMapMarkdown() {
   } finally {
     if (button) {
       button.disabled = false;
+      delete button.dataset.exporting;
       button.textContent = originalText || t("buttons.exportObsidian");
     }
   }
 }
+
+window.exportExperienceMapMarkdown = exportExperienceMapMarkdown;
 
 function renderReport() {
   updateReportScopeControls();
@@ -27706,7 +27712,7 @@ function getLocalObsidianStatusText() {
   const vault = state.localObsidianVault || {};
   if (!supportsLocalObsidianVault()) {
     return languageText(
-      "Conexión local no disponible en este navegador.",
+      "Conexion local no disponible en este navegador.",
       "Local vault connection is not available in this browser.",
       "La connexion locale n'est pas disponible dans ce navigateur.",
       "A conexao local nao esta disponivel neste navegador.",
@@ -27714,26 +27720,25 @@ function getLocalObsidianStatusText() {
   }
   if (vault.connected) {
     const saved = vault.lastSavedPath
-      ? languageText(`Último guardado: ${vault.lastSavedPath}`, `Last saved: ${vault.lastSavedPath}`, `Dernier enregistrement : ${vault.lastSavedPath}`, `Ultimo salvo: ${vault.lastSavedPath}`)
-      : languageText("Lista para recibir exportaciones Markdown.", "Ready for Markdown exports.", "Prête pour les exports Markdown.", "Pronta para exportacoes Markdown.");
-    return `${languageText("Bóveda PC conectada", "PC vault connected", "Bóveda PC connectée", "Cofre PC conectado")}: ${vault.name || "obsidian-vault-vibe"} · ${saved}`;
+      ? languageText("Ultimo guardado: " + vault.lastSavedPath, "Last saved: " + vault.lastSavedPath, "Dernier enregistrement : " + vault.lastSavedPath, "Ultimo salvamento: " + vault.lastSavedPath)
+      : languageText("Lista para recibir exportaciones Markdown.", "Ready for Markdown exports.", "Prete pour les exports Markdown.", "Pronta para exportacoes Markdown.");
+    return languageText("Boveda PC conectada", "PC vault connected", "Boveda PC connectee", "Cofre PC conectado") + ": " + (vault.name || "obsidian-vault-vibe") + " - " + saved;
   }
   if (vault.lastError) {
     return languageText(
-      "Bóveda PC no conectada. Pulsa Conectar y elige la carpeta local de Obsidian.",
+      "Boveda PC no conectada. Pulsa Conectar y elige la carpeta local de Obsidian.",
       "PC vault not connected. Press Connect and choose the local Obsidian folder.",
-      "Bóveda PC non connectée. Appuie sur Connecter et choisis le dossier local Obsidian.",
+      "Boveda PC non connectee. Appuie sur Connecter et choisis le dossier local Obsidian.",
       "Cofre PC nao conectado. Clique em Conectar e escolha a pasta local do Obsidian.",
     );
   }
   return languageText(
-    "Bóveda PC no conectada. Las exportaciones solo se descargarán.",
+    "Boveda PC no conectada. Las exportaciones solo se descargaran.",
     "PC vault not connected. Exports will only be downloaded.",
-    "Bóveda PC non connectée. Les exports seront seulement téléchargés.",
+    "Boveda PC non connectee. Les exports seront seulement telecharges.",
     "Cofre PC nao conectado. As exportacoes apenas serao baixadas.",
   );
 }
-
 function renderLocalObsidianVaultStatus() {
   const status = document.getElementById("localObsidianVaultStatus");
   const connect = document.getElementById("connectLocalObsidianVaultButton");

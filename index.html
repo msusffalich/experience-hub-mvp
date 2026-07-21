@@ -19,10 +19,10 @@
         }
       })();
     </script>
-    <link rel="manifest" href="manifest.webmanifest?v=20260721-obsidian-export-button-673" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260721-obsidian-export-button-674" />
     <link rel="icon" href="icons/vibe-icon-192.png" type="image/png" />
     <link rel="apple-touch-icon" href="icons/vibe-apple-touch.png" />
-    <link rel="stylesheet" href="styles.css?v=20260721-obsidian-export-button-673" />
+    <link rel="stylesheet" href="styles.css?v=20260721-obsidian-export-button-674" />
   </head>
   <body>
     <noscript>
@@ -628,7 +628,6 @@
                   <option value="energy">Energía</option>
                 </select>
                 <input id="experienceMapSearchInput" type="search" placeholder="Buscar experiencia, persona, lugar u objetivo" />
-                <button id="experienceMapExportButton" class="ghost-button" type="button" onclick="exportExperienceMapMarkdown()">Exportar Markdown</button>
               </div>
               <div id="experienceMapStats" class="experience-map-stats"></div>
               <div id="experienceMapGraph" class="experience-map-graph"></div>
@@ -642,6 +641,13 @@
               <div class="obsidian-bridge-card">
                 <strong>Obsidian + Codex</strong>
                 <p>Exporta nodos y enlaces como Markdown para una bóveda de Obsidian; usa las preguntas para leer patrones dentro de la app.</p>
+                <button id="experienceMapExportButton" class="primary-button" type="button" onclick="window.exportExperienceMapMarkdown?.()">Exportar mapa y notas</button>
+                <small id="experienceMapExportHelp">Genera el Markdown del mapa y las notas de experiencias para Obsidian.</small>
+                <div class="obsidian-local-actions" aria-label="Estado de conexión con Obsidian">
+                  <span id="localObsidianVaultStatus" class="card-meta">Bóveda PC no conectada. Las exportaciones solo se descargarán.</span>
+                  <button id="connectLocalObsidianVaultButton" class="ghost-button" type="button">Conectar bóveda del PC</button>
+                  <button id="forgetLocalObsidianVaultButton" class="ghost-button" type="button" hidden>Quitar conexión local</button>
+                </div>
               </div>
               <div class="query-box">
                 <input id="experienceMapQuestionInput" type="text" placeholder="Ej: ¿qué lugares se relacionan con mayor energía?" />
@@ -964,7 +970,7 @@
             <div class="manual-version-card">
               <div>
                 <span id="manualVersionEyebrow">Versión vigente</span>
-                <strong id="manualVersionValue">20260721-obsidian-export-button-673</strong>
+                <strong id="manualVersionValue">20260721-obsidian-export-button-674</strong>
                 <p id="manualVersionSummary">Guía práctica organizada por temas para entender el flujo de la app sin leer todo de corrido.</p>
               </div>
               <div class="manual-guide-grid" aria-label="Estructura del manual">
@@ -1212,6 +1218,6 @@
       </main>
     </div>
 
-    <script src="app.js?v=20260721-obsidian-export-button-673"></script>
+    <script src="app.js?v=20260721-obsidian-export-button-674"></script>
 </body>
 </html>

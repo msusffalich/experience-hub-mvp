@@ -47,7 +47,7 @@ const saveObsidianExport = between(
   "function inferObsidianTargetFromFilename",
 );
 
-assert(app.includes('const APP_VERSION = "20260721-obsidian-export-button-673";'), "APP_VERSION must identify the Obsidian contract build.");
+assert(app.includes('const APP_VERSION = "20260721-obsidian-export-button-674";'), "APP_VERSION must identify the Obsidian contract build.");
 assert(app.includes("function getLocalDateKey") && app.includes("function getLocalDateTimeWithOffset"), "Obsidian export must use local date helpers.");
 assert(experienceNoteBuilder.includes("getLocalDateKey(experience.timestamp)"), "Experience notes must use local dates, not UTC dates.");
 assert(!experienceNoteBuilder.includes("toISOString().slice(0, 10)"), "Experience notes must not derive date from UTC toISOString().slice(0, 10).");
@@ -56,7 +56,7 @@ assert(experienceNoteBuilder.includes("datetime_local") && experienceNoteBuilder
 assert(experienceNoteBuilder.includes("getExperienceCategoryForExport") && experienceNoteBuilder.includes("category: ${category ?"), "Experience notes must omit untrusted categories instead of inventing them.");
 assert(experienceNoteBuilder.includes("getExperienceEnergyForExport") && !experienceNoteBuilder.includes("Number(experience.energy || 0)") && !experienceNoteBuilder.includes("Number(experience.energy || 5)"), "Experience notes must not fabricate energy values.");
 assert(experienceNoteBuilder.includes("narrativeStatus") && experienceNoteBuilder.includes("multimodalStatus"), "Experience notes must emit Dataview status fields.");
-assert(experienceNoteBuilder.includes("...(people.length ?") && experienceNoteBuilder.includes(": []),"), "Experience notes must omit people when no real people are known instead of emitting an empty array.");
+assert(experienceNoteBuilder.includes("...(people.length ?") && !experienceNoteBuilder.includes("people: []"), "Experience notes must omit people when no real people are known instead of emitting an empty array.");
 assert(experienceNoteBuilder.includes("narrativeStatus") && !experienceNoteBuilder.includes("Sin resumen narrativo suficiente"), "Experience notes must mark missing narrative as pending, not export filler text.");
 assert(experienceNoteBuilder.includes("getObsidianCategoryWikiLink"), "Experience notes must sanitize category wiki links.");
 assert(experienceNoteBuilder.includes("wrapObsidianAutoBlock") && app.includes("OBSIDIAN_HUMAN_HEADING") && app.includes("String.fromCharCode(0x00ed)"), "Experience notes must write the human curation heading with the UTF-8 accented i.");
@@ -77,7 +77,9 @@ assert(server.includes("function mergeObsidianAutoBlock") && server.includes("aw
 assert(app.includes("hasCuratedObsidianLearnings(preservedHuman)") && app.includes('"learnings", "ok"') && app.includes('"updated_at"'), "Local merge must mark learnings ok and refresh updated_at when human curation adds learning content.");
 assert(server.includes("hasCuratedObsidianLearnings(preservedHuman)") && server.includes('"learnings", "ok"') && server.includes('"updated_at"'), "Server merge must mark learnings ok and refresh updated_at when human curation adds learning content.");
 assert(mapExporter.includes("Exportando...") && mapExporter.includes("requestAnimationFrame") && mapExporter.includes("skipObsidian: true") && mapExporter.includes('target: "generated_map"'), "Experience-map Markdown button must show progress and sync the map explicitly instead of silently doing nothing.");
-assert(index.includes('onclick="exportExperienceMapMarkdown()"') && !app.includes('experienceMapExportButton").addEventListener("click", exportExperienceMapMarkdown'), "Experience-map Markdown button must have a direct click fallback without duplicate listener execution.");
+assert(index.includes('onclick="window.exportExperienceMapMarkdown?.()"') && app.includes("window.exportExperienceMapMarkdown = exportExperienceMapMarkdown"), "Experience-map Markdown button must have a direct browser click fallback.");
+assert(app.includes('experienceMapExportButton")?.addEventListener("click", exportExperienceMapMarkdown') && app.includes('button?.dataset.exporting === "1"'), "Experience-map Markdown button must also have a programmatic listener guarded against duplicate execution.");
+assert(index.includes('id="localObsidianVaultStatus"') && index.includes('id="connectLocalObsidianVaultButton"') && index.includes('id="forgetLocalObsidianVaultButton"'), "Experience map must show a clear Obsidian vault connection state and actions.");
 assert(saveObsidianExport.includes("obsidian_markdown_required"), "Server must reject empty Markdown exports.");
 assert(integrationExperienceBuilder.includes('rawCategory ? normalizeCategoryName(rawCategory) : "Sin categoría"'), "External experience ingest must not default category to Trabajo.");
 assert(integrationExperienceBuilder.includes("Number.isFinite(Number(rawEnergy))") && integrationExperienceBuilder.includes(": null"), "External experience ingest must not default energy to 5.");
