@@ -47,7 +47,13 @@ const saveObsidianExport = between(
   "function inferObsidianTargetFromFilename",
 );
 
-assert(app.includes('const APP_VERSION = "20260721-obsidian-export-review-678";'), "APP_VERSION must identify the Obsidian contract build.");
+assert(app.includes('const APP_VERSION = "20260721-obsidian-vault-guard-679";'), "APP_VERSION must identify the Obsidian vault guard build.");
+assert(app.includes("RECOMMENDED_OBSIDIAN_VAULT_PATH") && app.includes("obsidian-vault-vibe"), "The app must show the exact expected local Obsidian vault path.");
+assert(app.includes("function hasObsidianMarkerDirectory") && app.includes('hasChildDirectoryHandle(handle, ".obsidian")'), "Local vault selection must validate the real Obsidian .obsidian marker.");
+assert(app.includes("function resolveLocalObsidianVaultHandle") && app.includes("obsidian_vault_marker_missing"), "Local vault selection must reject folders that are not Obsidian vaults.");
+assert(app.includes("obsidian_multiple_vaults_found"), "Local vault selection must reject ambiguous parent folders with multiple vaults.");
+assert(app.includes("function ensureConnectedLocalObsidianVaultHandle") && app.includes("await resolveLocalObsidianVaultHandle(vault.handle)"), "Stored local vault handles must be revalidated before export.");
+assert(app.includes("await ensureConnectedLocalObsidianVaultHandle()") && app.includes("obsidian_vault_marker_missing"), "Local Markdown save must verify the vault marker before writing.");
 assert(app.includes("function getLocalDateKey") && app.includes("function getLocalDateTimeWithOffset"), "Obsidian export must use local date helpers.");
 assert(experienceNoteBuilder.includes("getLocalDateKey(experience.timestamp)"), "Experience notes must use local dates, not UTC dates.");
 assert(!experienceNoteBuilder.includes("toISOString().slice(0, 10)"), "Experience notes must not derive date from UTC toISOString().slice(0, 10).");

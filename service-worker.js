@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260721-obsidian-export-review-678";
+const CACHE_NAME = "experience-hub-pwa-20260721-obsidian-vault-guard-679";
 const APP_SHELL = [
   "/icons/vibe-logo.jpg",
   "/icons/vibe-logo.png",

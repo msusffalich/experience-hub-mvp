@@ -1,4 +1,4 @@
-const APP_VERSION = "20260721-obsidian-export-review-678";
+const APP_VERSION = "20260721-obsidian-vault-guard-679";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -27676,6 +27676,7 @@ function inferObsidianTargetForFilename(filename = "") {
 const LOCAL_OBSIDIAN_DB_NAME = "vibepwa-local-obsidian";
 const LOCAL_OBSIDIAN_STORE_NAME = "handles";
 const LOCAL_OBSIDIAN_HANDLE_KEY = "vault";
+const RECOMMENDED_OBSIDIAN_VAULT_PATH = "C:\\Users\\msusf\\Documents\\Codex\\2026-05-09\\files-mentioned-by-the-user-meta\\obsidian-vault-vibe";
 
 function supportsLocalObsidianVault() {
   return Boolean(window.showDirectoryPicker && window.indexedDB);
@@ -27745,6 +27746,65 @@ async function ensureLocalObsidianPermission(handle, mode = "readwrite") {
   return permission;
 }
 
+async function hasChildDirectoryHandle(parentHandle, name) {
+  try {
+    await parentHandle.getDirectoryHandle(name, { create: false });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function hasObsidianMarkerDirectory(handle) {
+  return hasChildDirectoryHandle(handle, ".obsidian");
+}
+
+async function resolveLocalObsidianVaultHandle(selectedHandle) {
+  if (!selectedHandle) throw new Error("obsidian_vault_not_selected");
+  if (await hasObsidianMarkerDirectory(selectedHandle)) {
+    return { handle: selectedHandle, correctedFromParent: false };
+  }
+  const childVaults = [];
+  if (selectedHandle.values) {
+    for await (const entry of selectedHandle.values()) {
+      if (entry.kind !== "directory") continue;
+      if (await hasObsidianMarkerDirectory(entry)) childVaults.push(entry);
+    }
+  }
+  if (childVaults.length === 1) {
+    return { handle: childVaults[0], correctedFromParent: true, parentName: selectedHandle.name || "" };
+  }
+  if (childVaults.length > 1) throw new Error("obsidian_multiple_vaults_found");
+  throw new Error("obsidian_vault_marker_missing");
+}
+
+async function ensureConnectedLocalObsidianVaultHandle() {
+  const vault = state.localObsidianVault || {};
+  if (!vault.handle || !supportsLocalObsidianVault()) throw new Error("obsidian_vault_not_connected");
+  const resolved = await resolveLocalObsidianVaultHandle(vault.handle);
+  const permission = await ensureLocalObsidianPermission(resolved.handle);
+  if (permission !== "granted") {
+    state.localObsidianVault = { ...vault, connected: false, permission, lastError: "permission_required" };
+    renderLocalObsidianVaultStatus();
+    throw new Error("obsidian_vault_permission_required");
+  }
+  if (resolved.handle !== vault.handle || !vault.connected || vault.name !== resolved.handle.name) {
+    state.localObsidianVault = {
+      ...vault,
+      handle: resolved.handle,
+      connected: true,
+      permission,
+      name: resolved.handle.name || "Obsidian",
+      correctedFromParent: Boolean(resolved.correctedFromParent),
+      parentName: resolved.parentName || vault.parentName || "",
+      lastError: "",
+    };
+    await writeLocalObsidianHandle(resolved.handle).catch(() => {});
+    renderLocalObsidianVaultStatus();
+  }
+  return resolved.handle;
+}
+
 async function loadStoredLocalObsidianVault() {
   if (!supportsLocalObsidianVault()) {
     state.localObsidianVault = {
@@ -27762,15 +27822,19 @@ async function loadStoredLocalObsidianVault() {
       renderLocalObsidianVaultStatus();
       return;
     }
-    const permission = await ensureLocalObsidianPermission(handle);
+    const resolved = await resolveLocalObsidianVaultHandle(handle);
+    const permission = await ensureLocalObsidianPermission(resolved.handle);
     state.localObsidianVault = {
       ...(state.localObsidianVault || {}),
-      handle,
+      handle: resolved.handle,
       connected: permission === "granted",
       permission,
-      name: handle.name || "obsidian-vault-vibe",
+      name: resolved.handle.name || "Obsidian",
+      correctedFromParent: Boolean(resolved.correctedFromParent),
+      parentName: resolved.parentName || "",
       lastError: permission === "granted" ? "" : "permission_required",
     };
+    if (resolved.handle !== handle) await writeLocalObsidianHandle(resolved.handle).catch(() => {});
   } catch (error) {
     state.localObsidianVault = {
       ...(state.localObsidianVault || {}),
@@ -27802,15 +27866,18 @@ async function connectLocalObsidianVault() {
       mode: "readwrite",
       startIn: "documents",
     });
-    const permission = await ensureLocalObsidianPermission(handle);
+    const resolved = await resolveLocalObsidianVaultHandle(handle);
+    const permission = await ensureLocalObsidianPermission(resolved.handle);
     if (permission !== "granted") throw new Error("permission_denied");
-    await writeLocalObsidianHandle(handle);
+    await writeLocalObsidianHandle(resolved.handle);
     state.localObsidianVault = {
       ...(state.localObsidianVault || {}),
-      handle,
+      handle: resolved.handle,
       connected: true,
       permission,
-      name: handle.name || "obsidian-vault-vibe",
+      name: resolved.handle.name || "Obsidian",
+      correctedFromParent: Boolean(resolved.correctedFromParent),
+      parentName: resolved.parentName || "",
       lastError: "",
     };
     renderLocalObsidianVaultStatus();
@@ -27872,21 +27939,24 @@ function getLocalObsidianStatusText() {
     const saved = vault.lastSavedPath
       ? languageText("Ultimo guardado: " + vault.lastSavedPath, "Last saved: " + vault.lastSavedPath, "Dernier enregistrement : " + vault.lastSavedPath, "Ultimo salvamento: " + vault.lastSavedPath)
       : languageText("Lista para recibir exportaciones Markdown.", "Ready for Markdown exports.", "Prete pour les exports Markdown.", "Pronta para exportacoes Markdown.");
-    return languageText("Boveda PC conectada", "PC vault connected", "Boveda PC connectee", "Cofre PC conectado") + ": " + (vault.name || "obsidian-vault-vibe") + " - " + saved;
+    const corrected = vault.correctedFromParent && vault.parentName
+      ? languageText(`Carpeta padre corregida: ${vault.parentName}.`, `Parent folder corrected: ${vault.parentName}.`, `Dossier parent corrige : ${vault.parentName}.`, `Pasta pai corrigida: ${vault.parentName}.`)
+      : "";
+    return [languageText("Boveda PC conectada", "PC vault connected", "Boveda PC connectee", "Cofre PC conectado") + ": " + (vault.name || "Obsidian"), corrected, saved].filter(Boolean).join(" - ");
   }
   if (vault.lastError) {
     return languageText(
-      "Boveda PC no conectada. Pulsa Conectar y elige la carpeta local de Obsidian.",
-      "PC vault not connected. Press Connect and choose the local Obsidian folder.",
-      "Boveda PC non connectee. Appuie sur Connecter et choisis le dossier local Obsidian.",
-      "Cofre PC nao conectado. Clique em Conectar e escolha a pasta local do Obsidian.",
+      `Boveda PC no conectada. Pulsa Conectar y elige exactamente: ${RECOMMENDED_OBSIDIAN_VAULT_PATH}`,
+      `PC vault not connected. Press Connect and choose exactly: ${RECOMMENDED_OBSIDIAN_VAULT_PATH}`,
+      `Boveda PC non connectee. Appuie sur Connecter et choisis exactement : ${RECOMMENDED_OBSIDIAN_VAULT_PATH}`,
+      `Cofre PC nao conectado. Clique em Conectar e escolha exatamente: ${RECOMMENDED_OBSIDIAN_VAULT_PATH}`,
     );
   }
   return languageText(
-    "Boveda PC no conectada. Las exportaciones solo se descargaran.",
-    "PC vault not connected. Exports will only be downloaded.",
-    "Boveda PC non connectee. Les exports seront seulement telecharges.",
-    "Cofre PC nao conectado. As exportacoes apenas serao baixadas.",
+    `Boveda PC no conectada. Ruta esperada: ${RECOMMENDED_OBSIDIAN_VAULT_PATH}`,
+    `PC vault not connected. Expected path: ${RECOMMENDED_OBSIDIAN_VAULT_PATH}`,
+    `Boveda PC non connectee. Chemin attendu : ${RECOMMENDED_OBSIDIAN_VAULT_PATH}`,
+    `Cofre PC nao conectado. Caminho esperado: ${RECOMMENDED_OBSIDIAN_VAULT_PATH}`,
   );
 }
 function renderLocalObsidianVaultStatus() {
@@ -27961,14 +28031,10 @@ async function saveMarkdownToLocalObsidianVault(markdown, filename, options = {}
   if (!safeMarkdown) throw new Error("obsidian_markdown_required");
   const vault = state.localObsidianVault || {};
   if (!vault.handle || !supportsLocalObsidianVault()) return null;
-  const permission = await ensureLocalObsidianPermission(vault.handle);
-  if (permission !== "granted") {
-    state.localObsidianVault = { ...vault, connected: false, permission, lastError: "permission_required" };
-    renderLocalObsidianVaultStatus();
-    return null;
-  }
+  const vaultHandle = await ensureConnectedLocalObsidianVaultHandle();
+  if (!(await hasObsidianMarkerDirectory(vaultHandle))) throw new Error("obsidian_vault_marker_missing");
   const target = options.target || inferObsidianTargetForFilename(filename);
-  const targetDir = await getOrCreateDirectoryHandle(vault.handle, getLocalObsidianTargetPath(target));
+  const targetDir = await getOrCreateDirectoryHandle(vaultHandle, getLocalObsidianTargetPath(target));
   const safeFilename = sanitizeLocalObsidianFilename(filename);
   let fileHandle = await targetDir.getFileHandle(safeFilename, { create: true });
   let finalFilename = safeFilename;
