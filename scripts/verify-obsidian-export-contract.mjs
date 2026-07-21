@@ -47,7 +47,7 @@ const saveObsidianExport = between(
   "function inferObsidianTargetFromFilename",
 );
 
-assert(app.includes('const APP_VERSION = "20260721-obsidian-export-rules-676";'), "APP_VERSION must identify the Obsidian contract build.");
+assert(app.includes('const APP_VERSION = "20260721-obsidian-export-atomic-677";'), "APP_VERSION must identify the Obsidian contract build.");
 assert(app.includes("function getLocalDateKey") && app.includes("function getLocalDateTimeWithOffset"), "Obsidian export must use local date helpers.");
 assert(experienceNoteBuilder.includes("getLocalDateKey(experience.timestamp)"), "Experience notes must use local dates, not UTC dates.");
 assert(!experienceNoteBuilder.includes("toISOString().slice(0, 10)"), "Experience notes must not derive date from UTC toISOString().slice(0, 10).");
@@ -79,6 +79,11 @@ assert(server.includes("function mergeObsidianAutoBlock") && server.includes("aw
 assert(app.includes("hasCuratedObsidianLearnings(preservedHuman)") && app.includes('"learnings", "ok"') && app.includes('"updated_at"'), "Local merge must mark learnings ok and refresh updated_at when human curation adds learning content.");
 assert(server.includes("hasCuratedObsidianLearnings(preservedHuman)") && server.includes('"learnings", "ok"') && server.includes('"updated_at"'), "Server merge must mark learnings ok and refresh updated_at when human curation adds learning content.");
 assert(mapExporter.includes("Exportando...") && mapExporter.includes("requestAnimationFrame") && mapExporter.includes("skipObsidian: true") && mapExporter.includes('target: "generated_map"'), "Experience-map Markdown button must show progress and sync the map explicitly instead of silently doing nothing.");
+assert(mapExporter.indexOf("exportExperienceNotesToLocalObsidianVault(experiences)") < mapExporter.indexOf("syncMarkdownBlobToObsidian(blob, filename"), "Obsidian export must save experience notes before saving the generated map.");
+assert(mapExporter.includes("obsidian_notes_incomplete") && mapExporter.includes("obsidian_map_not_saved"), "Obsidian export must fail visibly instead of accepting a partial map-only export.");
+assert(app.includes("cleanupObsidianExcludedExperienceNotes(allExperiences)") && app.includes("deleteObsidianExperienceNoteIfExists"), "Obsidian export must remove stale notes for experiences that are no longer exportable.");
+assert(app.includes("function deleteMarkdownFromLocalObsidianVault") && app.includes("removeEntry(safeFilename)"), "Local Obsidian cleanup must delete stale note files from the PC vault.");
+assert(server.includes('url.pathname === "/api/obsidian/export" && req.method === "DELETE"') && server.includes("function deleteObsidianExport") && server.includes("await unlink(requestedPath)"), "Server Obsidian cleanup must support deleting stale exported notes.");
 assert(index.includes('onclick="window.exportExperienceMapMarkdown?.()"') && app.includes("window.exportExperienceMapMarkdown = exportExperienceMapMarkdown"), "Experience-map Markdown button must have a direct browser click fallback.");
 assert(app.includes('experienceMapExportButton")?.addEventListener("click", exportExperienceMapMarkdown') && app.includes('button?.dataset.exporting === "1"'), "Experience-map Markdown button must also have a programmatic listener guarded against duplicate execution.");
 assert(index.includes('id="localObsidianVaultStatus"') && index.includes('id="connectLocalObsidianVaultButton"') && index.includes('id="forgetLocalObsidianVaultButton"'), "Experience map must show a clear Obsidian vault connection state and actions.");

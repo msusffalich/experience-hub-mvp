@@ -1,4 +1,4 @@
-const APP_VERSION = "20260721-obsidian-export-rules-676";
+const APP_VERSION = "20260721-obsidian-export-atomic-677";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -21035,7 +21035,9 @@ function buildObsidianExperienceNoteMarkdown(experience = {}) {
 }
 
 async function exportExperienceNotesToLocalObsidianVault(experiences = []) {
-  if (!state.localObsidianVault?.connected || !supportsLocalObsidianVault()) return { ok: false, skipped: true, count: 0 };
+  if (!state.localObsidianVault?.connected || !supportsLocalObsidianVault()) {
+    throw new Error("obsidian_vault_not_connected");
+  }
   let count = 0;
   const errors = [];
   for (const experience of experiences) {
@@ -21043,7 +21045,8 @@ async function exportExperienceNotesToLocalObsidianVault(experiences = []) {
     const filename = `${getObsidianExperienceNoteStem(experience)}.md`;
     if (!markdown.trim()) throw new Error("obsidian_experience_markdown_empty");
     try {
-      await saveMarkdownToLocalObsidianVault(markdown, filename, { target: "experiences", preserveHuman: true });
+      const localSaved = await saveMarkdownToLocalObsidianVault(markdown, filename, { target: "experiences", preserveHuman: true });
+      if (!localSaved?.ok) throw new Error("obsidian_local_note_not_saved");
       const response = await fetch(`${API_BASE}/obsidian/export`, {
         method: "POST",
         headers: {
@@ -21067,6 +21070,47 @@ async function exportExperienceNotesToLocalObsidianVault(experiences = []) {
   return { ok: errors.length === 0, count, expected: experiences.length, errors };
 }
 
+async function deleteObsidianExperienceNoteIfExists(experience = {}) {
+  const filename = `${getObsidianExperienceNoteStem(experience)}.md`;
+  const results = { filename, localDeleted: false, remoteDeleted: false, skipped: false };
+  try {
+    results.localDeleted = await deleteMarkdownFromLocalObsidianVault(filename, { target: "experiences" });
+  } catch (error) {
+    results.localError = error.message;
+  }
+  try {
+    const response = await fetch(`${API_BASE}/obsidian/export`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        ...(state.session?.access_token ? { Authorization: `Bearer ${state.session.access_token}` } : {}),
+      },
+      body: JSON.stringify({ target: "experiences", filename }),
+    });
+    if (response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      results.remoteDeleted = Boolean(payload.deleted);
+    }
+  } catch (error) {
+    results.remoteError = error.message;
+  }
+  return results;
+}
+
+async function cleanupObsidianExcludedExperienceNotes(experiences = []) {
+  const excluded = experiences.filter((experience) => !isObsidianExportableExperience(experience));
+  const results = [];
+  for (const experience of excluded) {
+    results.push(await deleteObsidianExperienceNoteIfExists(experience));
+  }
+  return {
+    ok: true,
+    count: results.filter((item) => item.localDeleted || item.remoteDeleted).length,
+    expected: excluded.length,
+    results,
+  };
+}
+
 async function exportExperienceMapMarkdown() {
   const button = document.getElementById("experienceMapExportButton");
   const box = document.getElementById("experienceMapAnswer");
@@ -21082,6 +21126,9 @@ async function exportExperienceMapMarkdown() {
     : "Generando el mapa Markdown y preparando notas de experiencias...";
   try {
     await new Promise((resolve) => requestAnimationFrame(resolve));
+    if (!supportsLocalObsidianVault() || !state.localObsidianVault?.connected) {
+      throw new Error("obsidian_vault_not_connected");
+    }
     const graph = buildExperienceMapGraph();
     const allExperiences = getExperienceMapMarkdownScope(graph);
     const contextSignals = allExperiences.filter((experience) => !isObsidianExportableExperience(experience));
@@ -21166,20 +21213,28 @@ async function exportExperienceMapMarkdown() {
     const markdown = lines.join("\n");
     const filename = "mapa-de-conocimiento-vibe-obsidian.md";
     const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
+    const cleanupResult = await cleanupObsidianExcludedExperienceNotes(allExperiences);
+    const notesResult = await exportExperienceNotesToLocalObsidianVault(experiences);
+    if (!notesResult?.ok || notesResult.count !== notesResult.expected) {
+      throw new Error(`obsidian_notes_incomplete_${notesResult?.count || 0}_of_${notesResult?.expected || experiences.length}`);
+    }
     downloadBlob(blob, filename, null, { skipObsidian: true });
     const mapSync = await syncMarkdownBlobToObsidian(blob, filename, { source: "experience-map", target: "generated_map" });
-    const notesResult = await exportExperienceNotesToLocalObsidianVault(experiences);
+    if (!mapSync?.ok) throw new Error("obsidian_map_not_saved");
     const mapStatus = mapSync?.ok
       ? state.language !== "es" ? `map saved at ${mapSync.relativePath || filename}` : `mapa guardado en ${mapSync.relativePath || filename}`
       : state.language !== "es" ? "map downloaded; vault sync pending" : "mapa descargado; sincronizacion a boveda pendiente";
     const notesStatus = notesResult?.ok && notesResult.count === notesResult.expected
       ? state.language !== "es" ? `${notesResult.count} experience notes saved` : `${notesResult.count} notas de experiencia guardadas`
       : state.language !== "es" ? `${notesResult?.count || 0}/${notesResult?.expected || experiences.length} notes saved` : `${notesResult?.count || 0}/${notesResult?.expected || experiences.length} notas guardadas`;
+    const cleanupStatus = cleanupResult.count
+      ? state.language !== "es" ? `${cleanupResult.count} stale notes removed` : `${cleanupResult.count} notas obsoletas retiradas`
+      : state.language !== "es" ? "no stale notes found" : "sin notas obsoletas";
     const message = state.language !== "es"
-      ? `Obsidian export finished: ${mapStatus}; ${notesStatus}.`
-      : `Exportacion Obsidian terminada: ${mapStatus}; ${notesStatus}.`;
+      ? `Obsidian export finished: ${mapStatus}; ${notesStatus}; ${cleanupStatus}.`
+      : `Exportacion Obsidian terminada: ${mapStatus}; ${notesStatus}; ${cleanupStatus}.`;
     if (box) box.textContent = message;
-    notify(message, notesResult?.errors?.length || !mapSync?.ok ? "warn" : "success");
+    notify(message, "success");
   } catch (error) {
     console.warn("Experience map Markdown export failed", error);
     const message = state.language !== "es"
@@ -27968,6 +28023,41 @@ async function saveMarkdownToLocalObsidianVault(markdown, filename, options = {}
   };
   renderLocalObsidianVaultStatus();
   return { ok: true, relativePath };
+}
+
+async function deleteMarkdownFromLocalObsidianVault(filename, options = {}) {
+  const vault = state.localObsidianVault || {};
+  if (!vault.handle || !supportsLocalObsidianVault()) return false;
+  const permission = await ensureLocalObsidianPermission(vault.handle);
+  if (permission !== "granted") {
+    state.localObsidianVault = { ...vault, connected: false, permission, lastError: "permission_required" };
+    renderLocalObsidianVaultStatus();
+    return false;
+  }
+  const target = options.target || inferObsidianTargetForFilename(filename);
+  let targetDir;
+  try {
+    targetDir = await getOrCreateDirectoryHandle(vault.handle, getLocalObsidianTargetPath(target));
+  } catch {
+    return false;
+  }
+  const safeFilename = sanitizeLocalObsidianFilename(filename);
+  try {
+    await targetDir.removeEntry(safeFilename);
+    state.localObsidianVault = {
+      ...vault,
+      connected: true,
+      permission: "granted",
+      lastDeletedPath: [...getLocalObsidianTargetPath(target), safeFilename].join("/"),
+      lastSavedAt: new Date().toISOString(),
+      lastError: "",
+    };
+    renderLocalObsidianVaultStatus();
+    return true;
+  } catch (error) {
+    if (error?.name === "NotFoundError") return false;
+    throw error;
+  }
 }
 
 async function syncMarkdownBlobToObsidian(blob, filename, options = {}) {

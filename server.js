@@ -797,6 +797,13 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (url.pathname === "/api/obsidian/export" && req.method === "DELETE") {
+    const user = await getOptionalRequestUser(req);
+    const body = await readJson(req);
+    sendJson(res, 200, await deleteObsidianExport(body, user));
+    return;
+  }
+
   if (url.pathname === "/api/context/impact" && req.method === "GET") {
     const location = url.searchParams.get("location") || DEFAULT_OPERATIONAL_LOCATION;
     const experienceType = url.searchParams.get("experienceType") || "auto";
@@ -9924,6 +9931,36 @@ async function saveObsidianExport(body = {}, user = null) {
     target: targetKey,
     vaultPath: vaultRoot,
     savedAt: new Date().toISOString(),
+  };
+}
+
+async function deleteObsidianExport(body = {}, user = null) {
+  if (!OBSIDIAN_VAULT_PATH) {
+    throw new HttpError(503, "obsidian_vault_not_configured");
+  }
+  const vaultRoot = path.resolve(OBSIDIAN_VAULT_PATH);
+  const targetKey = String(body.target || inferObsidianTargetFromFilename(body.filename || "") || "inbox").trim().toLowerCase();
+  const targetRelative = OBSIDIAN_EXPORT_TARGETS[targetKey] || OBSIDIAN_EXPORT_TARGETS.inbox;
+  const targetDir = path.resolve(vaultRoot, targetRelative);
+  if (!isPathInside(targetDir, vaultRoot)) throw new HttpError(400, "obsidian_invalid_target");
+  if (!String(body.filename || "").trim()) throw new HttpError(400, "obsidian_invalid_filename");
+  const filename = sanitizeObsidianFilename(body.filename);
+  if (!filename) throw new HttpError(400, "obsidian_invalid_filename");
+  const requestedPath = path.resolve(targetDir, filename);
+  if (!isPathInside(requestedPath, targetDir)) throw new HttpError(400, "obsidian_invalid_filename");
+  let deleted = false;
+  if (existsSync(requestedPath)) {
+    await unlink(requestedPath);
+    deleted = true;
+  }
+  return {
+    ok: true,
+    deleted,
+    filename,
+    relativePath: path.relative(vaultRoot, requestedPath).replace(/\\/g, "/"),
+    target: targetKey,
+    userId: user?.id || LOCAL_USER_ID,
+    deletedAt: deleted ? new Date().toISOString() : "",
   };
 }
 
