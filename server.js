@@ -138,6 +138,9 @@ const OBSIDIAN_EXPORT_TARGETS = {
   atomic_note: "10_Atomic_Notes",
   moc: "20_Maps_of_Content",
   map: "20_Maps_of_Content",
+  generated: "05_Generated",
+  generated_map: "05_Generated",
+  generated_report: "05_Generated",
   projects: "30_Projects",
   project: "30_Projects",
   publications: "40_Publications",
@@ -145,6 +148,8 @@ const OBSIDIAN_EXPORT_TARGETS = {
   reference: "50_Reference",
   manual: "50_Reference",
 };
+const OBSIDIAN_AUTO_START = "<!-- vibe:auto -->";
+const OBSIDIAN_AUTO_END = "<!-- /vibe:auto -->";
 const execFileAsync = promisify(execFile);
 const PYTHON_EXECUTABLE_CANDIDATES = [
   process.env.PYTHON_EXECUTABLE,
@@ -2768,14 +2773,16 @@ function buildExperienceFromIntegrationSignal(normalized, signal = {}, user = { 
   const title = String(payload.title || signal.title || normalized.metadata.title || "Registro desde Vibeapp").trim();
   const text = String(payload.text || payload.note || payload.description || signal.notes || "").trim();
   const idempotencyKey = normalized.idempotencyKey || normalized.sourceId;
+  const rawCategory = payload.category || signal.category || "";
+  const rawEnergy = payload.energy ?? signal.energy;
   return {
     id: stableIntegrationId("exp", idempotencyKey),
     title: title || "Registro desde Vibeapp",
-    category: normalizeCategoryName(payload.category || signal.category || "Trabajo"),
+    category: rawCategory ? normalizeCategoryName(rawCategory) : "Sin categoría",
     timestamp: normalized.capturedAt,
     duration: Number(payload.durationMinutes || signal.duration || 0),
     mood: payload.mood || "Calmo",
-    energy: clampServerNumber(payload.energy || signal.energy || 5, 1, 10),
+    energy: Number.isFinite(Number(rawEnergy)) ? clampServerNumber(rawEnergy, 1, 10) : null,
     location: payload.location || signal.location || "Sin ubicación",
     people: payload.people || normalized.participantId || "Sin personas",
     notes: text || title,
@@ -9679,14 +9686,15 @@ function fromExperienceRow(row) {
 
 function normalizeExperience(experience) {
   const metadata = isPlainObject(experience.metadata) ? experience.metadata : {};
+  const rawEnergy = experience.energy;
   return {
     id: experience.id || createId(),
     title: experience.title || "Untitled experience",
-    category: normalizeCategoryName(experience.category || "Trabajo"),
+    category: normalizeCategoryName(experience.category || "Sin categoría"),
     timestamp: experience.timestamp || new Date().toISOString(),
     duration: Number(experience.duration || 0),
     mood: experience.mood || "Calmo",
-    energy: Number(experience.energy || 5),
+    energy: Number.isFinite(Number(rawEnergy)) ? Number(rawEnergy) : null,
     location: experience.location || "Sin ubicación",
     people: experience.people || "Sin personas",
     notes: experience.notes || "",
@@ -9889,13 +9897,25 @@ async function saveObsidianExport(body = {}, user = null) {
   const filename = sanitizeObsidianFilename(body.filename || "vibe-export.md");
   const requestedPath = path.resolve(targetDir, filename);
   if (!isPathInside(requestedPath, targetDir)) throw new HttpError(400, "obsidian_invalid_filename");
-  const finalPath = await uniqueObsidianPath(requestedPath);
   const finalContent = ensureObsidianFrontmatter(content, {
     userId: user?.id || LOCAL_USER_ID,
     target: targetKey,
     source: body.source || "vibepwa",
   });
-  await writeFile(finalPath, finalContent, "utf-8");
+  const preserveHuman = shouldPreserveHumanObsidianContent(targetKey) || body.preserveHuman === true;
+  let finalPath = body.upsert === false ? await uniqueObsidianPath(requestedPath) : requestedPath;
+  let contentToWrite = finalContent;
+  if (preserveHuman && existsSync(requestedPath)) {
+    const existingContent = await readFile(requestedPath, "utf-8");
+    const mergedContent = mergeObsidianAutoBlock(existingContent, finalContent);
+    if (mergedContent) {
+      contentToWrite = mergedContent;
+      finalPath = requestedPath;
+    } else {
+      finalPath = await uniqueObsidianPath(requestedPath);
+    }
+  }
+  await writeFile(finalPath, contentToWrite.endsWith("\n") ? contentToWrite : `${contentToWrite}\n`, "utf-8");
   return {
     ok: true,
     filename: path.basename(finalPath),
@@ -9907,13 +9927,71 @@ async function saveObsidianExport(body = {}, user = null) {
   };
 }
 
+function shouldPreserveHumanObsidianContent(targetKey = "") {
+  return String(targetKey || "").toLowerCase() === "experiences" || String(targetKey || "").toLowerCase() === "experience";
+}
+
+function mergeObsidianAutoBlock(existingContent = "", incomingContent = "") {
+  const existing = String(existingContent || "");
+  const incoming = String(incomingContent || "").trim();
+  if (!existing.trim()) return incoming;
+  const existingStart = existing.indexOf(OBSIDIAN_AUTO_START);
+  const existingEnd = existing.indexOf(OBSIDIAN_AUTO_END, existingStart);
+  const incomingStart = incoming.indexOf(OBSIDIAN_AUTO_START);
+  const incomingEnd = incoming.indexOf(OBSIDIAN_AUTO_END, incomingStart);
+  if (existingStart < 0 || existingEnd < 0 || incomingStart < 0 || incomingEnd < 0) return null;
+  const incomingAutomatic = incoming.slice(0, incomingEnd + OBSIDIAN_AUTO_END.length);
+  const preservedHuman = normalizeObsidianHumanHeadings(existing.slice(existingEnd + OBSIDIAN_AUTO_END.length));
+  const mergedAutomatic = hasCuratedObsidianLearnings(preservedHuman)
+    ? setObsidianFrontmatterField(incomingAutomatic, "learnings", "ok")
+    : incomingAutomatic;
+  return `${mergedAutomatic}${preservedHuman}`.trim();
+}
+
+function normalizeObsidianHumanHeadings(markdown = "") {
+  const humanHeading = `## Curadur${String.fromCharCode(0x00ed)}a humana`;
+  const variants = [
+    "## Curaduria humana",
+    humanHeading,
+    `## Curadur${String.fromCharCode(0x00c3)}${String.fromCharCode(0x00ad)}a humana`,
+  ];
+  return variants.reduce(
+    (text, variant) => text.split(variant).join(humanHeading),
+    String(markdown || ""),
+  );
+}
+
+function hasCuratedObsidianLearnings(markdown = "") {
+  const text = String(markdown || "");
+  const match = text.match(new RegExp("(?:^|\\n)###\\s+Aprendizajes[^\\n]*\\n([\\s\\S]*?)(?=\\n#{2,3}\\s+|$)", "i"));
+  if (!match) return false;
+  return match[1]
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .some((line) => line && !line.startsWith("<!--") && !/^[-*]\s*$/.test(line));
+}
+
+function setObsidianFrontmatterField(markdown = "", field = "", value = "") {
+  const text = String(markdown || "");
+  const serialized = `${field}: ${JSON.stringify(value)}`;
+  const frontmatterMatch = text.match(new RegExp("^---\\n([\\s\\S]*?)\\n---\\n?"));
+  if (!frontmatterMatch) return text;
+  const bodyStart = frontmatterMatch[0].length;
+  const frontmatter = frontmatterMatch[1];
+  const fieldPattern = new RegExp(`^${field}:.*$`, "m");
+  const nextFrontmatter = fieldPattern.test(frontmatter)
+    ? frontmatter.replace(fieldPattern, serialized)
+    : `${frontmatter}\n${serialized}`;
+  return `---\n${nextFrontmatter}\n---\n${text.slice(bodyStart)}`;
+}
+
 function inferObsidianTargetFromFilename(filename = "") {
   const normalized = String(filename || "").toLowerCase();
   if (/publicacion|publication/.test(normalized)) return "publications";
-  if (/hallazgo|insight|finding/.test(normalized)) return "moc";
-  if (/mapa|map|obsidian/.test(normalized)) return "moc";
+  if (/hallazgo|insight|finding|reporte|report/.test(normalized)) return "generated_report";
+  if (/mapa|map|obsidian/.test(normalized)) return "generated_map";
   if (/manual|guia|guide/.test(normalized)) return "manual";
-  if (/experiencia|experience|reporte|report/.test(normalized)) return "experiences";
+  if (/experiencia|experience/.test(normalized)) return "experiences";
   if (/activo|asset|multimedia|biometr/.test(normalized)) return "assets";
   return "inbox";
 }

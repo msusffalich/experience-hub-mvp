@@ -18,6 +18,7 @@
     "audit:blueprint": "node scripts/audit-blueprint-flows.mjs",
     "audit:control": "node scripts/audit-control.mjs",
     "audit:runtime": "node scripts/audit-runtime-helpers.mjs",
+    "verify:obsidian": "node scripts/verify-obsidian-export-contract.mjs",
     "simulate:vibeapp": "node scripts/simulate-vibeapp-sync.mjs",
     "verify:processing": "node scripts/verify-asset-processing-job.mjs",
     "verify:flows": "node scripts/verify-flow-automation.mjs",
@@ -34,7 +35,7 @@
     "package:vibeapp:ios": "node scripts/package-vibeapp-ios-handoff.mjs",
     "start": "node server.js",
     "dev": "node server.js",
-    "check": "node --check app.js && node --check server.js && node scripts/smoke-check.mjs && npm run audit:runtime",
+    "check": "node --check app.js && node --check server.js && node scripts/smoke-check.mjs && npm run audit:runtime && npm run verify:obsidian",
     "test": "npm run check"
   }
 }

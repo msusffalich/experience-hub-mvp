@@ -1,4 +1,4 @@
-const APP_VERSION = "20260721-obsidian-experience-notes-666";
+const APP_VERSION = "20260721-obsidian-learnings-671";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -3036,6 +3036,10 @@ const manualContent = {
         "Las notas de OneNote, Apple Notes, Google Keep, Notion, Evernote u otras apps se manejarán primero por exportación estándar: Markdown, TXT, HTML, PDF, DOCX, CSV o JSON, según permita cada herramienta.",
         "Obsidian se prioriza mediante Markdown. Notion se puede manejar por exportación Markdown, HTML o CSV; su API queda para fase posterior. OneNote, Apple Notes y Google Keep se tratarán mediante exportación manual a PDF, HTML, TXT o DOCX cuando esté disponible.",
         "Cuando la bóveda Obsidian está configurada en el servidor, las exportaciones Markdown también se guardan automáticamente en la carpeta correspondiente: Publicaciones, Mapa, Experiencias, Biometría o Inbox.",
+        "El Mapa de Experiencias usa datos ya sincronizados en la base de datos: experiencias, eventos internos, grupo/persona, ubicación, categoría, energía real, activos, texto analítico, biometría y contexto. No inventa categoría ni energía cuando faltan datos.",
+        "Antes de exportar a Obsidian, la app valida que la nota tenga contenido, fecha local, identificadores, estado narrativo, estado multimodal y personas. Las capturas técnicas sin narrativa no se convierten en notas de experiencia.",
+        "En Obsidian, los mapas y reportes generados van a 05_Generated. Las experiencias reales van a 02_Experiences. La parte generada por Vibe queda dentro del bloque <!-- vibe:auto -->; lo escrito por una persona queda fuera y no se sobrescribe al reexportar.",
+        "Los aprendizajes nacen como pendientes. Solo pasan a ok cuando una persona escribe texto real bajo ### Aprendizajes en la sección ## Curaduría humana y la experiencia se reexporta; así la bóveda no confunde notas vacías con notas ya curadas.",
         "Formatos nativos propietarios, como bases internas de apps de notas o ENEX de Evernote, no son requisito del MVP; se evaluarán después de estabilizar documentos estándar, OCR, transcripción y conectores.",
         "La búsqueda de activos encuentra coincidencias por nombre, experiencia, categoría, persona, lugar, formato, dispositivo, etiquetas, texto analítico y fecha. También puedes acotar por rango Desde/Hasta.",
         "Cada activo muestra preparación de almacenamiento: si está en servidor/Supabase, si conserva vista previa local y si está pendiente de sincronizar para uso privado multidispositivo.",
@@ -3669,6 +3673,10 @@ const manualContent = {
         "Notes from OneNote, Apple Notes, Google Keep, Notion, Evernote, or other note apps will first be handled through standard export formats: Markdown, TXT, HTML, PDF, DOCX, CSV, or JSON, depending on what each tool allows.",
         "Obsidian is prioritized through Markdown. Notion can be handled through Markdown, HTML, or CSV export; its API remains a later phase. OneNote, Apple Notes, and Google Keep will use manual export to PDF, HTML, TXT, or DOCX when available.",
         "When the Obsidian vault is configured on the server, Markdown exports are also saved automatically in the right folder: Publications, Map, Experiences, Biometrics, or Inbox.",
+        "The Experience Map uses data already synchronized in the database: experiences, internal events, group/person, location, category, real energy, assets, analytical text, biometrics, and context. It does not invent category or energy when data is missing.",
+        "Before exporting to Obsidian, the app validates that each note has content, local date, identifiers, narrative status, multimodal status, and people. Technical captures without narrative are not converted into experience notes.",
+        "In Obsidian, generated maps and reports go to 05_Generated. Real experiences go to 02_Experiences. Vibe-generated content stays inside the <!-- vibe:auto --> block; human writing stays outside and is not overwritten when reexporting.",
+        "Learnings start as pending. They only become ok when a person writes real text under ### Aprendizajes in the ## Curaduría humana section and the experience is reexported, so the vault does not confuse empty notes with curated notes.",
         "Proprietary native formats, such as internal note-app databases or Evernote ENEX, are not MVP requirements; they will be evaluated after standard documents, OCR, transcription, and connectors are stable.",
         "Asset search matches name, experience, category, person, place, format, device, tags, analytical text, and date. You can also narrow results with the From/To range.",
         "Each asset shows storage readiness: whether it is on server/Supabase, keeps a local preview, or is pending sync for private multi-device use.",
@@ -4301,6 +4309,10 @@ manualContent.fr = [
       "La carte se met a jour avec les donnees reelles synchronisees dans l'app. Elle ne depend pas d'Obsidian pour exister ni pour analyser les connexions.",
       "Obsidian est seulement une exportation avancee compatible Markdown pour une voute externe. Si une ancienne voute contenait des donnees de test, remplace-la en exportant de nouveau la carte reelle ou nettoie cette copie externe.",
       "Quand la voute Obsidian est configuree sur le serveur, les exports Markdown sont aussi enregistres automatiquement dans le bon dossier: Publications, Carte, Experiences, Biometrie ou Inbox.",
+      "La Carte des experiences utilise les donnees deja synchronisees dans la base: experiences, evenements internes, groupe/personne, lieu, categorie, energie reelle, actifs, texte analytique, biometrie et contexte. Elle n'invente ni categorie ni energie quand la donnee manque.",
+      "Avant l'export vers Obsidian, l'app valide que chaque note contient du contenu, une date locale, des identifiants, un etat narratif, un etat multimodal et les personnes associees. Les captures techniques sans narration ne deviennent pas des notes d'experience.",
+      "Dans Obsidian, les cartes et rapports generes vont dans 05_Generated. Les experiences reelles vont dans 02_Experiences. Le contenu genere par Vibe reste dans le bloc <!-- vibe:auto -->; l'ecriture humaine reste dehors et n'est pas ecrasee lors d'un nouvel export.",
+      "Les apprentissages commencent comme pending. Ils passent a ok seulement quand une personne ecrit un vrai texte sous ### Aprendizajes dans la section ## Curaduría humana et que l'experience est reexportee; la voute ne confond donc pas une note vide avec une note deja curee.",
     ],
   },
   {
@@ -4353,6 +4365,10 @@ manualContent.pt = [
       "O mapa e atualizado com os dados reais sincronizados no app. Ele nao depende do Obsidian para existir nem para analisar conexoes.",
       "Obsidian e apenas uma exportacao avancada em Markdown compativel com um cofre externo. Se um cofre antigo tinha dados de teste, substitua exportando novamente o mapa real ou limpe essa copia externa.",
       "Quando o cofre Obsidian esta configurado no servidor, as exportacoes Markdown tambem sao salvas automaticamente na pasta correta: Publicacoes, Mapa, Experiencias, Biometria ou Inbox.",
+      "O Mapa de Experiencias usa dados ja sincronizados no banco: experiencias, eventos internos, grupo/pessoa, local, categoria, energia real, ativos, texto analitico, biometria e contexto. Ele nao inventa categoria nem energia quando a informacao falta.",
+      "Antes de exportar para Obsidian, o app valida que cada nota tenha conteudo, data local, identificadores, estado narrativo, estado multimodal e pessoas. Capturas tecnicas sem narrativa nao viram notas de experiencia.",
+      "No Obsidian, mapas e relatorios gerados vao para 05_Generated. Experiencias reais vao para 02_Experiences. O conteudo gerado pelo Vibe fica dentro do bloco <!-- vibe:auto -->; a escrita humana fica fora e nao e sobrescrita ao reexportar.",
+      "Os aprendizados nascem como pending. Eles so passam para ok quando uma pessoa escreve texto real em ### Aprendizajes dentro da secao ## Curaduría humana e a experiencia e reexportada; assim o cofre nao confunde notas vazias com notas ja curadas.",
     ],
   },
   {
@@ -6240,6 +6256,27 @@ function displayCategory(category) {
   const normalized = normalizeCategoryName(category);
   const label = t(`labels.categoryLabels.${normalized}`);
   return label && !String(label).startsWith("labels.") ? label : normalized;
+}
+
+function isRealExperienceCategory(category) {
+  const normalized = normalizeCategoryName(category);
+  return Boolean(normalized && EXPERIENCE_CATEGORIES.includes(normalized));
+}
+
+function getExperienceCategoryForExport(experience = {}) {
+  const normalized = normalizeCategoryName(experience.category || "");
+  if (!isRealExperienceCategory(normalized)) return null;
+  if (/dato del usuario|user data/i.test(normalized)) return null;
+  return normalized;
+}
+
+function getExperienceEnergyForExport(experience = {}) {
+  const raw = Number(experience.energy);
+  if (!Number.isFinite(raw) || raw < 1 || raw > 10) return null;
+  const source = String(experience.metadata?.energySource || experience.energySource || "").toLowerCase();
+  if (source === "default" || source === "placeholder") return null;
+  if ((raw === 5 || raw === 7) && isExperienceMapContextSignal(experience)) return null;
+  return raw;
 }
 
 function saveExperiences() {
@@ -20022,11 +20059,18 @@ function exportExperienceKnowledgeMapMarkdown() {
     t("labels.experienceMapQuestionSocial"),
   ];
   const exportedAt = new Date().toISOString();
+  const exportedLocal = getLocalDateTimeWithOffset(exportedAt);
   const lines = [
     state.language !== "es" ? "# Experience Map" : "# Mapa de Experiencias",
     "",
     "---",
     `generated: ${exportedAt}`,
+    `created_at: ${JSON.stringify(exportedLocal)}`,
+    `updated_at: ${JSON.stringify(exportedLocal)}`,
+    "source: \"vibepwa\"",
+    "fuente: \"generado\"",
+    "fiabilidad: \"pendiente\"",
+    "sync_status: exported",
     `language: ${state.language}`,
     `relation_filter: ${graph.relationFilter}`,
     `nodes: ${graph.nodes.length}`,
@@ -20395,6 +20439,75 @@ function obsidianSeparator() {
   return " \u00b7 ";
 }
 
+const OBSIDIAN_AUTO_START = "<!-- vibe:auto -->";
+const OBSIDIAN_AUTO_END = "<!-- /vibe:auto -->";
+const OBSIDIAN_HUMAN_HEADING = `## Curadur${String.fromCharCode(0x00ed)}a humana`;
+
+function wrapObsidianAutoBlock(lines = []) {
+  return [
+    OBSIDIAN_AUTO_START,
+    ...lines,
+    OBSIDIAN_AUTO_END,
+  ];
+}
+
+function mergeObsidianAutoBlock(existingMarkdown = "", incomingMarkdown = "") {
+  const existing = String(existingMarkdown || "");
+  const incoming = String(incomingMarkdown || "").trim();
+  if (!existing.trim()) return incoming;
+  const incomingStart = incoming.indexOf(OBSIDIAN_AUTO_START);
+  const incomingEnd = incoming.indexOf(OBSIDIAN_AUTO_END, incomingStart);
+  const existingStart = existing.indexOf(OBSIDIAN_AUTO_START);
+  const existingEnd = existing.indexOf(OBSIDIAN_AUTO_END, existingStart);
+  if (incomingStart < 0 || incomingEnd < 0 || existingStart < 0 || existingEnd < 0) return null;
+  const incomingAuto = incoming.slice(0, incomingEnd + OBSIDIAN_AUTO_END.length);
+  const preservedHuman = normalizeObsidianHumanHeadings(existing.slice(existingEnd + OBSIDIAN_AUTO_END.length));
+  const mergedAuto = hasCuratedObsidianLearnings(preservedHuman)
+    ? setObsidianFrontmatterField(incomingAuto, "learnings", "ok")
+    : incomingAuto;
+  return `${mergedAuto}${preservedHuman}`.trim();
+}
+
+function normalizeObsidianHumanHeadings(markdown = "") {
+  const variants = [
+    "## Curaduria humana",
+    OBSIDIAN_HUMAN_HEADING,
+    `## Curadur${String.fromCharCode(0x00c3)}${String.fromCharCode(0x00ad)}a humana`,
+  ];
+  return variants.reduce(
+    (text, variant) => text.split(variant).join(OBSIDIAN_HUMAN_HEADING),
+    String(markdown || ""),
+  );
+}
+
+function hasCuratedObsidianLearnings(markdown = "") {
+  const text = String(markdown || "");
+  const match = text.match(new RegExp("(?:^|\\n)###\\s+Aprendizajes[^\\n]*\\n([\\s\\S]*?)(?=\\n#{2,3}\\s+|$)", "i"));
+  if (!match) return false;
+  return match[1]
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .some((line) => line && !line.startsWith("<!--") && !/^[-*]\s*$/.test(line));
+}
+
+function setObsidianFrontmatterField(markdown = "", field = "", value = "") {
+  const text = String(markdown || "");
+  const serialized = `${field}: ${JSON.stringify(value)}`;
+  const frontmatterMatch = text.match(new RegExp("^---\\n([\\s\\S]*?)\\n---\\n?"));
+  if (!frontmatterMatch) return text;
+  const bodyStart = frontmatterMatch[0].length;
+  const frontmatter = frontmatterMatch[1];
+  const fieldPattern = new RegExp(`^${field}:.*$`, "m");
+  const nextFrontmatter = fieldPattern.test(frontmatter)
+    ? frontmatter.replace(fieldPattern, serialized)
+    : `${frontmatter}\n${serialized}`;
+  return `---\n${nextFrontmatter}\n---\n${text.slice(bodyStart)}`;
+}
+
+function shouldPreserveHumanObsidianContent(target) {
+  return String(target || "").toLowerCase() === "experiences";
+}
+
 function isCoordinateText(value) {
   return /^-?\d{1,3}\.\d+,\s*-?\d{1,3}\.\d+$/.test(cleanObsidianMarkdownText(value));
 }
@@ -20413,6 +20526,48 @@ function cleanObsidianLocationLabel(value) {
   return isCoordinateText(clean) ? `GPS ${clean}` : clean;
 }
 
+function getUserTimeZone() {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone || "America/New_York";
+}
+
+function getLocalDateKey(value) {
+  const date = new Date(value || Date.now());
+  if (Number.isNaN(date.getTime())) return getLocalDateKey(Date.now());
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: getUserTimeZone(),
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date).reduce((acc, part) => {
+    acc[part.type] = part.value;
+    return acc;
+  }, {});
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
+
+function getLocalDateTimeWithOffset(value) {
+  const date = new Date(value || Date.now());
+  if (Number.isNaN(date.getTime())) return getLocalDateTimeWithOffset(Date.now());
+  const pad = (number) => String(Math.abs(number)).padStart(2, "0");
+  const offsetMinutes = -date.getTimezoneOffset();
+  const sign = offsetMinutes >= 0 ? "+" : "-";
+  const offsetHours = Math.trunc(Math.abs(offsetMinutes) / 60);
+  const offsetRemainder = Math.abs(offsetMinutes) % 60;
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}${sign}${pad(offsetHours)}:${pad(offsetRemainder)}`;
+}
+
+function getObsidianCategoryWikiLink(category) {
+  const clean = cleanObsidianMarkdownText(category);
+  if (!clean) return "";
+  return obsidianWikiLink(clean.replace(/[\\/]+/g, " - "));
+}
+
+function getExperiencePeopleForExport(experience = {}) {
+  const clean = cleanObsidianPersonLabel(experience.people);
+  if (!clean || isLowValueObsidianFactor(clean)) return [];
+  return clean.split(/[,;]+/).map((item) => cleanObsidianMarkdownText(item)).filter(Boolean);
+}
+
 function isExperienceMapContextSignal(experience) {
   const title = cleanObsidianMarkdownText(experience?.title).toLowerCase();
   const objective = cleanObsidianMarkdownText(experience?.objective).toLowerCase();
@@ -20427,6 +20582,28 @@ function isExperienceMapContextSignal(experience) {
     objective.includes("biometr\u00eda transversal") ||
     (category === "salud" && title.includes("biometr"))
   );
+}
+
+function isTechnicalMediaOnlyExperience(experience = {}) {
+  const title = cleanObsidianMarkdownText(experience.title).toLowerCase();
+  const notes = cleanObsidianMarkdownText(experience.notes);
+  const source = String(experience.sourceType || experience.source || experience.metadata?.sourceType || "").toLowerCase();
+  const attachments = experience.attachments || [];
+  return (
+    attachments.length > 0 &&
+    notes.length < 20 &&
+    (
+      title.includes("foto capturado desde vibeapp") ||
+      title.includes("foto capturada desde vibeapp") ||
+      title.includes("image_picker") ||
+      source.includes("image_picker") ||
+      String(experience.id || "").startsWith("native-media-")
+    )
+  );
+}
+
+function isObsidianExportableExperience(experience = {}) {
+  return !isExperienceMapContextSignal(experience) && !isTechnicalMediaOnlyExperience(experience);
 }
 
 function isLowValueObsidianFactor(value) {
@@ -20455,15 +20632,13 @@ function summarizeObsidianContextSignals(experiences) {
 }
 
 function obsidianWikiLink(label, alias = "") {
-  const cleanLabel = cleanObsidianMarkdownText(label, "Sin titulo").replace(/[\[\]#|]/g, "").slice(0, 90).trim() || "Sin titulo";
+  const cleanLabel = cleanObsidianMarkdownText(label, "Sin titulo").replace(/[\[\]#|\\/]/g, "-").slice(0, 90).trim() || "Sin titulo";
   const cleanAlias = cleanObsidianMarkdownText(alias || cleanLabel, cleanLabel).replace(/[\[\]|]/g, "").slice(0, 90);
   return cleanAlias && cleanAlias !== cleanLabel ? `[[${cleanLabel}|${cleanAlias}]]` : `[[${cleanLabel}]]`;
 }
 
 function getObsidianExperienceNoteStem(experience = {}) {
-  const date = Number.isNaN(new Date(experience.timestamp).getTime())
-    ? new Date().toISOString().slice(0, 10)
-    : new Date(experience.timestamp).toISOString().slice(0, 10);
+  const date = getLocalDateKey(experience.timestamp);
   const title = cleanObsidianMarkdownText(experience.title || experience.label || "experiencia");
   return `${date} - ${slugifyFilename(title).slice(0, 80) || "experiencia"}`;
 }
@@ -20488,9 +20663,12 @@ function getExperienceMapMarkdownScope(graph) {
 }
 
 function summarizeExperienceMapForKnowledge(experiences, graph, routes, topFactors) {
-  const avgEnergy = experiences.length ? average(experiences.map((item) => Number(item.energy || 0))).toFixed(1) : "0.0";
+  const realEnergy = experiences.map(getExperienceEnergyForExport).filter((value) => value !== null);
+  const avgEnergy = realEnergy.length ? average(realEnergy).toFixed(1) : null;
   const categories = experiences.reduce((acc, item) => {
-    const key = displayCategory(item.category);
+    const category = getExperienceCategoryForExport(item);
+    if (!category) return acc;
+    const key = displayCategory(category);
     acc[key] = (acc[key] || 0) + 1;
     return acc;
   }, {});
@@ -20512,7 +20690,7 @@ function summarizeExperienceMapForKnowledge(experiences, graph, routes, topFacto
     factorNames,
     text:
       `El mapa reune ${experiences.length} experiencias conectadas por ${graph.links.length} relaciones. ` +
-      `La categoria con mayor presencia es ${cleanObsidianMarkdownText(topCategory)}, con energia media ${avgEnergy}/10. ` +
+      `La categoria con mayor presencia es ${cleanObsidianMarkdownText(topCategory)}${avgEnergy ? `, con energia media registrada ${avgEnergy}/10` : ", sin energia registrada suficiente"}. ` +
       `Las rutas detectadas son ${routeNames}. Los factores que mas ordenan la lectura son ${factorNames}.`,
   };
 }
@@ -20521,7 +20699,8 @@ function renderExperienceMapMarkdownTimeline(experiences) {
   if (!experiences.length) return ["- No hay experiencias en el alcance actual."];
   return experiences.map((experience) => {
     const title = cleanObsidianMarkdownText(experience.title, "Experiencia");
-    const category = cleanObsidianMarkdownText(displayCategory(experience.category));
+    const category = getExperienceCategoryForExport(experience);
+    const energy = getExperienceEnergyForExport(experience);
     const context = [
       cleanObsidianLocationLabel(experience.location),
       cleanObsidianPersonLabel(experience.people),
@@ -20530,13 +20709,14 @@ function renderExperienceMapMarkdownTimeline(experiences) {
       .filter(Boolean)
       .filter((item) => !isLowValueObsidianFactor(item))
       .join(obsidianSeparator());
-    return `- **${formatShortDate(experience.timestamp)}**${obsidianSeparator()}${obsidianExperienceWikiLink(experience, title)}${obsidianSeparator()}${category}${obsidianSeparator()}Energia ${Number(experience.energy || 0)}/10${context ? `${obsidianSeparator()}${context}` : ""}`;
+    return `- **${formatShortDate(experience.timestamp)}**${obsidianSeparator()}${obsidianExperienceWikiLink(experience, title)}${category ? `${obsidianSeparator()}${cleanObsidianMarkdownText(displayCategory(category))}` : ""}${energy ? `${obsidianSeparator()}Energia ${energy}/10` : ""}${context ? `${obsidianSeparator()}${context}` : ""}`;
   });
 }
 
 function renderExperienceMapMarkdownExperience(experience) {
   const title = cleanObsidianMarkdownText(experience.title, "Experiencia");
-  const category = cleanObsidianMarkdownText(displayCategory(experience.category));
+  const category = getExperienceCategoryForExport(experience);
+  const energy = getExperienceEnergyForExport(experience);
   const events = getExperienceEventTimeline(experience);
   const attachments = experience.attachments || [];
   const notes = cleanObsidianMarkdownText(experience.notes);
@@ -20548,15 +20728,15 @@ function renderExperienceMapMarkdownExperience(experience) {
     `### ${obsidianExperienceWikiLink(experience, title)}`,
     "",
     `- **Fecha:** ${formatDate(experience.timestamp)}`,
-    `- **Categoria:** ${category}`,
-    `- **Energia:** ${Number(experience.energy || 0)}/10`,
+    category ? `- **Categoria:** ${cleanObsidianMarkdownText(displayCategory(category))}` : "- **Categoria:** pendiente de clasificar",
+    energy ? `- **Energia:** ${energy}/10` : "- **Energia:** sin dato registrado",
     experience.location ? `- **Lugar:** ${cleanObsidianLocationLabel(experience.location)}` : "- **Lugar:** sin registrar",
     experience.people ? `- **Grupo/persona:** ${cleanObsidianPersonLabel(experience.people)}` : "- **Grupo/persona:** sin registrar",
     experience.objective ? `- **Intencion:** ${cleanObsidianMarkdownText(experience.objective)}` : "- **Intencion:** sin registrar",
     "",
     "**Narrativa registrada**",
     "",
-    notes ? `> ${notes}` : "> Sin nota narrativa suficiente todavia.",
+    notes ? `> ${notes}` : "> Narrativa pendiente.",
     "",
     "**Eventos internos**",
     "",
@@ -20629,6 +20809,8 @@ function renderExperienceMapMarkdownRelations(graph) {
       seen.add(key);
       const sourceNode = nodeById.get(link.source);
       const targetNode = nodeById.get(link.target);
+      if (sourceNode?.kind === "experience" && !isObsidianExportableExperience(resolveObsidianExperienceFromNode(sourceNode))) return "";
+      if (targetNode?.kind === "experience" && !isObsidianExportableExperience(resolveObsidianExperienceFromNode(targetNode))) return "";
       const sourceLink = sourceNode?.kind === "experience"
         ? obsidianExperienceWikiLink(resolveObsidianExperienceFromNode(sourceNode), source)
         : obsidianWikiLink(source);
@@ -20644,10 +20826,16 @@ function renderExperienceMapMarkdownRelations(graph) {
 
 function buildObsidianExperienceNoteMarkdown(experience = {}) {
   const title = cleanObsidianMarkdownText(experience.title, "Experiencia");
-  const category = cleanObsidianMarkdownText(displayCategory(experience.category));
+  const category = getExperienceCategoryForExport(experience);
+  const energy = getExperienceEnergyForExport(experience);
+  const localDate = getLocalDateKey(experience.timestamp);
+  const localDateTime = getLocalDateTimeWithOffset(experience.timestamp);
+  const people = getExperiencePeopleForExport(experience);
   const events = getExperienceEventTimeline(experience);
   const attachments = experience.attachments || [];
   const notes = cleanObsidianMarkdownText(experience.notes);
+  const narrativeStatus = notes.length > 20 ? "ok" : "pending";
+  const multimodalStatus = attachments.length ? "ok" : "pending";
   const analyticalText = attachments
     .map((asset) => cleanObsidianMarkdownText(asset.extractedText || asset.analyticalText || asset.translatedText || asset.manualNote))
     .filter(Boolean)
@@ -20655,56 +20843,73 @@ function buildObsidianExperienceNoteMarkdown(experience = {}) {
   const links = [
     "[[MOC - Vibe]]",
     "[[mapa-de-conocimiento-vibe-obsidian|Mapa de conocimiento]]",
-    category ? obsidianWikiLink(category) : "",
+    category ? getObsidianCategoryWikiLink(category) : "",
   ].filter(Boolean);
   const lines = [
     "---",
     `vibe_id: ${JSON.stringify(experience.id || getObsidianExperienceNoteStem(experience))}`,
     "type: experience",
     `title: ${JSON.stringify(title)}`,
-    `date: ${JSON.stringify(new Date(experience.timestamp || Date.now()).toISOString().slice(0, 10))}`,
-    `category: ${JSON.stringify(category)}`,
-    `energy: ${JSON.stringify(Number(experience.energy || 0))}`,
+    `created_at: ${JSON.stringify(localDateTime)}`,
+    `updated_at: ${JSON.stringify(getLocalDateTimeWithOffset(experience.updatedAt || experience.timestamp))}`,
+    `date: ${JSON.stringify(localDate)}`,
+    `datetime_local: ${JSON.stringify(localDateTime)}`,
+    `timezone: ${JSON.stringify(getUserTimeZone())}`,
+    `category: ${category ? JSON.stringify(category) : "null"}`,
+    `category_source: ${category ? JSON.stringify(experience.metadata?.categorySource || experience.categorySource || "user") : "null"}`,
+    ...(energy ? [`energy: ${JSON.stringify(energy)}`, `energy_source: ${JSON.stringify(experience.metadata?.energySource || experience.energySource || "user")}`] : []),
+    `narrative: ${JSON.stringify(narrativeStatus)}`,
+    `learnings: ${JSON.stringify("pending")}`,
+    `multimodal: ${JSON.stringify(multimodalStatus)}`,
+    ...(people.length ? [`people: ${JSON.stringify(people)}`] : []),
     `source: ${JSON.stringify(getExperienceSourceKey(experience))}`,
     "sync_status: exported",
     "---",
     "",
-    `# ${title}`,
+    ...wrapObsidianAutoBlock([
+      "",
+      `# ${title}`,
+      "",
+      "Tipo: experiencia",
+      `Fecha: ${formatDate(experience.timestamp)}`,
+      `Grupo/persona: ${cleanObsidianPersonLabel(experience.people) || "sin registrar"}`,
+      `Categoria: ${category ? displayCategory(category) : "pendiente de clasificar"}`,
+      `Lugar: ${cleanObsidianLocationLabel(experience.location) || "sin registrar"}`,
+      `Fuente: ${getExperienceSourceKey(experience) || "Vibe"}`,
+      energy ? `Energia registrada: ${energy}/10` : "Energia registrada: sin dato",
+      "",
+      "## Resumen",
+      "",
+      notes || "",
+      "",
+      "## Eventos internos",
+      "",
+      ...(events.length
+        ? events.map((event) => `- ${event.order || ""}. ${cleanObsidianMarkdownText(event.title || event.text || event.description, "Evento")}`)
+        : ["- Sin eventos internos registrados."]),
+      "",
+      "## Activos vinculados",
+      "",
+      ...(attachments.length
+        ? attachments.map((asset) => `- ${cleanObsidianMarkdownText(asset.name || asset.fileName || asset.kind || "Activo")}${obsidianSeparator()}${cleanObsidianMarkdownText(asset.kind || asset.type || "multimedia")}`)
+        : ["- Sin activos vinculados."]),
+      "",
+      "## Lectura automatica",
+      "",
+      ...(analyticalText.length ? analyticalText.map((text) => `- ${truncateText(text, 360)}`) : []),
+      "",
+      "## Enlaces",
+      "",
+      ...links.map((link) => `- ${link}`),
+    ]),
     "",
-    "Tipo: experiencia",
-    `Fecha: ${formatDate(experience.timestamp)}`,
-    `Grupo/persona: ${cleanObsidianPersonLabel(experience.people) || "sin registrar"}`,
-    `Categoria: ${category || "sin registrar"}`,
-    `Lugar: ${cleanObsidianLocationLabel(experience.location) || "sin registrar"}`,
-    `Fuente: ${getExperienceSourceKey(experience) || "Vibe"}`,
+    OBSIDIAN_HUMAN_HEADING,
     "",
-    "## Resumen",
+    "### Aprendizajes",
     "",
-    notes || "Sin resumen narrativo suficiente todavía.",
+    "### Decisiones o acciones",
     "",
-    "## Eventos internos",
-    "",
-    ...(events.length
-      ? events.map((event) => `- ${event.order || ""}. ${cleanObsidianMarkdownText(event.title || event.text || event.description, "Evento")}`)
-      : ["- Sin eventos internos registrados."]),
-    "",
-    "## Activos vinculados",
-    "",
-    ...(attachments.length
-      ? attachments.map((asset) => `- ${cleanObsidianMarkdownText(asset.name || asset.fileName || asset.kind || "Activo")}${obsidianSeparator()}${cleanObsidianMarkdownText(asset.kind || asset.type || "multimedia")}`)
-      : ["- Sin activos vinculados."]),
-    "",
-    "## Lectura humana",
-    "",
-    ...(analyticalText.length ? analyticalText.map((text) => `- ${truncateText(text, 360)}`) : ["- Sin lectura interpretada disponible todavía."]),
-    "",
-    "## Aprendizajes",
-    "",
-    "- Pendiente de completar al revisar esta experiencia.",
-    "",
-    "## Enlaces",
-    "",
-    ...links.map((link) => `- ${link}`),
+    "### Notas editoriales",
     "",
   ];
   return lines.join("\n").trim() + "\n";
@@ -20713,21 +20918,41 @@ function buildObsidianExperienceNoteMarkdown(experience = {}) {
 async function exportExperienceNotesToLocalObsidianVault(experiences = []) {
   if (!state.localObsidianVault?.connected || !supportsLocalObsidianVault()) return { ok: false, skipped: true, count: 0 };
   let count = 0;
+  const errors = [];
   for (const experience of experiences) {
     const markdown = buildObsidianExperienceNoteMarkdown(experience);
     const filename = `${getObsidianExperienceNoteStem(experience)}.md`;
     if (!markdown.trim()) throw new Error("obsidian_experience_markdown_empty");
-    await saveMarkdownToLocalObsidianVault(markdown, filename, { target: "experiences" });
-    count += 1;
+    try {
+      await saveMarkdownToLocalObsidianVault(markdown, filename, { target: "experiences", preserveHuman: true });
+      const response = await fetch(`${API_BASE}/obsidian/export`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(state.session?.access_token ? { Authorization: `Bearer ${state.session.access_token}` } : {}),
+        },
+        body: JSON.stringify({
+          target: "experiences",
+          filename,
+          markdown,
+          source: "vibepwa-experience-note",
+          preserveHuman: true,
+        }),
+      });
+      if (!response.ok) throw new Error(`obsidian_experience_export_${response.status}`);
+      count += 1;
+    } catch (error) {
+      errors.push({ id: experience.id, title: experience.title, error: error.message });
+    }
   }
-  return { ok: true, count };
+  return { ok: errors.length === 0, count, expected: experiences.length, errors };
 }
 
 async function exportExperienceMapMarkdown() {
   const graph = buildExperienceMapGraph();
   const allExperiences = getExperienceMapMarkdownScope(graph);
-  const contextSignals = allExperiences.filter((experience) => isExperienceMapContextSignal(experience));
-  const experiences = allExperiences.filter((experience) => !isExperienceMapContextSignal(experience));
+  const contextSignals = allExperiences.filter((experience) => !isObsidianExportableExperience(experience));
+  const experiences = allExperiences.filter(isObsidianExportableExperience);
   const routes = buildExperienceMapRoutes(graph, { excludeContextSignals: true });
   const topFactors = [...graph.factors]
     .filter((factor) => !isLowValueObsidianFactor(factor.label))
@@ -20741,11 +20966,18 @@ async function exportExperienceMapMarkdown() {
     t("labels.experienceMapQuestionSocial"),
   ];
   const exportedAt = new Date().toISOString();
+  const exportedLocal = getLocalDateTimeWithOffset(exportedAt);
   const lines = [
     state.language !== "es" ? "# Experience Knowledge Map" : "# Mapa de conocimiento de experiencias",
     "",
     "---",
     `generated: ${exportedAt}`,
+    `created_at: ${JSON.stringify(exportedLocal)}`,
+    `updated_at: ${JSON.stringify(exportedLocal)}`,
+    "source: \"vibepwa\"",
+    "fuente: \"generado\"",
+    "fiabilidad: \"pendiente\"",
+    "sync_status: exported",
     `language: ${state.language}`,
     `relation_filter: ${graph.relationFilter}`,
     `experiences: ${experiences.length}`,
@@ -20760,7 +20992,7 @@ async function exportExperienceMapMarkdown() {
     knowledgeSummary.text,
     "",
     `- Experiencias en alcance: ${experiences.length}`,
-    `- Energia media: ${knowledgeSummary.avgEnergy}/10`,
+    `- Energia media registrada: ${knowledgeSummary.avgEnergy ? `${knowledgeSummary.avgEnergy}/10` : "sin dato suficiente"}`,
     `- Categoria dominante: ${cleanObsidianMarkdownText(knowledgeSummary.topCategory)}`,
     `- Experiencias con narrativa suficiente: ${knowledgeSummary.withNotes}`,
     `- Experiencias con multimedia: ${knowledgeSummary.withMedia}`,
@@ -20801,8 +21033,10 @@ async function exportExperienceMapMarkdown() {
   downloadBlob(new Blob([lines.join("\n")], { type: "text/markdown;charset=utf-8" }), "mapa-de-conocimiento-vibe-obsidian.md");
   exportExperienceNotesToLocalObsidianVault(experiences)
     .then((result) => {
-      if (result?.ok && result.count) {
-        notify(`Notas de experiencia guardadas en Obsidian: ${result.count}`, "success");
+      if (result?.ok && result.count === result.expected) {
+        notify(`Obsidian sincronizado: mapa y ${result.count} notas de experiencia.`, "success");
+      } else if (result?.errors?.length) {
+        notify(`Obsidian requiere revision: ${result.count}/${result.expected} notas guardadas.`, "warn");
       }
     })
     .catch((error) => {
@@ -27246,10 +27480,10 @@ function isMarkdownExport(blob, filename = "") {
 function inferObsidianTargetForFilename(filename = "") {
   const normalized = String(filename || "").toLowerCase();
   if (/publicacion|publication/.test(normalized)) return "publications";
-  if (/hallazgo|insight|finding/.test(normalized)) return "moc";
-  if (/mapa|map|obsidian/.test(normalized)) return "moc";
+  if (/hallazgo|insight|finding|reporte|report/.test(normalized)) return "generated_report";
+  if (/mapa|map|obsidian/.test(normalized)) return "generated_map";
   if (/manual|guia|guide/.test(normalized)) return "manual";
-  if (/experiencia|experience|reporte|report/.test(normalized)) return "experiences";
+  if (/experiencia|experience/.test(normalized)) return "experiences";
   if (/biometr|health|oura|apple-health/.test(normalized)) return "biometrics";
   if (/activo|asset|multimedia/.test(normalized)) return "assets";
   return "inbox";
@@ -27493,6 +27727,9 @@ function getLocalObsidianTargetPath(target) {
   const map = {
     publications: ["40_Publications"],
     moc: ["20_Maps_of_Content"],
+    generated: ["05_Generated"],
+    generated_map: ["05_Generated"],
+    generated_report: ["05_Generated"],
     manual: ["50_Reference"],
     experiences: ["02_Experiences"],
     biometrics: ["04_Assets", "Biometrics"],
@@ -27519,6 +27756,23 @@ async function getOrCreateDirectoryHandle(rootHandle, segments = []) {
   return current;
 }
 
+async function getUniqueLocalObsidianFileHandle(targetDir, filename) {
+  const safeFilename = sanitizeLocalObsidianFilename(filename);
+  const dotIndex = safeFilename.lastIndexOf(".");
+  const base = dotIndex > 0 ? safeFilename.slice(0, dotIndex) : safeFilename;
+  const extension = dotIndex > 0 ? safeFilename.slice(dotIndex) : ".md";
+  for (let index = 1; index < 100; index += 1) {
+    const candidate = index === 1 ? safeFilename : `${base}-${index}${extension}`;
+    try {
+      await targetDir.getFileHandle(candidate, { create: false });
+    } catch (error) {
+      return { fileHandle: await targetDir.getFileHandle(candidate, { create: true }), filename: candidate };
+    }
+  }
+  const fallback = `${base}-${Date.now()}${extension}`;
+  return { fileHandle: await targetDir.getFileHandle(fallback, { create: true }), filename: fallback };
+}
+
 async function saveMarkdownToLocalObsidianVault(markdown, filename, options = {}) {
   const safeMarkdown = String(markdown || "").trim();
   if (!safeMarkdown) throw new Error("obsidian_markdown_required");
@@ -27533,11 +27787,29 @@ async function saveMarkdownToLocalObsidianVault(markdown, filename, options = {}
   const target = options.target || inferObsidianTargetForFilename(filename);
   const targetDir = await getOrCreateDirectoryHandle(vault.handle, getLocalObsidianTargetPath(target));
   const safeFilename = sanitizeLocalObsidianFilename(filename);
-  const fileHandle = await targetDir.getFileHandle(safeFilename, { create: true });
+  let fileHandle = await targetDir.getFileHandle(safeFilename, { create: true });
+  let finalFilename = safeFilename;
+  let finalMarkdown = safeMarkdown;
+  if (options.preserveHuman || shouldPreserveHumanObsidianContent(target)) {
+    try {
+      const existingFile = await fileHandle.getFile();
+      const existingMarkdown = await existingFile.text();
+      const mergedMarkdown = mergeObsidianAutoBlock(existingMarkdown, safeMarkdown);
+      if (mergedMarkdown) {
+        finalMarkdown = mergedMarkdown;
+      } else if (existingMarkdown.trim()) {
+        const unique = await getUniqueLocalObsidianFileHandle(targetDir, safeFilename);
+        fileHandle = unique.fileHandle;
+        finalFilename = unique.filename;
+      }
+    } catch (error) {
+      finalMarkdown = safeMarkdown;
+    }
+  }
   const writable = await fileHandle.createWritable();
-  await writable.write(safeMarkdown.endsWith("\n") ? safeMarkdown : `${safeMarkdown}\n`);
+  await writable.write(finalMarkdown.endsWith("\n") ? finalMarkdown : `${finalMarkdown}\n`);
   await writable.close();
-  const relativePath = [...getLocalObsidianTargetPath(target), safeFilename].join("/");
+  const relativePath = [...getLocalObsidianTargetPath(target), finalFilename].join("/");
   state.localObsidianVault = {
     ...vault,
     connected: true,
@@ -27589,6 +27861,7 @@ async function syncMarkdownBlobToObsidian(blob, filename, options = {}) {
         filename,
         markdown,
         source: options.source || "vibepwa",
+        upsert: options.upsert !== false,
       }),
     });
     if (!response.ok) throw new Error(`obsidian_export_${response.status}`);
