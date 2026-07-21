@@ -1,4 +1,4 @@
-const APP_VERSION = "20260721-obsidian-export-button-672";
+const APP_VERSION = "20260721-obsidian-export-button-673";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -8666,7 +8666,6 @@ function setupActions() {
   document.getElementById("experienceMapQuestionInput").addEventListener("keydown", (event) => {
     if (event.key === "Enter") answerExperienceMapQuestion();
   });
-  document.getElementById("experienceMapExportButton").addEventListener("click", exportExperienceMapMarkdown);
   document.getElementById("connectLocalObsidianVaultButton")?.addEventListener("click", connectLocalObsidianVault);
   document.getElementById("forgetLocalObsidianVaultButton")?.addEventListener("click", forgetLocalObsidianVault);
   document.getElementById("manualSearchInput").addEventListener("input", (event) => {
@@ -20964,6 +20963,7 @@ async function exportExperienceMapMarkdown() {
     ? "Generating the Markdown map and preparing experience notes..."
     : "Generando el mapa Markdown y preparando notas de experiencias...";
   try {
+    await new Promise((resolve) => requestAnimationFrame(resolve));
     const graph = buildExperienceMapGraph();
     const allExperiences = getExperienceMapMarkdownScope(graph);
     const contextSignals = allExperiences.filter((experience) => !isObsidianExportableExperience(experience));

@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 
 const app = readFileSync("app.js", "utf8");
 const server = readFileSync("server.js", "utf8");
+const index = readFileSync("index.html", "utf8");
 
 const failures = [];
 const assert = (condition, message) => {
@@ -46,7 +47,7 @@ const saveObsidianExport = between(
   "function inferObsidianTargetFromFilename",
 );
 
-assert(app.includes('const APP_VERSION = "20260721-obsidian-export-button-672";'), "APP_VERSION must identify the Obsidian contract build.");
+assert(app.includes('const APP_VERSION = "20260721-obsidian-export-button-673";'), "APP_VERSION must identify the Obsidian contract build.");
 assert(app.includes("function getLocalDateKey") && app.includes("function getLocalDateTimeWithOffset"), "Obsidian export must use local date helpers.");
 assert(experienceNoteBuilder.includes("getLocalDateKey(experience.timestamp)"), "Experience notes must use local dates, not UTC dates.");
 assert(!experienceNoteBuilder.includes("toISOString().slice(0, 10)"), "Experience notes must not derive date from UTC toISOString().slice(0, 10).");
@@ -75,7 +76,8 @@ assert(saveObsidianExport.includes("shouldPreserveHumanObsidianContent") && save
 assert(server.includes("function mergeObsidianAutoBlock") && server.includes("await uniqueObsidianPath(requestedPath)"), "Server must version legacy experience notes that do not have auto-block markers.");
 assert(app.includes("hasCuratedObsidianLearnings(preservedHuman)") && app.includes('"learnings", "ok"') && app.includes('"updated_at"'), "Local merge must mark learnings ok and refresh updated_at when human curation adds learning content.");
 assert(server.includes("hasCuratedObsidianLearnings(preservedHuman)") && server.includes('"learnings", "ok"') && server.includes('"updated_at"'), "Server merge must mark learnings ok and refresh updated_at when human curation adds learning content.");
-assert(mapExporter.includes("Exportando...") && mapExporter.includes("skipObsidian: true") && mapExporter.includes('target: "generated_map"'), "Experience-map Markdown button must show progress and sync the map explicitly instead of silently doing nothing.");
+assert(mapExporter.includes("Exportando...") && mapExporter.includes("requestAnimationFrame") && mapExporter.includes("skipObsidian: true") && mapExporter.includes('target: "generated_map"'), "Experience-map Markdown button must show progress and sync the map explicitly instead of silently doing nothing.");
+assert(index.includes('onclick="exportExperienceMapMarkdown()"') && !app.includes('experienceMapExportButton").addEventListener("click", exportExperienceMapMarkdown'), "Experience-map Markdown button must have a direct click fallback without duplicate listener execution.");
 assert(saveObsidianExport.includes("obsidian_markdown_required"), "Server must reject empty Markdown exports.");
 assert(integrationExperienceBuilder.includes('rawCategory ? normalizeCategoryName(rawCategory) : "Sin categoría"'), "External experience ingest must not default category to Trabajo.");
 assert(integrationExperienceBuilder.includes("Number.isFinite(Number(rawEnergy))") && integrationExperienceBuilder.includes(": null"), "External experience ingest must not default energy to 5.");
