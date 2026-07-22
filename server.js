@@ -3720,6 +3720,9 @@ async function proxyMobileAssistantToArnes(originalBody = {}, options = {}) {
     actions: data.actions,
     answer,
   });
+  if (options.actionMode && contract.fallback) {
+    throw new HttpError(502, "arnes_assistant_contract_invalid", "Arnes respondio sin JSON de acciones valido para V.");
+  }
   await appendLog("info", "arnes_assistant_proxy_ok", {
     userId: options.user?.id || LOCAL_USER_ID,
     promptLength: options.text.length,

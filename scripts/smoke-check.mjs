@@ -398,8 +398,9 @@ assert(
     && files.server.includes("normalizeMobileAssistantContract")
     && files.server.includes("parseMobileAssistantJson")
     && files.server.includes("payload.response_format = { type: \"json_object\" }")
+    && files.server.includes("arnes_assistant_contract_invalid")
     && files.server.includes("contractFallback"),
-  "Mobile assistant action mode must preserve V's JSON/action contract across Arnes and native-provider fallbacks.",
+  "Mobile assistant action mode must preserve V's JSON/action contract and fall back when Arnes responds with an incompatible contract.",
 );
 assert(files.vibeappMain.includes("/api/mobile/auth/sign-in") && files.vibeappMain.includes("signInViaBackend"), "Vibeapp must sign in through the Vibe backend instead of direct mobile Supabase auth.");
 assert(files.vibeappSimulator.includes("Vibeapp sync simulation passed") && files.vibeappSimulator.includes("meta-glasses-import"), "Vibeapp simulator must validate native and external-session sync samples.");
