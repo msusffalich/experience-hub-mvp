@@ -1,4 +1,4 @@
-const APP_VERSION = "20260722-media-contract-tolerant-686";
+const APP_VERSION = "20260722-deferred-ingest-context-689";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";

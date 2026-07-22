@@ -202,7 +202,13 @@ const check = (condition, message) => {
 
 check(files.server.includes("/api/integration/validate"), "server must expose /api/integration/validate.");
 check(files.server.includes("/api/integration/ingest") && files.server.includes("function ingestIntegrationSignal"), "server must expose a validated integration ingest endpoint.");
-check(files.server.includes("buildPostIngestAutomation") && files.server.includes("biometric_impact_recomputed"), "server ingest must trigger post-ingest automation for context, dashboard, and biometric impact.");
+check(
+  files.server.includes("buildPostIngestAutomation")
+    && files.server.includes("biometric_impact_recomputed")
+    && files.server.includes("completed_with_deferred_context")
+    && files.server.includes("queuePostIngestContextRefresh"),
+  "server ingest must acknowledge native writes quickly and defer slow context/dashboard automation.",
+);
 check(files.server.includes("/api/experiences") && files.server.includes("/api/media") && files.server.includes("/api/integration/ingest"), "server must keep native sync and validated ingest endpoints.");
 check(files.server.includes("storageObjectHint") && files.server.includes("idempotencyKey"), "server must preserve storageObjectHint and idempotency metadata.");
 check(files.vibeappMain.includes("Idempotency-Key") && files.vibeappMain.includes("X-Vibe-Source-Id"), "Vibeapp transport must send retry-safe idempotency headers.");

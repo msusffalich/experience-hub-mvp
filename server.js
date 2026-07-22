@@ -2655,6 +2655,23 @@ async function buildPostIngestAutomation(response = {}, user = { id: LOCAL_USER_
   };
 
   const location = inferPostIngestLocation(stored);
+  const runInline = shouldRunInlinePostIngestAutomation(options);
+  if (!runInline) {
+    const shouldRefreshContext = location && shouldRefreshContextImpact(payloadSet, targetSet, options);
+    const shouldRefreshDaily = location && shouldRefreshDailyBriefing(payloadSet, targetSet, options);
+    if (shouldRefreshContext || shouldRefreshDaily) {
+      automation.status = "completed_with_deferred_context";
+      automation.contextImpact = shouldRefreshContext
+        ? { status: "deferred", location, reason: "background_refresh_scheduled" }
+        : automation.contextImpact;
+      automation.dailyBriefing = shouldRefreshDaily
+        ? { status: "deferred", location, reason: "background_refresh_scheduled" }
+        : automation.dailyBriefing;
+      queuePostIngestContextRefresh({ location, payloadSet, targetSet, user, options });
+    }
+    return automation;
+  }
+
   if (location && shouldRefreshContextImpact(payloadSet, targetSet, options)) {
     try {
       const profile = await getProfile(user);
@@ -2694,6 +2711,77 @@ async function buildPostIngestAutomation(response = {}, user = { id: LOCAL_USER_
   }
 
   return automation;
+}
+
+function shouldRunInlinePostIngestAutomation(options = {}) {
+  return options.awaitAutomation === true
+    || options.awaitPostIngestAutomation === true
+    || options.inlineAutomation === true;
+}
+
+function queuePostIngestContextRefresh({ location, payloadSet, targetSet, user, options = {} }) {
+  const payloadTypes = [...payloadSet];
+  const targetTypes = [...targetSet];
+  Promise.resolve()
+    .then(() => runPostIngestContextRefresh({ location, payloadTypes, targetTypes, user, options }))
+    .catch((error) => appendLog("warn", "integration_ingest_background_refresh_failed", {
+      userId: user.id,
+      location,
+      payloadTypes,
+      targetTypes,
+      error: sanitizeDiagnosticError(error),
+    }));
+}
+
+async function runPostIngestContextRefresh({ location, payloadTypes = [], targetTypes = [], user = { id: LOCAL_USER_ID }, options = {} }) {
+  const payloadSet = new Set(payloadTypes);
+  const targetSet = new Set(targetTypes);
+  const summary = {
+    contextImpact: { status: "not_required" },
+    dailyBriefing: { status: "not_required" },
+  };
+  if (location && shouldRefreshContextImpact(payloadSet, targetSet, options)) {
+    try {
+      const profile = await getProfile(user);
+      summary.contextImpact = {
+        status: "refreshed",
+        location,
+        impact: await getContextImpact(location, profile, inferExperienceTypeFromPayloads(payloadSet)),
+      };
+    } catch (error) {
+      summary.contextImpact = {
+        status: "deferred_failed",
+        location,
+        reason: sanitizeDiagnosticError(error),
+      };
+    }
+  }
+  if (location && shouldRefreshDailyBriefing(payloadSet, targetSet, options)) {
+    try {
+      const briefing = await getDailyBriefing(location, "es", { user, force: Boolean(options.forceDailyBriefing) });
+      summary.dailyBriefing = {
+        status: "refreshed",
+        location,
+        generatedAt: briefing.generatedAt,
+        nextRefreshAt: briefing.nextRefreshAt,
+      };
+    } catch (error) {
+      summary.dailyBriefing = {
+        status: "deferred_failed",
+        location,
+        reason: sanitizeDiagnosticError(error),
+      };
+    }
+  }
+  await appendLog("info", "integration_ingest_background_refresh_completed", {
+    userId: user.id,
+    location,
+    payloadTypes,
+    targetTypes,
+    contextImpact: summary.contextImpact.status,
+    dailyBriefing: summary.dailyBriefing.status,
+  });
+  return summary;
 }
 
 function inferUpdatedPanelsFromIngest(targetSet = new Set(), payloadSet = new Set()) {

@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260722-media-contract-tolerant-686";
+const CACHE_NAME = "experience-hub-pwa-20260722-deferred-ingest-context-689";
 const APP_SHELL = [
   "/icons/vibe-logo.jpg",
   "/icons/vibe-logo.png",
