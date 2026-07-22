@@ -5194,7 +5194,9 @@ function cleanEventNarrativeText(value = "") {
 
 function isLowValueEventNarrative(value = "") {
   const clean = cleanEventNarrativeText(value);
-  if (!clean || clean.length < 24) return true;
+  if (!clean) return true;
+  const words = clean.split(/\s+/).filter(Boolean);
+  if (clean.length < 12 || words.length < 2) return true;
   if (/^(img|image|video|vid|audio|recording|foto|photo)[-_ ]?\d*/i.test(clean)) return true;
   if (/\b(image_picker|camera_capture|native-media|vibeapp-native|vibe-glasses)\b/i.test(clean)) return true;
   if (/\.(jpe?g|png|heic|webp|gif|mp4|mov|webm|m4v|mp3|wav|m4a|aac|pdf|docx?|txt|csv|json|zip)$/i.test(clean)) return true;
@@ -5205,6 +5207,12 @@ function isLowValueEventNarrative(value = "") {
 }
 
 function getEventNarrativeText(event = {}) {
+  const description = cleanEventNarrativeText(event.description);
+  const title = cleanEventNarrativeText(event.title || event.text || event.name);
+  const descriptionLooksHuman =
+    description &&
+    description.toLowerCase() !== title.toLowerCase() &&
+    !isLowValueEventNarrative(description);
   return [
     event.narrativeText,
     event.narrative_text,
@@ -5214,6 +5222,7 @@ function getEventNarrativeText(event = {}) {
     event.voiceTranscript,
     event.transcript,
     event.notes,
+    descriptionLooksHuman ? description : "",
   ]
     .map(cleanEventNarrativeText)
     .find((value) => value && !isLowValueEventNarrative(value)) || "";

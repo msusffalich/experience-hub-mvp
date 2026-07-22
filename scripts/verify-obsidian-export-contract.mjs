@@ -66,6 +66,9 @@ assert(experienceNoteBuilder.includes("...(people.length ?") && !experienceNoteB
 assert(app.includes("function isLowValueObsidianNarrative") && app.includes("function getExperienceNarrativeTextForExport") && app.includes("function getExperienceNarrativeStatus"), "Obsidian export must have one shared rule for real narrative text.");
 assert(app.includes("function getEventNarrativeTextForExport") && app.includes("function getEventNarrativeStatus") && app.includes("function getExperienceNarrativeRollupStatus"), "Obsidian export must support event-level human narrative and experience-level rollup.");
 assert(app.includes("hasNarratedEvent(experience)") && app.includes("return getExperienceNarrativeRollupStatus(experience);"), "Experience narrative status must be derived from experience narrative or narrated events.");
+assert(app.includes("descriptionLooksHuman ? description : \"\""), "Event narrative export must keep compatibility with human event text stored in description.");
+assert(server.includes("descriptionLooksHuman ? description : \"\""), "Server event normalization must keep compatibility with human event text stored in description.");
+assert(app.includes("words.length < 2") && server.includes("words.length < 2"), "Narrative filtering must reject one-word labels without rejecting short multi-word human phrases.");
 const narrativeCandidates = between(
   app,
   "function getExperienceNarrativeCandidates",
@@ -205,6 +208,48 @@ ${AUTO_END}
 `;
 const mergedEmptyLearningNote = testMergeAutoBlock(existingEmptyLearningNote, incomingMachineNote);
 assert(mergedEmptyLearningNote?.includes('learnings: "pending"'), "Behavior check: empty learning sections must remain pending after reexport.");
+
+function testCleanNarrative(value = "") {
+  return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+function testLowValueNarrative(value = "") {
+  const clean = testCleanNarrative(value).toLowerCase();
+  if (!clean) return true;
+  const words = clean.split(/\s+/).filter(Boolean);
+  if (clean.length < 12 || words.length < 2) return true;
+  if (/^(img|image|video|vid|audio|recording|foto|photo)[-_ ]?\d*/i.test(clean)) return true;
+  if (/\b(image_picker|camera_capture|native-media|vibeapp-native|vibe-glasses)\b/i.test(clean)) return true;
+  if (/^(foto|imagen|video|audio)\s+capturad[oa]\s+desde\s+vibeapp/i.test(clean)) return true;
+  if (/sin resumen narrativo suficiente|narrativa pendiente/i.test(clean)) return true;
+  return false;
+}
+
+function testEventNarrative(event = {}) {
+  const description = testCleanNarrative(event.description);
+  const title = testCleanNarrative(event.title || event.text || event.name);
+  const descriptionLooksHuman =
+    description &&
+    description.toLowerCase() !== title.toLowerCase() &&
+    !testLowValueNarrative(description);
+  return [
+    event.narrativeText,
+    event.narrative_text,
+    event.narrative,
+    event.humanNarrative,
+    event.manualNote,
+    event.voiceTranscript,
+    event.transcript,
+    event.notes,
+    descriptionLooksHuman ? description : "",
+  ]
+    .map(testCleanNarrative)
+    .find((value) => value && !testLowValueNarrative(value)) || "";
+}
+
+assert(testEventNarrative({ title: "reunion", description: "me hizo llorar de alegria" }) === "me hizo llorar de alegria", "Behavior check: human event description must count as event narrative.");
+assert(testEventNarrative({ title: "Texto", description: "Texto" }) === "", "Behavior check: repeated one-word event labels must not count as narrative.");
+assert(testEventNarrative({ title: "Prueba", narrativeText: "ahora nueva prueba" }) === "ahora nueva prueba", "Behavior check: short multi-word narrativeText must count as event narrative.");
 
 if (failures.length) {
   console.error("Obsidian export contract verification failed:");

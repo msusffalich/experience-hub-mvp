@@ -1,4 +1,4 @@
-const APP_VERSION = "20260722-admin-export-clarity-691";
+const APP_VERSION = "20260722-event-narrative-rollup-692";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -20864,7 +20864,9 @@ function isCoordinateText(value) {
 
 function isLowValueObsidianNarrative(value) {
   const clean = cleanObsidianMarkdownText(value).toLowerCase();
-  if (!clean || clean.length < 24) return true;
+  if (!clean) return true;
+  const words = clean.split(/\s+/).filter(Boolean);
+  if (clean.length < 12 || words.length < 2) return true;
   if (/^(img|image|video|vid|audio|recording|foto|photo)[-_ ]?\d*/i.test(clean)) return true;
   if (/\b(image_picker|camera_capture|native-media|vibeapp-native|vibe-glasses)\b/i.test(clean)) return true;
   if (/\.(jpe?g|png|heic|webp|gif|mp4|mov|webm|m4v|mp3|wav|m4a|aac|pdf|docx?|txt|csv|json|zip)$/i.test(clean)) return true;
@@ -20924,14 +20926,22 @@ function getExperienceNarrativeTextForExport(experience = {}) {
 }
 
 function getEventNarrativeCandidates(event = {}) {
+  const description = cleanObsidianMarkdownText(event.description);
+  const title = cleanObsidianMarkdownText(event.title || event.text || event.name);
+  const descriptionLooksHuman =
+    description &&
+    description.toLowerCase() !== title.toLowerCase() &&
+    !isLowValueObsidianNarrative(description);
   return [
     event.narrativeText,
+    event.narrative_text,
     event.narrative,
     event.humanNarrative,
     event.manualNote,
     event.voiceTranscript,
     event.transcript,
     event.notes,
+    descriptionLooksHuman ? description : "",
   ]
     .map((value) => cleanObsidianMarkdownText(value))
     .filter((value) => value && !isLowValueObsidianNarrative(value));
