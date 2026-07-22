@@ -141,6 +141,7 @@ When Vibeapp creates an event inside an explicit experience flow, it must keep s
   - When the native `system` requests JSON/actions mode, the backend reinforces the JSON-only instruction and normalizes the response to the stable shape `{ actions: [], answer: "" }`, even if the provider wraps JSON in text or Arnes returns `actions` as a separate field.
   - If Arnes is enabled but responds with prose or an incompatible contract in JSON/actions mode, the backend treats that as `arnes_assistant_contract_invalid` and falls back to the native provider.
   - If the model fails to return valid agent JSON, the backend returns an explicit fallback action `answer` instead of silent prose-only ambiguity.
+  - Free Q&A mode must remain conversational. The backend only enters JSON/actions mode when the native `system` contains the action schema and an explicit JSON-only instruction.
 - `GET /api/mobile/assistant/status`
   - Protected status endpoint for Vibeapp to confirm whether Arnes is enabled, whether Arnes `/health` responds, and which `source` value should appear in assistant responses.
   - Does not expose secrets or full service URLs.

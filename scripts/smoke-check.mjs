@@ -394,6 +394,8 @@ assert(
 );
 assert(
   files.server.includes("isMobileAssistantActionMode")
+    && files.server.includes("hasActionsSchema")
+    && files.server.includes("requestsJsonOnly")
     && files.server.includes("buildMobileAssistantSystem")
     && files.server.includes("normalizeMobileAssistantContract")
     && files.server.includes("parseMobileAssistantJson")

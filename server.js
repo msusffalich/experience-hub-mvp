@@ -3997,7 +3997,10 @@ function normalizeAssistantHistory(history = []) {
 
 function isMobileAssistantActionMode(system = "") {
   const text = String(system || "");
-  return /actions/i.test(text) && /\bJSON\b|devuelva|responde|respond|solo|only/i.test(text);
+  const hasActionsSchema = /["']?actions["']?\s*:|actions\s*\[|acciones\s*\[|action\s*:/i.test(text);
+  const hasAnswerSchema = /["']?answer["']?\s*:|respuesta|answer/i.test(text);
+  const requestsJsonOnly = /\bJSON\b|objeto\s+JSON|json\s+object|solo\s+un\s+json|only\s+json|devuelve\s+exclusivamente/i.test(text);
+  return hasActionsSchema && hasAnswerSchema && requestsJsonOnly;
 }
 
 function buildMobileAssistantSystem(system = "", actionMode = false) {
