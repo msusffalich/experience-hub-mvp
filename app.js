@@ -1,4 +1,4 @@
-const APP_VERSION = "20260722-event-narrative-rollup-692";
+const APP_VERSION = "20260722-evidence-adoption-693";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -4313,6 +4313,8 @@ manualContent.en = [
   {
     title: "Capture, Groups, and Sync",
     body: [
+      "The new flow separates capturing facts from building stories. Vibeapp captures in the moment; VibePWA reviews evidence, adopts what belongs, and turns it into experiences, events, reports, publications, and the map.",
+      "Evidence may be born without a parent experience. Photos, videos, audio, or documents sent from Vibeapp remain in the Evidence Inbox until they are adopted by time, place, group/person, or explicit selection.",
       "Every experience belongs to an account and, when useful, to a private group/person such as Family, Trip, Project, or Team.",
       "Groups/persons are created and managed in VibePWA. Vibeapp reads active groups so new captures are correctly associated.",
       "Sync is complete when text, events, assets, and context appear on another device without manual intervention. If something is pending, the app must explain why and retry.",
@@ -4395,6 +4397,8 @@ manualContent.fr = [
   {
     title: "Capture, groupes et synchronisation",
     body: [
+      "Le nouveau flux separe la capture des faits de la construction des histoires. Vibeapp capture sur le moment; VibePWA revise les preuves, adopte ce qui correspond et le transforme en experiences, evenements, rapports, publications et carte.",
+      "Une preuve peut naitre sans experience parente. Photos, videos, audios ou documents envoyes par Vibeapp restent dans la boite de preuves jusqu'a leur adoption par temps, lieu, groupe/personne ou selection explicite.",
       "Chaque experience appartient a un compte et, si utile, a un groupe/personne prive: Famille, Voyage, Projet ou Equipe.",
       "Les groupes/personnes sont crees et geres dans VibePWA. Vibeapp lit les groupes actifs pour associer correctement les nouvelles captures.",
       "La synchronisation est complete lorsque texte, evenements, actifs et contexte apparaissent sur un autre appareil sans intervention manuelle.",
@@ -4814,6 +4818,8 @@ const state = {
   manualReview: loadManualReview(),
   displayTheme: loadDisplayTheme(),
   pendingAttachments: [],
+  selectedEvidenceAssetIds: new Set(),
+  evidenceAdoptionStatus: null,
   serverAssets: [],
   captureSaveStatus: null,
   captureDraftAutosave: { inProgress: false, timer: null, lastSignature: "", lastSavedAt: 0 },
@@ -8146,10 +8152,15 @@ function setupForm() {
         saveExperiences();
       }
       if (apiResult?.remote) {
+        savePhase = "evidence_adoption";
+        await adoptSelectedEvidenceForExperience(savedExperience || experience);
         scheduleAutomaticAssetProcessing(savedExperience || experience);
       }
       state.lastSavedExperienceId = experience.id;
       state.captureSaveStatus = buildCaptureSaveStatus(savedExperience || experience, { ...apiResult, localSaved }, existingIndex >= 0);
+      if (state.evidenceAdoptionStatus?.detail) {
+        state.captureSaveStatus.detail += ` ${state.evidenceAdoptionStatus.detail}`;
+      }
       agendaRequested = Boolean(document.getElementById("syncAgendaInput")?.checked);
       savePhase = "agenda_optional";
       const agendaSynced = agendaRequested ? syncExperienceToAgenda(experience) : false;
@@ -8205,6 +8216,9 @@ function setupForm() {
   form.addEventListener("change", renderCaptureWritingCoach);
   document.getElementById("timestampInput")?.addEventListener("change", renderBiometricCaptureContext);
   document.getElementById("durationInput")?.addEventListener("change", renderBiometricCaptureContext);
+  document.getElementById("timestampInput")?.addEventListener("change", renderCaptureEvidenceInbox);
+  document.getElementById("durationInput")?.addEventListener("change", renderCaptureEvidenceInbox);
+  document.getElementById("pilotParticipantInput")?.addEventListener("change", renderCaptureEvidenceInbox);
   document.getElementById("energyInput")?.addEventListener("input", renderBiometricCaptureContext);
   document.getElementById("biometricCaptureContext")?.addEventListener("click", handleBiometricCaptureContextClick);
   form.addEventListener("input", () => scheduleCaptureDraftAutosave("input"));
@@ -8215,6 +8229,8 @@ function setupForm() {
     scheduleCaptureDraftAutosave("events");
   });
   document.getElementById("attachmentPreview")?.addEventListener("change", handleAttachmentEventSelection);
+  document.getElementById("captureEvidenceInbox")?.addEventListener("change", handleEvidenceInboxSelection);
+  document.getElementById("captureEvidenceInbox")?.addEventListener("click", handleEvidenceInboxAction);
   document.getElementById("captureSaveStatus")?.addEventListener("click", handleCaptureSaveStatusClick);
 }
 
@@ -8286,6 +8302,7 @@ function getCaptureSavePhaseLabel(phase = "") {
         remote_persistence: "saving to Supabase",
         remote_merge: "reading the Supabase response",
         agenda_optional: "optional Agenda update",
+        evidence_adoption: "adopting selected evidence",
         interface_refresh: "refreshing the interface",
       }
     : {
@@ -8297,6 +8314,7 @@ function getCaptureSavePhaseLabel(phase = "") {
         remote_persistence: "guardado en Supabase",
         remote_merge: "lectura de la respuesta de Supabase",
         agenda_optional: "actualizaci\u00f3n opcional de Agenda",
+        evidence_adoption: "adopci\u00f3n de evidencia seleccionada",
         interface_refresh: "actualizaci\u00f3n visual de la interfaz",
       };
   return labels[phase] || labels.starting;
@@ -11098,6 +11116,8 @@ function clearForm() {
   state.captureDraftAutosave.timer = null;
   document.getElementById("durationInput").value = 30;
   document.getElementById("pilotParticipantInput").value = "";
+  state.selectedEvidenceAssetIds = new Set();
+  state.evidenceAdoptionStatus = null;
   document.getElementById("syncAgendaInput").checked = false;
   document.getElementById("objectiveInput").value = "";
   const eventsInput = document.getElementById("experienceEventsInput");
@@ -12227,6 +12247,104 @@ function getEvidenceInboxAssets() {
     .sort((a, b) => new Date(b.capturedAt || b.timestamp || b.uploadedAt || 0) - new Date(a.capturedAt || a.timestamp || a.uploadedAt || 0));
 }
 
+function getCurrentCaptureWindow() {
+  const startValue = document.getElementById("timestampInput")?.value || "";
+  const duration = Number(document.getElementById("durationInput")?.value || 30);
+  const start = new Date(startValue);
+  if (Number.isNaN(start.getTime())) return null;
+  const minutes = Number.isFinite(duration) && duration > 0 ? duration : 30;
+  const end = new Date(start.getTime() + minutes * 60 * 1000);
+  return { start, end, minutes };
+}
+
+function isEvidenceSuggestedForCapture(asset = {}) {
+  const windowRange = getCurrentCaptureWindow();
+  if (!windowRange) return false;
+  const timestamp = new Date(asset.capturedAt || asset.timestamp || asset.uploadedAt || asset.createdAt || 0);
+  if (Number.isNaN(timestamp.getTime())) return false;
+  const marginMs = 30 * 60 * 1000;
+  const selectedParticipantId = document.getElementById("pilotParticipantInput")?.value || "";
+  const participantId = asset.participantId || asset.pilotParticipantId || asset.metadata?.participantId || "";
+  const participantMatches = !selectedParticipantId || !participantId || participantId === selectedParticipantId;
+  return participantMatches && timestamp.getTime() >= windowRange.start.getTime() - marginMs && timestamp.getTime() <= windowRange.end.getTime() + marginMs;
+}
+
+function getSelectedEvidenceAssets() {
+  const selected = state.selectedEvidenceAssetIds instanceof Set ? state.selectedEvidenceAssetIds : new Set();
+  return getEvidenceInboxAssets().filter((asset) => selected.has(asset.id));
+}
+
+function mergeAdoptedServerAssets(assets = []) {
+  if (!Array.isArray(assets) || !assets.length) return;
+  const byId = new Map((state.serverAssets || []).map((asset) => [asset.id || asset.assetKey, asset]));
+  normalizeServerAssets(assets).forEach((asset) => byId.set(asset.id || asset.assetKey, asset));
+  state.serverAssets = Array.from(byId.values());
+}
+
+async function adoptSelectedEvidenceForExperience(experience = {}) {
+  const selectedAssets = getSelectedEvidenceAssets();
+  if (!selectedAssets.length) return { ok: true, updated: 0 };
+  if (!state.apiOnline || !state.session?.access_token) {
+    state.evidenceAdoptionStatus = {
+      type: "warn",
+      detail: languageText(
+        "La experiencia se guardo, pero la evidencia seleccionada queda pendiente porque no hay conexion segura.",
+        "The experience was saved, but selected evidence is still pending because the secure connection is unavailable.",
+        "L'experience a ete enregistree, mais les preuves selectionnees restent en attente car la connexion securisee est indisponible.",
+        "A experiencia foi salva, mas a evidencia selecionada segue pendente porque a conexao segura nao esta disponivel.",
+      ),
+    };
+    return { ok: false, updated: 0, reason: "offline" };
+  }
+  try {
+    const result = await apiRequest("/assets/adopt", {
+      method: "POST",
+      body: JSON.stringify({
+        assetIds: selectedAssets.map((asset) => asset.id),
+        experienceId: experience.id,
+        experienceTitle: experience.title,
+        participantId: experience.pilotParticipantId || "",
+        method: "manual_window",
+        confidence: 1,
+      }),
+      preserveSessionOnAuthFailure: true,
+    });
+    mergeAdoptedServerAssets(result.assets || []);
+    const adoptedIds = new Set((result.assets || []).map((asset) => asset.id || asset.assetKey).filter(Boolean));
+    selectedAssets.filter((asset) => adoptedIds.has(asset.id)).forEach((asset) => state.selectedEvidenceAssetIds.delete(asset.id));
+    const incomplete = selectedAssets.length > (result.updated || 0);
+    state.evidenceAdoptionStatus = {
+      type: incomplete ? "warn" : "ok",
+      detail: incomplete
+        ? languageText(
+            `${result.updated || 0}/${selectedAssets.length} evidencia(s) adoptada(s). Revisa las restantes en Activos.`,
+            `${result.updated || 0}/${selectedAssets.length} evidence item(s) adopted. Review the rest in Assets.`,
+            `${result.updated || 0}/${selectedAssets.length} preuve(s) adoptee(s). Verifie le reste dans les fichiers.`,
+            `${result.updated || 0}/${selectedAssets.length} evidencia(s) adotada(s). Revise o restante em Ativos.`,
+          )
+        : languageText(
+            `${result.updated || 0} evidencia(s) adoptada(s) en esta experiencia.`,
+            `${result.updated || 0} evidence item(s) adopted into this experience.`,
+            `${result.updated || 0} preuve(s) adoptee(s) dans cette experience.`,
+            `${result.updated || 0} evidencia(s) adotada(s) nesta experiencia.`,
+          ),
+    };
+    return result;
+  } catch (error) {
+    state.evidenceAdoptionStatus = {
+      type: "warn",
+      detail: languageText(
+        `La experiencia se guardo, pero no se pudo adoptar evidencia: ${error.message || error}`,
+        `The experience was saved, but evidence adoption failed: ${error.message || error}`,
+        `L'experience a ete enregistree, mais l'adoption des preuves a echoue: ${error.message || error}`,
+        `A experiencia foi salva, mas a adocao da evidencia falhou: ${error.message || error}`,
+      ),
+    };
+    console.warn("Evidence adoption failed", error);
+    return { ok: false, updated: 0, error: error.message || String(error) };
+  }
+}
+
 function renderCaptureFlowSplit() {
   const status = document.getElementById("captureFlowStatus");
   const eyebrow = document.getElementById("captureFlowEyebrow");
@@ -12277,6 +12395,9 @@ function renderCaptureEvidenceInbox() {
   if (!box) return;
   const inbox = getEvidenceInboxAssets();
   const localPending = state.pendingAttachments || [];
+  const selected = state.selectedEvidenceAssetIds instanceof Set ? state.selectedEvidenceAssetIds : new Set();
+  const suggested = inbox.filter(isEvidenceSuggestedForCapture);
+  const rest = inbox.filter((asset) => !suggested.some((candidate) => candidate.id === asset.id));
   const labels = {
     title: languageText("Bandeja de evidencia", "Evidence inbox", "Boite de preuves", "Bandeja de evidencias"),
     status: languageText(
@@ -12294,11 +12415,20 @@ function renderCaptureEvidenceInbox() {
     openAssets: languageText("Ver en Activos", "Open Assets", "Voir Fichiers", "Ver em Ativos"),
     localDraft: languageText("Seleccionado ahora", "Selected now", "Selectionne maintenant", "Selecionado agora"),
     awaiting: languageText("Esperando historia", "Waiting for story", "En attente d'histoire", "Aguardando historia"),
+    suggested: languageText("Sugerida por horario", "Suggested by time", "Suggeree par horaire", "Sugerida por horario"),
+    selected: languageText(`${selected.size} seleccionada(s)`, `${selected.size} selected`, `${selected.size} selectionnee(s)`, `${selected.size} selecionada(s)`),
+    adoptOnSave: languageText("Se adoptan al guardar la experiencia.", "They are adopted when you save the experience.", "Elles sont adoptees quand tu enregistres l'experience.", "Sao adotadas ao salvar a experiencia."),
+    selectSuggested: languageText("Seleccionar sugeridas", "Select suggested", "Selectionner suggerees", "Selecionar sugeridas"),
+    clearSelection: languageText("Limpiar seleccion", "Clear selection", "Effacer selection", "Limpar selecao"),
   };
   const rows = [
     ...localPending.slice(0, 4).map((asset) => ({ ...asset, localDraft: true })),
-    ...inbox.slice(0, 4),
+    ...suggested.slice(0, 6).map((asset) => ({ ...asset, suggested: true })),
+    ...rest.slice(0, Math.max(0, 8 - suggested.slice(0, 6).length)),
   ];
+  const statusHtml = state.evidenceAdoptionStatus?.detail
+    ? `<p class="capture-evidence-status ${state.evidenceAdoptionStatus.type === "ok" ? "is-ok" : "is-warn"}">${escapeHtml(state.evidenceAdoptionStatus.detail)}</p>`
+    : "";
   box.innerHTML = `
     <div class="capture-evidence-heading">
       <div>
@@ -12307,18 +12437,60 @@ function renderCaptureEvidenceInbox() {
       </div>
       <button class="ghost-button small-button" type="button" data-open-view="assetLibrary">${escapeHtml(labels.openAssets)}</button>
     </div>
+    <div class="capture-evidence-toolbar">
+      <span>${escapeHtml(labels.selected)} · ${escapeHtml(labels.adoptOnSave)}</span>
+      <div>
+        <button class="ghost-button small-button" type="button" data-evidence-select-suggested="true" ${suggested.length ? "" : "disabled"}>${escapeHtml(labels.selectSuggested)}</button>
+        <button class="ghost-button small-button" type="button" data-evidence-clear-selection="true" ${selected.size ? "" : "disabled"}>${escapeHtml(labels.clearSelection)}</button>
+      </div>
+    </div>
+    ${statusHtml}
     ${rows.length
       ? `<div class="capture-evidence-list">
           ${rows.map((asset) => `
-            <article>
-              <span>${escapeHtml(asset.localDraft ? labels.localDraft : labels.awaiting)}</span>
+            <article class="${asset.suggested ? "is-suggested" : ""}">
+              ${asset.localDraft
+                ? `<span>${escapeHtml(labels.localDraft)}</span>`
+                : `<label class="capture-evidence-selector">
+                    <input type="checkbox" data-evidence-asset-select="${escapeHtml(asset.id)}" ${selected.has(asset.id) ? "checked" : ""} />
+                    <span>${escapeHtml(asset.suggested ? labels.suggested : labels.awaiting)}</span>
+                  </label>`}
               <strong>${escapeHtml(asset.name || asset.fileName || asset.kind || "Activo")}</strong>
-              <small>${escapeHtml([asset.kind || inferMediaKind(asset), asset.sourceDevice || asset.sourceType || "", asset.capturedAt ? formatDate(asset.capturedAt) : ""].filter(Boolean).join(" · "))}</small>
+              <small>${escapeHtml([asset.kind || inferMediaKind(asset), asset.sourceDevice || asset.sourceType || "", asset.capturedAt ? formatDate(asset.capturedAt) : "", asset.size ? formatFileSize(asset.size) : ""].filter(Boolean).join(" · "))}</small>
             </article>
           `).join("")}
         </div>`
       : `<p class="card-meta">${escapeHtml(labels.empty)}</p>`}
   `;
+}
+
+function handleEvidenceInboxSelection(event) {
+  const checkbox = event.target.closest("[data-evidence-asset-select]");
+  if (!checkbox) return;
+  const id = checkbox.dataset.evidenceAssetSelect;
+  if (!id) return;
+  if (!(state.selectedEvidenceAssetIds instanceof Set)) state.selectedEvidenceAssetIds = new Set();
+  if (checkbox.checked) state.selectedEvidenceAssetIds.add(id);
+  else state.selectedEvidenceAssetIds.delete(id);
+  state.evidenceAdoptionStatus = null;
+  renderCaptureEvidenceInbox();
+}
+
+function handleEvidenceInboxAction(event) {
+  const suggestedButton = event.target.closest("[data-evidence-select-suggested]");
+  const clearButton = event.target.closest("[data-evidence-clear-selection]");
+  if (suggestedButton) {
+    if (!(state.selectedEvidenceAssetIds instanceof Set)) state.selectedEvidenceAssetIds = new Set();
+    getEvidenceInboxAssets().filter(isEvidenceSuggestedForCapture).forEach((asset) => state.selectedEvidenceAssetIds.add(asset.id));
+    state.evidenceAdoptionStatus = null;
+    renderCaptureEvidenceInbox();
+    return;
+  }
+  if (clearButton) {
+    state.selectedEvidenceAssetIds = new Set();
+    state.evidenceAdoptionStatus = null;
+    renderCaptureEvidenceInbox();
+  }
 }
 
 function applyInitialViewFromUrl() {

@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260722-event-narrative-rollup-692";
+const CACHE_NAME = "experience-hub-pwa-20260722-evidence-adoption-693";
 const APP_SHELL = [
   "/icons/vibe-logo.jpg",
   "/icons/vibe-logo.png",

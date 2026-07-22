@@ -639,6 +639,13 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (url.pathname === "/api/assets/adopt" && req.method === "POST") {
+    const user = await getRequestUser(req);
+    const body = await readJson(req);
+    sendJson(res, 200, await adoptAssetEvidenceForExperience(body, user));
+    return;
+  }
+
   if (url.pathname === "/api/upload-attempts" && req.method === "GET") {
     const user = await getRequestUser(req);
     const limit = Number(url.searchParams.get("limit") || 20);
@@ -5459,6 +5466,83 @@ async function listAssetEvidence(user = { id: LOCAL_USER_ID }) {
     });
     return [];
   }
+}
+
+async function adoptAssetEvidenceForExperience(body = {}, user = { id: LOCAL_USER_ID }) {
+  if (activePersistence() !== "supabase") {
+    return { ok: false, reason: "supabase_not_active", updated: 0, assets: [] };
+  }
+  const assetIds = [...new Set((Array.isArray(body.assetIds) ? body.assetIds : []).map((id) => String(id || "").trim()).filter(Boolean))];
+  const experienceId = String(body.experienceId || "").trim();
+  if (!assetIds.length || !experienceId) {
+    const error = new Error("asset_adoption_payload_required");
+    error.statusCode = 400;
+    throw error;
+  }
+  const workspace = await getWorkspaceContext(user);
+  if (!workspace?.id || workspaceSchemaUnavailableRecently()) {
+    return { ok: false, reason: "workspace_unavailable", updated: 0, assets: [] };
+  }
+  const rows = await supabaseRest("assets", {
+    searchParams: {
+      workspace_id: `eq.${workspace.id}`,
+      asset_id: `in.(${assetIds.map(encodePostgrestListValue).join(",")})`,
+    },
+    accessToken: user.accessToken,
+  });
+  const now = new Date().toISOString();
+  const updatedAssets = [];
+  for (const row of rows) {
+    const metadata = removeEmptyMetadataFields({
+      ...(isPlainObject(row.metadata) ? row.metadata : {}),
+      linkedExperienceId: experienceId,
+      linkedExperienceTitle: body.experienceTitle || "",
+      participantId: body.participantId || row.participant_id || "",
+      linkedEventId: body.eventId || row.event_id || "",
+      linkedEventTitle: body.eventTitle || "",
+      adoptionStatus: "adopted",
+      adoptionMethod: body.method || "manual_window",
+      adoptionConfidence: Number.isFinite(Number(body.confidence)) ? Number(body.confidence) : 1,
+      adoptedAt: now,
+      inboxReason: "",
+    });
+    const patch = removeEmptyMetadataFields({
+      experience_id: experienceId,
+      event_id: body.eventId || row.event_id || null,
+      participant_id: body.participantId || row.participant_id || null,
+      adoption_status: "adopted",
+      adopted_at: now,
+      adoption_method: body.method || "manual_window",
+      adoption_confidence: Number.isFinite(Number(body.confidence)) ? Number(body.confidence) : 1,
+      metadata,
+      updated_at: now,
+    });
+    const updated = await supabaseRest("assets", {
+      method: "PATCH",
+      searchParams: {
+        workspace_id: `eq.${workspace.id}`,
+        asset_id: `eq.${row.asset_id}`,
+      },
+      headers: { Prefer: "return=representation" },
+      body: JSON.stringify(patch),
+      accessToken: user.accessToken,
+    });
+    updatedAssets.push(fromAssetRow(updated[0] || { ...row, ...patch }));
+  }
+  const foundIds = new Set(rows.map((row) => row.asset_id));
+  const missingIds = assetIds.filter((id) => !foundIds.has(id));
+  await appendLog("info", "asset_evidence_adopted", {
+    experienceId,
+    updated: updatedAssets.length,
+    missing: missingIds.length,
+    method: body.method || "manual_window",
+  });
+  return {
+    ok: true,
+    updated: updatedAssets.length,
+    missingIds,
+    assets: updatedAssets,
+  };
 }
 
 function toAssetEvidenceRow(media, workspaceId, user = { id: LOCAL_USER_ID }) {

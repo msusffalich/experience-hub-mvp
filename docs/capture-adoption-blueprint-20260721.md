@@ -24,6 +24,15 @@ Blueprint ownership rule: this file is the implementation blueprint for VibePWA/
 
 Build `20260722-event-narrative-rollup-684` is validated by code, SQL, contract checks, and simulated integration. Build `20260722-capture-structure-split-685` starts the implementation split: Vibeapp captures evidence in the moment, while VibePWA structures that evidence into experiences, events, reports, publications, and the Obsidian map.
 
+Build `20260722-evidence-adoption-693` implements Capa 2 on VibePWA/backend:
+
+- The Capture view has an actionable Evidence Inbox, not only an informational panel.
+- VibePWA suggests parentless server evidence by the current experience time window and group/person.
+- The user can select suggested or pending evidence.
+- Selected evidence is adopted only when the experience is saved, not during autosave.
+- The backend exposes `POST /api/assets/adopt` to update existing `assets` rows instead of creating duplicate attachments.
+- The save confirmation reports whether adoption happened or remains pending.
+
 ## Current fit
 
 | Requirement | Current support | Gap |
@@ -73,6 +82,13 @@ The ingest router should write:
 - `assets`: intentional evidence, with or without parent.
 - `context`: `context_signals`.
 
+Implemented in 693:
+
+- `POST /api/assets/adopt`
+- Payload: `{ assetIds, experienceId, experienceTitle, participantId, method, confidence }`
+- Effect: updates the existing asset row with `experience_id`, `participant_id`, `adoption_status = adopted`, `adopted_at`, `adoption_method`, `adoption_confidence`, and matching metadata.
+- Safety: adoption requires authenticated backend access and an existing workspace. Parentless evidence remains in `inbox` when adoption cannot be confirmed.
+
 ## UI implications
 
 VibePWA needs an evidence inbox:
@@ -82,6 +98,14 @@ VibePWA needs an evidence inbox:
 - "Adopt selected evidence"
 - "Ignore for now"
 - "Prune duplicate/wrong media"
+
+Implemented in 693:
+
+- Evidence Inbox appears in Capture.
+- It shows local form attachments and server evidence waiting for a story.
+- It flags evidence suggested by the current time window with a 30-minute margin.
+- It lets the user select suggested evidence or clear the selection.
+- Selected evidence is linked to the experience on save.
 
 The experience creation flow needs:
 

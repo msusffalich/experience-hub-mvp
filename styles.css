@@ -608,16 +608,25 @@ button,
 .capture-flow-steps article,
 .capture-evidence-list article {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
 }
 
+.capture-evidence-list article.is-suggested {
+  border-color: rgba(13, 124, 102, 0.38);
+  background: rgba(13, 124, 102, 0.07);
+}
+
 .capture-flow-steps strong,
 .capture-evidence-list strong {
   display: block;
   margin-bottom: 4px;
+  overflow-wrap: anywhere;
 }
 
 .capture-flow-steps p,
@@ -647,6 +656,47 @@ button,
   font-size: 0.9rem;
 }
 
+.capture-evidence-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding: 10px;
+  border: 1px solid rgba(13, 124, 102, 0.16);
+  border-radius: 8px;
+  background: rgba(13, 124, 102, 0.06);
+}
+
+.capture-evidence-toolbar > span,
+.capture-evidence-status {
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.35;
+}
+
+.capture-evidence-toolbar > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.capture-evidence-status {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+
+.capture-evidence-status.is-ok {
+  color: var(--accent-dark);
+  background: rgba(13, 124, 102, 0.1);
+}
+
+.capture-evidence-status.is-warn {
+  color: #7a4f00;
+  background: rgba(245, 158, 11, 0.14);
+}
+
 .capture-evidence-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -660,6 +710,17 @@ button,
   font-size: 0.78rem;
   font-weight: 700;
   text-transform: uppercase;
+}
+
+.capture-evidence-selector {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.capture-evidence-selector input {
+  flex: 0 0 auto;
 }
 
 html[data-theme="dark"] .capture-flow-split,
@@ -13414,6 +13475,16 @@ button.asset-processing-summary-card {
   .capture-evidence-heading {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .capture-evidence-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .capture-evidence-toolbar > div {
+    display: grid;
+    grid-template-columns: 1fr;
   }
 
   .daily-news-local .daily-section-grid {
