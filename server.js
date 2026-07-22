@@ -938,6 +938,10 @@ function buildIntegrationContract() {
       "voice",
       "manual",
       "vibeapp-native",
+      "vibeapp-native-image",
+      "vibeapp-native-video",
+      "vibeapp-native-audio",
+      "vibeapp-native-document",
       "external-session",
       "apple-healthkit-native",
       "android-health-connect",
@@ -5233,6 +5237,8 @@ function toAssetEvidenceRow(media, workspaceId, user = { id: LOCAL_USER_ID }) {
       extra: {
         evidenceModel: "intentional_evidence_v1",
         adoptionStatus,
+        targetLayer: normalized.targetLayer || normalized.metadata?.targetLayer || "evidence",
+        payloadType: normalized.payloadType || normalized.metadata?.payloadType || kind,
         linkedExperienceId,
         storage: normalized.storage || "",
         storageBucket: SUPABASE_STORAGE_BUCKET,
@@ -5259,7 +5265,9 @@ function toAssetEvidenceRow(media, workspaceId, user = { id: LOCAL_USER_ID }) {
 }
 
 function inferMediaAdoptionStatus(media = {}) {
-  return media.experienceId || media.metadata?.linkedExperienceId ? "adopted" : "inbox";
+  if (media.experienceId || media.metadata?.linkedExperienceId) return "adopted";
+  const explicit = String(media.adoptionStatus || media.metadata?.adoptionStatus || "").trim().toLowerCase();
+  return explicit || "inbox";
 }
 
 function fromAssetRow(row) {
@@ -5827,6 +5835,7 @@ function classifyUploadError(error) {
 }
 
 function normalizeMedia(media) {
+  const metadata = isPlainObject(media.metadata) ? media.metadata : {};
   return {
     id: media.id || createId(),
     name: media.name || "media",
@@ -5834,7 +5843,7 @@ function normalizeMedia(media) {
     size: Number(media.size || 0),
     dataUrl: media.dataUrl || null,
     createdAt: media.createdAt || new Date().toISOString(),
-    capturedAt: media.capturedAt || media.timestamp || media.createdAt || new Date().toISOString(),
+    capturedAt: media.capturedAt || metadata.capturedAt || media.timestamp || media.createdAt || new Date().toISOString(),
     uploadedAt: media.uploadedAt || null,
     storage: media.storage || "inline",
     path: media.path || null,
@@ -5848,18 +5857,21 @@ function normalizeMedia(media) {
     analysisSuggested: Boolean(media.analysisSuggested),
     remoteSyncFailed: Boolean(media.remoteSyncFailed),
     remoteSyncError: media.remoteSyncError || "",
-    metadata: isPlainObject(media.metadata) ? media.metadata : {},
-    experienceId: media.experienceId || media.experience_id || media.linkedExperienceId || media.metadata?.linkedExperienceId || "",
-    eventId: media.eventId || media.event_id || media.linkedEventId || media.metadata?.linkedEventId || "",
-    participantId: media.participantId || media.pilotParticipantId || media.metadata?.participantId || "",
-    pilotParticipantId: media.pilotParticipantId || media.participantId || media.metadata?.participantId || "",
-    sourceType: media.sourceType || media.source || "",
-    sourceDevice: media.sourceDevice || media.device || "",
-    sourceId: media.sourceId || "",
-    permissions: media.permissions || "",
-    checksum: media.checksum || media.metadata?.checksum || "",
-    fingerprint: media.fingerprint || media.metadata?.fingerprint || "",
-    processingStatus: media.processingStatus || media.extractionStatus || media.metadata?.processingStatus || "",
+    metadata,
+    experienceId: media.experienceId || media.experience_id || media.linkedExperienceId || metadata.linkedExperienceId || metadata.experienceId || "",
+    eventId: media.eventId || media.event_id || media.linkedEventId || metadata.linkedEventId || metadata.eventId || "",
+    participantId: media.participantId || media.pilotParticipantId || metadata.participantId || "",
+    pilotParticipantId: media.pilotParticipantId || media.participantId || metadata.participantId || "",
+    sourceType: media.sourceType || metadata.sourceType || media.source || metadata.source || "",
+    sourceDevice: media.sourceDevice || metadata.sourceDevice || media.device || metadata.device || "",
+    sourceId: media.sourceId || metadata.sourceId || "",
+    targetLayer: media.targetLayer || metadata.targetLayer || "",
+    payloadType: media.payloadType || metadata.payloadType || "",
+    adoptionStatus: media.adoptionStatus || metadata.adoptionStatus || "",
+    permissions: media.permissions || metadata.permissions || "",
+    checksum: media.checksum || metadata.checksum || "",
+    fingerprint: media.fingerprint || metadata.fingerprint || "",
+    processingStatus: media.processingStatus || media.extractionStatus || metadata.processingStatus || "",
   };
 }
 
