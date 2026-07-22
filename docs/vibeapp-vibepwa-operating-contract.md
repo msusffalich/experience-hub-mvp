@@ -81,6 +81,36 @@ Narrative can exist at the experience level or event level:
 - An experience is considered narrated when it has its own human narrative or at least one narrated event.
 - Metrics such as "real narrative" count narrated experiences, not the number of event narratives.
 
+## Canonical Event Contract
+
+Vibe uses two different concepts that must not be mixed:
+
+- Lived event: an optional meaningful submoment inside an experience. This is stored in `experience_events` and always has an `experience_id`.
+- Agenda event: a scheduled calendar item. This is stored through the Agenda/calendar path and remains separate from lived experience events.
+
+The structuring output shown in VibePWA or Obsidian uses the lived event model after curation. It is not a third table and must not create a parallel event truth.
+
+A narrated moment captured without an open experience is still not a loose lived event. It is intentional evidence or an `experience_candidate` until VibePWA adopts it into an experience. It becomes a lived event only when it receives a parent experience.
+
+Canonical lived event fields:
+
+- `id`: stable local or server event id.
+- `title`: short human label.
+- `description`: brief context or label; not used as narrative.
+- `order`: position inside the parent experience.
+- `timestamp` or `occurredAt`: when the submoment happened.
+- `duration`: optional minutes.
+- `sourceType`: source of the event/narrative signal, such as `manual`, `text_note`, `voice_transcript`, `video_transcript`, `vibeapp-native`, or `vibeapp-native-audio`.
+- `sourceDevice` and `sourceId`: optional native traceability.
+- `narrativeText`: canonical human narrative for the submoment.
+- `linkedAssetIds`: optional evidence already associated with the event.
+
+`narrativeText` is the canonical narrative field. The backend accepts legacy aliases such as `narrative_text`, `narrative`, `humanNarrative`, `manualNote`, `voiceTranscript`, `transcript`, and `notes` during transition. `description` is intentionally not treated as narrative, because descriptions often contain labels, filenames, or short operational notes.
+
+Loose media or sensor/context data must not create lived events by itself. Without a parent experience, intentional media goes to the evidence inbox; ambient signals go to context. VibePWA owns later adoption: attach evidence to the whole experience, attach it to an existing event, or create a new event during human-confirmed structuring.
+
+When Vibeapp creates an event inside an explicit experience flow, it must keep stable identity and parentage. Obsidian and the VibePWA map may later render that event as a child node when it has narrative/evidence weight, or inline inside the parent experience when it is only a light label. That rendering decision belongs to the map/curation layer, not to native capture.
+
 ## API Responsibilities
 
 - `POST /api/integration/ingest`

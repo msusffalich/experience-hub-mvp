@@ -60,7 +60,9 @@ Required fields:
 
 ### 5. Event narrative
 
-Events can have their own human narrative.
+Events can have their own human narrative, but a lived event is always a child of an experience or an experience candidate. A loose capture is evidence inbox, not an event. A narrated quick capture without parent is intentional evidence or an experience candidate until VibePWA adopts it.
+
+Do not mix lived events with Agenda/calendar events. Agenda events continue through the calendar/agenda contract; lived events go inside `experience.events[]` and persist in `experience_events`.
 
 Each event may include:
 
@@ -68,13 +70,23 @@ Each event may include:
 {
   "id": "event-local-id",
   "title": "Charla en el cafe",
+  "description": "Submomento durante el paseo",
+  "order": 1,
   "timestamp": "2026-07-22T16:10:00-04:00",
+  "duration": 10,
   "narrativeText": "Hablamos de la idea principal y acordamos probarla manana.",
-  "sourceType": "voice_transcript"
+  "sourceType": "voice_transcript",
+  "sourceDevice": "iPhone",
+  "sourceId": "voice-note-001",
+  "linkedAssetIds": ["asset-001"]
 }
 ```
 
-The backend derives `narrativeStatus` from `narrativeText`. Do not send `ok` for machine vision, OCR, filenames, biometrics, weather, GPS, or placeholders.
+`narrativeText` is canonical. `description` is a short label/context field and is not narrative. The backend derives `narrativeStatus` from `narrativeText` or accepted transition aliases (`voiceTranscript`, `transcript`, `notes`, `manualNote`, `humanNarrative`). Do not send `ok` for machine vision, OCR, filenames, biometrics, weather, GPS, or placeholders.
+
+Vibeapp should create an event only when the user is already in an explicit experience/event flow. If the user captures photo, video, audio, document, location, health, weather, or news as a quick fact, send it as evidence or context and let VibePWA adopt it later.
+
+Every event created inside an experience flow must keep a stable id. Vibeapp should not decide whether the event appears as a graph node or inline detail; VibePWA/Obsidian decide that during curation. Events with narrative or adopted evidence can become child nodes in the map. Light labels can remain inline inside the parent experience.
 
 ### 6. Group/person selection
 
@@ -109,4 +121,3 @@ When Vibeapp changes are ready, return:
 - Three sample payloads: evidence inbox media, context signal, experience with event narrative.
 - Screenshots of the native home and capture screens.
 - Result of queue/retry test.
-
