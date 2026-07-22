@@ -47,7 +47,7 @@ const saveObsidianExport = between(
   "function inferObsidianTargetFromFilename",
 );
 
-assert(app.includes('const APP_VERSION = "20260721-obsidian-human-narrative-681";'), "APP_VERSION must identify the human-narrative Obsidian build.");
+assert(app.includes('const APP_VERSION = "20260721-taxonomy-domain-cleanup-682";'), "APP_VERSION must identify the taxonomy/domain cleanup build.");
 assert(app.includes("RECOMMENDED_OBSIDIAN_VAULT_PATH") && app.includes("obsidian-vault-vibe"), "The app must show the exact expected local Obsidian vault path.");
 assert(app.includes("function hasObsidianMarkerDirectory") && app.includes('hasChildDirectoryHandle(handle, ".obsidian")'), "Local vault selection must validate the real Obsidian .obsidian marker.");
 assert(app.includes("function resolveLocalObsidianVaultHandle") && app.includes("obsidian_vault_marker_missing"), "Local vault selection must reject folders that are not Obsidian vaults.");
@@ -107,6 +107,11 @@ assert(app.includes('experienceMapExportButton")?.addEventListener("click", expo
 assert(index.includes('id="localObsidianVaultStatus"') && index.includes('id="connectLocalObsidianVaultButton"') && index.includes('id="forgetLocalObsidianVaultButton"'), "Experience map must show a clear Obsidian vault connection state and actions.");
 assert(app.includes("experience-map-board") && app.includes("renderExperienceMapBoardExperience") && app.includes("renderExperienceMapBoardFactor"), "Experience map must render as a readable board instead of only a dense SVG node graph.");
 assert(!app.includes("EXPERIENCE_CATEGORIES"), "Experience category validation must use the real categories array, not an undefined constant.");
+const categoryList = between(app, "const categories = [", "];");
+assert(!categoryList.includes('"Hogar"') && !categoryList.includes('"Bienestar"'), "Hogar and Bienestar must not be primary narrative categories.");
+assert(app.includes('Hogar: "Social"') && app.includes('Bienestar: "Salud"'), "Legacy Hogar/Bienestar values must normalize to narrative-compatible fields.");
+assert(!app.includes('Personal: "Hogar"') && app.includes('Personal: "Social"'), "Agenda Personal must not create Hogar as a narrative category.");
+assert(app.includes('if (match?.[0] === "Hogar") return "";'), "Transcript inference must not infer Hogar from house/place words.");
 assert(app.includes("getExperienceNarrativeStatus(item) === \"ok\"") && !app.includes("cleanObsidianMarkdownText(item.notes).length > 30"), "Map narrative metrics must use the same real-narrative rule as exported notes.");
 assert(app.includes("function getMeaningfulAssetAnalysisSnippets") && app.includes("Lectura relevante de activos"), "Map export must suppress generic OCR/review boilerplate and show only meaningful asset readings.");
 assert(app.includes("function getExperienceEnergyForKnowledge") && app.includes("function getExperienceCategoryForKnowledge"), "Map export must separate trusted analytical values from raw/default experience values.");

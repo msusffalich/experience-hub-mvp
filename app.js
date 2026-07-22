@@ -1,4 +1,4 @@
-const APP_VERSION = "20260721-obsidian-human-narrative-681";
+const APP_VERSION = "20260721-taxonomy-domain-cleanup-682";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -17,12 +17,13 @@ const categories = [
   "Aprendizaje",
   "Compras",
   "Creatividad",
-  "Hogar",
   "Espiritualidad",
 ];
 
 const categoryAliases = {
   Movilidad: "Viajes / Paseos",
+  Hogar: "Social",
+  Bienestar: "Salud",
 };
 
 const experienceTypes = [
@@ -34,7 +35,7 @@ const experienceTypes = [
   { id: "social", label: "Socialización / relaciones", categories: ["Social"] },
   { id: "digital", label: "Tecnología / videojuegos / redes", categories: ["Entretenimiento"] },
   { id: "creative", label: "Creatividad / arte", categories: ["Creatividad"] },
-  { id: "home", label: "Hogar / familia / cuidado", categories: ["Hogar"] },
+  { id: "home", label: "Familia / cuidado", categories: ["Social", "Salud"] },
   { id: "spiritual", label: "Espiritualidad / comunidad", categories: ["Espiritualidad"] },
   { id: "shopping", label: "Consumo / compras", categories: ["Compras"] },
 ];
@@ -3138,6 +3139,8 @@ const manualContent = {
       items: [
         "Narrativa humana es el lenguaje del usuario que cuenta que vivio: texto escrito, nota manual, voz transcrita o voz de un video narrado.",
         "El formato del archivo no decide. Decide el origen del significado: si lo relato una persona, puede ser narrativa; si lo derivo la maquina, es contexto o evidencia.",
+        "La taxonomia de captura separa tres cosas: categorias de experiencia, dimensiones/estados y lugares. Solo las categorias de experiencia piden relato narrativo.",
+        "Trabajo, Paseo, Aprendizaje, Social, Entretenimiento, Creatividad, Espiritualidad y Salud como evento pueden narrar. Bienestar es una dimension, Hogar es un lugar, la biometria de Salud es contexto y Compras solo narra cuando hay una vivencia real.",
         "Fotos descritas por IA, OCR, vision automatica, biometria, ubicacion, clima, noticias, metadatos y nombres de archivo no cuentan como narrativa. Enriquecen la experiencia como activos o contexto.",
         "Un paper, informe o documento producido por el usuario es un artefacto. Si el usuario cuenta como fue hacerlo, esa reflexion si es narrativa y el documento queda adjunto.",
         "En el mapa y en Obsidian, narrative: ok solo aparece cuando existe lenguaje humano con contenido real. Las experiencias sin relato quedan como narrativa pendiente hasta que el usuario escriba o grabe que paso.",
@@ -3231,7 +3234,7 @@ const manualContent = {
       items: [
         "Cada experiencia se analiza desde cinco capas: captura base, clasificación, contexto externo, perfil del usuario y síntesis accionable.",
         "Captura base: título, categoría, objetivo/intención, fecha, duración, estado emocional, energía, ubicación, personas, notas y adjuntos multimedia.",
-        "Clasificación: la categoría visible se consolida en un tipo de experiencia dominante, por ejemplo Trabajo, Salud, Aprendizaje, Viajes / Paseos, Social, Digital, Creatividad, Hogar, Espiritualidad o Compras.",
+        "Clasificación: la categoría visible se consolida en un tipo de experiencia dominante, por ejemplo Trabajo, Salud como evento, Aprendizaje, Viajes / Paseos, Social, Entretenimiento, Creatividad, Espiritualidad o Compras con vivencia real. Hogar se guarda como lugar y Bienestar como dimensión/estado.",
         "Contexto externo: el módulo ambiental consulta Open-Meteo para temperatura, humedad, viento, lluvia y pronóstico; el módulo geopolítico consulta GDELT para noticias y señales del lugar.",
         "Perfil del usuario: género, año de nacimiento y tipo de experiencia dominante ajustan la lectura con una matriz de pesos biométricos, geopolíticos y climáticos.",
         "Puntaje final: el sistema calcula un impacto base por clima/noticias y luego aplica un ajuste de perfil. El resultado no es diagnóstico médico; es una priorización operativa para decidir atención, planificación y recuperación.",
@@ -3781,6 +3784,8 @@ const manualContent = {
       items: [
         "Human narrative is the user's own language explaining what they lived: written text, manual note, transcribed voice, or the spoken track of a narrated video.",
         "The file format does not decide. The source of meaning decides: if a person told it, it can be narrative; if the machine derived it, it is context or evidence.",
+        "The capture taxonomy separates three things: experience categories, dimensions/states, and places. Only experience categories ask for a narrative account.",
+        "Work, Walk/Trip, Learning, Social, Entertainment, Creativity, Spirituality, and Health as an event can narrate. Wellbeing is a dimension, Home is a place, Health biometrics are context, and Shopping narrates only when there is a real lived moment.",
         "AI photo descriptions, OCR, automatic vision, biometrics, location, weather, news, metadata, and file names do not count as narrative. They enrich the experience as assets or context.",
         "A paper, report, or document created by the user is an artifact. If the user explains what it was like to create it, that reflection is narrative and the document stays attached.",
         "In the map and in Obsidian, narrative: ok appears only when real human language exists. Experiences without a human account remain pending until the user writes or records what happened.",
@@ -3872,7 +3877,7 @@ const manualContent = {
       items: [
         "Each experience is analyzed through five layers: base capture, classification, external context, user profile, and actionable synthesis.",
         "Base capture: title, category, objective/intention, date, duration, mood, energy, location, people, notes, and media attachments.",
-        "Classification: the visible category is consolidated into a dominant experience type, such as Work, Health, Learning, Mobility, Social, Digital, Creativity, Home, Spirituality, or Shopping.",
+        "Classification: the visible category is consolidated into a dominant experience type, such as Work, Health as an event, Learning, Mobility, Social, Entertainment, Creativity, Spirituality, or Shopping with a real lived moment. Home is stored as place and Wellbeing as a dimension/state.",
         "External context: the environmental module queries Open-Meteo for temperature, humidity, wind, rain, and forecast; the geopolitical module queries GDELT for place-related news signals.",
         "User profile: gender, birth year, and dominant experience type adjust the reading through biometric, geopolitical, and climate weights.",
         "Final score: the system computes a base impact from weather/news and then applies the profile adjustment. This is not a medical diagnosis; it is an operational prioritization signal for attention, planning, and recovery.",
@@ -4195,6 +4200,7 @@ manualContent.es = [
     body: [
       "Narrativa es lenguaje humano que cuenta que viviste: texto escrito, nota manual, voz transcrita o voz de un video narrado.",
       "Vision IA, OCR, biometria, ubicacion, clima, noticias, metadatos y nombres de archivo son contexto o evidencia. No marcan narrative: ok.",
+      "Las categorias narrativas son actividades o eventos vividos. Hogar se trata como lugar; Bienestar como dimension/estado; Salud solo narra cuando es evento vivido, no cuando es biometria.",
       "Un informe, paper o documento es artefacto; la reflexion humana sobre haberlo creado si puede ser narrativa.",
       "El mapa y Obsidian cuentan narrativa real solo sobre notas exportables con relato humano. Si falta relato, la experiencia queda pendiente hasta que escribas o grabes que paso.",
     ],
@@ -4271,6 +4277,7 @@ manualContent.en = [
     body: [
       "Narrative is human language explaining what you lived: written text, manual note, transcribed voice, or the spoken track of a narrated video.",
       "AI vision, OCR, biometrics, location, weather, news, metadata, and file names are context or evidence. They do not mark narrative: ok.",
+      "Narrative categories are lived activities or events. Home is treated as place; Wellbeing as a dimension/state; Health narrates only when it is a lived event, not when it is biometrics.",
       "A report, paper, or document is an artifact; the human reflection about creating it can be narrative.",
       "The map and Obsidian count real narrative only on exportable notes with a human account. If the account is missing, the experience remains pending until you write or record what happened.",
     ],
@@ -4347,6 +4354,7 @@ manualContent.fr = [
     body: [
       "La narration est le langage humain qui raconte ce que tu as vecu: texte ecrit, note manuelle, voix transcrite ou voix d'une video narree.",
       "Vision IA, OCR, biometrie, localisation, meteo, actualites, metadonnees et noms de fichiers sont du contexte ou de la preuve. Ils ne marquent pas narrative: ok.",
+      "Les categories narratives sont des activites ou evenements vecus. Maison est un lieu; Bien-etre est une dimension/etat; Sante ne narre que lorsqu'il s'agit d'un evenement vecu, pas de biometrie.",
       "Un rapport, paper ou document est un artefact; la reflexion humaine sur sa creation peut etre narrative.",
       "La carte et Obsidian comptent la narration reelle seulement dans les notes exportables qui ont un recit humain. Sans recit, l'experience reste en attente.",
     ],
@@ -4441,6 +4449,7 @@ manualContent.pt = [
     body: [
       "Narrativa e linguagem humana contando o que voce viveu: texto escrito, nota manual, voz transcrita ou voz de um video narrado.",
       "Visao IA, OCR, biometria, localizacao, clima, noticias, metadados e nomes de arquivo sao contexto ou evidencia. Nao marcam narrative: ok.",
+      "As categorias narrativas sao atividades ou eventos vividos. Casa e tratada como lugar; bem-estar como dimensao/estado; saude so narra quando e evento vivido, nao quando e biometria.",
       "Um relatorio, paper ou documento e artefato; a reflexao humana sobre cria-lo pode ser narrativa.",
       "O mapa e o Obsidian contam narrativa real apenas nas notas exportaveis com relato humano. Sem relato, a experiencia fica pendente ate voce escrever ou gravar o que aconteceu.",
     ],
@@ -4705,7 +4714,7 @@ const demoExperiences = [
   {
     id: createId(),
     title: "Organización del espacio de trabajo",
-    category: "Hogar",
+    category: "Trabajo",
     timestamp: daysAgo(9, 10, 25),
     duration: 45,
     objective: "orden y foco",
@@ -11917,6 +11926,7 @@ function inferCategoryFromTranscript(text) {
     ["Hogar", ["casa", "hogar", "cocina", "limpieza", "jardin", "jardín"]],
   ];
   const match = rules.find(([, terms]) => terms.some((term) => lower.includes(term)));
+  if (match?.[0] === "Hogar") return "";
   return match?.[0] || "";
 }
 
@@ -19384,9 +19394,9 @@ function mapAgendaTypeToCategory(type) {
     Laboral: "Trabajo",
     Viajes: "Viajes / Paseos",
     Bienestar: "Salud",
-    Personal: "Hogar",
+    Personal: "Social",
   };
-  return map[type] || "Hogar";
+  return map[type] || "Social";
 }
 
 function displayAgendaType(type) {
@@ -21822,7 +21832,7 @@ function buildPredictiveOutlook(experiences, analysis, quality) {
   const energyDelta = recentEnergy - previousEnergy;
   const recentSaturationPct = pct(recent.filter((item) => item.mood === "Saturado" || Number(item.energy || 0) <= 4).length, recent.length);
   const workPct = pct(recent.filter((item) => normalizeCategoryName(item.category) === "Trabajo").length, recent.length);
-  const recoveryPct = pct(recent.filter((item) => ["Salud", "Espiritualidad", "Viajes / Paseos", "Hogar"].includes(normalizeCategoryName(item.category))).length, recent.length);
+  const recoveryPct = pct(recent.filter((item) => ["Salud", "Espiritualidad", "Viajes / Paseos"].includes(normalizeCategoryName(item.category))).length, recent.length);
   const contextImpact = Number(state.contextImpact?.impactScore || 0);
   const biometricSummary = summarizeBiometricSignalsForExperiences(experiences);
   const riskScore = clampScore((recentSaturationPct * 0.42) + (Math.max(0, workPct - recoveryPct) * 0.24) + (Math.max(0, -energyDelta) * 11) + (contextImpact * 0.14) + (biometricSummary.biometricRiskScore * 0.1));
@@ -22402,7 +22412,7 @@ function buildHumanKpis(experiences, analysis, quality) {
   const lowEnergyPct = pct(experiences.filter((item) => Number(item.energy || 0) <= 4).length, experiences.length);
   const saturatedPct = pct(experiences.filter((item) => item.mood === "Saturado").length, experiences.length);
   const socialPct = pct(experiences.filter((item) => item.category === "Social" || hasMeaningfulPeople(item.people)).length, experiences.length);
-  const recoveryPct = pct(experiences.filter((item) => ["Salud", "Espiritualidad", "Viajes / Paseos", "Hogar"].includes(normalizeCategoryName(item.category))).length, experiences.length);
+  const recoveryPct = pct(experiences.filter((item) => ["Salud", "Espiritualidad", "Viajes / Paseos"].includes(normalizeCategoryName(item.category))).length, experiences.length);
   const workPct = pct(experiences.filter((item) => normalizeCategoryName(item.category) === "Trabajo").length, experiences.length);
   const learningPct = pct(experiences.filter((item) => normalizeCategoryName(item.category) === "Aprendizaje" || String(item.notes || "").toLowerCase().includes("aprendi")).length, experiences.length);
   const balanceScore = clampScore(100 - Math.abs(workPct - recoveryPct));
@@ -22894,7 +22904,7 @@ function renderReportBiometricImpactLegacy(experiences = []) {
 function buildHumanCorrelations(experiences, analysis) {
   if (experiences.length < 3) return [];
   const workItems = experiences.filter((item) => normalizeCategoryName(item.category) === "Trabajo");
-  const recoveryItems = experiences.filter((item) => ["Salud", "Espiritualidad", "Viajes / Paseos", "Hogar"].includes(normalizeCategoryName(item.category)));
+  const recoveryItems = experiences.filter((item) => ["Salud", "Espiritualidad", "Viajes / Paseos"].includes(normalizeCategoryName(item.category)));
   const socialItems = experiences.filter((item) => normalizeCategoryName(item.category) === "Social" || hasMeaningfulPeople(item.people));
   const learningItems = experiences.filter((item) => normalizeCategoryName(item.category) === "Aprendizaje" || String(item.notes || "").toLowerCase().includes("aprendi"));
   const weatherItems = experiences.filter((item) => ["calor", "lluvia", "clima", "frio", "viento", "humedad"].some((token) => `${item.location || ""} ${item.notes || ""}`.toLowerCase().includes(token)));
@@ -24959,7 +24969,7 @@ function buildPublicationEditorialContract({ type, channel, experiences = [], me
   if (hasDashboard) {
     return "Construye una lectura visual desde la evidencia: tarjetas KPI, tendencias, proporciones, multimedia seleccionada, documentos interpretados y acciones recomendadas. El texto debe explicar el cuadro, no repetir el dato bruto.";
   }
-  return `Usa los ${included.length} activo(s) seleccionados como evidencia para una pieza ${displayPublicationType(type).toLowerCase()} en ${channel}. Conserva los hechos, edita la historia y separa material fuente de interpretacion.`;
+  return `Usa los ${included.length} activos seleccionados como evidencia para una pieza ${displayPublicationType(type).toLowerCase()} en ${channel}. Conserva los hechos, edita la historia y separa material fuente de interpretacion.`;
 }
 
 function buildPublicationInterpretationSummary(media = []) {
@@ -25275,7 +25285,7 @@ function renderPublicationScopeRecommendation() {
   }
   const mediaLabel = state.language !== "es"
      ? `${recommendation.media.length} media item(s): ${recommendation.stats.imageCount} images, ${recommendation.stats.videoCount} videos, ${recommendation.stats.audioCount} audio, ${recommendation.stats.documentCount} documents`
-    : `${recommendation.media.length} activo(s): ${recommendation.stats.imageCount} imágenes, ${recommendation.stats.videoCount} videos, ${recommendation.stats.audioCount} audios, ${recommendation.stats.documentCount} documentos`;
+    : `${recommendation.media.length} activos: ${recommendation.stats.imageCount} imágenes, ${recommendation.stats.videoCount} videos, ${recommendation.stats.audioCount} audios, ${recommendation.stats.documentCount} documentos`;
   return `
     <section class="publication-recommendation-panel">
       <div>
@@ -25487,8 +25497,8 @@ function buildPublicationChannelStudio(draft) {
       : "Salida documental: usa el PDF ReportLab como versión maestra y deja HTML/Markdown como formatos de apoyo.";
   const mediaDecision = selectedMedia.length
     ? state.language !== "es"
-       ? `${selectedMedia.length} of ${allMedia.length} media asset(s) selected: ${imageCount} images, ${videoCount} videos, ${audioCount} audio, ${documentCount} support files.`
-      : `${selectedMedia.length} de ${allMedia.length} activo(s) seleccionados: ${imageCount} imágenes, ${videoCount} videos, ${audioCount} audios, ${documentCount} archivos de apoyo.`
+       ? `${selectedMedia.length} of ${allMedia.length} media assets selected: ${imageCount} images, ${videoCount} videos, ${audioCount} audio, ${documentCount} support files.`
+      : `${selectedMedia.length} de ${allMedia.length} activos seleccionados: ${imageCount} imágenes, ${videoCount} videos, ${audioCount} audios, ${documentCount} archivos de apoyo.`
     : state.language !== "es"
        ? "No media selected. This can work for a text publication, but a memory, album, carousel, or dossier should usually include selected assets."
       : "No hay multimedia seleccionada. Puede servir para una publicación de texto, pero una memoria, álbum, carrusel o dossier normalmente debería incluir activos seleccionados.";
@@ -25880,8 +25890,8 @@ function buildPublicationDistributionKit(draft) {
   const caption = buildPublicationChannelCopy(draft, profile, "caption", summary, action);
   const mediaInstruction = includedMedia.length
     ? state.language !== "es"
-       ? `${includedMedia.length} selected asset(s): ${visualCount} visual and ${supportCount} support file(s). Use only the assets that reinforce the story.`
-      : `${includedMedia.length} activo(s) seleccionados: ${visualCount} visuales y ${supportCount} de apoyo. Usa solo los activos que refuerzan la historia.`
+       ? `${includedMedia.length} selected assets: ${visualCount} visual and ${supportCount} support file(s). Use only the assets that reinforce the story.`
+      : `${includedMedia.length} activos seleccionados: ${visualCount} visuales y ${supportCount} de apoyo. Usa solo los activos que refuerzan la historia.`
     : state.language !== "es"
        ? "No media selected. Publish as text or return to Multimedia selection."
       : "No hay multimedia seleccionada. Publica como texto o vuelve a la seleccion multimedia.";
@@ -25919,43 +25929,43 @@ function buildPublicationChannelDeliverables(draft, profile, media = []) {
     WhatsApp: [
       [labels.master, state.language !== "es" ? "Edited PDF as backup" : "PDF editado como respaldo", state.language !== "es" ? "Use it when the story is too long for chat." : "Úsalo cuando la historia sea demasiado larga para el chat."],
       [labels.copy, state.language !== "es" ? "Short message + optional long text" : "Mensaje breve + texto ampliado opcional", state.language !== "es" ? "The app opens WhatsApp when the browser allows it." : "La app abre WhatsApp cuando el navegador lo permite."],
-      [labels.media, `${mediaCount} ${state.language !== "es" ? "selected asset(s)" : "activo(s) seleccionado(s)"}`, state.language !== "es" ? "Send only one or two strong assets in chat." : "Envía solo uno o dos activos fuertes en el chat."],
+      [labels.media, `${mediaCount} ${state.language !== "es" ? "selected assets" : "activos seleccionados"}`, state.language !== "es" ? "Send only one or two strong assets in chat." : "Envía solo uno o dos activos fuertes en el chat."],
       [labels.limit, state.language !== "es" ? "User sends manually" : "El usuario envía manualmente", state.language !== "es" ? "No automatic posting without a native connector." : "No hay publicación automática sin conector nativo."],
     ],
     Instagram: [
       [labels.master, state.language !== "es" ? "Visual carousel or reel script" : "Carrusel visual o guion de reel", state.language !== "es" ? "Use the PDF as a planning reference, not the social post itself." : "Usa el PDF como referencia de planificación, no como post en sí."],
       [labels.copy, state.language !== "es" ? "Caption, hook, and slide text" : "Leyenda, gancho y texto de láminas", state.language !== "es" ? "Copy/paste into Instagram after visual review." : "Copia/pega en Instagram después de revisar visualmente."],
-      [labels.media, `${visualCount} ${state.language !== "es" ? "visual asset(s)" : "activo(s) visual(es)"}`, state.language !== "es" ? "Images and short clips are primary; documents become notes." : "Imágenes y clips cortos son principales; documentos quedan como notas."],
+      [labels.media, `${visualCount} ${state.language !== "es" ? "visual assets" : "activos visuales"}`, state.language !== "es" ? "Images and short clips are primary; documents become notes." : "Imágenes y clips cortos son principales; documentos quedan como notas."],
       [labels.limit, state.language !== "es" ? "Manual publish" : "Publicación manual", state.language !== "es" ? "Instagram API publishing remains future connector work." : "Publicar por API de Instagram queda para conectores futuros."],
     ],
     Facebook: [
       [labels.master, state.language !== "es" ? "Memory album or narrative post" : "Álbum de memoria o post narrativo", state.language !== "es" ? "Good for a warm story with selected context." : "Sirve para una historia cálida con contexto seleccionado."],
       [labels.copy, state.language !== "es" ? "Post text and caption" : "Texto del post y leyenda", state.language !== "es" ? "Prepared for manual paste." : "Preparado para pegado manual."],
-      [labels.media, `${visualCount} ${state.language !== "es" ? "visual asset(s)" : "activo(s) visual(es)"}`, state.language !== "es" ? "Use selected images/video; keep sensitive people private." : "Usa imágenes/video seleccionados; cuida privacidad de personas."],
+      [labels.media, `${visualCount} ${state.language !== "es" ? "visual assets" : "activos visuales"}`, state.language !== "es" ? "Use selected images/video; keep sensitive people private." : "Usa imágenes/video seleccionados; cuida privacidad de personas."],
       [labels.limit, state.language !== "es" ? "Manual publish" : "Publicación manual", state.language !== "es" ? "Direct posting needs approved API setup." : "Publicación directa requiere API aprobada."],
     ],
     LinkedIn: [
       [labels.master, state.language !== "es" ? "Professional insight or carousel" : "Hallazgo profesional o carrusel", state.language !== "es" ? "The piece should teach, explain, or support a decision." : "La pieza debe enseñar, explicar o apoyar una decisión."],
       [labels.copy, state.language !== "es" ? "Point of view + evidence + lesson" : "Punto de vista + evidencia + lección", state.language !== "es" ? "Tone should be less diary, more useful conclusion." : "El tono debe ser menos bitácora y más conclusión útil."],
-      [labels.media, `${visualCount} ${state.language !== "es" ? "visual/evidence asset(s)" : "activo(s) visuales/de evidencia"}`, state.language !== "es" ? "Use charts, images, documents, or proof only when relevant." : "Usa gráficos, imágenes, documentos o evidencia solo si aportan."],
+      [labels.media, `${visualCount} ${state.language !== "es" ? "visual/evidence assets" : "activos visuales/de evidencia"}`, state.language !== "es" ? "Use charts, images, documents, or proof only when relevant." : "Usa gráficos, imágenes, documentos o evidencia solo si aportan."],
       [labels.limit, state.language !== "es" ? "Manual publish" : "Publicación manual", state.language !== "es" ? "The app prepares the content; you review professional tone." : "La app prepara contenido; tú revisas el tono profesional."],
     ],
     Email: [
       [labels.master, state.language !== "es" ? "Letter, brief, or health summary" : "Carta, resumen o ficha de salud", state.language !== "es" ? "PDF remains the formal reference if the message is long." : "El PDF queda como referencia formal si el mensaje es largo."],
       [labels.copy, state.language !== "es" ? "Subject + body" : "Asunto + cuerpo", state.language !== "es" ? "The app opens a draft when mailto is supported." : "La app abre un borrador cuando mailto está soportado."],
-      [labels.media, `${supportCount} ${state.language !== "es" ? "annex/support asset(s)" : "activo(s) de anexo/apoyo"}`, state.language !== "es" ? "Attachments are reviewed separately; sensitive files need care." : "Adjuntos se revisan aparte; archivos sensibles requieren cuidado."],
+      [labels.media, `${supportCount} ${state.language !== "es" ? "annex/support assets" : "activos de anexo/apoyo"}`, state.language !== "es" ? "Attachments are reviewed separately; sensitive files need care." : "Adjuntos se revisan aparte; archivos sensibles requieren cuidado."],
       [labels.limit, state.language !== "es" ? "Attachments are not auto-sent" : "Adjuntos no se envían solos", state.language !== "es" ? "The browser cannot attach files automatically." : "El navegador no puede adjuntar archivos automáticamente."],
     ],
     "Blog/Web": [
       [labels.master, state.language !== "es" ? "HTML/PDF article package" : "Paquete artículo HTML/PDF", state.language !== "es" ? "Use HTML for web layout and PDF for fixed reading." : "Usa HTML para maqueta web y PDF para lectura fija."],
       [labels.copy, state.language !== "es" ? "Sections and captions" : "Secciones y leyendas", state.language !== "es" ? "Ready to adapt into a CMS or external page." : "Listo para adaptar en CMS o página externa."],
-      [labels.media, `${mediaCount} ${state.language !== "es" ? "selected asset(s)" : "activo(s) seleccionado(s)"}`, state.language !== "es" ? "Images render; audio/video/docs remain controls or references." : "Imágenes se muestran; audio/video/documentos quedan como controles o referencias."],
+      [labels.media, `${mediaCount} ${state.language !== "es" ? "selected assets" : "activos seleccionados"}`, state.language !== "es" ? "Images render; audio/video/docs remain controls or references." : "Imágenes se muestran; audio/video/documentos quedan como controles o referencias."],
       [labels.limit, state.language !== "es" ? "No CMS connector yet" : "Sin conector CMS todavía", state.language !== "es" ? "Publishing to a site is manual until connectors exist." : "Publicar en un sitio es manual hasta tener conectores."],
     ],
     "PDF/HTML": [
       [labels.master, state.language !== "es" ? "Edited ReportLab PDF" : "PDF editado ReportLab", state.language !== "es" ? "This is the final artifact for reading, printing, or sending." : "Este es el artefacto final para leer, imprimir o enviar."],
       [labels.copy, state.language !== "es" ? "Summary + long text" : "Resumen + texto ampliado", state.language !== "es" ? "Can be copied to another channel after review." : "Puede copiarse a otro canal después de revisar."],
-      [labels.media, `${mediaCount} ${state.language !== "es" ? "curated asset(s)" : "activo(s) curado(s)"}`, state.language !== "es" ? "Images can be embedded; other media are summarized as evidence." : "Imágenes se incrustan; otros medios se resumen como evidencia."],
+      [labels.media, `${mediaCount} ${state.language !== "es" ? "curated assets" : "activos curados"}`, state.language !== "es" ? "Images can be embedded; other media are summarized as evidence." : "Imágenes se incrustan; otros medios se resumen como evidencia."],
       [labels.limit, state.language !== "es" ? "Review before sharing" : "Revisar antes de compartir", state.language !== "es" ? "PDF is final only after human approval." : "El PDF es final solo después de aprobación humana."],
     ],
   };
@@ -26048,7 +26058,7 @@ function buildPublicationChannelCopy(draft, profile, mode, summary, action) {
   }
   if (mode === "caption") {
     const mediaLine = mediaCount
-      ? state.language !== "es" ? `${mediaCount} selected media asset(s).` : `${mediaCount} activo(s) multimedia seleccionados.`
+      ? state.language !== "es" ? `${mediaCount} selected media assets.` : `${mediaCount} activos multimedia seleccionados.`
       : state.language !== "es" ? "Text-only version." : "Version solo texto.";
     return state.language !== "es"
        ? `${shortPublicationText(title, 84)} - ${profile.format}. ${mediaLine}`
@@ -26961,7 +26971,7 @@ function applyPublicationTemplateStructure(draft, template = {}) {
 ${sections.map((section, index) => `${index + 1}. ${section}
 ${index === 0 ? firstBlock : (state.language !== "es" ? "Edit this block before exporting." : "Edita este bloque antes de exportar.")}`).join("\n\n")}
 
-${state.language !== "es" ? "Selected media" : "Multimedia seleccionada"}: ${mediaCount} activo(s).`;
+${state.language !== "es" ? "Selected media" : "Multimedia seleccionada"}: ${mediaCount} activos.`;
 }
 
 function handlePublicationApprovalClick(event) {
@@ -28747,7 +28757,7 @@ function renderQuestionSuggestions() {
 function getInsightThematicDefinitionsLegacy() {
   return state.language !== "es"
      ? [
-        { id: "health", title: "Health and wellbeing", categories: ["Salud", "Hogar", "Espiritualidad"], question: "How are energy, recovery, habits, and emotional stability behaving?", action: "Choose one small rest, movement, or recovery adjustment this week and notice whether your energy responds." },
+        { id: "health", title: "Health and wellbeing", categories: ["Salud", "Espiritualidad"], question: "How are energy, recovery, habits, and emotional stability behaving?", action: "Choose one small rest, movement, or recovery adjustment this week and notice whether your energy responds." },
         { id: "work", title: "Work and productivity", categories: ["Trabajo"], question: "Where is real productivity rising or creating load?", action: "Review one recent work block and decide what to keep, delegate, pause, or simplify." },
         { id: "learning", title: "Learning and growth", categories: ["Aprendizaje"], question: "What lessons repeat and which should become routines?", action: "Turn one repeated lesson into a brief practice that is easy to repeat." },
         { id: "travel", title: "Travel and outings", categories: ["Viajes / Paseos"], question: "Which places, routes, and visits create energy or friction?", action: "Compare which place, company, or context left the best memory, then use it to plan the next outing." },
@@ -28757,7 +28767,7 @@ function getInsightThematicDefinitionsLegacy() {
         { id: "creative", title: "Creativity and purpose", categories: ["Creatividad"], question: "Where do creation, meaning, and personal expression appear?", action: "Reserve a small space to continue what felt meaningful, even if it is only a short note." },
       ]
     : [
-        { id: "health", title: "Salud y bienestar", categories: ["Salud", "Hogar", "Espiritualidad"], question: "¿Cómo se comportan energía, recuperación, hábitos y estabilidad emocional?", action: "Revisa descanso, movimiento, recuperación y contexto biométrico." },
+        { id: "health", title: "Salud y bienestar", categories: ["Salud", "Espiritualidad"], question: "¿Cómo se comportan energía, recuperación, hábitos y estabilidad emocional?", action: "Revisa descanso, movimiento, recuperación y contexto biométrico." },
         { id: "work", title: "Trabajo y productividad", categories: ["Trabajo"], question: "¿Dónde sube la productividad real o aparece carga?", action: "Compara foco, sobrecarga, acuerdos y recuperación posterior al trabajo." },
         { id: "learning", title: "Aprendizaje y crecimiento", categories: ["Aprendizaje"], question: "¿Qué aprendizajes se repiten y cuáles deben volverse rutina?", action: "Convierte el aprendizaje repetido en un próximo experimento." },
         { id: "travel", title: "Viajes / Paseos", categories: ["Viajes / Paseos"], question: "¿Qué lugares, rutas y visitas generan energía o fricción?", action: "Compara lugar, clima, compañía y disfrute." },
@@ -28771,7 +28781,7 @@ function getInsightThematicDefinitionsLegacy() {
 function getInsightThematicDefinitions() {
   return state.language !== "es"
      ? [
-        { id: "health", title: "Health and wellbeing", categories: ["Salud", "Hogar", "Espiritualidad"], question: "How are energy, recovery, habits, and emotional stability behaving?", action: "Choose one small rest, movement, or recovery adjustment this week and notice whether your energy responds." },
+        { id: "health", title: "Health and wellbeing", categories: ["Salud", "Espiritualidad"], question: "How are energy, recovery, habits, and emotional stability behaving?", action: "Choose one small rest, movement, or recovery adjustment this week and notice whether your energy responds." },
         { id: "work", title: "Work and productivity", categories: ["Trabajo"], question: "Where is real productivity rising or creating load?", action: "Review one recent work block and decide what to keep, delegate, pause, or simplify." },
         { id: "learning", title: "Learning and growth", categories: ["Aprendizaje"], question: "What lessons repeat and which should become routines?", action: "Turn one repeated lesson into a brief practice that is easy to repeat." },
         { id: "travel", title: "Travel and outings", categories: ["Viajes / Paseos"], question: "Which places, routes, and visits create energy or friction?", action: "Compare which place, company, or context left the best memory, then use it to plan the next outing." },
@@ -28781,7 +28791,7 @@ function getInsightThematicDefinitions() {
         { id: "creative", title: "Creativity and purpose", categories: ["Creatividad"], question: "Where do creation, meaning, and personal expression appear?", action: "Reserve a small space to continue what felt meaningful, even if it is only a short note." },
       ]
     : [
-        { id: "health", title: "Salud y bienestar", categories: ["Salud", "Hogar", "Espiritualidad"], question: "¿Cómo se comportan energía, recuperación, hábitos y estabilidad emocional?", action: "Elige un pequeño ajuste de descanso, movimiento o recuperación para esta semana y observa si tu energía responde mejor." },
+        { id: "health", title: "Salud y bienestar", categories: ["Salud", "Espiritualidad"], question: "¿Cómo se comportan energía, recuperación, hábitos y estabilidad emocional?", action: "Elige un pequeño ajuste de descanso, movimiento o recuperación para esta semana y observa si tu energía responde mejor." },
         { id: "work", title: "Trabajo y productividad", categories: ["Trabajo"], question: "¿Dónde sube la productividad real o aparece carga?", action: "Revisa un bloque de trabajo reciente y decide qué mantener, delegar, pausar o simplificar." },
         { id: "learning", title: "Aprendizaje y crecimiento", categories: ["Aprendizaje"], question: "¿Qué aprendizajes se repiten y cuáles deben volverse rutina?", action: "Toma un aprendizaje repetido y conviértelo en una práctica breve, concreta y fácil de repetir." },
         { id: "travel", title: "Viajes / Paseos", categories: ["Viajes / Paseos"], question: "¿Qué lugares, rutas y visitas generan energía o fricción?", action: "Compara qué lugar, compañía o contexto te dejó mejor recuerdo y úsalo para planear la próxima salida." },

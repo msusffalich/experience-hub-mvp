@@ -76,7 +76,24 @@ Esto puede enriquecer la experiencia, pero no crea narrativa por si solo.
 
 La exportacion queda congelada: path, atomicidad, cero borrado automatico, zona humana preservada y contexto clasificado. No hay mas rondas de reglas de export.
 
+## Taxonomia de dominios aplicada
+
+La tabla de `90_System/tabla-dominios-y-narrativa.md` queda incorporada como criterio operativo para VibePWA:
+
+- Categorias narrativas principales: `Trabajo`, `Viajes / Paseos`, `Aprendizaje`, `Social`, `Entretenimiento`, `Creatividad`, `Espiritualidad` y `Salud` cuando describe un evento vivido.
+- `Hogar` deja de operar como categoria narrativa principal. Se trata como lugar/contexto: una experiencia puede ocurrir en casa, pero la categoria debe describir que paso.
+- `Bienestar` deja de operar como categoria narrativa principal. Se trata como dimension/estado, igual que energia, calma, estres o recuperacion.
+- La biometria de `Salud` es contexto de sensor; no crea experiencia por si sola.
+- `Compras` es categoria debil: solo cuenta como experiencia si hay vivencia, decision, aprendizaje, emocion o contexto humano. Una compra rutinaria queda como log o evidencia.
+
+Cambios aplicados en VibePWA:
+
+- `Hogar` ya no aparece en la lista principal de categorias seleccionables.
+- Las experiencias historicas con `Hogar` se normalizan como `Social` para evitar notas vacias, manteniendo el lugar real en el campo de ubicacion.
+- `Bienestar` se normaliza como `Salud` cuando llega desde agenda o datos antiguos, pero el manual aclara que su uso correcto es dimension/estado.
+- La inferencia por texto ya no crea categoria `Hogar` por palabras como casa u hogar.
+- Agenda personal ya no cae por defecto en `Hogar`; usa una categoria narrativa revisable.
+
 ## Siguiente bloque real
 
 El trabajo siguiente es captura: VibePWA debe pedir narracion humana al guardar una experiencia, con campo de texto y boton de voz tipo "Que paso?".
-

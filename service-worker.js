@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260721-obsidian-human-narrative-681";
+const CACHE_NAME = "experience-hub-pwa-20260721-taxonomy-domain-cleanup-682";
 const APP_SHELL = [
   "/icons/vibe-logo.jpg",
   "/icons/vibe-logo.png",
