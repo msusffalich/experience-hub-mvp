@@ -3578,9 +3578,11 @@ async function handleMobileAssistantMessage(body = {}, user = {}) {
   }
   const history = normalizeAssistantHistory(body.history);
   const maxTokens = Number(body.maxTokens || body.max_tokens || 700);
+  const actionMode = isMobileAssistantActionMode(system);
+  const assistantSystem = buildMobileAssistantSystem(system, actionMode);
   if (ARNES_ASSISTANT_ENABLED) {
     try {
-      return await proxyMobileAssistantToArnes(body, { system, text, history, maxTokens, user });
+      return await proxyMobileAssistantToArnes(body, { system: assistantSystem, text, history, maxTokens, user, actionMode });
     } catch (error) {
       await appendLog("warn", "arnes_assistant_proxy_failed", {
         userId: user.id,
@@ -3589,17 +3591,22 @@ async function handleMobileAssistantMessage(body = {}, user = {}) {
     }
   }
   const result = await callMobileAssistantMessages({
-    system,
+    system: assistantSystem,
     messages: [...history, { role: "user", content: text }],
     maxTokens,
+    actionMode,
   });
+  const contract = normalizeMobileAssistantContract(result.text, { actionMode });
   await appendLog("info", "mobile_assistant_message", {
     userId: user.id,
     promptLength: text.length,
     historyTurns: history.length,
     model: result.model,
+    actionMode,
+    actions: contract.actions.length,
+    contractFallback: contract.fallback,
   });
-  return { ok: true, text: result.text, answer: result.text, actions: [], model: result.model, source: "native-provider" };
+  return { ok: true, text: contract.text, answer: contract.answer, actions: contract.actions, model: result.model, source: "native-provider" };
 }
 
 async function getMobileAssistantStatus(user = {}) {
@@ -3708,19 +3715,25 @@ async function proxyMobileAssistantToArnes(originalBody = {}, options = {}) {
     throw new HttpError(response.status, "arnes_assistant_failed", data || text || response.statusText);
   }
   const answer = String(data.answer || data.text || data.message || "").trim();
-  const actions = Array.isArray(data.actions) ? data.actions : [];
+  const contract = normalizeMobileAssistantContract(answer || JSON.stringify({ actions: data.actions || [], answer: "" }), {
+    actionMode: options.actionMode,
+    actions: data.actions,
+    answer,
+  });
   await appendLog("info", "arnes_assistant_proxy_ok", {
     userId: options.user?.id || LOCAL_USER_ID,
     promptLength: options.text.length,
     historyTurns: options.history.length,
-    actions: actions.length,
+    actions: contract.actions.length,
     model: data.model || "arnes",
+    actionMode: Boolean(options.actionMode),
+    contractFallback: contract.fallback,
   });
   return {
     ok: data.ok !== false,
-    text: answer,
-    answer,
-    actions,
+    text: contract.text,
+    answer: contract.answer,
+    actions: contract.actions,
     model: data.model || "arnes",
     source: "arnes",
   };
@@ -3979,6 +3992,90 @@ function normalizeAssistantHistory(history = []) {
   }).filter(Boolean);
 }
 
+function isMobileAssistantActionMode(system = "") {
+  const text = String(system || "");
+  return /actions/i.test(text) && /\bJSON\b|devuelva|responde|respond|solo|only/i.test(text);
+}
+
+function buildMobileAssistantSystem(system = "", actionMode = false) {
+  const base = String(system || "").trim();
+  if (!actionMode) return base;
+  return [
+    base,
+    "",
+    "Contrato obligatorio de V modo agente:",
+    "Devuelve exclusivamente un objeto JSON valido, sin Markdown, sin explicaciones y sin texto antes o despues.",
+    "Formato exacto: {\"actions\":[{\"action\":\"answer\",\"note\":\"\"}],\"answer\":\"\"}.",
+    "Si no puedes ejecutar una accion especifica, usa action=\"answer\" y explica en answer de forma breve.",
+  ].join("\n");
+}
+
+function normalizeMobileAssistantContract(rawText = "", options = {}) {
+  const actionMode = Boolean(options.actionMode);
+  const suppliedActions = Array.isArray(options.actions) ? options.actions : [];
+  const suppliedAnswer = String(options.answer || "").trim();
+  const parsed = parseMobileAssistantJson(rawText) || parseMobileAssistantJson(suppliedAnswer);
+  if (parsed && (Array.isArray(parsed.actions) || typeof parsed.answer === "string" || typeof parsed.text === "string")) {
+    const actions = normalizeMobileAssistantActions(parsed.actions);
+    const answer = String(parsed.answer || parsed.text || suppliedAnswer || "").trim();
+    const canonical = actionMode ? JSON.stringify({ actions, answer }) : (answer || String(rawText || "").trim());
+    return { text: canonical, answer: canonical, actions, fallback: false };
+  }
+  if (suppliedActions.length) {
+    const actions = normalizeMobileAssistantActions(suppliedActions);
+    const answer = suppliedAnswer || String(rawText || "").trim();
+    const canonical = actionMode ? JSON.stringify({ actions, answer }) : answer;
+    return { text: canonical, answer: canonical, actions, fallback: false };
+  }
+  const answer = String(rawText || suppliedAnswer || "").trim();
+  if (actionMode) {
+    const canonical = JSON.stringify({ actions: [{ action: "answer", note: "" }], answer });
+    return { text: canonical, answer: canonical, actions: [{ action: "answer", note: "" }], fallback: true };
+  }
+  return { text: answer, answer, actions: [], fallback: false };
+}
+
+function normalizeMobileAssistantActions(actions = []) {
+  if (!Array.isArray(actions)) return [];
+  return actions.map((item) => {
+    if (!item || typeof item !== "object") return null;
+    const action = String(item.action || item.type || "").trim();
+    if (!action) return null;
+    return {
+      ...item,
+      action,
+      note: String(item.note || item.message || item.answer || "").trim(),
+    };
+  }).filter(Boolean);
+}
+
+function parseMobileAssistantJson(text = "") {
+  const raw = String(text || "").trim();
+  if (!raw) return null;
+  const candidates = [
+    raw,
+    raw.replace(/^```(?:json)?/i, "").replace(/```$/i, "").trim(),
+    extractFirstJsonObject(raw),
+  ].filter(Boolean);
+  for (const candidate of candidates) {
+    try {
+      const parsed = JSON.parse(candidate);
+      if (parsed && typeof parsed === "object") return parsed;
+    } catch {
+      // Keep trying looser candidates.
+    }
+  }
+  return null;
+}
+
+function extractFirstJsonObject(text = "") {
+  const raw = String(text || "");
+  const start = raw.indexOf("{");
+  const end = raw.lastIndexOf("}");
+  if (start < 0 || end <= start) return "";
+  return raw.slice(start, end + 1).trim();
+}
+
 function limitAssistantText(value, maxLength, fieldName) {
   const text = String(value || "").trim();
   if (text.length > maxLength) {
@@ -3987,7 +4084,7 @@ function limitAssistantText(value, maxLength, fieldName) {
   return text;
 }
 
-async function callMobileAssistantMessages({ system, messages, maxTokens = 700 }) {
+async function callMobileAssistantMessages({ system, messages, maxTokens = 700, actionMode = false }) {
   const startedAt = Date.now();
   const preferredProvider = ["anthropic", "claude"].includes(MOBILE_ASSISTANT_PROVIDER) ? "anthropic" : "openai";
   const providerOrder = preferredProvider === "anthropic" ? ["anthropic", "openai"] : ["openai", "anthropic"];
@@ -3997,7 +4094,7 @@ async function callMobileAssistantMessages({ system, messages, maxTokens = 700 }
     if (provider === "anthropic" && !ANTHROPIC_API_KEY) continue;
     try {
       const result = provider === "openai"
-        ? await callOpenAIAssistantMessages({ system, messages, maxTokens })
+        ? await callOpenAIAssistantMessages({ system, messages, maxTokens, actionMode })
         : await callAnthropicMessages({ system, messages, maxTokens });
       await appendLog("info", "mobile_assistant_provider_ok", {
         provider,
@@ -4058,19 +4155,23 @@ async function callAnthropicMessages({ system, messages, maxTokens = 700 }) {
   return { text, model: decoded.model || ANTHROPIC_MODEL };
 }
 
-async function callOpenAIAssistantMessages({ system, messages, maxTokens = 700 }) {
+async function callOpenAIAssistantMessages({ system, messages, maxTokens = 700, actionMode = false }) {
   const openAiMessages = convertAssistantMessagesToOpenAI(system, messages);
+  const payload = {
+    model: OPENAI_ASSISTANT_MODEL,
+    messages: openAiMessages,
+    max_tokens: Math.max(1, Math.min(Number(maxTokens) || 700, 1200)),
+  };
+  if (actionMode) {
+    payload.response_format = { type: "json_object" };
+  }
   const response = await fetchWithTimeout("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${OPENAI_API_KEY}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      model: OPENAI_ASSISTANT_MODEL,
-      messages: openAiMessages,
-      max_tokens: Math.max(1, Math.min(Number(maxTokens) || 700, 1200)),
-    }),
+    body: JSON.stringify(payload),
   }, MOBILE_ASSISTANT_PROVIDER_TIMEOUT_MS);
   const raw = await response.text();
   let decoded = {};

@@ -137,6 +137,9 @@ When Vibeapp creates an event inside an explicit experience flow, it must keep s
   - This is not immediate destructive deletion; backup, identity confirmation, and server-side review are required before final deletion.
 - `POST /api/mobile/assistant/message`
   - Server-side assistant calls for Vibeapp.
+  - The backend must preserve the native `system`, `text`, and `history` fields when proxying to Arnes or the native provider.
+  - When the native `system` requests JSON/actions mode, the backend reinforces the JSON-only instruction and normalizes the response to the stable shape `{ actions: [], answer: "" }`, even if the provider wraps JSON in text or Arnes returns `actions` as a separate field.
+  - If the model fails to return valid agent JSON, the backend returns an explicit fallback action `answer` instead of silent prose-only ambiguity.
 - `GET /api/mobile/assistant/status`
   - Protected status endpoint for Vibeapp to confirm whether Arnes is enabled, whether Arnes `/health` responds, and which `source` value should appear in assistant responses.
   - Does not expose secrets or full service URLs.

@@ -392,6 +392,15 @@ assert(
     && files.server.includes("mobile_assistant_provider_ok"),
   "Mobile assistant must use a configurable provider, timeout slow providers, and log latency/model.",
 );
+assert(
+  files.server.includes("isMobileAssistantActionMode")
+    && files.server.includes("buildMobileAssistantSystem")
+    && files.server.includes("normalizeMobileAssistantContract")
+    && files.server.includes("parseMobileAssistantJson")
+    && files.server.includes("payload.response_format = { type: \"json_object\" }")
+    && files.server.includes("contractFallback"),
+  "Mobile assistant action mode must preserve V's JSON/action contract across Arnes and native-provider fallbacks.",
+);
 assert(files.vibeappMain.includes("/api/mobile/auth/sign-in") && files.vibeappMain.includes("signInViaBackend"), "Vibeapp must sign in through the Vibe backend instead of direct mobile Supabase auth.");
 assert(files.vibeappSimulator.includes("Vibeapp sync simulation passed") && files.vibeappSimulator.includes("meta-glasses-import"), "Vibeapp simulator must validate native and external-session sync samples.");
 assert(files.app.includes("Simulador de sincronizaci") && files.app.includes("Native sync simulator"), "Manual/Admin must expose the Vibeapp sync simulator.");
