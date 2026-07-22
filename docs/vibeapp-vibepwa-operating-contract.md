@@ -30,6 +30,25 @@ VibePWA is the web analysis and operations surface. It is responsible for:
 
 Supabase and the backend are the single source of truth. Both apps must converge there before a flow is considered complete.
 
+## Platform Orientation
+
+Vibeapp captures first. It is optimized for the moment when the user is living something and needs fast capture: voice, text fragments, photo, video, audio, documents, location, biometrics, wearable signals, and daily mobile context.
+
+VibePWA structures first. It is optimized for the later work of turning captured facts into experience memory: evidence inbox, experience creation, event promotion, evidence adoption, reports, findings, publications, knowledge map, Obsidian, manual, and operations.
+
+This orientation is not a hard permission boundary:
+
+- Vibeapp may close a quick experience when the user explicitly wants to finish it on the phone or tablet.
+- VibePWA may create a complete experience from keyboard/manual input, especially for desktop work or historical backfill.
+- The primary UI must still keep the jobs clear: Vibeapp should not become a complex analysis cockpit, and VibePWA should not pretend to replace native device capture.
+
+Single ownership rule:
+
+- The backend/Supabase model owns the canonical experience record.
+- Vibeapp can originate or close a simple experience, but it writes through the same backend contract and idempotency rules.
+- VibePWA can create or restructure experiences, but it must update the same canonical records.
+- No platform may keep a private parallel experience copy as product truth. Local queues and caches are temporary transport/resilience layers only.
+
 ## Data Flow
 
 1. Vibeapp captures or reads native/mobile data.

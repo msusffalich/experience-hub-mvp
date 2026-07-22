@@ -10,6 +10,20 @@ Vibe must separate:
 - Intentional evidence: media or files captured by the user, allowed to wait in an inbox before adoption.
 - Ambient context: biometrics, GPS, weather, news, entertainment, and device context stored as time-based signals.
 
+The central product rule is: capture is not the same as structuring. Capture must stay cheap and fast; structuring is the later act of giving meaning, time range, narrative, events, and evidence adoption.
+
+Platform orientation:
+
+- Vibeapp captures first. Its main job is recording facts close to the person and device: voice, notes, camera, video, files, biometrics, location, and mobile context.
+- VibePWA structures first. Its main job is reviewing, organizing, adopting evidence, building stories, analyzing, reporting, publishing, and exporting to Obsidian.
+- This is a product orientation, not a hard block. VibePWA may still create a full experience from the keyboard, and Vibeapp may still close a quick experience when the user explicitly wants to do it. The primary UI of each platform must not confuse these jobs.
+
+Single write rule: even when both apps can originate an experience, the canonical experience record lives in the same backend/Supabase model. Vibeapp must not keep a parallel experience store, and VibePWA must not create a second copy of the same lived episode. Idempotency keys, source ids, and server-side upsert rules decide whether a payload creates a new record or updates/adopts into an existing one.
+
+Blueprint ownership rule: this file is the implementation blueprint for VibePWA/backend/Vibeapp integration. The Obsidian vault blueprint in `90_System` is the conceptual mirror for knowledge work. They may use different language, but they must not contradict the platform split, hierarchy, narrative definition, or evidence/context rules.
+
+Build `20260722-event-narrative-rollup-684` is validated by code, SQL, contract checks, and simulated integration. It is not yet validated with a real user-created event narrative, because the current capture UI does not expose the gesture needed to create that data honestly. Real validation is deferred to the capture restructuring block below.
+
 ## Current fit
 
 | Requirement | Current support | Gap |
@@ -76,6 +90,44 @@ The experience creation flow needs:
 - Group/person.
 - Suggested evidence to adopt.
 - Ambient context snapshot preview.
+
+## Capture restructuring block
+
+Next implementation priority: separate two flows that happen at different times and cannot share the same UI without confusing the user.
+
+### Flow 1 - Capture facts in the moment
+
+This flow is immediate. The user is living something and only wants to record facts with minimum friction:
+
+- Spoken or written narrative fragments.
+- Photos, videos, audio, documents, and quick notes.
+- Device context already available from Vibeapp, such as location and biometric context.
+
+This flow does not need a finished experience. It writes evidence and narrative fragments with timestamp, owner, group/person, source, and idempotency. If there is no parent experience yet, intentional evidence remains in the evidence inbox.
+
+Primary platform: Vibeapp. VibePWA can offer a backup/manual capture path, but it should not be the main mobile capture surface.
+
+### Flow 2 - Build stories from captured facts
+
+This flow happens during review or closure. The user organizes meaning after enough facts exist:
+
+- Create or confirm the experience.
+- Define time range, title, group/person, place, and global narrative.
+- Promote meaningful submoments into events.
+- Attach or adopt evidence by time window.
+- Add event-level narrative when a submoment deserves its own voice.
+
+The product must not force Flow 2 during Flow 1. Forcing the user to define the experience before capturing facts breaks real-world capture. Turning every captured fact into an experience breaks memory and produces fake nodes.
+
+Primary platform: VibePWA. Vibeapp can offer quick closure for simple cases, but deep organization, map, reports, findings, publications, and Obsidian belong to the web workspace.
+
+### Required gestures
+
+1. Capture evidence: quick photo, video, audio, document, note, or imported file. It can be parentless and must land in the evidence inbox.
+2. Mark experience: choose or confirm the lived episode, time range, group/person, and human narrative. The experience adopts nearby intentional evidence by proposal and confirmation.
+3. Narrate event: while reviewing an open experience, add voice or text to a meaningful submoment. This creates or updates `event.narrativeText`; it does not automatically promote the event to a new experience.
+
+This block is the real acceptance path for build 684. The first real test must create an experience without global narrative, add one narrated event, sync it, export to Obsidian, and confirm that the experience note has `narrative: "ok"` by rollup.
 
 ## Two-level narrative
 
