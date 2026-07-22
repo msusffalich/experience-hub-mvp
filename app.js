@@ -1,4 +1,4 @@
-const APP_VERSION = "20260722-event-narrative-rollup-684";
+const APP_VERSION = "20260722-capture-structure-split-685";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -3003,6 +3003,9 @@ const manualContent = {
     {
       title: "Captura de experiencias",
       items: [
+        "El flujo nuevo separa capturar hechos de armar historias. Vibeapp es la ruta normal para capturar en el momento; VibePWA sirve para revisar la evidencia, adoptarla y convertirla en experiencias, eventos, reportes, publicaciones y mapa.",
+        "La evidencia puede nacer sin experiencia padre. Fotos, videos, audios o documentos enviados desde Vibeapp sin una experiencia quedan en Bandeja de evidencia hasta que una experiencia los adopte por tiempo, lugar, grupo/persona o selección explícita.",
+        "La evidencia intencional no se convierte automáticamente en experiencia. Si falta relato humano, queda como evidencia pendiente; si escribes o grabas qué viviste, entonces puede formar parte de una experiencia o de un evento narrado.",
         "Registra título, categoría, objetivo/intención, fecha, duración, estado emocional, energía, ubicación, personas y notas.",
         "Al registrar energía, usa una lectura rápida y consistente: 1-3 baja, 4-6 media/estable, 7-8 alta, 9-10 excepcional.",
         "Captura usa un formulario único. La revisión de escritura, calidad, sincronización y diagnósticos se mantienen como lógica interna o administrativa para no competir con el acto principal de guardar una experiencia.",
@@ -3657,6 +3660,9 @@ const manualContent = {
     {
       title: "Experience Capture",
       items: [
+        "The new flow separates capturing facts from building stories. Vibeapp is the normal route for in-the-moment capture; VibePWA reviews evidence, adopts it, and turns it into experiences, events, reports, publications, and the map.",
+        "Evidence can exist before a parent experience. Photos, videos, audio, or documents sent from Vibeapp without an experience stay in the Evidence inbox until an experience adopts them by time, place, group/person, or explicit selection.",
+        "Intentional evidence does not automatically become an experience. Without human narrative it remains pending evidence; when you write or record what you lived, it can become part of an experience or narrated event.",
         "Capture title, category, objective/intention, date, duration, mood, energy, location, people, and notes.",
         "When recording energy, use a consistent quick scale: 1-3 low, 4-6 medium/stable, 7-8 high, 9-10 exceptional.",
         "Capture uses one form. Writing review, quality, sync, and diagnostics remain internal or administrative logic so they do not compete with the main act of saving an experience.",
@@ -4085,6 +4091,8 @@ manualContent.fr = [
   {
     title: "Capture",
     items: [
+      "Le nouveau flux separe la capture des faits et la construction des histoires. Vibeapp capture sur le moment; VibePWA revise les preuves, les adopte et les transforme en experiences, evenements, rapports, publications et carte.",
+      "Une preuve peut naitre sans experience parent. Photos, videos, audios ou documents envoyes depuis Vibeapp restent dans la boite de preuves jusqu'a leur adoption par temps, lieu, groupe/personne ou selection explicite.",
       "Capture sert a enregistrer une experience courte ou longue avec titre, categorie, objectif, date, duree, lieu, personnes, energie, notes et pieces jointes.",
       "Une experience longue peut contenir plusieurs evenements internes. Chaque photo, audio, video ou document peut etre lie a toute l'experience ou a un evenement precis.",
       "Quand Supabase et la session sont actifs, la capture fonctionne comme brouillon vivant: les changements importants se synchronisent en arriere-plan et Enregistrer confirme l'etat final.",
@@ -4224,6 +4232,8 @@ manualContent.es = [
   {
     title: "Captura, grupos y sincronizacion",
     body: [
+      "El flujo nuevo separa capturar hechos de armar historias. Vibeapp captura en el momento; VibePWA revisa la evidencia, adopta lo que corresponde y lo convierte en experiencias, eventos, reportes, publicaciones y mapa.",
+      "La evidencia puede nacer sin experiencia padre. Fotos, videos, audios o documentos enviados desde Vibeapp quedan en Bandeja de evidencia hasta que se adopten por tiempo, lugar, grupo/persona o seleccion explicita.",
       "Cada experiencia debe quedar asociada a una cuenta y, si aplica, a un grupo/persona privado del usuario: Miguel, Familia, Viaje, Proyecto o Equipo.",
       "Los grupos/personas se crean y administran en VibePWA. Vibeapp solo lee los grupos activos para asociar nuevas capturas.",
       "La sincronizacion es correcta cuando texto, eventos, activos y contexto aparecen desde otro dispositivo sin pasos manuales. Si queda pendiente, la app debe indicar el motivo y reintentar.",
@@ -4465,6 +4475,8 @@ manualContent.pt = [
   {
     title: "Captura, grupos e sincronização",
     body: [
+      "O novo fluxo separa capturar fatos de montar historias. Vibeapp captura no momento; VibePWA revisa as evidencias, adota o que corresponde e transforma isso em experiencias, eventos, relatorios, publicacoes e mapa.",
+      "A evidencia pode nascer sem experiencia pai. Fotos, videos, audios ou documentos enviados pelo Vibeapp ficam na Bandeja de evidencias ate serem adotados por tempo, lugar, grupo/pessoa ou selecao explicita.",
       "Cada experiência pertence a uma conta e, quando útil, a um grupo/pessoa privado do usuário: Família, Viagem, Projeto ou Equipe.",
       "Os grupos/pessoas são criados e administrados em VibePWA. Vibeapp lê os grupos ativos para associar corretamente as novas capturas.",
       "A sincronização está completa quando texto, eventos, arquivos e contexto aparecem em outro dispositivo sem intervenção manual.",
@@ -4800,6 +4812,7 @@ const state = {
   manualReview: loadManualReview(),
   displayTheme: loadDisplayTheme(),
   pendingAttachments: [],
+  serverAssets: [],
   captureSaveStatus: null,
   captureDraftAutosave: { inProgress: false, timer: null, lastSignature: "", lastSavedAt: 0 },
   captureWritingSuggestions: [],
@@ -5954,11 +5967,12 @@ async function hydrateFromApi() {
       return;
     }
 
-    const [profile, experiences, agendaEvents, latestDailyBriefing] = await Promise.all([
+    const [profile, experiences, agendaEvents, latestDailyBriefing, serverAssets] = await Promise.all([
       apiRequest("/profile"),
       apiRequest("/experiences"),
       apiRequest("/agenda").catch(() => null),
       apiRequest(`/daily-briefing/latest?locale=${encodeURIComponent(state.language)}`).catch(() => null),
+      apiRequest("/assets").catch(() => []),
     ]);
     state.profile = profile;
     saveLocalProfile(profile);
@@ -5987,6 +6001,7 @@ async function hydrateFromApi() {
       const localOnly = mergedAgenda.filter((item) => item.id && !remoteIds.has(item.id) && !item.isDemo);
       await Promise.all(localOnly.slice(0, 50).map((item) => saveAgendaEventToApi(item, { silent: true })));
     }
+    state.serverAssets = normalizeServerAssets(serverAssets);
     applyLatestServerDailyBriefing(latestDailyBriefing?.briefing);
     await syncOfflineQueue({ silent: true, skipServerRefresh: true });
     await loadBackendRoutines();
@@ -6166,6 +6181,40 @@ function normalizeExperiences(experiences) {
 
 function normalizeExperienceItem(experience) {
   return normalizeExperiences([experience || {}])[0];
+}
+
+function normalizeServerAssets(assets = []) {
+  if (!Array.isArray(assets)) return [];
+  return assets
+    .map((asset) => {
+      const metadata = asset.metadata || {};
+      const experienceId = asset.experienceId || asset.experience_id || metadata.linkedExperienceId || "";
+      const adoptionStatus = asset.adoptionStatus || asset.adoption_status || metadata.adoptionStatus || (experienceId ? "adopted" : "inbox");
+      return {
+        ...asset,
+        id: asset.id || asset.assetId || asset.asset_id || createId(),
+        assetKey: asset.assetKey || asset.id || asset.assetId || asset.asset_id || "",
+        name: asset.name || asset.fileName || asset.filename || "Activo",
+        kind: asset.kind || inferMediaKind(asset),
+        type: asset.type || asset.mimeType || asset.mime_type || "application/octet-stream",
+        size: Number(asset.size || asset.sizeBytes || asset.size_bytes || 0),
+        experienceId,
+        participantId: asset.participantId || asset.participant_id || metadata.participantId || "",
+        eventId: asset.eventId || asset.event_id || metadata.linkedEventId || "",
+        adoptionStatus,
+        evidenceType: asset.evidenceType || asset.evidence_type || metadata.evidenceType || "intentional",
+        capturedAt: asset.capturedAt || asset.captured_at || metadata.capturedAt || asset.createdAt || "",
+        uploadedAt: asset.uploadedAt || asset.uploaded_at || metadata.uploadedAt || "",
+        sourceType: asset.sourceType || asset.source_type || metadata.sourceType || "",
+        sourceDevice: asset.sourceDevice || asset.source_device || metadata.sourceDevice || "",
+        storage: asset.storage || (asset.path || asset.url ? "supabase" : ""),
+        path: asset.path || asset.storagePath || asset.storage_path || "",
+        previewText: asset.previewText || asset.preview_text || "",
+        analysisText: asset.analysisText || asset.analysis_text || "",
+        metadata,
+      };
+    })
+    .filter((asset) => asset.id || asset.assetKey || asset.name);
 }
 
 function normalizeAgendaEvents(events = []) {
@@ -7775,6 +7824,8 @@ function applyLanguage() {
   document.querySelector("#experienceForm .primary-button").textContent = t("buttons.save");
   document.getElementById("clearFormButton").textContent = t("buttons.clear");
   document.getElementById("attachmentInputLabel").textContent = t("labels.attachmentInputLabel");
+  renderCaptureFlowSplit();
+  renderCaptureEvidenceInbox();
   const recordAudioButton = document.getElementById("recordAudioButton");
   if (recordAudioButton && state.mediaRecorder?.state !== "recording") recordAudioButton.textContent = t("labels.recordAudio");
   const recordingStatus = document.getElementById("recordingStatus");
@@ -8299,6 +8350,12 @@ function setupAgenda() {
 }
 
 function setupFilters() {
+  document.addEventListener("click", (event) => {
+    const openViewButton = event.target.closest("[data-open-view]");
+    if (!openViewButton) return;
+    const view = openViewButton.dataset.openView || "";
+    if (view) safeShowView(view);
+  });
   document.getElementById("searchInput").addEventListener("input", (event) => {
     state.filters.query = event.target.value.trim().toLowerCase();
     renderTimeline();
@@ -11042,6 +11099,7 @@ function clearForm() {
   document.getElementById("energyInput").value = 7;
   document.getElementById("timestampInput").value = toDatetimeLocal(new Date().toISOString());
   renderAttachmentPreview();
+  renderCaptureEvidenceInbox();
   renderCaptureWritingCoach();
 }
 
@@ -11667,6 +11725,7 @@ function renderPendingAttachmentCard(attachment) {
 function removePendingAttachment(id) {
   state.pendingAttachments = state.pendingAttachments.filter((attachment) => attachment.id !== id);
   renderAttachmentPreview();
+  renderCaptureEvidenceInbox();
 }
 
 function buildPendingMediaDetail(experience, apiResult = {}, label = "") {
@@ -11723,6 +11782,7 @@ function handleAttachmentEventSelection(event) {
     };
   });
   renderAttachmentPreview();
+  renderCaptureEvidenceInbox();
 }
 
 function setupAudioCapture() {
@@ -11973,6 +12033,7 @@ function loadExperienceIntoForm(experience) {
   }
   state.pendingAttachments = [...(experience.attachments || [])];
   renderAttachmentPreview();
+  renderCaptureEvidenceInbox();
   showView("capture");
 }
 
@@ -12140,11 +12201,118 @@ function renderDashboardView() {
 
 function renderCaptureView() {
   updatePilotParticipantControls();
+  renderCaptureFlowSplit();
+  renderCaptureEvidenceInbox();
   renderCaptureCoach();
   renderBiometricCaptureContext();
   renderCaptureEventPreview();
   renderCaptureSaveStatus();
   renderAttachmentPreview();
+}
+
+function getEvidenceInboxAssets() {
+  const assets = collectMultimodalAssets();
+  return assets
+    .filter((asset) => {
+      if (asset.contextOnly) return false;
+      const status = String(asset.adoptionStatus || asset.metadata?.adoptionStatus || "").toLowerCase();
+      return asset.inboxEvidence || status === "inbox" || (!asset.experienceId && !asset.experienceTitle);
+    })
+    .sort((a, b) => new Date(b.capturedAt || b.timestamp || b.uploadedAt || 0) - new Date(a.capturedAt || a.timestamp || a.uploadedAt || 0));
+}
+
+function renderCaptureFlowSplit() {
+  const status = document.getElementById("captureFlowStatus");
+  const eyebrow = document.getElementById("captureFlowEyebrow");
+  const title = document.getElementById("captureFlowTitle");
+  const help = document.getElementById("captureFlowHelp");
+  const steps = document.getElementById("captureFlowSteps");
+  if (!steps) return;
+  if (status) status.textContent = languageText("Evidencia e historia", "Evidence and story", "Preuve et histoire", "Evidencia e historia");
+  if (eyebrow) eyebrow.textContent = languageText("Flujo operativo", "Operating flow", "Flux operationnel", "Fluxo operacional");
+  if (title) title.textContent = languageText(
+    "Capturar ahora, estructurar despues",
+    "Capture now, structure later",
+    "Capturer maintenant, structurer ensuite",
+    "Capturar agora, estruturar depois",
+  );
+  if (help) help.textContent = languageText(
+    "Vibeapp captura hechos del momento. VibePWA convierte esa evidencia en experiencias, eventos, reportes, publicaciones y mapa.",
+    "Vibeapp captures facts in the moment. VibePWA turns that evidence into experiences, events, reports, publications, and the map.",
+    "Vibeapp capture les faits sur le moment. VibePWA transforme ces preuves en experiences, evenements, rapports, publications et carte.",
+    "Vibeapp captura fatos no momento. VibePWA transforma essas evidencias em experiencias, eventos, relatorios, publicacoes e mapa.",
+  );
+  const items = [
+    {
+      title: languageText("1. Capturar hecho", "1. Capture fact", "1. Capturer le fait", "1. Capturar fato"),
+      detail: languageText("Voz, texto, foto, video, documento o sensor con hora y grupo/persona.", "Voice, text, photo, video, document, or sensor with time and group/person.", "Voix, texte, photo, video, document ou capteur avec heure et groupe/personne.", "Voz, texto, foto, video, documento ou sensor com hora e grupo/pessoa."),
+    },
+    {
+      title: languageText("2. Adoptar evidencia", "2. Adopt evidence", "2. Adopter la preuve", "2. Adotar evidencia"),
+      detail: languageText("La evidencia queda en bandeja hasta vincularla a una experiencia o evento.", "Evidence waits in the inbox until linked to an experience or event.", "La preuve attend dans la boite jusqu'a son lien avec une experience ou un evenement.", "A evidencia fica na bandeja ate ser vinculada a uma experiencia ou evento."),
+    },
+    {
+      title: languageText("3. Armar historia", "3. Build story", "3. Construire l'histoire", "3. Montar historia"),
+      detail: languageText("La experiencia agrega narrativa, rango de tiempo, eventos y contexto.", "The experience adds narrative, time range, events, and context.", "L'experience ajoute narration, plage horaire, evenements et contexte.", "A experiencia adiciona narrativa, periodo, eventos e contexto."),
+    },
+  ];
+  steps.innerHTML = items
+    .map((item) => `
+      <article>
+        <strong>${escapeHtml(item.title)}</strong>
+        <p>${escapeHtml(item.detail)}</p>
+      </article>
+    `)
+    .join("");
+}
+
+function renderCaptureEvidenceInbox() {
+  const box = document.getElementById("captureEvidenceInbox");
+  if (!box) return;
+  const inbox = getEvidenceInboxAssets();
+  const localPending = state.pendingAttachments || [];
+  const labels = {
+    title: languageText("Bandeja de evidencia", "Evidence inbox", "Boite de preuves", "Bandeja de evidencias"),
+    status: languageText(
+      `${inbox.length} en servidor · ${localPending.length} en este formulario`,
+      `${inbox.length} on server · ${localPending.length} in this form`,
+      `${inbox.length} sur serveur · ${localPending.length} dans ce formulaire`,
+      `${inbox.length} no servidor · ${localPending.length} neste formulario`,
+    ),
+    empty: languageText(
+      "Sin evidencia pendiente. Cuando Vibeapp envie fotos, videos, audios o documentos sin experiencia, apareceran aqui para adoptarlos despues.",
+      "No pending evidence. When Vibeapp sends photos, videos, audio, or documents without an experience, they will appear here for later adoption.",
+      "Aucune preuve en attente. Quand Vibeapp envoie photos, videos, audios ou documents sans experience, ils apparaitront ici pour adoption ulterieure.",
+      "Sem evidencia pendente. Quando Vibeapp enviar fotos, videos, audios ou documentos sem experiencia, eles aparecerao aqui para adocao posterior.",
+    ),
+    openAssets: languageText("Ver en Activos", "Open Assets", "Voir Fichiers", "Ver em Ativos"),
+    localDraft: languageText("Seleccionado ahora", "Selected now", "Selectionne maintenant", "Selecionado agora"),
+    awaiting: languageText("Esperando historia", "Waiting for story", "En attente d'histoire", "Aguardando historia"),
+  };
+  const rows = [
+    ...localPending.slice(0, 4).map((asset) => ({ ...asset, localDraft: true })),
+    ...inbox.slice(0, 4),
+  ];
+  box.innerHTML = `
+    <div class="capture-evidence-heading">
+      <div>
+        <strong>${escapeHtml(labels.title)}</strong>
+        <p>${escapeHtml(labels.status)}</p>
+      </div>
+      <button class="ghost-button small-button" type="button" data-open-view="assetLibrary">${escapeHtml(labels.openAssets)}</button>
+    </div>
+    ${rows.length
+      ? `<div class="capture-evidence-list">
+          ${rows.map((asset) => `
+            <article>
+              <span>${escapeHtml(asset.localDraft ? labels.localDraft : labels.awaiting)}</span>
+              <strong>${escapeHtml(asset.name || asset.fileName || asset.kind || "Activo")}</strong>
+              <small>${escapeHtml([asset.kind || inferMediaKind(asset), asset.sourceDevice || asset.sourceType || "", asset.capturedAt ? formatDate(asset.capturedAt) : ""].filter(Boolean).join(" · "))}</small>
+            </article>
+          `).join("")}
+        </div>`
+      : `<p class="card-meta">${escapeHtml(labels.empty)}</p>`}
+  `;
 }
 
 function applyInitialViewFromUrl() {
@@ -15734,8 +15902,47 @@ function collectMultimodalAssets() {
       };
     }),
   );
+  const experienceAssetKeys = new Set(experienceAssets.map((asset) => asset.assetKey || asset.id).filter(Boolean));
+  const standaloneServerAssets = normalizeServerAssets(state.serverAssets)
+    .filter((asset) => !asset.experienceId && !experienceAssetKeys.has(asset.assetKey || asset.id))
+    .map((asset) => {
+      const externalProfile = getExternalAssetProfile(asset);
+      return {
+        ...asset,
+        assetKey: asset.assetKey || asset.id,
+        experienceTitle: languageText("Bandeja de evidencia", "Evidence inbox", "Boite de preuves", "Bandeja de evidencias"),
+        isDemo: false,
+        category: "",
+        objective: languageText("Evidencia pendiente de adoptar", "Evidence waiting for adoption", "Preuve en attente d'adoption", "Evidencia aguardando adocao"),
+        timestamp: asset.capturedAt || asset.uploadedAt || new Date().toISOString(),
+        location: asset.metadata?.location || "",
+        people: "",
+        notes: asset.previewText || asset.analysisText || "",
+        language: asset.detectedLanguage || state.language,
+        device: asset.sourceDevice || languageText("Servidor/Supabase", "Server/Supabase", "Serveur/Supabase", "Servidor/Supabase"),
+        externalSource: externalProfile.source,
+        externalPayloadType: externalProfile.payloadType,
+        externalProcessingIntent: externalProfile.intent,
+        externalCaptureOrigin: externalProfile.captureOrigin,
+        externalTreatment: externalProfile.treatment,
+        externalPrivacyHint: externalProfile.privacy,
+        externalExpectedConsumer: externalProfile.consumer,
+        externalTransportOnly: externalProfile.transportOnly,
+        externalAutoInterpret: externalProfile.autoInterpret,
+        externalProfileLabel: externalProfile.label,
+        storageLabel: asset.path || asset.url ? "Servidor/Supabase" : "Local",
+        manualTags: [],
+        manualNote: "",
+        extractedText: asset.extractedText || asset.previewText || "",
+        extractionMethod: asset.extractionMethod || "",
+        extractionStatus: asset.extractionStatus || asset.processingStatus || "",
+        processedAt: asset.processedAt || "",
+        analysisSuggested: false,
+        inboxEvidence: true,
+      };
+    });
   const biometricAssets = (state.biometricImports || []).map((item) => toBiometricAsset(item));
-  return [...biometricAssets, ...experienceAssets];
+  return [...biometricAssets, ...standaloneServerAssets, ...experienceAssets];
 }
 
 function toBiometricAsset(item = {}) {

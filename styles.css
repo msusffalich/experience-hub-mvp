@@ -578,6 +578,95 @@ button,
   gap: 12px;
 }
 
+.capture-flow-split {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.35fr);
+  gap: 18px;
+  align-items: stretch;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-strong);
+}
+
+.capture-flow-split h3 {
+  margin: 4px 0 8px;
+  font-size: 1.15rem;
+}
+
+.capture-flow-split p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.capture-flow-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.capture-flow-steps article,
+.capture-evidence-list article {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.capture-flow-steps strong,
+.capture-evidence-list strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.capture-flow-steps p,
+.capture-evidence-list small {
+  font-size: 0.86rem;
+  line-height: 1.35;
+}
+
+.capture-evidence-inbox {
+  padding: 14px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.52);
+}
+
+.capture-evidence-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.capture-evidence-heading p {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.capture-evidence-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.capture-evidence-list span {
+  display: inline-block;
+  margin-bottom: 6px;
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+html[data-theme="dark"] .capture-flow-split,
+html[data-theme="dark"] .capture-evidence-inbox {
+  background: var(--surface-strong);
+}
+
 .development-rules-heading {
   display: flex;
   align-items: flex-start;
@@ -13316,6 +13405,17 @@ button.asset-processing-summary-card {
 }
 
 @media (max-width: 920px) {
+  .capture-flow-split,
+  .capture-flow-steps,
+  .capture-evidence-list {
+    grid-template-columns: 1fr;
+  }
+
+  .capture-evidence-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
   .daily-news-local .daily-section-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

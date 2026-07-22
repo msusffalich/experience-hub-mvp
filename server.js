@@ -633,6 +633,12 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (url.pathname === "/api/assets" && req.method === "GET") {
+    const user = await getRequestUser(req);
+    sendJson(res, 200, await listAssetEvidence(user));
+    return;
+  }
+
   if (url.pathname === "/api/upload-attempts" && req.method === "GET") {
     const user = await getRequestUser(req);
     const limit = Number(url.searchParams.get("limit") || 20);
@@ -5169,6 +5175,31 @@ async function upsertAssetEvidence(media, user = { id: LOCAL_USER_ID }) {
   }
 }
 
+async function listAssetEvidence(user = { id: LOCAL_USER_ID }) {
+  if (activePersistence() !== "supabase") return [];
+  const workspace = await getWorkspaceContext(user);
+  if (!workspace?.id || workspaceSchemaUnavailableRecently()) return [];
+  try {
+    const rows = await supabaseRest("assets", {
+      searchParams: {
+        workspace_id: `eq.${workspace.id}`,
+        order: "captured_at.desc",
+        limit: "250",
+      },
+      accessToken: user.accessToken,
+    });
+    workspaceSchemaState.available = true;
+    workspaceSchemaState.checkedAt = new Date().toISOString();
+    workspaceSchemaState.error = null;
+    return rows.map(fromAssetRow);
+  } catch (error) {
+    await appendLog("warn", "asset_evidence_list_remote_skipped", {
+      reason: sanitizeDiagnosticError(error),
+    });
+    return [];
+  }
+}
+
 function toAssetEvidenceRow(media, workspaceId, user = { id: LOCAL_USER_ID }) {
   const normalized = normalizeMedia(media);
   const kind = normalized.kind || inferServerMediaKind(normalized);
@@ -5248,6 +5279,12 @@ function fromAssetRow(row) {
     detectedLanguage: metadata.detectedLanguage || "",
     translatedText: metadata.translatedText || "",
     translationLanguage: metadata.translationLanguage || "",
+    experienceId: row.experience_id || metadata.linkedExperienceId || "",
+    participantId: row.participant_id || metadata.participantId || "",
+    adoptionStatus: row.adoption_status || metadata.adoptionStatus || "",
+    adoptionMethod: row.adoption_method || metadata.adoptionMethod || "",
+    adoptionConfidence: row.adoption_confidence ?? metadata.adoptionConfidence ?? null,
+    evidenceType: row.evidence_type || metadata.evidenceType || "",
     extractionMethod: metadata.extractionMethod || "",
     extractionStatus: metadata.extractionStatus || row.processing_status || "",
     processedAt: metadata.processedAt || "",

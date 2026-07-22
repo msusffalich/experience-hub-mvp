@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260722-event-narrative-rollup-684";
+const CACHE_NAME = "experience-hub-pwa-20260722-capture-structure-split-685";
 const APP_SHELL = [
   "/icons/vibe-logo.jpg",
   "/icons/vibe-logo.png",

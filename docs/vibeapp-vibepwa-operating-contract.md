@@ -6,6 +6,7 @@ Current native reference: Vibeapp iOS build `0.5.33+646`.
 
 Latest sync notes:
 
+- 2026-07-22: the implementation handoff for the new capture/structure split is documented in `docs/vibeapp-capture-structure-handoff-20260722.md`.
 - Vibeapp build 646 is installed on a physical iPhone and includes **Probar Arnes** in `Cuenta -> Asistente V`.
 - `GET /api/mobile/assistant/status` is the read-only diagnostic endpoint used by that button. It must require the user's Supabase bearer and must not spend LLM tokens.
 - Arnes key rotation was completed on 2026-06-19. VibePWA must never receive, store, or write that key in notes, USB files, or chat.
