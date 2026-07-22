@@ -94,6 +94,8 @@ assert(!/[\u00c3\u00c2\ufffd]/u.test(visibleAndPdfText), "Visible app files or R
 
 assert(!/\bnormalizeExperience\s*\(/.test(files.app), "app.js still calls normalizeExperience(); use normalizeExperienceItem() or normalizeExperiences().");
 assert(files.app.includes("function sentenceCase") && files.app.includes("return sentenceCase(payload)"), "sentenceCase helper is missing for external asset payload labels.");
+assert(files.app.includes("function resolveActivePilotParticipantId") && files.app.includes("return getActivePilotParticipantId(preferredScopes);"), "Admin/device samples must not call a missing active participant resolver.");
+assert(files.app.includes("Operacion del producto") && files.app.includes("Actualizar datos del servidor") && files.app.includes("Update server data"), "Admin product controls must use clear user-facing sync labels.");
 [
   "function normalizeExperienceItem",
   "function getCaptureEventOptions",

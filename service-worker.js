@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260722-deferred-ingest-retry-690";
+const CACHE_NAME = "experience-hub-pwa-20260722-admin-export-clarity-691";
 const APP_SHELL = [
   "/icons/vibe-logo.jpg",
   "/icons/vibe-logo.png",
