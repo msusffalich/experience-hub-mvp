@@ -114,7 +114,7 @@ When Vibeapp creates an event inside an explicit experience flow, it must keep s
 ## API Responsibilities
 
 - `POST /api/integration/ingest`
-  - The endpoint acknowledges validated writes quickly. Slow enrichment such as climate, news, daily briefing, and location impact runs as deferred post-ingest automation unless `awaitAutomation`, `awaitPostIngestAutomation`, or `inlineAutomation` is explicitly requested for diagnostics.
+  - The endpoint acknowledges validated writes quickly. Slow enrichment such as climate, news, daily briefing, and location impact runs as deferred post-ingest automation unless `awaitAutomation`, `awaitPostIngestAutomation`, or `inlineAutomation` is explicitly requested for diagnostics. Deferred enrichment logs scheduled, completed, retry, and final failure states so a saved capture cannot hide a broken context refresh.
   - Text or transcribed human narrative may create/update an experience when the payload represents a lived episode.
   - Agenda events create/update Agenda.
   - Agenda payloads must use `targetLayer: "agenda"` and `payloadType: "calendar"`. They schedule or organize future commitments; they do not create experience events or narrative memory until the user later converts/links them after the moment is lived.

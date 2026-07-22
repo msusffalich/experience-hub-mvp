@@ -206,8 +206,9 @@ check(
   files.server.includes("buildPostIngestAutomation")
     && files.server.includes("biometric_impact_recomputed")
     && files.server.includes("completed_with_deferred_context")
-    && files.server.includes("queuePostIngestContextRefresh"),
-  "server ingest must acknowledge native writes quickly and defer slow context/dashboard automation.",
+    && files.server.includes("queuePostIngestContextRefresh")
+    && files.server.includes("integration_ingest_background_refresh_retry_scheduled"),
+  "server ingest must acknowledge native writes quickly and defer slow context/dashboard automation with retry visibility.",
 );
 check(files.server.includes("/api/experiences") && files.server.includes("/api/media") && files.server.includes("/api/integration/ingest"), "server must keep native sync and validated ingest endpoints.");
 check(files.server.includes("storageObjectHint") && files.server.includes("idempotencyKey"), "server must preserve storageObjectHint and idempotency metadata.");

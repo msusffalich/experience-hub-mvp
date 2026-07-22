@@ -2719,18 +2719,71 @@ function shouldRunInlinePostIngestAutomation(options = {}) {
     || options.inlineAutomation === true;
 }
 
+const POST_INGEST_CONTEXT_REFRESH_RETRY_DELAYS_MS = [15000, 60000];
+
 function queuePostIngestContextRefresh({ location, payloadSet, targetSet, user, options = {} }) {
   const payloadTypes = [...payloadSet];
   const targetTypes = [...targetSet];
+  appendLog("info", "integration_ingest_background_refresh_scheduled", {
+    userId: user.id,
+    location,
+    payloadTypes,
+    targetTypes,
+  }).catch(() => {});
+  runQueuedPostIngestContextRefresh({ location, payloadTypes, targetTypes, user, options }, 0);
+}
+
+function runQueuedPostIngestContextRefresh(job, attempt = 0) {
   Promise.resolve()
-    .then(() => runPostIngestContextRefresh({ location, payloadTypes, targetTypes, user, options }))
-    .catch((error) => appendLog("warn", "integration_ingest_background_refresh_failed", {
-      userId: user.id,
-      location,
-      payloadTypes,
-      targetTypes,
-      error: sanitizeDiagnosticError(error),
-    }));
+    .then(() => runPostIngestContextRefresh(job))
+    .then((summary) => {
+      if (hasPostIngestRefreshFailure(summary) && attempt < POST_INGEST_CONTEXT_REFRESH_RETRY_DELAYS_MS.length) {
+        schedulePostIngestContextRefreshRetry(job, attempt, summary);
+      } else if (hasPostIngestRefreshFailure(summary)) {
+        logPostIngestContextRefreshFailure(job, summary, attempt);
+      }
+    })
+    .catch((error) => {
+      if (attempt < POST_INGEST_CONTEXT_REFRESH_RETRY_DELAYS_MS.length) {
+        schedulePostIngestContextRefreshRetry(job, attempt, { error: sanitizeDiagnosticError(error) });
+      } else {
+        logPostIngestContextRefreshFailure(job, { error: sanitizeDiagnosticError(error) }, attempt);
+      }
+    });
+}
+
+function hasPostIngestRefreshFailure(summary = {}) {
+  return [summary.contextImpact?.status, summary.dailyBriefing?.status].some((status) => String(status || "").includes("failed"))
+    || Boolean(summary.error);
+}
+
+function schedulePostIngestContextRefreshRetry(job, attempt = 0, summary = {}) {
+  const delayMs = POST_INGEST_CONTEXT_REFRESH_RETRY_DELAYS_MS[attempt] || 0;
+  appendLog("warn", "integration_ingest_background_refresh_retry_scheduled", {
+    userId: job.user?.id,
+    location: job.location,
+    payloadTypes: job.payloadTypes,
+    targetTypes: job.targetTypes,
+    attempt: attempt + 1,
+    delayMs,
+    contextImpact: summary.contextImpact?.status || "unknown",
+    dailyBriefing: summary.dailyBriefing?.status || "unknown",
+    error: summary.error || null,
+  }).catch(() => {});
+  setTimeout(() => runQueuedPostIngestContextRefresh(job, attempt + 1), delayMs);
+}
+
+function logPostIngestContextRefreshFailure(job, summary = {}, attempt = 0) {
+  appendLog("warn", "integration_ingest_background_refresh_failed", {
+    userId: job.user?.id,
+    location: job.location,
+    payloadTypes: job.payloadTypes,
+    targetTypes: job.targetTypes,
+    attempts: attempt + 1,
+    contextImpact: summary.contextImpact?.status || "unknown",
+    dailyBriefing: summary.dailyBriefing?.status || "unknown",
+    error: summary.error || null,
+  }).catch(() => {});
 }
 
 async function runPostIngestContextRefresh({ location, payloadTypes = [], targetTypes = [], user = { id: LOCAL_USER_ID }, options = {} }) {
