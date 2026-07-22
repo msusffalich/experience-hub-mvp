@@ -1,4 +1,4 @@
-const APP_VERSION = "20260722-experience-evidence-context-683";
+const APP_VERSION = "20260722-event-narrative-rollup-684";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -2746,6 +2746,10 @@ const manualContent = {
         "En modo publicado, Captura bloquea el guardado si no hay sesión activa. Esto evita registros aislados en un solo navegador y protege la prueba multidispositivo.",
         "El refactor multidispositivo introduce el modelo correcto de workspace, miembros, participantes, eventos internos y activos. La migración SQL está en database/workspace-events-assets.sql y debe aplicarse antes de considerar compartición multiusuario real.",
         "Captura ahora permite registrar varios eventos dentro de una experiencia. Cada línea representa un momento de la experiencia y se conserva para reportes, activos, publicaciones e integración futura con dispositivos.",
+        "La narrativa humana puede vivir en dos niveles. La experiencia narra el episodio completo; un evento puede narrar un submomento dentro de una experiencia larga. Un evento narrado sigue siendo evento: solo se convierte en experiencia independiente si el usuario lo promueve durante la curación.",
+        "Una experiencia cuenta como narrada si tiene relato humano propio o si al menos uno de sus eventos tiene relato humano. El mapa de conocimiento cuenta experiencias narradas, no fragmentos sueltos, para evitar inflar el avance cuando una experiencia tiene varios eventos narrados.",
+        "La narrativa humana es texto escrito por el usuario o voz/video transcrito donde el usuario cuenta qué vivió. OCR, visión de imágenes, biometría, clima, GPS, nombres de archivo y rellenos técnicos son contexto o evidencia; no convierten por sí solos un registro en experiencia narrada.",
+        "Para sincronizar narrativa de eventos entre dispositivos, Supabase debe tener aplicada la migración database/event-narrative-rollup.sql. Si aún no está aplicada, el servidor conserva compatibilidad guardando el estado dentro de metadatos, pero las columnas consultables de experience_events quedarán pendientes.",
         "Captura muestra una vista previa viva de eventos antes de guardar. Esto ayuda a confirmar si una experiencia larga debe quedar como un solo registro con momentos internos y a qué momento pertenece cada adjunto.",
         "Cada adjunto de Captura puede quedar asociado a toda la experiencia o a un evento interno específico. Esto permite separar evidencia por momento: una imagen, audio, video o documento puede pertenecer al evento 1, 2, 3 o al contexto general.",
         "Reportes puede filtrar por texto de eventos internos y Activos puede separar adjuntos vinculados a eventos de adjuntos generales de la experiencia.",
@@ -3428,6 +3432,10 @@ const manualContent = {
         "In published mode, Capture blocks saving when there is no active session. This prevents isolated records in one browser and protects the multi-device test.",
         "The multi-device refactor introduces the correct workspace, members, participants, internal events, and assets model. The SQL migration lives in database/workspace-events-assets.sql and must be applied before real multi-user sharing is considered complete.",
         "Capture now supports several events inside one experience. Each line represents one moment in the experience and is preserved for reports, assets, publications, and future device integration.",
+        "Human narrative can live at two levels. The experience narrates the full episode; an event can narrate one meaningful submoment inside a longer experience. A narrated event remains an event unless the user promotes it during curation.",
+        "An experience counts as narrated when it has its own human narrative or at least one narrated event. The knowledge map counts narrated experiences, not loose snippets, so one experience with several narrated events still counts once.",
+        "Human narrative means user-written text or transcribed voice/video where the user tells what they lived. OCR, image vision, biometrics, weather, GPS, filenames, and technical filler are context or evidence; they do not make a record narrated by themselves.",
+        "To synchronize event narrative between devices, Supabase needs the database/event-narrative-rollup.sql migration. Until it is applied, the server keeps compatibility by preserving the state in metadata, but queryable experience_events columns remain pending.",
         "Capture shows a live Event preview before saving. This helps confirm whether a long experience should stay as one record with internal moments and which attachments belong to each moment.",
         "Each Capture attachment can be linked to the whole experience or to a specific internal event. This separates evidence by moment: an image, audio, video, or document can belong to event 1, 2, 3, or the general context.",
         "Reports can filter by internal-event text, and Assets can separate event-linked attachments from general experience attachments.",
@@ -6195,16 +6203,21 @@ function mergeRemoteAgendaEvents(remoteEvents = [], localEvents = []) {
 function normalizeExperienceEvents(events = [], experienceId = "") {
   if (!Array.isArray(events)) return [];
   return events
-    .map((event, index) => ({
-      id: event.id || event.eventId || `evt-${experienceId || "experience"}-${index + 1}`,
-      title: String(event.title || event.name || "").trim(),
-      description: String(event.description || event.notes || "").trim(),
-      order: Number.isFinite(Number(event.order)) ? Number(event.order) : index + 1,
-      timestamp: event.timestamp || event.occurredAt || "",
-      duration: event.duration ? Number(event.duration) : null,
-      mood: event.mood || "",
-      energy: event.energy ? Number(event.energy) : null,
-    }))
+    .map((event, index) => {
+      const narrativeText = getEventNarrativeTextForExport(event);
+      return {
+        id: event.id || event.eventId || `evt-${experienceId || "experience"}-${index + 1}`,
+        title: String(event.title || event.name || "").trim(),
+        description: String(event.description || event.notes || "").trim(),
+        order: Number.isFinite(Number(event.order)) ? Number(event.order) : index + 1,
+        timestamp: event.timestamp || event.occurredAt || "",
+        duration: event.duration ? Number(event.duration) : null,
+        mood: event.mood || "",
+        energy: event.energy ? Number(event.energy) : null,
+        narrativeText,
+        narrativeStatus: narrativeText ? "ok" : "pending",
+      };
+    })
     .filter((event) => event.title || event.description);
 }
 
@@ -20697,8 +20710,48 @@ function getExperienceNarrativeTextForExport(experience = {}) {
   return getExperienceNarrativeCandidates(experience)[0] || "";
 }
 
+function getEventNarrativeCandidates(event = {}) {
+  return [
+    event.narrativeText,
+    event.narrative,
+    event.humanNarrative,
+    event.manualNote,
+    event.voiceTranscript,
+    event.transcript,
+    event.notes,
+  ]
+    .map((value) => cleanObsidianMarkdownText(value))
+    .filter((value) => value && !isLowValueObsidianNarrative(value));
+}
+
+function getEventNarrativeTextForExport(event = {}) {
+  return getEventNarrativeCandidates(event)[0] || "";
+}
+
+function getEventNarrativeStatus(event = {}) {
+  return getEventNarrativeTextForExport(event) ? "ok" : "pending";
+}
+
+function hasNarratedEvent(experience = {}) {
+  return getExperienceEventTimeline(experience).some((event) => getEventNarrativeStatus(event) === "ok");
+}
+
+function getExperienceNarrativeRollupStatus(experience = {}) {
+  return getExperienceNarrativeTextForExport(experience) || hasNarratedEvent(experience) ? "ok" : "pending";
+}
+
 function getExperienceNarrativeStatus(experience = {}) {
-  return getExperienceNarrativeTextForExport(experience) ? "ok" : "pending";
+  return getExperienceNarrativeRollupStatus(experience);
+}
+
+function renderObsidianEventLine(event = {}) {
+  const label = cleanObsidianMarkdownText(event.title || event.text || event.description, "Evento");
+  const narrative = getEventNarrativeTextForExport(event);
+  const status = getEventNarrativeStatus(event);
+  const prefix = event.order ? `${event.order}. ` : "";
+  return narrative
+    ? `- ${prefix}${label}${obsidianSeparator()}narrativa de evento: ${truncateText(narrative, 260)}`
+    : `- ${prefix}${label}${obsidianSeparator()}narrativa de evento: ${status}`;
 }
 
 function getMeaningfulAssetAnalysisSnippets(attachments = [], limit = 3) {
@@ -21001,7 +21054,7 @@ function renderExperienceMapMarkdownExperience(experience) {
     "**Eventos internos**",
     "",
     ...(events.length
-      ? events.map((event) => `- ${event.order || ""}. ${cleanObsidianMarkdownText(event.title || event.text || event.description, "Evento")}`)
+      ? events.map(renderObsidianEventLine)
       : ["- Sin eventos internos registrados."]),
     "",
     "**Activos y evidencia**",
@@ -21144,7 +21197,7 @@ function buildObsidianExperienceNoteMarkdown(experience = {}) {
       "## Eventos internos",
       "",
       ...(events.length
-        ? events.map((event) => `- ${event.order || ""}. ${cleanObsidianMarkdownText(event.title || event.text || event.description, "Evento")}`)
+        ? events.map(renderObsidianEventLine)
         : ["- Sin eventos internos registrados."]),
       "",
       "## Activos vinculados",
@@ -38191,4 +38244,3 @@ function toDatetimeLocal(value) {
   const offset = date.getTimezoneOffset() * 60000;
   return new Date(date.getTime() - offset).toISOString().slice(0, 16);
 }
-

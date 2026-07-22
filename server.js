@@ -4809,12 +4809,23 @@ async function syncExperienceEventsToSupabase(experience, user = { id: LOCAL_USE
       accessToken: user.accessToken,
     });
     if (!events.length) return { synced: true, count: 0 };
-    await supabaseRest("experience_events", {
-      method: "POST",
-      headers: { Prefer: "return=minimal" },
-      body: JSON.stringify(events.map((event, index) => toExperienceEventRow(event, experience, workspace.id, index))),
-      accessToken: user.accessToken,
-    });
+    const eventRows = events.map((event, index) => toExperienceEventRow(event, experience, workspace.id, index));
+    try {
+      await supabaseRest("experience_events", {
+        method: "POST",
+        headers: { Prefer: "return=minimal" },
+        body: JSON.stringify(eventRows),
+        accessToken: user.accessToken,
+      });
+    } catch (error) {
+      if (!isSupabaseMissingEventNarrativeColumns(error)) throw error;
+      await supabaseRest("experience_events", {
+        method: "POST",
+        headers: { Prefer: "return=minimal" },
+        body: JSON.stringify(eventRows.map(stripExperienceEventNarrativeColumns)),
+        accessToken: user.accessToken,
+      });
+    }
     return { synced: true, count: events.length };
   } catch (error) {
     workspaceSchemaState.available = false;
@@ -4917,8 +4928,57 @@ async function listExperienceAssetsForRows(rows = [], user = { id: LOCAL_USER_ID
   }
 }
 
+function cleanEventNarrativeText(value = "") {
+  return String(value || "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function isLowValueEventNarrative(value = "") {
+  const clean = cleanEventNarrativeText(value);
+  if (!clean || clean.length < 24) return true;
+  if (/^(img|image|video|vid|audio|recording|foto|photo)[-_ ]?\d*/i.test(clean)) return true;
+  if (/\b(image_picker|camera_capture|native-media|vibeapp-native|vibe-glasses)\b/i.test(clean)) return true;
+  if (/\.(jpe?g|png|heic|webp|gif|mp4|mov|webm|m4v|mp3|wav|m4a|aac|pdf|docx?|txt|csv|json|zip)$/i.test(clean)) return true;
+  if (/^(foto|imagen|video|audio)\s+capturad[oa]\s+desde\s+vibeapp/i.test(clean)) return true;
+  if (/sin resumen narrativo suficiente|narrativa pendiente/i.test(clean)) return true;
+  if (/extracci[oó]n local autom[aá]tica|revisi[oó]n multimodal guiada|estado mvp actual|evidencia consultable|revisar antes de publicar/i.test(clean)) return true;
+  return false;
+}
+
+function getEventNarrativeText(event = {}) {
+  return [
+    event.narrativeText,
+    event.narrative_text,
+    event.narrative,
+    event.humanNarrative,
+    event.manualNote,
+    event.voiceTranscript,
+    event.transcript,
+    event.notes,
+  ]
+    .map(cleanEventNarrativeText)
+    .find((value) => value && !isLowValueEventNarrative(value)) || "";
+}
+
+function getEventNarrativeStatus(event = {}) {
+  return getEventNarrativeText(event) ? "ok" : "pending";
+}
+
+function stripExperienceEventNarrativeColumns(row = {}) {
+  const { narrative_text, narrative_status, ...rest } = row;
+  return rest;
+}
+
+function isSupabaseMissingEventNarrativeColumns(error) {
+  const detail = sanitizeDiagnosticError(error);
+  return /narrative_text|narrative_status|schema cache|column/i.test(detail);
+}
+
 function toExperienceEventRow(event, experience, workspaceId, index = 0) {
   const participantId = experience.pilotParticipantId || null;
+  const narrativeText = getEventNarrativeText(event);
+  const narrativeStatus = narrativeText ? "ok" : "pending";
   return {
     event_id: event.id || `evt-${experience.id}-${index + 1}`,
     experience_id: experience.id,
@@ -4931,13 +4991,19 @@ function toExperienceEventRow(event, experience, workspaceId, index = 0) {
     duration_minutes: event.duration || null,
     mood: event.mood || null,
     energy: event.energy || null,
+    narrative_text: narrativeText || null,
+    narrative_status: narrativeStatus,
     metadata: buildSignalMetadata({
       existing: event.metadata,
       source: "experience-capture-v1",
       sourceType: event.sourceType || experience.sourceType || "manual",
       payloadType: "experience_event",
       experience,
-      event,
+      event: {
+        ...event,
+        narrativeText: narrativeText || null,
+        narrativeStatus,
+      },
       participantId,
       index,
     }),
@@ -4954,6 +5020,8 @@ function fromExperienceEventRow(row) {
     duration: row.duration_minutes || null,
     mood: row.mood || "",
     energy: row.energy || null,
+    narrativeText: row.narrative_text || row.metadata?.event?.narrativeText || "",
+    narrativeStatus: row.narrative_status || row.metadata?.event?.narrativeStatus || "pending",
   };
 }
 
@@ -10050,16 +10118,21 @@ function normalizeExperience(experience) {
 function normalizeExperienceEvents(events = [], experienceId = "") {
   if (!Array.isArray(events)) return [];
   return events
-    .map((event, index) => ({
-      id: event.id || event.eventId || `evt-${experienceId || "experience"}-${index + 1}`,
-      title: String(event.title || event.name || "").trim(),
-      description: String(event.description || event.notes || "").trim(),
-      order: Number.isFinite(Number(event.order)) ? Number(event.order) : index + 1,
-      timestamp: event.timestamp || event.occurredAt || "",
-      duration: event.duration ? Number(event.duration) : null,
-      mood: event.mood || "",
-      energy: event.energy ? Number(event.energy) : null,
-    }))
+    .map((event, index) => {
+      const narrativeText = getEventNarrativeText(event);
+      return {
+        id: event.id || event.eventId || `evt-${experienceId || "experience"}-${index + 1}`,
+        title: String(event.title || event.name || "").trim(),
+        description: String(event.description || event.notes || "").trim(),
+        order: Number.isFinite(Number(event.order)) ? Number(event.order) : index + 1,
+        timestamp: event.timestamp || event.occurredAt || "",
+        duration: event.duration ? Number(event.duration) : null,
+        mood: event.mood || "",
+        energy: event.energy ? Number(event.energy) : null,
+        narrativeText,
+        narrativeStatus: narrativeText ? "ok" : "pending",
+      };
+    })
     .filter((event) => event.title || event.description);
 }
 

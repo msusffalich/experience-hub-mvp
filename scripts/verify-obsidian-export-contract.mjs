@@ -47,7 +47,7 @@ const saveObsidianExport = between(
   "function inferObsidianTargetFromFilename",
 );
 
-assert(app.includes('const APP_VERSION = "20260722-experience-evidence-context-683";'), "APP_VERSION must identify the experience/evidence/context build.");
+assert(app.includes('const APP_VERSION = "20260722-event-narrative-rollup-684";'), "APP_VERSION must identify the event narrative rollup build.");
 assert(app.includes("RECOMMENDED_OBSIDIAN_VAULT_PATH") && app.includes("obsidian-vault-vibe"), "The app must show the exact expected local Obsidian vault path.");
 assert(app.includes("function hasObsidianMarkerDirectory") && app.includes('hasChildDirectoryHandle(handle, ".obsidian")'), "Local vault selection must validate the real Obsidian .obsidian marker.");
 assert(app.includes("function resolveLocalObsidianVaultHandle") && app.includes("obsidian_vault_marker_missing"), "Local vault selection must reject folders that are not Obsidian vaults.");
@@ -64,6 +64,8 @@ assert(experienceNoteBuilder.includes("getExperienceEnergyForExport") && !experi
 assert(experienceNoteBuilder.includes("getExperienceNarrativeStatus(experience)") && experienceNoteBuilder.includes("multimodalStatus"), "Experience notes must emit Dataview status fields from the shared narrative rule.");
 assert(experienceNoteBuilder.includes("...(people.length ?") && !experienceNoteBuilder.includes("people: []"), "Experience notes must omit people when no real people are known instead of emitting an empty array.");
 assert(app.includes("function isLowValueObsidianNarrative") && app.includes("function getExperienceNarrativeTextForExport") && app.includes("function getExperienceNarrativeStatus"), "Obsidian export must have one shared rule for real narrative text.");
+assert(app.includes("function getEventNarrativeTextForExport") && app.includes("function getEventNarrativeStatus") && app.includes("function getExperienceNarrativeRollupStatus"), "Obsidian export must support event-level human narrative and experience-level rollup.");
+assert(app.includes("hasNarratedEvent(experience)") && app.includes("return getExperienceNarrativeRollupStatus(experience);"), "Experience narrative status must be derived from experience narrative or narrated events.");
 const narrativeCandidates = between(
   app,
   "function getExperienceNarrativeCandidates",
@@ -91,6 +93,8 @@ assert(app.includes("preserveHuman: true") && !experienceNoteBuilder.includes("u
 assert(app.includes("mergeObsidianAutoBlock(existingMarkdown, safeMarkdown)"), "Local Obsidian save must merge the automatic block instead of overwriting curated experience notes.");
 assert(saveObsidianExport.includes("shouldPreserveHumanObsidianContent") && saveObsidianExport.includes("mergeObsidianAutoBlock(existingContent, finalContent)"), "Server Obsidian export must preserve human curation for experience notes.");
 assert(server.includes("function mergeObsidianAutoBlock") && server.includes("await uniqueObsidianPath(requestedPath)"), "Server must version legacy experience notes that do not have auto-block markers.");
+assert(server.includes("function getEventNarrativeText") && server.includes("narrative_text") && server.includes("narrative_status"), "Server must preserve event-level narrative in experience_events rows or metadata.");
+assert(server.includes("isSupabaseMissingEventNarrativeColumns") && server.includes("stripExperienceEventNarrativeColumns"), "Server event sync must gracefully fall back when Supabase has not yet applied event narrative columns.");
 assert(app.includes("hasCuratedObsidianLearnings(preservedHuman)") && app.includes('"learnings", "ok"') && app.includes('"updated_at"'), "Local merge must mark learnings ok and refresh updated_at when human curation adds learning content.");
 assert(server.includes("hasCuratedObsidianLearnings(preservedHuman)") && server.includes('"learnings", "ok"') && server.includes('"updated_at"'), "Server merge must mark learnings ok and refresh updated_at when human curation adds learning content.");
 assert(mapExporter.includes("Exportando...") && mapExporter.includes("requestAnimationFrame") && mapExporter.includes("skipObsidian: true") && mapExporter.includes('target: "generated_map"'), "Experience-map Markdown button must show progress and sync the map explicitly instead of silently doing nothing.");

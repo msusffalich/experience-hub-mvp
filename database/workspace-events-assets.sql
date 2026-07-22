@@ -71,10 +71,20 @@ ALTER TABLE experience_events
   ADD COLUMN IF NOT EXISTS uploaded_at TIMESTAMPTZ,
   ADD COLUMN IF NOT EXISTS processing_status TEXT,
   ADD COLUMN IF NOT EXISTS permissions TEXT,
-  ADD COLUMN IF NOT EXISTS metadata_fingerprint TEXT;
+  ADD COLUMN IF NOT EXISTS metadata_fingerprint TEXT,
+  ADD COLUMN IF NOT EXISTS narrative_text TEXT,
+  ADD COLUMN IF NOT EXISTS narrative_status TEXT NOT NULL DEFAULT 'pending';
+
+ALTER TABLE experience_events DROP CONSTRAINT IF EXISTS experience_events_narrative_status_check;
+ALTER TABLE experience_events
+  ADD CONSTRAINT experience_events_narrative_status_check
+  CHECK (narrative_status IN ('ok', 'pending'));
 
 CREATE INDEX IF NOT EXISTS experience_events_workspace_source_time_idx
   ON experience_events (workspace_id, source_type, occurred_at DESC);
+
+CREATE INDEX IF NOT EXISTS experience_events_workspace_narrative_idx
+  ON experience_events (workspace_id, narrative_status, occurred_at DESC);
 
 CREATE TABLE IF NOT EXISTS assets (
   asset_id TEXT PRIMARY KEY,

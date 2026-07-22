@@ -31,6 +31,14 @@ It adds:
 - A `context_signals` table with RLS.
 - Indexes for inbox and time-window lookups.
 
+Use `database/event-narrative-rollup.sql` when the event narrative layer is enabled.
+
+It adds:
+
+- `experience_events.narrative_text`
+- `experience_events.narrative_status`
+- An index for workspace-level event narrative review.
+
 This is intentionally additive. It does not delete existing records.
 
 ## Backend implications
@@ -69,6 +77,22 @@ The experience creation flow needs:
 - Suggested evidence to adopt.
 - Ambient context snapshot preview.
 
+## Two-level narrative
+
+Narrative can live at two levels:
+
+- Experience narrative: the human tells what the full lived episode meant.
+- Event narrative: the human tells what happened in one meaningful submoment inside a longer experience.
+
+An event with narrative remains an event. Narrative does not promote it automatically. Scope decides the level.
+
+Operational rule:
+
+- `event.narrative_status = ok` only when the event has human language with real content.
+- `experience.narrative = ok` when the experience itself has human narrative, or when at least one of its events has human narrative.
+- The knowledge map counts narrated experiences, not loose narrative snippets. One experience with three narrated events counts as one narrated experience.
+- Events remain optional and selective. The system may propose them, but it must not create one event for every evidence cluster without confirmation.
+
 ## Vibeapp implications
 
 Vibeapp should expose two simple user gestures:
@@ -93,7 +117,8 @@ Obsidian remains downstream:
 3. Creating an experience with a time range proposes nearby inbox evidence.
 4. Adopting evidence updates the existing asset instead of creating a duplicate.
 5. Obsidian export does not create notes for context signals or parentless technical media.
-6. Reports, findings, and publications can use adopted evidence and referenced context.
+6. An experience with no global narrative but at least one narrated event exports as narrated by rollup.
+7. Reports, findings, publications, and the knowledge map can use adopted evidence, referenced context, and event-level narrative without fabricating a global story.
 
 ## Recommendation
 

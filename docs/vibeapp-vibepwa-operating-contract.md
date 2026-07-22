@@ -53,6 +53,14 @@ Intentional evidence is allowed to exist before its parent experience. It starts
 
 Ambient context is different: it is stored as a time-based signal and referenced by experiences. It must not create an experience note by itself.
 
+Narrative can exist at the experience level or event level:
+
+- Experience narrative describes the full lived episode.
+- Event narrative describes one meaningful submoment inside a longer experience.
+- A narrated event remains an event; promotion to experience is a curation decision, not an automatic consequence of having text.
+- An experience is considered narrated when it has its own human narrative or at least one narrated event.
+- Metrics such as "real narrative" count narrated experiences, not the number of event narratives.
+
 ## API Responsibilities
 
 - `POST /api/integration/ingest`
@@ -66,6 +74,7 @@ Ambient context is different: it is stored as a time-based signal and referenced
 - `POST /api/experiences`
   - Rich experiences with multiple events and already-linked or adoptable assets.
   - Experiences should provide a time range (`startedAt`/`endedAt` or `occurredAt` plus duration) so the backend can propose/adopt evidence and reference ambient context.
+  - Events may include `narrativeText` and `narrativeStatus`. The backend derives the status from human text when possible and stores it in event metadata, and in `experience_events.narrative_text/status` after the Supabase migration is applied.
 - `GET /api/mobile/participants`
   - Groups/persons visible to the signed-in account so Vibeapp can attach every capture to the correct group/person.
 - `POST /api/participants`
@@ -154,8 +163,10 @@ Arnes is the optional native assistant orchestration service for Vibeapp. It sho
 
 - Capturing evidence is cheap and may happen without choosing an experience first.
 - Marking an experience is a separate gesture: narrative, time range, group/person, and optional events.
+- Narrating an event is a separate gesture inside an open experience: voice or text tied to that submoment.
 - When an experience is marked, the backend proposes evidence in the same time window and context.
 - User or automation can adopt intentional evidence into the experience.
+- Curation can later promote an event into its own experience, or demote an experience into an event/context candidate, while preserving timestamps and evidence links.
 - Pruning intentional evidence may remove duplicate or wrong user media from the experience view.
 - Ambient context is never pruned for narrative reasons; only sensor errors, duplicates, or corrupt samples may be cleaned as data hygiene.
 
