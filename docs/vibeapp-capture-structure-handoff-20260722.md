@@ -88,6 +88,22 @@ Vibeapp should create an event only when the user is already in an explicit expe
 
 Every event created inside an experience flow must keep a stable id. Vibeapp should not decide whether the event appears as a graph node or inline detail; VibePWA/Obsidian decide that during curation. Events with narrative or adopted evidence can become child nodes in the map. Light labels can remain inline inside the parent experience.
 
+### 5.1 Agenda handling
+
+Agenda is for scheduled or future commitments. It is not an experience and not a lived event.
+
+When the user says something like "V agenda cita manana a las 4", Vibeapp should send a calendar payload through `/api/integration/ingest` with:
+
+- `targetLayer: "agenda"`
+- `payloadType: "calendar"`
+- `title`
+- `startAt` / `endAt`
+- optional `location`, `participantId`, `description`, `sourceType`, `sourceDevice`, and `sourceId`
+
+This must create or update Agenda only. It must not create an experience, event narrative, Obsidian note, finding, or publication by itself.
+
+After the scheduled moment happens, VibePWA may help convert or link the agenda item to a real experience if the user narrates what happened. That later conversion uses the experience/event/evidence flow, not the original agenda record as narrative.
+
 ### 6. Group/person selection
 
 After login, Vibeapp must call `GET /api/mobile/participants` and show the available groups/persons. The selected group/person must be attached to all captures, evidence, context, events, and experiences.

@@ -116,6 +116,7 @@ When Vibeapp creates an event inside an explicit experience flow, it must keep s
 - `POST /api/integration/ingest`
   - Text or transcribed human narrative may create/update an experience when the payload represents a lived episode.
   - Agenda events create/update Agenda.
+  - Agenda payloads must use `targetLayer: "agenda"` and `payloadType: "calendar"`. They schedule or organize future commitments; they do not create experience events or narrative memory until the user later converts/links them after the moment is lived.
   - Location, weather/news summaries, biometric summaries, Oura/Health Connect/Samsung context, and entertainment summaries are ambient context signals, not experiences.
   - Meta/Oakley visual media metadata and other media metadata are evidence descriptors; the binary file goes through `/api/media`.
 - `POST /api/media`
