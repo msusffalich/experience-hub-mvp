@@ -10,6 +10,9 @@ const files = {
   flowAutomation: readFileSync("scripts/verify-flow-automation.mjs", "utf8"),
   simulateVibeapp: readFileSync("scripts/simulate-vibeapp-sync.mjs", "utf8"),
   nativeBlueprint: readFileSync("docs/vibeapp-native-blueprint.md", "utf8"),
+  operatingContract: readFileSync("docs/vibeapp-vibepwa-operating-contract.md", "utf8"),
+  captureAdoptionBlueprint: readFileSync("docs/capture-adoption-blueprint-20260721.md", "utf8"),
+  evidenceMigration: readFileSync("database/evidence-adoption-context-signals.sql", "utf8"),
   clioPlan: readFileSync("docs/clio-adoption-plan.md", "utf8"),
   productGapRegister: readFileSync("docs/product-gap-register.md", "utf8"),
 };
@@ -32,6 +35,9 @@ check(files.server.includes("/api/integration/ingest"), "Blueprint requires a si
 check(files.server.includes("buildPostIngestAutomation"), "Integration ingest must trigger post-ingest automation.");
 check(files.server.includes("biometric_impact_recomputed"), "Biometric ingest must recompute impact, not only store data.");
 check(files.server.includes("inferUpdatedPanelsFromIngest"), "Post-ingest automation must list affected operational panels.");
+check(files.server.includes("upsertContextSignal(buildContextSignalFromIntegrationSignal"), "Context ingest must store context_signals instead of generated context experiences.");
+check(!files.server.includes("upsertExperience(buildContextExperienceFromIntegrationSignal"), "Context ingest must not create ctx-* experience rows.");
+check(files.server.includes("upsertAssetEvidence(saved, user)"), "Direct /api/media uploads must register intentional evidence in assets.");
 check(files.server.includes("getDailyBriefing") && files.server.includes("getContextImpact"), "Daily/context providers must remain server-side.");
 check(files.server.includes("allowedSourceTypes") && files.server.includes("apple-healthkit-native") && files.server.includes("android-health-connect"), "Device source catalog must include Apple HealthKit and Health Connect.");
 check(files.server.includes("/api/sync/state") && files.server.includes("getServerSyncState"), "Server must expose a sync state endpoint for automatic multi-device refresh.");
@@ -63,6 +69,10 @@ check(files.packageJson.includes('"verify:processing"') && files.packageJson.inc
 check(files.productGapRegister.includes("Registro de brechas de producto Vibe"), "Product gap register is missing.");
 check(files.productGapRegister.includes("Apple Health") && files.productGapRegister.includes("Samsung Watch") && files.productGapRegister.includes("Oura Ring") && files.productGapRegister.includes("Meta/Oakley"), "Product gap register must track device/accessory universe explicitly.");
 check(files.productGapRegister.includes("Cerrado con prueba") && files.productGapRegister.includes("Pendiente hardware/API"), "Product gap register must separate tested closure from hardware/API assumptions.");
+check(files.evidenceMigration.includes("CREATE TABLE IF NOT EXISTS context_signals"), "Evidence/context migration must create context_signals.");
+check(files.evidenceMigration.includes("adoption_status") && files.evidenceMigration.includes("evidence_type"), "Evidence/context migration must add adoption status and evidence type to assets.");
+check(files.operatingContract.includes("Intentional evidence is allowed to exist before its parent experience"), "Operating contract must state evidence can be captured before its experience.");
+check(files.captureAdoptionBlueprint.includes("Do not ship partial behavior that writes context as both `context_signals` and `ctx-*` experiences"), "Capture blueprint must prevent dual-writing context as fake experiences.");
 check(files.packageJson.includes('"verify:flows"') && files.packageJson.includes("verify-flow-automation.mjs"), "Package scripts must verify automatic server flow closure.");
 check(files.packageJson.includes("npm run verify:flows"), "Release verification must run the automatic flow closure gate.");
 check(files.packageJson.includes("verify-local-e2e-flow.mjs") && files.packageJson.includes("verify-production-e2e.mjs"), "Package scripts must expose local and production E2E verification.");

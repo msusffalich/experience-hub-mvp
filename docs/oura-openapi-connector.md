@@ -218,10 +218,10 @@ Comportamiento actual:
 
 - `text`: crea o actualiza una experiencia con id estable derivado de `idempotencyKey`.
 - `calendar`: crea o actualiza un evento de Agenda con id estable.
-- `biometric`, `activity`, `sleep`, `location` y `context`: crean una experiencia de contexto con `metadata.structuredContext.signals`, para que la PWA la use en biometria, Panel, Reportes y Hallazgos.
-- `image`, `audio`, `video`, `document` y `media`: quedan aceptados como `accepted_pending_media`; el archivo binario debe subir por `/api/media` con el mismo `sourceId` e `idempotencyKey`.
+- `biometric`, `activity`, `sleep`, `location` y `context`: se guardan como `context_signals`, no como experiencias. La PWA los cruza por fecha/hora para biometria, Panel, Reportes y Hallazgos.
+- `image`, `audio`, `video`, `document` y `media`: quedan como evidencia intencional en `assets`; si no traen experiencia padre, quedan en bandeja hasta que una experiencia las adopte.
 
-La regla sigue siendo la misma: ninguna fuente escribe directamente sobre reportes o hallazgos. Primero se transforma en experiencia, agenda, activo o contexto sincronizable.
+La regla sigue siendo la misma: ninguna fuente escribe directamente sobre reportes o hallazgos. Primero se transforma en experiencia, agenda, evidencia o contexto sincronizable.
 
 ## Prueba integral de conectores
 

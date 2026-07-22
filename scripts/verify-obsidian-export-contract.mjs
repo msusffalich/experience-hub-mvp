@@ -47,7 +47,7 @@ const saveObsidianExport = between(
   "function inferObsidianTargetFromFilename",
 );
 
-assert(app.includes('const APP_VERSION = "20260721-taxonomy-domain-cleanup-682";'), "APP_VERSION must identify the taxonomy/domain cleanup build.");
+assert(app.includes('const APP_VERSION = "20260722-experience-evidence-context-683";'), "APP_VERSION must identify the experience/evidence/context build.");
 assert(app.includes("RECOMMENDED_OBSIDIAN_VAULT_PATH") && app.includes("obsidian-vault-vibe"), "The app must show the exact expected local Obsidian vault path.");
 assert(app.includes("function hasObsidianMarkerDirectory") && app.includes('hasChildDirectoryHandle(handle, ".obsidian")'), "Local vault selection must validate the real Obsidian .obsidian marker.");
 assert(app.includes("function resolveLocalObsidianVaultHandle") && app.includes("obsidian_vault_marker_missing"), "Local vault selection must reject folders that are not Obsidian vaults.");

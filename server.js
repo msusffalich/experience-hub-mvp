@@ -187,6 +187,7 @@ const defaultStore = {
   },
   experiences: [],
   agendaEvents: [],
+  contextSignals: [],
 };
 
 const categoryAliases = {
@@ -622,11 +623,13 @@ async function handleApi(req, res, url) {
     const contentType = req.headers["content-type"] || "";
     if (contentType.includes("multipart/form-data")) {
       const upload = await readMultipartMedia(req, contentType);
-      sendJson(res, 201, await saveMediaBuffer(upload.media, upload.bytes, user));
+      const saved = await saveMediaBuffer(upload.media, upload.bytes, user);
+      sendJson(res, 201, await upsertAssetEvidence(saved, user));
       return;
     }
     const media = await readJson(req);
-    sendJson(res, 201, await saveMedia(media, user));
+    const saved = await saveMedia(media, user);
+    sendJson(res, 201, await upsertAssetEvidence(saved, user));
     return;
   }
 
@@ -2585,9 +2588,9 @@ async function ingestIntegrationSignal(signal = {}, user = { id: LOCAL_USER_ID }
   }
 
   if (validation.target === "context") {
-    const experience = await upsertExperience(buildContextExperienceFromIntegrationSignal(normalized, signal, user), user);
-    return integrationIngestResult(validation, "stored", experience.id, {
-      experience,
+    const contextSignal = await upsertContextSignal(buildContextSignalFromIntegrationSignal(normalized, signal, user), user);
+    return integrationIngestResult(validation, "stored", contextSignal.id, {
+      contextSignal,
       contextType: normalized.payloadType,
     });
   }
@@ -2727,6 +2730,8 @@ function inferPostIngestLocation(results = []) {
   for (const result of results) {
     candidates.push(result.agendaEvent?.location);
     candidates.push(result.experience?.location);
+    candidates.push(result.contextSignal?.location);
+    candidates.push(result.contextSignal?.payload?.raw?.location);
     const context = result.experience?.metadata?.structuredContext;
     candidates.push(context?.signals?.[0]?.location);
     candidates.push(context?.signals?.[0]?.payload?.location);
@@ -2746,7 +2751,13 @@ function buildBiometricImpactFromIngest(results = []) {
   let suggestedEnergyTotal = 0;
   let suggestedEnergyCount = 0;
   for (const result of biometricResults) {
-    const context = result.experience?.metadata?.structuredContext || {};
+    const context = result.contextSignal
+      ? {
+          metrics: result.contextSignal.metrics || {},
+          signals: result.contextSignal.payload?.signals || [],
+          payloadType: result.contextSignal.signalType,
+        }
+      : result.experience?.metadata?.structuredContext || {};
     const metrics = context.metrics && typeof context.metrics === "object" ? context.metrics : {};
     Object.keys(metrics).forEach((key) => metricNames.add(key));
     const signals = Array.isArray(context.signals) ? context.signals : [];
@@ -2822,6 +2833,62 @@ function buildAgendaEventFromIntegrationSignal(normalized, signal = {}) {
     sourceType: normalized.sourceType,
     pilotParticipantId: normalized.participantId,
     metadata: buildIntegrationMetadata(normalized, signal, null, { target: "agenda" }),
+  };
+}
+
+function buildContextSignalFromIntegrationSignal(normalized, signal = {}, user = { id: LOCAL_USER_ID }) {
+  const payload = isPlainObject(normalized.payload) ? normalized.payload : {};
+  const idempotencyKey = normalized.idempotencyKey || normalized.sourceId;
+  const weather = normalizeIntegrationWeather(payload.weather || signal.weather || signal.metadata?.weather);
+  const news = normalizeIntegrationNews(payload.news || payload.dailyContext?.news || signal.news || signal.metadata?.news);
+  const entertainment = normalizeIntegrationEntertainment(payload.entertainment || payload.dailyContext?.entertainment || signal.entertainment || signal.metadata?.entertainment);
+  const metrics = {
+    ...(payload.metrics && typeof payload.metrics === "object" ? payload.metrics : {}),
+    ...(weather ? {
+      weatherTemperatureC: weather.temperatureC,
+      weatherApparentC: weather.apparentC,
+      weatherHumidity: weather.humidity,
+      weatherWindKph: weather.windKph,
+      weatherCode: weather.weatherCode,
+    } : {}),
+  };
+  const rows = Array.isArray(payload.records)
+    ? payload.records
+    : Array.isArray(payload.samples)
+      ? payload.samples
+      : [signal];
+  const dataType = payload.dataType || payload.recordType || normalized.payloadType;
+  const capturedAt = normalized.capturedAt || new Date().toISOString();
+  const validFrom = payload.validFrom || payload.startAt || payload.startTime || payload.startDate || capturedAt;
+  const validTo = payload.validTo || payload.endAt || payload.endTime || payload.endDate || null;
+  return {
+    id: stableIntegrationId("ctxsig", idempotencyKey),
+    ownerUserId: user.id || LOCAL_USER_ID,
+    participantId: normalized.participantId || "",
+    sourceType: normalized.sourceType || "device",
+    sourceDevice: normalized.deviceMetadata?.deviceId || normalized.deviceMetadata?.device || "",
+    sourceId: normalized.sourceId,
+    signalType: normalized.payloadType || "context",
+    capturedAt,
+    validFrom,
+    validTo,
+    location: payload.location || signal.location || "",
+    metrics,
+    payload: {
+      provider: payload.provider || normalized.sourceType || "",
+      dataType,
+      summary: buildContextSignalSummary(normalized),
+      weather,
+      news,
+      entertainment,
+      signals: rows,
+      raw: payload,
+    },
+    metadata: buildIntegrationMetadata(normalized, signal, user, {
+      target: "context_signal",
+      contextModel: "ambient_context_v1",
+      idempotencyKey,
+    }),
   };
 }
 
@@ -4222,6 +4289,69 @@ async function deleteAgendaEvent(id, user = { id: LOCAL_USER_ID }) {
   }, user);
 }
 
+async function upsertContextSignal(signal, user = { id: LOCAL_USER_ID }) {
+  const normalized = normalizeContextSignal(signal, user);
+  if (activePersistence() === "supabase") {
+    const workspace = await getWorkspaceContext(user);
+    if (workspace?.id && !workspaceSchemaUnavailableRecently()) {
+      try {
+        const rows = await supabaseRest("context_signals", {
+          method: "POST",
+          searchParams: { on_conflict: "signal_id" },
+          headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+          body: JSON.stringify(toContextSignalRow(normalized, workspace.id, user)),
+          accessToken: user.accessToken,
+        });
+        workspaceSchemaState.available = true;
+        workspaceSchemaState.checkedAt = new Date().toISOString();
+        workspaceSchemaState.error = null;
+        return fromContextSignalRow(rows[0]);
+      } catch (error) {
+        await appendLog("warn", "context_signal_remote_skipped", {
+          signalId: normalized.id,
+          reason: sanitizeDiagnosticError(error),
+        });
+      }
+    }
+  }
+  return mutateStore((currentStore) => {
+    const contextSignals = Array.isArray(currentStore.contextSignals) ? currentStore.contextSignals : [];
+    currentStore.contextSignals = [normalized, ...contextSignals.filter((item) => item.id !== normalized.id)];
+    return normalized;
+  });
+}
+
+async function listContextSignals(user = { id: LOCAL_USER_ID }, range = null) {
+  if (activePersistence() === "supabase") {
+    const workspace = await getWorkspaceContext(user);
+    if (workspace?.id && !workspaceSchemaUnavailableRecently()) {
+      try {
+        const rows = await supabaseRest("context_signals", {
+          searchParams: {
+            workspace_id: `eq.${workspace.id}`,
+            order: "captured_at.desc",
+            limit: "500",
+          },
+          accessToken: user.accessToken,
+        });
+        workspaceSchemaState.available = true;
+        workspaceSchemaState.checkedAt = new Date().toISOString();
+        workspaceSchemaState.error = null;
+        return rows.map(fromContextSignalRow).filter((item) => !range || isTimestampInRange(item.capturedAt, range));
+      } catch (error) {
+        await appendLog("warn", "context_signal_list_remote_skipped", {
+          reason: sanitizeDiagnosticError(error),
+        });
+      }
+    }
+  }
+  const store = await readStore();
+  const items = Array.isArray(store.contextSignals) ? store.contextSignals : [];
+  return items
+    .filter((item) => !range || isTimestampInRange(item.capturedAt, range))
+    .sort((a, b) => new Date(b.capturedAt || 0) - new Date(a.capturedAt || 0));
+}
+
 async function upsertExperience(experience, user = { id: LOCAL_USER_ID }) {
   const normalized = normalizeExperience(experience);
   if (activePersistence() === "supabase") {
@@ -4497,6 +4627,8 @@ async function resetUserContentData(body = {}, user = { id: LOCAL_USER_ID, email
     await mutateStore((currentStore) => {
       const before = currentStore.experiences.length;
       currentStore.experiences = [];
+      summary.deleted.contextSignals = Array.isArray(currentStore.contextSignals) ? currentStore.contextSignals.length : 0;
+      currentStore.contextSignals = [];
       summary.deleted.experiences = before;
       return { ok: true };
     });
@@ -4524,9 +4656,11 @@ async function resetUserContentData(body = {}, user = { id: LOCAL_USER_ID, email
   await deleteSupabaseRowsForReset("asset_upload_attempts", { user_id: `eq.${user.id}` }, summary);
   if (workspaceIds.length) {
     await deleteSupabaseRowsForReset("assets", { workspace_id: `in.(${workspaceIds.join(",")})` }, summary);
+    await deleteSupabaseRowsForReset("context_signals", { workspace_id: `in.(${workspaceIds.join(",")})` }, summary);
     await deleteSupabaseRowsForReset("experience_events", { workspace_id: `in.(${workspaceIds.join(",")})` }, summary);
     await deleteSupabaseRowsForReset("participants", { workspace_id: `in.(${workspaceIds.join(",")})` }, summary);
   } else {
+    await deleteSupabaseRowsForReset("context_signals", { owner_user_id: `eq.${user.id}` }, summary);
     await deleteSupabaseRowsForReset("assets", { owner_user_id: `eq.${user.id}` }, summary);
   }
   await deleteSupabaseRowsForReset("agenda_events", { user_id: `eq.${user.id}` }, summary);
@@ -4823,6 +4957,71 @@ function fromExperienceEventRow(row) {
   };
 }
 
+function normalizeContextSignal(signal = {}, user = { id: LOCAL_USER_ID }) {
+  const now = new Date().toISOString();
+  return {
+    id: signal.id || signal.signalId || createId(),
+    ownerUserId: signal.ownerUserId || signal.owner_user_id || user?.id || LOCAL_USER_ID,
+    participantId: signal.participantId || signal.participant_id || "",
+    sourceType: signal.sourceType || signal.source_type || "device",
+    sourceDevice: signal.sourceDevice || signal.source_device || "",
+    sourceId: signal.sourceId || signal.source_id || "",
+    signalType: signal.signalType || signal.signal_type || "context",
+    capturedAt: signal.capturedAt || signal.captured_at || now,
+    validFrom: signal.validFrom || signal.valid_from || signal.capturedAt || now,
+    validTo: signal.validTo || signal.valid_to || null,
+    location: signal.location || "",
+    metrics: isPlainObject(signal.metrics) ? signal.metrics : {},
+    payload: isPlainObject(signal.payload) ? signal.payload : {},
+    metadata: isPlainObject(signal.metadata) ? signal.metadata : {},
+    createdAt: signal.createdAt || signal.created_at || now,
+    updatedAt: signal.updatedAt || signal.updated_at || now,
+  };
+}
+
+function toContextSignalRow(signal, workspaceId, user = { id: LOCAL_USER_ID }) {
+  const normalized = normalizeContextSignal(signal, user);
+  return {
+    signal_id: normalized.id,
+    workspace_id: workspaceId,
+    owner_user_id: user.id || normalized.ownerUserId || null,
+    participant_id: normalized.participantId || null,
+    source_type: normalized.sourceType,
+    source_device: normalized.sourceDevice || null,
+    source_id: normalized.sourceId || null,
+    signal_type: normalized.signalType,
+    captured_at: normalized.capturedAt,
+    valid_from: normalized.validFrom || normalized.capturedAt,
+    valid_to: normalized.validTo || null,
+    location: normalized.location || null,
+    metrics: normalized.metrics || {},
+    payload: normalized.payload || {},
+    metadata: normalized.metadata || {},
+    updated_at: new Date().toISOString(),
+  };
+}
+
+function fromContextSignalRow(row = {}) {
+  return normalizeContextSignal({
+    id: row.signal_id,
+    ownerUserId: row.owner_user_id,
+    participantId: row.participant_id,
+    sourceType: row.source_type,
+    sourceDevice: row.source_device,
+    sourceId: row.source_id,
+    signalType: row.signal_type,
+    capturedAt: row.captured_at,
+    validFrom: row.valid_from,
+    validTo: row.valid_to,
+    location: row.location,
+    metrics: row.metrics,
+    payload: row.payload,
+    metadata: row.metadata,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  });
+}
+
 function toAssetRow(attachment, experience, workspaceId, user, index = 0) {
   if (!attachment) return null;
   const kind = attachment.kind || inferServerMediaKind(attachment);
@@ -4869,6 +5068,99 @@ function toAssetRow(attachment, experience, workspaceId, user, index = 0) {
       },
     }),
   };
+}
+
+async function upsertAssetEvidence(media, user = { id: LOCAL_USER_ID }) {
+  const normalized = normalizeMedia(media);
+  if (activePersistence() !== "supabase") return normalized;
+  const workspace = await getWorkspaceContext(user);
+  if (!workspace?.id || workspaceSchemaUnavailableRecently()) return normalized;
+  try {
+    const rows = await supabaseRest("assets", {
+      method: "POST",
+      searchParams: { on_conflict: "asset_id" },
+      headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+      body: JSON.stringify(toAssetEvidenceRow(normalized, workspace.id, user)),
+      accessToken: user.accessToken,
+    });
+    workspaceSchemaState.available = true;
+    workspaceSchemaState.checkedAt = new Date().toISOString();
+    workspaceSchemaState.error = null;
+    return {
+      ...normalized,
+      ...fromAssetRow(rows[0]),
+      adoptionStatus: rows[0]?.adoption_status || inferMediaAdoptionStatus(normalized),
+      evidenceType: rows[0]?.evidence_type || "intentional",
+    };
+  } catch (error) {
+    await appendLog("warn", "asset_evidence_remote_skipped", {
+      assetId: normalized.id,
+      reason: sanitizeDiagnosticError(error),
+    });
+    return normalized;
+  }
+}
+
+function toAssetEvidenceRow(media, workspaceId, user = { id: LOCAL_USER_ID }) {
+  const normalized = normalizeMedia(media);
+  const kind = normalized.kind || inferServerMediaKind(normalized);
+  const linkedExperienceId = normalized.experienceId || normalized.metadata?.linkedExperienceId || "";
+  const participantId = normalized.participantId || normalized.pilotParticipantId || normalized.metadata?.participantId || "";
+  const adoptionStatus = inferMediaAdoptionStatus(normalized);
+  return {
+    asset_id: normalized.id,
+    workspace_id: workspaceId,
+    owner_user_id: user.id || null,
+    participant_id: participantId || null,
+    experience_id: linkedExperienceId || null,
+    event_id: normalized.eventId || normalized.metadata?.linkedEventId || null,
+    name: normalized.name || "Activo",
+    kind,
+    mime_type: normalized.type || normalized.originalType || "application/octet-stream",
+    size_bytes: Number(normalized.size || 0),
+    storage_bucket: SUPABASE_STORAGE_BUCKET,
+    storage_path: normalized.path || null,
+    signed_url: null,
+    preview_text: normalized.previewText || "",
+    analysis_text: normalized.analysisText || "",
+    metadata: buildSignalMetadata({
+      existing: normalized.metadata,
+      source: "evidence-inbox-v1",
+      sourceType: normalized.sourceType || normalized.source || "media_upload",
+      payloadType: kind,
+      attachment: normalized,
+      participantId,
+      user,
+      extra: {
+        evidenceModel: "intentional_evidence_v1",
+        adoptionStatus,
+        linkedExperienceId,
+        storage: normalized.storage || "",
+        storageBucket: SUPABASE_STORAGE_BUCKET,
+        storagePath: normalized.path || "",
+        capturedAt: normalized.capturedAt || normalized.createdAt || "",
+        inboxReason: linkedExperienceId ? "" : "waiting_for_experience_adoption",
+      },
+    }),
+    source_type: normalized.sourceType || normalized.source || "media_upload",
+    source_device: normalized.sourceDevice || normalized.device || null,
+    source_id: normalized.sourceId || null,
+    captured_at: normalized.capturedAt || normalized.createdAt || new Date().toISOString(),
+    uploaded_at: normalized.uploadedAt || new Date().toISOString(),
+    processing_status: normalized.processingStatus || inferAssetProcessingStatus(normalized, kind),
+    permissions: normalized.permissions || normalized.metadata?.permissions || "private",
+    metadata_fingerprint: normalized.fingerprint || normalized.metadata?.fingerprint || "",
+    checksum: normalized.checksum || normalized.metadata?.checksum || null,
+    evidence_type: "intentional",
+    adoption_status: adoptionStatus,
+    adopted_at: linkedExperienceId ? new Date().toISOString() : null,
+    adoption_method: linkedExperienceId ? "explicit_link" : null,
+    adoption_confidence: linkedExperienceId ? 1 : null,
+  };
+}
+
+function inferMediaAdoptionStatus(media = {}) {
+  return media.experienceId || media.metadata?.linkedExperienceId ? "adopted" : "inbox";
 }
 
 function fromAssetRow(row) {
@@ -5437,6 +5729,8 @@ function normalizeMedia(media) {
     size: Number(media.size || 0),
     dataUrl: media.dataUrl || null,
     createdAt: media.createdAt || new Date().toISOString(),
+    capturedAt: media.capturedAt || media.timestamp || media.createdAt || new Date().toISOString(),
+    uploadedAt: media.uploadedAt || null,
     storage: media.storage || "inline",
     path: media.path || null,
     url: media.url || null,
@@ -5450,10 +5744,17 @@ function normalizeMedia(media) {
     remoteSyncFailed: Boolean(media.remoteSyncFailed),
     remoteSyncError: media.remoteSyncError || "",
     metadata: isPlainObject(media.metadata) ? media.metadata : {},
+    experienceId: media.experienceId || media.experience_id || media.linkedExperienceId || media.metadata?.linkedExperienceId || "",
+    eventId: media.eventId || media.event_id || media.linkedEventId || media.metadata?.linkedEventId || "",
+    participantId: media.participantId || media.pilotParticipantId || media.metadata?.participantId || "",
+    pilotParticipantId: media.pilotParticipantId || media.participantId || media.metadata?.participantId || "",
     sourceType: media.sourceType || media.source || "",
     sourceDevice: media.sourceDevice || media.device || "",
     sourceId: media.sourceId || "",
     permissions: media.permissions || "",
+    checksum: media.checksum || media.metadata?.checksum || "",
+    fingerprint: media.fingerprint || media.metadata?.fingerprint || "",
+    processingStatus: media.processingStatus || media.extractionStatus || media.metadata?.processingStatus || "",
   };
 }
 
@@ -8454,19 +8755,26 @@ async function getMobileDailyContext(searchParams = new URLSearchParams(), user 
 async function getMobileHealthSummary(searchParams = new URLSearchParams(), user = { id: LOCAL_USER_ID }) {
   const language = normalizeDailyLanguage(searchParams.get("lang") || searchParams.get("locale") || "es");
   const range = normalizeMobileHealthRange(searchParams);
+  const contextSignalRecords = (await listContextSignals(user, range))
+    .filter((signal) => isMobileHealthContextSignal(signal))
+    .map((signal) => ({ signal, context: contextSignalToStructuredContext(signal) }));
   const experiences = await listExperiences(user);
-  const records = experiences
+  const legacyRecords = experiences
     .map((experience) => ({ experience, context: experience?.metadata?.structuredContext || null }))
     .filter((item) => isMobileHealthContext(item.context))
     .filter((item) => isTimestampInRange(item.context?.capturedAt || item.experience?.timestamp, range))
     .sort((a, b) => new Date(b.context?.capturedAt || b.experience?.timestamp || 0) - new Date(a.context?.capturedAt || a.experience?.timestamp || 0));
+  const records = [
+    ...contextSignalRecords,
+    ...legacyRecords,
+  ].sort((a, b) => new Date(b.context?.capturedAt || b.experience?.timestamp || 0) - new Date(a.context?.capturedAt || a.experience?.timestamp || 0));
   const metricNames = new Set();
   const connectors = new Set();
   const payloadTypes = new Set();
   let signalCount = 0;
   let energyTotal = 0;
   let energyCount = 0;
-  records.forEach(({ experience, context }) => {
+  records.forEach(({ context }) => {
     const metrics = context.metrics && typeof context.metrics === "object" ? context.metrics : {};
     Object.keys(metrics).forEach((key) => metricNames.add(key));
     if (context.connector) connectors.add(context.connector);
@@ -8479,17 +8787,17 @@ async function getMobileHealthSummary(searchParams = new URLSearchParams(), user
       energyCount += 1;
     }
   });
-  const latestItems = records.slice(0, 12).map(({ experience, context }) => {
+  const latestItems = records.slice(0, 12).map(({ experience, signal, context }) => {
     const metrics = context.metrics && typeof context.metrics === "object" ? context.metrics : {};
     const signals = Array.isArray(context.signals) ? context.signals : [];
     return {
-      id: experience.id,
-      title: experience.title,
-      capturedAt: context.capturedAt || experience.timestamp,
+      id: signal?.id || experience?.id,
+      title: signal ? integrationPayloadLabel({ payloadType: signal.signalType, sourceType: signal.sourceType, payload: signal.payload?.raw || signal.payload || {} }) : experience.title,
+      capturedAt: context.capturedAt || experience?.timestamp,
       connector: context.connector || "device",
       payloadType: context.payloadType || "biometric",
       dataType: context.dataType || context.payloadType || "",
-      summary: context.summary || experience.notes || "",
+      summary: context.summary || experience?.notes || "",
       metricNames: Object.keys(metrics).slice(0, 10),
       signalsPreview: signals.slice(0, 3).map((signal) => ({
         type: signal.type || signal.metric || signal.name || "",
@@ -8543,6 +8851,33 @@ function isMobileHealthContext(context = null) {
   const connector = String(context.connector || "").toLowerCase();
   return ["biometric", "activity", "sleep"].includes(payloadType)
     || /oura|health|samsung|galaxy|apple|wearable|biometric/.test(connector);
+}
+
+function isMobileHealthContextSignal(signal = null) {
+  if (!signal || typeof signal !== "object") return false;
+  const signalType = String(signal.signalType || "").toLowerCase();
+  const connector = String(signal.sourceType || signal.payload?.provider || "").toLowerCase();
+  return ["biometric", "activity", "sleep"].includes(signalType)
+    || /oura|health|samsung|galaxy|apple|wearable|biometric/.test(connector);
+}
+
+function contextSignalToStructuredContext(signal = {}) {
+  const payload = signal.payload && typeof signal.payload === "object" ? signal.payload : {};
+  return {
+    id: signal.id,
+    connector: signal.sourceType || payload.provider || "device",
+    sourceId: signal.sourceId || "",
+    payloadType: signal.signalType || payload.dataType || "context",
+    dataType: payload.dataType || signal.signalType || "",
+    capturedAt: signal.capturedAt,
+    summary: payload.summary || buildContextSignalSummary({
+      payloadType: signal.signalType || "context",
+      sourceType: signal.sourceType || "device",
+      payload: payload.raw || payload,
+    }),
+    metrics: signal.metrics || {},
+    signals: Array.isArray(payload.signals) ? payload.signals : [],
+  };
 }
 
 function isTimestampInRange(timestamp, range = {}) {
