@@ -35,17 +35,37 @@ Supabase and the backend are the single source of truth. Both apps must converge
 1. Vibeapp captures or reads native/mobile data.
 2. Vibeapp normalizes the payload locally and assigns a stable idempotency key.
 3. Vibeapp sends the signal to the backend.
-4. Backend writes the normalized record, asset, context, event, or experience to Supabase.
+4. Backend writes the normalized record to the correct layer: experience, event, evidence asset, or ambient context signal.
 5. VibePWA reads the server state and refreshes Dashboard, Library, Assets, Reports, Findings, Publications, and Manual-facing status.
+
+## Capture Hierarchy
+
+Vibe uses the hierarchy `person -> experience -> event -> evidence/data`.
+
+- Person: signed-in owner and selected group/person.
+- Experience: a lived episode with time range and human narrative.
+- Event: optional meaningful submoment inside a long experience.
+- Evidence/data:
+  - Intentional evidence: photo, audio, video, document, quick note, or file captured by the user.
+  - Ambient context: biometrics, GPS, weather, news, entertainment, and device context.
+
+Intentional evidence is allowed to exist before its parent experience. It starts in an evidence inbox with timestamp, person, source, and idempotency. Later, an experience adopts evidence by time window, place, group/person, or explicit user selection.
+
+Ambient context is different: it is stored as a time-based signal and referenced by experiences. It must not create an experience note by itself.
 
 ## API Responsibilities
 
 - `POST /api/integration/ingest`
-  - Text notes, agenda events, location signals, weather/news summaries, biometric summaries, Oura/Health Connect/Samsung context, and Meta/Oakley visual media metadata.
+  - Text or transcribed human narrative may create/update an experience when the payload represents a lived episode.
+  - Agenda events create/update Agenda.
+  - Location, weather/news summaries, biometric summaries, Oura/Health Connect/Samsung context, and entertainment summaries are ambient context signals, not experiences.
+  - Meta/Oakley visual media metadata and other media metadata are evidence descriptors; the binary file goes through `/api/media`.
 - `POST /api/media`
   - Binary photo, video, audio, document, and other files before or during experience consolidation.
+  - Media without `experienceId` stays in the evidence inbox until adopted.
 - `POST /api/experiences`
-  - Rich experiences with multiple events and already-linked assets.
+  - Rich experiences with multiple events and already-linked or adoptable assets.
+  - Experiences should provide a time range (`startedAt`/`endedAt` or `occurredAt` plus duration) so the backend can propose/adopt evidence and reference ambient context.
 - `GET /api/mobile/participants`
   - Groups/persons visible to the signed-in account so Vibeapp can attach every capture to the correct group/person.
 - `POST /api/participants`
@@ -128,6 +148,16 @@ Arnes is the optional native assistant orchestration service for Vibeapp. It sho
 - Meta/Oakley/Ray-Ban glasses are a visual source only for this product stage. Vibe can analyze imported photos/videos, but V voice, wake, microphone, and spoken dialogue remain on the phone or tablet.
 - VibePWA asset import for biometric files is historical/recovery/admin only. It must not be presented as the normal user path.
 - Reports, Findings, and Publications use the server-normalized context, regardless of whether it came from live native capture or a backup import.
+- Context signals enrich experiences by time and place. They are not promoted into experiences, events, or Obsidian experience notes.
+
+## Evidence Adoption Rules
+
+- Capturing evidence is cheap and may happen without choosing an experience first.
+- Marking an experience is a separate gesture: narrative, time range, group/person, and optional events.
+- When an experience is marked, the backend proposes evidence in the same time window and context.
+- User or automation can adopt intentional evidence into the experience.
+- Pruning intentional evidence may remove duplicate or wrong user media from the experience view.
+- Ambient context is never pruned for narrative reasons; only sensor errors, duplicates, or corrupt samples may be cleaned as data hygiene.
 
 ## UX Rules
 
