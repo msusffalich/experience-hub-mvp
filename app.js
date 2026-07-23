@@ -1,4 +1,4 @@
-const APP_VERSION = "20260722-evidence-inbox-ux-699";
+const APP_VERSION = "20260722-evidence-inbox-filter-700";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -4820,6 +4820,7 @@ const state = {
   pendingAttachments: [],
   selectedEvidenceAssetIds: new Set(),
   evidenceAdoptionStatus: null,
+  evidenceInboxDateFilter: "capture",
   evidenceInboxRefreshInProgress: false,
   evidenceInboxLastRefreshAt: 0,
   evidenceInboxRefreshTimer: null,
@@ -6214,6 +6215,7 @@ function normalizeServerAssets(assets = []) {
         eventId: asset.eventId || asset.event_id || metadata.linkedEventId || "",
         adoptionStatus,
         evidenceType: asset.evidenceType || asset.evidence_type || metadata.evidenceType || "intentional",
+        payloadType: asset.payloadType || asset.payload_type || metadata.payloadType || "",
         capturedAt: asset.capturedAt || asset.captured_at || metadata.capturedAt || asset.createdAt || "",
         uploadedAt: asset.uploadedAt || asset.uploaded_at || metadata.uploadedAt || "",
         sourceType: asset.sourceType || asset.source_type || metadata.sourceType || "",
@@ -12240,27 +12242,76 @@ function renderCaptureView() {
   renderAttachmentPreview();
 }
 
-function getEvidenceInboxAssets() {
+function getEvidenceInboxAssets(options = {}) {
   const assets = collectMultimodalAssets();
+  const dateFilter = options.ignoreDate ? "" : getEvidenceInboxDateFilterValue();
   return assets
     .filter((asset) => {
-      if (asset.contextOnly) return false;
-      const status = String(asset.adoptionStatus || asset.metadata?.adoptionStatus || "").toLowerCase();
-      return asset.inboxEvidence || status === "inbox" || (!asset.experienceId && !asset.experienceTitle);
+      if (!isIntentionalAdoptableEvidenceAsset(asset)) return false;
+      if (isEvidenceAssetAdopted(asset)) return false;
+      if (dateFilter && getEvidenceAssetDateKey(asset) !== dateFilter) return false;
+      const status = getEvidenceAdoptionStatus(asset);
+      return asset.inboxEvidence || status === "inbox" || !asset.experienceId;
     })
     .sort((a, b) => new Date(b.capturedAt || b.timestamp || b.uploadedAt || 0) - new Date(a.capturedAt || a.timestamp || a.uploadedAt || 0));
 }
 
+function getEvidenceAdoptionStatus(asset = {}) {
+  return String(asset.adoptionStatus || asset.adoption_status || asset.metadata?.adoptionStatus || "").toLowerCase();
+}
+
+function isEvidenceAssetAdopted(asset = {}) {
+  return getEvidenceAdoptionStatus(asset) === "adopted" || Boolean(asset.experienceId || asset.experience_id);
+}
+
+function isIntentionalAdoptableEvidenceAsset(asset = {}) {
+  if (!asset || asset.contextOnly) return false;
+  const metadata = asset.metadata || {};
+  const evidenceType = String(asset.evidenceType || asset.evidence_type || metadata.evidenceType || "intentional").toLowerCase();
+  const payloadType = String(asset.payloadType || asset.payload_type || asset.externalPayloadType || metadata.payloadType || metadata.externalPayloadType || "").toLowerCase();
+  const sourceType = String(asset.sourceType || asset.source_type || metadata.sourceType || asset.source || "").toLowerCase();
+  const kind = String(asset.kind || inferMediaKind(asset) || "").toLowerCase();
+  const name = String(asset.name || asset.fileName || asset.filename || "").toLowerCase();
+  const type = String(asset.type || asset.mimeType || asset.mime_type || "").toLowerCase();
+  const combined = [evidenceType, payloadType, sourceType, kind, name, type].join(" ");
+
+  if (evidenceType === "context" || evidenceType === "ambient" || evidenceType === "ambient_snapshot") return false;
+  if (/(biometric|biometr|health|healthkit|health-connect|oura|sleep|readiness|heart|steps|activity|location|gps|weather|climate|news|context|sensor)/.test(combined)) return false;
+  if (name.startsWith("vibeapp-health-")) return false;
+
+  if (["image", "video", "audio", "document", "media"].includes(payloadType)) return true;
+  if (["image", "video", "audio", "document"].includes(kind)) return true;
+  if (/^(image|video|audio)\//.test(type)) return true;
+  if (/(pdf|msword|officedocument|text\/plain|text\/markdown|application\/zip)/.test(type)) return true;
+  return Boolean(asset.inboxEvidence);
+}
+
+function getEvidenceAssetDateKey(asset = {}) {
+  const raw = asset.capturedAt || asset.timestamp || asset.uploadedAt || asset.createdAt || "";
+  const date = new Date(raw);
+  if (Number.isNaN(date.getTime())) return "";
+  return toDatetimeLocal(date.toISOString()).slice(0, 10);
+}
+
+function getCaptureDateKey() {
+  const value = document.getElementById("timestampInput")?.value || "";
+  return String(value).slice(0, 10);
+}
+
+function getEvidenceInboxDateFilterValue() {
+  const current = String(state.evidenceInboxDateFilter || "capture");
+  if (current === "all") return "";
+  if (current === "capture") return getCaptureDateKey();
+  return current;
+}
+
 function getEvidenceInboxStats(inbox = getEvidenceInboxAssets()) {
-  const serverAssets = normalizeServerAssets(state.serverAssets || []);
-  const serverPending = serverAssets.filter((asset) => {
-    const status = String(asset.adoptionStatus || asset.metadata?.adoptionStatus || "").toLowerCase();
-    return status === "inbox" || (!asset.experienceId && !asset.experienceTitle);
-  });
-  const serverAdopted = serverAssets.filter((asset) => {
-    const status = String(asset.adoptionStatus || asset.metadata?.adoptionStatus || "").toLowerCase();
-    return status === "adopted" || Boolean(asset.experienceId || asset.experienceTitle);
-  });
+  const dateFilter = getEvidenceInboxDateFilterValue();
+  const serverAssets = normalizeServerAssets(state.serverAssets || [])
+    .filter(isIntentionalAdoptableEvidenceAsset)
+    .filter((asset) => !dateFilter || getEvidenceAssetDateKey(asset) === dateFilter);
+  const serverAdopted = serverAssets.filter(isEvidenceAssetAdopted);
+  const serverPending = serverAssets.filter((asset) => !isEvidenceAssetAdopted(asset));
   const suggested = inbox.filter(isEvidenceSuggestedForCapture).length;
   return {
     serverTotal: serverAssets.length,
@@ -12502,14 +12553,16 @@ function renderCaptureEvidenceInbox() {
   const selected = state.selectedEvidenceAssetIds instanceof Set ? state.selectedEvidenceAssetIds : new Set();
   const suggested = inbox.filter(isEvidenceSuggestedForCapture);
   const suggestedIds = new Set(suggested.map((asset) => asset.id));
+  const dateFilter = getEvidenceInboxDateFilterValue();
+  const dateMode = String(state.evidenceInboxDateFilter || "capture");
   const recentLimit = 12;
   const labels = {
     title: languageText("Bandeja de evidencia", "Evidence inbox", "Boite de preuves", "Bandeja de evidencias"),
     status: languageText(
-      `${stats.serverTotal} en servidor - ${stats.selectable} pendientes para adoptar`,
-      `${stats.serverTotal} on server - ${stats.selectable} pending for adoption`,
-      `${stats.serverTotal} sur serveur - ${stats.selectable} preuves a adopter`,
-      `${stats.serverTotal} no servidor - ${stats.selectable} pendentes para adotar`,
+      `${stats.serverTotal} evidencia(s) adoptable(s) - ${stats.selectable} pendiente(s) para adoptar`,
+      `${stats.serverTotal} adoptable evidence item(s) - ${stats.selectable} pending for adoption`,
+      `${stats.serverTotal} preuve(s) adoptable(s) - ${stats.selectable} en attente d'adoption`,
+      `${stats.serverTotal} evidencia(s) adotavel(is) - ${stats.selectable} pendente(s) para adotar`,
     ),
     empty: languageText(
       "Sin evidencia pendiente. Cuando Vibeapp envie fotos, videos, audios o documentos sin experiencia, apareceran aqui para adoptarlos despues.",
@@ -12519,8 +12572,12 @@ function renderCaptureEvidenceInbox() {
     ),
     openAssets: languageText("Ver en Activos", "Open Assets", "Voir Fichiers", "Ver em Ativos"),
     refresh: languageText("Actualizar bandeja", "Refresh inbox", "Actualiser la boite", "Atualizar bandeja"),
+    dateFilter: languageText("Fecha de evidencia", "Evidence date", "Date des preuves", "Data da evidencia"),
+    useExperienceDate: languageText("Usar fecha de experiencia", "Use experience date", "Utiliser la date de l'experience", "Usar data da experiencia"),
+    allDates: languageText("Todas las fechas", "All dates", "Toutes les dates", "Todas as datas"),
     pending: languageText("Pendientes", "Pending", "En attente", "Pendentes"),
     adopted: languageText("Ya adoptados", "Already adopted", "Deja adoptees", "Ja adotados"),
+    adoptableTotal: languageText("Adoptables", "Adoptable", "Adoptables", "Adotaveis"),
     visibleNow: languageText("Mostrando recientes", "Showing recent", "Recentes affichees", "Mostrando recentes"),
     outsideRange: languageText("Fuera del horario sugerido", "Outside suggested time", "Hors horaire suggere", "Fora do horario sugerido"),
     localDraft: languageText("Seleccionado ahora", "Selected now", "Selectionne maintenant", "Selecionado agora"),
@@ -12551,11 +12608,22 @@ function renderCaptureEvidenceInbox() {
       </div>
     </div>
     <div class="capture-evidence-metrics">
+      <span>${escapeHtml(`${labels.adoptableTotal}: ${stats.serverTotal}`)}</span>
       <span>${escapeHtml(`${labels.pending}: ${stats.serverPending}`)}</span>
       <span>${escapeHtml(`${labels.suggested}: ${stats.suggested}`)}</span>
       <span>${escapeHtml(`${labels.outsideRange}: ${stats.outsideRange}`)}</span>
       <span>${escapeHtml(`${labels.adopted}: ${stats.serverAdopted}`)}</span>
       <span>${escapeHtml(`${labels.visibleNow}: ${Math.min(rows.length, recentLimit)}`)}</span>
+    </div>
+    <div class="capture-evidence-toolbar">
+      <label>
+        <span>${escapeHtml(labels.dateFilter)}</span>
+        <input type="date" data-evidence-date-filter="true" value="${escapeHtml(dateFilter || getCaptureDateKey())}" ${dateMode === "all" ? "disabled" : ""} />
+      </label>
+      <div>
+        <button class="ghost-button small-button" type="button" data-evidence-date-capture="true">${escapeHtml(labels.useExperienceDate)}</button>
+        <button class="ghost-button small-button" type="button" data-evidence-date-all="true">${escapeHtml(labels.allDates)}</button>
+      </div>
     </div>
     <div class="capture-evidence-toolbar">
       <span>${escapeHtml(labels.selected)} - ${escapeHtml(labels.adoptOnSave)}</span>
@@ -12585,6 +12653,13 @@ function renderCaptureEvidenceInbox() {
   `;
 }
 function handleEvidenceInboxSelection(event) {
+  const dateInput = event.target.closest("[data-evidence-date-filter]");
+  if (dateInput) {
+    state.evidenceInboxDateFilter = String(dateInput.value || "").trim() || "capture";
+    state.evidenceAdoptionStatus = null;
+    renderCaptureEvidenceInbox();
+    return;
+  }
   const checkbox = event.target.closest("[data-evidence-asset-select]");
   if (!checkbox) return;
   const id = checkbox.dataset.evidenceAssetSelect;
@@ -12598,11 +12673,25 @@ function handleEvidenceInboxSelection(event) {
 
 function handleEvidenceInboxAction(event) {
   const refreshButton = event.target.closest("[data-evidence-refresh-inbox]");
+  const dateCaptureButton = event.target.closest("[data-evidence-date-capture]");
+  const dateAllButton = event.target.closest("[data-evidence-date-all]");
   const visibleButton = event.target.closest("[data-evidence-select-visible]");
   const suggestedButton = event.target.closest("[data-evidence-select-suggested]");
   const clearButton = event.target.closest("[data-evidence-clear-selection]");
   if (refreshButton) {
     scheduleEvidenceInboxRefresh("manual", { force: true, delayMs: 0 });
+    return;
+  }
+  if (dateCaptureButton) {
+    state.evidenceInboxDateFilter = "capture";
+    state.evidenceAdoptionStatus = null;
+    renderCaptureEvidenceInbox();
+    return;
+  }
+  if (dateAllButton) {
+    state.evidenceInboxDateFilter = "all";
+    state.evidenceAdoptionStatus = null;
+    renderCaptureEvidenceInbox();
     return;
   }
   if (visibleButton) {

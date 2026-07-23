@@ -53,6 +53,9 @@ check(files.app.includes("applyIntegrationAutomationResponse"), "PWA must consum
 check(files.app.includes("state.contextImpact = automation.contextImpact.impact"), "Server context impact must update local state automatically.");
 check(files.app.includes("setupServerSyncPolling") && files.app.includes("pollServerSyncState"), "PWA must poll server sync state and refresh automatically when another device changes data.");
 check(files.app.includes("queueAssetProcessingJob") && files.app.includes("/jobs/asset-processing"), "PWA automatic asset processing must enqueue server jobs instead of relying only on manual buttons.");
+check(files.app.includes("isIntentionalAdoptableEvidenceAsset"), "Evidence inbox must filter intentional adoptable evidence separately from context signals.");
+check(files.app.includes("vibeapp-health-") && files.app.includes("ambient_snapshot"), "Evidence inbox must exclude Vibeapp health/context signals from adoption.");
+check(files.app.includes("getEvidenceInboxDateFilterValue") && files.app.includes("data-evidence-date-filter"), "Evidence inbox must offer a date-first filter for user-friendly adoption.");
 
 check(files.localE2e.includes("capture E2E ok"), "Local E2E must cover capture.");
 check(files.localE2e.includes("library edit E2E ok") && files.localE2e.includes("library delete E2E ok"), "Local E2E must cover library edit/delete.");
