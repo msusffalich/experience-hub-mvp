@@ -5867,8 +5867,9 @@ function fromAssetRow(row) {
     sourceType: metadata.sourceType || "",
     sourceDevice: metadata.sourceDevice || "",
     sourceId: metadata.sourceId || "",
-    capturedAt: metadata.capturedAt || "",
-    uploadedAt: metadata.uploadedAt || "",
+    // Preserve persisted timestamps: the inbox filters by the local capture day.
+    capturedAt: row.captured_at || metadata.capturedAt || row.created_at || "",
+    uploadedAt: row.uploaded_at || metadata.uploadedAt || row.created_at || "",
     processingStatus: row.processing_status || metadata.processingStatus || "",
     permissions: metadata.permissions || "",
     metadataFingerprint: metadata.metadataFingerprint || "",

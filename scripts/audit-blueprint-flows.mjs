@@ -56,6 +56,8 @@ check(files.app.includes("queueAssetProcessingJob") && files.app.includes("/jobs
 check(files.app.includes("isIntentionalAdoptableEvidenceAsset"), "Evidence inbox must filter intentional adoptable evidence separately from context signals.");
 check(files.app.includes("vibeapp-health-") && files.app.includes("ambient_snapshot"), "Evidence inbox must exclude Vibeapp health/context signals from adoption.");
 check(files.app.includes("getEvidenceInboxDateFilterValue") && files.app.includes("data-evidence-date-filter"), "Evidence inbox must offer a date-first filter for user-friendly adoption.");
+check(files.server.includes("capturedAt: row.captured_at"), "Evidence API must preserve captured_at for inbox date filtering.");
+check(files.app.includes("const year = date.getFullYear();"), "Evidence inbox must calculate capture dates in the user's local calendar.");
 
 check(files.localE2e.includes("capture E2E ok"), "Local E2E must cover capture.");
 check(files.localE2e.includes("library edit E2E ok") && files.localE2e.includes("library delete E2E ok"), "Local E2E must cover library edit/delete.");

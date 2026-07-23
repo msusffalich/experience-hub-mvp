@@ -1,4 +1,4 @@
-const APP_VERSION = "20260722-evidence-inbox-filter-700";
+const APP_VERSION = "20260722-evidence-inbox-date-repair-701";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -12290,7 +12290,12 @@ function getEvidenceAssetDateKey(asset = {}) {
   const raw = asset.capturedAt || asset.timestamp || asset.uploadedAt || asset.createdAt || "";
   const date = new Date(raw);
   if (Number.isNaN(date.getTime())) return "";
-  return toDatetimeLocal(date.toISOString()).slice(0, 10);
+  // The picker uses the person's local calendar. UTC days would move evening
+  // captures into tomorrow and hide them from the intended date.
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function getCaptureDateKey() {
@@ -12559,17 +12564,24 @@ function renderCaptureEvidenceInbox() {
   const labels = {
     title: languageText("Bandeja de evidencia", "Evidence inbox", "Boite de preuves", "Bandeja de evidencias"),
     status: languageText(
-      `${stats.serverTotal} evidencia(s) adoptable(s) - ${stats.selectable} pendiente(s) para adoptar`,
-      `${stats.serverTotal} adoptable evidence item(s) - ${stats.selectable} pending for adoption`,
-      `${stats.serverTotal} preuve(s) adoptable(s) - ${stats.selectable} en attente d'adoption`,
-      `${stats.serverTotal} evidencia(s) adotavel(is) - ${stats.selectable} pendente(s) para adotar`,
+      `${stats.selectable} evidencia(s) pendiente(s) para adoptar`,
+      `${stats.selectable} pending evidence item(s) for adoption`,
+      `${stats.selectable} preuve(s) en attente d'adoption`,
+      `${stats.selectable} evidencia(s) pendente(s) para adotar`,
     ),
-    empty: languageText(
-      "Sin evidencia pendiente. Cuando Vibeapp envie fotos, videos, audios o documentos sin experiencia, apareceran aqui para adoptarlos despues.",
-      "No pending evidence. When Vibeapp sends photos, videos, audio, or documents without an experience, they will appear here for later adoption.",
-      "Aucune preuve en attente. Quand Vibeapp envoie photos, videos, audios ou documents sans experience, ils apparaitront ici pour adoption ulterieure.",
-      "Sem evidencia pendente. Quando Vibeapp enviar fotos, videos, audios ou documentos sem experiencia, eles aparecerao aqui para adocao posterior.",
-    ),
+    empty: stats.serverAdopted
+      ? languageText(
+          `No hay evidencia pendiente para esta fecha. ${stats.serverAdopted} archivo(s) ya estan vinculados a una historia. Cambia la fecha o usa Todas las fechas para revisar otra jornada.`,
+          `There is no pending evidence on this date. ${stats.serverAdopted} file(s) are already linked to a story. Change the date or use All dates to review another day.`,
+          `Aucune preuve en attente a cette date. ${stats.serverAdopted} fichier(s) sont deja lies a une histoire. Change la date ou utilise Toutes les dates.`,
+          `Nao ha evidencia pendente nesta data. ${stats.serverAdopted} arquivo(s) ja estao vinculados a uma historia. Altere a data ou use Todas as datas.`,
+        )
+      : languageText(
+          "Sin evidencia pendiente para esta fecha. Cambia la fecha o usa Todas las fechas para revisar otra jornada.",
+          "No pending evidence on this date. Change the date or use All dates to review another day.",
+          "Aucune preuve en attente a cette date. Change la date ou utilise Toutes les dates pour une autre journee.",
+          "Sem evidencia pendente nesta data. Altere a data ou use Todas as datas para revisar outro dia.",
+        ),
     openAssets: languageText("Ver en Activos", "Open Assets", "Voir Fichiers", "Ver em Ativos"),
     refresh: languageText("Actualizar bandeja", "Refresh inbox", "Actualiser la boite", "Atualizar bandeja"),
     dateFilter: languageText("Fecha de evidencia", "Evidence date", "Date des preuves", "Data da evidencia"),

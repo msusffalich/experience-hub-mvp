@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260722-evidence-inbox-filter-700";
+const CACHE_NAME = "experience-hub-pwa-20260722-evidence-inbox-date-repair-701";
 const APP_SHELL = [
   "/icons/vibe-logo.jpg",
   "/icons/vibe-logo.png",
