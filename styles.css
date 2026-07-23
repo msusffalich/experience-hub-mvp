@@ -656,6 +656,13 @@ button,
   font-size: 0.9rem;
 }
 
+.capture-evidence-heading-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .capture-evidence-toolbar {
   display: flex;
   align-items: center;

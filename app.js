@@ -1,4 +1,4 @@
-const APP_VERSION = "20260722-evidence-adoption-693";
+const APP_VERSION = "20260722-evidence-inbox-refresh-694";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -4820,6 +4820,9 @@ const state = {
   pendingAttachments: [],
   selectedEvidenceAssetIds: new Set(),
   evidenceAdoptionStatus: null,
+  evidenceInboxRefreshInProgress: false,
+  evidenceInboxLastRefreshAt: 0,
+  evidenceInboxRefreshTimer: null,
   serverAssets: [],
   captureSaveStatus: null,
   captureDraftAutosave: { inProgress: false, timer: null, lastSignature: "", lastSavedAt: 0 },
@@ -12229,6 +12232,7 @@ function renderCaptureView() {
   updatePilotParticipantControls();
   renderCaptureFlowSplit();
   renderCaptureEvidenceInbox();
+  scheduleEvidenceInboxRefresh("capture_view");
   renderCaptureCoach();
   renderBiometricCaptureContext();
   renderCaptureEventPreview();
@@ -12272,6 +12276,84 @@ function isEvidenceSuggestedForCapture(asset = {}) {
 function getSelectedEvidenceAssets() {
   const selected = state.selectedEvidenceAssetIds instanceof Set ? state.selectedEvidenceAssetIds : new Set();
   return getEvidenceInboxAssets().filter((asset) => selected.has(asset.id));
+}
+
+function scheduleEvidenceInboxRefresh(reason = "auto", options = {}) {
+  if (!state.apiOnline || !state.session?.access_token) {
+    if (reason === "manual") {
+      state.evidenceAdoptionStatus = {
+        type: "warn",
+        detail: languageText(
+          "No se pudo actualizar la bandeja: la sesion o el servidor no estan disponibles.",
+          "Could not refresh the inbox: the session or server is unavailable.",
+          "Impossible d'actualiser la boite : la session ou le serveur n'est pas disponible.",
+          "Nao foi possivel atualizar a bandeja: a sessao ou o servidor nao estao disponiveis.",
+        ),
+      };
+      renderCaptureEvidenceInbox();
+    }
+    return;
+  }
+  if (state.evidenceInboxRefreshInProgress) return;
+  const now = Date.now();
+  if (!options.force && now - Number(state.evidenceInboxLastRefreshAt || 0) < 15000) return;
+  if (state.evidenceInboxRefreshTimer) clearTimeout(state.evidenceInboxRefreshTimer);
+  const delayMs = Number.isFinite(options.delayMs) ? options.delayMs : 250;
+  state.evidenceInboxRefreshTimer = setTimeout(() => {
+    state.evidenceInboxRefreshTimer = null;
+    refreshServerAssetsForEvidenceInbox({ silent: reason !== "manual" });
+  }, delayMs);
+}
+
+async function refreshServerAssetsForEvidenceInbox(options = {}) {
+  const silent = Boolean(options.silent);
+  state.evidenceInboxRefreshInProgress = true;
+  if (!silent) {
+    state.evidenceAdoptionStatus = {
+      type: "ok",
+      detail: languageText(
+        "Actualizando bandeja de evidencia...",
+        "Refreshing evidence inbox...",
+        "Actualisation de la boite de preuves...",
+        "Atualizando bandeja de evidencias...",
+      ),
+    };
+  }
+  renderCaptureEvidenceInbox();
+  try {
+    const assets = await apiRequest("/assets", { preserveSessionOnAuthFailure: true });
+    state.serverAssets = normalizeServerAssets(assets);
+    state.evidenceInboxLastRefreshAt = Date.now();
+    markApiOnline({ source: "evidence_inbox_refresh" });
+    if (!silent) {
+      const inboxCount = getEvidenceInboxAssets().length;
+      state.evidenceAdoptionStatus = {
+        type: "ok",
+        detail: languageText(
+          `Bandeja actualizada: ${inboxCount} evidencia(s) pendiente(s).`,
+          `Inbox refreshed: ${inboxCount} pending evidence item(s).`,
+          `Boite actualisee : ${inboxCount} preuve(s) en attente.`,
+          `Bandeja atualizada: ${inboxCount} evidencia(s) pendente(s).`,
+        ),
+      };
+    }
+    return state.serverAssets;
+  } catch (error) {
+    markApiConnectivityFailure(error);
+    state.evidenceAdoptionStatus = {
+      type: "warn",
+      detail: languageText(
+        `No se pudo actualizar la bandeja de evidencia: ${error.message || error}`,
+        `Could not refresh the evidence inbox: ${error.message || error}`,
+        `Impossible d'actualiser la boite de preuves : ${error.message || error}`,
+        `Nao foi possivel atualizar a bandeja de evidencias: ${error.message || error}`,
+      ),
+    };
+    return [];
+  } finally {
+    state.evidenceInboxRefreshInProgress = false;
+    renderCaptureEvidenceInbox();
+  }
 }
 
 function mergeAdoptedServerAssets(assets = []) {
@@ -12413,6 +12495,7 @@ function renderCaptureEvidenceInbox() {
       "Sem evidencia pendente. Quando Vibeapp enviar fotos, videos, audios ou documentos sem experiencia, eles aparecerao aqui para adocao posterior.",
     ),
     openAssets: languageText("Ver en Activos", "Open Assets", "Voir Fichiers", "Ver em Ativos"),
+    refresh: languageText("Actualizar bandeja", "Refresh inbox", "Actualiser la boite", "Atualizar bandeja"),
     localDraft: languageText("Seleccionado ahora", "Selected now", "Selectionne maintenant", "Selecionado agora"),
     awaiting: languageText("Esperando historia", "Waiting for story", "En attente d'histoire", "Aguardando historia"),
     suggested: languageText("Sugerida por horario", "Suggested by time", "Suggeree par horaire", "Sugerida por horario"),
@@ -12433,9 +12516,12 @@ function renderCaptureEvidenceInbox() {
     <div class="capture-evidence-heading">
       <div>
         <strong>${escapeHtml(labels.title)}</strong>
-        <p>${escapeHtml(labels.status)}</p>
+        <p>${escapeHtml(`${labels.status}${state.evidenceInboxRefreshInProgress ? " · actualizando" : ""}`)}</p>
       </div>
-      <button class="ghost-button small-button" type="button" data-open-view="assetLibrary">${escapeHtml(labels.openAssets)}</button>
+      <div class="capture-evidence-heading-actions">
+        <button class="ghost-button small-button" type="button" data-evidence-refresh-inbox="true" ${state.evidenceInboxRefreshInProgress ? "disabled" : ""}>${escapeHtml(labels.refresh)}</button>
+        <button class="ghost-button small-button" type="button" data-open-view="assetLibrary">${escapeHtml(labels.openAssets)}</button>
+      </div>
     </div>
     <div class="capture-evidence-toolbar">
       <span>${escapeHtml(labels.selected)} · ${escapeHtml(labels.adoptOnSave)}</span>
@@ -12477,8 +12563,13 @@ function handleEvidenceInboxSelection(event) {
 }
 
 function handleEvidenceInboxAction(event) {
+  const refreshButton = event.target.closest("[data-evidence-refresh-inbox]");
   const suggestedButton = event.target.closest("[data-evidence-select-suggested]");
   const clearButton = event.target.closest("[data-evidence-clear-selection]");
+  if (refreshButton) {
+    scheduleEvidenceInboxRefresh("manual", { force: true, delayMs: 0 });
+    return;
+  }
   if (suggestedButton) {
     if (!(state.selectedEvidenceAssetIds instanceof Set)) state.selectedEvidenceAssetIds = new Set();
     getEvidenceInboxAssets().filter(isEvidenceSuggestedForCapture).forEach((asset) => state.selectedEvidenceAssetIds.add(asset.id));
