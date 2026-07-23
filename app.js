@@ -1,4 +1,4 @@
-const APP_VERSION = "20260722-assets-schema-compatible-698";
+const APP_VERSION = "20260722-evidence-inbox-ux-699";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -12251,6 +12251,27 @@ function getEvidenceInboxAssets() {
     .sort((a, b) => new Date(b.capturedAt || b.timestamp || b.uploadedAt || 0) - new Date(a.capturedAt || a.timestamp || a.uploadedAt || 0));
 }
 
+function getEvidenceInboxStats(inbox = getEvidenceInboxAssets()) {
+  const serverAssets = normalizeServerAssets(state.serverAssets || []);
+  const serverPending = serverAssets.filter((asset) => {
+    const status = String(asset.adoptionStatus || asset.metadata?.adoptionStatus || "").toLowerCase();
+    return status === "inbox" || (!asset.experienceId && !asset.experienceTitle);
+  });
+  const serverAdopted = serverAssets.filter((asset) => {
+    const status = String(asset.adoptionStatus || asset.metadata?.adoptionStatus || "").toLowerCase();
+    return status === "adopted" || Boolean(asset.experienceId || asset.experienceTitle);
+  });
+  const suggested = inbox.filter(isEvidenceSuggestedForCapture).length;
+  return {
+    serverTotal: serverAssets.length,
+    serverPending: serverPending.length,
+    serverAdopted: serverAdopted.length,
+    selectable: inbox.length,
+    suggested,
+    outsideRange: Math.max(0, inbox.length - suggested),
+  };
+}
+
 function getCurrentCaptureWindow() {
   const startValue = document.getElementById("timestampInput")?.value || "";
   const duration = Number(document.getElementById("durationInput")?.value || 30);
@@ -12476,17 +12497,19 @@ function renderCaptureEvidenceInbox() {
   const box = document.getElementById("captureEvidenceInbox");
   if (!box) return;
   const inbox = getEvidenceInboxAssets();
+  const stats = getEvidenceInboxStats(inbox);
   const localPending = state.pendingAttachments || [];
   const selected = state.selectedEvidenceAssetIds instanceof Set ? state.selectedEvidenceAssetIds : new Set();
   const suggested = inbox.filter(isEvidenceSuggestedForCapture);
-  const rest = inbox.filter((asset) => !suggested.some((candidate) => candidate.id === asset.id));
+  const suggestedIds = new Set(suggested.map((asset) => asset.id));
+  const recentLimit = 12;
   const labels = {
     title: languageText("Bandeja de evidencia", "Evidence inbox", "Boite de preuves", "Bandeja de evidencias"),
     status: languageText(
-      `${inbox.length} en servidor · ${localPending.length} en este formulario`,
-      `${inbox.length} on server · ${localPending.length} in this form`,
-      `${inbox.length} sur serveur · ${localPending.length} dans ce formulaire`,
-      `${inbox.length} no servidor · ${localPending.length} neste formulario`,
+      `${stats.serverTotal} en servidor - ${stats.selectable} pendientes para adoptar`,
+      `${stats.serverTotal} on server - ${stats.selectable} pending for adoption`,
+      `${stats.serverTotal} sur serveur - ${stats.selectable} preuves a adopter`,
+      `${stats.serverTotal} no servidor - ${stats.selectable} pendentes para adotar`,
     ),
     empty: languageText(
       "Sin evidencia pendiente. Cuando Vibeapp envie fotos, videos, audios o documentos sin experiencia, apareceran aqui para adoptarlos despues.",
@@ -12496,18 +12519,22 @@ function renderCaptureEvidenceInbox() {
     ),
     openAssets: languageText("Ver en Activos", "Open Assets", "Voir Fichiers", "Ver em Ativos"),
     refresh: languageText("Actualizar bandeja", "Refresh inbox", "Actualiser la boite", "Atualizar bandeja"),
+    pending: languageText("Pendientes", "Pending", "En attente", "Pendentes"),
+    adopted: languageText("Ya adoptados", "Already adopted", "Deja adoptees", "Ja adotados"),
+    visibleNow: languageText("Mostrando recientes", "Showing recent", "Recentes affichees", "Mostrando recentes"),
+    outsideRange: languageText("Fuera del horario sugerido", "Outside suggested time", "Hors horaire suggere", "Fora do horario sugerido"),
     localDraft: languageText("Seleccionado ahora", "Selected now", "Selectionne maintenant", "Selecionado agora"),
-    awaiting: languageText("Esperando historia", "Waiting for story", "En attente d'histoire", "Aguardando historia"),
+    awaiting: languageText("Esperando historia", "Waiting for story", "En attente d histoire", "Aguardando historia"),
     suggested: languageText("Sugerida por horario", "Suggested by time", "Suggeree par horaire", "Sugerida por horario"),
     selected: languageText(`${selected.size} seleccionada(s)`, `${selected.size} selected`, `${selected.size} selectionnee(s)`, `${selected.size} selecionada(s)`),
-    adoptOnSave: languageText("Se adoptan al guardar la experiencia.", "They are adopted when you save the experience.", "Elles sont adoptees quand tu enregistres l'experience.", "Sao adotadas ao salvar a experiencia."),
+    adoptOnSave: languageText("Se adoptan al guardar la experiencia.", "They are adopted when you save the experience.", "Elles sont adoptees quand tu enregistres l experience.", "Sao adotadas ao salvar a experiencia."),
+    selectVisible: languageText("Seleccionar visibles", "Select visible", "Selectionner visibles", "Selecionar visiveis"),
     selectSuggested: languageText("Seleccionar sugeridas", "Select suggested", "Selectionner suggerees", "Selecionar sugeridas"),
     clearSelection: languageText("Limpiar seleccion", "Clear selection", "Effacer selection", "Limpar selecao"),
   };
   const rows = [
     ...localPending.slice(0, 4).map((asset) => ({ ...asset, localDraft: true })),
-    ...suggested.slice(0, 6).map((asset) => ({ ...asset, suggested: true })),
-    ...rest.slice(0, Math.max(0, 8 - suggested.slice(0, 6).length)),
+    ...inbox.slice(0, recentLimit).map((asset) => ({ ...asset, suggested: suggestedIds.has(asset.id) })),
   ];
   const statusHtml = state.evidenceAdoptionStatus?.detail
     ? `<p class="capture-evidence-status ${state.evidenceAdoptionStatus.type === "ok" ? "is-ok" : "is-warn"}">${escapeHtml(state.evidenceAdoptionStatus.detail)}</p>`
@@ -12516,16 +12543,24 @@ function renderCaptureEvidenceInbox() {
     <div class="capture-evidence-heading">
       <div>
         <strong>${escapeHtml(labels.title)}</strong>
-        <p>${escapeHtml(`${labels.status}${state.evidenceInboxRefreshInProgress ? " · actualizando" : ""}`)}</p>
+        <p>${escapeHtml(`${labels.status}${state.evidenceInboxRefreshInProgress ? " - actualizando" : ""}`)}</p>
       </div>
       <div class="capture-evidence-heading-actions">
         <button class="ghost-button small-button" type="button" data-evidence-refresh-inbox="true" ${state.evidenceInboxRefreshInProgress ? "disabled" : ""}>${escapeHtml(labels.refresh)}</button>
         <button class="ghost-button small-button" type="button" data-open-view="assetLibrary">${escapeHtml(labels.openAssets)}</button>
       </div>
     </div>
+    <div class="capture-evidence-metrics">
+      <span>${escapeHtml(`${labels.pending}: ${stats.serverPending}`)}</span>
+      <span>${escapeHtml(`${labels.suggested}: ${stats.suggested}`)}</span>
+      <span>${escapeHtml(`${labels.outsideRange}: ${stats.outsideRange}`)}</span>
+      <span>${escapeHtml(`${labels.adopted}: ${stats.serverAdopted}`)}</span>
+      <span>${escapeHtml(`${labels.visibleNow}: ${Math.min(rows.length, recentLimit)}`)}</span>
+    </div>
     <div class="capture-evidence-toolbar">
-      <span>${escapeHtml(labels.selected)} · ${escapeHtml(labels.adoptOnSave)}</span>
+      <span>${escapeHtml(labels.selected)} - ${escapeHtml(labels.adoptOnSave)}</span>
       <div>
+        <button class="ghost-button small-button" type="button" data-evidence-select-visible="true" ${rows.some((asset) => !asset.localDraft) ? "" : "disabled"}>${escapeHtml(labels.selectVisible)}</button>
         <button class="ghost-button small-button" type="button" data-evidence-select-suggested="true" ${suggested.length ? "" : "disabled"}>${escapeHtml(labels.selectSuggested)}</button>
         <button class="ghost-button small-button" type="button" data-evidence-clear-selection="true" ${selected.size ? "" : "disabled"}>${escapeHtml(labels.clearSelection)}</button>
       </div>
@@ -12542,14 +12577,13 @@ function renderCaptureEvidenceInbox() {
                     <span>${escapeHtml(asset.suggested ? labels.suggested : labels.awaiting)}</span>
                   </label>`}
               <strong>${escapeHtml(asset.name || asset.fileName || asset.kind || "Activo")}</strong>
-              <small>${escapeHtml([asset.kind || inferMediaKind(asset), asset.sourceDevice || asset.sourceType || "", asset.capturedAt ? formatDate(asset.capturedAt) : "", asset.size ? formatFileSize(asset.size) : ""].filter(Boolean).join(" · "))}</small>
+              <small>${escapeHtml([asset.kind || inferMediaKind(asset), asset.sourceDevice || asset.sourceType || "", asset.capturedAt ? formatDate(asset.capturedAt) : "", asset.size ? formatFileSize(asset.size) : ""].filter(Boolean).join(" - "))}</small>
             </article>
           `).join("")}
         </div>`
       : `<p class="card-meta">${escapeHtml(labels.empty)}</p>`}
   `;
 }
-
 function handleEvidenceInboxSelection(event) {
   const checkbox = event.target.closest("[data-evidence-asset-select]");
   if (!checkbox) return;
@@ -12564,10 +12598,18 @@ function handleEvidenceInboxSelection(event) {
 
 function handleEvidenceInboxAction(event) {
   const refreshButton = event.target.closest("[data-evidence-refresh-inbox]");
+  const visibleButton = event.target.closest("[data-evidence-select-visible]");
   const suggestedButton = event.target.closest("[data-evidence-select-suggested]");
   const clearButton = event.target.closest("[data-evidence-clear-selection]");
   if (refreshButton) {
     scheduleEvidenceInboxRefresh("manual", { force: true, delayMs: 0 });
+    return;
+  }
+  if (visibleButton) {
+    if (!(state.selectedEvidenceAssetIds instanceof Set)) state.selectedEvidenceAssetIds = new Set();
+    getEvidenceInboxAssets().slice(0, 12).forEach((asset) => state.selectedEvidenceAssetIds.add(asset.id));
+    state.evidenceAdoptionStatus = null;
+    renderCaptureEvidenceInbox();
     return;
   }
   if (suggestedButton) {
