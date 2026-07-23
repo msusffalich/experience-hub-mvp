@@ -1,4 +1,4 @@
-const APP_VERSION = "20260723-manual-blueprint-708";
+const APP_VERSION = "20260723-ecosystem-guides-709";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -4586,6 +4586,10 @@ Object.assign(manualContent, {
       "El Mapa de experiencias es parte de VibePWA y muestra conexiones entre historias, tiempo, personas, lugares y evidencia.",
       "La exportación a Obsidian es opcional. Lleva historias narradas y activos adoptados a una bóveda para curación y aprendizaje, sin reemplazar la información guardada en Vibe.",
     ] },
+    { title: "Dispositivos y lentes Meta", body: [
+      "Vibeapp captura desde iPhone o iPad y recibe fotos, videos, audio, archivos, ubicación y datos autorizados de salud. Los wearables aportan contexto, no historias automáticas.",
+      "Las fotos y videos de lentes Meta Ray-Ban u Oakley se importan primero al teléfono con Meta AI y luego se eligen en Vibeapp. Vibe no controla el almacenamiento interno de los lentes.",
+    ] },
     { title: "Grupos, privacidad y ayuda", body: [
       "Los grupos/personas son privados y sirven para ordenar Familia, Viaje, Proyecto o Equipo. Archivar uno no borra su historial.",
       "Cuando la barra indica Sincronizado, tus datos ya están disponibles en los otros dispositivos. Operación concentra respaldo, restauración y ayuda de sincronización para cuando realmente la necesites.",
@@ -4620,6 +4624,10 @@ Object.assign(manualContent, {
     { title: "Map and Obsidian", body: [
       "The Experience Map belongs to VibePWA and shows connections across stories, time, people, places, and evidence.",
       "Obsidian export is optional. It sends narrated stories and adopted assets to a vault for curation and learning without replacing Vibe's stored information.",
+    ] },
+    { title: "Devices and Meta glasses", body: [
+      "Vibeapp captures from iPhone or iPad and receives photos, video, audio, files, location, and authorized health data. Wearables provide context, not automatic stories.",
+      "Photos and videos from Meta Ray-Ban or Oakley glasses are first imported to the phone with Meta AI and then selected in Vibeapp. Vibe does not control the glasses' internal storage.",
     ] },
     { title: "Groups, privacy, and help", body: [
       "Groups/persons are private and organize Family, Travel, Project, or Team. Archiving one does not erase its history.",
@@ -4656,6 +4664,10 @@ Object.assign(manualContent, {
       "La Carte des experiences appartient a VibePWA et montre les liens entre histoires, temps, personnes, lieux et preuves.",
       "L export Obsidian est optionnel. Il envoie les histoires narrees et les actifs adoptes vers un coffre pour la curation et l apprentissage sans remplacer les informations de Vibe.",
     ] },
+    { title: "Appareils et lunettes Meta", body: [
+      "Vibeapp capture depuis iPhone ou iPad et recoit photos, videos, audio, fichiers, localisation et donnees de sante autorisees. Les wearables apportent du contexte, pas des histoires automatiques.",
+      "Les photos et videos des lunettes Meta Ray-Ban ou Oakley sont d abord importees sur le telephone avec Meta AI puis choisies dans Vibeapp. Vibe ne controle pas le stockage interne des lunettes.",
+    ] },
     { title: "Groupes, confidentialite et aide", body: [
       "Les groupes/personnes sont prives et organisent Famille, Voyage, Projet ou Equipe. Archiver un groupe n efface pas son historique.",
       "Lorsque la barre indique Synchronise, vos donnees sont disponibles sur vos autres appareils. Operation contient sauvegarde, restauration et aide de synchronisation quand vous en avez besoin.",
@@ -4690,6 +4702,10 @@ Object.assign(manualContent, {
     { title: "Mapa e Obsidian", body: [
       "O Mapa de Experiencias pertence ao VibePWA e mostra conexoes entre historias, tempo, pessoas, lugares e evidencia.",
       "A exportacao para Obsidian e opcional. Ela envia historias narradas e ativos adotados para um cofre de curadoria e aprendizado sem substituir as informacoes guardadas no Vibe.",
+    ] },
+    { title: "Dispositivos e oculos Meta", body: [
+      "Vibeapp captura no iPhone ou iPad e recebe fotos, videos, audio, arquivos, localizacao e dados de saude autorizados. Wearables fornecem contexto, nao historias automaticas.",
+      "Fotos e videos dos oculos Meta Ray-Ban ou Oakley sao primeiro importados para o telefone com Meta AI e depois escolhidos no Vibeapp. Vibe nao controla o armazenamento interno dos oculos.",
     ] },
     { title: "Grupos, privacidade e ajuda", body: [
       "Grupos/pessoas sao privados e organizam Familia, Viagem, Projeto ou Equipe. Arquivar um grupo nao apaga seu historico.",

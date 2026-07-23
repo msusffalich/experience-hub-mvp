@@ -1,231 +1,275 @@
-# Blueprint de producción del ecosistema Vibe
+# Blueprint de producción del ecosistema Vibe 1.0
 
-Estado: documento canónico de producto y producción  
-Fecha: 2026-07-23  
-Alcance: Vibeapp, VibePWA, backend/Supabase, Obsidian/Claude PC y VibePub.
+Estado: referencia integral de producto, operación y evolución
+Fecha: 2026-07-23
+Alcance: Vibeapp, VibePWA, API Vibe, Supabase, Obsidian, Claude PC y VibePub.
 
-## 1. Propósito y resultado esperado
+## 1. Resumen ejecutivo
 
-Vibe es un ecosistema para registrar, comprender y reutilizar experiencias humanas. No es una aplicación de archivos ni un tablero de métricas aisladas. Conserva los hechos que el usuario decide registrar, permite convertirlos en historias fieles y usa esa memoria para análisis, reportes, hallazgos y publicaciones.
+Vibe es una plataforma de inteligencia de experiencias humanas. Ayuda a una persona a registrar momentos de su vida, convertirlos en historias fieles, comprender los patrones que aparecen con el tiempo y producir recuerdos, reportes o publicaciones a partir de datos que le pertenecen.
 
-El producto atiende dos necesidades que comparten la misma base:
+La versión 1.0 no se define por una sola pantalla ni por una sola tecnología. Es un ecosistema con dos ritmos: **capturar en el momento** y **dar sentido después**. Vibeapp acompaña el momento con una captura ligera desde móvil o tableta. VibePWA permite revisar, ordenar, editar, analizar y compartir desde cualquier navegador. Ambos trabajan sobre la misma cuenta y la misma fuente de verdad en la nube.
 
-1. **Memoria personal y narrativa:** recordar lo vivido, organizar historias, preservar evidencia y aprender de ellas.
-2. **Lectura contextual y decisiones:** observar patrones de trabajo, salud, aprendizaje, relaciones y hábitos sin reemplazar el juicio humano ni emitir diagnósticos clínicos.
+El sistema no confunde una fotografía, una señal de salud o una noticia con una historia. Conserva cada pieza como evidencia o contexto hasta que el usuario decide incorporarla a una experiencia. Esta separación protege la memoria: evita historias falsas, conserva los archivos originales y permite reconstruir un episodio cuando ya existe perspectiva suficiente.
 
-La regla de diseño es: **capturar no es estructurar**. Una persona puede capturar una foto o una frase en segundos y construir la historia horas o días después.
+## 2. Historia y propósito del ecosistema
 
-## 2. Usuarios y superficies
+### 2.1 El propósito original
 
-| Usuario | Necesidad | Superficie principal |
+El proyecto nació para responder una pregunta humana, no técnica: **¿cómo registrar, recordar y comprender una vida sin reducirla a archivos sueltos ni a métricas aisladas?**
+
+La propuesta original reunió cuatro elementos:
+
+- experiencias relatadas por la propia persona;
+- evidencia multimodal: texto, voz, imágenes, videos y documentos;
+- contexto: salud, ubicación, clima, agenda y entorno;
+- salidas útiles: memoria, reportes, hallazgos, publicaciones y aprendizaje.
+
+### 2.2 La evolución que llevó a Vibe 1.0
+
+La primera capa fue VibePWA: una aplicación web para registrar experiencias, administrar una biblioteca, consultar contexto y generar documentos. Después se incorporó Vibeapp, una aplicación nativa Flutter, porque una PWA no puede controlar de manera completa las capacidades de cámara, audio, sensores, permisos y conectores de un teléfono o wearable.
+
+La exploración del mapa de conocimiento con Obsidian permitió detectar una decisión central: la evidencia suele aparecer antes que la historia. Por eso la versión 1.0 distingue explícitamente captura, adopción y curación. El resultado no reemplaza el propósito original; lo recupera y lo hace más sólido.
+
+### 2.3 La promesa de producto
+
+Vibe busca que una persona pueda:
+
+1. guardar un hecho en pocos segundos;
+2. encontrarlo más tarde por fecha, persona, lugar o tema;
+3. convertir varias piezas en una historia coherente;
+4. ver contexto sin confundirlo con lo vivido;
+5. obtener una lectura clara de sus experiencias;
+6. conservar una memoria exportable y bajo su control.
+
+## 3. Para quién es Vibe
+
+| Persona | Necesidad principal | Superficie más útil |
 | --- | --- | --- |
-| Persona que vive el momento | Capturar sin fricción. | Vibeapp. |
-| Persona que revisa y organiza | Armar historias, adoptar evidencia y curar memoria. | VibePWA. |
-| Persona que analiza su historia | Consultar reportes, hallazgos, publicaciones y mapa. | VibePWA. |
-| Curador de conocimiento | Desarrollar aprendizajes y conexiones persistentes. | Obsidian + Claude PC. |
-| Editor/distribuidor | Refinar una publicación para otros canales. | VibePub. |
-| Operador del producto | Respaldo, recuperación, control de calidad y soporte. | VibePWA > Operación/Administración. |
+| Quien está viviendo el momento | Capturar sin interrumpirse. | Vibeapp. |
+| Quien organiza su memoria | Crear historias, elegir evidencia y revisar detalles. | VibePWA. |
+| Quien busca comprensión | Consultar reportes, hallazgos y tendencias. | VibePWA. |
+| Quien quiere compartir un recuerdo o informe | Generar un PDF cronológico, editable posteriormente. | VibePWA + VibePub. |
+| Quien cultiva una base de conocimiento personal | Relacionar experiencias y escribir aprendizajes. | Obsidian + Claude PC. |
+| Quien mantiene el servicio | Respaldar, recuperar y revisar controles. | VibePWA, zona Operación. |
 
-## 3. Modelo canónico de información
+Una misma persona puede usar todos estos roles. Los grupos o personas privadas permiten separar contextos como familia, viaje, proyecto o equipo sin abrir los datos a otros usuarios.
+
+## 4. Componentes y responsabilidades
+
+### 4.1 Vibeapp: el cuaderno de bolsillo
+
+Vibeapp es la aplicación nativa Flutter para iPhone, iPad y, según disponibilidad física de equipos, Android y tabletas Android. Su misión principal es capturar, no obligar a estructurar una historia completa en el instante.
+
+Capacidades principales:
+
+- texto y narración por voz;
+- fotos, videos, audio, documentos y selección desde galería;
+- ubicación con permiso explícito;
+- importación de archivos de salud y conectores nativos disponibles;
+- cola local, reintentos y sincronización con la cuenta;
+- comando de voz V dentro de la aplicación activa.
+
+Vibeapp puede crear una experiencia simple cuando la persona ya quiere relatarla. No es el espacio para reorganizaciones complejas, administración de cuentas ni curación prolongada.
+
+### 4.2 VibePWA: el estudio de memoria
+
+VibePWA es la aplicación web multidispositivo. Es el lugar para transformar capturas en historias, profundizar en los datos y producir salidas legibles.
+
+Capacidades principales:
+
+- bandeja de evidencia por fecha, rango temporal y grupo/persona;
+- biblioteca de experiencias, eventos, activos y agenda;
+- creación y edición de historias;
+- curación: mover evidencia, liberarla, fusionar, dividir, promover y degradar;
+- mapa de experiencias, reportes, hallazgos, publicaciones y exportación Markdown;
+- administración de grupos, datos, respaldos y operación;
+- manual integrado en español, inglés, francés y portugués.
+
+### 4.3 API Vibe y Supabase: el registro común
+
+La API Node y Supabase forman la fuente única de verdad. Toda experiencia, evento, activo y señal de contexto se guarda una sola vez en el registro común, sin importar si fue creada desde Vibeapp o VibePWA.
+
+Supabase aporta autenticación, Postgres, reglas de acceso por usuario, almacenamiento privado multimedia y actualizaciones de datos. Railway ejecuta la API, las automatizaciones y ReportLab para PDFs editados.
+
+### 4.4 Obsidian y Claude PC: memoria curada
+
+Obsidian recibe una exportación seleccionada de la base, no una segunda base de datos. Allí se cultivan vínculos, aprendizajes y mapas de conocimiento. Claude PC revisa la bóveda, audita consistencia y ayuda a proponer curación; no sustituye al registro canónico de Vibe.
+
+### 4.5 VibePub: acabado editorial posterior
+
+VibePWA crea un PDF editorial cronológico con historia y evidencia seleccionada. VibePub es la herramienta complementaria para refinar composición, estilo y distribución a canales externos. Publicar no altera la historia de origen.
+
+## 5. Arquitectura e infraestructura
+
+La arquitectura está diseñada para que cada capa haga lo que mejor sabe hacer:
+
+| Capa | Tecnología o servicio | Responsabilidad |
+| --- | --- | --- |
+| Captura nativa | Flutter, iOS/iPadOS, Android futuro | Cámara, audio, video, archivos, permisos, cola local y conectores. |
+| Aplicación web | VibePWA | Curación, análisis, reportes, publicaciones y operación. |
+| API | Node.js en Railway | Validación, sincronización, integraciones, automatizaciones y PDFs. |
+| Datos | Supabase Auth, Postgres, RLS, Storage | Identidad, datos privados, multimedia y auditoría. |
+| Documentos | ReportLab | PDFs de reportes, hallazgos, publicaciones y manuales. |
+| Conocimiento | Obsidian local + Claude PC | Mapa de conocimiento, aprendizaje y curación humana. |
+| Edición posterior | VibePub | Diseño y adaptación externa de publicaciones. |
+
+La infraestructura separa lo inmediato de lo pesado. Guardar una captura debe responder pronto. Enriquecimientos como clima, noticias, análisis de entorno o lecturas derivadas se ejecutan después, con registro de resultado, reintento o acción requerida.
+
+## 6. Modelo de datos: persona, historia y evidencia
 
 ```
-Cuenta / persona
-  └─ Grupo o persona privada (opcional)
-       └─ Experiencia
-            ├─ Evento(s) opcional(es)
-            ├─ Evidencia intencional adoptada
-            └─ Referencias a contexto ambiente
+Cuenta autenticada
+  -> Grupo o persona privada opcional
+     -> Experiencia: episodio con rango de tiempo y sentido
+        -> Evento opcional: submomento significativo
+        -> Evidencia intencional: foto, audio, video, texto, documento
+        -> Referencias a contexto: salud, GPS, clima, noticias, agenda
 ```
 
-### 3.1 Definiciones
+### 6.1 Definiciones operativas
 
-- **Experiencia:** episodio vivido con rango de tiempo y significado coherente.
-- **Evento:** submomento significativo dentro de una experiencia. Puede tener narrativa, pero no se transforma automáticamente en experiencia.
-- **Evidencia intencional:** foto, video, audio, texto, documento u otro archivo capturado o elegido por la persona.
-- **Contexto ambiente:** biometría, GPS, clima, noticias, entretenimiento y datos de agenda por fecha/hora.
-- **Narrativa humana:** lenguaje de la persona contando lo que vivió. Texto escrito, voz transcrita o voz de video narrado.
-- **Artefacto:** algo producido o recopilado, por ejemplo un informe o paper. Puede adjuntarse a una experiencia, pero no es su narrativa por defecto.
+- **Persona o grupo:** ámbito privado que identifica a quién pertenece el registro.
+- **Experiencia:** un episodio vivido que se sostiene como historia, por ejemplo una tarde en la playa o una reunión importante.
+- **Evento:** un momento dentro de una experiencia, como una conversación, una decisión o un cambio relevante.
+- **Evidencia intencional:** algo capturado o elegido deliberadamente: foto, video, voz, texto o documento.
+- **Contexto ambiente:** datos temporales que enriquecen la lectura: biometría, ubicación, clima, noticias y agenda.
+- **Artefacto:** una producción o fuente, como un informe, paper o documento. Puede adjuntarse, pero no es automáticamente una historia.
 
-La definición completa de narrativa vive en `obsidian-vault-vibe/90_System/definicion-narrativa-humana.md`. El contrato de implementación equivalente está en `docs/capture-adoption-blueprint-20260721.md` y no puede contradecirla.
+## 7. Contrato de narrativa y clasificación
 
-## 4. Arquitectura funcional
+La narrativa humana es **lenguaje de una persona que cuenta qué vivió**. El formato no define la narrativa; su origen sí.
 
-### 4.1 Vibeapp: capturar primero
-
-Vibeapp es la aplicación Flutter para teléfono y tableta. Su interfaz está optimizada para el momento: texto, voz, cámara, galería, video, documentos, ubicación y datos del dispositivo.
-
-Responsabilidades:
-
-- Capturar evidencia rápida, aun sin historia padre.
-- Asociar cuenta y grupo/persona activos.
-- Mantener cola local, reintento e idempotencia.
-- Obtener contexto móvil permitido: ubicación, biometría, clima, noticias y conectores de dispositivos.
-- Enviar señales normalizadas al backend y comunicar éxito, espera o acción requerida en lenguaje simple.
-
-Límites deliberados:
-
-- No administra grupos, usuarios ni bajas de cuenta.
-- No realiza curación compleja: no fusiona/divide historias ni mueve evidencia entre varias historias.
-- No convierte contexto técnico en experiencia por su cuenta.
-
-### 4.2 VibePWA: estructurar y comprender
-
-VibePWA es la aplicación web para revisión, curación, análisis y operación.
-
-Responsabilidades:
-
-- Mostrar Bandeja de evidencia y permitir adopción por fecha, rango, grupo/persona o selección explícita.
-- Crear experiencias y eventos con narrativa humana.
-- Curar historias: mover/soltar evidencia, fusionar, dividir, promover eventos y degradar una experiencia a evento.
-- Mostrar Librería, Activos, Agenda, Mapa, Reportes, Hallazgos, Publicaciones, Manual y controles operativos.
-- Exportar a Obsidian y generar PDFs editados.
-
-### 4.3 Backend y Supabase: fuente única de verdad
-
-El backend Node y Supabase son el registro común. Ninguna UI mantiene una segunda versión canónica de experiencias.
-
-Componentes:
-
-- Supabase Auth para sesión e identidad.
-- Postgres con protección por usuario/workspace para experiencias, eventos, activos, agenda, contexto y auditoría.
-- Storage privado para multimedia; las vistas usan URLs firmadas temporales.
-- API Node para captura, sincronización, media binaria, integraciones, PDFs y exportación.
-- Railway para despliegue de la API y generación ReportLab.
-
-La aplicación responde rápido al guardar. Enriquecimientos lentos, como clima, noticias o impacto ambiental, se ejecutan después y se registran con éxito, reintento o fallo visible para Operación.
-
-### 4.4 Obsidian y Claude PC: conocimiento, no segunda base
-
-Obsidian es una exportación curada para revisar aprendizajes, conexiones y memoria de largo plazo.
-
-- `02_Experiences`: experiencias narradas exportables.
-- `04_Assets`: archivos reales adoptados, organizados por familia multimedia.
-- `05_Generated`: mapas, resúmenes y productos regenerables.
-- `90_System`: contratos conceptuales, auditorías y guías de la bóveda.
-
-La exportación es atómica: las notas y el mapa pertenecen al mismo lote. Conserva el bloque humano de cada nota y actualiza solo el bloque generado. Una historia reorganizada se conserva como antecedente `merged`, `split` o `degraded`; no cuenta como experiencia activa ni se borra automáticamente.
-
-Claude PC audita la bóveda y propone curación humana. No escribe como fuente de verdad del producto.
-
-### 4.5 VibePub: edición y distribución posterior
-
-VibePWA construye el PDF editorial con relatos, evidencia y cronología. VibePub es el entorno para refinar diseño y adaptar la publicación a canales externos. Ningún canal externo es fuente de experiencias ni debe modificar silenciosamente la memoria del usuario.
-
-## 5. Ciclo de vida de una experiencia
-
-### Fase A: captura
-
-La evidencia puede nacer sin padre. Vibeapp la guarda con fecha/hora, persona, procedencia y clave de idempotencia. Una foto o archivo sin historia aparece en la Bandeja de evidencia de VibePWA.
-
-El contexto ambiente se guarda como señal temporal. Nunca crea experiencia, evento ni nota de Obsidian por sí solo.
-
-### Fase B: adopción y relato
-
-El usuario crea una experiencia con título, narrativa, fecha/rango y evidencia elegida. La fecha es el filtro principal de la bandeja. El backend vincula los activos adoptados; el binario original se conserva en Storage.
-
-Una experiencia es narrada cuando tiene relato humano propio o cuando al menos un evento interno tiene relato humano. Esta es una regla de *rollup*: se cuentan experiencias narradas, no textos individuales.
-
-### Fase C: curación
-
-Curar reorganiza sin destruir:
-
-| Operación | Resultado requerido |
-| --- | --- |
-| Mover evidencia | Un solo vínculo activo; el archivo no se duplica ni se borra. |
-| Soltar evidencia | Regresa a Bandeja; el archivo permanece en Activos. |
-| Fusionar | La secundaria queda como antecedente y no cuenta en salidas activas. |
-| Dividir | Nacen dos historias editables; la original queda como antecedente. |
-| Promover evento | El evento se vuelve experiencia con sus datos y evidencia. |
-| Degradar experiencia | La historia menor se vuelve evento de la historia padre; queda antecedente. |
-
-## 6. Clasificación y reglas de decisión
-
-Las categorías no mezclan actividad, estado y lugar:
-
-- **Actividades que pueden ser experiencia:** Trabajo, Paseo/Viaje, Aprendizaje, Social, Entretenimiento, Creatividad, Espiritualidad y algunos episodios de Salud o Compras.
-- **Estado/dimensión:** Bienestar, energía, ánimo, recuperación. Califican una experiencia, no la crean.
-- **Lugar/contexto:** Hogar, ubicación, clima, biometría, noticias. Describen condiciones, no actividades.
-
-Antes de crear una experiencia, la pregunta es: “¿hay un relato humano de lo vivido y una actividad o episodio que se sostenga?”. Si no, se conserva como evidencia o contexto candidato a revisar.
-
-## 7. Informes y productos de salida
-
-| Salida | Pregunta que responde | Contenido |
+| Caso | Destino | Estado de narrativa |
 | --- | --- | --- |
-| Librería | ¿Qué tengo guardado? | Historias, eventos, activos y edición. |
-| Mapa | ¿Qué se conecta? | Tiempo, personas, lugares, temas, evidencia y contexto. |
-| Reportes | ¿Qué ocurrió en este alcance? | Tendencias, indicadores, evidencia y contexto disponible. |
-| Hallazgos | ¿Qué conviene observar o hacer? | Patrones, confianza, recomendación humana y acción. |
-| Publicaciones | ¿Qué quiero contar a otros? | PDF editorial cronológico, narrativa y multimedia seleccionada. |
-| Obsidian | ¿Qué puedo curar y relacionar a largo plazo? | Notas, enlaces, activos y MOCs. |
+| Texto de la persona relatando un momento | Experiencia o evento | Narrada. |
+| Voz transcrita relatando un momento | Experiencia o evento | Narrada. |
+| Video con voz que relata el momento | Experiencia o evento + activo | Narrada por la transcripción. |
+| Foto, video silencioso, OCR o descripción IA | Activo/evidencia | Pendiente de relato. |
+| Pulso, sueño, pasos, GPS, clima o noticias | Contexto temporal | No crea experiencia. |
+| Paper, informe o fuente reunida | Artefacto o activo | No es narrativa por sí solo. |
+| Nombre de archivo, etiqueta o texto de relleno | Candidato a revisar | No es narrativa. |
 
-Los resultados deben declarar límites de datos. No se inventan categoría, energía, sueño ni conclusiones clínicas cuando la fuente no es suficiente.
+Una experiencia se considera narrada si tiene relato propio o si al menos uno de sus eventos contiene relato humano. Este rollup impide que una historia con eventos bien narrados parezca vacía.
 
-## 8. Integraciones y compatibilidad
+### 7.1 Actividad, estado y lugar no son lo mismo
 
-### Fuentes móviles y wearables
+Las categorías de actividad que suelen originar experiencias incluyen Trabajo, Paseo/Viaje, Aprendizaje, Social, Entretenimiento, Creatividad y Espiritualidad. Salud puede ser una experiencia cuando hay un episodio vivido, como una consulta médica; una métrica de salud sigue siendo contexto.
 
-- Apple/iPhone/iPad: texto, cámara, audio, video, ubicación, archivos y HealthKit cuando el permiso/flujo nativo esté disponible.
-- Oura Ring: integración OAuth/API y archivos de respaldo normalizados; los datos vacíos son válidos cuando no hubo lecturas.
-- Samsung/Health Connect: preparado por contrato, pendiente de validación física con dispositivo real.
-- Meta/Oakley/Ray-Ban: fotos y videos se importan por el teléfono; no se asume control total de los lentes ni audio independiente.
+Bienestar es una dimensión o estado, no una actividad. Hogar es un lugar, no una categoría de experiencia. Compras solo se vuelve historia cuando existe una vivencia que vale relatar, no como un simple registro rutinario.
 
-### Voz V
+## 8. Procesos E2E del ecosistema
 
-V es el comando de Vibe dentro de una aplicación activa. El backend preserva el contrato de acciones para comandos operativos y mantiene conversación libre para preguntas abiertas. Las claves de proveedor quedan únicamente en servidor.
+### 8.1 Captura rápida desde móvil
 
-## 9. Seguridad, privacidad y resiliencia
+1. La persona selecciona su grupo o usa su cuenta principal en Vibeapp.
+2. Captura texto, voz, foto, video, documento, ubicación o una señal disponible.
+3. Vibeapp guarda en una cola local si la red no está lista.
+4. La API valida identidad e idempotencia, y Supabase guarda el dato o activo privado.
+5. La captura queda sincronizada o muestra una acción clara de reintento.
+6. La evidencia sin historia aparece en la Bandeja de VibePWA.
 
-- Sesión autenticada antes de guardar datos destinados a sincronización multidispositivo.
-- Permisos del sistema para cámara, micrófono, ubicación y salud, solicitados solo cuando el usuario usa la función.
-- Storage privado y URLs firmadas de duración limitada.
-- Cola local, reintento e idempotencia para resistir conexión irregular sin duplicar.
-- Respaldo antes de limpieza o baja de datos en nube.
-- Separación entre controles cotidianos y diagnósticos técnicos: Operación/Administración concentra lo técnico.
+### 8.2 Construcción de una historia
 
-## 10. Idiomas y accesibilidad
+1. En VibePWA, el usuario abre Nueva experiencia.
+2. Elige una fecha o rango para reconocer sus piezas recientes.
+3. Escribe o dicta qué ocurrió. Esta es la narrativa.
+4. Selecciona fotos, audios, videos, documentos o textos de la bandeja.
+5. Guarda la experiencia; los activos elegidos se adoptan y quedan vinculados.
+6. El contexto de esa ventana temporal queda disponible como referencia, sin convertirse en historia falsa.
 
-El producto soporta español, inglés, francés y portugués. Cada flujo de usuario debe contar con textos completos en los cuatro idiomas; no se acepta una traducción parcial que deje etiquetas técnicas o una sección sin localizar.
+### 8.3 Curación posterior
 
-Los estados deben comunicar acciones sencillas: Guardado, Sincronizando, Requiere acción o No se pudo completar, con una explicación concreta. La interfaz normal no expone nombres de tablas, APIs ni servicios internos.
+El usuario puede editar cuando ya tiene perspectiva. Puede liberar una evidencia, pasarla a otra historia, fusionar historias del mismo episodio, dividir una historia larga, promover un evento a experiencia o degradar una experiencia menor a evento. El sistema conserva antecedentes y no destruye de forma silenciosa.
 
-## 11. Operación y despliegue
+### 8.4 Lectura, reportes y hallazgos
 
-### Controles de calidad previos a publicar
+Reportes, Hallazgos y Publicaciones consumen la misma base de experiencias. Un filtro por fecha, grupo/persona, categoría o experiencia delimita el alcance. Los resultados muestran evidencia y contexto solo cuando existen. No presentan energía, sueño, categoría ni conclusiones clínicas como si fueran datos seguros cuando no hay base suficiente.
 
-1. Sintaxis de cliente y servidor.
-2. Pruebas de flujo de Vibeapp, activos, automatización y contrato Obsidian.
-3. PDF ReportLab válido para Reportes, Hallazgos, Publicaciones y Manual.
-4. Revisión de UI de los flujos modificados en escritorio y móvil/tableta cuando corresponda.
-5. Push a `main`; Railway construye y verifica `/api/health`.
-6. Prueba real posterior al deploy para cualquier permiso, integración física o cambio de flujo crítico.
+### 8.5 Publicación editorial
 
-### Roles de coordinación
+El usuario define el alcance y el tipo de publicación. Vibe ordena cronológicamente las experiencias y evidencia elegida, desarrolla una narrativa editorial fiel a los hechos y genera un PDF. Cuando existen videos, el paquete editorial puede incluir el PDF y los videos relacionados para descargar y editar con VibePub u otra herramienta.
 
-| Responsable | Dueño de cambios |
+### 8.6 Mapa de conocimiento con Obsidian
+
+VibePWA exporta experiencias narradas a una bóveda local configurada. El export valida que la ruta sea una bóveda real, genera notas y mapa en un lote, conserva la zona humana de las notas y no borra automáticamente memorias curadas. Obsidian sirve para profundizar aprendizajes y relaciones, no para competir con la base de datos.
+
+## 9. Integraciones de dispositivos y fuentes
+
+### 9.1 Teléfonos, tabletas y salud
+
+Vibeapp utiliza capacidades nativas permitidas por cada plataforma. En Apple puede trabajar con cámara, micrófono, archivos, ubicación y HealthKit cuando el usuario concede permisos. En Android, la estrategia contempla cámara, archivos y Health Connect; la validación física se completa por dispositivo disponible.
+
+Oura Ring puede aportar sueño, actividad, frecuencia cardíaca, recuperación y otros indicadores mediante API OAuth o archivo de respaldo. Los datos sin lectura se guardan como ausencia de datos, nunca como cero. Samsung Watch y Health Connect forman parte de la matriz de integración y requieren prueba física específica antes de declararse validados.
+
+### 9.2 Lentes Meta Ray-Ban y Oakley
+
+Los lentes Meta capturan fotos y videos, pero su flujo oficial utiliza el teléfono como puente. El contenido se importa primero en la aplicación Meta AI y luego pasa a Fotos/Galería del dispositivo. Vibeapp puede capturarlo desde la galería o archivos del teléfono como evidencia intencional.
+
+- Fotos: formatos normales como JPEG o HEIC según la plataforma.
+- Videos: formatos habituales como MP4 o HEVC; incluyen su audio cuando existe.
+- Audio de interacciones Meta AI: se gestiona mediante las herramientas de descarga de información de Meta, no como una grabadora universal de los lentes.
+- Autocapture: puede crear compilaciones dentro de Meta AI; Vibe recibe los archivos que el usuario importe al teléfono.
+
+Vibe no promete controlar los lentes, extraer automáticamente su almacenamiento ni convertir sus exportaciones HTML/JSON en multimedia. La evidencia entra cuando existe un archivo accesible en el dispositivo y el usuario lo autoriza.
+
+### 9.3 Clima, noticias, agenda y entretenimiento
+
+Vibeapp captura ubicación y señales del momento; la API enriquece la experiencia por fecha, hora y lugar. Clima, noticias y agenda son contexto, no hechos narrados. La cartelera y entretenimiento requieren fuentes vigentes por ciudad y deben comunicar claramente el nivel de disponibilidad.
+
+## 10. Idiomas, privacidad y accesibilidad
+
+Vibe se presenta en cuatro idiomas completos: español, inglés, francés y portugués. Las etiquetas, mensajes de estado, manuales y flujos clave deben mantener paridad; una pantalla parcialmente traducida es un defecto de producto.
+
+Cada usuario ve su propia información. Los grupos o personas son subámbitos privados dentro de esa cuenta, no usuarios globales. El acceso a una cuenta está determinado por autenticación y autorización del servidor; Vibeapp y VibePWA usan la misma sesión y las mismas reglas de datos.
+
+Las acciones de cámara, audio, ubicación, salud y archivos se solicitan solo cuando la persona elige utilizarlas. Los medios viven en almacenamiento privado y se muestran por enlaces firmados temporales. Respaldos, baja de datos y controles técnicos se concentran en Operación para no contaminar los flujos cotidianos.
+
+## 11. Resiliencia, calidad y operación
+
+La experiencia no debe depender de una red perfecta. Vibeapp conserva una cola local y reintenta; la API usa identificadores para evitar duplicados; VibePWA informa el estado real en vez de prometer sincronización inexistente.
+
+Antes de publicar cambios se validan sintaxis, flujos de servidor, contrato de Vibeapp, activos, exportación Obsidian y PDFs. Después del deploy se prueban los permisos, dispositivos e integraciones que no pueden simularse completamente.
+
+| Responsable | Ámbito |
 | --- | --- |
-| Codex PC | VibePWA, backend, documentación de producto y servidor. |
-| Claude MAC | Vibeapp Flutter e integraciones de dispositivos. |
+| Miguel | Decisiones de producto, validación humana y coordinación. |
+| Codex PC | VibePWA, API, servidor, documentación y despliegue. |
+| Claude MAC | Vibeapp Flutter e integración nativa de dispositivos. |
 | Claude PC | Obsidian, mapa de conocimiento y auditoría de bóveda. |
-| Miguel | Decisiones de producto, validación humana y coordinación final. |
 
-Un handcheck debe indicar objetivo, versión, datos de prueba, responsable, resultado esperado y criterio de cierre. No se intercambia una carpeta completa si basta un documento o archivos cambiados.
+Todo handcheck debe declarar objetivo, versión, datos de prueba, resultado esperado, resultado observado y criterio de cierre. La coordinación evita que tres frentes editen la misma responsabilidad.
 
-## 12. Validación pendiente de curación
+## 12. Estado de la versión 1.0 y siguientes mejoras
 
-La operación de mover/soltar/fusionar tiene evidencia de uso. Faltan las pruebas reales y registradas de **dividir** y **degradar** con VibePWA, Supabase y Obsidian.
+La versión 1.0 dispone de captura multimodal, sincronización, biblioteca, bandeja de evidencia, curación, contexto, reportes, hallazgos, publicaciones PDF, exportación Obsidian y una aplicación nativa operativa en el ecosistema Apple validado.
 
-La guía ejecutable es `docs/handcheck-curacion-dividir-degradar-20260723.md`. Ambas operaciones se consideran cerradas solo cuando Librería, Reportes, Hallazgos, Publicaciones, Mapa y Obsidian muestran una única historia activa, preservan el antecedente y no duplican activos.
+Mejoras posteriores:
 
-## 13. Fuente de verdad documental
+- validación física completa en Android y Samsung Watch;
+- conectores de salud con actualización continua bajo permisos del usuario;
+- propuestas más inteligentes de agrupación por tiempo, lugar y evidencia;
+- diseño editorial adicional para publicaciones y VibePub;
+- indicadores de estado y recuperación cada vez más simples para el usuario final;
+- verificación real de dividir y degradar una historia en todos los productos de salida.
 
-| Documento | Uso |
+## 13. Recomendaciones finales
+
+1. Captura primero y narra cuando puedas; no fuerces una historia por cada archivo.
+2. Usa Vibeapp para vivir y registrar; usa VibePWA para ordenar y comprender.
+3. Trata el contexto como una ayuda para recordar, no como diagnóstico.
+4. Antes de eliminar, libera, reorganiza o respalda: una memoria puede adquirir valor después.
+5. Mantén Obsidian como una capa de conocimiento curada y Vibe como el registro confiable de origen.
+
+## 14. Documentos de referencia
+
+| Documento | Para qué sirve |
 | --- | --- |
-| Este blueprint | Visión de producción y decisiones de ecosistema. |
-| `docs/manual-usuario-vibe-20260723.md` | Manual amigable para uso diario. |
-| `docs/capture-adoption-blueprint-20260721.md` | Especificación de implementación de captura/adopción. |
-| `docs/vibeapp-vibepwa-operating-contract.md` | Contrato entre plataformas y API. |
-| `docs/story-curation-operations-20260723.md` | Reglas detalladas de curación. |
-| `obsidian-vault-vibe/90_System/*` | Espejo conceptual y reglas de la bóveda. |
+| Este blueprint | Historia, arquitectura, responsabilidades y operación de Vibe 1.0. |
+| `docs/manual-usuario-vibe-20260723.md` | Orientación de uso cotidiano para personas usuarias. |
+| `docs/capture-adoption-blueprint-20260721.md` | Especificación de captura, adopción y curación. |
+| `docs/vibeapp-vibepwa-operating-contract.md` | Contrato técnico entre las aplicaciones y la API. |
+| `docs/story-curation-operations-20260723.md` | Reglas de reorganización de historias. |
+| `obsidian-vault-vibe/90_System/*` | Contrato de narrativa y conocimiento curado. |
 
-Si estos documentos difieren, este blueprint y el contrato de narrativa se revisan antes de modificar código. El manual de usuario debe simplificar las reglas, nunca cambiarlas.
+Si un documento contradice este blueprint o el contrato de narrativa, se revisa antes de cambiar el producto.

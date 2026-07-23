@@ -1,96 +1,73 @@
 # Guía integral del ecosistema Vibe
 
-Versión de referencia: 2026-07-23  
-Propósito: explicar el ecosistema completo sin confundir experiencia, evidencia, contexto, plataforma o fuente de verdad.
+Fecha: 2026-07-23
+Estado: índice de navegación y lectura amigable del ecosistema.
 
-## Resumen ejecutivo
+## Cómo leer el ecosistema
 
-Vibe es un ecosistema de memoria y comprensión de experiencias humanas. Su diseño separa dos tiempos naturales: **capturar hechos cuando ocurren** y **darles estructura cuando el usuario puede entenderlos**. Esta separación evita dos errores: obligar a inventar una historia antes de vivirla, o convertir cada foto, lectura biométrica o ubicación en una experiencia falsa.
+Vibe no es un conjunto de aplicaciones independientes. Es un único sistema de memoria y comprensión personal con diferentes espacios de trabajo. El usuario no necesita conocer la infraestructura para usarlo; esta guía explica cómo encajan las piezas y dónde encontrar cada respuesta.
 
-El sistema sirve tanto a quien quiere recordar y organizar su vida como a quien desea observar patrones de trabajo, salud, aprendizaje, relaciones o bienestar. La misma base permite ambos usos: primero conserva hechos y relatos; después genera reportes, hallazgos, publicaciones y conocimiento conectado.
+## El recorrido principal
 
-## Las piezas del ecosistema
+1. **Vive y captura:** Vibeapp guarda palabras, imágenes, video, audio, documentos y datos autorizados del momento.
+2. **Sincroniza:** la misma cuenta Vibe conserva el registro común en la nube.
+3. **Da sentido:** VibePWA convierte una selección de evidencias y una narración humana en experiencia.
+4. **Organiza:** la Biblioteca permite ajustar la historia sin borrar la memoria accidentalmente.
+5. **Comprende:** Reportes, Hallazgos y Mapa leen las experiencias y su contexto.
+6. **Comparte:** Publicaciones crea un PDF editorial; VibePub puede refinarlo.
+7. **Profundiza:** Obsidian recibe notas curadas para conexiones y aprendizajes de largo plazo.
 
-| Pieza | Rol principal | No debe convertirse en |
+## Mapa de responsabilidades
+
+| Espacio | Hace | No hace |
 | --- | --- | --- |
-| **Vibeapp** | Captura móvil y contexto cercano al usuario. | Un panel complejo de análisis o curación. |
-| **VibePWA** | Estructura historias, revisa datos, analiza y opera. | Un sustituto de cámara, sensores o permisos nativos. |
-| **Servidor + Supabase** | Registro común, autenticación, archivos privados y sincronización. | Una segunda interfaz para uso cotidiano. |
-| **Obsidian + Claude PC** | Bóveda de conocimiento, curación humana y análisis de notas exportadas. | Una base paralela que reescribe a Vibe. |
-| **VibePub** | Edición posterior y distribución externa de publicaciones. | La fuente de datos de experiencias. |
+| Vibeapp | Captura móvil, permisos, cola local y sincronización. | Curación compleja ni administración de datos. |
+| VibePWA | Historias, eventos, evidencia, análisis, PDFs y operación. | Control físico completo del dispositivo. |
+| API y Supabase | Fuente única de datos, acceso privado, automatización. | Interpretar un archivo como experiencia sin relato humano. |
+| Obsidian y Claude PC | Curación de conocimiento y auditoría de la bóveda. | Sustituir la base de datos de Vibe. |
+| VibePub | Edición y adaptación editorial posterior. | Cambiar el registro de experiencias de origen. |
 
-La fuente única de verdad de experiencias, eventos, evidencia y contexto es el backend/Supabase. Las cachés, colas y la bóveda Obsidian son capas de transporte, resiliencia o lectura; no reemplazan ese registro.
+## Reglas que mantienen el sistema coherente
 
-## Modelo de información
+- Capturar no equivale a crear una experiencia.
+- Una historia nace de un relato humano, no de un nombre de archivo ni de una señal de sensor.
+- La evidencia se puede adoptar después por fecha, rango y selección.
+- El contexto se referencia por tiempo; no se convierte en historia por sí solo.
+- Curar reorganiza y deja antecedentes; no destruye silenciosamente.
+- Vibe es la fuente de verdad. Obsidian es una vista de conocimiento curada.
+- Las cuatro lenguas del producto son español, inglés, francés y portugués.
 
-`Persona -> Experiencia -> Evento -> Evidencia / dato`
+## Preguntas rápidas
 
-**Persona** es el dueño de los datos y puede usar grupos privados para separar Familia, Viaje, Proyecto o Equipo.
+### ¿Dónde creo una experiencia?
 
-**Experiencia** es un episodio vivido con rango de tiempo y significado coherente.
+En VibePWA, desde Captura o Biblioteca. Vibeapp puede crear una experiencia simple cuando ya tienes el relato, pero su uso principal es capturar rápido.
 
-**Evento** es un submomento selectivo dentro de una experiencia. Puede tener narrativa propia, pero sigue siendo evento hasta que el usuario lo promueve.
+### ¿Qué hago con una foto que no pertenece todavía a nada?
 
-**Evidencia intencional** incluye fotos, voz, video, texto y documentos. Puede existir sin experiencia y esperar adopción.
+Déjala en la Bandeja. No se pierde ni se convierte en una historia vacía. Más adelante la adoptas desde la experiencia correcta.
 
-**Contexto ambiente** incluye biometría, GPS, clima, noticias y agenda. Se almacena por fecha/hora y enriquece historias sin convertirse en una experiencia por sí mismo.
+### ¿Qué hace Meta AI glasses dentro de Vibe?
 
-## Dos flujos que ocurren en tiempos diferentes
+Las fotos y videos se importan al teléfono a través de Meta AI y luego se capturan desde Vibeapp. Los lentes son una fuente de evidencia; Vibe no controla directamente su almacenamiento.
 
-### 1. Captura: Vibeapp primero
+### ¿El clima, las noticias y la biometría son experiencias?
 
-La captura debe ser rápida, barata y posible aun cuando la historia todavía no esté clara. Vibeapp recoge texto, voz, foto, video, documento, ubicación y contexto móvil. Cada captura se sella con fecha, cuenta, grupo/persona y una clave de idempotencia para impedir duplicados durante reintentos.
+No. Son contexto. Ayudan a comprender un episodio real cuando existe una historia y un rango de tiempo.
 
-La evidencia sin padre llega a la Bandeja de evidencia. No se muestra como experiencia, evento vivido, reporte ni nota de Obsidian.
+### ¿Qué documentos debo consultar?
 
-### 2. Estructura y curación: VibePWA después
+| Necesidad | Documento |
+| --- | --- |
+| Aprender a usar Vibe | `manual-usuario-vibe-20260723.md` y su PDF. |
+| Entender el producto completo | `blueprint-produccion-ecosistema-vibe-20260723.md` y su PDF. |
+| Implementar captura/adopción | `capture-adoption-blueprint-20260721.md`. |
+| Coordinar Vibeapp con VibePWA | `vibeapp-vibepwa-operating-contract.md`. |
+| Reorganizar historias | `story-curation-operations-20260723.md`. |
+| Auditar Obsidian | `obsidian-vault-vibe/90_System/`. |
 
-VibePWA permite elegir un conjunto de evidencia por fecha, escribir una narrativa, establecer un rango de tiempo y guardar una experiencia. Luego permite eventos internos, adopción de evidencia y curación: mover, soltar, unir, dividir, promover o degradar.
+## Estado de verificación
 
-La adopción vincula; no borra. La curación reorganiza; no destruye una historia silenciosamente. Los antecedentes de una fusión, división o degradación permanecen trazables y no cuentan como historias activas en reportes, publicaciones ni mapa.
+La adopción de evidencia y la reorganización básica ya cuentan con pruebas E2E. Queda una validación registrada de las operaciones de dividir y degradar una historia para confirmar el antecedente en Biblioteca, productos de salida y Obsidian. La guía de prueba es `handcheck-curacion-dividir-degradar-20260723.md`.
 
-## Narrativa humana
-
-Narrativa significa lenguaje humano que cuenta lo vivido. Es válida cuando proviene de texto escrito, voz transcrita o video narrado.
-
-No es narrativa: nombres de archivo, etiquetas de una palabra, visión automática, OCR, biometría, GPS, clima, noticias ni metadatos. Esos datos pueden ser evidencia o contexto muy útil, pero no sustituyen el relato.
-
-Una experiencia está narrada si contiene narrativa propia o si alguno de sus eventos tiene narrativa humana. Las métricas cuentan experiencias narradas, no fragmentos de texto.
-
-## Taxonomía para clasificar sin confundir
-
-Las categorías de actividad que pueden definir una experiencia incluyen Trabajo, Paseo/Viaje, Aprendizaje, Social, Entretenimiento, Creatividad y Espiritualidad. Salud narra cuando describe un episodio vivido, por ejemplo una consulta médica; la biometría de salud es contexto.
-
-Bienestar es una dimensión o estado, no una actividad. Hogar es un lugar, no una categoría de experiencia. Compras requiere vivencia real para ser experiencia; una compra rutinaria es un registro breve, no necesariamente una historia.
-
-## Cómo se usa la información
-
-1. **Librería y Mapa** organizan memoria, conexiones y continuidad.
-2. **Reportes** explican períodos, grupos o temas con evidencia y datos disponibles.
-3. **Hallazgos** convierten patrones en recomendaciones comprensibles.
-4. **Publicaciones** crean un PDF editorial cronológico a partir de un alcance y evidencia seleccionados. VibePub puede refinarlo para distribución externa.
-5. **Obsidian** recibe una exportación curada: experiencias narradas en `02_Experiences`, multimedia adoptada en `04_Assets` y productos regenerables en `05_Generated`.
-
-## Reglas de sincronización
-
-- Una captura se considera completa cuando el servidor la acepta y VibePWA puede leerla.
-- La cola móvil puede reintentar, pero nunca debe duplicar registros.
-- Los archivos se guardan en Storage privado y se consultan con URLs firmadas de duración limitada.
-- El contexto lento, como clima o noticias, se enriquece después de guardar para no bloquear una captura.
-- Una agenda crea o actualiza un compromiso futuro; no crea automáticamente una experiencia ni un evento vivido.
-
-## Privacidad y control
-
-Cada usuario ve sus propios datos. Los grupos/personas son subgrupos privados, no cuentas independientes. Los administradores de producto pueden operar la plataforma, pero no cambian esta propiedad de datos.
-
-Antes de una baja de cuenta se genera respaldo y existe confirmación explícita. Archivar un grupo no borra experiencias históricas. El borrado de evidencia o historias debe ser consciente, reversible mediante respaldo cuando corresponda y trazable.
-
-## Límites actuales y evolución
-
-Vibeapp está validado en iPhone/iPad para los flujos ya probados. Android, Samsung/Health Connect y algunos conectores de wearables requieren validación física adicional. Apple Health, Oura y otras fuentes se normalizan cuando están disponibles; el sistema no debe inventar mediciones ausentes.
-
-El próximo desarrollo debe priorizar calidad de captura y curación antes de añadir más análisis: una historia con relato humano y evidencia bien adoptada mejora todos los productos posteriores.
-
-## Criterio de éxito
-
-El ecosistema funciona cuando una persona puede capturar sin fricción, reconocer y adoptar sus piezas después, formar una historia fiel, reorganizarla sin pérdida, verla reflejada en reportes/publicaciones/mapa y, si lo desea, curarla en Obsidian sin crear duplicados ni bases paralelas.
+Esta guía se mantiene como puerta de entrada. El blueprint explica por qué existe cada capa; el manual explica cómo usarla sin tecnicismos.

@@ -11,7 +11,7 @@ from reportlab.lib.enums import TA_CENTER, TA_LEFT
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
-from reportlab.platypus import Image, KeepTogether, PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.platypus import Flowable, Image, PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -24,6 +24,116 @@ TEAL = colors.HexColor("#0D7C66")
 PURPLE = colors.HexColor("#60419A")
 LINE = colors.HexColor("#D8E2E0")
 MUTED = colors.HexColor("#5C6B73")
+PALE_TEAL = colors.HexColor("#E6F2F0")
+PALE_PURPLE = colors.HexColor("#F0EAF8")
+PALE_ORANGE = colors.HexColor("#FFF2E6")
+
+
+class EcosystemDiagram(Flowable):
+    """Small vector diagrams used as reading aids in the production guides."""
+
+    def __init__(self, kind: str):
+        super().__init__()
+        self.kind = kind
+        self.width = 6.45 * inch
+        self.height = 2.15 * inch
+
+    def _box(self, x, y, width, height, title, caption, fill):
+        canvas = self.canv
+        canvas.setStrokeColor(LINE)
+        canvas.setFillColor(fill)
+        canvas.roundRect(x, y, width, height, 7, stroke=1, fill=1)
+        canvas.setFillColor(INK)
+        canvas.setFont("Helvetica-Bold", 8.4)
+        canvas.drawCentredString(x + width / 2, y + height - 15, title)
+        canvas.setFillColor(MUTED)
+        canvas.setFont("Helvetica", 6.8)
+        for index, line in enumerate(caption.split("\n")):
+            canvas.drawCentredString(x + width / 2, y + height - 29 - (index * 9), line)
+
+    def _arrow(self, x1, y1, x2, y2, color=TEAL):
+        canvas = self.canv
+        canvas.setStrokeColor(color)
+        canvas.setLineWidth(1.3)
+        canvas.line(x1, y1, x2, y2)
+        canvas.setFillColor(color)
+        canvas.circle(x2, y2, 2.5, stroke=0, fill=1)
+
+    def _title(self, text):
+        self.canv.setFillColor(INK)
+        self.canv.setFont("Helvetica-Bold", 10.5)
+        self.canv.drawString(0, self.height - 12, text)
+
+    def draw(self):
+        if self.kind == "architecture":
+            self._title("Mapa del ecosistema: una cuenta, varias superficies")
+            self._box(0, 62, 112, 55, "Vibeapp", "captura móvil\ntexto, voz, cámara", PALE_TEAL)
+            self._box(138, 62, 118, 55, "API Vibe", "validación, sincronía\ne integraciones", PALE_PURPLE)
+            self._box(282, 62, 112, 55, "Supabase", "identidad, datos\ny medios privados", PALE_TEAL)
+            self._box(420, 105, 104, 44, "VibePWA", "historias, análisis\ny PDFs", PALE_ORANGE)
+            self._box(420, 26, 104, 44, "Obsidian", "memoria curada\ny aprendizaje", PALE_PURPLE)
+            self._arrow(112, 89, 138, 89)
+            self._arrow(256, 89, 282, 89)
+            self._arrow(394, 98, 420, 126)
+            self._arrow(394, 78, 420, 48, PURPLE)
+            self.canv.setFillColor(MUTED)
+            self.canv.setFont("Helvetica", 7)
+            self.canv.drawString(0, 10, "VibePub recibe el PDF editorial para composición y distribución posterior.")
+        elif self.kind == "lifecycle":
+            self._title("Recorrido E2E: de un hecho a una memoria útil")
+            stages = [
+                ("1. Capturar", "Vibeapp", PALE_TEAL),
+                ("2. Sincronizar", "API + Supabase", PALE_PURPLE),
+                ("3. Adoptar", "Bandeja VibePWA", PALE_ORANGE),
+                ("4. Narrar", "experiencia + eventos", PALE_TEAL),
+                ("5. Comprender", "reportes, mapa, PDF", PALE_PURPLE),
+            ]
+            x = 0
+            for index, (title, caption, fill) in enumerate(stages):
+                self._box(x, 71, 100, 48, title, caption, fill)
+                if index < len(stages) - 1:
+                    self._arrow(x + 100, 95, x + 110, 95)
+                x += 110
+            self.canv.setFillColor(MUTED)
+            self.canv.setFont("Helvetica", 7.2)
+            self.canv.drawString(0, 34, "La evidencia puede esperar sin padre. El relato humano decide cuándo se convierte en historia.")
+            self.canv.drawString(0, 20, "Biometría, GPS, clima, agenda y noticias acompañan la historia como contexto; no la inventan.")
+        elif self.kind == "decision":
+            self._title("Árbol de decisión: clasificar un registro")
+            self._box(207, 132, 170, 38, "¿Hay relato humano de algo vivido?", "texto propio, voz transcrita o video narrado", PALE_TEAL)
+            self._box(48, 54, 155, 46, "Sí: experiencia o evento", "actividad + relato\nnarrativa: ok", PALE_PURPLE)
+            self._box(382, 54, 155, 46, "No: evidencia, contexto o artefacto", "foto, sensor, GPS, OCR, documento\nnarrativa: pending", PALE_ORANGE)
+            self._arrow(250, 132, 125, 100, PURPLE)
+            self._arrow(334, 132, 459, 100, TEAL)
+            self.canv.setFillColor(MUTED)
+            self.canv.setFont("Helvetica", 7)
+            self.canv.drawString(48, 36, "Bienestar es estado y Hogar es lugar: acompañan una experiencia, no crean una por sí solos.")
+        else:
+            self._title("Sincronización y confianza")
+            self._box(0, 70, 122, 50, "Dispositivo", "captura y cola local\ncuando no hay red", PALE_TEAL)
+            self._box(145, 70, 122, 50, "Servidor", "guarda primero\nvalida y evita duplicados", PALE_PURPLE)
+            self._box(290, 70, 122, 50, "Contexto", "se enriquece después\ncon estado visible", PALE_ORANGE)
+            self._box(435, 70, 122, 50, "Otros dispositivos", "leen el mismo\nregistro común", PALE_TEAL)
+            self._arrow(122, 95, 145, 95)
+            self._arrow(267, 95, 290, 95)
+            self._arrow(412, 95, 435, 95)
+            self.canv.setFillColor(MUTED)
+            self.canv.setFont("Helvetica", 7.2)
+            self.canv.drawString(0, 32, "Guardado, Sincronizando, Reintento o Acción requerida deben comunicar el estado real en lenguaje simple.")
+
+
+def diagrams_for(path: Path):
+    if path.name.startswith("blueprint"):
+        return [
+            EcosystemDiagram("architecture"), Spacer(1, 10),
+            EcosystemDiagram("lifecycle"), Spacer(1, 10),
+            EcosystemDiagram("decision"), Spacer(1, 10),
+            EcosystemDiagram("resilience"), Spacer(1, 16),
+        ]
+    return [
+        EcosystemDiagram("lifecycle"), Spacer(1, 12),
+        EcosystemDiagram("decision"), Spacer(1, 16),
+    ]
 
 
 def safe(text: str) -> str:
@@ -80,11 +190,23 @@ def parse_markdown(path: Path):
                     document.append(image)
                     document.append(Spacer(1, 5))
                 document.append(Paragraph(safe(stripped[2:]), s["title"]))
+                document.extend(diagrams_for(path))
                 title_seen = True
             else:
                 document.append(PageBreak())
                 document.append(Paragraph(safe(stripped[2:]), s["title"]))
             index += 1
+            continue
+        if stripped.startswith(("Estado:", "Fecha:", "Versión de referencia:", "Para:")):
+            metadata = [stripped]
+            index += 1
+            while index < len(lines):
+                candidate = lines[index].strip()
+                if not candidate.startswith(("Estado:", "Fecha:", "Versión de referencia:", "Para:", "Alcance:")):
+                    break
+                metadata.append(candidate)
+                index += 1
+            document.append(Paragraph("<br/>".join(safe(value) for value in metadata), s["subtitle"]))
             continue
         if stripped.startswith("## "):
             document.append(Paragraph(safe(stripped[3:]), s["h1"]))
