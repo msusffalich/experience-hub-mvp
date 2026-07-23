@@ -39,6 +39,7 @@ check(files.server.includes("upsertContextSignal(buildContextSignalFromIntegrati
 check(!files.server.includes("upsertExperience(buildContextExperienceFromIntegrationSignal"), "Context ingest must not create ctx-* experience rows.");
 check(files.server.includes("upsertAssetEvidence(saved, user, { requireRemote: true })"), "Direct /api/media uploads must require a persisted intentional evidence row in assets.");
 check(files.server.includes("repairMissingAssetEvidenceRowsFromUploadAttempts") && files.server.includes("asset_evidence_repaired_from_upload_attempts"), "Asset listing must repair uploaded media attempts that were accepted before evidence rows existed.");
+check(files.server.includes("isAssetOptionalAdoptionColumnError") && files.server.includes("removeAssetOptionalAdoptionColumns"), "Asset evidence writes must remain compatible when optional adoption columns are not yet migrated.");
 check(files.server.includes("getDailyBriefing") && files.server.includes("getContextImpact"), "Daily/context providers must remain server-side.");
 check(files.server.includes("allowedSourceTypes") && files.server.includes("apple-healthkit-native") && files.server.includes("android-health-connect"), "Device source catalog must include Apple HealthKit and Health Connect.");
 check(files.server.includes("/api/sync/state") && files.server.includes("getServerSyncState"), "Server must expose a sync state endpoint for automatic multi-device refresh.");

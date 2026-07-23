@@ -5488,11 +5488,12 @@ async function upsertAssetEvidence(media, user = { id: LOCAL_USER_ID }, options 
     return withAssetEvidenceRemoteFailure(normalized, "asset_evidence_workspace_unavailable");
   }
   try {
+    const row = toAssetEvidenceRow(normalized, workspace.id, user);
     const rows = await supabaseRest("assets", {
       method: "POST",
       searchParams: { on_conflict: "asset_id" },
       headers: { Prefer: "resolution=merge-duplicates,return=representation" },
-      body: JSON.stringify(toAssetEvidenceRow(normalized, workspace.id, user)),
+      body: JSON.stringify(row),
       accessToken: user.accessToken,
     });
     workspaceSchemaState.available = true;
@@ -5505,6 +5506,26 @@ async function upsertAssetEvidence(media, user = { id: LOCAL_USER_ID }, options 
       evidenceType: rows[0]?.evidence_type || "intentional",
     };
   } catch (error) {
+    if (isAssetOptionalAdoptionColumnError(error)) {
+      const row = removeAssetOptionalAdoptionColumns(toAssetEvidenceRow(normalized, workspace.id, user));
+      const rows = await supabaseRest("assets", {
+        method: "POST",
+        searchParams: { on_conflict: "asset_id" },
+        headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+        body: JSON.stringify(row),
+        accessToken: user.accessToken,
+      });
+      await appendLog("warn", "asset_evidence_optional_columns_skipped", {
+        assetId: normalized.id,
+        reason: sanitizeDiagnosticError(error),
+      });
+      return {
+        ...normalized,
+        ...fromAssetRow(rows[0]),
+        adoptionStatus: rows[0]?.adoption_status || inferMediaAdoptionStatus(normalized),
+        evidenceType: rows[0]?.evidence_type || "intentional",
+      };
+    }
     const reason = sanitizeDiagnosticError(error);
     await appendLog("warn", "asset_evidence_remote_skipped", {
       assetId: normalized.id,
@@ -5530,6 +5551,22 @@ function throwAssetEvidencePersistenceError(code, detail, cause) {
   error.detail = detail || code;
   error.cause = cause;
   throw error;
+}
+
+function isAssetOptionalAdoptionColumnError(error) {
+  const detail = `${error?.message || ""} ${error?.detail || ""} ${JSON.stringify(error?.cause || {})}`;
+  return detail.includes("PGRST204")
+    && ["adopted_at", "adoption_method", "adoption_confidence", "pruned_at", "pruned_reason"].some((column) => detail.includes(column));
+}
+
+function removeAssetOptionalAdoptionColumns(row = {}) {
+  const compatible = { ...row };
+  delete compatible.adopted_at;
+  delete compatible.adoption_method;
+  delete compatible.adoption_confidence;
+  delete compatible.pruned_at;
+  delete compatible.pruned_reason;
+  return compatible;
 }
 
 async function listAssetEvidence(user = { id: LOCAL_USER_ID }) {
@@ -5683,16 +5720,36 @@ async function adoptAssetEvidenceForExperience(body = {}, user = { id: LOCAL_USE
       metadata,
       updated_at: now,
     });
-    const updated = await supabaseRest("assets", {
-      method: "PATCH",
-      searchParams: {
-        workspace_id: `eq.${workspace.id}`,
-        asset_id: `eq.${row.asset_id}`,
-      },
-      headers: { Prefer: "return=representation" },
-      body: JSON.stringify(patch),
-      accessToken: user.accessToken,
-    });
+    let updated;
+    try {
+      updated = await supabaseRest("assets", {
+        method: "PATCH",
+        searchParams: {
+          workspace_id: `eq.${workspace.id}`,
+          asset_id: `eq.${row.asset_id}`,
+        },
+        headers: { Prefer: "return=representation" },
+        body: JSON.stringify(patch),
+        accessToken: user.accessToken,
+      });
+    } catch (error) {
+      if (!isAssetOptionalAdoptionColumnError(error)) throw error;
+      const compatiblePatch = removeAssetOptionalAdoptionColumns(patch);
+      updated = await supabaseRest("assets", {
+        method: "PATCH",
+        searchParams: {
+          workspace_id: `eq.${workspace.id}`,
+          asset_id: `eq.${row.asset_id}`,
+        },
+        headers: { Prefer: "return=representation" },
+        body: JSON.stringify(compatiblePatch),
+        accessToken: user.accessToken,
+      });
+      await appendLog("warn", "asset_adoption_optional_columns_skipped", {
+        assetId: row.asset_id,
+        reason: sanitizeDiagnosticError(error),
+      });
+    }
     updatedAssets.push(fromAssetRow(updated[0] || { ...row, ...patch }));
   }
   const foundIds = new Set(rows.map((row) => row.asset_id));

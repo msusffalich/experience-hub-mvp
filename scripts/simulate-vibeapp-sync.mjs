@@ -224,6 +224,12 @@ check(
     && files.server.includes("asset_evidence_repaired_from_upload_attempts"),
   "server must repair uploaded Vibeapp media attempts into assets rows when listing the evidence inbox.",
 );
+check(
+  files.server.includes("isAssetOptionalAdoptionColumnError")
+    && files.server.includes("removeAssetOptionalAdoptionColumns")
+    && files.server.includes("asset_evidence_optional_columns_skipped"),
+  "server must keep media evidence compatible with Supabase projects missing optional adoption columns.",
+);
 check(files.vibeappMain.includes("Idempotency-Key") && files.vibeappMain.includes("X-Vibe-Source-Id"), "Vibeapp transport must send retry-safe idempotency headers.");
 check(files.vibeappMain.includes("ExperienceSyncClient") && files.vibeappMain.includes("NativeSyncTransport"), "Vibeapp must keep a sync client and transport abstraction.");
 check(files.vibeappMain.includes("CaptureQueueSummary") && files.vibeappMain.includes("NativePilotChecklist"), "Vibeapp must keep queue summary and pilot checklist.");
