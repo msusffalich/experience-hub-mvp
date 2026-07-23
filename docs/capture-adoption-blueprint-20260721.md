@@ -192,9 +192,10 @@ Obsidian remains downstream:
 2. A biometric sample lands in `context_signals`, not `experiences`.
 3. Creating an experience with a time range proposes nearby inbox evidence.
 4. Adopting evidence updates the existing asset instead of creating a duplicate.
-5. Obsidian export does not create notes for context signals or parentless technical media.
-6. An experience with no global narrative but at least one narrated event exports as narrated by rollup.
-7. Reports, findings, publications, and the knowledge map can use adopted evidence, referenced context, and event-level narrative without fabricating a global story.
+5. Obsidian export copies each adopted intentional asset to `04_Assets/<type>` and links the real file from the matching experience note. If a declared binary cannot be copied, the export fails visibly before the map is written.
+6. Obsidian export does not create notes for context signals or parentless technical media.
+7. An experience with no global narrative but at least one narrated event exports as narrated by rollup.
+8. Reports, findings, publications, and the knowledge map can use adopted evidence, referenced context, and event-level narrative without fabricating a global story.
 
 ## Recommendation
 

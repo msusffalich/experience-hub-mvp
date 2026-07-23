@@ -47,7 +47,7 @@ const saveObsidianExport = between(
   "function inferObsidianTargetFromFilename",
 );
 
-assert(/const APP_VERSION = "20260722-[^"]+-\d+";/.test(app), "APP_VERSION must identify the current 20260722 release build.");
+assert(/const APP_VERSION = "202607\d{2}-[^"]+-\d+";/.test(app), "APP_VERSION must identify the current July 2026 release build.");
 assert(app.includes("RECOMMENDED_OBSIDIAN_VAULT_PATH") && app.includes("obsidian-vault-vibe"), "The app must show the exact expected local Obsidian vault path.");
 assert(app.includes("function hasObsidianMarkerDirectory") && app.includes('hasChildDirectoryHandle(handle, ".obsidian")'), "Local vault selection must validate the real Obsidian .obsidian marker.");
 assert(app.includes("function resolveLocalObsidianVaultHandle") && app.includes("obsidian_vault_marker_missing"), "Local vault selection must reject folders that are not Obsidian vaults.");
@@ -88,6 +88,7 @@ assert(autoBlockBuilder.includes("## Enlaces") && autoBlockBuilder.includes("...
 assert(app.includes("function isObsidianExportableExperience") && app.includes("function isTechnicalMediaOnlyExperience"), "Obsidian export must exclude technical media-only captures from experience notes.");
 assert(app.includes("getExperienceNarrativeStatus(experience) === \"pending\"") && app.includes("image_picker") && app.includes("native-media"), "Technical media-only captures must require a missing real narrative before they are excluded.");
 assert(localTargetMap.includes('generated_map: ["05_Generated"]'), "Generated maps must be routed to 05_Generated in the local vault.");
+assert(localTargetMap.includes('images: ["04_Assets", "Images"]') && localTargetMap.includes('videos: ["04_Assets", "Videos"]') && localTargetMap.includes('audio: ["04_Assets", "Audio"]'), "Local vault must have explicit media folders for adopted intentional evidence.");
 assert(serverTargets.includes('generated_map: "05_Generated"'), "Generated maps must be routed to 05_Generated on the server.");
 assert(mapExporter.includes("fuente:") && mapExporter.includes("generado") && mapExporter.includes("fiabilidad:") && mapExporter.includes("pendiente"), "Generated map frontmatter must declare generated source and reliability.");
 assert(mapExporter.includes("Exportacion Obsidian terminada") && mapExporter.includes("notesResult.count === notesResult.expected"), "Map export must report verifiable note counts.");
@@ -106,6 +107,10 @@ assert(mapExporter.indexOf("exportExperienceNotesToLocalObsidianVault(experience
 assert(mapExporter.includes("const savedIds = new Set(notesResult.savedIds || [])") && mapExporter.includes("const mapExperiences = experiences.filter") && mapExporter.includes("filterExperienceMapRoutesForSavedNotes(rawRoutes, savedIds)"), "Generated map must count only the same exported experience-note set.");
 assert(mapExporter.includes("withNotes: notesResult.narrativeOk") && mapExporter.includes("renderExperienceMapMarkdownTimeline(mapExperiences)") && mapExporter.includes("renderExperienceMapMarkdownRelations(graph, savedIds)"), "Generated map narrative metrics, timeline, and backlinks must use the saved-note set.");
 assert(mapExporter.includes("obsidian_notes_incomplete") && mapExporter.includes("obsidian_map_not_saved"), "Obsidian export must fail visibly instead of accepting a partial map-only export.");
+assert(app.includes("async function exportExperienceAssetsToLocalObsidianVault") && app.includes("async function saveBinaryToLocalObsidianVault"), "Obsidian export must copy adopted binary evidence before writing experience notes.");
+assert(mapExporter.includes("const assetResult = await exportExperienceAssetsToLocalObsidianVault(experiences)") && mapExporter.includes("obsidian_assets_incomplete"), "The map must not be exported if its adopted evidence could not be copied.");
+assert(experienceNoteBuilder.includes("buildObsidianExperienceAssetLine") && experienceNoteBuilder.includes("assetReferences"), "Experience notes must link to copied Obsidian assets instead of only listing file names.");
+assert(server.includes('url.pathname.endsWith("/download")') && server.includes("getAssetEvidenceDownload"), "The server must provide an authenticated signed download for an adopted evidence asset.");
 assert(app.includes("buildObsidianExcludedExperienceNoteCandidates(allExperiences)") && app.includes("Notas candidatas a revisar"), "Obsidian export must report stale-note candidates for human review.");
 assert(!app.includes("function deleteMarkdownFromLocalObsidianVault") && !app.includes("removeEntry(safeFilename)") && !app.includes("deleteObsidianExperienceNoteIfExists"), "VibePWA must not automatically delete append-only experience notes.");
 assert(!server.includes('url.pathname === "/api/obsidian/export" && req.method === "DELETE"') && !server.includes("function deleteObsidianExport"), "Server Obsidian export must not expose automatic deletion for experience notes.");

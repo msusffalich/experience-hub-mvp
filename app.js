@@ -1,4 +1,4 @@
-const APP_VERSION = "20260722-evidence-inbox-date-repair-701";
+const APP_VERSION = "20260723-evidence-adoption-assets-702";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -3049,6 +3049,7 @@ const manualContent = {
         "El Mapa de Experiencias usa datos ya sincronizados en la base de datos: experiencias, eventos internos, grupo/persona, ubicación, categoría, energía real, activos, texto analítico, biometría y contexto. No inventa categoría ni energía cuando faltan datos.",
         "Antes de exportar a Obsidian, la app valida que la nota tenga contenido, fecha local, identificadores, estado narrativo, estado multimodal y personas. Las capturas técnicas sin narrativa no se convierten en notas de experiencia.",
         "En Obsidian, los mapas y reportes generados van a 05_Generated. Las experiencias reales van a 02_Experiences. La parte generada por Vibe queda dentro del bloque <!-- vibe:auto -->; lo escrito por una persona queda fuera y no se sobrescribe al reexportar.",
+        "Al exportar el mapa, VibePWA copia las fotos, videos, audios y documentos adoptados a 04_Assets y los enlaza desde la nota de la experiencia. Si un archivo no se puede copiar, la exportacion se detiene y lo indica; no declara un mapa completo con evidencia faltante.",
         "Los aprendizajes nacen como pendientes. Solo pasan a ok cuando una persona escribe texto real bajo ### Aprendizajes en la sección ## Curaduría humana y la experiencia se reexporta; así la bóveda no confunde notas vacías con notas ya curadas.",
         "Formatos nativos propietarios, como bases internas de apps de notas o ENEX de Evernote, no son requisito del MVP; se evaluarán después de estabilizar documentos estándar, OCR, transcripción y conectores.",
         "La búsqueda de activos encuentra coincidencias por nombre, experiencia, categoría, persona, lugar, formato, dispositivo, etiquetas, texto analítico y fecha. También puedes acotar por rango Desde/Hasta.",
@@ -3706,6 +3707,7 @@ const manualContent = {
         "The Experience Map uses data already synchronized in the database: experiences, internal events, group/person, location, category, real energy, assets, analytical text, biometrics, and context. It does not invent category or energy when data is missing.",
         "Before exporting to Obsidian, the app validates that each note has content, local date, identifiers, narrative status, multimodal status, and people. Technical captures without narrative are not converted into experience notes.",
         "In Obsidian, generated maps and reports go to 05_Generated. Real experiences go to 02_Experiences. Vibe-generated content stays inside the <!-- vibe:auto --> block; human writing stays outside and is not overwritten when reexporting.",
+        "When exporting the map, VibePWA copies adopted photos, videos, audio, and documents to 04_Assets and links them from the experience note. If a file cannot be copied, the export stops and says so; it never reports a complete map with missing evidence.",
         "Learnings start as pending. They only become ok when a person writes real text under ### Aprendizajes in the ## Curaduría humana section and the experience is reexported, so the vault does not confuse empty notes with curated notes.",
         "Proprietary native formats, such as internal note-app databases or Evernote ENEX, are not MVP requirements; they will be evaluated after standard documents, OCR, transcription, and connectors are stable.",
         "Asset search matches name, experience, category, person, place, format, device, tags, analytical text, and date. You can also narrow results with the From/To range.",
@@ -4391,6 +4393,7 @@ manualContent.fr = [
       "La Carte des experiences utilise les donnees deja synchronisees dans la base: experiences, evenements internes, groupe/personne, lieu, categorie, energie reelle, actifs, texte analytique, biometrie et contexte. Elle n'invente ni categorie ni energie quand la donnee manque.",
       "Avant l'export vers Obsidian, l'app valide que chaque note contient du contenu, une date locale, des identifiants, un etat narratif, un etat multimodal et les personnes associees. Les captures techniques sans narration ne deviennent pas des notes d'experience.",
       "Dans Obsidian, les cartes et rapports generes vont dans 05_Generated. Les experiences reelles vont dans 02_Experiences. Le contenu genere par Vibe reste dans le bloc <!-- vibe:auto -->; l'ecriture humaine reste dehors et n'est pas ecrasee lors d'un nouvel export.",
+      "Lors de l'export de la carte, VibePWA copie les photos, videos, audios et documents adoptes dans 04_Assets et les lie a la note de l'experience. Si un fichier ne peut pas etre copie, l'export s'arrete et le signale.",
       "Les apprentissages commencent comme pending. Ils passent a ok seulement quand une personne ecrit un vrai texte sous ### Aprendizajes dans la section ## Curaduría humana et que l'experience est reexportee; la voute ne confond donc pas une note vide avec une note deja curee.",
     ],
   },
@@ -4449,6 +4452,7 @@ manualContent.pt = [
       "O Mapa de Experiencias usa dados ja sincronizados no banco: experiencias, eventos internos, grupo/pessoa, local, categoria, energia real, ativos, texto analitico, biometria e contexto. Ele nao inventa categoria nem energia quando a informacao falta.",
       "Antes de exportar para Obsidian, o app valida que cada nota tenha conteudo, data local, identificadores, estado narrativo, estado multimodal e pessoas. Capturas tecnicas sem narrativa nao viram notas de experiencia.",
       "No Obsidian, mapas e relatorios gerados vao para 05_Generated. Experiencias reais vao para 02_Experiences. O conteudo gerado pelo Vibe fica dentro do bloco <!-- vibe:auto -->; a escrita humana fica fora e nao e sobrescrita ao reexportar.",
+      "Ao exportar o mapa, o VibePWA copia fotos, videos, audios e documentos adotados para 04_Assets e os vincula a nota da experiencia. Se um arquivo nao puder ser copiado, a exportacao para e informa o motivo.",
       "Os aprendizados nascem como pending. Eles so passam para ok quando uma pessoa escreve texto real em ### Aprendizajes dentro da secao ## Curaduría humana e a experiencia e reexportada; assim o cofre nao confunde notas vazias com notas ja curadas.",
     ],
   },
@@ -12468,7 +12472,36 @@ async function adoptSelectedEvidenceForExperience(experience = {}) {
       }),
       preserveSessionOnAuthFailure: true,
     });
-    mergeAdoptedServerAssets(result.assets || []);
+    const adoptedAssets = normalizeServerAssets(result.assets || []).map((asset) => ({
+      ...asset,
+      inboxEvidence: false,
+      adoptedAt: asset.adoptedAt || new Date().toISOString(),
+      adoptionMethod: asset.adoptionMethod || "manual_window",
+      adoptionConfidence: Number(asset.adoptionConfidence ?? 1),
+      metadata: {
+        ...(asset.metadata || {}),
+        linkedExperienceId: experience.id,
+        adoptionStatus: "adopted",
+      },
+    }));
+    mergeAdoptedServerAssets(adoptedAssets);
+    // Keep the local experience aligned with the server adoption. This makes the
+    // evidence immediately available to exports without waiting for a refresh.
+    if (experience?.id && adoptedAssets.length) {
+      const current = state.experiences.find((item) => item.id === experience.id) || experience;
+      const byId = new Map((current.attachments || []).map((asset) => [asset.id || asset.assetKey, asset]));
+      adoptedAssets.forEach((asset) => byId.set(asset.id || asset.assetKey, asset));
+      const mergedExperience = normalizeExperienceItem({
+        ...current,
+        attachments: Array.from(byId.values()),
+        updatedAt: new Date().toISOString(),
+      });
+      const experienceIndex = state.experiences.findIndex((item) => item.id === experience.id);
+      if (experienceIndex >= 0) state.experiences[experienceIndex] = mergedExperience;
+      else state.experiences.unshift(mergedExperience);
+      Object.assign(experience, mergedExperience);
+      saveExperiences();
+    }
     const adoptedIds = new Set((result.assets || []).map((asset) => asset.id || asset.assetKey).filter(Boolean));
     selectedAssets.filter((asset) => adoptedIds.has(asset.id)).forEach((asset) => state.selectedEvidenceAssetIds.delete(asset.id));
     const incomplete = selectedAssets.length > (result.updated || 0);
@@ -21768,7 +21801,18 @@ function renderExperienceMapMarkdownRelations(graph, allowedExperienceIds = null
   return useful.length ? useful : ["- Sin relaciones exportables."];
 }
 
-function buildObsidianExperienceNoteMarkdown(experience = {}) {
+function getObsidianAssetReferenceKey(asset = {}) {
+  return String(asset.id || asset.assetKey || asset.path || asset.url || asset.name || "").trim();
+}
+
+function buildObsidianExperienceAssetLine(asset = {}, assetReferences = new Map()) {
+  const fallbackName = cleanObsidianMarkdownText(asset.name || asset.fileName || asset.kind || "Activo");
+  const reference = assetReferences.get(getObsidianAssetReferenceKey(asset));
+  if (!reference) return `- ${fallbackName}${obsidianSeparator()}${cleanObsidianMarkdownText(asset.kind || asset.type || "multimedia")} (archivo no disponible para copiar)`;
+  return `- ${reference.link}${obsidianSeparator()}${cleanObsidianMarkdownText(asset.kind || asset.type || "multimedia")}`;
+}
+
+function buildObsidianExperienceNoteMarkdown(experience = {}, options = {}) {
   const title = cleanObsidianMarkdownText(experience.title, "Experiencia");
   const category = getExperienceCategoryForExport(experience);
   const energy = getExperienceEnergyForExport(experience);
@@ -21777,6 +21821,7 @@ function buildObsidianExperienceNoteMarkdown(experience = {}) {
   const people = getExperiencePeopleForExport(experience);
   const events = getExperienceEventTimeline(experience);
   const attachments = experience.attachments || [];
+  const assetReferences = options.assetReferences instanceof Map ? options.assetReferences : new Map();
   const notes = getExperienceNarrativeTextForExport(experience);
   const narrativeStatus = getExperienceNarrativeStatus(experience);
   const multimodalStatus = attachments.length ? "ok" : "pending";
@@ -21832,7 +21877,7 @@ function buildObsidianExperienceNoteMarkdown(experience = {}) {
       "## Activos vinculados",
       "",
       ...(attachments.length
-        ? attachments.map((asset) => `- ${cleanObsidianMarkdownText(asset.name || asset.fileName || asset.kind || "Activo")}${obsidianSeparator()}${cleanObsidianMarkdownText(asset.kind || asset.type || "multimedia")}`)
+        ? attachments.map((asset) => buildObsidianExperienceAssetLine(asset, assetReferences))
         : ["- Sin activos vinculados."]),
       "",
       "## Lectura automatica",
@@ -21856,7 +21901,7 @@ function buildObsidianExperienceNoteMarkdown(experience = {}) {
   return lines.join("\n").trim() + "\n";
 }
 
-async function exportExperienceNotesToLocalObsidianVault(experiences = []) {
+async function exportExperienceNotesToLocalObsidianVault(experiences = [], options = {}) {
   if (!state.localObsidianVault?.connected || !supportsLocalObsidianVault()) {
     throw new Error("obsidian_vault_not_connected");
   }
@@ -21865,7 +21910,7 @@ async function exportExperienceNotesToLocalObsidianVault(experiences = []) {
   const savedIds = [];
   const errors = [];
   for (const experience of experiences) {
-    const markdown = buildObsidianExperienceNoteMarkdown(experience);
+    const markdown = buildObsidianExperienceNoteMarkdown(experience, options);
     const filename = `${getObsidianExperienceNoteStem(experience)}.md`;
     if (!markdown.trim()) throw new Error("obsidian_experience_markdown_empty");
     try {
@@ -21935,7 +21980,11 @@ async function exportExperienceMapMarkdown() {
     const experiences = allExperiences.filter(isObsidianExportableExperience);
     const cleanupResult = buildObsidianExcludedExperienceNoteCandidates(allExperiences);
     const rawRoutes = buildExperienceMapRoutes(graph, { excludeContextSignals: true });
-    const notesResult = await exportExperienceNotesToLocalObsidianVault(experiences);
+    // Write evidence first. A note or map is never reported as complete when a
+    // referenced intentional asset could not be copied to the local vault.
+    const assetResult = await exportExperienceAssetsToLocalObsidianVault(experiences);
+    if (!assetResult?.ok) throw new Error(`obsidian_assets_incomplete_${assetResult?.errors?.length || 0}`);
+    const notesResult = await exportExperienceNotesToLocalObsidianVault(experiences, { assetReferences: assetResult.references });
     if (!notesResult?.ok || notesResult.count !== notesResult.expected) {
       throw new Error(`obsidian_notes_incomplete_${notesResult?.count || 0}_of_${notesResult?.expected || experiences.length}`);
     }
@@ -22039,12 +22088,15 @@ async function exportExperienceMapMarkdown() {
     const notesStatus = notesResult?.ok && notesResult.count === notesResult.expected
       ? state.language !== "es" ? `${notesResult.count} experience notes saved` : `${notesResult.count} notas de experiencia guardadas`
       : state.language !== "es" ? `${notesResult?.count || 0}/${notesResult?.expected || experiences.length} notes saved` : `${notesResult?.count || 0}/${notesResult?.expected || experiences.length} notas guardadas`;
+    const assetsStatus = state.language !== "es"
+      ? `${assetResult.exported.length} real asset(s) saved`
+      : `${assetResult.exported.length} activo(s) real(es) guardado(s)`;
     const cleanupStatus = cleanupResult.count
       ? state.language !== "es" ? `${cleanupResult.count} stale notes require review` : `${cleanupResult.count} notas obsoletas requieren revision`
       : state.language !== "es" ? "no stale notes found" : "sin notas obsoletas";
     const message = state.language !== "es"
-      ? `Obsidian export finished: ${mapStatus}; ${notesStatus}; ${cleanupStatus}.`
-      : `Exportacion Obsidian terminada: ${mapStatus}; ${notesStatus}; ${cleanupStatus}.`;
+      ? `Obsidian export finished: ${assetsStatus}; ${notesStatus}; ${mapStatus}; ${cleanupStatus}.`
+      : `Exportacion Obsidian terminada: ${assetsStatus}; ${notesStatus}; ${mapStatus}; ${cleanupStatus}.`;
     if (box) box.textContent = message;
     notify(message, "success");
   } catch (error) {
@@ -28819,6 +28871,13 @@ function getLocalObsidianTargetPath(target) {
     experiences: ["02_Experiences"],
     biometrics: ["04_Assets", "Biometrics"],
     assets: ["04_Assets"],
+    images: ["04_Assets", "Images"],
+    image: ["04_Assets", "Images"],
+    videos: ["04_Assets", "Videos"],
+    video: ["04_Assets", "Videos"],
+    audio: ["04_Assets", "Audio"],
+    documents: ["04_Assets", "Documents"],
+    document: ["04_Assets", "Documents"],
     inbox: ["00_Inbox"],
   };
   return map[target] || map.inbox;
@@ -28831,6 +28890,17 @@ function sanitizeLocalObsidianFilename(filename = "") {
     .trim()
     .slice(0, 140);
   return /\.m(?:d|arkdown)$/i.test(clean) ? clean : `${clean || "vibe-export"}.md`;
+}
+
+function sanitizeLocalObsidianAssetFilename(filename = "", fallbackExtension = "bin") {
+  const clean = String(filename || "activo")
+    .replace(/[<>:"/\\|?*\u0000-\u001f]/g, "-")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^[-.]+|[-.]+$/g, "")
+    .slice(0, 140);
+  const extension = getFileExtension(clean);
+  return extension ? clean : `${clean || "activo"}.${fallbackExtension}`;
 }
 
 async function getOrCreateDirectoryHandle(rootHandle, segments = []) {
@@ -28856,6 +28926,108 @@ async function getUniqueLocalObsidianFileHandle(targetDir, filename) {
   }
   const fallback = `${base}-${Date.now()}${extension}`;
   return { fileHandle: await targetDir.getFileHandle(fallback, { create: true }), filename: fallback };
+}
+
+async function saveBinaryToLocalObsidianVault(blob, filename, options = {}) {
+  if (!(blob instanceof Blob) || !blob.size) throw new Error("obsidian_asset_binary_required");
+  const vault = state.localObsidianVault || {};
+  if (!vault.handle || !supportsLocalObsidianVault()) throw new Error("obsidian_vault_not_connected");
+  const vaultHandle = await ensureConnectedLocalObsidianVaultHandle();
+  if (!(await hasObsidianMarkerDirectory(vaultHandle))) throw new Error("obsidian_vault_marker_missing");
+  const target = options.target || "assets";
+  const targetDir = await getOrCreateDirectoryHandle(vaultHandle, getLocalObsidianTargetPath(target));
+  const safeFilename = sanitizeLocalObsidianAssetFilename(filename, options.fallbackExtension || "bin");
+  const fileHandle = await targetDir.getFileHandle(safeFilename, { create: true });
+  const writable = await fileHandle.createWritable();
+  await writable.write(blob);
+  await writable.close();
+  const relativePath = [...getLocalObsidianTargetPath(target), safeFilename].join("/");
+  state.localObsidianVault = {
+    ...vault,
+    connected: true,
+    permission: "granted",
+    lastSavedPath: relativePath,
+    lastSavedAt: new Date().toISOString(),
+    lastError: "",
+  };
+  renderLocalObsidianVaultStatus();
+  return { ok: true, relativePath, filename: safeFilename };
+}
+
+function getObsidianAssetTarget(asset = {}) {
+  const kind = String(asset.kind || inferMediaKind(asset) || "document").toLowerCase();
+  if (kind === "image") return "images";
+  if (kind === "video") return "videos";
+  if (kind === "audio") return "audio";
+  if (kind === "biometric") return "biometrics";
+  return "documents";
+}
+
+function getObsidianAssetFallbackExtension(asset = {}) {
+  const known = getFileExtension(asset.name || asset.fileName || "");
+  if (known) return known;
+  const kind = String(asset.kind || inferMediaKind(asset) || "document").toLowerCase();
+  if (kind === "image") return "jpg";
+  if (kind === "video") return "mp4";
+  if (kind === "audio") return "m4a";
+  return "bin";
+}
+
+function buildObsidianAssetFilename(asset = {}) {
+  const assetId = getObsidianAssetReferenceKey(asset).replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "").slice(0, 42) || "activo";
+  return sanitizeLocalObsidianAssetFilename(`${assetId}-${asset.name || asset.fileName || "evidencia"}`, getObsidianAssetFallbackExtension(asset));
+}
+
+function buildObsidianAssetLink(relativePath = "", asset = {}) {
+  const label = cleanObsidianMarkdownText(asset.name || asset.fileName || "Activo");
+  if (String(asset.kind || "").toLowerCase() === "image") return `![[${relativePath}]]`;
+  return `[[${relativePath}|${label}]]`;
+}
+
+async function getObsidianAssetBlob(asset = {}) {
+  if (asset.dataUrl) return dataUrlToBlob(asset.dataUrl, asset.type || "application/octet-stream");
+  let downloadUrl = asset.url || "";
+  if (!downloadUrl && asset.id) {
+    const download = await apiRequest(`/assets/${encodeURIComponent(asset.id)}/download`, { preserveSessionOnAuthFailure: true });
+    downloadUrl = download?.url || "";
+  }
+  if (!downloadUrl) throw new Error("obsidian_asset_source_unavailable");
+  const response = await fetch(downloadUrl);
+  if (!response.ok) throw new Error(`obsidian_asset_download_${response.status}`);
+  const blob = await response.blob();
+  if (!blob.size) throw new Error("obsidian_asset_download_empty");
+  return blob;
+}
+
+async function exportExperienceAssetsToLocalObsidianVault(experiences = []) {
+  const references = new Map();
+  const exported = [];
+  const unavailable = [];
+  const errors = [];
+  const seen = new Set();
+  for (const experience of experiences) {
+    for (const asset of experience.attachments || []) {
+      const key = getObsidianAssetReferenceKey(asset);
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      try {
+        const blob = await getObsidianAssetBlob(asset);
+        const saved = await saveBinaryToLocalObsidianVault(blob, buildObsidianAssetFilename(asset), {
+          target: getObsidianAssetTarget(asset),
+          fallbackExtension: getObsidianAssetFallbackExtension(asset),
+        });
+        const reference = { relativePath: saved.relativePath, link: buildObsidianAssetLink(saved.relativePath, asset) };
+        references.set(key, reference);
+        exported.push({ id: key, ...reference });
+      } catch (error) {
+        const sourceDeclared = Boolean(asset.id || asset.path || asset.url || asset.dataUrl);
+        const detail = { id: key, name: asset.name || "Activo", error: error.message || String(error) };
+        if (sourceDeclared) errors.push(detail);
+        else unavailable.push(detail);
+      }
+    }
+  }
+  return { ok: errors.length === 0, references, exported, unavailable, errors };
 }
 
 async function saveMarkdownToLocalObsidianVault(markdown, filename, options = {}) {

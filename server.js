@@ -646,6 +646,13 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (url.pathname.startsWith("/api/assets/") && url.pathname.endsWith("/download") && req.method === "GET") {
+    const user = await getRequestUser(req);
+    const assetId = decodeURIComponent(url.pathname.replace("/api/assets/", "").replace("/download", ""));
+    sendJson(res, 200, await getAssetEvidenceDownload(assetId, user));
+    return;
+  }
+
   if (url.pathname === "/api/upload-attempts" && req.method === "GET") {
     const user = await getRequestUser(req);
     const limit = Number(url.searchParams.get("limit") || 20);
@@ -5171,19 +5178,14 @@ async function syncExperienceAssetsToSupabase(experience, user = { id: LOCAL_USE
       const participant = await ensureExperienceParticipant(experience, workspace.id, user);
       if (!participant) return { synced: false, reason: "participant_sync_failed" };
     }
-    await supabaseRest("assets", {
-      method: "DELETE",
-      searchParams: { experience_id: `eq.${experience.id}` },
-      headers: { Prefer: "return=minimal" },
-      accessToken: user.accessToken,
-    });
     const rows = attachments
       .map((attachment, index) => toAssetRow(attachment, experience, workspace.id, user, index))
       .filter(Boolean);
     if (!rows.length) return { synced: true, count: 0 };
     await supabaseRest("assets", {
       method: "POST",
-      headers: { Prefer: "return=minimal" },
+      searchParams: { on_conflict: "asset_id" },
+      headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
       body: JSON.stringify(rows),
       accessToken: user.accessToken,
     });
@@ -5430,6 +5432,9 @@ function toAssetRow(attachment, experience, workspaceId, user, index = 0) {
   if (!attachment) return null;
   const kind = attachment.kind || inferServerMediaKind(attachment);
   const participantId = experience.pilotParticipantId || null;
+  const adoptedAt = attachment.adoptedAt || attachment.adopted_at || attachment.metadata?.adoptedAt || new Date().toISOString();
+  const adoptionMethod = attachment.adoptionMethod || attachment.adoption_method || attachment.metadata?.adoptionMethod || "experience_attachment";
+  const adoptionConfidence = Number(attachment.adoptionConfidence ?? attachment.adoption_confidence ?? attachment.metadata?.adoptionConfidence ?? 1);
   return {
     asset_id: attachment.id || `asset-${experience.id}-${index + 1}`,
     workspace_id: workspaceId,
@@ -5444,6 +5449,11 @@ function toAssetRow(attachment, experience, workspaceId, user, index = 0) {
     storage_bucket: SUPABASE_STORAGE_BUCKET,
     storage_path: attachment.path || null,
     signed_url: null,
+    evidence_type: attachment.evidenceType || attachment.evidence_type || attachment.metadata?.evidenceType || "intentional",
+    adoption_status: "adopted",
+    adopted_at: adoptedAt,
+    adoption_method: adoptionMethod,
+    adoption_confidence: Number.isFinite(adoptionConfidence) ? adoptionConfidence : 1,
     preview_text: attachment.previewText || "",
     analysis_text: attachment.analysisText || "",
     metadata: buildSignalMetadata({
@@ -5469,6 +5479,11 @@ function toAssetRow(attachment, experience, workspaceId, user, index = 0) {
         linkedEventTitle: attachment.eventTitle || attachment.metadata?.linkedEventTitle || "",
         eventOrder: attachment.eventOrder || attachment.metadata?.eventOrder || "",
         processingStatus: inferAssetProcessingStatus(attachment, kind),
+        evidenceType: attachment.evidenceType || attachment.evidence_type || attachment.metadata?.evidenceType || "intentional",
+        adoptionStatus: "adopted",
+        adoptedAt,
+        adoptionMethod,
+        adoptionConfidence: Number.isFinite(adoptionConfidence) ? adoptionConfidence : 1,
       },
     }),
   };
@@ -5768,6 +5783,32 @@ async function adoptAssetEvidenceForExperience(body = {}, user = { id: LOCAL_USE
   };
 }
 
+async function getAssetEvidenceDownload(assetId = "", user = { id: LOCAL_USER_ID }) {
+  const cleanId = String(assetId || "").trim();
+  if (!cleanId) throw new HttpError(400, "asset_id_required");
+  if (activePersistence() !== "supabase") throw new HttpError(503, "supabase_not_active");
+  const workspace = await getWorkspaceContext(user);
+  if (!workspace?.id) throw new HttpError(503, "workspace_unavailable");
+  const rows = await supabaseRest("assets", {
+    searchParams: {
+      workspace_id: `eq.${workspace.id}`,
+      asset_id: `eq.${cleanId}`,
+      limit: "1",
+    },
+    accessToken: user.accessToken,
+  });
+  const row = rows[0];
+  if (!row) throw new HttpError(404, "asset_not_found");
+  if (!row.storage_path) throw new HttpError(409, "asset_binary_unavailable");
+  const url = await createSignedObjectUrl(row.storage_path);
+  return {
+    ok: true,
+    asset: fromAssetRow(row),
+    url,
+    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+  };
+}
+
 function toAssetEvidenceRow(media, workspaceId, user = { id: LOCAL_USER_ID }) {
   const normalized = normalizeMedia(media);
   const kind = normalized.kind || inferServerMediaKind(normalized);
@@ -5856,6 +5897,7 @@ function fromAssetRow(row) {
     adoptionStatus: row.adoption_status || metadata.adoptionStatus || "",
     adoptionMethod: row.adoption_method || metadata.adoptionMethod || "",
     adoptionConfidence: row.adoption_confidence ?? metadata.adoptionConfidence ?? null,
+    adoptedAt: row.adopted_at || metadata.adoptedAt || "",
     evidenceType: row.evidence_type || metadata.evidenceType || "",
     extractionMethod: metadata.extractionMethod || "",
     extractionStatus: metadata.extractionStatus || row.processing_status || "",
