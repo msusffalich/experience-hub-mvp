@@ -19,10 +19,10 @@
         }
       })();
     </script>
-    <link rel="manifest" href="manifest.webmanifest?v=20260723-evidence-adoption-assets-702" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260723-story-builder-taxonomy-703" />
     <link rel="icon" href="icons/vibe-icon-192.png" type="image/png" />
     <link rel="apple-touch-icon" href="icons/vibe-apple-touch.png" />
-    <link rel="stylesheet" href="styles.css?v=20260723-evidence-adoption-assets-702" />
+    <link rel="stylesheet" href="styles.css?v=20260723-story-builder-taxonomy-703" />
   </head>
   <body>
     <noscript>
@@ -286,34 +286,57 @@
             <section class="panel">
               <div class="panel-heading">
                 <h2 id="capture-heading">Nueva experiencia</h2>
-                <span id="captureFlowStatus">Evidencia e historia</span>
+                <span id="captureFlowContext">Evidencia e historia</span>
               </div>
               <div id="captureSaveStatus" class="capture-save-status" aria-live="polite"></div>
-              <section class="capture-flow-split" aria-labelledby="captureFlowTitle">
-                <div>
-                  <p class="section-eyebrow" id="captureFlowEyebrow">Nuevo flujo</p>
-                  <h3 id="captureFlowTitle">Capturar ahora, estructurar después</h3>
-                  <p id="captureFlowHelp">Vibeapp captura hechos del momento. VibePWA convierte esa evidencia en experiencias, eventos y salidas editadas.</p>
-                </div>
-                <div class="capture-flow-steps" id="captureFlowSteps"></div>
-              </section>
-              <section id="captureEvidenceInbox" class="capture-evidence-inbox" aria-live="polite"></section>
-
               <form id="experienceForm" class="experience-form">
                 <input id="editingId" type="hidden" />
-                <label>
-                  Título
-                  <input id="titleInput" name="title" type="text" placeholder="Reunión con cliente, entrenamiento, lectura..." required />
-                </label>
-                <label>
-                  Categoría
-                  <select id="categoryInput" name="category" required></select>
-                </label>
-                <label>
-                  Grupo / persona
-                  <select id="pilotParticipantInput" name="pilotParticipantId"></select>
-                </label>
-                <details class="participant-quick-create">
+                <section class="story-builder-primary" aria-labelledby="storyBuilderTitle">
+                  <div class="story-builder-heading">
+                    <div>
+                      <p class="section-eyebrow" id="captureFlowEyebrow">Tu historia</p>
+                      <h3 id="storyBuilderTitle">Cuenta el momento</h3>
+                      <p id="captureFlowHelp">Escribe o pega la transcripción de lo que viviste. Puedes completar los detalles después.</p>
+                    </div>
+                    <span id="captureFlowStatus">Paso 1 de 3</span>
+                  </div>
+                  <label>
+                    Título breve
+                    <input id="titleInput" name="title" type="text" placeholder="Una tarde en la playa, reunión con Ana..." required />
+                  </label>
+                  <label class="story-builder-narrative">
+                    ¿Qué ocurrió?
+                    <textarea id="notesInput" name="notes" rows="5" placeholder="Cuenta lo que viviste, lo que sentiste o lo que quieres recordar."></textarea>
+                    <small>Una nota escrita o una voz transcrita convierte este momento en una historia.</small>
+                  </label>
+                  <div class="story-builder-basics">
+                    <label>
+                      Momento
+                      <input id="timestampInput" name="timestamp" type="datetime-local" required />
+                    </label>
+                    <label>
+                      Actividad principal
+                      <select id="categoryInput" name="category" required></select>
+                      <small id="captureCategoryHelp" class="capture-category-help"></small>
+                    </label>
+                    <label>
+                      Para
+                      <select id="pilotParticipantInput" name="pilotParticipantId"></select>
+                    </label>
+                  </div>
+                </section>
+
+                <section id="captureEvidenceInbox" class="capture-evidence-inbox" aria-live="polite"></section>
+
+                <div class="form-actions story-builder-save-actions">
+                  <button class="ghost-button" id="clearFormButton" type="button">Limpiar</button>
+                  <button class="primary-button" type="submit">Guardar historia</button>
+                </div>
+
+                <details class="story-builder-details">
+                  <summary>Detalles opcionales</summary>
+                  <p class="story-builder-details-help">Agrega contexto si ayuda a entender el momento o mejora tus reportes.</p>
+                  <details class="participant-quick-create">
                   <summary>Crear grupo/persona sin salir de Captura</summary>
                   <div class="group-quick-form">
                     <label>
@@ -327,26 +350,22 @@
                     <button id="captureQuickGroupAddButton" class="ghost-button" type="button">Crear y seleccionar</button>
                     <p id="captureGroupMessage" class="card-meta" aria-live="polite"></p>
                   </div>
-                </details>
-                <label class="inline-check">
+                  </details>
+                  <label class="inline-check">
                   <input id="syncAgendaInput" name="syncAgenda" type="checkbox" />
                   Actualizar Agenda/Calendario con esta experiencia
-                </label>
-                <label>
+                  </label>
+                  <label>
                   Objetivo / intención
                   <input id="objectiveInput" name="objective" type="text" placeholder="Ej: aprendizaje, salud, cierre comercial..." />
-                </label>
-                <div class="two-columns">
-                  <label>
-                    Fecha y hora
-                    <input id="timestampInput" name="timestamp" type="datetime-local" required />
                   </label>
+                  <div class="two-columns">
                   <label>
                     Duración (min)
                     <input id="durationInput" name="duration" type="number" min="1" max="720" value="30" required />
                   </label>
-                </div>
-                <div class="two-columns">
+                  </div>
+                  <div class="two-columns">
                   <label>
                     Estado emocional
                     <select id="moodInput" name="mood">
@@ -361,40 +380,33 @@
                   Energía (1-10)
                     <input id="energyInput" name="energy" type="range" min="1" max="10" value="7" />
                   </label>
-                </div>
-                <div id="biometricCaptureContext" class="biometric-capture-context" aria-live="polite"></div>
-                <label>
+                  </div>
+                  <div id="biometricCaptureContext" class="biometric-capture-context" aria-live="polite"></div>
+                  <label>
                   Ubicación
                   <input id="locationInput" name="location" type="text" placeholder="Casa, oficina, gimnasio..." />
-                </label>
-                <label>
+                  </label>
+                  <label>
                   Personas / contexto
                   <input id="peopleInput" name="people" type="text" placeholder="Ana, equipo producto, familia..." />
-                </label>
-                <label>
-                  Notas
-                  <textarea id="notesInput" name="notes" rows="5" placeholder="Qué pasó, qué aprendiste, próximas acciones..."></textarea>
-                </label>
-                <label>
+                  </label>
+                  <label>
                   Eventos dentro de la experiencia
                   <textarea id="experienceEventsInput" name="experienceEvents" rows="4" placeholder="Un evento por línea: llegada, conversación, comida, aprendizaje, cierre..."></textarea>
                   <small>Usa un evento por línea. Ejemplo: Llegada - breve contexto del momento.</small>
-                </label>
-                <div id="captureEventPreview" class="capture-event-preview" aria-live="polite"></div>
-                <label>
+                  </label>
+                  <div id="captureEventPreview" class="capture-event-preview" aria-live="polite"></div>
+                  <label>
                   <span id="attachmentInputLabel">Imágenes, videos, audio o documentos</span>
                   <input id="mediaInput" name="media" type="file" accept="image/*,video/*,audio/*,.heic,.heif,.avif,.webp,.tif,.tiff,.raw,.dng,.cr2,.nef,.arw,.mp3,.wav,.m4a,.aac,.flac,.ogg,.opus,.wma,.aiff,.aif,.amr,.mp4,.mov,.m4v,.webm,.mkv,.avi,.wmv,.mpeg,.mpg,.3gp,.hevc,.txt,.md,.markdown,.html,.htm,.rtf,.docx,.pdf,.csv,.json,.zip,.rar,.7z" multiple />
-                </label>
-                <div class="audio-capture">
+                  </label>
+                  <div class="audio-capture">
                   <button id="recordAudioButton" class="ghost-button" type="button">Grabar audio</button>
                   <span id="recordingStatus" class="card-meta">Audio manual opcional</span>
-                </div>
-                <div id="audioCaptureGuide" class="audio-capture-guide"></div>
-                <div id="attachmentPreview" class="attachment-preview" aria-live="polite"></div>
-                <div class="form-actions">
-                  <button class="ghost-button" id="clearFormButton" type="button">Limpiar</button>
-                  <button class="primary-button" type="submit">Guardar experiencia</button>
-                </div>
+                  </div>
+                  <div id="audioCaptureGuide" class="audio-capture-guide"></div>
+                  <div id="attachmentPreview" class="attachment-preview" aria-live="polite"></div>
+                </details>
               </form>
             </section>
 
@@ -979,7 +991,7 @@
             <div class="manual-version-card">
               <div>
                 <span id="manualVersionEyebrow">Versión vigente</span>
-                <strong id="manualVersionValue">20260723-evidence-adoption-assets-702</strong>
+                <strong id="manualVersionValue">20260723-story-builder-taxonomy-703</strong>
                 <p id="manualVersionSummary">Guía práctica organizada por temas para entender el flujo de la app sin leer todo de corrido.</p>
               </div>
               <div class="manual-guide-grid" aria-label="Estructura del manual">
@@ -1227,6 +1239,6 @@
       </main>
     </div>
 
-    <script src="app.js?v=20260723-evidence-adoption-assets-702"></script>
+    <script src="app.js?v=20260723-story-builder-taxonomy-703"></script>
 </body>
 </html>

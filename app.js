@@ -1,4 +1,4 @@
-const APP_VERSION = "20260723-evidence-adoption-assets-702";
+const APP_VERSION = "20260723-story-builder-taxonomy-703";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -22,6 +22,8 @@ const categories = [
 
 const categoryAliases = {
   Movilidad: "Viajes / Paseos",
+  // Compatibility only: new captures cannot select these legacy labels.
+  // Existing records remain readable in narrative reporting instead of being dropped.
   Hogar: "Social",
   Bienestar: "Salud",
 };
@@ -3008,6 +3010,7 @@ const manualContent = {
         "El flujo nuevo separa capturar hechos de armar historias. Vibeapp es la ruta normal para capturar en el momento; VibePWA sirve para revisar la evidencia, adoptarla y convertirla en experiencias, eventos, reportes, publicaciones y mapa.",
         "La evidencia puede nacer sin experiencia padre. Fotos, videos, audios o documentos enviados desde Vibeapp sin una experiencia quedan en Bandeja de evidencia hasta que una experiencia los adopte por tiempo, lugar, grupo/persona o selección explícita.",
         "La evidencia intencional no se convierte automáticamente en experiencia. Si falta relato humano, queda como evidencia pendiente; si escribes o grabas qué viviste, entonces puede formar parte de una experiencia o de un evento narrado.",
+        "En VibePWA, crear una historia empieza con tres decisiones: cuenta qué ocurrió, elige la evidencia que pertenece a ese momento y guarda. Categoría, tiempo, lugar, energía, agenda y eventos siguen disponibles en Detalles opcionales y continúan alimentando reportes, hallazgos y publicaciones.",
         "Registra título, categoría, objetivo/intención, fecha, duración, estado emocional, energía, ubicación, personas y notas.",
         "Al registrar energía, usa una lectura rápida y consistente: 1-3 baja, 4-6 media/estable, 7-8 alta, 9-10 excepcional.",
         "Captura usa un formulario único. La revisión de escritura, calidad, sincronización y diagnósticos se mantienen como lógica interna o administrativa para no competir con el acto principal de guardar una experiencia.",
@@ -3666,6 +3669,7 @@ const manualContent = {
         "The new flow separates capturing facts from building stories. Vibeapp is the normal route for in-the-moment capture; VibePWA reviews evidence, adopts it, and turns it into experiences, events, reports, publications, and the map.",
         "Evidence can exist before a parent experience. Photos, videos, audio, or documents sent from Vibeapp without an experience stay in the Evidence inbox until an experience adopts them by time, place, group/person, or explicit selection.",
         "Intentional evidence does not automatically become an experience. Without human narrative it remains pending evidence; when you write or record what you lived, it can become part of an experience or narrated event.",
+        "In VibePWA, building a story starts with three decisions: tell what happened, choose the evidence that belongs to the moment, and save. Category, time, place, energy, agenda, and events remain available in Optional details and continue feeding reports, insights, and publications.",
         "Capture title, category, objective/intention, date, duration, mood, energy, location, people, and notes.",
         "When recording energy, use a consistent quick scale: 1-3 low, 4-6 medium/stable, 7-8 high, 9-10 exceptional.",
         "Capture uses one form. Writing review, quality, sync, and diagnostics remain internal or administrative logic so they do not compete with the main act of saving an experience.",
@@ -4238,6 +4242,7 @@ manualContent.es = [
     body: [
       "El flujo nuevo separa capturar hechos de armar historias. Vibeapp captura en el momento; VibePWA revisa la evidencia, adopta lo que corresponde y lo convierte en experiencias, eventos, reportes, publicaciones y mapa.",
       "La evidencia puede nacer sin experiencia padre. Fotos, videos, audios o documentos enviados desde Vibeapp quedan en Bandeja de evidencia hasta que se adopten por tiempo, lugar, grupo/persona o seleccion explicita.",
+      "En VibePWA, armar una historia empieza con tres decisiones: contar que ocurrio, elegir la evidencia del momento y guardar. Categoria, tiempo, lugar, energia, agenda y eventos quedan en Detalles opcionales y siguen alimentando reportes, hallazgos y publicaciones.",
       "Cada experiencia debe quedar asociada a una cuenta y, si aplica, a un grupo/persona privado del usuario: Miguel, Familia, Viaje, Proyecto o Equipo.",
       "Los grupos/personas se crean y administran en VibePWA. Vibeapp solo lee los grupos activos para asociar nuevas capturas.",
       "La sincronizacion es correcta cuando texto, eventos, activos y contexto aparecen desde otro dispositivo sin pasos manuales. Si queda pendiente, la app debe indicar el motivo y reintentar.",
@@ -4317,6 +4322,7 @@ manualContent.en = [
     body: [
       "The new flow separates capturing facts from building stories. Vibeapp captures in the moment; VibePWA reviews evidence, adopts what belongs, and turns it into experiences, events, reports, publications, and the map.",
       "Evidence may be born without a parent experience. Photos, videos, audio, or documents sent from Vibeapp remain in the Evidence Inbox until they are adopted by time, place, group/person, or explicit selection.",
+      "In VibePWA, building a story starts with three decisions: tell what happened, choose the evidence for that moment, and save. Category, time, place, energy, agenda, and events remain in Optional details and continue feeding reports, findings, and publications.",
       "Every experience belongs to an account and, when useful, to a private group/person such as Family, Trip, Project, or Team.",
       "Groups/persons are created and managed in VibePWA. Vibeapp reads active groups so new captures are correctly associated.",
       "Sync is complete when text, events, assets, and context appear on another device without manual intervention. If something is pending, the app must explain why and retry.",
@@ -4402,6 +4408,7 @@ manualContent.fr = [
     body: [
       "Le nouveau flux separe la capture des faits de la construction des histoires. Vibeapp capture sur le moment; VibePWA revise les preuves, adopte ce qui correspond et le transforme en experiences, evenements, rapports, publications et carte.",
       "Une preuve peut naitre sans experience parente. Photos, videos, audios ou documents envoyes par Vibeapp restent dans la boite de preuves jusqu'a leur adoption par temps, lieu, groupe/personne ou selection explicite.",
+      "Dans VibePWA, construire une histoire commence par trois decisions: raconter ce qui s est passe, choisir les preuves de ce moment et enregistrer. Categorie, heure, lieu, energie, agenda et evenements restent dans Details facultatifs et alimentent toujours rapports, enseignements et publications.",
       "Chaque experience appartient a un compte et, si utile, a un groupe/personne prive: Famille, Voyage, Projet ou Equipe.",
       "Les groupes/personnes sont crees et geres dans VibePWA. Vibeapp lit les groupes actifs pour associer correctement les nouvelles captures.",
       "La synchronisation est complete lorsque texte, evenements, actifs et contexte apparaissent sur un autre appareil sans intervention manuelle.",
@@ -4487,6 +4494,7 @@ manualContent.pt = [
     body: [
       "O novo fluxo separa capturar fatos de montar historias. Vibeapp captura no momento; VibePWA revisa as evidencias, adota o que corresponde e transforma isso em experiencias, eventos, relatorios, publicacoes e mapa.",
       "A evidencia pode nascer sem experiencia pai. Fotos, videos, audios ou documentos enviados pelo Vibeapp ficam na Bandeja de evidencias ate serem adotados por tempo, lugar, grupo/pessoa ou selecao explicita.",
+      "No VibePWA, montar uma historia comeca com tres decisoes: contar o que aconteceu, escolher a evidencia do momento e salvar. Categoria, horario, local, energia, agenda e eventos ficam em Detalhes opcionais e continuam alimentando relatorios, descobertas e publicacoes.",
       "Cada experiência pertence a uma conta e, quando útil, a um grupo/pessoa privado do usuário: Família, Viagem, Projeto ou Equipe.",
       "Os grupos/pessoas são criados e administrados em VibePWA. Vibeapp lê os grupos ativos para associar corretamente as novas capturas.",
       "A sincronização está completa quando texto, eventos, arquivos e contexto aparecem em outro dispositivo sem intervenção manual.",
@@ -8228,6 +8236,7 @@ function setupForm() {
   document.getElementById("timestampInput")?.addEventListener("change", renderCaptureEvidenceInbox);
   document.getElementById("durationInput")?.addEventListener("change", renderCaptureEvidenceInbox);
   document.getElementById("pilotParticipantInput")?.addEventListener("change", renderCaptureEvidenceInbox);
+  document.getElementById("categoryInput")?.addEventListener("change", renderCaptureCategoryClassificationHelp);
   document.getElementById("energyInput")?.addEventListener("input", renderBiometricCaptureContext);
   document.getElementById("biometricCaptureContext")?.addEventListener("click", handleBiometricCaptureContextClick);
   form.addEventListener("input", () => scheduleCaptureDraftAutosave("input"));
@@ -8241,6 +8250,43 @@ function setupForm() {
   document.getElementById("captureEvidenceInbox")?.addEventListener("change", handleEvidenceInboxSelection);
   document.getElementById("captureEvidenceInbox")?.addEventListener("click", handleEvidenceInboxAction);
   document.getElementById("captureSaveStatus")?.addEventListener("click", handleCaptureSaveStatusClick);
+}
+
+function getCaptureCategoryLabel(category) {
+  const normalized = normalizeCategoryName(category);
+  const labels = {
+    Salud: languageText("Salud (evento vivido)", "Health (lived event)", "Sante (evenement vecu)", "Saude (evento vivido)"),
+    Compras: languageText("Compras (vivencia o decision)", "Shopping (lived moment or decision)", "Achats (experience ou decision)", "Compras (vivencia ou decisao)"),
+  };
+  return labels[normalized] || displayCategory(normalized);
+}
+
+function renderCaptureCategoryClassificationHelp() {
+  const help = document.getElementById("captureCategoryHelp");
+  const select = document.getElementById("categoryInput");
+  if (!help || !select) return;
+  const category = normalizeCategoryName(select.value || "");
+  const detail = category === "Salud"
+    ? languageText(
+        "Elige Salud para una vivencia: consulta, tratamiento, ejercicio o cuidado. Pulso, sueño y pasos se guardan como contexto, no como experiencia.",
+        "Choose Health for a lived moment: appointment, treatment, exercise, or care. Heart rate, sleep, and steps are saved as context, not as an experience.",
+        "Choisissez Sante pour un moment vecu: consultation, traitement, exercice ou soin. Frequence cardiaque, sommeil et pas restent du contexte.",
+        "Escolha Saude para uma vivencia: consulta, tratamento, exercicio ou cuidado. Pulso, sono e passos ficam como contexto.",
+      )
+    : category === "Compras"
+      ? languageText(
+          "Elige Compras solo cuando hubo una decisión, búsqueda o vivencia que quieras recordar. Una compra rutinaria queda como dato, no como historia.",
+          "Choose Shopping only when there was a decision, search, or lived moment worth remembering. A routine purchase stays as data, not a story.",
+          "Choisissez Achats seulement pour une decision, recherche ou experience a retenir. Un achat habituel reste une donnee, pas une histoire.",
+          "Escolha Compras somente quando houve uma decisao, busca ou vivencia a lembrar. Uma compra rotineira fica como dado, nao como historia.",
+        )
+      : languageText(
+          "Elige la actividad que define el momento. Bienestar se registra como estado emocional y Hogar como ubicación.",
+          "Choose the activity that defines the moment. Wellbeing is recorded as mood and Home as location.",
+          "Choisissez l activite qui definit le moment. Le bien-etre est un etat et le foyer est un lieu.",
+          "Escolha a atividade que define o momento. Bem-estar e registrado como estado e Lar como local.",
+        );
+  help.textContent = detail;
 }
 
 function validateCaptureFormBeforeRead() {
@@ -9568,9 +9614,13 @@ function populateStaticControls() {
     if (select.id === "filterCategory" || select.id === "libraryCategory" || select.id === "assetCategoryFilter" || select.id === "reportCategoryFilter" || select.id === "insightsCategoryFilter" || select.id === "publicationCategoryFilter") {
       select.append(new Option(t("labels.categoryAll"), "all"));
     }
-    categories.forEach((category) => select.append(new Option(displayCategory(category), category)));
+    categories.forEach((category) => {
+      const label = select.id === "categoryInput" ? getCaptureCategoryLabel(category) : displayCategory(category);
+      select.append(new Option(label, category));
+    });
     if ([...select.options].some((option) => option.value === selectedValue)) select.value = selectedValue;
   });
+  renderCaptureCategoryClassificationHelp();
 
   const assetTypeSelect = document.getElementById("assetTypeFilter");
   const selectedAssetType = assetTypeSelect.value || "all";
@@ -12539,47 +12589,26 @@ async function adoptSelectedEvidenceForExperience(experience = {}) {
 
 function renderCaptureFlowSplit() {
   const status = document.getElementById("captureFlowStatus");
+  const context = document.getElementById("captureFlowContext");
   const eyebrow = document.getElementById("captureFlowEyebrow");
-  const title = document.getElementById("captureFlowTitle");
+  const title = document.getElementById("storyBuilderTitle");
   const help = document.getElementById("captureFlowHelp");
-  const steps = document.getElementById("captureFlowSteps");
-  if (!steps) return;
-  if (status) status.textContent = languageText("Evidencia e historia", "Evidence and story", "Preuve et histoire", "Evidencia e historia");
-  if (eyebrow) eyebrow.textContent = languageText("Flujo operativo", "Operating flow", "Flux operationnel", "Fluxo operacional");
+  if (!title) return;
+  if (context) context.textContent = languageText("Historia", "Story", "Histoire", "Historia");
+  if (status) status.textContent = languageText("Paso 1 de 3", "Step 1 of 3", "Etape 1 sur 3", "Passo 1 de 3");
+  if (eyebrow) eyebrow.textContent = languageText("Tu historia", "Your story", "Votre histoire", "Sua historia");
   if (title) title.textContent = languageText(
-    "Capturar ahora, estructurar despues",
-    "Capture now, structure later",
-    "Capturer maintenant, structurer ensuite",
-    "Capturar agora, estruturar depois",
+    "Cuenta el momento",
+    "Tell the moment",
+    "Racontez le moment",
+    "Conte o momento",
   );
   if (help) help.textContent = languageText(
-    "Vibeapp captura hechos del momento. VibePWA convierte esa evidencia en experiencias, eventos, reportes, publicaciones y mapa.",
-    "Vibeapp captures facts in the moment. VibePWA turns that evidence into experiences, events, reports, publications, and the map.",
-    "Vibeapp capture les faits sur le moment. VibePWA transforme ces preuves en experiences, evenements, rapports, publications et carte.",
-    "Vibeapp captura fatos no momento. VibePWA transforma essas evidencias em experiencias, eventos, relatorios, publicacoes e mapa.",
+    "Escribe o pega la transcripcion de lo que viviste. Puedes completar los detalles despues.",
+    "Write or paste a transcription of what you lived. You can complete the details later.",
+    "Ecrivez ou collez la transcription de ce que vous avez vecu. Vous pourrez completer les details ensuite.",
+    "Escreva ou cole a transcricao do que voce viveu. Voce pode completar os detalhes depois.",
   );
-  const items = [
-    {
-      title: languageText("1. Capturar hecho", "1. Capture fact", "1. Capturer le fait", "1. Capturar fato"),
-      detail: languageText("Voz, texto, foto, video, documento o sensor con hora y grupo/persona.", "Voice, text, photo, video, document, or sensor with time and group/person.", "Voix, texte, photo, video, document ou capteur avec heure et groupe/personne.", "Voz, texto, foto, video, documento ou sensor com hora e grupo/pessoa."),
-    },
-    {
-      title: languageText("2. Adoptar evidencia", "2. Adopt evidence", "2. Adopter la preuve", "2. Adotar evidencia"),
-      detail: languageText("La evidencia queda en bandeja hasta vincularla a una experiencia o evento.", "Evidence waits in the inbox until linked to an experience or event.", "La preuve attend dans la boite jusqu'a son lien avec une experience ou un evenement.", "A evidencia fica na bandeja ate ser vinculada a uma experiencia ou evento."),
-    },
-    {
-      title: languageText("3. Armar historia", "3. Build story", "3. Construire l'histoire", "3. Montar historia"),
-      detail: languageText("La experiencia agrega narrativa, rango de tiempo, eventos y contexto.", "The experience adds narrative, time range, events, and context.", "L'experience ajoute narration, plage horaire, evenements et contexte.", "A experiencia adiciona narrativa, periodo, eventos e contexto."),
-    },
-  ];
-  steps.innerHTML = items
-    .map((item) => `
-      <article>
-        <strong>${escapeHtml(item.title)}</strong>
-        <p>${escapeHtml(item.detail)}</p>
-      </article>
-    `)
-    .join("");
 }
 
 function renderCaptureEvidenceInbox() {
@@ -12633,6 +12662,10 @@ function renderCaptureEvidenceInbox() {
     selectVisible: languageText("Seleccionar visibles", "Select visible", "Selectionner visibles", "Selecionar visiveis"),
     selectSuggested: languageText("Seleccionar sugeridas", "Select suggested", "Selectionner suggerees", "Selecionar sugeridas"),
     clearSelection: languageText("Limpiar seleccion", "Clear selection", "Effacer selection", "Limpar selecao"),
+    chooseEvidence: languageText("Elige lo que pertenece a este momento", "Choose what belongs to this moment", "Choisissez ce qui appartient a ce moment", "Escolha o que pertence a este momento"),
+    visibleForDate: languageText("de esta fecha", "from this date", "de cette date", "desta data"),
+    moreOptions: languageText("Ver opciones de evidencia", "Evidence options", "Options de preuves", "Opcoes de evidencia"),
+    noSelection: languageText("Aun no has elegido evidencia.", "You have not chosen evidence yet.", "Vous n avez pas encore choisi de preuve.", "Voce ainda nao escolheu evidencia."),
   };
   const rows = [
     ...localPending.slice(0, 4).map((asset) => ({ ...asset, localDraft: true })),
@@ -12644,37 +12677,17 @@ function renderCaptureEvidenceInbox() {
   box.innerHTML = `
     <div class="capture-evidence-heading">
       <div>
-        <strong>${escapeHtml(labels.title)}</strong>
-        <p>${escapeHtml(`${labels.status}${state.evidenceInboxRefreshInProgress ? " - actualizando" : ""}`)}</p>
+        <strong>${escapeHtml(labels.chooseEvidence)}</strong>
+        <p>${escapeHtml(`${stats.selectable} ${labels.visibleForDate}${state.evidenceInboxRefreshInProgress ? " - actualizando" : ""}`)}</p>
       </div>
       <div class="capture-evidence-heading-actions">
         <button class="ghost-button small-button" type="button" data-evidence-refresh-inbox="true" ${state.evidenceInboxRefreshInProgress ? "disabled" : ""}>${escapeHtml(labels.refresh)}</button>
-        <button class="ghost-button small-button" type="button" data-open-view="assetLibrary">${escapeHtml(labels.openAssets)}</button>
-      </div>
-    </div>
-    <div class="capture-evidence-metrics">
-      <span>${escapeHtml(`${labels.adoptableTotal}: ${stats.serverTotal}`)}</span>
-      <span>${escapeHtml(`${labels.pending}: ${stats.serverPending}`)}</span>
-      <span>${escapeHtml(`${labels.suggested}: ${stats.suggested}`)}</span>
-      <span>${escapeHtml(`${labels.outsideRange}: ${stats.outsideRange}`)}</span>
-      <span>${escapeHtml(`${labels.adopted}: ${stats.serverAdopted}`)}</span>
-      <span>${escapeHtml(`${labels.visibleNow}: ${Math.min(rows.length, recentLimit)}`)}</span>
-    </div>
-    <div class="capture-evidence-toolbar">
-      <label>
-        <span>${escapeHtml(labels.dateFilter)}</span>
-        <input type="date" data-evidence-date-filter="true" value="${escapeHtml(dateFilter || getCaptureDateKey())}" ${dateMode === "all" ? "disabled" : ""} />
-      </label>
-      <div>
-        <button class="ghost-button small-button" type="button" data-evidence-date-capture="true">${escapeHtml(labels.useExperienceDate)}</button>
-        <button class="ghost-button small-button" type="button" data-evidence-date-all="true">${escapeHtml(labels.allDates)}</button>
       </div>
     </div>
     <div class="capture-evidence-toolbar">
-      <span>${escapeHtml(labels.selected)} - ${escapeHtml(labels.adoptOnSave)}</span>
+      <span>${selected.size ? escapeHtml(`${labels.selected} - ${labels.adoptOnSave}`) : escapeHtml(labels.noSelection)}</span>
       <div>
         <button class="ghost-button small-button" type="button" data-evidence-select-visible="true" ${rows.some((asset) => !asset.localDraft) ? "" : "disabled"}>${escapeHtml(labels.selectVisible)}</button>
-        <button class="ghost-button small-button" type="button" data-evidence-select-suggested="true" ${suggested.length ? "" : "disabled"}>${escapeHtml(labels.selectSuggested)}</button>
         <button class="ghost-button small-button" type="button" data-evidence-clear-selection="true" ${selected.size ? "" : "disabled"}>${escapeHtml(labels.clearSelection)}</button>
       </div>
     </div>
@@ -12695,6 +12708,28 @@ function renderCaptureEvidenceInbox() {
           `).join("")}
         </div>`
       : `<p class="card-meta">${escapeHtml(labels.empty)}</p>`}
+    <details class="capture-evidence-options">
+      <summary>${escapeHtml(labels.moreOptions)}</summary>
+      <div class="capture-evidence-options-body">
+        <div class="capture-evidence-metrics">
+          <span>${escapeHtml(`${labels.adoptableTotal}: ${stats.serverTotal}`)}</span>
+          <span>${escapeHtml(`${labels.pending}: ${stats.serverPending}`)}</span>
+          <span>${escapeHtml(`${labels.adopted}: ${stats.serverAdopted}`)}</span>
+        </div>
+        <div class="capture-evidence-toolbar">
+          <label>
+            <span>${escapeHtml(labels.dateFilter)}</span>
+            <input type="date" data-evidence-date-filter="true" value="${escapeHtml(dateFilter || getCaptureDateKey())}" ${dateMode === "all" ? "disabled" : ""} />
+          </label>
+          <div>
+            <button class="ghost-button small-button" type="button" data-evidence-date-capture="true">${escapeHtml(labels.useExperienceDate)}</button>
+            <button class="ghost-button small-button" type="button" data-evidence-date-all="true">${escapeHtml(labels.allDates)}</button>
+            <button class="ghost-button small-button" type="button" data-evidence-select-suggested="true" ${suggested.length ? "" : "disabled"}>${escapeHtml(labels.selectSuggested)}</button>
+            <button class="ghost-button small-button" type="button" data-open-view="assetLibrary">${escapeHtml(labels.openAssets)}</button>
+          </div>
+        </div>
+      </div>
+    </details>
   `;
 }
 function handleEvidenceInboxSelection(event) {
