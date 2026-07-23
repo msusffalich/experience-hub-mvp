@@ -37,7 +37,7 @@ check(files.server.includes("biometric_impact_recomputed"), "Biometric ingest mu
 check(files.server.includes("inferUpdatedPanelsFromIngest"), "Post-ingest automation must list affected operational panels.");
 check(files.server.includes("upsertContextSignal(buildContextSignalFromIntegrationSignal"), "Context ingest must store context_signals instead of generated context experiences.");
 check(!files.server.includes("upsertExperience(buildContextExperienceFromIntegrationSignal"), "Context ingest must not create ctx-* experience rows.");
-check(files.server.includes("upsertAssetEvidence(saved, user)"), "Direct /api/media uploads must register intentional evidence in assets.");
+check(files.server.includes("upsertAssetEvidence(saved, user, { requireRemote: true })"), "Direct /api/media uploads must require a persisted intentional evidence row in assets.");
 check(files.server.includes("getDailyBriefing") && files.server.includes("getContextImpact"), "Daily/context providers must remain server-side.");
 check(files.server.includes("allowedSourceTypes") && files.server.includes("apple-healthkit-native") && files.server.includes("android-health-connect"), "Device source catalog must include Apple HealthKit and Health Connect.");
 check(files.server.includes("/api/sync/state") && files.server.includes("getServerSyncState"), "Server must expose a sync state endpoint for automatic multi-device refresh.");

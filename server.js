@@ -624,12 +624,12 @@ async function handleApi(req, res, url) {
     if (contentType.includes("multipart/form-data")) {
       const upload = await readMultipartMedia(req, contentType);
       const saved = await saveMediaBuffer(upload.media, upload.bytes, user);
-      sendJson(res, 201, await upsertAssetEvidence(saved, user));
+      sendJson(res, 201, await upsertAssetEvidence(saved, user, { requireRemote: true }));
       return;
     }
     const media = await readJson(req);
     const saved = await saveMedia(media, user);
-    sendJson(res, 201, await upsertAssetEvidence(saved, user));
+    sendJson(res, 201, await upsertAssetEvidence(saved, user, { requireRemote: true }));
     return;
   }
 
@@ -2613,7 +2613,7 @@ async function ingestIntegrationSignal(signal = {}, user = { id: LOCAL_USER_ID }
   }
 
   if (validation.target === "assets") {
-    const asset = await upsertAssetEvidence(buildAssetEvidenceFromIntegrationSignal(normalized, signal, user), user);
+    const asset = await upsertAssetEvidence(buildAssetEvidenceFromIntegrationSignal(normalized, signal, user), user, { requireRemote: true });
     return integrationIngestResult(validation, "stored", asset.id, {
       asset,
       route: "/api/assets",
@@ -5474,11 +5474,19 @@ function toAssetRow(attachment, experience, workspaceId, user, index = 0) {
   };
 }
 
-async function upsertAssetEvidence(media, user = { id: LOCAL_USER_ID }) {
+async function upsertAssetEvidence(media, user = { id: LOCAL_USER_ID }, options = {}) {
   const normalized = normalizeMedia(media);
   if (activePersistence() !== "supabase") return normalized;
+  const requireRemote = Boolean(options.requireRemote);
   const workspace = await getWorkspaceContext(user);
-  if (!workspace?.id || workspaceSchemaUnavailableRecently()) return normalized;
+  if (!workspace?.id) {
+    if (requireRemote) throwAssetEvidencePersistenceError("asset_evidence_workspace_missing", "No se pudo resolver el workspace para registrar la evidencia.");
+    return withAssetEvidenceRemoteFailure(normalized, "asset_evidence_workspace_missing");
+  }
+  if (workspaceSchemaUnavailableRecently()) {
+    if (requireRemote) throwAssetEvidencePersistenceError("asset_evidence_workspace_unavailable", workspaceSchemaState.error || "La tabla de activos no esta disponible temporalmente.");
+    return withAssetEvidenceRemoteFailure(normalized, "asset_evidence_workspace_unavailable");
+  }
   try {
     const rows = await supabaseRest("assets", {
       method: "POST",
@@ -5497,12 +5505,31 @@ async function upsertAssetEvidence(media, user = { id: LOCAL_USER_ID }) {
       evidenceType: rows[0]?.evidence_type || "intentional",
     };
   } catch (error) {
+    const reason = sanitizeDiagnosticError(error);
     await appendLog("warn", "asset_evidence_remote_skipped", {
       assetId: normalized.id,
-      reason: sanitizeDiagnosticError(error),
+      reason,
     });
-    return normalized;
+    if (requireRemote) throwAssetEvidencePersistenceError("asset_evidence_remote_write_failed", reason, error);
+    return withAssetEvidenceRemoteFailure(normalized, reason);
   }
+}
+
+function withAssetEvidenceRemoteFailure(media, reason) {
+  return {
+    ...media,
+    assetEvidenceSynced: false,
+    remoteSyncFailed: true,
+    remoteSyncError: reason || "asset_evidence_remote_write_failed",
+  };
+}
+
+function throwAssetEvidencePersistenceError(code, detail, cause) {
+  const error = new Error(code);
+  error.statusCode = 502;
+  error.detail = detail || code;
+  error.cause = cause;
+  throw error;
 }
 
 async function listAssetEvidence(user = { id: LOCAL_USER_ID }) {
