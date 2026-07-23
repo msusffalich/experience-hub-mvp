@@ -218,6 +218,12 @@ check(
     && files.server.includes("{ requireRemote: true }"),
   "server ingest and media upload must require a persisted assets row for Vibeapp media/image/audio/video/document evidence.",
 );
+check(
+  files.server.includes("repairMissingAssetEvidenceRowsFromUploadAttempts")
+    && files.server.includes("buildAssetEvidenceFromUploadAttempt")
+    && files.server.includes("asset_evidence_repaired_from_upload_attempts"),
+  "server must repair uploaded Vibeapp media attempts into assets rows when listing the evidence inbox.",
+);
 check(files.vibeappMain.includes("Idempotency-Key") && files.vibeappMain.includes("X-Vibe-Source-Id"), "Vibeapp transport must send retry-safe idempotency headers.");
 check(files.vibeappMain.includes("ExperienceSyncClient") && files.vibeappMain.includes("NativeSyncTransport"), "Vibeapp must keep a sync client and transport abstraction.");
 check(files.vibeappMain.includes("CaptureQueueSummary") && files.vibeappMain.includes("NativePilotChecklist"), "Vibeapp must keep queue summary and pilot checklist.");

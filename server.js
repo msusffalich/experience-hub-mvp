@@ -5548,13 +5548,90 @@ async function listAssetEvidence(user = { id: LOCAL_USER_ID }) {
     workspaceSchemaState.available = true;
     workspaceSchemaState.checkedAt = new Date().toISOString();
     workspaceSchemaState.error = null;
-    return rows.map(fromAssetRow);
+    const repaired = await repairMissingAssetEvidenceRowsFromUploadAttempts(rows, user);
+    return mergeAssetEvidenceRows(rows.map(fromAssetRow), repaired);
   } catch (error) {
     await appendLog("warn", "asset_evidence_list_remote_skipped", {
       reason: sanitizeDiagnosticError(error),
     });
     return [];
   }
+}
+
+async function repairMissingAssetEvidenceRowsFromUploadAttempts(assetRows = [], user = { id: LOCAL_USER_ID }) {
+  const existingIds = new Set(assetRows.map((row) => row.asset_id).filter(Boolean));
+  const attempts = await listAssetUploadAttempts(user, 100);
+  const uploadedAttempts = attempts
+    .filter((attempt) => attempt.status === "uploaded")
+    .filter((attempt) => attempt.assetId && !existingIds.has(attempt.assetId))
+    .filter((attempt) => attempt.storagePath && attempt.bucketId === SUPABASE_STORAGE_BUCKET);
+  if (!uploadedAttempts.length) return [];
+  const repaired = [];
+  for (const attempt of uploadedAttempts) {
+    try {
+      const asset = await upsertAssetEvidence(buildAssetEvidenceFromUploadAttempt(attempt), user);
+      if (asset?.id) {
+        existingIds.add(asset.id);
+        repaired.push(asset);
+      }
+    } catch (error) {
+      await appendLog("warn", "asset_evidence_repair_failed", {
+        assetId: attempt.assetId,
+        fileName: attempt.fileName,
+        reason: sanitizeDiagnosticError(error),
+      });
+    }
+  }
+  if (repaired.length) {
+    await appendLog("info", "asset_evidence_repaired_from_upload_attempts", {
+      repaired: repaired.length,
+      source: "asset_upload_attempts",
+    });
+  }
+  return repaired;
+}
+
+function mergeAssetEvidenceRows(primary = [], repaired = []) {
+  const byId = new Map();
+  [...primary, ...repaired].forEach((asset) => {
+    const id = asset?.id || asset?.assetId || asset?.asset_id;
+    if (id) byId.set(id, asset);
+  });
+  return Array.from(byId.values()).sort(
+    (a, b) => new Date(b.capturedAt || b.uploadedAt || 0) - new Date(a.capturedAt || a.uploadedAt || 0),
+  );
+}
+
+function buildAssetEvidenceFromUploadAttempt(attempt = {}) {
+  const metadata = isPlainObject(attempt.metadata) ? attempt.metadata : {};
+  return {
+    id: attempt.assetId,
+    name: attempt.fileName || "media",
+    type: attempt.mimeType || "application/octet-stream",
+    size: Number(attempt.sizeBytes || 0),
+    storage: "supabase",
+    path: attempt.storagePath || "",
+    sourceType: metadata.sourceType || "vibeapp-native-media",
+    sourceDevice: attempt.deviceId || metadata.sourceDevice || "",
+    sourceId: metadata.sourceId || metadata.idempotencyKey || attempt.assetId || "",
+    capturedAt: metadata.capturedAt || attempt.startedAt || attempt.finishedAt || new Date().toISOString(),
+    uploadedAt: attempt.finishedAt || attempt.startedAt || new Date().toISOString(),
+    participantId: metadata.participantId || "",
+    experienceId: attempt.experienceId || metadata.linkedExperienceId || "",
+    adoptionStatus: attempt.experienceId || metadata.linkedExperienceId ? "adopted" : "inbox",
+    targetLayer: "evidence",
+    payloadType: inferServerMediaKind({ type: attempt.mimeType, name: attempt.fileName }),
+    metadata: removeEmptyMetadataFields({
+      ...metadata,
+      repairedFromUploadAttempt: true,
+      repairedAt: new Date().toISOString(),
+      idempotencyKey: metadata.idempotencyKey || "",
+      storagePath: attempt.storagePath || "",
+      storageBucket: attempt.bucketId || SUPABASE_STORAGE_BUCKET,
+      adoptionStatus: attempt.experienceId || metadata.linkedExperienceId ? "adopted" : "inbox",
+      inboxReason: attempt.experienceId || metadata.linkedExperienceId ? "" : "repaired_waiting_for_experience_adoption",
+    }),
+  };
 }
 
 async function adoptAssetEvidenceForExperience(body = {}, user = { id: LOCAL_USER_ID }) {
@@ -6084,11 +6161,17 @@ async function saveMediaBuffer(media, bytes, user = { id: LOCAL_USER_ID }) {
     bucketId: SUPABASE_STORAGE_BUCKET,
     storagePath: objectPath,
     metadata: {
+      ...(isPlainObject(normalized.metadata) ? normalized.metadata : {}),
       kind: normalized.kind || inferServerMediaKind(normalized),
       sourceType: normalized.sourceType || "",
       sourceId: normalized.sourceId || "",
       idempotencyKey: normalized.metadata?.idempotencyKey || normalized.sourceId || "",
       storageObjectHint: storageObjectHint || "",
+      participantId: normalized.participantId || normalized.pilotParticipantId || normalized.metadata?.participantId || "",
+      adoptionStatus: inferMediaAdoptionStatus(normalized),
+      targetLayer: normalized.targetLayer || normalized.metadata?.targetLayer || "evidence",
+      payloadType: normalized.payloadType || normalized.metadata?.payloadType || inferServerMediaKind(normalized),
+      capturedAt: normalized.capturedAt || normalized.createdAt || "",
     },
   };
 
