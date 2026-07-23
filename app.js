@@ -1,4 +1,4 @@
-const APP_VERSION = "20260723-story-curation-704";
+const APP_VERSION = "20260723-definitions-handcheck-705";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -4108,6 +4108,9 @@ manualContent.fr = [
       "Si une piece jointe ne monte pas encore vers Storage, l'experience conserve le texte et signale le fichier comme en attente. Le flux n'est complet que lorsque le fichier a une route distante ou une URL signee.",
       "Vibeapp capture et peut fermer une histoire courte ou ajouter un evenement a une histoire ouverte. Il ne fusionne pas, ne divise pas, ne deplace pas des preuves entre histoires et ne supprime pas de fichiers : ces decisions se font dans VibePWA avec confirmation.",
       "Dans Bibliotheque, utilisez Organiser seulement pour reformuler une histoire : liberer ou deplacer une preuve, unir des histoires du meme episode, diviser une histoire longue, promouvoir un evenement ou transformer une petite histoire en evenement. Chaque action conserve un antecedent et ne supprime jamais le fichier source.",
+      "Une capture est un fait rapide avec une heure et un proprietaire. Photo, audio, video ou document sont des preuves intentionnelles et peuvent attendre dans la boite sans devenir une fausse experience.",
+      "Une experience est un episode vecu avec un recit humain. Un evenement est un sous-moment important. Agenda est un engagement futur; biometrie, GPS, climat et actualites sont du contexte par date et heure.",
+      "Adopter lie une preuve a une histoire; la curation reorganise ensuite cette histoire. Aucune de ces actions ne supprime seule le fichier source.",
     ],
   },
   {
@@ -4229,6 +4232,9 @@ manualContent.es = [
       "Las categorias narrativas son actividades o eventos vividos. Hogar se trata como lugar; Bienestar como dimension/estado; Salud solo narra cuando es evento vivido, no cuando es biometria.",
       "Un informe, paper o documento es artefacto; la reflexion humana sobre haberlo creado si puede ser narrativa.",
       "El mapa y Obsidian cuentan narrativa real solo sobre notas exportables con relato humano. Si falta relato, la experiencia queda pendiente hasta que escribas o grabes que paso.",
+      "Una captura es un hecho rapido con hora y dueño. Una foto, audio, video o documento es evidencia intencional: puede esperar en Bandeja sin convertirse en una experiencia falsa.",
+      "Una experiencia es un episodio vivido con relato humano. Un evento es un submomento selectivo dentro de esa experiencia. Agenda es un compromiso futuro; biometria, GPS, clima y noticias son contexto por fecha y hora.",
+      "Adoptar vincula evidencia a una historia; curar reorganiza despues esa historia. Ninguna de las dos acciones borra por si sola el archivo fuente.",
     ],
   },
   {
@@ -4311,6 +4317,9 @@ manualContent.en = [
       "Narrative categories are lived activities or events. Home is treated as place; Wellbeing as a dimension/state; Health narrates only when it is a lived event, not when it is biometrics.",
       "A report, paper, or document is an artifact; the human reflection about creating it can be narrative.",
       "The map and Obsidian count real narrative only on exportable notes with a human account. If the account is missing, the experience remains pending until you write or record what happened.",
+      "A capture is a quick fact with a time and owner. A photo, audio, video, or document is intentional evidence: it may wait in the Inbox without becoming a false experience.",
+      "An experience is a lived episode with a human account. An event is a meaningful submoment inside that experience. Agenda is a future commitment; biometrics, GPS, weather, and news are time-based context.",
+      "Adoption links evidence to a story; curation rearranges that story later. Neither action deletes the source file by itself.",
     ],
   },
   {
@@ -4493,6 +4502,9 @@ manualContent.pt = [
       "As categorias narrativas sao atividades ou eventos vividos. Casa e tratada como lugar; bem-estar como dimensao/estado; saude so narra quando e evento vivido, nao quando e biometria.",
       "Um relatorio, paper ou documento e artefato; a reflexao humana sobre cria-lo pode ser narrativa.",
       "O mapa e o Obsidian contam narrativa real apenas nas notas exportaveis com relato humano. Sem relato, a experiencia fica pendente ate voce escrever ou gravar o que aconteceu.",
+      "Uma captura e um fato rapido com hora e dono. Foto, audio, video ou documento sao evidencia intencional: podem aguardar na Bandeja sem virar uma experiencia falsa.",
+      "Uma experiencia e um episodio vivido com relato humano. Um evento e um submomento importante dentro dela. Agenda e compromisso futuro; biometria, GPS, clima e noticias sao contexto por data e hora.",
+      "Adotar vincula evidencia a uma historia; curar reorganiza depois essa historia. Nenhuma das duas acoes exclui sozinha o arquivo fonte.",
     ],
   },
   {

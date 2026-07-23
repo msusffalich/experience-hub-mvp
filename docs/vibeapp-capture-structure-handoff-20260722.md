@@ -2,6 +2,11 @@
 
 Version: 2026-07-22
 
+> Actualizacion: para el handcheck posterior a la curacion 704, usar
+> `vibeapp-story-capture-handoff-704.md`. Este documento conserva el contrato
+> tecnico base; la actualizacion define el alcance movil final y sus criterios
+> de aceptacion.
+
 Purpose: align Vibeapp with the product split now implemented in VibePWA.
 
 ## Product decision

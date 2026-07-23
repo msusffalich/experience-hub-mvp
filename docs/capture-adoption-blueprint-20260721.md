@@ -26,6 +26,11 @@ For the operations allowed after capture, including editing, adopting, moving,
 merging, splitting, promoting, and degrading stories, use
 `story-curation-operations-20260723.md` as the product contract.
 
+The canonical vocabulary for person, capture, evidence, context, experience,
+event, narrative, artifact, agenda, adoption, and curation is
+`experience-model-glossary-20260723.md`. UI labels and payloads must not
+contradict those definitions.
+
 Build `20260722-event-narrative-rollup-684` is validated by code, SQL, contract checks, and simulated integration. Build `20260722-capture-structure-split-685` starts the implementation split: Vibeapp captures evidence in the moment, while VibePWA structures that evidence into experiences, events, reports, publications, and the Obsidian map.
 
 Build `20260722-evidence-adoption-693` implements Capa 2 on VibePWA/backend:
