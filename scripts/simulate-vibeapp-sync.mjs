@@ -212,6 +212,11 @@ check(
 );
 check(files.server.includes("/api/experiences") && files.server.includes("/api/media") && files.server.includes("/api/integration/ingest"), "server must keep native sync and validated ingest endpoints.");
 check(files.server.includes("storageObjectHint") && files.server.includes("idempotencyKey"), "server must preserve storageObjectHint and idempotency metadata.");
+check(
+  files.server.includes("buildAssetEvidenceFromIntegrationSignal")
+    && files.server.includes("await upsertAssetEvidence(buildAssetEvidenceFromIntegrationSignal"),
+  "server ingest must create an assets row for Vibeapp media/image/audio/video/document evidence.",
+);
 check(files.vibeappMain.includes("Idempotency-Key") && files.vibeappMain.includes("X-Vibe-Source-Id"), "Vibeapp transport must send retry-safe idempotency headers.");
 check(files.vibeappMain.includes("ExperienceSyncClient") && files.vibeappMain.includes("NativeSyncTransport"), "Vibeapp must keep a sync client and transport abstraction.");
 check(files.vibeappMain.includes("CaptureQueueSummary") && files.vibeappMain.includes("NativePilotChecklist"), "Vibeapp must keep queue summary and pilot checklist.");

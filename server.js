@@ -2613,15 +2613,77 @@ async function ingestIntegrationSignal(signal = {}, user = { id: LOCAL_USER_ID }
   }
 
   if (validation.target === "assets") {
-    return integrationIngestResult(validation, "accepted_pending_media", stableIntegrationId("asset", idempotencyKey), {
-      route: "/api/media",
-      message: "Asset metadata accepted. Upload binary media through /api/media with the same sourceId and idempotencyKey.",
+    const asset = await upsertAssetEvidence(buildAssetEvidenceFromIntegrationSignal(normalized, signal, user), user);
+    return integrationIngestResult(validation, "stored", asset.id, {
+      asset,
+      route: "/api/assets",
+      message: "Asset evidence stored in the inbox. Binary media can still be uploaded through /api/media with the same sourceId and idempotencyKey.",
     });
   }
 
   return integrationIngestResult(validation, "accepted_for_review", stableIntegrationId("review", idempotencyKey), {
     message: "Signal validated, but no automatic target is configured.",
   });
+}
+
+function buildAssetEvidenceFromIntegrationSignal(normalized = {}, signal = {}, user = { id: LOCAL_USER_ID }) {
+  const payload = isPlainObject(normalized.payload) ? normalized.payload : {};
+  const firstFile = Array.isArray(payload.files) && payload.files.length && isPlainObject(payload.files[0])
+    ? payload.files[0]
+    : {};
+  const fileName = payload.fileName || payload.filename || payload.name || firstFile.fileName || firstFile.filename || firstFile.name || `${normalized.payloadType || "media"}-${normalized.sourceId || Date.now()}`;
+  const mimeType = payload.mimeType || payload.type || firstFile.mimeType || firstFile.type || defaultMimeTypeForPayload(normalized.payloadType);
+  const idempotencyKey = normalized.idempotencyKey || normalized.sourceId || signal.idempotencyKey || "";
+  const sourceId = normalized.sourceId || signal.sourceId || idempotencyKey;
+  const assetId = signal.assetId || signal.asset_id || payload.assetId || payload.asset_id || stableIntegrationId("asset", idempotencyKey || sourceId || fileName);
+  const metadata = {
+    ...(normalized.metadata || {}),
+    ...(isPlainObject(signal.metadata) ? signal.metadata : {}),
+    idempotencyKey,
+    sourceId,
+    sourceType: normalized.sourceType,
+    sourceDevice: signal.sourceDevice || signal.device || normalized.deviceMetadata?.deviceName || normalized.deviceMetadata?.platform || "",
+    payloadType: normalized.payloadType,
+    privacyLevel: normalized.privacyLevel,
+    linkedExperienceId: normalized.linkedExperienceId || "",
+    storageObjectHint: payload.storageObjectHint || firstFile.storageObjectHint || "",
+    originalPayload: payload,
+    ingestRoute: "/api/integration/ingest",
+  };
+  return {
+    id: assetId,
+    name: fileName,
+    type: mimeType,
+    size: Number(payload.size || payload.sizeBytes || firstFile.size || firstFile.sizeBytes || 0),
+    dataUrl: payload.dataUrl || "",
+    path: payload.storagePath || payload.path || firstFile.storagePath || firstFile.path || "",
+    url: payload.url || payload.downloadUrl || firstFile.url || "",
+    createdAt: normalized.capturedAt || new Date().toISOString(),
+    capturedAt: normalized.capturedAt,
+    uploadedAt: new Date().toISOString(),
+    storage: payload.storage || (payload.storagePath || firstFile.storagePath ? "supabase" : "metadata"),
+    kind: normalized.payloadType === "media" ? inferServerMediaKind({ type: mimeType, name: fileName }) : normalized.payloadType,
+    payloadType: normalized.payloadType,
+    sourceType: normalized.sourceType,
+    sourceDevice: metadata.sourceDevice,
+    sourceId,
+    participantId: normalized.participantId,
+    pilotParticipantId: normalized.participantId,
+    experienceId: normalized.linkedExperienceId || "",
+    adoptionStatus: normalized.linkedExperienceId ? "adopted" : "inbox",
+    permissions: normalized.privacyLevel || "private",
+    checksum: signal.checksum || payload.checksum || firstFile.checksum || "",
+    metadata,
+  };
+}
+
+function defaultMimeTypeForPayload(payloadType = "") {
+  const type = String(payloadType || "").toLowerCase();
+  if (type === "image") return "image/jpeg";
+  if (type === "video") return "video/mp4";
+  if (type === "audio") return "audio/mp4";
+  if (type === "document") return "application/octet-stream";
+  return "application/octet-stream";
 }
 
 function integrationIngestResult(validation, status, id, extra = {}) {
@@ -6178,7 +6240,7 @@ function classifyUploadError(error) {
 function normalizeMedia(media) {
   const metadata = isPlainObject(media.metadata) ? media.metadata : {};
   return {
-    id: media.id || createId(),
+    id: media.id || media.assetId || media.asset_id || media.sourceId || metadata.sourceId || metadata.idempotencyKey || createId(),
     name: media.name || "media",
     type: media.type || "application/octet-stream",
     size: Number(media.size || 0),
