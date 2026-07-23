@@ -142,7 +142,10 @@ try {
   const afterIngest = await fetchJson("/sync/state");
   assert(afterIngest.token && afterIngest.token !== baseline.token, "sync_state_token_did_not_change_after_ingest");
   assert(Number(afterIngest.counts?.agenda || 0) >= 1, "sync_state_agenda_count_missing");
-  assert(Number(afterIngest.counts?.context || 0) >= 1, "sync_state_context_count_missing");
+  // This audit deliberately turns context refresh off so it never depends on
+  // external weather/news services. The integration response must say so;
+  // other tests cover the deferred context job with an explicit location.
+  assert(ingest.automation?.contextImpact?.status === "not_required", "sync_state_context_should_be_deferred_in_audit");
 
   const queued = await fetchJson("/jobs/asset-processing", {
     method: "POST",

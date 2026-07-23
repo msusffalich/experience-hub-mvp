@@ -646,6 +646,13 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (url.pathname === "/api/assets/reassign" && req.method === "POST") {
+    const user = await getRequestUser(req);
+    const body = await readJson(req);
+    sendJson(res, 200, await reassignAssetEvidence(body, user));
+    return;
+  }
+
   if (url.pathname.startsWith("/api/assets/") && url.pathname.endsWith("/download") && req.method === "GET") {
     const user = await getRequestUser(req);
     const assetId = decodeURIComponent(url.pathname.replace("/api/assets/", "").replace("/download", ""));
@@ -5781,6 +5788,81 @@ async function adoptAssetEvidenceForExperience(body = {}, user = { id: LOCAL_USE
     missingIds,
     assets: updatedAssets,
   };
+}
+
+// Curating a story changes the relationship, never the underlying binary. A
+// released asset returns to the evidence inbox; moving it retains one link.
+async function reassignAssetEvidence(body = {}, user = { id: LOCAL_USER_ID }) {
+  if (activePersistence() !== "supabase") {
+    return { ok: false, reason: "supabase_not_active", updated: 0, assets: [] };
+  }
+  const assetIds = [...new Set((Array.isArray(body.assetIds) ? body.assetIds : []).map((id) => String(id || "").trim()).filter(Boolean))];
+  const targetExperienceId = String(body.experienceId || "").trim();
+  const release = Boolean(body.release);
+  if (!assetIds.length || (!release && !targetExperienceId)) {
+    const error = new Error("asset_reassignment_payload_required");
+    error.statusCode = 400;
+    throw error;
+  }
+  const workspace = await getWorkspaceContext(user);
+  if (!workspace?.id || workspaceSchemaUnavailableRecently()) {
+    return { ok: false, reason: "workspace_unavailable", updated: 0, assets: [] };
+  }
+  const rows = await supabaseRest("assets", {
+    searchParams: {
+      workspace_id: `eq.${workspace.id}`,
+      asset_id: `in.(${assetIds.map(encodePostgrestListValue).join(",")})`,
+    },
+    accessToken: user.accessToken,
+  });
+  const now = new Date().toISOString();
+  const updatedAssets = [];
+  for (const row of rows) {
+    const previous = isPlainObject(row.metadata) ? row.metadata : {};
+    const metadata = removeEmptyMetadataFields({
+      ...previous,
+      linkedExperienceId: release ? "" : targetExperienceId,
+      linkedExperienceTitle: release ? "" : body.experienceTitle || "",
+      linkedEventId: release ? "" : body.eventId || "",
+      linkedEventTitle: release ? "" : body.eventTitle || "",
+      adoptionStatus: release ? "inbox" : "adopted",
+      adoptionMethod: release ? "released_from_story" : body.method || "story_curation_move",
+      adoptionConfidence: release ? "" : 1,
+      adoptedAt: release ? "" : now,
+      inboxReason: release ? "released_during_story_curation" : "",
+      releasedAt: release ? now : "",
+    });
+    const patch = {
+      experience_id: release ? null : targetExperienceId,
+      event_id: release ? null : body.eventId || null,
+      adoption_status: release ? "inbox" : "adopted",
+      adopted_at: release ? null : now,
+      adoption_method: release ? "released_from_story" : body.method || "story_curation_move",
+      adoption_confidence: release ? null : 1,
+      metadata,
+      updated_at: now,
+    };
+    const updated = await supabaseRest("assets", {
+      method: "PATCH",
+      searchParams: {
+        workspace_id: `eq.${workspace.id}`,
+        asset_id: `eq.${row.asset_id}`,
+      },
+      headers: { Prefer: "return=representation" },
+      body: JSON.stringify(patch),
+      accessToken: user.accessToken,
+    });
+    updatedAssets.push(fromAssetRow(updated[0] || { ...row, ...patch }));
+  }
+  const foundIds = new Set(rows.map((row) => row.asset_id));
+  const missingIds = assetIds.filter((id) => !foundIds.has(id));
+  await appendLog("info", "asset_evidence_reassigned", {
+    action: release ? "release" : "move",
+    experienceId: release ? "" : targetExperienceId,
+    updated: updatedAssets.length,
+    missing: missingIds.length,
+  });
+  return { ok: true, updated: updatedAssets.length, missingIds, assets: updatedAssets };
 }
 
 async function getAssetEvidenceDownload(assetId = "", user = { id: LOCAL_USER_ID }) {

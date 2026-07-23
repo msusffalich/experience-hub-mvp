@@ -1,4 +1,4 @@
-const APP_VERSION = "20260723-story-builder-taxonomy-703";
+const APP_VERSION = "20260723-story-curation-704";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -4106,6 +4106,8 @@ manualContent.fr = [
       "Quand Supabase et la session sont actifs, la capture fonctionne comme brouillon vivant: les changements importants se synchronisent en arriere-plan et Enregistrer confirme l'etat final.",
       "La PWA peut charger des fichiers et enregistrer de l'audio selon les capacites du navigateur, mais le controle natif de camera, video continu, wake word, capteurs et taches en arriere-plan appartient a Vibeapp.",
       "Si une piece jointe ne monte pas encore vers Storage, l'experience conserve le texte et signale le fichier comme en attente. Le flux n'est complet que lorsque le fichier a une route distante ou une URL signee.",
+      "Vibeapp capture et peut fermer une histoire courte ou ajouter un evenement a une histoire ouverte. Il ne fusionne pas, ne divise pas, ne deplace pas des preuves entre histoires et ne supprime pas de fichiers : ces decisions se font dans VibePWA avec confirmation.",
+      "Dans Bibliotheque, utilisez Organiser seulement pour reformuler une histoire : liberer ou deplacer une preuve, unir des histoires du meme episode, diviser une histoire longue, promouvoir un evenement ou transformer une petite histoire en evenement. Chaque action conserve un antecedent et ne supprime jamais le fichier source.",
     ],
   },
   {
@@ -4246,6 +4248,8 @@ manualContent.es = [
       "Cada experiencia debe quedar asociada a una cuenta y, si aplica, a un grupo/persona privado del usuario: Miguel, Familia, Viaje, Proyecto o Equipo.",
       "Los grupos/personas se crean y administran en VibePWA. Vibeapp solo lee los grupos activos para asociar nuevas capturas.",
       "La sincronizacion es correcta cuando texto, eventos, activos y contexto aparecen desde otro dispositivo sin pasos manuales. Si queda pendiente, la app debe indicar el motivo y reintentar.",
+      "Vibeapp captura y puede cerrar una historia breve o añadir un evento a una historia abierta. No fusiona, divide, mueve evidencia entre historias ni borra archivos: esas decisiones se hacen en VibePWA con una pantalla amplia y confirmación.",
+      "En Librería, usa Organizar solo cuando quieras reformular una historia: puedes soltar o mover evidencia, unir historias del mismo episodio, dividir una historia extensa, promover un evento o convertir una historia menor en evento. Las acciones conservan un antecedente y no borran el archivo fuente.",
     ],
   },
   {
@@ -4326,6 +4330,8 @@ manualContent.en = [
       "Every experience belongs to an account and, when useful, to a private group/person such as Family, Trip, Project, or Team.",
       "Groups/persons are created and managed in VibePWA. Vibeapp reads active groups so new captures are correctly associated.",
       "Sync is complete when text, events, assets, and context appear on another device without manual intervention. If something is pending, the app must explain why and retry.",
+      "Vibeapp captures and may close a short story or add an event to an open story. It does not merge, split, move evidence between stories, or delete files: those decisions happen in VibePWA with a larger screen and confirmation.",
+      "In Library, use Organize only when you want to reshape a story: release or move evidence, merge stories from the same episode, split a long story, promote an event, or turn a smaller story into an event. Each action keeps an antecedent and never deletes the source file.",
     ],
   },
   {
@@ -4498,6 +4504,8 @@ manualContent.pt = [
       "Cada experiência pertence a uma conta e, quando útil, a um grupo/pessoa privado do usuário: Família, Viagem, Projeto ou Equipe.",
       "Os grupos/pessoas são criados e administrados em VibePWA. Vibeapp lê os grupos ativos para associar corretamente as novas capturas.",
       "A sincronização está completa quando texto, eventos, arquivos e contexto aparecem em outro dispositivo sem intervenção manual.",
+      "Vibeapp captura e pode fechar uma historia curta ou adicionar um evento a uma historia aberta. Ele nao une, divide, move evidencia entre historias nem exclui arquivos: essas decisoes ficam no VibePWA, com tela ampla e confirmacao.",
+      "Na Biblioteca, use Organizar somente quando quiser reformular uma historia: solte ou mova evidencia, una historias do mesmo episodio, divida uma historia longa, promova um evento ou transforme uma historia menor em evento. Cada acao preserva um antecedente e nunca exclui o arquivo fonte.",
     ],
   },
   {
@@ -10253,8 +10261,9 @@ function getDashboardAgendaEvents() {
 }
 
 function getExperiencesByPilotParticipant(participantId = "all") {
-  if (!participantId || participantId === "all") return state.experiences;
-  return state.experiences.filter((item) => experienceMatchesPilotParticipant(item, participantId));
+  const visible = state.experiences.filter((item) => !isSupersededExperience(item));
+  if (!participantId || participantId === "all") return visible;
+  return visible.filter((item) => experienceMatchesPilotParticipant(item, participantId));
 }
 
 function experienceMatchesDateRange(item, dateFrom = "", dateTo = "") {
@@ -10272,7 +10281,7 @@ function experienceMatchesDateRange(item, dateFrom = "", dateTo = "") {
 }
 
 function getExperiencesByAnalyticalFilters(filters = {}) {
-  return filterExperiencesByAnalyticalFilters(state.experiences, filters);
+  return filterExperiencesByAnalyticalFilters(state.experiences.filter((item) => !isSupersededExperience(item)), filters);
 }
 
 function filterExperiencesByAnalyticalFilters(experiences = [], filters = {}) {
@@ -12086,6 +12095,339 @@ function inferCategoryFromTranscript(text) {
   const match = rules.find(([, terms]) => terms.some((term) => lower.includes(term)));
   if (match?.[0] === "Hogar") return "";
   return match?.[0] || "";
+}
+
+function isSupersededExperience(experience = {}) {
+  return ["merged", "split", "degraded"].includes(String(experience.curationStatus || experience.metadata?.curationStatus || "").toLowerCase());
+}
+
+function addCurationHistory(experience = {}, operation = "updated", detail = "") {
+  const history = Array.isArray(experience.metadata?.curationHistory) ? experience.metadata.curationHistory : [];
+  return {
+    ...experience,
+    updatedAt: new Date().toISOString(),
+    metadata: {
+      ...(experience.metadata || {}),
+      curationHistory: [...history, { operation, detail, at: new Date().toISOString() }].slice(-30),
+    },
+  };
+}
+
+function replaceExperienceLocally(experience = {}) {
+  const normalized = normalizeExperienceItem(experience);
+  const index = state.experiences.findIndex((item) => item.id === normalized.id);
+  if (index >= 0) state.experiences[index] = normalized;
+  else state.experiences.unshift(normalized);
+  return normalized;
+}
+
+async function persistCuratedExperiences(experiences = []) {
+  const unique = Array.from(new Map(experiences.filter(Boolean).map((item) => [item.id, replaceExperienceLocally(item)])).values());
+  saveExperiences();
+  for (const experience of unique) {
+    await saveExperienceToApi(experience);
+  }
+  renderAll();
+  return unique;
+}
+
+function toggleExperienceCuration(id) {
+  state.curationExperienceId = state.curationExperienceId === id ? "" : id;
+  renderLibrary();
+}
+
+function getCurationTargetExperiences(sourceId = "") {
+  return state.experiences
+    .filter((item) => item.id !== sourceId && !isSupersededExperience(item))
+    .sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+}
+
+function getAttachmentId(attachment = {}) {
+  return attachment.id || attachment.assetKey || attachment.assetId || attachment.asset_id || "";
+}
+
+async function reassignEvidenceFromCuration(sourceId, attachmentId, targetId = "") {
+  const source = state.experiences.find((item) => item.id === sourceId);
+  const target = targetId ? state.experiences.find((item) => item.id === targetId) : null;
+  const attachment = source?.attachments?.find((item) => getAttachmentId(item) === attachmentId);
+  if (!source || !attachment || (targetId && !target)) return;
+  const release = !target;
+  const hasRemoteAssetId = Boolean(attachmentId);
+  if (release && !hasRemoteAssetId) {
+    notify("Este archivo todavía se está sincronizando. Espera a que llegue al servidor antes de devolverlo a la Bandeja de evidencia.", "warn");
+    return;
+  }
+  const action = release ? "soltar" : "mover";
+  const confirmation = release
+    ? `¿Soltar \"${attachment.name || "este archivo"}\"? Volverá a la Bandeja de evidencia; el archivo no se borrará.`
+    : `¿Mover \"${attachment.name || "este archivo"}\" a \"${target.title}\"? El archivo dejará de pertenecer a \"${source.title}\".`;
+  if (!confirm(confirmation)) return;
+  if (hasRemoteAssetId && (!state.apiOnline || !state.session?.access_token)) {
+    notify("No se puede reorganizar evidencia sin conexión segura. Inténtalo de nuevo cuando el servidor esté disponible.", "warn");
+    return;
+  }
+  try {
+    let reassignedAssets = [attachment];
+    if (hasRemoteAssetId) {
+      const result = await apiRequest("/assets/reassign", {
+        method: "POST",
+        body: JSON.stringify({
+          assetIds: [attachmentId],
+          release,
+          experienceId: target?.id || "",
+          experienceTitle: target?.title || "",
+          method: release ? "released_from_story" : "story_curation_move",
+        }),
+        preserveSessionOnAuthFailure: true,
+      });
+      if (!result.ok || !result.updated) throw new Error(result.reason || "asset_reassignment_failed");
+      reassignedAssets = result.assets || [attachment];
+      mergeAdoptedServerAssets(reassignedAssets);
+    }
+    const nextSource = addCurationHistory({
+      ...source,
+      attachments: source.attachments.filter((item) => hasRemoteAssetId ? getAttachmentId(item) !== attachmentId : item !== attachment),
+    }, release ? "evidence_released" : "evidence_moved", attachment.name || attachmentId);
+    const nextTarget = target
+      ? addCurationHistory({ ...target, attachments: [...(target.attachments || []), ...reassignedAssets] }, "evidence_received", attachment.name || attachmentId)
+      : null;
+    await persistCuratedExperiences([nextSource, nextTarget]);
+    notify(release ? "El archivo volvió a la Bandeja de evidencia." : "El archivo se movió a la historia elegida.", "success");
+  } catch (error) {
+    console.warn("Story evidence reassignment failed", error);
+    notify(`No se pudo reorganizar el archivo: ${error.message || error}`, "warn");
+  }
+}
+
+async function mergeExperiencesFromCuration(primaryId) {
+  const select = document.getElementById(`curationMergeTarget-${primaryId}`);
+  const secondaryId = select?.value || "";
+  const primary = state.experiences.find((item) => item.id === primaryId);
+  const secondary = state.experiences.find((item) => item.id === secondaryId);
+  if (!primary || !secondary) {
+    notify("Elige la otra historia que representa el mismo episodio.", "warn");
+    return;
+  }
+  if (!confirm(`¿Unir \"${secondary.title}\" dentro de \"${primary.title}\"? La segunda quedará conservada como antecedente y no aparecerá dos veces en reportes.`)) return;
+  const assets = secondary.attachments || [];
+  const remoteAssetIds = assets.map(getAttachmentId).filter(Boolean);
+  try {
+    if (remoteAssetIds.length) {
+      const result = await apiRequest("/assets/reassign", {
+        method: "POST",
+        body: JSON.stringify({ assetIds: remoteAssetIds, experienceId: primary.id, experienceTitle: primary.title, method: "story_merge" }),
+        preserveSessionOnAuthFailure: true,
+      });
+      if (!result.ok || result.updated !== remoteAssetIds.length) throw new Error(result.reason || "merge_asset_transfer_failed");
+      mergeAdoptedServerAssets(result.assets || []);
+    }
+    const attachments = Array.from(new Map([...(primary.attachments || []), ...assets].map((item) => [getAttachmentId(item) || item.name, item])).values());
+    const events = normalizeExperienceEvents([...(primary.events || []), ...(secondary.events || [])], primary.id)
+      .map((event, index) => ({ ...event, order: index + 1 }));
+    const start = Math.min(new Date(primary.timestamp || 0).getTime() || Date.now(), new Date(secondary.timestamp || 0).getTime() || Date.now());
+    const nextPrimary = addCurationHistory({
+      ...primary,
+      timestamp: new Date(start).toISOString(),
+      duration: Math.max(Number(primary.duration || 0), Number(secondary.duration || 0)),
+      attachments,
+      events,
+      notes: [primary.notes, secondary.notes].filter(Boolean).filter((value, index, all) => all.indexOf(value) === index).join("\n\n"),
+    }, "merged_from", secondary.id);
+    const nextSecondary = addCurationHistory({
+      ...secondary,
+      attachments: [],
+      events: [],
+      curationStatus: "merged",
+      mergedIntoId: primary.id,
+      metadata: { ...(secondary.metadata || {}), curationStatus: "merged", mergedIntoId: primary.id },
+    }, "merged_into", primary.id);
+    await persistCuratedExperiences([nextPrimary, nextSecondary]);
+    state.curationExperienceId = primary.id;
+    notify("Las historias se unieron. La original secundaria quedó preservada como antecedente.", "success");
+  } catch (error) {
+    console.warn("Story merge failed", error);
+    notify(`No se pudieron unir las historias: ${error.message || error}`, "warn");
+  }
+}
+
+async function promoteEventFromCuration(experienceId) {
+  const select = document.getElementById(`curationPromoteEvent-${experienceId}`);
+  const eventId = select?.value || "";
+  const source = state.experiences.find((item) => item.id === experienceId);
+  const event = normalizeExperienceEvents(source?.events || [], experienceId).find((item) => item.id === eventId);
+  if (!source || !event) {
+    notify("Elige un evento para convertirlo en una historia independiente.", "warn");
+    return;
+  }
+  if (!confirm(`¿Convertir \"${event.title}\" en una experiencia independiente? Se conservará la historia principal sin ese evento.`)) return;
+  const eventAttachments = (source.attachments || []).filter((asset) => (asset.eventId || asset.metadata?.linkedEventId || "") === event.id);
+  const remoteAssetIds = eventAttachments.map(getAttachmentId).filter(Boolean);
+  const child = addCurationHistory({
+    ...source,
+    id: createId(),
+    title: event.title,
+    timestamp: event.timestamp || source.timestamp,
+    duration: event.duration || source.duration,
+    mood: event.mood || source.mood,
+    energy: event.energy || source.energy,
+    notes: event.narrativeText || event.description || "",
+    events: [],
+    attachments: eventAttachments,
+    createdAt: new Date().toISOString(),
+    sourceType: "story_curation",
+  }, "promoted_from_event", `${source.id}:${event.id}`);
+  try {
+    if (remoteAssetIds.length) {
+      const result = await apiRequest("/assets/reassign", {
+        method: "POST",
+        body: JSON.stringify({ assetIds: remoteAssetIds, experienceId: child.id, experienceTitle: child.title, method: "event_promoted" }),
+        preserveSessionOnAuthFailure: true,
+      });
+      if (!result.ok || result.updated !== remoteAssetIds.length) throw new Error(result.reason || "event_asset_transfer_failed");
+      mergeAdoptedServerAssets(result.assets || []);
+    }
+    const nextSource = addCurationHistory({
+      ...source,
+      events: normalizeExperienceEvents(source.events || [], source.id).filter((item) => item.id !== event.id),
+      attachments: (source.attachments || []).filter((asset) => !eventAttachments.includes(asset)),
+    }, "event_promoted", event.id);
+    await persistCuratedExperiences([nextSource, child]);
+    notify("El evento ahora tiene su propia historia. Puedes editarla cuando quieras.", "success");
+  } catch (error) {
+    console.warn("Event promotion failed", error);
+    notify(`No se pudo promover el evento: ${error.message || error}`, "warn");
+  }
+}
+
+async function splitExperienceFromCuration(experienceId) {
+  const source = state.experiences.find((item) => item.id === experienceId);
+  const boundaryValue = document.getElementById(`curationSplitAt-${experienceId}`)?.value || "";
+  const boundary = new Date(boundaryValue);
+  const start = new Date(source?.timestamp || "");
+  const duration = Number(source?.duration || 0);
+  const end = new Date(start.getTime() + duration * 60 * 1000);
+  if (!source || Number.isNaN(boundary.getTime()) || Number.isNaN(start.getTime()) || duration < 2 || boundary <= start || boundary >= end) {
+    notify("Elige una hora dentro del rango de esta historia para dividirla.", "warn");
+    return;
+  }
+  if (!confirm(`¿Dividir \"${source.title}\" en dos historias? La original se conservará como antecedente y podrás editar los títulos y relatos después.`)) return;
+  const beforeAttachments = [];
+  const afterAttachments = [];
+  (source.attachments || []).forEach((asset) => {
+    const captured = new Date(asset.capturedAt || asset.timestamp || source.timestamp || 0);
+    (Number.isNaN(captured.getTime()) || captured <= boundary ? beforeAttachments : afterAttachments).push(asset);
+  });
+  const beforeEvents = [];
+  const afterEvents = [];
+  normalizeExperienceEvents(source.events || [], source.id).forEach((event) => {
+    const occurred = new Date(event.timestamp || source.timestamp || 0);
+    (Number.isNaN(occurred.getTime()) || occurred <= boundary ? beforeEvents : afterEvents).push(event);
+  });
+  const beforeMinutes = Math.max(1, Math.round((boundary.getTime() - start.getTime()) / 60000));
+  const afterMinutes = Math.max(1, duration - beforeMinutes);
+  const first = addCurationHistory({
+    ...source,
+    id: createId(),
+    title: `${source.title} · 1`,
+    duration: beforeMinutes,
+    attachments: beforeAttachments,
+    events: beforeEvents,
+    createdAt: new Date().toISOString(),
+    sourceType: "story_curation",
+  }, "split_from", source.id);
+  const second = addCurationHistory({
+    ...source,
+    id: createId(),
+    title: `${source.title} · 2`,
+    timestamp: boundary.toISOString(),
+    duration: afterMinutes,
+    notes: "",
+    attachments: afterAttachments,
+    events: afterEvents,
+    createdAt: new Date().toISOString(),
+    sourceType: "story_curation",
+  }, "split_from", source.id);
+  try {
+    for (const [assets, target] of [[beforeAttachments, first], [afterAttachments, second]]) {
+      const assetIds = assets.map(getAttachmentId).filter(Boolean);
+      if (!assetIds.length) continue;
+      const result = await apiRequest("/assets/reassign", {
+        method: "POST",
+        body: JSON.stringify({ assetIds, experienceId: target.id, experienceTitle: target.title, method: "story_split" }),
+        preserveSessionOnAuthFailure: true,
+      });
+      if (!result.ok || result.updated !== assetIds.length) throw new Error(result.reason || "split_asset_transfer_failed");
+      mergeAdoptedServerAssets(result.assets || []);
+    }
+    const archived = addCurationHistory({
+      ...source,
+      attachments: [],
+      events: [],
+      curationStatus: "split",
+      splitIntoIds: [first.id, second.id],
+      metadata: { ...(source.metadata || {}), curationStatus: "split", splitIntoIds: [first.id, second.id] },
+    }, "split_into", `${first.id},${second.id}`);
+    await persistCuratedExperiences([first, second, archived]);
+    state.curationExperienceId = first.id;
+    notify("La historia se dividió. Revisa y ajusta el relato de cada parte antes de publicar.", "success");
+  } catch (error) {
+    console.warn("Story split failed", error);
+    notify(`No se pudo dividir la historia: ${error.message || error}`, "warn");
+  }
+}
+
+async function degradeExperienceFromCuration(sourceId) {
+  const targetId = document.getElementById(`curationDegradeTarget-${sourceId}`)?.value || "";
+  const source = state.experiences.find((item) => item.id === sourceId);
+  const target = state.experiences.find((item) => item.id === targetId);
+  if (!source || !target) {
+    notify("Elige la historia mayor que recibirá este momento como evento.", "warn");
+    return;
+  }
+  if (!confirm(`¿Convertir \"${source.title}\" en un evento dentro de \"${target.title}\"? La historia original quedará conservada como antecedente.`)) return;
+  const event = {
+    id: createId(),
+    title: source.title,
+    description: source.notes || "",
+    narrativeText: source.notes || "",
+    timestamp: source.timestamp,
+    duration: source.duration,
+    mood: source.mood,
+    energy: source.energy,
+    order: normalizeExperienceEvents(target.events || [], target.id).length + 1,
+  };
+  const assets = source.attachments || [];
+  try {
+    const assetIds = assets.map(getAttachmentId).filter(Boolean);
+    if (assetIds.length) {
+      const result = await apiRequest("/assets/reassign", {
+        method: "POST",
+        body: JSON.stringify({ assetIds, experienceId: target.id, experienceTitle: target.title, eventId: event.id, eventTitle: event.title, method: "experience_degraded" }),
+        preserveSessionOnAuthFailure: true,
+      });
+      if (!result.ok || result.updated !== assetIds.length) throw new Error(result.reason || "degrade_asset_transfer_failed");
+      mergeAdoptedServerAssets(result.assets || []);
+    }
+    const nextTarget = addCurationHistory({
+      ...target,
+      events: [...normalizeExperienceEvents(target.events || [], target.id), event],
+      attachments: [...(target.attachments || []), ...assets.map((asset) => ({ ...asset, eventId: event.id, eventTitle: event.title }))],
+    }, "experience_received_as_event", source.id);
+    const nextSource = addCurationHistory({
+      ...source,
+      attachments: [],
+      events: [],
+      curationStatus: "degraded",
+      degradedIntoId: target.id,
+      metadata: { ...(source.metadata || {}), curationStatus: "degraded", degradedIntoId: target.id },
+    }, "degraded_into_event", target.id);
+    await persistCuratedExperiences([nextTarget, nextSource]);
+    state.curationExperienceId = target.id;
+    notify("La historia ahora vive como un evento dentro de la historia elegida.", "success");
+  } catch (error) {
+    console.warn("Experience demotion failed", error);
+    notify(`No se pudo reorganizar la historia: ${error.message || error}`, "warn");
+  }
 }
 
 function editExperience(id) {
@@ -16079,8 +16421,10 @@ function renderLibrary() {
                 <div class="timeline-actions">
                   <button class="ghost-button" type="button" onclick="editExperience('${item.id}')">${t("buttons.edit")}</button>
                   <button class="ghost-button" type="button" onclick="showExperienceInTimeline('${item.id}')">${t("buttons.viewTimeline")}</button>
+                  <button class="ghost-button" type="button" onclick="toggleExperienceCuration('${item.id}')">${state.language === "es" ? "Organizar" : state.language === "fr" ? "Organiser" : state.language === "pt" ? "Organizar" : "Organize"}</button>
                   <button class="danger-button" type="button" onclick="deleteExperience('${item.id}')">${t("buttons.delete")}</button>
                 </div>
+                ${renderStoryCurationPanel(item)}
               </article>
             `,
           )
@@ -21838,6 +22182,98 @@ function renderExperienceMapMarkdownRelations(graph, allowedExperienceIds = null
 
 function getObsidianAssetReferenceKey(asset = {}) {
   return String(asset.id || asset.assetKey || asset.path || asset.url || asset.name || "").trim();
+}
+
+function renderStoryCurationPanel(item) {
+  if (state.curationExperienceId !== item.id) return "";
+  const language = state.language || "es";
+  const labels = language === "es"
+    ? {
+        title: "Organizar esta historia",
+        help: "Reordena sin borrar: mueve archivos, une historias o convierte un evento en historia propia.",
+        evidence: "Evidencia vinculada",
+        noEvidence: "Esta historia todavía no tiene archivos vinculados.",
+        release: "Soltar",
+        move: "Mover a...",
+        moveAction: "Mover",
+        merge: "Unir con otra historia",
+        mergeAction: "Unir historias",
+        split: "Dividir esta historia",
+        splitHelp: "Marca el momento donde empieza la segunda parte.",
+        splitAction: "Dividir en dos",
+        demote: "Convertir esta historia en evento",
+        demoteAction: "Mover como evento",
+        choose: "Seleccionar historia",
+        events: "Eventos con peso propio",
+        promote: "Convertir evento en historia",
+        promoteAction: "Crear historia desde evento",
+        noEvents: "No hay eventos registrados para reorganizar.",
+        record: "Cada operación queda registrada; los archivos no se borran al reorganizarlos.",
+      }
+    : language === "fr"
+      ? { title: "Organiser cette histoire", help: "Reorganisez sans supprimer : deplacez des fichiers, unissez des histoires ou rendez un evenement autonome.", evidence: "Preuves liees", noEvidence: "Cette histoire n'a pas encore de fichier lie.", release: "Liberer", move: "Deplacer vers...", moveAction: "Deplacer", merge: "Unir a une autre histoire", mergeAction: "Unir les histoires", split: "Diviser cette histoire", splitHelp: "Indiquez le moment ou commence la seconde partie.", splitAction: "Diviser en deux", demote: "Transformer cette histoire en evenement", demoteAction: "Deplacer comme evenement", choose: "Choisir une histoire", events: "Evenements importants", promote: "Transformer un evenement en histoire", promoteAction: "Creer une histoire depuis l'evenement", noEvents: "Aucun evenement a reorganiser.", record: "Chaque operation est conservee ; les fichiers ne sont pas supprimes lors de la reorganisation." }
+      : language === "pt"
+        ? { title: "Organizar esta historia", help: "Reorganize sem excluir: mova arquivos, una historias ou transforme um evento em historia propria.", evidence: "Evidencia vinculada", noEvidence: "Esta historia ainda nao tem arquivos vinculados.", release: "Soltar", move: "Mover para...", moveAction: "Mover", merge: "Unir a outra historia", mergeAction: "Unir historias", split: "Dividir esta historia", splitHelp: "Marque quando começa a segunda parte.", splitAction: "Dividir em duas", demote: "Transformar esta historia em evento", demoteAction: "Mover como evento", choose: "Selecionar historia", events: "Eventos importantes", promote: "Transformar evento em historia", promoteAction: "Criar historia a partir do evento", noEvents: "Nao ha eventos para reorganizar.", record: "Cada operacao fica registrada; arquivos nao sao excluidos ao reorganizar." }
+        : { title: "Organize this story", help: "Rearrange without deleting: move files, merge stories, or make an event its own story.", evidence: "Linked evidence", noEvidence: "This story has no linked files yet.", release: "Release", move: "Move to...", moveAction: "Move", merge: "Merge with another story", mergeAction: "Merge stories", split: "Split this story", splitHelp: "Set when the second part begins.", splitAction: "Split in two", demote: "Turn this story into an event", demoteAction: "Move as event", choose: "Choose a story", events: "Meaningful events", promote: "Turn event into a story", promoteAction: "Create story from event", noEvents: "There are no events to reorganize.", record: "Every operation is recorded; rearranging never deletes files." };
+  const targets = getCurationTargetExperiences(item.id);
+  const targetOptions = [`<option value="">${escapeHtml(labels.choose)}</option>`, ...targets.map((target) => `<option value="${escapeHtml(target.id)}">${escapeHtml(target.title)} · ${escapeHtml(formatDate(target.timestamp))}</option>`)].join("");
+  const attachments = item.attachments || [];
+  const events = normalizeExperienceEvents(item.events || [], item.id);
+  return `
+    <section class="story-curation-panel" aria-label="${escapeHtml(labels.title)}">
+      <header>
+        <div>
+          <p class="eyebrow">${escapeHtml(labels.title)}</p>
+          <p>${escapeHtml(labels.help)}</p>
+        </div>
+        <button class="icon-button" type="button" aria-label="${escapeHtml(language === "es" ? "Cerrar organización" : "Close organizing")}" onclick="toggleExperienceCuration('${item.id}')">×</button>
+      </header>
+      <div class="story-curation-grid">
+        <section>
+          <h4>${escapeHtml(labels.evidence)}</h4>
+          ${attachments.length ? attachments.map((asset) => {
+            const assetId = getAttachmentId(asset);
+            return `
+              <div class="story-curation-item">
+                <strong>${escapeHtml(asset.name || "Archivo")}</strong>
+                <div class="story-curation-controls">
+                  <select id="curationMoveTarget-${escapeHtml(item.id)}-${escapeHtml(assetId)}">${targetOptions}</select>
+                  <button class="ghost-button" type="button" onclick="reassignEvidenceFromCuration('${item.id}', '${escapeHtml(assetId)}', document.getElementById('curationMoveTarget-${escapeHtml(item.id)}-${escapeHtml(assetId)}').value)">${escapeHtml(labels.moveAction)}</button>
+                  <button class="text-button" type="button" onclick="reassignEvidenceFromCuration('${item.id}', '${escapeHtml(assetId)}')">${escapeHtml(labels.release)}</button>
+                </div>
+              </div>`;
+          }).join("") : `<p class="card-meta">${escapeHtml(labels.noEvidence)}</p>`}
+        </section>
+        <section>
+          <h4>${escapeHtml(labels.merge)}</h4>
+          <div class="story-curation-controls stack-controls">
+            <select id="curationMergeTarget-${escapeHtml(item.id)}">${targetOptions}</select>
+            <button class="primary-button" type="button" onclick="mergeExperiencesFromCuration('${item.id}')">${escapeHtml(labels.mergeAction)}</button>
+          </div>
+          <h4>${escapeHtml(labels.split)}</h4>
+          <p class="card-meta">${escapeHtml(labels.splitHelp)}</p>
+          <div class="story-curation-controls stack-controls">
+            <input id="curationSplitAt-${escapeHtml(item.id)}" type="datetime-local" min="${escapeHtml(toDatetimeLocal(item.timestamp))}" max="${escapeHtml(toDatetimeLocal(new Date(new Date(item.timestamp || Date.now()).getTime() + Number(item.duration || 0) * 60000).toISOString()))}">
+            <button class="ghost-button" type="button" onclick="splitExperienceFromCuration('${item.id}')">${escapeHtml(labels.splitAction)}</button>
+          </div>
+          <h4>${escapeHtml(labels.demote)}</h4>
+          <div class="story-curation-controls stack-controls">
+            <select id="curationDegradeTarget-${escapeHtml(item.id)}">${targetOptions}</select>
+            <button class="ghost-button" type="button" onclick="degradeExperienceFromCuration('${item.id}')">${escapeHtml(labels.demoteAction)}</button>
+          </div>
+          <h4>${escapeHtml(labels.events)}</h4>
+          ${events.length ? `
+            <div class="story-curation-controls stack-controls">
+              <select id="curationPromoteEvent-${escapeHtml(item.id)}">
+                <option value="">${escapeHtml(labels.promote)}</option>
+                ${events.map((event) => `<option value="${escapeHtml(event.id)}">${escapeHtml(event.title || event.description)}</option>`).join("")}
+              </select>
+              <button class="ghost-button" type="button" onclick="promoteEventFromCuration('${item.id}')">${escapeHtml(labels.promoteAction)}</button>
+            </div>` : `<p class="card-meta">${escapeHtml(labels.noEvents)}</p>`}
+        </section>
+      </div>
+      <p class="story-curation-note">${escapeHtml(labels.record)}</p>
+    </section>`;
 }
 
 function buildObsidianExperienceAssetLine(asset = {}, assetReferences = new Map()) {
@@ -28521,7 +28957,7 @@ function buildReportRows() {
 function getReportExperiences() {
   if (state.reportFilters.scope === "single") {
     const selected = state.experiences.find((item) => item.id === state.reportFilters.experienceId);
-    return selected ? [selected] : [];
+    return selected && !isSupersededExperience(selected) ? [selected] : [];
   }
   const now = Date.now();
   const scope = state.reportFilters.scope || "all";
@@ -28529,6 +28965,7 @@ function getReportExperiences() {
   const since = periodDays ? now - periodDays * 24 * 60 * 60 * 1000 : null;
   return [...state.experiences]
     .filter((item) => {
+      if (isSupersededExperience(item)) return false;
       const dateMatch = !since || new Date(item.timestamp).getTime() >= since;
       const customDateMatch = experienceMatchesDateRange(item, state.reportFilters.dateFrom || "", state.reportFilters.dateTo || "");
       const useFieldFilters = scope === "filters";
@@ -38790,6 +39227,7 @@ function cosineSimilarity(a, b) {
 function getFilteredExperiences() {
   return [...state.experiences]
     .filter((item) => {
+      if (isSupersededExperience(item)) return false;
       const text = `${item.title} ${item.objective} ${item.notes} ${item.people} ${item.location} ${getExperiencePilotParticipantLabel(item)} ${buildExperienceEventSearchText(item)}`.toLowerCase();
       const queryMatch = !state.filters.query || text.includes(state.filters.query);
       const categoryMatch = state.filters.category === "all" || item.category === state.filters.category;
@@ -38802,6 +39240,7 @@ function getFilteredExperiences() {
 function getFilteredLibraryExperiences() {
   return [...state.experiences]
     .filter((item) => {
+      if (isSupersededExperience(item)) return false;
       const text = `${item.title} ${item.objective} ${item.notes} ${item.people} ${item.location} ${item.category} ${getExperiencePilotParticipantLabel(item)} ${buildExperienceEventSearchText(item)}`.toLowerCase();
       const queryMatch = !state.libraryFilters.query || text.includes(state.libraryFilters.query);
       const categoryMatch = state.libraryFilters.category === "all" || item.category === state.libraryFilters.category;

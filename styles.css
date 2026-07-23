@@ -6413,6 +6413,84 @@ textarea {
   min-height: 34px;
 }
 
+.story-curation-panel {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, var(--green) 38%, var(--line));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface) 92%, var(--green));
+}
+
+.story-curation-panel > header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.story-curation-panel h4 {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+
+.story-curation-panel p {
+  margin: 0;
+}
+
+.story-curation-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(220px, 0.75fr);
+  gap: 16px;
+}
+
+.story-curation-grid > section {
+  min-width: 0;
+}
+
+.story-curation-item {
+  display: grid;
+  gap: 8px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+
+.story-curation-item strong {
+  overflow-wrap: anywhere;
+}
+
+.story-curation-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.story-curation-controls select {
+  flex: 1 1 170px;
+  min-width: 0;
+  min-height: 36px;
+}
+
+.stack-controls {
+  display: grid;
+  align-items: stretch;
+}
+
+.stack-controls select,
+.stack-controls button {
+  width: 100%;
+}
+
+.story-curation-note {
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
 .library-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -13417,6 +13495,7 @@ button.asset-processing-summary-card {
   .question-answer-metrics,
   .experience-map-toolbar,
   .experience-map-stats,
+  .story-curation-grid,
   .map-route-grid,
   .agenda-blocked-control,
   .two-columns,

@@ -22,6 +22,10 @@ Single write rule: even when both apps can originate an experience, the canonica
 
 Blueprint ownership rule: this file is the implementation blueprint for VibePWA/backend/Vibeapp integration. The Obsidian vault blueprint in `90_System` is the conceptual mirror for knowledge work. They may use different language, but they must not contradict the platform split, hierarchy, narrative definition, or evidence/context rules.
 
+For the operations allowed after capture, including editing, adopting, moving,
+merging, splitting, promoting, and degrading stories, use
+`story-curation-operations-20260723.md` as the product contract.
+
 Build `20260722-event-narrative-rollup-684` is validated by code, SQL, contract checks, and simulated integration. Build `20260722-capture-structure-split-685` starts the implementation split: Vibeapp captures evidence in the moment, while VibePWA structures that evidence into experiences, events, reports, publications, and the Obsidian map.
 
 Build `20260722-evidence-adoption-693` implements Capa 2 on VibePWA/backend:
