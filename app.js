@@ -1,4 +1,4 @@
-const APP_VERSION = "20260723-evidence-inbox-visual-707";
+const APP_VERSION = "20260723-manual-blueprint-708";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -4553,6 +4553,150 @@ manualContent.pt = [
     ],
   },
 ];
+
+// User-facing manual. Operational diagnostics and historical pilot notes stay in Operation and docs.
+Object.assign(manualContent, {
+  es: [
+    { title: "Tu ecosistema Vibe", body: [
+      "Vibe te ayuda a capturar momentos, convertirlos en historias y usarlos para recordar, analizar o compartir. No es necesario decidir toda la historia mientras la estás viviendo.",
+      "Vibeapp captura desde el móvil o tablet. VibePWA organiza, analiza y presenta la memoria desde la web. Ambos usan la misma cuenta y el servidor es el registro común.",
+    ] },
+    { title: "Captura primero, historia después", body: [
+      "Una foto, nota de voz, video, texto o documento puede llegar antes de que exista una historia. Se guarda como evidencia en la Bandeja y espera a que decidas dónde pertenece.",
+      "Este orden evita experiencias falsas: una foto no se convierte en una historia por sí sola. La historia nace cuando tú eliges el momento y cuentas qué ocurrió.",
+    ] },
+    { title: "Crear una historia", body: [
+      "En Captura > Nueva experiencia escribe un título, cuenta qué ocurrió y selecciona la evidencia del momento. La fecha es la forma más rápida de encontrar tus archivos.",
+      "Puedes guardar una historia sin evidencia o adoptar una, varias o ninguna pieza. Al guardar, los archivos elegidos dejan la Bandeja y quedan vinculados a esa historia.",
+    ] },
+    { title: "Narrativa, evidencia y contexto", body: [
+      "Narrativa es tu propio relato: texto escrito, voz transcrita o voz de un video narrado. Una experiencia también puede estar narrada por uno de sus eventos internos.",
+      "Fotos, videos, documentos y audio son evidencia. Biometría, ubicación, clima, noticias y agenda son contexto por fecha y hora: enriquecen una historia, pero no crean una historia por sí mismos.",
+      "Hogar es lugar y Bienestar es estado. Trabajo, paseo, aprendizaje, social, entretenimiento, creatividad y espiritualidad pueden definir actividades vividas.",
+    ] },
+    { title: "Organizar sin perder memoria", body: [
+      "En Librería > Organizar puedes mover o soltar evidencia, unir historias, dividir una historia larga, promover un evento o convertir una historia menor en evento.",
+      "Todas las reorganizaciones piden confirmación y conservan el antecedente. Soltar evidencia solo cambia su vínculo: el archivo sigue guardado para que puedas usarlo después.",
+    ] },
+    { title: "Leer y compartir", body: [
+      "Reportes explican un período, grupo o tema. Hallazgos convierten patrones en próximas acciones. Publicaciones crea un PDF editorial con la evidencia que elijas.",
+      "Las tres vistas usan las mismas historias guardadas. Completar una narrativa o adoptar una foto mejora las salidas futuras sin volver a cargar datos.",
+    ] },
+    { title: "Mapa y Obsidian", body: [
+      "El Mapa de experiencias es parte de VibePWA y muestra conexiones entre historias, tiempo, personas, lugares y evidencia.",
+      "La exportación a Obsidian es opcional. Lleva historias narradas y activos adoptados a una bóveda para curación y aprendizaje, sin reemplazar la información guardada en Vibe.",
+    ] },
+    { title: "Grupos, privacidad y ayuda", body: [
+      "Los grupos/personas son privados y sirven para ordenar Familia, Viaje, Proyecto o Equipo. Archivar uno no borra su historial.",
+      "Cuando la barra indica Sincronizado, tus datos ya están disponibles en los otros dispositivos. Operación concentra respaldo, restauración y ayuda de sincronización para cuando realmente la necesites.",
+    ] },
+  ],
+  en: [
+    { title: "Your Vibe ecosystem", body: [
+      "Vibe helps you capture moments, turn them into stories, and use them to remember, understand, or share. You do not need to define the whole story while living it.",
+      "Vibeapp captures from mobile or tablet. VibePWA organizes, analyzes, and presents memory on the web. Both use the same account and the server is the shared record.",
+    ] },
+    { title: "Capture first, structure later", body: [
+      "A photo, voice note, video, text, or document may arrive before there is a story. It stays as evidence in the Inbox until you decide where it belongs.",
+      "This prevents false experiences: a photo does not become a story on its own. A story begins when you choose the moment and tell what happened.",
+    ] },
+    { title: "Create a story", body: [
+      "In Capture > New experience, write a title, describe what happened, and choose the evidence for that moment. Date is the quickest way to find your files.",
+      "You can save a story with no evidence or adopt one, several, or no items. On save, selected files leave the Inbox and link to that story.",
+    ] },
+    { title: "Narrative, evidence, and context", body: [
+      "Narrative is your own account: written text, transcribed voice, or the spoken voice in a narrated video. An experience can also be narrated by one of its internal events.",
+      "Photos, video, documents, and audio are evidence. Biometrics, location, weather, news, and calendar are time-based context: they enrich a story but do not create one by themselves.",
+      "Home is a place and Wellbeing is a state. Work, travel, learning, social life, entertainment, creativity, and spirituality can define lived activities.",
+    ] },
+    { title: "Organize without losing memory", body: [
+      "In Library > Organize, you can move or release evidence, merge stories, split a long story, promote an event, or turn a smaller story into an event.",
+      "Every reorganization asks for confirmation and keeps its predecessor. Releasing evidence only changes its link; the original file remains available.",
+    ] },
+    { title: "Read and share", body: [
+      "Reports explain a period, group, or topic. Findings turn patterns into next steps. Publications creates an editorial PDF using the evidence you choose.",
+      "All three views use the same saved stories. Completing a narrative or adopting a photo improves future outputs without uploading data again.",
+    ] },
+    { title: "Map and Obsidian", body: [
+      "The Experience Map belongs to VibePWA and shows connections across stories, time, people, places, and evidence.",
+      "Obsidian export is optional. It sends narrated stories and adopted assets to a vault for curation and learning without replacing Vibe's stored information.",
+    ] },
+    { title: "Groups, privacy, and help", body: [
+      "Groups/persons are private and organize Family, Travel, Project, or Team. Archiving one does not erase its history.",
+      "When the bar says Synced, data is available on your other devices. Operation contains backup, restore, and synchronization help when you actually need it.",
+    ] },
+  ],
+  fr: [
+    { title: "Votre ecosystème Vibe", body: [
+      "Vibe vous aide a capturer des moments, a les transformer en histoires et a les utiliser pour vous souvenir, comprendre ou partager. Il n est pas necessaire de definir toute l histoire au moment de la vivre.",
+      "Vibeapp capture depuis le mobile ou la tablette. VibePWA organise, analyse et presente la memoire sur le web. Les deux utilisent le meme compte et le serveur est le registre commun.",
+    ] },
+    { title: "Capturer d abord, structurer ensuite", body: [
+      "Une photo, une note vocale, une video, un texte ou un document peut arriver avant une histoire. Il reste comme preuve dans la Boite jusqu a ce que vous decidiez ou il appartient.",
+      "Cela evite les fausses experiences: une photo ne devient pas une histoire seule. L histoire commence lorsque vous choisissez le moment et racontez ce qui s est passe.",
+    ] },
+    { title: "Creer une histoire", body: [
+      "Dans Capture > Nouvelle experience, ecrivez un titre, racontez ce qui s est passe et choisissez les preuves du moment. La date est le moyen le plus rapide de retrouver vos fichiers.",
+      "Vous pouvez enregistrer une histoire sans preuve ou adopter un, plusieurs ou aucun element. Les fichiers choisis quittent la Boite et sont lies a l histoire.",
+    ] },
+    { title: "Narration, preuve et contexte", body: [
+      "La narration est votre propre recit: texte ecrit, voix transcrite ou voix d une video narree. Une experience peut aussi etre racontee par un de ses evenements internes.",
+      "Photos, videos, documents et audio sont des preuves. Biometrie, lieu, meteo, actualites et agenda sont du contexte temporel: ils enrichissent une histoire sans en creer une seuls.",
+      "Le foyer est un lieu et le bien-etre est un etat. Travail, voyage, apprentissage, social, divertissement, creativite et spiritualite peuvent definir une activite vecue.",
+    ] },
+    { title: "Organiser sans perdre la memoire", body: [
+      "Dans Bibliotheque > Organiser, vous pouvez deplacer ou liberer une preuve, fusionner des histoires, diviser une histoire longue, promouvoir un evenement ou transformer une histoire mineure en evenement.",
+      "Chaque reorganisation demande confirmation et conserve son antecedent. Liberer une preuve change seulement son lien; le fichier original reste disponible.",
+    ] },
+    { title: "Lire et partager", body: [
+      "Les rapports expliquent une periode, un groupe ou un sujet. Les enseignements transforment les tendances en prochaines actions. Publications cree un PDF editorial avec les preuves choisies.",
+      "Les trois vues utilisent les memes histoires. Completer une narration ou adopter une photo ameliore les sorties futures sans nouveau chargement.",
+    ] },
+    { title: "Carte et Obsidian", body: [
+      "La Carte des experiences appartient a VibePWA et montre les liens entre histoires, temps, personnes, lieux et preuves.",
+      "L export Obsidian est optionnel. Il envoie les histoires narrees et les actifs adoptes vers un coffre pour la curation et l apprentissage sans remplacer les informations de Vibe.",
+    ] },
+    { title: "Groupes, confidentialite et aide", body: [
+      "Les groupes/personnes sont prives et organisent Famille, Voyage, Projet ou Equipe. Archiver un groupe n efface pas son historique.",
+      "Lorsque la barre indique Synchronise, vos donnees sont disponibles sur vos autres appareils. Operation contient sauvegarde, restauration et aide de synchronisation quand vous en avez besoin.",
+    ] },
+  ],
+  pt: [
+    { title: "Seu ecossistema Vibe", body: [
+      "Vibe ajuda voce a capturar momentos, transforma-los em historias e usa-los para lembrar, compreender ou compartilhar. Nao e necessario definir toda a historia enquanto voce a vive.",
+      "Vibeapp captura no celular ou tablet. VibePWA organiza, analisa e apresenta a memoria na web. Ambos usam a mesma conta e o servidor e o registro comum.",
+    ] },
+    { title: "Capture primeiro, estruture depois", body: [
+      "Uma foto, nota de voz, video, texto ou documento pode chegar antes de existir uma historia. Ele fica como evidencia na Bandeja ate voce decidir a que historia pertence.",
+      "Isso evita experiencias falsas: uma foto nao se transforma em historia sozinha. A historia comeca quando voce escolhe o momento e conta o que aconteceu.",
+    ] },
+    { title: "Criar uma historia", body: [
+      "Em Captura > Nova experiencia, escreva um titulo, conte o que aconteceu e escolha a evidencia daquele momento. A data e a maneira mais rapida de encontrar seus arquivos.",
+      "Voce pode salvar uma historia sem evidencia ou adotar um, varios ou nenhum item. Ao salvar, os arquivos escolhidos saem da Bandeja e ficam vinculados a historia.",
+    ] },
+    { title: "Narrativa, evidencia e contexto", body: [
+      "Narrativa e o seu relato: texto escrito, voz transcrita ou voz de um video narrado. Uma experiencia tambem pode ser narrada por um de seus eventos internos.",
+      "Fotos, videos, documentos e audio sao evidencia. Biometria, localizacao, clima, noticias e agenda sao contexto por data e hora: enriquecem uma historia, mas nao a criam sozinhos.",
+      "Lar e lugar e Bem-estar e estado. Trabalho, viagem, aprendizado, social, entretenimento, criatividade e espiritualidade podem definir atividades vividas.",
+    ] },
+    { title: "Organizar sem perder memoria", body: [
+      "Em Biblioteca > Organizar, voce pode mover ou soltar evidencia, unir historias, dividir uma historia longa, promover um evento ou transformar uma historia menor em evento.",
+      "Toda reorganizacao pede confirmacao e conserva seu antecedente. Soltar evidencia apenas muda seu vinculo; o arquivo original continua disponivel.",
+    ] },
+    { title: "Ler e compartilhar", body: [
+      "Relatorios explicam um periodo, grupo ou tema. Descobertas transformam padroes em proximas acoes. Publicacoes cria um PDF editorial com a evidencia escolhida.",
+      "As tres visoes usam as mesmas historias salvas. Completar uma narrativa ou adotar uma foto melhora as proximas saidas sem enviar dados novamente.",
+    ] },
+    { title: "Mapa e Obsidian", body: [
+      "O Mapa de Experiencias pertence ao VibePWA e mostra conexoes entre historias, tempo, pessoas, lugares e evidencia.",
+      "A exportacao para Obsidian e opcional. Ela envia historias narradas e ativos adotados para um cofre de curadoria e aprendizado sem substituir as informacoes guardadas no Vibe.",
+    ] },
+    { title: "Grupos, privacidade e ajuda", body: [
+      "Grupos/pessoas sao privados e organizam Familia, Viagem, Projeto ou Equipe. Arquivar um grupo nao apaga seu historico.",
+      "Quando a barra indica Sincronizado, os dados estao disponiveis nos outros dispositivos. Operacao concentra backup, restauracao e ajuda de sincronizacao quando necessario.",
+    ] },
+  ],
+});
 
 const demoExperiences = [
   {
