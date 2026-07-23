@@ -1,4 +1,4 @@
-const APP_VERSION = "20260723-obsidian-curation-integrity-706";
+const APP_VERSION = "20260723-evidence-inbox-visual-707";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -12980,6 +12980,29 @@ function renderCaptureFlowSplit() {
   );
 }
 
+function renderEvidenceInboxPreview(asset = {}) {
+  const kind = asset.kind || inferMediaKind(asset) || "document";
+  const source = String(asset.url || asset.dataUrl || "").trim();
+  const title = asset.name || asset.fileName || getAssetKindLabel(kind) || "Activo";
+  const excerpt = String(
+    asset.transcript || asset.transcription || asset.previewText || asset.manualNote || asset.notes || extractReadableAssetText(asset) || "",
+  ).replace(/\s+/g, " ").trim().slice(0, 130);
+  const kindLabel = getAssetKindLabel(kind);
+  if (kind === "image" && source) {
+    return `<div class="capture-evidence-preview is-image"><img src="${escapeHtml(source)}" alt="${escapeHtml(title)}" loading="lazy" /></div>`;
+  }
+  if (kind === "video" && source) {
+    return `<div class="capture-evidence-preview is-video"><video src="${escapeHtml(source)}" muted playsinline preload="metadata"></video><span>Video</span></div>`;
+  }
+  if (kind === "audio") {
+    return `<div class="capture-evidence-preview is-audio"><span aria-hidden="true">AUDIO</span><small>${escapeHtml(excerpt || kindLabel)}</small></div>`;
+  }
+  if (kind === "document") {
+    return `<div class="capture-evidence-preview is-document"><span aria-hidden="true">DOC</span><small>${escapeHtml(excerpt || title)}</small></div>`;
+  }
+  return `<div class="capture-evidence-preview is-generic"><span>${escapeHtml(String(kindLabel || "Archivo").slice(0, 4).toUpperCase())}</span></div>`;
+}
+
 function renderCaptureEvidenceInbox() {
   const box = document.getElementById("captureEvidenceInbox");
   if (!box) return;
@@ -13064,15 +13087,18 @@ function renderCaptureEvidenceInbox() {
     ${rows.length
       ? `<div class="capture-evidence-list">
           ${rows.map((asset) => `
-            <article class="${asset.suggested ? "is-suggested" : ""}">
-              ${asset.localDraft
-                ? `<span>${escapeHtml(labels.localDraft)}</span>`
-                : `<label class="capture-evidence-selector">
-                    <input type="checkbox" data-evidence-asset-select="${escapeHtml(asset.id)}" ${selected.has(asset.id) ? "checked" : ""} />
-                    <span>${escapeHtml(asset.suggested ? labels.suggested : labels.awaiting)}</span>
-                  </label>`}
-              <strong>${escapeHtml(asset.name || asset.fileName || asset.kind || "Activo")}</strong>
-              <small>${escapeHtml([asset.kind || inferMediaKind(asset), asset.sourceDevice || asset.sourceType || "", asset.capturedAt ? formatDate(asset.capturedAt) : "", asset.size ? formatFileSize(asset.size) : ""].filter(Boolean).join(" - "))}</small>
+            <article class="capture-evidence-item ${asset.suggested ? "is-suggested" : ""}">
+              ${renderEvidenceInboxPreview(asset)}
+              <div class="capture-evidence-item-content">
+                ${asset.localDraft
+                  ? `<span class="capture-evidence-state">${escapeHtml(labels.localDraft)}</span>`
+                  : `<label class="capture-evidence-selector">
+                      <input type="checkbox" data-evidence-asset-select="${escapeHtml(asset.id)}" ${selected.has(asset.id) ? "checked" : ""} />
+                      <span>${escapeHtml(asset.suggested ? labels.suggested : labels.awaiting)}</span>
+                    </label>`}
+                <strong title="${escapeHtml(asset.name || asset.fileName || asset.kind || "Activo")}">${escapeHtml(asset.name || asset.fileName || asset.kind || "Activo")}</strong>
+                <small>${escapeHtml([asset.kind || inferMediaKind(asset), asset.sourceDevice || asset.sourceType || "", asset.capturedAt ? formatDate(asset.capturedAt) : "", asset.size ? formatFileSize(asset.size) : ""].filter(Boolean).join(" - "))}</small>
+              </div>
             </article>
           `).join("")}
         </div>`
