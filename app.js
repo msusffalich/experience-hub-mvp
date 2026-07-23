@@ -1,4 +1,4 @@
-const APP_VERSION = "20260723-definitions-handcheck-705";
+const APP_VERSION = "20260723-obsidian-curation-integrity-706";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -12234,7 +12234,20 @@ async function mergeExperiencesFromCuration(primaryId) {
       mergeAdoptedServerAssets(result.assets || []);
     }
     const attachments = Array.from(new Map([...(primary.attachments || []), ...assets].map((item) => [getAttachmentId(item) || item.name, item])).values());
-    const events = normalizeExperienceEvents([...(primary.events || []), ...(secondary.events || [])], primary.id)
+    const mergedNarrative = getExperienceNarrativeTextForExport(secondary);
+    const mergedNarrativeEvent = mergedNarrative
+      ? [{
+          id: createId(),
+          title: secondary.title || "Momento incorporado",
+          description: mergedNarrative,
+          narrativeText: mergedNarrative,
+          timestamp: secondary.timestamp || primary.timestamp,
+          duration: secondary.duration || 0,
+          mood: secondary.mood || "",
+          energy: secondary.energy || null,
+        }]
+      : [];
+    const events = normalizeExperienceEvents([...(primary.events || []), ...mergedNarrativeEvent, ...(secondary.events || [])], primary.id)
       .map((event, index) => ({ ...event, order: index + 1 }));
     const start = Math.min(new Date(primary.timestamp || 0).getTime() || Date.now(), new Date(secondary.timestamp || 0).getTime() || Date.now());
     const nextPrimary = addCurationHistory({
@@ -12243,7 +12256,9 @@ async function mergeExperiencesFromCuration(primaryId) {
       duration: Math.max(Number(primary.duration || 0), Number(secondary.duration || 0)),
       attachments,
       events,
-      notes: [primary.notes, secondary.notes].filter(Boolean).filter((value, index, all) => all.indexOf(value) === index).join("\n\n"),
+      // Preserve the primary account. The secondary account is a dated child event,
+      // not a paragraph pasted into the main experience narrative.
+      notes: primary.notes || "",
     }, "merged_from", secondary.id);
     const nextSecondary = addCurationHistory({
       ...secondary,
@@ -20563,7 +20578,9 @@ function renderExperienceMap() {
 function buildExperienceMapGraph() {
   const query = state.experienceMapFilters.query || "";
   const relationFilter = state.experienceMapFilters.relation || "all";
-  const sourceExperiences = [...state.experiences].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+  const sourceExperiences = state.experiences
+    .filter((experience) => !isSupersededExperience(experience))
+    .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
   const matchesQuery = (experience) => {
     if (!query) return true;
     return `${experience.title} ${experience.category} ${experience.objective} ${experience.people} ${experience.location} ${experience.notes}`.toLowerCase().includes(query);
@@ -21797,6 +21814,62 @@ function getExperienceNarrativeStatus(experience = {}) {
   return getExperienceNarrativeRollupStatus(experience);
 }
 
+function getCurationSuccessorIds(experience = {}) {
+  const metadata = experience.metadata || {};
+  return [
+    experience.mergedIntoId,
+    metadata.mergedIntoId,
+    experience.degradedIntoId,
+    metadata.degradedIntoId,
+    ...(Array.isArray(experience.splitIntoIds) ? experience.splitIntoIds : []),
+    ...(Array.isArray(metadata.splitIntoIds) ? metadata.splitIntoIds : []),
+  ].map((id) => String(id || "").trim()).filter(Boolean);
+}
+
+function getMergedSourceExperiences(experience = {}) {
+  return state.experiences.filter((item) => {
+    const status = String(item.curationStatus || item.metadata?.curationStatus || "").toLowerCase();
+    return status === "merged" && getCurationSuccessorIds(item).includes(String(experience.id || ""));
+  });
+}
+
+function getObsidianNarrativeTextForExport(experience = {}) {
+  let narrative = cleanObsidianMarkdownText(getExperienceNarrativeTextForExport(experience));
+  const mergedSources = getMergedSourceExperiences(experience);
+  for (const source of mergedSources) {
+    const sourceNarrative = cleanObsidianMarkdownText(getExperienceNarrativeTextForExport(source));
+    if (sourceNarrative) narrative = narrative.split(sourceNarrative).join("").replace(/\s{2,}/g, " ").trim();
+  }
+  return !isLowValueObsidianNarrative(narrative) ? narrative : "";
+}
+
+function getObsidianEventsForExport(experience = {}) {
+  const events = [...getExperienceEventTimeline(experience)];
+  const knownNarratives = new Set(events.map((event) => getEventNarrativeTextForExport(event)).filter(Boolean));
+  getMergedSourceExperiences(experience).forEach((source) => {
+    const narrative = getExperienceNarrativeTextForExport(source);
+    if (!narrative || knownNarratives.has(narrative)) return;
+    knownNarratives.add(narrative);
+    events.push({
+      id: `merged-${source.id}`,
+      title: source.title || "Momento incorporado",
+      narrativeText: narrative,
+      description: narrative,
+      timestamp: source.timestamp || experience.timestamp,
+      duration: source.duration || 0,
+      order: events.length + 1,
+      source: "story_merge",
+    });
+  });
+  return events.sort((a, b) => new Date(a.timestamp || experience.timestamp) - new Date(b.timestamp || experience.timestamp));
+}
+
+function getObsidianNarrativeStatusForExport(experience = {}) {
+  return getObsidianNarrativeTextForExport(experience) || getObsidianEventsForExport(experience).some((event) => getEventNarrativeStatus(event) === "ok")
+    ? "ok"
+    : "pending";
+}
+
 function renderObsidianEventLine(event = {}) {
   const label = cleanObsidianMarkdownText(event.title || event.text || event.description, "Evento");
   const narrative = getEventNarrativeTextForExport(event);
@@ -22086,9 +22159,9 @@ function renderExperienceMapMarkdownExperience(experience) {
   const title = cleanObsidianMarkdownText(experience.title, "Experiencia");
   const category = getExperienceCategoryForExport(experience);
   const energy = getExperienceEnergyForExport(experience);
-  const events = getExperienceEventTimeline(experience);
+  const events = getObsidianEventsForExport(experience);
   const attachments = experience.attachments || [];
-  const notes = getExperienceNarrativeTextForExport(experience);
+  const notes = getObsidianNarrativeTextForExport(experience);
   const analyticalText = getMeaningfulAssetAnalysisSnippets(attachments, 3);
   return [
     `### ${obsidianExperienceWikiLink(experience, title)}`,
@@ -22302,11 +22375,11 @@ function buildObsidianExperienceNoteMarkdown(experience = {}, options = {}) {
   const localDate = getLocalDateKey(experience.timestamp);
   const localDateTime = getLocalDateTimeWithOffset(experience.timestamp);
   const people = getExperiencePeopleForExport(experience);
-  const events = getExperienceEventTimeline(experience);
+  const events = getObsidianEventsForExport(experience);
   const attachments = experience.attachments || [];
   const assetReferences = options.assetReferences instanceof Map ? options.assetReferences : new Map();
-  const notes = getExperienceNarrativeTextForExport(experience);
-  const narrativeStatus = getExperienceNarrativeStatus(experience);
+  const notes = getObsidianNarrativeTextForExport(experience);
+  const narrativeStatus = getObsidianNarrativeStatusForExport(experience);
   const multimodalStatus = attachments.length ? "ok" : "pending";
   const analyticalText = getMeaningfulAssetAnalysisSnippets(attachments, 5);
   const links = [
@@ -22384,6 +22457,55 @@ function buildObsidianExperienceNoteMarkdown(experience = {}, options = {}) {
   return lines.join("\n").trim() + "\n";
 }
 
+function buildObsidianSupersededExperienceNoteMarkdown(experience = {}) {
+  const title = cleanObsidianMarkdownText(experience.title, "Experiencia");
+  const status = String(experience.curationStatus || experience.metadata?.curationStatus || "superseded").toLowerCase();
+  const successors = getCurationSuccessorIds(experience)
+    .map((id) => state.experiences.find((item) => item.id === id))
+    .filter(Boolean);
+  const successorLinks = successors.map((item) => obsidianExperienceWikiLink(item));
+  const localDateTime = getLocalDateTimeWithOffset(experience.timestamp);
+  const lines = [
+    "---",
+    `vibe_id: ${JSON.stringify(experience.id || getObsidianExperienceNoteStem(experience))}`,
+    "type: experience_antecedent",
+    `title: ${JSON.stringify(title)}`,
+    `created_at: ${JSON.stringify(localDateTime)}`,
+    `updated_at: ${JSON.stringify(getLocalDateTimeWithOffset(new Date().toISOString()))}`,
+    `lifecycle: ${JSON.stringify("superseded")}`,
+    `curation_status: ${JSON.stringify(status)}`,
+    `superseded_by: ${JSON.stringify(successors.map((item) => item.id))}`,
+    "narrative: \"pending\"",
+    "sync_status: exported",
+    "---",
+    "",
+    ...wrapObsidianAutoBlock([
+      "",
+      `# ${title}`,
+      "",
+      "## Estado de curacion",
+      "",
+      `Esta historia fue reorganizada mediante ${status}. No cuenta como experiencia activa ni duplica su relato.`,
+      successorLinks.length ? `Historia vigente: ${successorLinks.join(", ")}` : "Historia vigente: pendiente de resolver.",
+      "",
+      "## Enlaces",
+      "",
+      "- [[MOC - Vibe]]",
+      ...successorLinks.map((link) => `- ${link}`),
+    ]),
+    "",
+    OBSIDIAN_HUMAN_HEADING,
+    "",
+    "### Aprendizajes",
+    "",
+    "### Decisiones o acciones",
+    "",
+    "### Notas editoriales",
+    "",
+  ];
+  return lines.join("\n").trim() + "\n";
+}
+
 async function exportExperienceNotesToLocalObsidianVault(experiences = [], options = {}) {
   if (!state.localObsidianVault?.connected || !supportsLocalObsidianVault()) {
     throw new Error("obsidian_vault_not_connected");
@@ -22424,6 +22546,32 @@ async function exportExperienceNotesToLocalObsidianVault(experiences = [], optio
   return { ok: errors.length === 0, count, expected: experiences.length, narrativeOk, savedIds, errors };
 }
 
+async function exportObsidianSupersededExperienceNotes(experiences = []) {
+  let count = 0;
+  const errors = [];
+  for (const experience of experiences) {
+    const markdown = buildObsidianSupersededExperienceNoteMarkdown(experience);
+    const filename = `${getObsidianExperienceNoteStem(experience)}.md`;
+    try {
+      const localSaved = await saveMarkdownToLocalObsidianVault(markdown, filename, { target: "experiences", preserveHuman: true });
+      if (!localSaved?.ok) throw new Error("obsidian_local_antecedent_not_saved");
+      const response = await fetch(`${API_BASE}/obsidian/export`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(state.session?.access_token ? { Authorization: `Bearer ${state.session.access_token}` } : {}),
+        },
+        body: JSON.stringify({ target: "experiences", filename, markdown, source: "vibepwa-curation-antecedent", preserveHuman: true }),
+      });
+      if (!response.ok) throw new Error(`obsidian_antecedent_export_${response.status}`);
+      count += 1;
+    } catch (error) {
+      errors.push({ id: experience.id, title: experience.title, error: error.message || String(error) });
+    }
+  }
+  return { ok: errors.length === 0, count, expected: experiences.length, errors };
+}
+
 function buildObsidianExcludedExperienceNoteCandidates(experiences = []) {
   const excluded = experiences.filter((experience) => !isObsidianExportableExperience(experience));
   return {
@@ -22461,7 +22609,11 @@ async function exportExperienceMapMarkdown() {
     const allExperiences = getExperienceMapMarkdownScope(graph);
     const contextSignals = allExperiences.filter((experience) => !isObsidianExportableExperience(experience));
     const experiences = allExperiences.filter(isObsidianExportableExperience);
-    const cleanupResult = buildObsidianExcludedExperienceNoteCandidates(allExperiences);
+    const supersededExperiences = state.experiences
+      .filter((experience) => isSupersededExperience(experience) && isObsidianExportableExperience(experience));
+    const cleanupResult = buildObsidianExcludedExperienceNoteCandidates(
+      state.experiences.filter((experience) => !isSupersededExperience(experience)),
+    );
     const rawRoutes = buildExperienceMapRoutes(graph, { excludeContextSignals: true });
     // Write evidence first. A note or map is never reported as complete when a
     // referenced intentional asset could not be copied to the local vault.
@@ -22470,6 +22622,10 @@ async function exportExperienceMapMarkdown() {
     const notesResult = await exportExperienceNotesToLocalObsidianVault(experiences, { assetReferences: assetResult.references });
     if (!notesResult?.ok || notesResult.count !== notesResult.expected) {
       throw new Error(`obsidian_notes_incomplete_${notesResult?.count || 0}_of_${notesResult?.expected || experiences.length}`);
+    }
+    const antecedentResult = await exportObsidianSupersededExperienceNotes(supersededExperiences);
+    if (!antecedentResult?.ok || antecedentResult.count !== antecedentResult.expected) {
+      throw new Error(`obsidian_antecedents_incomplete_${antecedentResult?.count || 0}_of_${antecedentResult?.expected || supersededExperiences.length}`);
     }
     const savedIds = new Set(notesResult.savedIds || []);
     const mapExperiences = experiences.filter((experience) => savedIds.has(experience.id));
@@ -22574,12 +22730,17 @@ async function exportExperienceMapMarkdown() {
     const assetsStatus = state.language !== "es"
       ? `${assetResult.exported.length} real asset(s) saved`
       : `${assetResult.exported.length} activo(s) real(es) guardado(s)`;
+    const antecedentStatus = antecedentResult.count
+      ? state.language !== "es"
+        ? `${antecedentResult.count} prior story note(s) marked as antecedents`
+        : `${antecedentResult.count} nota(s) previa(s) marcada(s) como antecedente`
+      : state.language !== "es" ? "no prior story notes" : "sin notas previas";
     const cleanupStatus = cleanupResult.count
       ? state.language !== "es" ? `${cleanupResult.count} stale notes require review` : `${cleanupResult.count} notas obsoletas requieren revision`
       : state.language !== "es" ? "no stale notes found" : "sin notas obsoletas";
     const message = state.language !== "es"
-      ? `Obsidian export finished: ${assetsStatus}; ${notesStatus}; ${mapStatus}; ${cleanupStatus}.`
-      : `Exportacion Obsidian terminada: ${assetsStatus}; ${notesStatus}; ${mapStatus}; ${cleanupStatus}.`;
+      ? `Obsidian export finished: ${assetsStatus}; ${notesStatus}; ${antecedentStatus}; ${mapStatus}; ${cleanupStatus}.`
+      : `Exportacion Obsidian terminada: ${assetsStatus}; ${notesStatus}; ${antecedentStatus}; ${mapStatus}; ${cleanupStatus}.`;
     if (box) box.textContent = message;
     notify(message, "success");
   } catch (error) {

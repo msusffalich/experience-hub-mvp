@@ -61,7 +61,7 @@ assert(experienceNoteBuilder.includes("created_at") && experienceNoteBuilder.inc
 assert(experienceNoteBuilder.includes("datetime_local") && experienceNoteBuilder.includes("timezone"), "Experience notes must include local datetime and timezone.");
 assert(experienceNoteBuilder.includes("getExperienceCategoryForExport") && experienceNoteBuilder.includes("category: ${category ?"), "Experience notes must omit untrusted categories instead of inventing them.");
 assert(experienceNoteBuilder.includes("getExperienceEnergyForExport") && !experienceNoteBuilder.includes("Number(experience.energy || 0)") && !experienceNoteBuilder.includes("Number(experience.energy || 5)"), "Experience notes must not fabricate energy values.");
-assert(experienceNoteBuilder.includes("getExperienceNarrativeStatus(experience)") && experienceNoteBuilder.includes("multimodalStatus"), "Experience notes must emit Dataview status fields from the shared narrative rule.");
+assert(experienceNoteBuilder.includes("getObsidianNarrativeStatusForExport(experience)") && experienceNoteBuilder.includes("multimodalStatus"), "Experience notes must emit Dataview status fields from the shared narrative rule.");
 assert(experienceNoteBuilder.includes("...(people.length ?") && !experienceNoteBuilder.includes("people: []"), "Experience notes must omit people when no real people are known instead of emitting an empty array.");
 assert(app.includes("function isLowValueObsidianNarrative") && app.includes("function getExperienceNarrativeTextForExport") && app.includes("function getExperienceNarrativeStatus"), "Obsidian export must have one shared rule for real narrative text.");
 assert(app.includes("function getEventNarrativeTextForExport") && app.includes("function getEventNarrativeStatus") && app.includes("function getExperienceNarrativeRollupStatus"), "Obsidian export must support event-level human narrative and experience-level rollup.");
@@ -78,7 +78,7 @@ assert(app.includes("function isHumanVoiceAsset"), "Obsidian export must disting
 assert(narrativeCandidates.includes("humanAssetNarratives"), "Narrative candidates must be restricted to human text, manual notes, and human voice transcripts.");
 assert(!narrativeCandidates.includes("experience.summary") && !narrativeCandidates.includes("experience.description"), "Narrative candidates must not count generated summaries or generic descriptions as human narrative.");
 assert(!narrativeCandidates.includes("asset.extractedText") && !narrativeCandidates.includes("asset.translatedText") && !narrativeCandidates.includes("asset.analyticalText") && !narrativeCandidates.includes("asset.caption"), "Narrative candidates must not count OCR, translations, visual captions, or automatic analysis as human narrative.");
-assert(experienceNoteBuilder.includes("getExperienceNarrativeTextForExport(experience)") && !experienceNoteBuilder.includes("Sin resumen narrativo suficiente"), "Experience notes must mark missing narrative as pending, not export filler text.");
+assert(experienceNoteBuilder.includes("getObsidianNarrativeTextForExport(experience)") && !experienceNoteBuilder.includes("Sin resumen narrativo suficiente"), "Experience notes must mark missing narrative as pending, not export filler text.");
 assert(experienceNoteBuilder.includes("getObsidianCategoryWikiLink"), "Experience notes must sanitize category wiki links.");
 assert(experienceNoteBuilder.includes("wrapObsidianAutoBlock") && app.includes("OBSIDIAN_HUMAN_HEADING") && app.includes("String.fromCharCode(0x00ed)"), "Experience notes must write the human curation heading with the UTF-8 accented i.");
 const autoBlockStart = experienceNoteBuilder.indexOf("...wrapObsidianAutoBlock");
@@ -86,6 +86,11 @@ const autoBlockEnd = experienceNoteBuilder.indexOf("OBSIDIAN_HUMAN_HEADING", aut
 const autoBlockBuilder = autoBlockStart >= 0 && autoBlockEnd > autoBlockStart ? experienceNoteBuilder.slice(autoBlockStart, autoBlockEnd) : "";
 assert(autoBlockBuilder.includes("## Enlaces") && autoBlockBuilder.includes("...links.map"), "Generated Obsidian backlinks must stay inside the automatic block so they update on reexport.");
 assert(app.includes("function isObsidianExportableExperience") && app.includes("function isTechnicalMediaOnlyExperience"), "Obsidian export must exclude technical media-only captures from experience notes.");
+assert(app.includes("filter((experience) => !isSupersededExperience(experience))"), "The experience map must exclude merged, split, and degraded stories from active scope.");
+assert(app.includes("function buildObsidianSupersededExperienceNoteMarkdown") && app.includes("lifecycle: ${JSON.stringify(\"superseded\")}"), "Superseded stories must export as traceable Obsidian antecedents.");
+assert(app.includes("exportObsidianSupersededExperienceNotes(supersededExperiences)") && app.includes("obsidian_antecedents_incomplete"), "Antecedent notes must complete before the generated map is saved.");
+assert(app.includes("mergedNarrativeEvent") && app.includes("notes: primary.notes || \"\""), "Merging must retain a secondary narrative as an event instead of pasting it into the primary summary.");
+assert(experienceNoteBuilder.includes("getObsidianEventsForExport(experience)") && experienceNoteBuilder.includes("getObsidianNarrativeTextForExport(experience)"), "Experience notes must render merged narrative as child events without repeating it in the main summary.");
 assert(app.includes("getExperienceNarrativeStatus(experience) === \"pending\"") && app.includes("image_picker") && app.includes("native-media"), "Technical media-only captures must require a missing real narrative before they are excluded.");
 assert(localTargetMap.includes('generated_map: ["05_Generated"]'), "Generated maps must be routed to 05_Generated in the local vault.");
 assert(localTargetMap.includes('images: ["04_Assets", "Images"]') && localTargetMap.includes('videos: ["04_Assets", "Videos"]') && localTargetMap.includes('audio: ["04_Assets", "Audio"]'), "Local vault must have explicit media folders for adopted intentional evidence.");
@@ -111,7 +116,7 @@ assert(app.includes("async function exportExperienceAssetsToLocalObsidianVault")
 assert(mapExporter.includes("const assetResult = await exportExperienceAssetsToLocalObsidianVault(experiences)") && mapExporter.includes("obsidian_assets_incomplete"), "The map must not be exported if its adopted evidence could not be copied.");
 assert(experienceNoteBuilder.includes("buildObsidianExperienceAssetLine") && experienceNoteBuilder.includes("assetReferences"), "Experience notes must link to copied Obsidian assets instead of only listing file names.");
 assert(server.includes('url.pathname.endsWith("/download")') && server.includes("getAssetEvidenceDownload"), "The server must provide an authenticated signed download for an adopted evidence asset.");
-assert(app.includes("buildObsidianExcludedExperienceNoteCandidates(allExperiences)") && app.includes("Notas candidatas a revisar"), "Obsidian export must report stale-note candidates for human review.");
+assert(app.includes("buildObsidianExcludedExperienceNoteCandidates(") && app.includes("Notas candidatas a revisar"), "Obsidian export must report stale-note candidates for human review.");
 assert(!app.includes("function deleteMarkdownFromLocalObsidianVault") && !app.includes("removeEntry(safeFilename)") && !app.includes("deleteObsidianExperienceNoteIfExists"), "VibePWA must not automatically delete append-only experience notes.");
 assert(!server.includes('url.pathname === "/api/obsidian/export" && req.method === "DELETE"') && !server.includes("function deleteObsidianExport"), "Server Obsidian export must not expose automatic deletion for experience notes.");
 assert(index.includes('onclick="window.exportExperienceMapMarkdown?.()"') && app.includes("window.exportExperienceMapMarkdown = exportExperienceMapMarkdown"), "Experience-map Markdown button must have a direct browser click fallback.");
@@ -229,6 +234,20 @@ function testLowValueNarrative(value = "") {
   if (/sin resumen narrativo suficiente|narrativa pendiente/i.test(clean)) return true;
   return false;
 }
+
+function testSeparateMergedNarrative(primaryNarrative = "", secondaryNarrative = "") {
+  return testCleanNarrative(primaryNarrative)
+    .split(testCleanNarrative(secondaryNarrative))
+    .join("")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+const mergedSummary = testSeparateMergedNarrative(
+  "Nos reunimos para jugar y conversar. Terminando de probar, pero recordando lo hermoso que es pintar.",
+  "Terminando de probar, pero recordando lo hermoso que es pintar.",
+);
+assert(mergedSummary === "Nos reunimos para jugar y conversar.", "Behavior check: merged secondary narrative must be removed from the active summary before it is rendered as a child event.");
 
 function testEventNarrative(event = {}) {
   const description = testCleanNarrative(event.description);

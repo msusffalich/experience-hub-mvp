@@ -57,6 +57,9 @@ Es valido cuando dos historias describen el mismo episodio. La operacion debe:
    duplicarlos.
 4. Marcar la experiencia secundaria como `merged` con referencia a la
    principal; nunca eliminarla silenciosamente.
+5. En Obsidian, actualizar la nota secundaria como `antecedente`: conserva la
+   curaduría humana, enlaza a la historia vigente y deja de contar como una
+   experiencia activa. No puede conservar un resumen narrativo duplicado.
 
 ### Dividir una experiencia
 
@@ -125,6 +128,18 @@ La confirmacion explica el destino de cada accion antes de cambiar la historia.
 El historial de curacion se conserva dentro del registro de la experiencia; la
 vista de historial detallado se incorporara cuando el producto exponga una
 linea de auditoria para usuarios finales.
+
+## Regla de exportacion a Obsidian
+
+Una exportacion escribe cuatro capas en orden atomico: activos adoptados,
+notas de experiencias vigentes, notas de antecedentes y mapa generado. Si una
+capa falla, el mapa no se declara actualizado.
+
+Las historias con estado `merged`, `split` o `degraded` no desaparecen ni se
+exportan como una segunda experiencia viva. Su nota se convierte en un
+antecedente con `lifecycle: superseded`, enlace a su sucesora y zona de
+curaduria humana preservada. Esto evita relatos y conteos duplicados sin
+permitir borrado automatico de memoria curada.
 
 ## Criterio de experiencia
 
