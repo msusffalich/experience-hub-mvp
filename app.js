@@ -17254,16 +17254,44 @@ function renderAssetSyncPendingSummary(assets = collectMultimodalAssets()) {
   const visible = pending.slice(0, 3);
   const detail = visible.map((asset) => asset.name || asset.experienceTitle || asset.assetKey || "asset").join(" - ");
   const more = pending.length > visible.length ? ` +${pending.length - visible.length}` : "";
+  const feedback = state.assetSyncFeedback || null;
   return `
     <article class="metric-card compact-metric asset-sync-pending-detail">
       <span>${escapeHtml(t("labels.assetSyncPendingDetailTitle"))}</span>
       <strong>${escapeHtml(String(pending.length))}</strong>
       <p>${escapeHtml(t("labels.assetSyncPendingDetailText"))}</p>
       <small>${escapeHtml(detail + more)}</small>
+      ${feedback ? `<small class="asset-sync-feedback ${feedback.type === "warn" ? "is-warn" : "is-ok"}">${escapeHtml(feedback.message)}</small>` : ""}
       <button class="primary-button small-button" type="button" data-asset-storage-action="repair">${escapeHtml(t("labels.assetSyncPendingRepair"))}</button>
       <button class="ghost-button small-button" type="button" data-asset-storage-filter="pending">${escapeHtml(t("labels.assetSyncPendingAction"))}</button>
     </article>
   `;
+}
+
+async function repairPendingAssetsFromLibrary() {
+  const before = summarizeAttachmentSyncState();
+  const language = state.language;
+  state.assetSyncFeedback = {
+    type: "ok",
+    message: language !== "es" ? `Syncing ${before.pending} pending file(s)...` : `Sincronizando ${before.pending} archivo(s) pendiente(s)...`,
+  };
+  renderAssetLibrary();
+  await repairDashboardAttachments();
+  const after = summarizeAttachmentSyncState();
+  const resolved = Math.max(0, before.pending - after.pending);
+  state.assetSyncFeedback = after.pending
+    ? {
+        type: "warn",
+        message: language !== "es"
+          ? `${resolved} file(s) synced. ${after.pending} still need this browser to keep the original file available.`
+          : `${resolved} archivo(s) sincronizado(s). ${after.pending} aún requieren conservar el archivo original en este navegador.`,
+      }
+    : {
+        type: "ok",
+        message: language !== "es" ? "Pending files synchronized." : "Archivos pendientes sincronizados.",
+      };
+  renderAssetLibrary();
+  notify(state.assetSyncFeedback.message, after.pending ? "warn" : "ok");
 }
 
 function renderBiometricAssetPanel() {
@@ -19114,7 +19142,7 @@ function renderAssetCard(asset) {
 async function handleAssetLibraryClick(event) {
   const storageActionButton = event.target.closest("[data-asset-storage-action]");
   if (storageActionButton?.dataset.assetStorageAction === "repair") {
-    await repairDashboardAttachments();
+    await repairPendingAssetsFromLibrary();
     return;
   }
   const processVisibleButton = event.target.closest("[data-asset-processing-run]");
