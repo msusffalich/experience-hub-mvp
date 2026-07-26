@@ -5594,95 +5594,29 @@ async function upsertAssetEvidence(media, user = { id: LOCAL_USER_ID }, options 
     return withAssetEvidenceRemoteFailure(normalized, "asset_evidence_workspace_unavailable");
   }
   try {
-    const row = toAssetEvidenceRow(normalized, workspace.id, user);
-    const rows = await supabaseRest("assets", {
-      method: "POST",
-      searchParams: { on_conflict: "asset_id" },
-      headers: { Prefer: "resolution=merge-duplicates,return=representation" },
-      body: JSON.stringify(row),
-      accessToken: user.accessToken,
-    });
+    const saved = await writeAssetEvidenceWithCompatibility(normalized, workspace.id, user);
     workspaceSchemaState.available = true;
     workspaceSchemaState.checkedAt = new Date().toISOString();
     workspaceSchemaState.error = null;
+    if (saved.parentDeferred) {
+      await appendLog("info", "asset_evidence_parent_deferred", {
+        assetId: normalized.id,
+        pendingExperienceId: saved.media.metadata?.pendingExperienceId || "",
+        pendingEventId: saved.media.metadata?.pendingEventId || "",
+      });
+    }
+    if (saved.columnMode === "optional") {
+      await appendLog("warn", "asset_evidence_optional_columns_skipped", { assetId: normalized.id });
+    } else if (saved.columnMode === "legacy") {
+      await appendLog("warn", "asset_evidence_legacy_schema_compatible", { assetId: normalized.id });
+    }
     return {
-      ...normalized,
-      ...fromAssetRow(rows[0]),
-      adoptionStatus: rows[0]?.adoption_status || inferMediaAdoptionStatus(normalized),
-      evidenceType: rows[0]?.evidence_type || "intentional",
+      ...saved.media,
+      ...fromAssetRow(saved.row),
+      adoptionStatus: saved.parentDeferred ? "inbox" : saved.row?.adoption_status || inferMediaAdoptionStatus(saved.media),
+      evidenceType: saved.row?.evidence_type || "intentional",
     };
   } catch (error) {
-    // Vibeapp can upload an attachment while its local experience is still
-    // travelling to this server. Keep the evidence in the inbox, then let the
-    // later experience upsert attach the same asset id once its parent exists.
-    if (isAssetParentExperienceForeignKeyError(error)) {
-      const deferred = deferAssetEvidenceUntilParentExists(normalized);
-      try {
-        const row = toAssetEvidenceRow(deferred, workspace.id, user);
-        const rows = await supabaseRest("assets", {
-          method: "POST",
-          searchParams: { on_conflict: "asset_id" },
-          headers: { Prefer: "resolution=merge-duplicates,return=representation" },
-          body: JSON.stringify(row),
-          accessToken: user.accessToken,
-        });
-        await appendLog("info", "asset_evidence_parent_deferred", {
-          assetId: normalized.id,
-          pendingExperienceId: deferred.metadata?.pendingExperienceId || "",
-          pendingEventId: deferred.metadata?.pendingEventId || "",
-        });
-        return {
-          ...deferred,
-          ...fromAssetRow(rows[0]),
-          adoptionStatus: "inbox",
-          evidenceType: rows[0]?.evidence_type || "intentional",
-        };
-      } catch (deferredError) {
-        error = deferredError;
-      }
-    }
-    if (isAssetOptionalAdoptionColumnError(error)) {
-      try {
-        const row = removeAssetOptionalAdoptionColumns(toAssetEvidenceRow(normalized, workspace.id, user));
-        const rows = await supabaseRest("assets", {
-          method: "POST",
-          searchParams: { on_conflict: "asset_id" },
-          headers: { Prefer: "resolution=merge-duplicates,return=representation" },
-          body: JSON.stringify(row),
-          accessToken: user.accessToken,
-        });
-        await appendLog("warn", "asset_evidence_optional_columns_skipped", {
-          assetId: normalized.id,
-          reason: sanitizeDiagnosticError(error),
-        });
-        return {
-          ...normalized,
-          ...fromAssetRow(rows[0]),
-          adoptionStatus: rows[0]?.adoption_status || inferMediaAdoptionStatus(normalized),
-          evidenceType: rows[0]?.evidence_type || "intentional",
-        };
-      } catch (compatibilityError) {
-        if (!isAssetOptionalAdoptionColumnError(compatibilityError)) throw compatibilityError;
-        const row = removeAssetLegacyOptionalColumns(toAssetEvidenceRow(normalized, workspace.id, user));
-        const rows = await supabaseRest("assets", {
-          method: "POST",
-          searchParams: { on_conflict: "asset_id" },
-          headers: { Prefer: "resolution=merge-duplicates,return=representation" },
-          body: JSON.stringify(row),
-          accessToken: user.accessToken,
-        });
-        await appendLog("warn", "asset_evidence_legacy_schema_compatible", {
-          assetId: normalized.id,
-          reason: sanitizeDiagnosticError(compatibilityError),
-        });
-        return {
-          ...normalized,
-          ...fromAssetRow(rows[0]),
-          adoptionStatus: inferMediaAdoptionStatus(normalized),
-          evidenceType: "intentional",
-        };
-      }
-    }
     const reason = sanitizeDiagnosticError(error);
     await appendLog("warn", "asset_evidence_remote_skipped", {
       assetId: normalized.id,
@@ -5691,6 +5625,43 @@ async function upsertAssetEvidence(media, user = { id: LOCAL_USER_ID }, options 
     if (requireRemote) throwAssetEvidencePersistenceError("asset_evidence_remote_write_failed", reason, error);
     return withAssetEvidenceRemoteFailure(normalized, reason);
   }
+}
+
+async function writeAssetEvidenceWithCompatibility(media, workspaceId, user) {
+  let candidate = normalizeMedia(media);
+  let columnMode = "full";
+  let parentDeferred = false;
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    let row = toAssetEvidenceRow(candidate, workspaceId, user);
+    if (columnMode === "optional") row = removeAssetOptionalAdoptionColumns(row);
+    if (columnMode === "legacy") row = removeAssetLegacyOptionalColumns(row);
+    try {
+      const rows = await supabaseRest("assets", {
+        method: "POST",
+        searchParams: { on_conflict: "asset_id" },
+        headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+        body: JSON.stringify(row),
+        accessToken: user.accessToken,
+      });
+      return { media: candidate, row: rows[0], columnMode, parentDeferred };
+    } catch (error) {
+      if (isAssetParentExperienceForeignKeyError(error) && !parentDeferred) {
+        candidate = deferAssetEvidenceUntilParentExists(candidate);
+        parentDeferred = true;
+        continue;
+      }
+      if (isAssetOptionalAdoptionColumnError(error) && columnMode === "full") {
+        columnMode = "optional";
+        continue;
+      }
+      if (isAssetOptionalAdoptionColumnError(error) && columnMode === "optional") {
+        columnMode = "legacy";
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw new Error("asset_evidence_write_retry_exhausted");
 }
 
 function withAssetEvidenceRemoteFailure(media, reason) {
