@@ -6923,7 +6923,13 @@ function mergeLocalMediaCacheForExperience(remoteExperience, localExperience) {
     if (!localAttachment?.dataUrl) return remoteAttachment;
     return { ...remoteAttachment, dataUrl: localAttachment.dataUrl, localPreviewOnly: true };
   });
-  return { ...remoteExperience, attachments };
+  // Keep a local original until the server returns the same attachment with a
+  // remote path. Dropping it early makes a failed upload look like success.
+  const remoteAttachmentIds = new Set((remoteExperience.attachments || []).map((attachment) => attachment.id).filter(Boolean));
+  const unsyncedLocalAttachments = localAttachments.filter((attachment) =>
+    attachment.dataUrl && !remoteAttachmentIds.has(attachment.id),
+  );
+  return { ...remoteExperience, attachments: [...attachments, ...unsyncedLocalAttachments] };
 }
 
 async function deleteExperienceFromApi(id) {
@@ -13621,70 +13627,9 @@ function renderDashboardAttachmentStatus() {
 }
 
 async function repairDashboardAttachments() {
-  const summary = summarizeAttachmentSyncState();
-  const status = document.getElementById("embeddingStatus");
-  state.notifications = state.notifications.filter((item) => !/adjuntos reparados|attachments repaired/i.test(item.detail || ""));
-  renderNotifications();
-  if (!summary.pending) {
-    state.dashboardAttachmentFeedback = {
-      type: "ok",
-      message: state.language !== "es" ? "All attachments are ready." : "Todos los adjuntos están listos.",
-    };
-    renderDashboardAttachmentStatus();
-    return;
-  }
-  if (!summary.retryable) {
-    state.dashboardAttachmentFeedback = {
-      type: "warn",
-      message: state.language !== "es"
-         ? "Some files need to be selected again from the device where they exist."
-        : "Algunos archivos deben volver a seleccionarse desde el dispositivo donde existen.",
-    };
-    renderDashboardAttachmentStatus();
-    showView("assetLibrary");
-    requestAnimationFrame(() => focusAppElement("assetWorkflowReadinessPanel"));
-    return;
-  }
-  if (requiresRemotePersistence() && !state.session?.access_token) {
-    state.pendingAuthReturn = "dashboard";
-    showAuthView();
-    requestAnimationFrame(() => {
-      const message = document.getElementById("authMessage");
-      if (message) message.textContent = state.language !== "es"
-         ? "Sign in to repair attachments across your devices."
-        : "Inicia sesión para reparar adjuntos en todos tus dispositivos.";
-    });
-    return;
-  }
-  if (status) {
-    status.textContent = state.language !== "es" ? "Repairing attachments..." : "Reparando adjuntos...";
-  }
-  const experienceIds = new Set(summary.retryableItems.map((item) => item.experience.id));
-  let repaired = 0;
-  for (const id of experienceIds) {
-    const index = state.experiences.findIndex((item) => item.id === id);
-    if (index < 0) continue;
-    const beforePending = (state.experiences[index].attachments || []).filter((attachment) => isAttachmentPendingRemoteSync(attachment) && !(attachment.path || attachment.url)).length;
-    const result = await saveExperienceToApi(state.experiences[index]);
-    if (result?.experience) {
-      state.experiences[index] = mergeLocalMediaCacheForExperience(result.experience, state.experiences[index]);
-      const afterPending = (state.experiences[index].attachments || []).filter((attachment) => isAttachmentPendingRemoteSync(attachment) && !(attachment.path || attachment.url)).length;
-      repaired += Math.max(0, beforePending - afterPending);
-    }
-  }
-  saveExperiences();
-  await syncOfflineQueue({ silent: true });
-  renderAll();
-  const next = summarizeAttachmentSyncState();
-  const pendingText = state.language !== "es"
-     ? `${next.pending} ${next.pending === 1 ? "attachment remains" : "attachments remain"} pending.`
-    : `${next.pending} ${next.pending === 1 ? "adjunto sigue" : "adjuntos siguen"} pendiente${next.pending === 1 ? "" : "s"}.`;
-  const message = state.language !== "es"
-     ? `${repaired} ${repaired === 1 ? "attachment repaired" : "attachments repaired"}. ${pendingText}`
-    : `${repaired} ${repaired === 1 ? "adjunto reparado" : "adjuntos reparados"}. ${pendingText}`;
-  if (status) status.textContent = message;
-  state.dashboardAttachmentFeedback = { type: next.pending ? "warn" : "ok", message };
-  renderDashboardAttachmentStatus();
+  // The dashboard and Assets must retry the same inventory. Otherwise one can
+  // report success while the other still shows local files without a remote path.
+  await repairPendingAssetsFromLibrary();
 }
 
 function handleDashboardAttachmentAction(event) {
@@ -17262,36 +17207,108 @@ function renderAssetSyncPendingSummary(assets = collectMultimodalAssets()) {
       <p>${escapeHtml(t("labels.assetSyncPendingDetailText"))}</p>
       <small>${escapeHtml(detail + more)}</small>
       ${feedback ? `<small class="asset-sync-feedback ${feedback.type === "warn" ? "is-warn" : "is-ok"}">${escapeHtml(feedback.message)}</small>` : ""}
-      <button class="primary-button small-button" type="button" data-asset-storage-action="repair">${escapeHtml(t("labels.assetSyncPendingRepair"))}</button>
+      <button class="primary-button small-button" type="button" data-asset-storage-action="repair" ${state.assetSyncInProgress ? "disabled" : ""}>${escapeHtml(state.assetSyncInProgress ? (state.language !== "es" ? "Syncing..." : "Sincronizando...") : t("labels.assetSyncPendingRepair"))}</button>
       <button class="ghost-button small-button" type="button" data-asset-storage-filter="pending">${escapeHtml(t("labels.assetSyncPendingAction"))}</button>
     </article>
   `;
 }
 
+function getPendingAssetSyncCandidates() {
+  return collectMultimodalAssets()
+    .filter((asset) => buildAssetStorageStatus(asset).needsSync)
+    .map((asset) => {
+      const experience = state.experiences.find((item) => item.id === asset.experienceId) || null;
+      const attachment = experience?.attachments?.find((item) =>
+        (asset.id && item.id === asset.id) ||
+        (asset.assetKey && getAssetMetadataKey({ ...item, experienceId: experience.id }) === asset.assetKey),
+      ) || null;
+      return { asset, experience, attachment: attachment || (asset.dataUrl ? asset : null) };
+    });
+}
+
+function attachmentFromPendingAsset(asset = {}) {
+  return {
+    id: asset.id || `attachment-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    name: asset.name || "media",
+    type: asset.type || asset.originalType || "application/octet-stream",
+    size: Number(asset.size || 0),
+    dataUrl: asset.dataUrl || "",
+    capturedAt: asset.capturedAt || asset.timestamp || new Date().toISOString(),
+    source: asset.source || "local-retry",
+    sourceDevice: asset.sourceDevice || asset.device || "",
+    metadata: asset.metadata || {},
+  };
+}
+
 async function repairPendingAssetsFromLibrary() {
-  const before = summarizeAttachmentSyncState();
+  if (state.assetSyncInProgress) return;
+  const before = getPendingAssetSyncCandidates();
   const language = state.language;
+  if (!before.length) {
+    state.assetSyncFeedback = {
+      type: "ok",
+      message: language !== "es" ? "There are no pending files to synchronize." : "No hay archivos pendientes por sincronizar.",
+    };
+    renderAssetLibrary();
+    notify(state.assetSyncFeedback.message, "ok");
+    return;
+  }
+  state.assetSyncInProgress = true;
   state.assetSyncFeedback = {
     type: "ok",
-    message: language !== "es" ? `Syncing ${before.pending} pending file(s)...` : `Sincronizando ${before.pending} archivo(s) pendiente(s)...`,
+    message: language !== "es" ? `Syncing ${before.length} pending file(s)...` : `Sincronizando ${before.length} archivo(s) pendiente(s)...`,
   };
   renderAssetLibrary();
-  await repairDashboardAttachments();
-  const after = summarizeAttachmentSyncState();
-  const resolved = Math.max(0, before.pending - after.pending);
-  state.assetSyncFeedback = after.pending
+  const retryable = before.filter((item) => item.experience?.id && item.attachment?.dataUrl);
+  if (!retryable.length) {
+    state.assetSyncInProgress = false;
+    state.assetSyncFeedback = {
+      type: "warn",
+      message: language !== "es"
+        ? "The original local files are no longer available for upload from this browser."
+        : "Los archivos locales originales ya no están disponibles para subirlos desde este navegador.",
+    };
+    renderAssetLibrary();
+    notify(state.assetSyncFeedback.message, "warn");
+    return;
+  }
+  const retryableExperienceIds = [...new Set(retryable.map((item) => item.experience.id))];
+  let failedRequests = 0;
+  for (const experienceId of retryableExperienceIds) {
+    const index = state.experiences.findIndex((item) => item.id === experienceId);
+    if (index < 0) continue;
+    const pendingForExperience = retryable.filter((item) => item.experience.id === experienceId);
+    const localExperience = state.experiences[index];
+    const attachmentIds = new Set((localExperience.attachments || []).map((attachment) => attachment.id).filter(Boolean));
+    const attachments = [...(localExperience.attachments || [])];
+    for (const candidate of pendingForExperience) {
+      if (!attachmentIds.has(candidate.attachment.id)) attachments.push(attachmentFromPendingAsset(candidate.attachment));
+    }
+    const result = await saveExperienceToApi({ ...localExperience, attachments });
+    if (result?.experience) {
+      state.experiences[index] = mergeLocalMediaCacheForExperience(result.experience, { ...localExperience, attachments });
+    } else {
+      failedRequests += 1;
+    }
+  }
+  saveExperiences();
+  await syncOfflineQueue({ silent: true });
+  const after = getPendingAssetSyncCandidates();
+  const resolved = Math.max(0, before.length - after.length);
+  state.assetSyncInProgress = false;
+  state.assetSyncFeedback = after.length
     ? {
         type: "warn",
         message: language !== "es"
-          ? `${resolved} file(s) synced. ${after.pending} still need this browser to keep the original file available.`
-          : `${resolved} archivo(s) sincronizado(s). ${after.pending} aún requieren conservar el archivo original en este navegador.`,
+          ? `${resolved} file(s) confirmed. ${after.length} remain pending${failedRequests ? " because the server did not confirm their upload" : ""}.`
+          : `${resolved} archivo(s) confirmado(s). ${after.length} siguen pendientes${failedRequests ? " porque el servidor no confirmó su carga" : ""}.`,
       }
     : {
         type: "ok",
         message: language !== "es" ? "Pending files synchronized." : "Archivos pendientes sincronizados.",
       };
   renderAssetLibrary();
-  notify(state.assetSyncFeedback.message, after.pending ? "warn" : "ok");
+  notify(state.assetSyncFeedback.message, after.length ? "warn" : "ok");
 }
 
 function renderBiometricAssetPanel() {
