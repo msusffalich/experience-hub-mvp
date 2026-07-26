@@ -251,6 +251,11 @@ check(
     && files.server.includes("asset_evidence_deferred_parent_reconciled"),
   "server must reconcile already-uploaded Vibeapp evidence with its parent experience when the parent becomes available.",
 );
+check(
+  files.server.includes("experience_library_asset_repair_skipped")
+    && files.server.includes("repairMissingAssetEvidenceRowsFromUploadAttempts(assetRows, user)"),
+  "server must repair persisted Vibeapp uploads when the experience library is read, not only from the evidence inbox.",
+);
 check(files.vibeappMain.includes("Idempotency-Key") && files.vibeappMain.includes("X-Vibe-Source-Id"), "Vibeapp transport must send retry-safe idempotency headers.");
 check(files.vibeappMain.includes("ExperienceSyncClient") && files.vibeappMain.includes("NativeSyncTransport"), "Vibeapp must keep a sync client and transport abstraction.");
 check(files.vibeappMain.includes("CaptureQueueSummary") && files.vibeappMain.includes("NativePilotChecklist"), "Vibeapp must keep queue summary and pilot checklist.");

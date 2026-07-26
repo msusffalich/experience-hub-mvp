@@ -4526,6 +4526,26 @@ async function listExperiences(user = { id: LOCAL_USER_ID }) {
       },
       accessToken: user.accessToken,
     });
+    // A failed first evidence write may still have a completed Storage upload.
+    // Repair it before rendering the library, not only when the inbox is opened.
+    try {
+      const workspace = await getWorkspaceContext(user);
+      if (workspace?.id) {
+        const assetRows = await supabaseRest("assets", {
+          searchParams: {
+            workspace_id: `eq.${workspace.id}`,
+            select: "asset_id",
+            limit: "500",
+          },
+          accessToken: user.accessToken,
+        });
+        await repairMissingAssetEvidenceRowsFromUploadAttempts(assetRows, user);
+      }
+    } catch (error) {
+      await appendLog("warn", "experience_library_asset_repair_skipped", {
+        reason: sanitizeDiagnosticError(error),
+      });
+    }
     await reconcileDeferredEvidenceForExperiences(rows.map(fromExperienceRow), user);
     const [eventMap, assetMap] = await Promise.all([
       listExperienceEventsForRows(rows, user),
