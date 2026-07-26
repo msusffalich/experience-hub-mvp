@@ -4526,6 +4526,7 @@ async function listExperiences(user = { id: LOCAL_USER_ID }) {
       },
       accessToken: user.accessToken,
     });
+    await reconcileDeferredEvidenceForExperiences(rows.map(fromExperienceRow), user);
     const [eventMap, assetMap] = await Promise.all([
       listExperienceEventsForRows(rows, user),
       listExperienceAssetsForRows(rows, user),
@@ -4708,6 +4709,7 @@ async function upsertExperience(experience, user = { id: LOCAL_USER_ID }) {
     });
     const savedExperience = fromExperienceRow(rows[0]);
     await syncExperienceEventsToSupabase(savedExperience, user);
+    await reconcileDeferredEvidenceForExperiences([savedExperience], user);
     await syncExperienceAssetsToSupabase(savedExperience, user);
     return signExperienceMedia(savedExperience);
   }
@@ -5202,6 +5204,68 @@ async function syncExperienceAssetsToSupabase(experience, user = { id: LOCAL_USE
     workspaceSchemaState.checkedAt = new Date().toISOString();
     workspaceSchemaState.error = sanitizeDiagnosticError(error);
     return { synced: false, reason: "asset_sync_failed" };
+  }
+}
+
+async function reconcileDeferredEvidenceForExperiences(experiences = [], user = { id: LOCAL_USER_ID }) {
+  if (activePersistence() !== "supabase" || !experiences.length) return { updated: 0 };
+  const workspace = await getWorkspaceContext(user);
+  if (!workspace?.id || workspaceSchemaUnavailableRecently()) return { updated: 0 };
+  const byId = new Map(experiences.filter((experience) => experience?.id).map((experience) => [experience.id, experience]));
+  if (!byId.size) return { updated: 0 };
+  try {
+    const inboxRows = await supabaseRest("assets", {
+      searchParams: {
+        workspace_id: `eq.${workspace.id}`,
+        adoption_status: "eq.inbox",
+        order: "captured_at.asc",
+        limit: "500",
+      },
+      accessToken: user.accessToken,
+    });
+    const pendingByExperience = new Map();
+    for (const row of inboxRows) {
+      const pendingExperienceId = String(row.metadata?.pendingExperienceId || "").trim();
+      if (!pendingExperienceId || !byId.has(pendingExperienceId)) continue;
+      if (!pendingByExperience.has(pendingExperienceId)) pendingByExperience.set(pendingExperienceId, []);
+      pendingByExperience.get(pendingExperienceId).push(row);
+    }
+    let updated = 0;
+    for (const [experienceId, pendingRows] of pendingByExperience) {
+      const experience = byId.get(experienceId);
+      const events = normalizeExperienceEvents(experience.events || [], experience.id);
+      const byEvent = new Map(events.map((event) => [event.id, event]));
+      const groups = new Map();
+      for (const row of pendingRows) {
+        const pendingEventId = String(row.metadata?.pendingEventId || "").trim();
+        const usableEventId = byEvent.has(pendingEventId) ? pendingEventId : "";
+        if (!groups.has(usableEventId)) groups.set(usableEventId, []);
+        groups.get(usableEventId).push(row.asset_id);
+      }
+      for (const [eventId, assetIds] of groups) {
+        const event = byEvent.get(eventId);
+        const result = await adoptAssetEvidenceForExperience({
+          assetIds,
+          experienceId: experience.id,
+          experienceTitle: experience.title || "",
+          participantId: experience.pilotParticipantId || "",
+          eventId,
+          eventTitle: event?.title || "",
+          method: "deferred_parent_reconcile",
+          confidence: 1,
+        }, user);
+        updated += Number(result.updated || 0);
+      }
+    }
+    if (updated) {
+      await appendLog("info", "asset_evidence_deferred_parent_reconciled", { updated, experiences: pendingByExperience.size });
+    }
+    return { updated };
+  } catch (error) {
+    await appendLog("warn", "asset_evidence_deferred_parent_reconcile_failed", {
+      reason: sanitizeDiagnosticError(error),
+    });
+    return { updated: 0 };
   }
 }
 

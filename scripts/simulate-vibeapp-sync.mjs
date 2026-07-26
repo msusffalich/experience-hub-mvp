@@ -245,6 +245,12 @@ check(
     && files.server.includes("pendingExperienceId"),
   "server must accept Vibeapp media whose parent experience has not reached Supabase yet, then bind it after the experience upsert.",
 );
+check(
+  files.server.includes("reconcileDeferredEvidenceForExperiences")
+    && files.server.includes("deferred_parent_reconcile")
+    && files.server.includes("asset_evidence_deferred_parent_reconciled"),
+  "server must reconcile already-uploaded Vibeapp evidence with its parent experience when the parent becomes available.",
+);
 check(files.vibeappMain.includes("Idempotency-Key") && files.vibeappMain.includes("X-Vibe-Source-Id"), "Vibeapp transport must send retry-safe idempotency headers.");
 check(files.vibeappMain.includes("ExperienceSyncClient") && files.vibeappMain.includes("NativeSyncTransport"), "Vibeapp must keep a sync client and transport abstraction.");
 check(files.vibeappMain.includes("CaptureQueueSummary") && files.vibeappMain.includes("NativePilotChecklist"), "Vibeapp must keep queue summary and pilot checklist.");
