@@ -233,8 +233,10 @@ check(
 check(
   files.server.includes("isAssetOptionalAdoptionColumnError")
     && files.server.includes("removeAssetOptionalAdoptionColumns")
+    && files.server.includes("removeAssetLegacyOptionalColumns")
+    && files.server.includes("asset_evidence_legacy_schema_compatible")
     && files.server.includes("asset_evidence_optional_columns_skipped"),
-  "server must keep media evidence compatible with Supabase projects missing optional adoption columns.",
+  "server must keep media evidence compatible with Supabase projects missing optional adoption or legacy provenance columns.",
 );
 check(files.vibeappMain.includes("Idempotency-Key") && files.vibeappMain.includes("X-Vibe-Source-Id"), "Vibeapp transport must send retry-safe idempotency headers.");
 check(files.vibeappMain.includes("ExperienceSyncClient") && files.vibeappMain.includes("NativeSyncTransport"), "Vibeapp must keep a sync client and transport abstraction.");

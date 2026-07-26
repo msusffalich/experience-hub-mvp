@@ -5529,24 +5529,46 @@ async function upsertAssetEvidence(media, user = { id: LOCAL_USER_ID }, options 
     };
   } catch (error) {
     if (isAssetOptionalAdoptionColumnError(error)) {
-      const row = removeAssetOptionalAdoptionColumns(toAssetEvidenceRow(normalized, workspace.id, user));
-      const rows = await supabaseRest("assets", {
-        method: "POST",
-        searchParams: { on_conflict: "asset_id" },
-        headers: { Prefer: "resolution=merge-duplicates,return=representation" },
-        body: JSON.stringify(row),
-        accessToken: user.accessToken,
-      });
-      await appendLog("warn", "asset_evidence_optional_columns_skipped", {
-        assetId: normalized.id,
-        reason: sanitizeDiagnosticError(error),
-      });
-      return {
-        ...normalized,
-        ...fromAssetRow(rows[0]),
-        adoptionStatus: rows[0]?.adoption_status || inferMediaAdoptionStatus(normalized),
-        evidenceType: rows[0]?.evidence_type || "intentional",
-      };
+      try {
+        const row = removeAssetOptionalAdoptionColumns(toAssetEvidenceRow(normalized, workspace.id, user));
+        const rows = await supabaseRest("assets", {
+          method: "POST",
+          searchParams: { on_conflict: "asset_id" },
+          headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+          body: JSON.stringify(row),
+          accessToken: user.accessToken,
+        });
+        await appendLog("warn", "asset_evidence_optional_columns_skipped", {
+          assetId: normalized.id,
+          reason: sanitizeDiagnosticError(error),
+        });
+        return {
+          ...normalized,
+          ...fromAssetRow(rows[0]),
+          adoptionStatus: rows[0]?.adoption_status || inferMediaAdoptionStatus(normalized),
+          evidenceType: rows[0]?.evidence_type || "intentional",
+        };
+      } catch (compatibilityError) {
+        if (!isAssetOptionalAdoptionColumnError(compatibilityError)) throw compatibilityError;
+        const row = removeAssetLegacyOptionalColumns(toAssetEvidenceRow(normalized, workspace.id, user));
+        const rows = await supabaseRest("assets", {
+          method: "POST",
+          searchParams: { on_conflict: "asset_id" },
+          headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+          body: JSON.stringify(row),
+          accessToken: user.accessToken,
+        });
+        await appendLog("warn", "asset_evidence_legacy_schema_compatible", {
+          assetId: normalized.id,
+          reason: sanitizeDiagnosticError(compatibilityError),
+        });
+        return {
+          ...normalized,
+          ...fromAssetRow(rows[0]),
+          adoptionStatus: inferMediaAdoptionStatus(normalized),
+          evidenceType: "intentional",
+        };
+      }
     }
     const reason = sanitizeDiagnosticError(error);
     await appendLog("warn", "asset_evidence_remote_skipped", {
@@ -5577,8 +5599,7 @@ function throwAssetEvidencePersistenceError(code, detail, cause) {
 
 function isAssetOptionalAdoptionColumnError(error) {
   const detail = `${error?.message || ""} ${error?.detail || ""} ${JSON.stringify(error?.cause || {})}`;
-  return detail.includes("PGRST204")
-    && ["adopted_at", "adoption_method", "adoption_confidence", "pruned_at", "pruned_reason"].some((column) => detail.includes(column));
+  return detail.includes("PGRST204") || /could not find (the )?['\"]?[a-z_]+['\"]? column/i.test(detail);
 }
 
 function removeAssetOptionalAdoptionColumns(row = {}) {
@@ -5588,6 +5609,30 @@ function removeAssetOptionalAdoptionColumns(row = {}) {
   delete compatible.adoption_confidence;
   delete compatible.pruned_at;
   delete compatible.pruned_reason;
+  return compatible;
+}
+
+// Older Vibe installations created `assets` before provenance and adoption
+// columns existed. The core link remains intact; extra adoption fields remain
+// in metadata until the database migration is applied.
+function removeAssetLegacyOptionalColumns(row = {}) {
+  const compatible = removeAssetOptionalAdoptionColumns(row);
+  [
+    "signed_url",
+    "preview_text",
+    "analysis_text",
+    "source_type",
+    "source_device",
+    "source_id",
+    "captured_at",
+    "uploaded_at",
+    "processing_status",
+    "permissions",
+    "metadata_fingerprint",
+    "checksum",
+    "evidence_type",
+    "adoption_status",
+  ].forEach((column) => delete compatible[column]);
   return compatible;
 }
 
