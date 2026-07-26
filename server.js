@@ -5528,6 +5528,35 @@ async function upsertAssetEvidence(media, user = { id: LOCAL_USER_ID }, options 
       evidenceType: rows[0]?.evidence_type || "intentional",
     };
   } catch (error) {
+    // Vibeapp can upload an attachment while its local experience is still
+    // travelling to this server. Keep the evidence in the inbox, then let the
+    // later experience upsert attach the same asset id once its parent exists.
+    if (isAssetParentExperienceForeignKeyError(error)) {
+      const deferred = deferAssetEvidenceUntilParentExists(normalized);
+      try {
+        const row = toAssetEvidenceRow(deferred, workspace.id, user);
+        const rows = await supabaseRest("assets", {
+          method: "POST",
+          searchParams: { on_conflict: "asset_id" },
+          headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+          body: JSON.stringify(row),
+          accessToken: user.accessToken,
+        });
+        await appendLog("info", "asset_evidence_parent_deferred", {
+          assetId: normalized.id,
+          pendingExperienceId: deferred.metadata?.pendingExperienceId || "",
+          pendingEventId: deferred.metadata?.pendingEventId || "",
+        });
+        return {
+          ...deferred,
+          ...fromAssetRow(rows[0]),
+          adoptionStatus: "inbox",
+          evidenceType: rows[0]?.evidence_type || "intentional",
+        };
+      } catch (deferredError) {
+        error = deferredError;
+      }
+    }
     if (isAssetOptionalAdoptionColumnError(error)) {
       try {
         const row = removeAssetOptionalAdoptionColumns(toAssetEvidenceRow(normalized, workspace.id, user));
@@ -5600,6 +5629,33 @@ function throwAssetEvidencePersistenceError(code, detail, cause) {
 function isAssetOptionalAdoptionColumnError(error) {
   const detail = `${error?.message || ""} ${error?.detail || ""} ${JSON.stringify(error?.cause || {})}`;
   return detail.includes("PGRST204") || /could not find (the )?['\"]?[a-z_]+['\"]? column/i.test(detail);
+}
+
+function isAssetParentExperienceForeignKeyError(error) {
+  const detail = `${error?.message || ""} ${error?.detail || ""} ${JSON.stringify(error?.cause || {})}`.toLowerCase();
+  return detail.includes("23503") || (detail.includes("foreign key") && detail.includes("experience"));
+}
+
+function deferAssetEvidenceUntilParentExists(media = {}) {
+  const normalized = normalizeMedia(media);
+  const pendingExperienceId = normalized.experienceId || normalized.metadata?.linkedExperienceId || "";
+  const pendingEventId = normalized.eventId || normalized.metadata?.linkedEventId || "";
+  return {
+    ...normalized,
+    experienceId: "",
+    eventId: "",
+    adoptionStatus: "inbox",
+    metadata: {
+      ...normalized.metadata,
+      linkedExperienceId: "",
+      linkedEventId: "",
+      pendingExperienceId,
+      pendingEventId,
+      adoptionStatus: "inbox",
+      adoptionMethod: "pending_parent_experience",
+      pendingParentExperience: true,
+    },
+  };
 }
 
 function removeAssetOptionalAdoptionColumns(row = {}) {

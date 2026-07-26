@@ -238,6 +238,13 @@ check(
     && files.server.includes("asset_evidence_optional_columns_skipped"),
   "server must keep media evidence compatible with Supabase projects missing optional adoption or legacy provenance columns.",
 );
+check(
+  files.server.includes("isAssetParentExperienceForeignKeyError")
+    && files.server.includes("deferAssetEvidenceUntilParentExists")
+    && files.server.includes("asset_evidence_parent_deferred")
+    && files.server.includes("pendingExperienceId"),
+  "server must accept Vibeapp media whose parent experience has not reached Supabase yet, then bind it after the experience upsert.",
+);
 check(files.vibeappMain.includes("Idempotency-Key") && files.vibeappMain.includes("X-Vibe-Source-Id"), "Vibeapp transport must send retry-safe idempotency headers.");
 check(files.vibeappMain.includes("ExperienceSyncClient") && files.vibeappMain.includes("NativeSyncTransport"), "Vibeapp must keep a sync client and transport abstraction.");
 check(files.vibeappMain.includes("CaptureQueueSummary") && files.vibeappMain.includes("NativePilotChecklist"), "Vibeapp must keep queue summary and pilot checklist.");
