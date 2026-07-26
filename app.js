@@ -572,6 +572,7 @@ const i18n = {
       assetSyncPendingDetailTitle: "Pendiente de sincronizaci\u00f3n",
       assetSyncPendingDetailText: "Hay activos visibles en este navegador que a\u00fan no tienen ruta remota en Supabase Storage.",
       assetSyncPendingAction: "Mostrar pendientes",
+      assetSyncPendingRepair: "Sincronizar pendientes",
       assetSyncPendingNone: "Sin activos pendientes de sincronizaci\u00f3n.",
       assetLanguage: "Idioma",
       assetDevice: "Dispositivo/origen",
@@ -1409,6 +1410,7 @@ const i18n = {
       assetSyncPendingDetailTitle: "Pending sync",
       assetSyncPendingDetailText: "Some assets visible in this browser do not have a remote Supabase Storage path yet.",
       assetSyncPendingAction: "Show pending",
+      assetSyncPendingRepair: "Sync pending files",
       assetSyncPendingNone: "No assets are pending sync.",
       assetLanguage: "Language",
       assetDevice: "Device/source",
@@ -8745,6 +8747,7 @@ function setupFilters() {
   });
   document.getElementById("assetLibraryGrid").addEventListener("submit", handleAssetMetadataSubmit);
   document.getElementById("assetLibraryGrid").addEventListener("click", handleAssetLibraryClick);
+  document.getElementById("assetMetricGrid").addEventListener("click", handleAssetLibraryClick);
   document.getElementById("importBiometricAssetButton").addEventListener("click", () => document.getElementById("importBiometricAssetInput").click());
   document.getElementById("importBiometricAssetInput").addEventListener("change", importBiometricAssetFromFile);
   document.getElementById("agendaDateFilter").addEventListener("change", (event) => {
@@ -17257,6 +17260,7 @@ function renderAssetSyncPendingSummary(assets = collectMultimodalAssets()) {
       <strong>${escapeHtml(String(pending.length))}</strong>
       <p>${escapeHtml(t("labels.assetSyncPendingDetailText"))}</p>
       <small>${escapeHtml(detail + more)}</small>
+      <button class="primary-button small-button" type="button" data-asset-storage-action="repair">${escapeHtml(t("labels.assetSyncPendingRepair"))}</button>
       <button class="ghost-button small-button" type="button" data-asset-storage-filter="pending">${escapeHtml(t("labels.assetSyncPendingAction"))}</button>
     </article>
   `;
@@ -19108,6 +19112,11 @@ function renderAssetCard(asset) {
 }
 
 async function handleAssetLibraryClick(event) {
+  const storageActionButton = event.target.closest("[data-asset-storage-action]");
+  if (storageActionButton?.dataset.assetStorageAction === "repair") {
+    await repairDashboardAttachments();
+    return;
+  }
   const processVisibleButton = event.target.closest("[data-asset-processing-run]");
   if (processVisibleButton?.dataset.assetProcessingRun === "visible") {
     await processVisibleAssetBacklog();
