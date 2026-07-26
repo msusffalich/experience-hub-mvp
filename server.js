@@ -10834,6 +10834,17 @@ function fromExperienceRow(row) {
 function normalizeExperience(experience) {
   const metadata = isPlainObject(experience.metadata) ? experience.metadata : {};
   const rawEnergy = experience.energy;
+  // Vibeapp presents child episodes as "momentos". Accept that transport alias
+  // while retaining `events` as the single persisted server contract.
+  const rawEvents = Array.isArray(experience.events)
+    ? experience.events
+    : Array.isArray(experience.moments)
+      ? experience.moments
+      : Array.isArray(metadata.events)
+        ? metadata.events
+        : Array.isArray(metadata.moments)
+          ? metadata.moments
+          : [];
   return {
     id: experience.id || createId(),
     title: experience.title || "Untitled experience",
@@ -10849,7 +10860,7 @@ function normalizeExperience(experience) {
     workspaceId: experience.workspaceId || metadata.workspaceId || "",
     pilotParticipantId: experience.pilotParticipantId || metadata.pilotParticipantId || "",
     pilotParticipantName: experience.pilotParticipantName || metadata.pilotParticipantName || "",
-    events: normalizeExperienceEvents(experience.events || metadata.events || [], experience.id),
+    events: normalizeExperienceEvents(rawEvents, experience.id),
     isDemo: Boolean(experience.isDemo || metadata.isDemo),
     demoBatch: experience.demoBatch || metadata.demoBatch || "",
     attachments: Array.isArray(experience.attachments) ? experience.attachments : [],

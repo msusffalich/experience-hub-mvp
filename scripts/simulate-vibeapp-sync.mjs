@@ -219,6 +219,12 @@ check(
   "server ingest and media upload must require a persisted assets row for Vibeapp media/image/audio/video/document evidence.",
 );
 check(
+  files.server.includes("Array.isArray(experience.moments)")
+    && files.server.includes("Array.isArray(metadata.moments)")
+    && files.server.includes("normalizeExperienceEvents(rawEvents, experience.id)"),
+  "server must accept the Vibeapp moments alias and persist it through the canonical events contract.",
+);
+check(
   files.server.includes("repairMissingAssetEvidenceRowsFromUploadAttempts")
     && files.server.includes("buildAssetEvidenceFromUploadAttempt")
     && files.server.includes("asset_evidence_repaired_from_upload_attempts"),
