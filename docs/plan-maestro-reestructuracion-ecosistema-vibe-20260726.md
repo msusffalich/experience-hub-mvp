@@ -154,7 +154,7 @@ HTTP, autenticación, validación inicial y delegación a módulos.
 - genera reportes y hallazgos;
 - permite alcance por fecha, persona, evidencia, historias o ambos;
 - separa datos observados, interpretación e hipótesis;
-- no inventa energía, categoría ni narrativa.
+- no inventa energía, Área de vida ni narrativa.
 
 #### Servicio Editorial
 
@@ -423,17 +423,17 @@ de alcance. No mantienen filtros diferentes.
 
 #### Filtros opcionales
 
-- actividad/categoría;
+- Área de vida;
 - ubicación;
 - tipo de evidencia;
 - texto o palabra clave;
 - selección explícita de historias;
 - selección explícita de activos.
 
-Categoría no es obligatoria y no se aplica silenciosamente a evidencia suelta.
-Si el usuario elige una categoría, el sistema analiza historias de esa categoría
+El Área de vida no es obligatoria y no se aplica silenciosamente a evidencia suelta.
+Si el usuario elige un área de vida, el sistema analiza historias de esa área de vida
 y sus activos vinculados. La evidencia aún no clasificada queda fuera y la
-interfaz informa cuántos elementos no fueron incluidos por carecer de categoría.
+interfaz informa cuántos elementos no fueron incluidos por carecer de área de vida.
 
 #### Contexto y eventos
 
@@ -455,7 +455,7 @@ interfaz informa cuántos elementos no fueron incluidos por carecer de categorí
 - periodo: últimos 7 días;
 - persona/grupo: usuario principal o selección activa;
 - base: `Todo lo registrado`;
-- categoría: todas;
+- Área de vida: todas;
 - contexto: automático.
 
 El selector muestra una frase humana antes de ejecutar, por ejemplo:

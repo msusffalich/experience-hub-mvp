@@ -1,4 +1,4 @@
-const APP_VERSION = "20260727-output-roles-713";
+const APP_VERSION = "20260727-life-area-language-714";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -524,7 +524,7 @@ const i18n = {
       experiences: "Experiencias",
       hours: "Horas registradas",
       avgEnergy: "Energía media",
-      topCategory: "Categoría líder",
+      topCategory: "Área de vida principal",
       media: "Adjuntos multimedia",
       total: "Total experiencias",
       capturedHours: "Horas capturadas",
@@ -536,7 +536,7 @@ const i18n = {
         light: "Claro",
         dark: "Oscuro",
       },
-      categoryAll: "Todas las categorías",
+      categoryAll: "Todas las Áreas de vida",
       categoryLabels: {
         Trabajo: "Trabajo",
         "Viajes / Paseos": "Viajes / Paseos",
@@ -831,9 +831,9 @@ const i18n = {
       livingMemoryMoment: "Momento destacado",
       livingMemoryLearning: "Aprendizaje recuperado",
       livingMemoryContinuity: "Continuidad sugerida",
-      reportCategoryBreakdown: "Desglose por categoría",
-      reportCategoryEmpty: "Sin categorías para el filtro actual.",
-      blueprintCategoryReading: "Lectura por categoría del plan maestro",
+      reportCategoryBreakdown: "Distribución por Áreas de vida",
+      reportCategoryEmpty: "Sin Áreas de vida para el filtro actual.",
+      blueprintCategoryReading: "Lectura por Áreas de vida del plan maestro",
       blueprintCategoryFocus: "Foco",
       blueprintCategoryRisk: "Riesgo",
       blueprintCategoryAction: "Acción sugerida",
@@ -845,7 +845,7 @@ const i18n = {
       blueprintCorrelationEstimated: "Lectura inicial; requiere más datos para precisión predictiva",
       blueprintCorrelationNoData: "Sin datos suficientes para detectar correlaciones.",
       energyTrendChart: "Tendencia de energía",
-      categoryShareChart: "Distribución por categoría",
+      categoryShareChart: "Distribución por Áreas de vida",
       saturationChart: "Saturación y volumen",
       noChartData: "Sin datos suficientes para graficar.",
       hoursShort: "h",
@@ -906,7 +906,7 @@ const i18n = {
       reportPriority: "Prioridad",
       relationAll: "Todas las relaciones",
       relationTime: "Tiempo",
-      relationCategory: "Categoría",
+      relationCategory: "Área de vida",
       relationPeople: "Personas",
       relationLocation: "Lugar",
       relationObjective: "Objetivo",
@@ -1258,7 +1258,7 @@ const i18n = {
     },
     report: {
       narrative: (count, media, category, energy) =>
-        `La librería contiene ${count} experiencias con ${media} imágenes o videos guardados. La categoría dominante es ${category} y la energía promedio es ${energy}/10.`,
+        `La librería contiene ${count} experiencias con ${media} imágenes o videos guardados. El Área de vida principal es ${category} y la energía promedio es ${energy}/10.`,
       next: "El siguiente paso natural es conectar este reporte con exportación PDF, búsqueda semántica y reportes por semana, objetivo o persona.",
     },
   },
@@ -1362,7 +1362,7 @@ const i18n = {
       experiences: "Experiences",
       hours: "Logged hours",
       avgEnergy: "Average energy",
-      topCategory: "Top category",
+      topCategory: "Primary life area",
       media: "Media files",
       total: "Total experiences",
       capturedHours: "Captured hours",
@@ -1374,7 +1374,7 @@ const i18n = {
         light: "Light",
         dark: "Dark",
       },
-      categoryAll: "All categories",
+      categoryAll: "All life areas",
       categoryLabels: {
         Trabajo: "Work",
         "Viajes / Paseos": "Travel / Outings",
@@ -1669,9 +1669,9 @@ const i18n = {
       livingMemoryMoment: "Highlighted moment",
       livingMemoryLearning: "Recovered learning",
       livingMemoryContinuity: "Suggested continuity",
-      reportCategoryBreakdown: "Category breakdown",
-      reportCategoryEmpty: "No categories for the current filter.",
-      blueprintCategoryReading: "Blueprint category reading",
+      reportCategoryBreakdown: "Life-area distribution",
+      reportCategoryEmpty: "No life areas for the current filter.",
+      blueprintCategoryReading: "Blueprint life-area reading",
       blueprintCategoryFocus: "Focus",
       blueprintCategoryRisk: "Risk",
       blueprintCategoryAction: "Suggested action",
@@ -1683,7 +1683,7 @@ const i18n = {
       blueprintCorrelationEstimated: "Initial reading; more data is required for predictive precision",
       blueprintCorrelationNoData: "Not enough data to detect correlations.",
       energyTrendChart: "Energy trend",
-      categoryShareChart: "Category distribution",
+      categoryShareChart: "Life-area distribution",
       saturationChart: "Saturation and volume",
       noChartData: "Not enough data to chart.",
       hoursShort: "h",
@@ -1744,7 +1744,7 @@ const i18n = {
       ],
       relationAll: "All relationships",
       relationTime: "Time",
-      relationCategory: "Category",
+      relationCategory: "Life area",
       relationPeople: "People",
       relationLocation: "Place",
       relationObjective: "Goal",
@@ -2215,7 +2215,7 @@ i18n.fr = mergeLocale(i18n.en, {
     experiences: "Expériences",
     hours: "Heures enregistrées",
     avgEnergy: "Énergie moyenne",
-    topCategory: "Catégorie principale",
+      topCategory: "Domaine de vie principal",
     media: "Pièces multimédias",
     total: "Total expériences",
     capturedHours: "Heures capturées",
@@ -2227,7 +2227,12 @@ i18n.fr = mergeLocale(i18n.en, {
       light: "Clair",
       dark: "Sombre",
     },
-    categoryAll: "Toutes les catégories",
+      categoryAll: "Tous les domaines de vie",
+      reportCategoryBreakdown: "Répartition par domaines de vie",
+      reportCategoryEmpty: "Aucun domaine de vie pour le filtre actuel.",
+      blueprintCategoryReading: "Lecture par domaines de vie du plan directeur",
+      categoryShareChart: "Répartition par domaines de vie",
+      relationCategory: "Domaine de vie",
     categoryLabels: {
       Trabajo: "Travail",
       "Viajes / Paseos": "Voyages / sorties",
@@ -2315,7 +2320,7 @@ i18n.fr = mergeLocale(i18n.en, {
   },
   report: {
     narrative: (count, media, category, energy) =>
-      `La bibliothèque contient ${count} expériences avec ${media} images ou vidéos enregistrées. La catégorie dominante est ${category}, et l'énergie moyenne est ${energy}/10.`,
+      `La bibliothèque contient ${count} expériences avec ${media} images ou vidéos enregistrées. Le domaine de vie principal est ${category}, et l'énergie moyenne est ${energy}/10.`,
     next: "La prochaine étape naturelle est l'export PDF, la recherche sémantique et les rapports par semaine, objectif ou personne.",
   },
 });
@@ -2391,7 +2396,7 @@ i18n.pt = mergeLocale(i18n.es, {
     experiences: "Experiências",
     hours: "Horas registradas",
     avgEnergy: "Energia média",
-    topCategory: "Categoria principal",
+      topCategory: "Área de vida principal",
     media: "Anexos multimídia",
     total: "Total de experiências",
     capturedHours: "Horas capturadas",
@@ -2403,7 +2408,12 @@ i18n.pt = mergeLocale(i18n.es, {
       light: "Claro",
       dark: "Escuro",
     },
-    categoryAll: "Todas as categorias",
+      categoryAll: "Todas as áreas de vida",
+      reportCategoryBreakdown: "Distribuição por áreas de vida",
+      reportCategoryEmpty: "Sem áreas de vida para o filtro atual.",
+      blueprintCategoryReading: "Leitura por áreas de vida do plano mestre",
+      categoryShareChart: "Distribuição por áreas de vida",
+      relationCategory: "Área de vida",
     noMedia: "Sem anexos",
     energyDefinition: "Energia é uma autoavaliação de 1 a 10 sobre vitalidade, foco ou disponibilidade pessoal durante a experiência.",
     mediaDefinition: "Anexos multimídia são imagens, vídeos ou áudios salvos junto a uma experiência.",
@@ -2457,7 +2467,7 @@ i18n.pt = mergeLocale(i18n.es, {
   },
   report: {
     narrative: (count, media, category, energy) =>
-      `A biblioteca contém ${count} experiências com ${media} imagens ou vídeos salvos. A categoria dominante é ${category}, e a energia média é ${energy}/10.`,
+      `A biblioteca contém ${count} experiências com ${media} imagens ou vídeos salvos. A área de vida principal é ${category}, e a energia média é ${energy}/10.`,
     next: "O próximo passo natural é gerar PDF, busca semântica e relatórios por semana, objetivo ou pessoa.",
   },
 });
@@ -2959,7 +2969,7 @@ const manualContent = {
     {
       title: "Panel",
       items: [
-        "Muestra total de experiencias, horas registradas, energía media y categoría dominante.",
+        "Muestra total de experiencias, horas registradas, energía media y Área de vida principal.",
         "Próximos eventos muestra los eventos inmediatos de Agenda con tiempo relativo, ubicación, tipo, estado y acceso directo a Agenda.",
         "Las tarjetas de próximos eventos también señalan si un evento fue importado desde .ics, si cae en un día bloqueado o si tiene conflicto horario.",
         "Energía media es el promedio de las calificaciones de energía registradas en las experiencias visibles. La energía se captura en escala 1-10.",
@@ -22738,7 +22748,7 @@ function summarizeExperienceMapForKnowledge(experiences, graph, routes, topFacto
     factorNames,
     text:
       `El mapa reune ${experienceCount} experiencias conectadas por ${graph.links.length} relaciones. ` +
-      `${topCategory ? `La categoria con mayor presencia confiable es ${cleanObsidianMarkdownText(topCategory)}` : "No hay categoria dominante confiable"}${avgEnergy ? `, con energia media registrada ${avgEnergy}/10` : ", sin energia registrada suficiente"}. ` +
+      `${topCategory ? `El Área de vida con mayor presencia confiable es ${cleanObsidianMarkdownText(topCategory)}` : "No hay Área de vida principal confiable"}${avgEnergy ? `, con energia media registrada ${avgEnergy}/10` : ", sin energia registrada suficiente"}. ` +
       `Las rutas detectadas son ${routeNames}. Los factores que mas ordenan la lectura son ${factorNames}.`,
   };
 }
@@ -26460,9 +26470,9 @@ function buildPublicationChartPlan(context) {
         "Infographic: one visual page that connects context, findings, evidence, and recommended next step.",
       ]
     : [
-        "Tarjetas KPI: numero de experiencias, multimedia curada, categoria dominante y energia media.",
+        "Tarjetas KPI: número de experiencias, multimedia curada, Área de vida principal y energía media.",
         "Linea de tiempo: secuencia de momentos relevantes sin duplicar cada registro.",
-        "Proporcion por categoria: dona o barra apilada para mostrar el peso de cada tema.",
+        "Proporción por Área de vida: dona o barra apilada para mostrar el peso de cada tema.",
         "Matriz de evidencia: tabla que cruza experiencia, tipo de activo, interpretacion y accion.",
         "Infografia: una pagina visual que conecta contexto, hallazgos, evidencia y siguiente paso recomendado.",
       ];
@@ -39923,8 +39933,8 @@ function buildExperienceAnalysis(experiences) {
         ? (state.language !== "es" ? `Recent energy is down ${Math.abs(energyDelta)} points versus the previous period.` : `La energía reciente baja ${Math.abs(energyDelta)} puntos frente al periodo anterior.`)
         : (state.language !== "es" ? "Recent energy remains stable versus the previous period." : "La energía reciente se mantiene estable frente al periodo anterior.");
   const focus = topObjective
-    ? (state.language !== "es" ? `The most repeated goal is "${topObjective}", with ${displayCategory(topCategory)} as the dominant category.` : `El objetivo más repetido es "${topObjective}", con predominio de ${displayCategory(topCategory)}.`)
-    : (state.language !== "es" ? `The dominant category is ${displayCategory(topCategory)}; more specific goals still need to be captured.` : `La categoría dominante es ${displayCategory(topCategory)}; aún falta capturar objetivos más específicos.`);
+    ? (state.language !== "es" ? `The most repeated goal is "${topObjective}", with ${displayCategory(topCategory)} as the primary life area.` : `El objetivo más repetido es "${topObjective}", con predominio del Área de vida ${displayCategory(topCategory)}.`)
+    : (state.language !== "es" ? `The primary life area is ${displayCategory(topCategory)}; more specific goals still need to be captured.` : `El Área de vida principal es ${displayCategory(topCategory)}; aún falta capturar objetivos más específicos.`);
   const risk = saturated.length || lowEnergy.length
     ? (state.language !== "es" ? `${saturated.length} saturated experiences and ${lowEnergy.length} low-energy experiences need follow-up.` : `${saturated.length} experiencias saturadas y ${lowEnergy.length} con energía baja requieren seguimiento.`)
     : (state.language !== "es" ? "There are no strong saturation or low-energy signals in the filtered set." : "No hay señales fuertes de saturación o energía baja en el conjunto filtrado.");

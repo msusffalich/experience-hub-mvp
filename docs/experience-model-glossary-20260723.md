@@ -32,11 +32,13 @@ experiencia.
 | Adopción | Acción de vincular evidencia intencional a una experiencia o evento. | Asociar 12 fotos a la tarde en la playa. | Borrar o duplicar el archivo. |
 | Curación | Reorganización posterior de la historia: mover/soltar evidencia, unir/dividir, promover/degradar. | Unir dos registros del mismo concierto. | Captura rápida móvil. |
 
-## Clasificación de categorías
+## Áreas de vida
 
-Las etiquetas visibles no son todas del mismo tipo:
+El único término visible para la clasificación analítica es **Área de vida**. El campo técnico histórico puede llamarse `category` en la base de datos, pero no debe aparecer como "categoría", "eje" o "dominio" en la interfaz.
 
-- **Actividades/experiencias:** Trabajo, Paseo, Aprendizaje, Social,
+No todas las etiquetas posibles son Áreas de vida:
+
+- **Áreas de vida:** Trabajo, Paseo, Aprendizaje, Social,
   Entretenimiento, Creatividad, Espiritualidad y Salud cuando describe un
   evento vivido.
 - **Estado/dimensión:** Bienestar, energía, ánimo, recuperación. Colorean una
@@ -44,6 +46,19 @@ Las etiquetas visibles no son todas del mismo tipo:
 - **Lugar/atributo:** Hogar, oficina, playa, ciudad. Describen dónde ocurrió.
 - **Caso condicional:** Compras solo es experiencia cuando hubo decisión,
   búsqueda o vivencia que merece relato. Una compra rutinaria es un dato.
+
+### Regla de implementación
+
+| Capa | Término que se muestra | Término técnico permitido | Regla |
+| --- | --- | --- | --- |
+| Captura, Biblioteca y filtros | Área de vida | `category` | La persona selecciona un Área de vida solo para una historia. |
+| Reportes y Hallazgos | Área de vida | `category` | Agrupan tendencias y cobertura sin clasificar evidencia suelta por inferencia. |
+| Publicaciones y Obsidian | Área de vida cuando aporta contexto | `category` | La historia y su narrativa conservan prioridad sobre la agrupación analítica. |
+| Estado, lugar y contexto | Estado, lugar o contexto | campos específicos | No se presentan como Áreas de vida ni crean una experiencia por sí solos. |
+
+Los **ejes humanos** de Hallazgos siguen siendo una lente de lectura (por
+ejemplo, salud o relaciones); no son otro nombre para Área de vida y nunca
+reemplazan ese selector.
 
 ## Consecuencias operativas
 

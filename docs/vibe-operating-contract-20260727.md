@@ -95,15 +95,15 @@ Los tres usan el mismo selector:
 
 Filtros opcionales:
 
-- categoría o actividad;
+- Área de vida;
 - ubicación;
 - tipo de activo;
 - texto;
 - historias o activos específicos.
 
 El contexto compatible se incluye automáticamente por persona y período.
-Categoría no clasifica evidencia suelta por inferencia. Cuando se usa, incluye
-historias de esa categoría y sus activos vinculados; la evidencia no clasificada
+El área de vida no clasifica evidencia suelta por inferencia. Cuando se usa, incluye
+historias de esa área de vida y sus activos vinculados; la evidencia no clasificada
 se reporta como excluida.
 
 Reportes y Hallazgos ejecutan el alcance confirmado. Publicaciones muestra además
@@ -126,7 +126,7 @@ El selector de alcance es común, pero la función de cada salida es distinta:
 Una publicación con base `todo` combina historias confirmadas y evidencia del
 alcance. Con base `historias`, parte de las narrativas y sus activos vinculados.
 Con base `evidencia`, genera un dossier cronológico sin inventar una historia,
-una categoría ni hechos ausentes.
+un área de vida ni hechos ausentes.
 
 La diferencia es de tratamiento, no de fuente: los tres productos consultan el
 mismo registro, pero solo Publicaciones realiza composición narrativa editorial.
