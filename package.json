@@ -21,6 +21,7 @@
     "verify:obsidian": "node scripts/verify-obsidian-export-contract.mjs",
     "simulate:vibeapp": "node scripts/simulate-vibeapp-sync.mjs",
     "verify:processing": "node scripts/verify-asset-processing-job.mjs",
+    "verify:evidence:v2": "node scripts/verify-evidence-pipeline-v2.mjs && node scripts/verify-evidence-pipeline-v2-supabase-adapter.mjs && node scripts/verify-evidence-http-contract-v2.mjs && node scripts/verify-evidence-pipeline-v2-contract.mjs && node scripts/verify-evidence-pipeline-v2-http.mjs",
     "verify:flows": "node scripts/verify-flow-automation.mjs",
     "verify:integrations": "node scripts/verify-integration-contract.mjs",
     "verify:oura:personal-json": "node scripts/verify-oura-personal-json.mjs",
@@ -35,7 +36,7 @@
     "package:vibeapp:ios": "node scripts/package-vibeapp-ios-handoff.mjs",
     "start": "node server.js",
     "dev": "node server.js",
-    "check": "node --check app.js && node --check server.js && node scripts/smoke-check.mjs && npm run audit:runtime && npm run verify:obsidian",
+    "check": "node --check app.js && node --check server.js && node scripts/smoke-check.mjs && npm run audit:runtime && npm run verify:obsidian && npm run verify:evidence:v2",
     "test": "npm run check"
   }
 }

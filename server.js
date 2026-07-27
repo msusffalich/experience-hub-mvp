@@ -8,6 +8,9 @@ import { createCipheriv, createDecipheriv, createHash, randomBytes, randomUUID }
 import { execFile, spawn } from "node:child_process";
 import { promisify } from "node:util";
 import { tmpdir } from "node:os";
+import { createEvidencePipelineV2, EvidencePipelineError } from "./lib/evidence-pipeline-v2.mjs";
+import { createSupabaseEvidenceV2Adapters } from "./lib/evidence-pipeline-v2-supabase.mjs";
+import { normalizeExperienceSubmissionV2 } from "./lib/evidence-http-contract-v2.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 await loadDotEnv();
@@ -27,6 +30,14 @@ const SUPABASE_URL = process.env.SUPABASE_URL?.replace(/\/$/, "");
 const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const SUPABASE_STORAGE_BUCKET = process.env.SUPABASE_STORAGE_BUCKET || "experience-media";
+const EVIDENCE_PIPELINE_V2_BUCKET = process.env.EVIDENCE_PIPELINE_V2_BUCKET || "experience-media-v2";
+const EVIDENCE_PIPELINE_MODE = String(process.env.EVIDENCE_PIPELINE_MODE || "off").trim().toLowerCase();
+const EVIDENCE_PIPELINE_CANARY_USERS = new Set(
+  String(process.env.EVIDENCE_PIPELINE_CANARY_USERS || "")
+    .split(",")
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean),
+);
 const ASSET_UPLOAD_ATTEMPTS_TABLE = "asset_upload_attempts";
 const MAX_JSON_BODY_LENGTH = Number(process.env.MAX_JSON_BODY_LENGTH || 40_000_000);
 const MAX_MEDIA_BODY_LENGTH = Number(process.env.MAX_MEDIA_BODY_LENGTH || 90_000_000);
@@ -616,6 +627,35 @@ async function handleApi(req, res, url) {
       sendJson(res, 201, await upsertAgendaEvent(agendaEvent, user));
       return;
     }
+  }
+
+  if (url.pathname === "/api/v2/status" && req.method === "GET") {
+    const user = await getRequestUser(req);
+    sendJson(res, 200, await getEvidencePipelineV2Status(user));
+    return;
+  }
+
+  if (url.pathname === "/api/v2/evidence" && req.method === "POST") {
+    const user = await getRequestUser(req);
+    assertEvidencePipelineV2Access(user);
+    sendJson(res, 201, await receiveEvidenceV2(req, user));
+    return;
+  }
+
+  if (url.pathname === "/api/v2/experiences" && req.method === "POST") {
+    const user = await getRequestUser(req);
+    assertEvidencePipelineV2Access(user);
+    const body = await readJson(req);
+    sendJson(res, 201, await saveExperienceV2(body, user));
+    return;
+  }
+
+  if (url.pathname.startsWith("/api/v2/operations/") && req.method === "GET") {
+    const user = await getRequestUser(req);
+    assertEvidencePipelineV2Access(user);
+    const operationId = decodeURIComponent(url.pathname.replace("/api/v2/operations/", ""));
+    sendJson(res, 200, await getEvidenceOperationV2(operationId, user));
+    return;
   }
 
   if (url.pathname === "/api/media" && req.method === "POST") {
@@ -6685,6 +6725,281 @@ function classifyUploadError(error) {
   return { code: "storage_upload_failed", message: detail || "Storage no completó la subida del archivo." };
 }
 
+function assertEvidencePipelineV2Access(user = {}) {
+  if (!["canary", "on"].includes(EVIDENCE_PIPELINE_MODE)) {
+    throw new HttpError(404, "evidence_pipeline_v2_disabled");
+  }
+  if (EVIDENCE_PIPELINE_MODE === "canary") {
+    const candidates = [user.id, user.email].map((value) => String(value || "").trim().toLowerCase()).filter(Boolean);
+    if (!candidates.some((value) => EVIDENCE_PIPELINE_CANARY_USERS.has(value))) {
+      throw new HttpError(403, "evidence_pipeline_v2_canary_only");
+    }
+  }
+}
+
+async function getEvidencePipelineV2Status(user = {}) {
+  const userCandidates = [user.id, user.email]
+    .map((value) => String(value || "").trim().toLowerCase())
+    .filter(Boolean);
+  const enabledForUser =
+    EVIDENCE_PIPELINE_MODE === "on" ||
+    (
+      EVIDENCE_PIPELINE_MODE === "canary" &&
+      userCandidates.some((value) => EVIDENCE_PIPELINE_CANARY_USERS.has(value))
+    );
+  const checks = {
+    persistence: {
+      ok: activePersistence() === "supabase",
+      detail: activePersistence(),
+    },
+    operationLedger: { ok: false, detail: "not_checked" },
+    assetSchema: { ok: false, detail: "not_checked" },
+    transactionFunction: { ok: false, detail: "not_checked" },
+    storageBucket: { ok: false, detail: "not_checked" },
+  };
+
+  if (activePersistence() !== "supabase" || !isSupabaseConfigured()) {
+    return {
+      ok: true,
+      ready: false,
+      mode: EVIDENCE_PIPELINE_MODE,
+      enabledForUser,
+      checks,
+    };
+  }
+
+  const workspace = await getWorkspaceContext(user);
+  if (!workspace?.id) {
+    checks.persistence = { ok: false, detail: "workspace_unavailable" };
+    return {
+      ok: true,
+      ready: false,
+      mode: EVIDENCE_PIPELINE_MODE,
+      enabledForUser,
+      checks,
+    };
+  }
+
+  checks.operationLedger = await runEvidenceV2ReadinessCheck(async () => {
+    await supabaseRest("evidence_operations_v2", {
+      accessToken: user.accessToken,
+      searchParams: {
+        select: "operation_id,state,checksum,storage_path",
+        workspace_id: `eq.${workspace.id}`,
+        limit: "1",
+      },
+    });
+    return "available";
+  });
+
+  checks.assetSchema = await runEvidenceV2ReadinessCheck(async () => {
+    await supabaseRest("assets", {
+      accessToken: user.accessToken,
+      searchParams: {
+        select: "asset_id,adoption_status,adopted_at,experience_id,event_id,storage_bucket,storage_path",
+        workspace_id: `eq.${workspace.id}`,
+        limit: "1",
+      },
+    });
+    return "available";
+  });
+
+  checks.transactionFunction = await runEvidenceV2ReadinessCheck(async () => {
+    try {
+      await supabaseRpc("commit_experience_graph_v2", {
+        p_experience_id: `readiness-${randomUUID()}`,
+        p_workspace_id: workspace.id,
+        p_owner_user_id: user.id,
+        p_events: [],
+        p_asset_links: [],
+      }, user.accessToken);
+    } catch (error) {
+      if (String(error?.message || error).includes("experience_v2_parent_not_found")) {
+        return "available";
+      }
+      throw error;
+    }
+    throw new Error("evidence_v2_readiness_probe_unexpected_success");
+  });
+
+  checks.storageBucket = await runEvidenceV2ReadinessCheck(async () => {
+    const response = await fetch(
+      `${SUPABASE_URL}/storage/v1/bucket/${encodeURIComponent(EVIDENCE_PIPELINE_V2_BUCKET)}`,
+      { headers: supabaseServerKeyHeaders() },
+    );
+    const text = await response.text();
+    if (!response.ok) {
+      throw new Error(`supabase_storage_bucket_${response.status}: ${text}`);
+    }
+    const bucket = text ? JSON.parse(text) : {};
+    if (bucket.public === true) throw new Error("evidence_v2_bucket_must_be_private");
+    return "available_private";
+  });
+
+  return {
+    ok: true,
+    ready: Object.values(checks).every((check) => check.ok),
+    mode: EVIDENCE_PIPELINE_MODE,
+    enabledForUser,
+    bucket: EVIDENCE_PIPELINE_V2_BUCKET,
+    checks,
+  };
+}
+
+async function runEvidenceV2ReadinessCheck(check) {
+  try {
+    return { ok: true, detail: await check() };
+  } catch (error) {
+    return {
+      ok: false,
+      detail: sanitizeDiagnosticError(error).slice(0, 500),
+    };
+  }
+}
+
+async function createEvidencePipelineForUserV2(user) {
+  if (activePersistence() !== "supabase") {
+    throw new HttpError(503, "evidence_pipeline_v2_requires_supabase");
+  }
+  const workspace = await getWorkspaceContext(user);
+  if (!workspace?.id) throw new HttpError(503, "evidence_pipeline_v2_workspace_unavailable");
+  const adapters = createSupabaseEvidenceV2Adapters({
+    user,
+    workspaceId: workspace.id,
+    bucket: EVIDENCE_PIPELINE_V2_BUCKET,
+    rest: supabaseRest,
+    rpc: supabaseRpc,
+    putObject: uploadSupabaseObjectToBucket,
+    objectExists: supabaseObjectExists,
+    mapExperienceRow: (experience) => toExperienceRow(experience, user),
+    mapEventRows: (events, experience, workspaceId) =>
+      normalizeExperienceEvents(events || [], experience.id)
+        .map((event, index) => toExperienceEventRow(event, experience, workspaceId, index)),
+  });
+  return {
+    pipeline: createEvidencePipelineV2(adapters),
+    adapters,
+    workspaceId: workspace.id,
+  };
+}
+
+async function receiveEvidenceV2(req, user) {
+  const contentType = req.headers["content-type"] || "";
+  let media;
+  let bytes;
+  if (contentType.includes("multipart/form-data")) {
+    const upload = await readMultipartMedia(req, contentType);
+    media = normalizeMedia(upload.media);
+    bytes = upload.bytes;
+  } else if (contentType.includes("application/json")) {
+    const body = await readJson(req);
+    const narrativeText = String(body.text || body.narrativeText || "").trim();
+    if (!narrativeText) throw new HttpError(400, "evidence_pipeline_v2_text_required");
+    media = normalizeMedia({
+      ...body,
+      id: body.assetId || body.id,
+      name: body.name || "nota.txt",
+      kind: "text",
+      type: "text/plain; charset=utf-8",
+      capturedAt: body.capturedAt,
+      sourceType: body.sourceType || "vibeapp-native-text",
+      metadata: {
+        ...(body.metadata || {}),
+        idempotencyKey: body.idempotencyKey || body.metadata?.idempotencyKey,
+        requestedExperienceId: body.requestedExperienceId || body.metadata?.requestedExperienceId,
+        requestedEventId: body.requestedEventId || body.metadata?.requestedEventId,
+      },
+    });
+    bytes = Buffer.from(narrativeText, "utf8");
+  } else {
+    throw new HttpError(415, "evidence_pipeline_v2_content_type_unsupported");
+  }
+  const { pipeline, workspaceId } = await createEvidencePipelineForUserV2(user);
+  try {
+    return await pipeline.receiveEvidence({
+      assetId: media.id,
+      ownerUserId: user.id,
+      workspaceId,
+      participantId: media.participantId || "",
+      idempotencyKey:
+        String(req.headers["idempotency-key"] || "").trim() ||
+        String(media.metadata?.idempotencyKey || media.sourceId || media.id).trim(),
+      name: media.name,
+      mimeType: media.type,
+      kind: media.kind || inferServerMediaKind(media),
+      bytes,
+      capturedAt: media.capturedAt,
+      sourceType: media.sourceType || "vibeapp-native",
+      sourceDevice: media.sourceDevice || "",
+      requestedExperienceId:
+        media.requestedExperienceId ||
+        media.experienceId ||
+        media.metadata?.requestedExperienceId ||
+        media.metadata?.pendingExperienceId ||
+        "",
+      requestedEventId:
+        media.requestedEventId ||
+        media.eventId ||
+        media.metadata?.requestedEventId ||
+        media.metadata?.pendingEventId ||
+        "",
+    });
+  } catch (error) {
+    throw evidenceV2HttpError(error);
+  }
+}
+
+async function saveExperienceV2(body = {}, user) {
+  const { experience, events, assetLinks } = normalizeExperienceSubmissionV2(body, normalizeExperience);
+  const { pipeline } = await createEvidencePipelineForUserV2(user);
+  try {
+    return await pipeline.saveExperience({
+      ownerUserId: user.id,
+      experience,
+      events,
+      assetLinks,
+    });
+  } catch (error) {
+    throw evidenceV2HttpError(error);
+  }
+}
+
+async function getEvidenceOperationV2(operationId, user) {
+  const workspace = await getWorkspaceContext(user);
+  if (!workspace?.id) throw new HttpError(503, "evidence_pipeline_v2_workspace_unavailable");
+  const rows = await supabaseRest("evidence_operations_v2", {
+    searchParams: {
+      operation_id: `eq.${operationId}`,
+      owner_user_id: `eq.${user.id}`,
+      workspace_id: `eq.${workspace.id}`,
+      limit: "1",
+    },
+    accessToken: user.accessToken,
+  });
+  if (!rows[0]) throw new HttpError(404, "evidence_operation_v2_not_found");
+  return {
+    ok: true,
+    operationId: rows[0].operation_id,
+    assetId: rows[0].asset_id,
+    state: rows[0].state,
+    retryable: rows[0].state === "failed_retryable",
+    errorCode: rows[0].last_error_code || "",
+    completedAt: rows[0].completed_at || "",
+    updatedAt: rows[0].updated_at,
+  };
+}
+
+function evidenceV2HttpError(error) {
+  if (!(error instanceof EvidencePipelineError)) return error;
+  const statusCode =
+    error.code === "evidence_idempotency_conflict"
+      ? 409
+      : error.retryable
+        ? 503
+        : 400;
+  return new HttpError(statusCode, error.code, error.detail);
+}
+
 function normalizeMedia(media) {
   const metadata = isPlainObject(media.metadata) ? media.metadata : {};
   return {
@@ -6711,6 +7026,8 @@ function normalizeMedia(media) {
     metadata,
     experienceId: media.experienceId || media.experience_id || media.linkedExperienceId || metadata.linkedExperienceId || metadata.experienceId || "",
     eventId: media.eventId || media.event_id || media.linkedEventId || metadata.linkedEventId || metadata.eventId || "",
+    requestedExperienceId: media.requestedExperienceId || media.pendingExperienceId || metadata.requestedExperienceId || metadata.pendingExperienceId || "",
+    requestedEventId: media.requestedEventId || media.pendingEventId || metadata.requestedEventId || metadata.pendingEventId || "",
     participantId: media.participantId || media.pilotParticipantId || metadata.participantId || "",
     pilotParticipantId: media.pilotParticipantId || media.participantId || metadata.participantId || "",
     sourceType: media.sourceType || metadata.sourceType || media.source || metadata.source || "",
@@ -6746,10 +7063,52 @@ async function uploadSupabaseObject(objectPath, contentType, bytes) {
     },
     body: bytes,
   });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`supabase_storage_${response.status}: ${text}`);
+  }
+}
+
+async function uploadSupabaseObjectToBucket(bucket, objectPath, bytes, metadata = {}) {
+  const cleanBucket = encodeURIComponent(String(bucket || ""));
+  const cleanPath = encodeStorageObjectPath(objectPath);
+  const url = `${SUPABASE_URL}/storage/v1/object/${cleanBucket}/${cleanPath}`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      ...supabaseServerKeyHeaders(),
+      "Content-Type": metadata.contentType || "application/octet-stream",
+      "x-upsert": "true",
+    },
+    body: bytes,
+  });
   const text = await response.text();
   if (!response.ok) {
     throw new Error(`supabase_storage_${response.status}: ${text}`);
   }
+}
+
+async function supabaseObjectExists(bucket, objectPath) {
+  const cleanBucket = encodeURIComponent(String(bucket || ""));
+  const cleanPath = encodeStorageObjectPath(objectPath);
+  const response = await fetch(`${SUPABASE_URL}/storage/v1/object/info/${cleanBucket}/${cleanPath}`, {
+    method: "GET",
+    headers: supabaseServerKeyHeaders(),
+  });
+  if (response.status === 404) return false;
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`supabase_storage_info_${response.status}: ${text}`);
+  }
+  return true;
+}
+
+function encodeStorageObjectPath(objectPath) {
+  return String(objectPath || "")
+    .split("/")
+    .filter(Boolean)
+    .map(encodeURIComponent)
+    .join("/");
 }
 
 async function createSignedObjectUrl(objectPath) {
