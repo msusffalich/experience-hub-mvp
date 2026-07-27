@@ -1,4 +1,4 @@
-const APP_VERSION = "20260727-life-area-manual-715";
+const APP_VERSION = "20260727-output-workbench-716";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -867,7 +867,7 @@ const i18n = {
         "¿Qué patrones se repiten cuando me siento saturado?",
         "¿Qué personas o lugares aparecen en mis mejores experiencias?",
         "¿Qué aprendizajes recientes debería retomar?",
-        "¿Qué categoría necesita más balance esta semana?",
+        "¿Qué área de vida necesita más balance esta semana?",
       ],
       experienceMapScope: "Relaciones vivas",
       experienceMapQuestions: "Preguntas al mapa",
@@ -1740,7 +1740,7 @@ const i18n = {
         "What patterns repeat when I feel overloaded?",
         "Which people or places appear in my best experiences?",
         "Which recent learnings should I revisit?",
-        "Which category needs more balance this week?",
+        "Which life area needs more balance this week?",
       ],
       relationAll: "All relationships",
       relationTime: "Time",
@@ -8063,6 +8063,12 @@ function applyLanguage() {
   if (document.getElementById("printReportButton")) document.getElementById("printReportButton").textContent = t("buttons.printReport");
   if (document.getElementById("downloadPdfButton")) document.getElementById("downloadPdfButton").textContent = t("buttons.downloadPdf");
   document.getElementById("askButton").textContent = t("buttons.ask");
+  document.getElementById("questionInput").placeholder = languageText(
+    "Pregunta sobre tus experiencias...",
+    "Ask about your experiences...",
+    "Posez une question sur vos expériences...",
+    "Pergunte sobre suas experiências...",
+  );
   document.getElementById("experienceMapAskButton").textContent = t("buttons.ask");
   document.getElementById("experienceMapExportButton").textContent = t("buttons.exportObsidian");
   document.getElementById("experience-map-heading").textContent = t("nav.experienceMap");
@@ -8187,8 +8193,61 @@ function applyLanguage() {
   document.getElementById("reportExportHelp").textContent = state.language !== "es" ? "JSON, CSV, HTML, and acceptance evidence" : "JSON, CSV, HTML y evidencia de aceptación";
   document.getElementById("publicationMoreTitle").textContent = state.language !== "es" ? "Technical options" : "Opciones técnicas";
   document.getElementById("publicationMoreHelp").textContent = state.language !== "es" ? "HTML, Markdown, and copies" : "HTML, Markdown y copias";
-  document.getElementById("reportParticipantLabel").textContent = state.language !== "es" ? "Group/person in this report" : "Grupo/persona de este reporte";
-  document.getElementById("insightsParticipantLabel").textContent = state.language !== "es" ? "Group / person" : "Grupo / persona";
+  document.getElementById("reportParticipantLabel").textContent = languageText("Grupo / persona", "Group / person", "Groupe / personne", "Grupo / pessoa");
+  document.getElementById("insightsParticipantLabel").textContent = languageText("Grupo / persona", "Group / person", "Groupe / personne", "Grupo / pessoa");
+  document.getElementById("reportBasisLabel").textContent = languageText("Tipo de reporte", "Report type", "Type de rapport", "Tipo de relatório");
+  document.getElementById("reportPeriodLabel").textContent = languageText("Período", "Period", "Période", "Período");
+  document.getElementById("reportAdvancedTitle").textContent = languageText("Acotar el reporte", "Refine the report", "Affiner le rapport", "Refinar o relatório");
+  document.getElementById("reportAdvancedHelp").textContent = languageText(
+    "Área de vida, origen, fechas o una experiencia específica",
+    "Life area, source, dates, or one specific experience",
+    "Domaine de vie, source, dates ou une expérience précise",
+    "Área de vida, origem, datas ou uma experiência específica",
+  );
+  document.getElementById("reportScopeFilterLabel").textContent = languageText("Tipo de alcance", "Scope type", "Type de portée", "Tipo de escopo");
+  document.getElementById("reportCategoryLabel").textContent = languageText("Área de vida", "Life area", "Domaine de vie", "Área de vida");
+  document.getElementById("reportSourceLabel").textContent = languageText("Origen / conector", "Source / connector", "Source / connecteur", "Origem / conector");
+  document.getElementById("reportDateFromLabel").textContent = languageText("Desde", "From", "Du", "Desde");
+  document.getElementById("reportDateToLabel").textContent = languageText("Hasta", "To", "Au", "Até");
+  document.getElementById("reportExperienceLabel").textContent = languageText("Experiencia específica", "Specific experience", "Expérience précise", "Experiência específica");
+  document.getElementById("insightsBasisLabel").textContent = languageText("Tipo de lectura", "Reading type", "Type de lecture", "Tipo de leitura");
+  document.getElementById("insightsAdvancedTitle").textContent = languageText("Acotar los hallazgos", "Refine findings", "Affiner les enseignements", "Refinar as descobertas");
+  document.getElementById("insightsAdvancedHelp").textContent = languageText(
+    "Área de vida, origen o rango de fechas",
+    "Life area, source, or date range",
+    "Domaine de vie, source ou plage de dates",
+    "Área de vida, origem ou intervalo de datas",
+  );
+  document.getElementById("insightsCategoryLabel").textContent = languageText("Área de vida", "Life area", "Domaine de vie", "Área de vida");
+  document.getElementById("insightsSourceLabel").textContent = languageText("Origen / conector", "Source / connector", "Source / connecteur", "Origem / conector");
+  document.getElementById("insightsDateFromLabel").textContent = languageText("Desde", "From", "Du", "Desde");
+  document.getElementById("insightsDateToLabel").textContent = languageText("Hasta", "To", "Au", "Até");
+  document.getElementById("generateReportButton").textContent = languageText("Generar reporte", "Generate report", "Générer le rapport", "Gerar relatório");
+  document.getElementById("downloadEditedReportPdfButton").textContent = languageText("Descargar PDF", "Download PDF", "Télécharger le PDF", "Baixar PDF");
+  document.getElementById("resetReportScopeButton").textContent = languageText("Restaurar vista", "Reset view", "Réinitialiser la vue", "Restaurar visão");
+  document.getElementById("resetReportScopeInlineButton").textContent = languageText("Limpiar filtros", "Clear filters", "Effacer les filtres", "Limpar filtros");
+  document.getElementById("clearInsightsScopeButton").textContent = languageText("Limpiar filtros", "Clear filters", "Effacer les filtres", "Limpar filtros");
+  const reportPeriodOptions = [
+    languageText("Todo el historial", "All history", "Tout l’historique", "Todo o histórico"),
+    languageText("Últimos 7 días", "Last 7 days", "7 derniers jours", "Últimos 7 dias"),
+    languageText("Últimos 30 días", "Last 30 days", "30 derniers jours", "Últimos 30 dias"),
+    languageText("Últimos 90 días", "Last 90 days", "90 derniers jours", "Últimos 90 dias"),
+  ];
+  Array.from(document.getElementById("reportPeriodFilter").options).forEach((option, index) => {
+    option.textContent = reportPeriodOptions[index] || option.textContent;
+  });
+  const reportScopeOptions = [
+    languageText("Todas las experiencias", "All experiences", "Toutes les expériences", "Todas as experiências"),
+    languageText("Rango rápido", "Quick range", "Plage rapide", "Intervalo rápido"),
+    languageText("Área de vida / persona / origen / objetivo", "Life area / person / source / goal", "Domaine de vie / personne / source / objectif", "Área de vida / pessoa / origem / objetivo"),
+    languageText("Una experiencia específica", "One specific experience", "Une expérience précise", "Uma experiência específica"),
+  ];
+  Array.from(document.getElementById("reportScopeFilter").options).forEach((option, index) => {
+    option.textContent = reportScopeOptions[index] || option.textContent;
+  });
+  document.getElementById("reportPeopleFilter").placeholder = languageText("Persona mencionada", "Mentioned person", "Personne mentionnée", "Pessoa mencionada");
+  document.getElementById("reportObjectiveFilter").placeholder = languageText("Objetivo", "Goal", "Objectif", "Objetivo");
+  document.getElementById("reportEventFilter").placeholder = languageText("Evento interno", "Internal event", "Événement interne", "Evento interno");
   document.getElementById("publicationParticipantLabel").textContent = state.language !== "es" ? "Source group / person" : "Grupo / persona fuente";
   document.getElementById("generatePublicationButton").textContent = state.language !== "es" ? "Generate draft" : "Generar borrador";
   document.getElementById("previewPublicationHtmlButton").textContent = t("buttons.previewPublication");
@@ -9080,20 +9139,12 @@ function handleReportScopeAction(event) {
 }
 
 function getReportScopeLabel(scope = state.reportFilters.scope) {
-  const labels =
-    state.language !== "es"
-       ? {
-          all: "all experiences",
-          period: "quick range",
-          filters: "category, person, origin, or objective filters",
-          single: "one specific experience",
-        }
-      : {
-          all: "todas las experiencias",
-          period: "rango rápido",
-          filters: "categoría, persona, origen u objetivo",
-          single: "una experiencia específica",
-        };
+  const labels = {
+    all: languageText("todas las experiencias", "all experiences", "toutes les expériences", "todas as experiências"),
+    period: languageText("rango rápido", "quick range", "plage rapide", "intervalo rápido"),
+    filters: languageText("área de vida, persona, origen u objetivo", "life area, person, source, or goal", "domaine de vie, personne, source ou objectif", "área de vida, pessoa, origem ou objetivo"),
+    single: languageText("una experiencia específica", "one specific experience", "une expérience précise", "uma experiência específica"),
+  };
   return labels[scope] || labels.all;
 }
 
@@ -10550,17 +10601,17 @@ function getOutputBasisOptions() {
 
 function getReportBasisOptions() {
   return [
-    ["all", languageText("Resumen por áreas de vida con evidencia", "Life-area summary with evidence", "Synthese par domaines de vie avec preuves", "Resumo por areas de vida com evidencias")],
-    ["stories", languageText("Cobertura por áreas de vida", "Life-area coverage", "Couverture par domaines de vie", "Cobertura por areas de vida")],
-    ["evidence", languageText("Inventario de evidencia y mediciones", "Evidence and measurement inventory", "Inventaire des preuves et mesures", "Inventario de evidencias e medicoes")],
+    ["all", languageText("Áreas de vida + evidencia", "Life areas + evidence", "Domaines de vie + preuves", "Áreas de vida + evidências")],
+    ["stories", languageText("Solo áreas de vida", "Life areas only", "Domaines de vie uniquement", "Somente áreas de vida")],
+    ["evidence", languageText("Solo evidencia y mediciones", "Evidence and measurements only", "Preuves et mesures uniquement", "Somente evidências e medições")],
   ];
 }
 
 function getInsightsBasisOptions() {
   return [
-    ["all", languageText("Lectura de Áreas de vida con evidencia", "Life-area reading with evidence", "Lecture des domaines de vie avec preuves", "Leitura de áreas de vida com evidências")],
-    ["stories", languageText("Lectura de Áreas de vida", "Life-area reading", "Lecture des domaines de vie", "Leitura de áreas de vida")],
-    ["evidence", languageText("Señales y mediciones del período", "Signals and measurements in this period", "Signaux et mesures de la période", "Sinais e medições do período")],
+    ["all", languageText("Áreas de vida + evidencia", "Life areas + evidence", "Domaines de vie + preuves", "Áreas de vida + evidências")],
+    ["stories", languageText("Solo áreas de vida", "Life areas only", "Domaines de vie uniquement", "Somente áreas de vida")],
+    ["evidence", languageText("Solo señales y mediciones", "Signals and measurements only", "Signaux et mesures uniquement", "Somente sinais e medições")],
   ];
 }
 
@@ -10685,6 +10736,68 @@ function buildScopedEvidenceSummary(scope = {}) {
 
 function getReportPresentationMode(scope = {}) {
   return scope.basis === "evidence" ? "evidence_inventory" : "life_area_coverage";
+}
+
+function renderOutputModeGuide(targetId, scope = {}, outputType = "report") {
+  const target = document.getElementById(targetId);
+  if (!target) return;
+  const stories = Array.isArray(scope.stories) ? scope.stories.length : 0;
+  const evidence = Array.isArray(scope.evidence) ? scope.evidence.length : 0;
+  const context = Array.isArray(scope.context) ? scope.context.length : 0;
+  const basis = scope.basis || "all";
+  const isReport = outputType === "report";
+  const copy = isReport
+    ? basis === "evidence"
+      ? {
+          title: languageText("Inventario factual", "Factual inventory", "Inventaire factuel", "Inventario factual"),
+          question: languageText("¿Qué datos y archivos existen en el período?", "What data and files exist in the period?", "Quelles données et quels fichiers existent sur la période ?", "Quais dados e arquivos existem no período?"),
+          result: languageText("Muestra mediciones y evidencia observada. No atribuye patrones a áreas de vida sin historias.", "Shows measurements and observed evidence. It does not assign life-area patterns without stories.", "Affiche les mesures et les preuves observées. Il n’attribue pas de tendances aux domaines de vie sans histoires.", "Mostra medições e evidências observadas. Não atribui padrões a áreas de vida sem histórias."),
+        }
+      : basis === "stories"
+        ? {
+            title: languageText("Cobertura por áreas de vida", "Life-area coverage", "Couverture par domaines de vie", "Cobertura por áreas de vida"),
+            question: languageText("¿Dónde se concentran las historias registradas?", "Where are recorded stories concentrated?", "Où se concentrent les histoires enregistrées ?", "Onde se concentram as histórias registradas?"),
+            result: languageText("Compara presencia, duración y balance entre áreas de vida usando las historias.", "Compares presence, duration, and balance across life areas using stories.", "Compare la présence, la durée et l’équilibre entre les domaines de vie à partir des histoires.", "Compara presença, duração e equilíbrio entre áreas de vida usando as histórias."),
+          }
+        : {
+            title: languageText("Balance con respaldo", "Evidence-backed balance", "Équilibre étayé", "Equilíbrio com evidências"),
+            question: languageText("¿Cómo se distribuye la vida registrada y qué la respalda?", "How is recorded life distributed and what supports it?", "Comment la vie enregistrée se répartit-elle et qu’est-ce qui l’étaye ?", "Como a vida registrada se distribui e o que a sustenta?"),
+            result: languageText("Resume las áreas de vida y vincula la evidencia y el contexto disponibles.", "Summarizes life areas and links available evidence and context.", "Résume les domaines de vie et relie les preuves et le contexte disponibles.", "Resume as áreas de vida e vincula as evidências e o contexto disponíveis."),
+          }
+    : basis === "evidence"
+      ? {
+          title: languageText("Señales observadas", "Observed signals", "Signaux observés", "Sinais observados"),
+          question: languageText("¿Qué muestran las mediciones y archivos del período?", "What do the period’s measurements and files show?", "Que montrent les mesures et les fichiers de la période ?", "O que mostram as medições e os arquivos do período?"),
+          result: languageText("Organiza hechos medidos. No produce recomendaciones personales sin historias.", "Organizes measured facts. It does not produce personal recommendations without stories.", "Organise les faits mesurés. Ne produit pas de recommandations personnelles sans histoires.", "Organiza fatos medidos. Não produz recomendações pessoais sem histórias."),
+        }
+      : basis === "stories"
+        ? {
+            title: languageText("Patrones de vida", "Life patterns", "Tendances de vie", "Padrões de vida"),
+            question: languageText("¿Qué patrones aparecen en las áreas de vida?", "What patterns appear across life areas?", "Quelles tendances apparaissent dans les domaines de vie ?", "Quais padrões aparecem nas áreas de vida?"),
+            result: languageText("Interpreta las historias por áreas de vida y luego las observa mediante ejes humanos.", "Interprets stories by life area and then views them through human themes.", "Interprète les histoires par domaine de vie, puis les observe à travers des axes humains.", "Interpreta as histórias por área de vida e depois as observa por eixos humanos."),
+          }
+        : {
+            title: languageText("Patrones con evidencia", "Evidence-backed patterns", "Tendances étayées", "Padrões com evidências"),
+            question: languageText("¿Qué patrones de vida están respaldados por datos?", "Which life patterns are supported by data?", "Quelles tendances de vie sont étayées par des données ?", "Quais padrões de vida são sustentados por dados?"),
+            result: languageText("Relaciona historias, áreas de vida, evidencia y contexto para priorizar hallazgos.", "Connects stories, life areas, evidence, and context to prioritize findings.", "Relie histoires, domaines de vie, preuves et contexte pour hiérarchiser les enseignements.", "Relaciona histórias, áreas de vida, evidências e contexto para priorizar descobertas."),
+          };
+  target.innerHTML = `
+    <article>
+      <span>${escapeHtml(languageText("Vista elegida", "Selected view", "Vue choisie", "Visão escolhida"))}</span>
+      <strong>${escapeHtml(copy.title)}</strong>
+      <p>${escapeHtml(copy.question)}</p>
+    </article>
+    <article>
+      <span>${escapeHtml(languageText("Base utilizada", "Source base", "Base utilisée", "Base utilizada"))}</span>
+      <strong>${stories} ${escapeHtml(languageText("historias", "stories", "histoires", "histórias"))}</strong>
+      <p>${evidence} ${escapeHtml(languageText("evidencias", "evidence items", "preuves", "evidências"))} · ${context} ${escapeHtml(languageText("señales de contexto", "context signals", "signaux de contexte", "sinais de contexto"))}</p>
+    </article>
+    <article>
+      <span>${escapeHtml(languageText("Cómo leerla", "How to read it", "Comment la lire", "Como interpretar"))}</span>
+      <strong>${escapeHtml(languageText("Resultado esperado", "Expected result", "Résultat attendu", "Resultado esperado"))}</strong>
+      <p>${escapeHtml(copy.result)}</p>
+    </article>
+  `;
 }
 
 function buildScopedBiometricMeasurements(scope = {}) {
@@ -17868,7 +17981,7 @@ function buildAssetActiveFilterChips() {
   const chips = [];
   if (filters.query) chips.push({ key: "query", label: `${state.language !== "es" ? "Search" : "Búsqueda"}: ${filters.query}` });
   if (filters.type !== "all") chips.push({ key: "type", label: `${state.language !== "es" ? "Type" : "Tipo"}: ${getAssetKindLabel(filters.type)}` });
-  if (filters.category !== "all") chips.push({ key: "category", label: `${state.language !== "es" ? "Category" : "Categoría"}: ${displayCategory(filters.category)}` });
+  if (filters.category !== "all") chips.push({ key: "category", label: `${languageText("Área de vida", "Life area", "Domaine de vie", "Área de vida")}: ${displayCategory(filters.category)}` });
   if (filters.readiness !== "all") {
     chips.push({
       key: "readiness",
@@ -23389,6 +23502,7 @@ function renderReport() {
   const firstDate = experiences[0]?.timestamp;
   const lastDate = experiences[experiences.length - 1]?.timestamp;
   renderReportAcceptancePanel();
+  renderOutputModeGuide("reportModeGuide", outputScope, "report");
   document.getElementById("reportRangeLabel").textContent =
     firstDate && lastDate ? `${formatShortDate(firstDate)} - ${formatShortDate(lastDate)}` : state.language !== "es" ? "No range" : "Sin rango";
   renderReportScopeSummary(experiences, outputScope);
@@ -23538,32 +23652,24 @@ function updateReportScopeControls() {
   const eventFilter = document.getElementById("reportEventFilter");
   if (!scopeSelect || !experienceSelect) return;
   const activeScope = state.reportFilters.scope || "all";
-  const scopeOptions =
-    state.language !== "es"
-       ? [
-          ["all", "All experiences"],
-          ["period", "Quick range"],
-          ["filters", "Life area / person / origin / objective / event"],
-          ["single", "One specific experience"],
-        ]
-      : [
-          ["all", "Todas las experiencias"],
-          ["period", "Rango rápido"],
-          ["filters", "Área de vida / persona / origen / objetivo / evento"],
-          ["single", "Una experiencia específica"],
-        ];
+  const scopeOptions = [
+    ["all", languageText("Todas las experiencias", "All experiences", "Toutes les expériences", "Todas as experiências")],
+    ["period", languageText("Rango rápido", "Quick range", "Plage rapide", "Intervalo rápido")],
+    ["filters", languageText("Área de vida / persona / origen / objetivo", "Life area / person / source / goal", "Domaine de vie / personne / source / objectif", "Área de vida / pessoa / origem / objetivo")],
+    ["single", languageText("Una experiencia específica", "One specific experience", "Une expérience précise", "Uma experiência específica")],
+  ];
   scopeSelect.innerHTML = scopeOptions.map(([value, label]) => `<option value="${value}">${escapeHtml(label)}</option>`).join("");
   scopeSelect.value = state.reportFilters.scope || "all";
   updatePilotParticipantControls();
   const selected = state.reportFilters.experienceId || "";
   const ordered = [...state.experiences].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
   experienceSelect.innerHTML = [
-    `<option value="">${escapeHtml(state.language !== "es" ? "Select an experience" : "Selecciona una experiencia")}</option>`,
+    `<option value="">${escapeHtml(languageText("Selecciona una experiencia", "Select an experience", "Sélectionnez une expérience", "Selecione uma experiência"))}</option>`,
     ...ordered.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(`${formatShortDate(item.timestamp)} · ${item.title}`)}</option>`),
   ].join("");
   experienceSelect.value = ordered.some((item) => item.id === selected) ? selected : "";
   if (singleLabel) singleLabel.hidden = scopeSelect.value !== "single";
-  if (periodFilter) periodFilter.disabled = !["period", "filters"].includes(activeScope);
+  if (periodFilter) periodFilter.disabled = activeScope === "single";
   if (categoryFilter) categoryFilter.disabled = activeScope === "single";
   if (sourceFilter) {
     populateIntegrationSourceFilter("reportSourceFilter", state.reportFilters.source || "all");
@@ -23590,17 +23696,19 @@ function updateReportScopeControls() {
         : ["Preparar alcance", "Generar y leer", "Aceptar y exportar"];
     flowSteps.innerHTML = steps.map((step, index) => `<li><strong>${index + 1}</strong><span>${escapeHtml(step)}</span></li>`).join("");
   }
-  if (generateButton) generateButton.textContent = state.language !== "es" ? "Generate / update report" : "Generar / actualizar reporte";
-  if (editedPdfButton) editedPdfButton.textContent = state.language !== "es" ? "Download edited ReportLab PDF" : "Descargar PDF editado ReportLab";
+  if (generateButton) generateButton.textContent = languageText("Generar reporte", "Generate report", "Générer le rapport", "Gerar relatório");
+  if (editedPdfButton) editedPdfButton.textContent = languageText("Descargar PDF", "Download PDF", "Télécharger le PDF", "Baixar PDF");
   if (jumpButton) jumpButton.textContent = state.language !== "es" ? "Go to acceptance" : "Ir a aceptación";
-  if (resetButton) resetButton.textContent = state.language !== "es" ? "Clear scope" : "Limpiar alcance";
-  if (resetInlineButton) resetInlineButton.textContent = state.language !== "es" ? "Clear filters" : "Limpiar filtros";
-  if (detailSummary) detailSummary.textContent = state.language !== "es" ? "View technical detail, charts, and table" : "Ver detalle técnico, gráficas y tabla";
+  if (resetButton) resetButton.textContent = languageText("Restaurar vista", "Reset view", "Réinitialiser la vue", "Restaurar visão");
+  if (resetInlineButton) resetInlineButton.textContent = languageText("Limpiar filtros", "Clear filters", "Effacer les filtres", "Limpar filtros");
+  if (detailSummary) detailSummary.textContent = languageText("Ver gráficas y detalle", "View charts and detail", "Voir les graphiques et le détail", "Ver gráficos e detalhes");
   if (flowStatus && /^(El reporte|The report|Prepara|Prepare)/.test(flowStatus.textContent || "")) {
-    flowStatus.textContent =
-      state.language !== "es"
-         ? "Prepare the scope, generate the report, then use the acceptance pack to export evidence."
-        : "Prepara el alcance, genera el reporte y usa el paquete de aceptación para exportar evidencia.";
+    flowStatus.textContent = languageText(
+      "Elige qué deseas revisar y genera el reporte.",
+      "Choose what you want to review and generate the report.",
+      "Choisissez ce que vous souhaitez examiner et générez le rapport.",
+      "Escolha o que deseja revisar e gere o relatório.",
+    );
   }
 }
 
@@ -25926,33 +26034,33 @@ async function downloadPdfReport() {
   const labels = state.language !== "es"
      ? {
         start: "Generating executive PDF",
-        startDetail: "Validating scope, charts, findings, and ReportLab payload.",
+        startDetail: "Validating data, scope, charts, and document layout.",
         api: "Checking connection",
         apiDetail: "The app is confirming the API automatically before generating the PDF.",
-        server: "Composing in ReportLab",
-        serverDetail: "The server is building the edited experience report.",
+        server: "Preparing document",
+        serverDetail: "The server is building the experience report.",
         download: "Preparing download",
         downloadDetail: "The PDF was generated; creating the download link.",
         ready: "Report PDF ready",
         readyDetail: "Generated file: reporte-experiencias.pdf.",
         error: "Could not generate report PDF",
         apiUnavailable: "The app tried to reconnect automatically, but the API did not respond. Try again in a few seconds.",
-        statusReady: "Edited ReportLab report PDF generated.",
+        statusReady: "Report PDF generated.",
       }
     : {
         start: "Generando PDF ejecutivo",
-        startDetail: "Validando alcance, graficas, hallazgos y payload ReportLab.",
+        startDetail: "Validando datos, alcance, graficas y composicion del documento.",
         api: "Verificando conexion",
         apiDetail: "La app confirma la API automaticamente antes de generar el PDF.",
-        server: "Componiendo en ReportLab",
-        serverDetail: "El servidor esta armando el reporte editado de experiencias.",
+        server: "Preparando documento",
+        serverDetail: "El servidor esta armando el reporte de experiencias.",
         download: "Preparando descarga",
         downloadDetail: "El PDF fue generado; creando enlace de descarga.",
         ready: "PDF de reporte listo",
         readyDetail: "Archivo generado: reporte-experiencias.pdf.",
         error: "No se pudo generar el PDF del reporte",
         apiUnavailable: "La app intento reconectar automaticamente, pero la API no respondio. Intenta de nuevo en unos segundos.",
-        statusReady: "PDF editado ReportLab del reporte generado.",
+        statusReady: "PDF del reporte generado correctamente.",
       };
   setReportFlowStatus(labels.start);
   setReportProgress({ title: labels.start, detail: labels.startDetail, percent: 15 });
@@ -30913,6 +31021,7 @@ function renderInsights() {
   const thematicAxes = buildInsightThematicAxes(sourceExperiences);
   const actionPlan = buildInsightActionPlan(sourceExperiences, insights, thematicAxes);
   syncAnalyticalScopeInputs();
+  renderOutputModeGuide("insightsModeGuide", outputScope, "insights");
   const quickStart = document.getElementById("insightsQuickStart");
   if (quickStart) quickStart.innerHTML = renderInsightsQuickStart();
   const scopeLabel = document.getElementById("insightScopeLabel");
@@ -30931,9 +31040,14 @@ function renderInsights() {
   if (presentationMode === "signal_inventory") {
     document.getElementById("insightList").innerHTML = `
       <section class="insight-hub-intro">
-        <span class="report-kicker">${escapeHtml(state.language !== "es" ? "Factual view" : "Vista factual")}</span>
-        <h3>${escapeHtml(state.language !== "es" ? "Signals and measurements in this period" : "Señales y mediciones del período")}</h3>
-        <p>${escapeHtml(state.language !== "es" ? "This view organizes observed evidence and context. It does not infer life-area patterns or actions without stories." : "Esta vista organiza evidencia y contexto observados. No infiere patrones ni acciones por Áreas de vida sin historias.")}</p>
+        <span class="report-kicker">${escapeHtml(languageText("Vista factual", "Factual view", "Vue factuelle", "Visão factual"))}</span>
+        <h3>${escapeHtml(languageText("Señales y mediciones del período", "Signals and measurements in this period", "Signaux et mesures de la période", "Sinais e medições do período"))}</h3>
+        <p>${escapeHtml(languageText(
+          "Esta vista organiza evidencia y contexto observados. No infiere patrones ni acciones por áreas de vida sin historias.",
+          "This view organizes observed evidence and context. It does not infer life-area patterns or actions without stories.",
+          "Cette vue organise les preuves et le contexte observés. Elle n’infère pas de tendances ni d’actions par domaine de vie sans histoires.",
+          "Esta visão organiza evidências e contexto observados. Não infere padrões nem ações por áreas de vida sem histórias.",
+        ))}</p>
       </section>
       ${renderScopedEvidenceSummary(outputScope, languageText("Base factual de los hallazgos", "Findings factual basis", "Base factuelle des enseignements", "Base factual das descobertas"))}
       ${renderEvidenceInventoryReport(outputScope)}
@@ -30944,12 +31058,17 @@ function renderInsights() {
   }
   document.getElementById("insightList").innerHTML = `
     <section class="insight-hub-intro">
-      <span class="report-kicker">${escapeHtml(state.language !== "es" ? "Main output" : "Salida principal")}</span>
-      <h3>${escapeHtml(state.language !== "es" ? "Experience findings by human theme" : "Hallazgos de experiencias por eje humano")}</h3>
-      <p>${escapeHtml(state.language !== "es" ? "This view turns experiences, energy, people, places, events, and assets into a clear reading. Use the thematic axes first; then review the prioritized findings." : "Esta vista convierte experiencias, energía, personas, lugares, eventos y activos en una lectura clara. Primero revisa los ejes temáticos; luego los hallazgos priorizados.")}</p>
+      <span class="report-kicker">${escapeHtml(languageText("Salida principal", "Main output", "Résultat principal", "Saída principal"))}</span>
+      <h3>${escapeHtml(languageText("Hallazgos por áreas de vida", "Findings by life area", "Enseignements par domaine de vie", "Descobertas por áreas de vida"))}</h3>
+      <p>${escapeHtml(languageText(
+        "Las áreas de vida agrupan las historias. Los ejes humanos son lentes de interpretación para entender bienestar, trabajo, aprendizaje, relaciones y otros patrones; no son categorías nuevas.",
+        "Life areas group the stories. Human themes are interpretation lenses for wellbeing, work, learning, relationships, and other patterns; they are not new categories.",
+        "Les domaines de vie regroupent les histoires. Les axes humains sont des angles d’interprétation du bien-être, du travail, de l’apprentissage, des relations et d’autres tendances ; ce ne sont pas de nouvelles catégories.",
+        "As áreas de vida agrupam as histórias. Os eixos humanos são lentes de interpretação para bem-estar, trabalho, aprendizagem, relações e outros padrões; não são novas categorias.",
+      ))}</p>
     </section>
     ${renderScopedEvidenceSummary(outputScope, languageText("Fuentes de los hallazgos", "Findings sources", "Sources des enseignements", "Fontes das descobertas"))}
-    <section class="insight-axis-grid" aria-label="${escapeHtml(state.language !== "es" ? "Analysis themes" : "Ejes de análisis")}">
+    <section class="insight-axis-grid" aria-label="${escapeHtml(languageText("Ejes humanos de interpretación", "Human interpretation themes", "Axes humains d’interprétation", "Eixos humanos de interpretação"))}">
       ${renderBiometricContextPanel(sourceExperiences, {
         title: languageText("Biometría para hallazgos", "Biometrics for findings", "Biométrie pour les enseignements", "Biometria para descobertas"),
       })}
@@ -30959,8 +31078,8 @@ function renderInsights() {
     <section class="insight-priority-section">
       <div class="publication-section-heading">
         <div>
-          <h3>${escapeHtml(state.language !== "es" ? "Prioritized findings" : "Hallazgos priorizados")}</h3>
-          <p class="card-meta">${escapeHtml(state.language !== "es" ? "Ordered reading with evidence, confidence, and next action." : "Lectura ordenada con evidencia, confianza y próxima acción.")}</p>
+          <h3>${escapeHtml(languageText("Hallazgos priorizados", "Prioritized findings", "Enseignements prioritaires", "Descobertas priorizadas"))}</h3>
+          <p class="card-meta">${escapeHtml(languageText("Lectura ordenada con evidencia, confianza y próxima acción.", "Ordered reading with evidence, confidence, and next action.", "Lecture ordonnée avec preuves, niveau de confiance et prochaine action.", "Leitura ordenada com evidências, confiança e próxima ação."))}</p>
         </div>
       </div>
       ${insights
@@ -31036,27 +31155,64 @@ function getInsightThematicDefinitionsLegacy() {
 }
 
 function getInsightThematicDefinitions() {
-  return state.language !== "es"
-     ? [
-        { id: "health", title: "Health and wellbeing", categories: ["Salud", "Espiritualidad"], question: "How are energy, recovery, habits, and emotional stability behaving?", action: "Choose one small rest, movement, or recovery adjustment this week and notice whether your energy responds." },
-        { id: "work", title: "Work and productivity", categories: ["Trabajo"], question: "Where is real productivity rising or creating load?", action: "Review one recent work block and decide what to keep, delegate, pause, or simplify." },
-        { id: "learning", title: "Learning and growth", categories: ["Aprendizaje"], question: "What lessons repeat and which should become routines?", action: "Turn one repeated lesson into a brief practice that is easy to repeat." },
-        { id: "travel", title: "Travel and outings", categories: ["Viajes / Paseos"], question: "Which places, routes, and visits create energy or friction?", action: "Compare which place, company, or context left the best memory, then use it to plan the next outing." },
-        { id: "social", title: "Relationships and social life", categories: ["Social"], question: "Which people or groups lift, drain, or connect experiences?", action: "Notice which people leave you calmer or more energized, and protect those spaces intentionally." },
-        { id: "leisure", title: "Leisure and entertainment", categories: ["Entretenimiento"], question: "Is leisure helping recovery or becoming noise?", action: "After leisure, note whether it restored you or scattered you, then adjust the next choice." },
-        { id: "finance", title: "Finance and consumption", categories: ["Compras"], question: "What purchases or decisions reflect intention, stress, or value?", action: "Before repeating a purchase, check whether it brought real value or only short relief." },
-        { id: "creative", title: "Creativity and purpose", categories: ["Creatividad"], question: "Where do creation, meaning, and personal expression appear?", action: "Reserve a small space to continue what felt meaningful, even if it is only a short note." },
-      ]
-    : [
-        { id: "health", title: "Salud y bienestar", categories: ["Salud", "Espiritualidad"], question: "¿Cómo se comportan energía, recuperación, hábitos y estabilidad emocional?", action: "Elige un pequeño ajuste de descanso, movimiento o recuperación para esta semana y observa si tu energía responde mejor." },
-        { id: "work", title: "Trabajo y productividad", categories: ["Trabajo"], question: "¿Dónde sube la productividad real o aparece carga?", action: "Revisa un bloque de trabajo reciente y decide qué mantener, delegar, pausar o simplificar." },
-        { id: "learning", title: "Aprendizaje y crecimiento", categories: ["Aprendizaje"], question: "¿Qué aprendizajes se repiten y cuáles deben volverse rutina?", action: "Toma un aprendizaje repetido y conviértelo en una práctica breve, concreta y fácil de repetir." },
-        { id: "travel", title: "Viajes / Paseos", categories: ["Viajes / Paseos"], question: "¿Qué lugares, rutas y visitas generan energía o fricción?", action: "Compara qué lugar, compañía o contexto te dejó mejor recuerdo y úsalo para planear la próxima salida." },
-        { id: "social", title: "Relaciones y vida social", categories: ["Social"], question: "¿Qué personas o grupos elevan, drenan o conectan experiencias?", action: "Observa qué personas te dejan con más calma o energía, y cuida esos espacios con intención." },
-        { id: "leisure", title: "Ocio y entretenimiento", categories: ["Entretenimiento"], question: "¿El ocio ayuda a recuperar o se vuelve ruido?", action: "Después del ocio, anota si te recuperó o te dispersó; ajusta la próxima elección desde ahí." },
-        { id: "finance", title: "Finanzas y consumo", categories: ["Compras"], question: "¿Qué compras o decisiones reflejan intención, estrés o valor?", action: "Antes de repetir una compra, revisa si trajo valor real o solo alivio momentáneo." },
-        { id: "creative", title: "Creatividad y propósito", categories: ["Creatividad"], question: "¿Dónde aparecen creación, sentido y expresión personal?", action: "Reserva un pequeño espacio para continuar lo que te dio sentido, aunque sea en una nota breve." },
-      ];
+  return [
+    {
+      id: "health",
+      title: languageText("Salud y bienestar", "Health and wellbeing", "Santé et bien-être", "Saúde e bem-estar"),
+      categories: ["Salud", "Espiritualidad"],
+      question: languageText("¿Cómo se comportan energía, recuperación, hábitos y estabilidad emocional?", "How are energy, recovery, habits, and emotional stability behaving?", "Comment évoluent l’énergie, la récupération, les habitudes et la stabilité émotionnelle ?", "Como se comportam energia, recuperação, hábitos e estabilidade emocional?"),
+      action: languageText("Elige un pequeño ajuste de descanso, movimiento o recuperación para esta semana y observa la respuesta.", "Choose one small rest, movement, or recovery adjustment this week and observe the response.", "Choisissez un petit ajustement de repos, de mouvement ou de récupération cette semaine et observez la réponse.", "Escolha um pequeno ajuste de descanso, movimento ou recuperação nesta semana e observe a resposta."),
+    },
+    {
+      id: "work",
+      title: languageText("Trabajo y productividad", "Work and productivity", "Travail et productivité", "Trabalho e produtividade"),
+      categories: ["Trabajo"],
+      question: languageText("¿Dónde sube la productividad real o aparece carga?", "Where is real productivity rising or creating load?", "Où la productivité réelle augmente-t-elle ou crée-t-elle une charge ?", "Onde a produtividade real aumenta ou gera sobrecarga?"),
+      action: languageText("Revisa un bloque reciente y decide qué mantener, delegar, pausar o simplificar.", "Review one recent block and decide what to keep, delegate, pause, or simplify.", "Examinez une période récente et décidez quoi maintenir, déléguer, suspendre ou simplifier.", "Revise um bloco recente e decida o que manter, delegar, pausar ou simplificar."),
+    },
+    {
+      id: "learning",
+      title: languageText("Aprendizaje y crecimiento", "Learning and growth", "Apprentissage et croissance", "Aprendizagem e crescimento"),
+      categories: ["Aprendizaje"],
+      question: languageText("¿Qué aprendizajes se repiten y cuáles deben volverse práctica?", "What lessons repeat and which should become practice?", "Quels apprentissages se répètent et lesquels devraient devenir une pratique ?", "Quais aprendizados se repetem e quais devem virar prática?"),
+      action: languageText("Convierte un aprendizaje repetido en una práctica breve y fácil de repetir.", "Turn one repeated lesson into a brief practice that is easy to repeat.", "Transformez un apprentissage récurrent en une pratique courte et facile à répéter.", "Transforme um aprendizado recorrente em uma prática breve e fácil de repetir."),
+    },
+    {
+      id: "travel",
+      title: languageText("Viajes y paseos", "Travel and outings", "Voyages et sorties", "Viagens e passeios"),
+      categories: ["Viajes / Paseos"],
+      question: languageText("¿Qué lugares, rutas y visitas generan energía o fricción?", "Which places, routes, and visits create energy or friction?", "Quels lieux, itinéraires et visites créent de l’énergie ou des frictions ?", "Quais lugares, rotas e visitas geram energia ou atrito?"),
+      action: languageText("Compara lugar, compañía y contexto para planear la próxima salida.", "Compare place, company, and context to plan the next outing.", "Comparez le lieu, la compagnie et le contexte pour préparer la prochaine sortie.", "Compare lugar, companhia e contexto para planejar o próximo passeio."),
+    },
+    {
+      id: "social",
+      title: languageText("Relaciones y vida social", "Relationships and social life", "Relations et vie sociale", "Relações e vida social"),
+      categories: ["Social"],
+      question: languageText("¿Qué personas o grupos elevan, drenan o conectan experiencias?", "Which people or groups lift, drain, or connect experiences?", "Quelles personnes ou quels groupes enrichissent, épuisent ou relient les expériences ?", "Quais pessoas ou grupos elevam, drenam ou conectam experiências?"),
+      action: languageText("Observa qué vínculos te dejan con más calma o energía y cuida esos espacios.", "Notice which relationships leave you calmer or more energized and protect those spaces.", "Observez quelles relations vous laissent plus calme ou énergique et préservez ces espaces.", "Observe quais vínculos deixam você mais calmo ou energizado e cuide desses espaços."),
+    },
+    {
+      id: "leisure",
+      title: languageText("Ocio y entretenimiento", "Leisure and entertainment", "Loisirs et divertissement", "Lazer e entretenimento"),
+      categories: ["Entretenimiento"],
+      question: languageText("¿El ocio ayuda a recuperar o se vuelve ruido?", "Is leisure helping recovery or becoming noise?", "Les loisirs favorisent-ils la récupération ou deviennent-ils du bruit ?", "O lazer ajuda na recuperação ou vira ruído?"),
+      action: languageText("Registra si el ocio te recuperó o te dispersó y ajusta la próxima elección.", "Note whether leisure restored or scattered you, then adjust the next choice.", "Notez si les loisirs vous ont ressourcé ou dispersé, puis ajustez le prochain choix.", "Registre se o lazer recuperou ou dispersou você e ajuste a próxima escolha."),
+    },
+    {
+      id: "finance",
+      title: languageText("Finanzas y consumo", "Finance and consumption", "Finances et consommation", "Finanças e consumo"),
+      categories: ["Compras"],
+      question: languageText("¿Qué compras o decisiones reflejan intención, estrés o valor?", "What purchases or decisions reflect intention, stress, or value?", "Quels achats ou décisions reflètent l’intention, le stress ou la valeur ?", "Quais compras ou decisões refletem intenção, estresse ou valor?"),
+      action: languageText("Antes de repetir una compra, revisa si trajo valor real o alivio momentáneo.", "Before repeating a purchase, check whether it brought real value or short relief.", "Avant de répéter un achat, vérifiez s’il a apporté une valeur réelle ou un soulagement momentané.", "Antes de repetir uma compra, veja se trouxe valor real ou apenas alívio momentâneo."),
+    },
+    {
+      id: "creative",
+      title: languageText("Creatividad y propósito", "Creativity and purpose", "Créativité et sens", "Criatividade e propósito"),
+      categories: ["Creatividad"],
+      question: languageText("¿Dónde aparecen creación, sentido y expresión personal?", "Where do creation, meaning, and personal expression appear?", "Où apparaissent la création, le sens et l’expression personnelle ?", "Onde aparecem criação, sentido e expressão pessoal?"),
+      action: languageText("Reserva un espacio pequeño para continuar lo que tuvo sentido.", "Reserve a small space to continue what felt meaningful.", "Réservez un petit espace pour poursuivre ce qui avait du sens.", "Reserve um pequeno espaço para continuar o que teve sentido."),
+    },
+  ];
 }
 
 function buildInsightThematicAxes(experiences = []) {
@@ -31069,11 +31225,11 @@ function buildInsightThematicAxes(experiences = []) {
     const score = items.length ? Math.round((items.length / total) * 45 + avgEnergy * 5 + Math.max(0, 10 - saturated * 2)) : 0;
     const status = items.length
       ? avgEnergy >= 7 && saturated === 0
-        ? (state.language !== "es" ? "Favorable" : "Favorable")
+        ? languageText("Favorable", "Favorable", "Favorable", "Favorável")
         : saturated
-          ? (state.language !== "es" ? "Needs attention" : "Requiere atención")
-          : (state.language !== "es" ? "Observed" : "En observación")
-      : (state.language !== "es" ? "No data yet" : "Sin datos aún");
+          ? languageText("Requiere atención", "Needs attention", "Demande de l’attention", "Requer atenção")
+          : languageText("En observación", "Observed", "En observation", "Em observação")
+      : languageText("Sin datos aún", "No data yet", "Pas encore de données", "Ainda sem dados");
     return { ...axis, items, avgEnergy, saturated, assets, score: Math.max(0, Math.min(100, score)), status };
   });
 }
@@ -31086,9 +31242,9 @@ function renderInsightAxisCard(axis) {
         <span>${escapeHtml(axis.status)}</span>
       </div>
       <div class="insight-axis-metrics">
-        <article><span>${escapeHtml(state.language !== "es" ? "Experiences" : "Experiencias")}</span><strong>${axis.items.length}</strong></article>
-        <article><span>${escapeHtml(state.language !== "es" ? "Energy" : "Energía")}</span><strong>${axis.avgEnergy}/10</strong></article>
-        <article><span>${escapeHtml(state.language !== "es" ? "Assets" : "Activos")}</span><strong>${axis.assets}</strong></article>
+        <article><span>${escapeHtml(languageText("Historias", "Stories", "Histoires", "Histórias"))}</span><strong>${axis.items.length}</strong></article>
+        <article><span>${escapeHtml(languageText("Energía", "Energy", "Énergie", "Energia"))}</span><strong>${axis.avgEnergy}/10</strong></article>
+        <article><span>${escapeHtml(languageText("Evidencias", "Evidence", "Preuves", "Evidências"))}</span><strong>${axis.assets}</strong></article>
       </div>
       <div class="insight-meter" aria-hidden="true"><span style="width:${Math.max(4, axis.score)}%"></span></div>
       <p>${escapeHtml(axis.question)}</p>
@@ -31488,33 +31644,33 @@ async function exportInsightsPdf() {
   const labels = state.language !== "es"
      ? {
         start: "Generating findings PDF",
-        startDetail: "Validating scope, human themes, action plan, and ReportLab payload.",
+        startDetail: "Validating scope, human themes, action plan, and document layout.",
         api: "Checking connection",
         apiDetail: "The app is confirming the API automatically before generating the PDF.",
-        server: "Composing in ReportLab",
-        serverDetail: "The server is building the edited findings document.",
+        server: "Preparing document",
+        serverDetail: "The server is building the findings document.",
         download: "Preparing download",
         downloadDetail: "The PDF was generated; creating the download link.",
         ready: "Findings PDF ready",
         readyDetail: "Generated file: hallazgos-experiencias.pdf.",
         error: "Could not generate findings PDF",
         apiUnavailable: "The app tried to reconnect automatically, but the API did not respond. Try again in a few seconds.",
-        statusReady: "Edited findings PDF generated.",
+        statusReady: "Findings PDF generated.",
       }
     : {
         start: "Generando PDF de hallazgos",
-        startDetail: "Validando alcance, ejes humanos, plan de accion y payload ReportLab.",
+        startDetail: "Validando alcance, ejes humanos, plan de accion y composicion del documento.",
         api: "Verificando conexion",
         apiDetail: "La app confirma la API automaticamente antes de generar el PDF.",
-        server: "Componiendo en ReportLab",
-        serverDetail: "El servidor esta armando el documento editado de hallazgos.",
+        server: "Preparando documento",
+        serverDetail: "El servidor esta armando el documento de hallazgos.",
         download: "Preparando descarga",
         downloadDetail: "El PDF fue generado; creando enlace de descarga.",
         ready: "PDF de hallazgos listo",
         readyDetail: "Archivo generado: hallazgos-experiencias.pdf.",
         error: "No se pudo generar el PDF de hallazgos",
         apiUnavailable: "La app intento reconectar automaticamente, pero la API no respondio. Intenta de nuevo en unos segundos.",
-        statusReady: "PDF editado de hallazgos generado.",
+        statusReady: "PDF de hallazgos generado correctamente.",
       };
   setInsightsProgress({ title: labels.start, detail: labels.startDetail, percent: 15 });
   if (!state.apiOnline) setInsightsProgress({ title: labels.api, detail: labels.apiDetail, percent: 8 });

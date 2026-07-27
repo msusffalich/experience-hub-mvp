@@ -425,7 +425,7 @@ assert(files.server.includes("PYTHONPATH") && files.server.includes(".python"), 
 assert(!files.index.includes('data-daily-flow="horoscope"'), "Daily should not expose horoscope until the module is reliable.");
 assert(files.app.includes("function experienceMatchesPilotParticipant"), "Participant filtering must support legacy records by participant name.");
 assert(files.app.includes("pilotParticipantFilter.disabled = false"), "Report participant selector must remain usable in every report scope.");
-assert(files.index.includes("Descargar PDF editado ReportLab"), "Reports must expose edited ReportLab PDF as a primary action.");
+assert(files.index.includes('id="downloadEditedReportPdfButton"') && files.index.includes(">Descargar PDF</button>"), "Reports must expose the edited ReportLab PDF through a clear user-facing download action.");
 assert(files.index.includes("Descargar PDF de hallazgos"), "Findings must expose PDF as the primary output.");
 assert(files.index.includes('id="exportInsightsHtmlButton"') && files.index.includes('id="exportInsightsHtmlButton" class="ghost-button technical-export" type="button" hidden'), "Findings HTML export must not appear as a primary user action.");
 assert(files.app.includes("function buildInsightActionPlan") && files.app.includes("data-insight-plan-index"), "Findings must produce a schedulable seven-day action plan.");

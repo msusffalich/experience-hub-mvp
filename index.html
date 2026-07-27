@@ -19,10 +19,10 @@
         }
       })();
     </script>
-    <link rel="manifest" href="manifest.webmanifest?v=20260727-life-area-manual-715" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260727-output-workbench-716" />
     <link rel="icon" href="icons/vibe-icon-192.png" type="image/png" />
     <link rel="apple-touch-icon" href="icons/vibe-apple-touch.png" />
-    <link rel="stylesheet" href="styles.css?v=20260727-life-area-manual-715" />
+    <link rel="stylesheet" href="styles.css?v=20260727-output-workbench-716" />
   </head>
   <body>
     <noscript>
@@ -690,18 +690,17 @@
                 <span id="reportRangeLabel"></span>
               </div>
               <section id="reportScopePanel" class="report-scope-panel" aria-label="Alcance del reporte">
-                <div>
+                <div class="output-workbench-heading">
                   <strong id="reportScopeTitle">Alcance del reporte</strong>
                   <p id="reportScopeSummary">Este reporte analiza el filtro activo.</p>
                 </div>
-                <div class="report-scope-controls">
+                <div id="reportPrimaryControls" class="output-primary-controls">
                   <label>
-                    Tipo de alcance
-                    <select id="reportScopeFilter" aria-label="Tipo de alcance del reporte">
-                      <option value="all">Todas las experiencias</option>
-                      <option value="period">Rango rápido</option>
-                      <option value="filters">Área de vida / persona / origen / objetivo</option>
-                      <option value="single">Una experiencia específica</option>
+                    <span id="reportBasisLabel">Tipo de reporte</span>
+                    <select id="reportBasisFilter" aria-label="Tipo de reporte">
+                      <option value="all">Áreas de vida + evidencia</option>
+                      <option value="stories">Solo áreas de vida</option>
+                      <option value="evidence">Solo evidencia y mediciones</option>
                     </select>
                   </label>
                   <label class="person-scope-control">
@@ -711,67 +710,73 @@
                     </select>
                   </label>
                   <label>
-                    Tipo de reporte
-                    <select id="reportBasisFilter" aria-label="Tipo de reporte">
-                      <option value="all">Resumen por áreas de vida con evidencia</option>
-                      <option value="stories">Cobertura por áreas de vida</option>
-                      <option value="evidence">Inventario de evidencia y mediciones</option>
+                    <span id="reportPeriodLabel">Período</span>
+                    <select id="reportPeriodFilter" aria-label="Periodo del reporte">
+                      <option value="all">Todo el historial</option>
+                      <option value="7">Últimos 7 días</option>
+                      <option value="30">Últimos 30 días</option>
+                      <option value="90">Últimos 90 días</option>
                     </select>
-                  </label>
-                  <label>
-                    Área de vida
-                    <select id="reportCategoryFilter" aria-label="Área de vida del reporte">
-                      <option value="all">Todas las áreas de vida</option>
-                    </select>
-                  </label>
-                  <label>
-                    Origen / conector
-                    <select id="reportSourceFilter" aria-label="Origen o conector del reporte">
-                      <option value="all">Todos los origenes</option>
-                    </select>
-                  </label>
-                  <label class="compact-date-filter">
-                    Desde
-                    <input id="reportDateFromFilter" type="date" />
-                  </label>
-                  <label class="compact-date-filter">
-                    Hasta
-                    <input id="reportDateToFilter" type="date" />
-                  </label>
-                  <button id="resetReportScopeInlineButton" class="ghost-button" type="button">Limpiar filtros</button>
-                  <label id="reportSingleExperienceLabel">
-                    Experiencia específica
-                    <select id="reportExperienceFilter" aria-label="Experiencia específica del reporte"></select>
                   </label>
                 </div>
+                <div id="reportModeGuide" class="output-mode-guide" aria-live="polite"></div>
+                <details id="reportAdvancedFilters" class="output-advanced-drawer">
+                  <summary>
+                    <span id="reportAdvancedTitle">Acotar el reporte</span>
+                    <small id="reportAdvancedHelp">Área de vida, origen, fechas o una experiencia específica</small>
+                  </summary>
+                  <div class="report-scope-controls">
+                    <label>
+                      <span id="reportScopeFilterLabel">Tipo de alcance</span>
+                      <select id="reportScopeFilter" aria-label="Tipo de alcance del reporte">
+                        <option value="all">Todas las experiencias</option>
+                        <option value="period">Rango rápido</option>
+                        <option value="filters">Área de vida / persona / origen / objetivo</option>
+                        <option value="single">Una experiencia específica</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span id="reportCategoryLabel">Área de vida</span>
+                      <select id="reportCategoryFilter" aria-label="Área de vida del reporte">
+                        <option value="all">Todas las áreas de vida</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span id="reportSourceLabel">Origen / conector</span>
+                      <select id="reportSourceFilter" aria-label="Origen o conector del reporte">
+                        <option value="all">Todos los orígenes</option>
+                      </select>
+                    </label>
+                    <label class="compact-date-filter">
+                      <span id="reportDateFromLabel">Desde</span>
+                      <input id="reportDateFromFilter" type="date" />
+                    </label>
+                    <label class="compact-date-filter">
+                      <span id="reportDateToLabel">Hasta</span>
+                      <input id="reportDateToFilter" type="date" />
+                    </label>
+                    <label id="reportSingleExperienceLabel">
+                      <span id="reportExperienceLabel">Experiencia específica</span>
+                      <select id="reportExperienceFilter" aria-label="Experiencia específica del reporte"></select>
+                    </label>
+                    <input id="reportPeopleFilter" type="search" placeholder="Persona mencionada" aria-label="Filtrar por persona mencionada" />
+                    <input id="reportObjectiveFilter" type="search" placeholder="Objetivo" aria-label="Filtrar por objetivo" />
+                    <input id="reportEventFilter" type="search" placeholder="Evento interno" aria-label="Filtrar por evento interno" />
+                    <button id="resetReportScopeInlineButton" class="ghost-button" type="button">Limpiar filtros</button>
+                  </div>
+                  <div id="reportQuickStart" class="report-quick-start" aria-label="Arranque rápido de reportes"></div>
+                </details>
                 <div class="report-flow-box" aria-label="Secuencia para generar el reporte">
-                  <ol class="report-flow-steps">
-                    <li><strong>1</strong><span>Preparar alcance</span></li>
-                    <li><strong>2</strong><span>Generar y leer</span></li>
-                    <li><strong>3</strong><span>Aceptar y exportar</span></li>
-                  </ol>
                   <div class="report-scope-actions">
-                    <button id="generateReportButton" class="primary-button" type="button">Generar / actualizar reporte</button>
-                    <button id="downloadEditedReportPdfButton" class="primary-button" type="button">Descargar PDF editado ReportLab</button>
-                    <button id="resetReportScopeButton" class="ghost-button" type="button">Limpiar alcance</button>
+                    <button id="generateReportButton" class="primary-button" type="button">Generar reporte</button>
+                    <button id="downloadEditedReportPdfButton" class="ghost-button" type="button">Descargar PDF</button>
+                    <button id="resetReportScopeButton" class="ghost-button" type="button">Restaurar vista</button>
                   </div>
                   <div id="reportProgressPanel" class="publication-progress-panel" hidden aria-live="polite"></div>
-                  <p id="reportFlowStatus" class="report-flow-status" aria-live="polite">Prepara el alcance, genera el reporte y usa el paquete de aceptación para exportar evidencia.</p>
+                  <p id="reportFlowStatus" class="report-flow-status" aria-live="polite">Elige qué deseas revisar y genera el reporte.</p>
                 </div>
               </section>
-              <div id="reportQuickStart" class="report-quick-start" aria-label="Arranque rapido de reportes"></div>
               <div id="reportSharedScopeContext" class="shared-scope-context" aria-live="polite"></div>
-              <div class="filters report-filters">
-                <select id="reportPeriodFilter" aria-label="Periodo del reporte">
-                  <option value="all">Todo el historial</option>
-                  <option value="7">Últimos 7 días</option>
-                  <option value="30">Últimos 30 días</option>
-                  <option value="90">Últimos 90 días</option>
-                </select>
-                <input id="reportPeopleFilter" type="search" placeholder="Filtrar por persona" />
-                <input id="reportObjectiveFilter" type="search" placeholder="Filtrar por objetivo" />
-                <input id="reportEventFilter" type="search" placeholder="Filtrar por evento interno" />
-              </div>
               <div id="reportSummary" class="report-summary"></div>
               <div id="reportNarrative" class="answer-box"></div>
               <details class="report-detail-drawer">
@@ -799,52 +804,61 @@
                 <h2 id="insights-heading">Hallazgos accionables</h2>
                 <span id="insightScopeLabel">Generados localmente</span>
               </div>
-              <div class="insights-main-actions">
-                <button id="exportInsightsPdfButton" class="primary-button" type="button">Descargar PDF de hallazgos</button>
-                <button id="exportInsightsHtmlButton" class="ghost-button technical-export" type="button" hidden>Descargar HTML</button>
-                <button id="exportInsightsMarkdownButton" class="ghost-button technical-export" type="button" hidden>Exportar Markdown</button>
-              </div>
-              <div id="insightsProgressPanel" class="publication-progress-panel" hidden aria-live="polite"></div>
-              <div class="module-scope-bar">
+              <div id="insightsPrimaryControls" class="output-primary-controls insights-primary-controls">
+                <label>
+                  <span id="insightsBasisLabel">Tipo de lectura</span>
+                  <select id="insightsBasisFilter" aria-label="Tipo de lectura de hallazgos">
+                    <option value="all">Áreas de vida + evidencia</option>
+                    <option value="stories">Solo áreas de vida</option>
+                    <option value="evidence">Solo señales y mediciones</option>
+                  </select>
+                </label>
                 <label>
                   <span id="insightsParticipantLabel">Grupo / persona</span>
                   <select id="insightsPilotParticipantFilter">
                     <option value="all">Todos los grupos/personas</option>
                   </select>
                 </label>
-                <label>
-                  Tipo de lectura
-                  <select id="insightsBasisFilter" aria-label="Tipo de lectura de hallazgos">
-                    <option value="all">Lectura de Áreas de vida con evidencia</option>
-                    <option value="stories">Lectura de Áreas de vida</option>
-                    <option value="evidence">Señales y mediciones del período</option>
-                  </select>
-                </label>
-                <label>
-                  Área de vida
-                  <select id="insightsCategoryFilter">
-                    <option value="all">Todas las áreas de vida</option>
-                  </select>
-                </label>
-                <label>
-                  Origen / conector
-                  <select id="insightsSourceFilter">
-                    <option value="all">Todos los origenes</option>
-                  </select>
-                </label>
-                <label class="compact-date-filter">
-                  Desde
-                  <input id="insightsDateFromFilter" type="date" />
-                </label>
-                <label class="compact-date-filter">
-                  Hasta
-                  <input id="insightsDateToFilter" type="date" />
-                </label>
-                <button id="clearInsightsScopeButton" class="ghost-button" type="button">Limpiar filtros</button>
-                <span id="insightsScopeStatus">Vista general</span>
               </div>
+              <div id="insightsModeGuide" class="output-mode-guide" aria-live="polite"></div>
+              <details id="insightsAdvancedFilters" class="output-advanced-drawer">
+                <summary>
+                  <span id="insightsAdvancedTitle">Acotar los hallazgos</span>
+                  <small id="insightsAdvancedHelp">Área de vida, origen o rango de fechas</small>
+                </summary>
+                <div class="module-scope-bar">
+                  <label>
+                    <span id="insightsCategoryLabel">Área de vida</span>
+                    <select id="insightsCategoryFilter">
+                      <option value="all">Todas las áreas de vida</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span id="insightsSourceLabel">Origen / conector</span>
+                    <select id="insightsSourceFilter">
+                      <option value="all">Todos los orígenes</option>
+                    </select>
+                  </label>
+                  <label class="compact-date-filter">
+                    <span id="insightsDateFromLabel">Desde</span>
+                    <input id="insightsDateFromFilter" type="date" />
+                  </label>
+                  <label class="compact-date-filter">
+                    <span id="insightsDateToLabel">Hasta</span>
+                    <input id="insightsDateToFilter" type="date" />
+                  </label>
+                  <button id="clearInsightsScopeButton" class="ghost-button" type="button">Limpiar filtros</button>
+                  <span id="insightsScopeStatus">Vista general</span>
+                </div>
+                <div id="insightsQuickStart" class="insights-quick-start" aria-label="Arranque rápido de hallazgos"></div>
+              </details>
+              <div class="insights-main-actions">
+                <button id="exportInsightsPdfButton" class="primary-button" type="button">Descargar PDF de hallazgos</button>
+                <button id="exportInsightsHtmlButton" class="ghost-button technical-export" type="button" hidden>Descargar HTML</button>
+                <button id="exportInsightsMarkdownButton" class="ghost-button technical-export" type="button" hidden>Exportar Markdown</button>
+              </div>
+              <div id="insightsProgressPanel" class="publication-progress-panel" hidden aria-live="polite"></div>
               <div id="insightsSharedScopeContext" class="shared-scope-context" aria-live="polite"></div>
-              <div id="insightsQuickStart" class="insights-quick-start" aria-label="Arranque rapido de hallazgos"></div>
               <div id="insightList" class="insight-list"></div>
             </section>
             <section class="panel">
@@ -853,7 +867,7 @@
                 <span>Búsqueda contextual</span>
               </div>
               <div class="query-box">
-                <input id="questionInput" type="text" placeholder="Ej: ¿qué actividades elevan mi energía?" />
+                <input id="questionInput" type="text" placeholder="Pregunta sobre tus experiencias..." />
                 <button id="askButton" class="primary-button" type="button">Consultar</button>
               </div>
               <div id="questionSuggestions" class="question-suggestions"></div>
@@ -1015,7 +1029,7 @@
             <div class="manual-version-card">
               <div>
                 <span id="manualVersionEyebrow">Versión vigente</span>
-                <strong id="manualVersionValue">20260727-life-area-manual-715</strong>
+                <strong id="manualVersionValue">20260727-output-workbench-716</strong>
                 <p id="manualVersionSummary">Guía práctica organizada por temas para entender el flujo de la app sin leer todo de corrido.</p>
               </div>
               <div class="manual-guide-grid" aria-label="Estructura del manual">
@@ -1263,6 +1277,6 @@
       </main>
     </div>
 
-    <script src="app.js?v=20260727-life-area-manual-715"></script>
+    <script src="app.js?v=20260727-output-workbench-716"></script>
 </body>
 </html>

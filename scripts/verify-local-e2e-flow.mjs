@@ -544,11 +544,45 @@ try {
 
 async function captureVisualAudit(cdp, name) {
   if (!visualAuditEnabled) return;
-  const { data } = await cdp("Page.captureScreenshot", {
+  const desktopAudit = await evaluate(cdp, `(() => ({
+    viewport: document.documentElement.clientWidth,
+    pageWidth: document.documentElement.scrollWidth,
+    visiblePrimaryControls: Array.from(document.querySelectorAll(".output-primary-controls")).filter((node) => node.offsetParent !== null).length,
+    visibleModeGuides: Array.from(document.querySelectorAll(".output-mode-guide")).filter((node) => node.offsetParent !== null).length,
+  }))()`);
+  if (desktopAudit.pageWidth > desktopAudit.viewport + 2) {
+    throw new Error(`${name} desktop layout overflows horizontally (${desktopAudit.pageWidth}px > ${desktopAudit.viewport}px).`);
+  }
+  if (["report", "insights"].includes(name) && (!desktopAudit.visiblePrimaryControls || !desktopAudit.visibleModeGuides)) {
+    throw new Error(`${name} is missing the primary controls or reading guide.`);
+  }
+  const desktop = await cdp("Page.captureScreenshot", {
     format: "png",
     captureBeyondViewport: false,
   });
-  writeFileSync(path.join(visualAuditDir, `vibe-${name}.png`), Buffer.from(data, "base64"));
+  writeFileSync(path.join(visualAuditDir, `vibe-${name}-desktop.png`), Buffer.from(desktop.data, "base64"));
+
+  await cdp("Emulation.setDeviceMetricsOverride", {
+    width: 390,
+    height: 844,
+    deviceScaleFactor: 1,
+    mobile: true,
+  });
+  await sleep(350);
+  const mobileAudit = await evaluate(cdp, `(() => ({
+    viewport: document.documentElement.clientWidth,
+    pageWidth: document.documentElement.scrollWidth,
+  }))()`);
+  if (mobileAudit.pageWidth > mobileAudit.viewport + 2) {
+    throw new Error(`${name} mobile layout overflows horizontally (${mobileAudit.pageWidth}px > ${mobileAudit.viewport}px).`);
+  }
+  const mobile = await cdp("Page.captureScreenshot", {
+    format: "png",
+    captureBeyondViewport: false,
+  });
+  writeFileSync(path.join(visualAuditDir, `vibe-${name}-mobile.png`), Buffer.from(mobile.data, "base64"));
+  await cdp("Emulation.clearDeviceMetricsOverride");
+  await sleep(250);
 }
 
 process.exit(0);
