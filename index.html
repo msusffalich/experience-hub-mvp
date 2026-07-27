@@ -19,10 +19,10 @@
         }
       })();
     </script>
-    <link rel="manifest" href="manifest.webmanifest?v=20260727-output-workbench-716" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260727-product-shell-717" />
     <link rel="icon" href="icons/vibe-icon-192.png" type="image/png" />
     <link rel="apple-touch-icon" href="icons/vibe-apple-touch.png" />
-    <link rel="stylesheet" href="styles.css?v=20260727-output-workbench-716" />
+    <link rel="stylesheet" href="styles.css?v=20260727-product-shell-717" />
   </head>
   <body>
     <noscript>
@@ -40,19 +40,13 @@
           </div>
         </div>
 
-        <nav class="nav-list">
-          <button class="nav-item" data-view="auth" type="button">Acceso</button>
-          <button class="nav-item active" data-view="dashboard" type="button">Inicio</button>
-          <button class="nav-item" data-view="capture" type="button">Capturar</button>
-          <button class="nav-item" data-view="library" type="button">Librería</button>
-          <button class="nav-item" data-view="assetLibrary" type="button">Archivos</button>
-          <button class="nav-item" data-view="agenda" type="button">Agenda</button>
-          <button class="nav-item" data-view="experienceMap" type="button">Mapa</button>
-          <button class="nav-item" data-view="report" type="button">Reportes</button>
-          <button class="nav-item" data-view="publications" type="button">Publicar</button>
-          <button class="nav-item" data-view="insights" type="button">Hallazgos</button>
-          <button class="nav-item" data-view="manual" type="button">Ayuda</button>
-          <button class="nav-item" data-view="admin" type="button">Operacion</button>
+        <nav class="nav-list" aria-label="Espacios de Vibe">
+          <button class="nav-item primary-nav-item active" data-view="dashboard" data-nav-root="dashboard" type="button">Inicio</button>
+          <button class="nav-item primary-nav-item" data-view="library" data-nav-root="library" type="button">Historias</button>
+          <button class="nav-item primary-nav-item" data-view="assetLibrary" data-nav-root="assetLibrary" type="button">Evidencia</button>
+          <button class="nav-item primary-nav-item" data-view="report" data-nav-root="report" type="button">Inteligencia</button>
+          <button class="nav-item primary-nav-item" data-view="publications" data-nav-root="publications" type="button">Publicar</button>
+          <button class="nav-item primary-nav-item" data-view="auth" data-nav-root="auth" type="button">Cuenta</button>
         </nav>
 
 
@@ -87,6 +81,16 @@
             <input id="restoreBackupInput" class="sr-only" type="file" accept="application/json,.json" />
           </div>
         </header>
+        <nav id="contextNavigation" class="context-navigation" aria-label="Opciones de la sección">
+          <button class="context-nav-item" data-view="agenda" data-nav-parent="dashboard" type="button">Agenda</button>
+          <button class="context-nav-item" data-view="capture" data-nav-parent="library" type="button">Nueva historia</button>
+          <button class="context-nav-item" data-view="timeline" data-nav-parent="library" type="button">Línea de tiempo</button>
+          <button class="context-nav-item" data-view="insights" data-nav-parent="report" type="button">Hallazgos</button>
+          <button class="context-nav-item" data-view="experienceMap" data-nav-parent="report" type="button">Mapa</button>
+          <button class="context-nav-item" data-view="manual" data-nav-parent="auth" type="button">Ayuda</button>
+          <button class="context-nav-item" data-view="admin" data-nav-parent="auth" type="button">Operación</button>
+          <button class="context-nav-item" data-view="automation" data-nav-parent="auth" type="button">Automatizaciones</button>
+        </nav>
         <div id="mvpReturnBanner" class="mvp-return-banner" aria-live="polite"></div>
         <div id="versionNotice" class="version-notice" hidden></div>
         <div id="persistenceGateBanner" class="persistence-gate-banner" aria-live="polite" hidden></div>
@@ -176,11 +180,10 @@
               <span>Uso diario</span>
             </div>
             <div class="dashboard-primary-actions">
-              <button class="primary-button" type="button" data-backlog-view="capture">Nueva experiencia</button>
-              <button class="ghost-button" type="button" data-backlog-view="library">Ver Librería</button>
-              <button class="ghost-button" type="button" data-backlog-view="assetLibrary">Ver Activos</button>
-              <button class="ghost-button" type="button" data-backlog-view="report">Generar reporte</button>
-              <button id="dashboardDataResetButton" class="danger-button" type="button" data-dashboard-action="reset-cloud">Limpiar datos</button>
+              <button class="primary-button" type="button" data-backlog-view="capture">Nueva historia</button>
+              <button class="ghost-button" type="button" data-backlog-view="library">Ver historias</button>
+              <button class="ghost-button" type="button" data-backlog-view="assetLibrary">Ver evidencia</button>
+              <button class="ghost-button" type="button" data-backlog-view="report">Abrir Inteligencia</button>
             </div>
           </section>
           <section class="panel dashboard-analytical-scope-panel">
@@ -450,19 +453,8 @@
             <p id="assetLibraryIntro" class="section-note">
               Inventario de imágenes, videos, audios y documentos asociados a experiencias.
             </p>
-            <section class="asset-biometric-panel">
-              <div>
-                <strong id="biometricAssetPanelTitle">Respaldo biometrico</strong>
-                <p id="biometricAssetPanelHelp">Vibeapp captura salud, ubicacion, clima, noticias y contexto movil. Usa esta importacion solo para historicos o recuperacion.</p>
-                <small id="biometricAssetImportSummary"></small>
-              </div>
-              <div class="asset-biometric-actions">
-                <button id="importBiometricAssetButton" class="primary-button" type="button">Importar historico</button>
-                <input id="importBiometricAssetInput" class="sr-only" type="file" accept="application/json,text/csv,text/xml,application/xml,.json,.csv,.xml" />
-              </div>
-            </section>
             <div class="metric-grid compact-metric-grid" id="assetMetricGrid"></div>
-            <div class="filters">
+            <div class="filters asset-primary-filters">
               <input id="assetSearchInput" type="search" placeholder="Buscar activo, experiencia, lugar o persona" />
               <select id="assetTypeFilter">
                 <option value="all">Todos los tipos</option>
@@ -472,16 +464,6 @@
                 <option value="document">Documentos</option>
               </select>
               <select id="assetCategoryFilter"></select>
-              <select id="assetReadinessFilter"></select>
-              <select id="assetProcessingFilter"></select>
-              <select id="assetProvenanceFilter"></select>
-              <select id="assetEventLinkFilter" aria-label="Filtrar activos por evento vinculado">
-                <option value="all">Todos los vínculos</option>
-                <option value="linked">Con evento interno</option>
-                <option value="whole">Toda la experiencia</option>
-              </select>
-              <select id="assetAnalysisFilter"></select>
-              <select id="assetSortFilter"></select>
               <label class="compact-date-filter">
                 <span>Desde</span>
                 <input id="assetDateFromFilter" type="date" />
@@ -490,8 +472,37 @@
                 <span>Hasta</span>
                 <input id="assetDateToFilter" type="date" />
               </label>
+              <select id="assetSortFilter"></select>
               <button id="clearAssetFiltersButton" class="ghost-button" type="button">Limpiar filtros</button>
             </div>
+            <details id="assetAdvancedFilters" class="output-advanced-drawer asset-advanced-drawer">
+              <summary>
+                <span>Opciones avanzadas</span>
+                <small>Origen, procesamiento, vínculos e importación histórica</small>
+              </summary>
+              <div class="filters asset-technical-filters">
+                <select id="assetReadinessFilter"></select>
+                <select id="assetProcessingFilter"></select>
+                <select id="assetProvenanceFilter"></select>
+                <select id="assetEventLinkFilter" aria-label="Filtrar activos por evento vinculado">
+                  <option value="all">Todos los vínculos</option>
+                  <option value="linked">Con evento interno</option>
+                  <option value="whole">Toda la experiencia</option>
+                </select>
+                <select id="assetAnalysisFilter"></select>
+              </div>
+              <section class="asset-biometric-panel">
+                <div>
+                  <strong id="biometricAssetPanelTitle">Respaldo biométrico</strong>
+                  <p id="biometricAssetPanelHelp">Vibeapp captura salud, ubicación, clima, noticias y contexto móvil. Usa esta importación solo para históricos o recuperación.</p>
+                  <small id="biometricAssetImportSummary"></small>
+                </div>
+                <div class="asset-biometric-actions">
+                  <button id="importBiometricAssetButton" class="ghost-button" type="button">Importar histórico</button>
+                  <input id="importBiometricAssetInput" class="sr-only" type="file" accept="application/json,text/csv,text/xml,application/xml,.json,.csv,.xml" />
+                </div>
+              </section>
+            </details>
             <div id="assetActiveFilters" class="asset-active-filters"></div>
             <div id="assetLibraryGrid" class="asset-grid"></div>
           </div>
@@ -657,19 +668,25 @@
             <section class="panel">
               <div class="panel-heading">
                 <h2 id="experienceMapQuestionHeading">Preguntas al mapa</h2>
-                <span>Codex + Obsidian</span>
+                <span>Explorar conexiones</span>
               </div>
-              <div class="obsidian-bridge-card">
-                <strong>Obsidian + Codex</strong>
-                <p>Exporta nodos y enlaces como Markdown para una bóveda de Obsidian; usa las preguntas para leer patrones dentro de la app.</p>
-                <button id="experienceMapExportButton" class="primary-button" type="button" onclick="window.exportExperienceMapMarkdown?.()">Exportar mapa y notas</button>
-                <small id="experienceMapExportHelp">Genera el Markdown del mapa y las notas de experiencias para Obsidian.</small>
-                <div class="obsidian-local-actions" aria-label="Estado de conexión con Obsidian">
-                  <span id="localObsidianVaultStatus" class="card-meta">Bóveda PC no conectada. Las exportaciones solo se descargarán.</span>
-                  <button id="connectLocalObsidianVaultButton" class="ghost-button" type="button">Conectar bóveda del PC</button>
-                  <button id="forgetLocalObsidianVaultButton" class="ghost-button" type="button" hidden>Quitar conexión local</button>
+              <details class="output-advanced-drawer map-export-drawer">
+                <summary>
+                  <span>Exportación y Obsidian</span>
+                  <small>Conectar la bóveda o generar Markdown</small>
+                </summary>
+                <div class="obsidian-bridge-card">
+                  <strong>Obsidian + Codex</strong>
+                  <p>Exporta nodos y enlaces como Markdown para una bóveda de Obsidian; usa las preguntas para leer patrones dentro de la app.</p>
+                  <button id="experienceMapExportButton" class="ghost-button" type="button" onclick="window.exportExperienceMapMarkdown?.()">Exportar mapa y notas</button>
+                  <small id="experienceMapExportHelp">Genera el Markdown del mapa y las notas de experiencias para Obsidian.</small>
+                  <div class="obsidian-local-actions" aria-label="Estado de conexión con Obsidian">
+                    <span id="localObsidianVaultStatus" class="card-meta">Bóveda PC no conectada. Las exportaciones solo se descargarán.</span>
+                    <button id="connectLocalObsidianVaultButton" class="ghost-button" type="button">Conectar bóveda del PC</button>
+                    <button id="forgetLocalObsidianVaultButton" class="ghost-button" type="button" hidden>Quitar conexión local</button>
+                  </div>
                 </div>
-              </div>
+              </details>
               <div class="query-box">
                 <input id="experienceMapQuestionInput" type="text" placeholder="Ej: ¿qué lugares se relacionan con mayor energía?" />
                 <button id="experienceMapAskButton" class="primary-button" type="button">Consultar</button>
@@ -883,7 +900,7 @@
                 <h2 id="publications-heading">Publicaciones Inteligentes</h2>
                 <span id="publicationStatus">Borradores locales</span>
               </div>
-              <div class="module-scope-bar">
+              <div class="output-primary-controls publication-primary-controls">
                 <label>
                   <span id="publicationParticipantLabel">Grupo / persona fuente</span>
                   <select id="publicationPilotParticipantFilter">
@@ -898,29 +915,48 @@
                     <option value="evidence">Material sin historia</option>
                   </select>
                 </label>
-                <label>
-                  Área de vida
-                  <select id="publicationCategoryFilter">
-                    <option value="all">Todas las áreas de vida</option>
-                  </select>
-                </label>
-                <label>
-                  Origen / conector
-                  <select id="publicationSourceFilter">
-                    <option value="all">Todos los origenes</option>
-                  </select>
-                </label>
-                <label class="compact-date-filter">
-                  Desde
-                  <input id="publicationDateFromFilter" type="date" />
-                </label>
-                <label class="compact-date-filter">
-                  Hasta
-                  <input id="publicationDateToFilter" type="date" />
-                </label>
-                <button id="clearPublicationScopeButton" class="ghost-button" type="button">Limpiar filtros</button>
-                <span id="publicationScopeStatus">Fuente general</span>
               </div>
+              <details id="publicationAdvancedFilters" class="output-advanced-drawer">
+                <summary>
+                  <span id="publicationAdvancedTitle">Ajustar selección</span>
+                  <small id="publicationAdvancedHelp">Área de vida, origen, fecha o cantidad de material</small>
+                </summary>
+                <div class="module-scope-bar">
+                  <label>
+                    <span id="publicationCategoryLabel">Área de vida</span>
+                    <select id="publicationCategoryFilter">
+                      <option value="all">Todas las áreas de vida</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span id="publicationSourceLabel">Origen / conector</span>
+                    <select id="publicationSourceFilter">
+                      <option value="all">Todos los origenes</option>
+                    </select>
+                  </label>
+                  <label class="compact-date-filter">
+                    <span id="publicationDateFromLabel">Desde</span>
+                    <input id="publicationDateFromFilter" type="date" />
+                  </label>
+                  <label class="compact-date-filter">
+                    <span id="publicationDateToLabel">Hasta</span>
+                    <input id="publicationDateToFilter" type="date" />
+                  </label>
+                  <label>
+                    <span id="publicationSourceModeLabel">Cantidad de material</span>
+                    <select id="publicationSourceInput">
+                      <option value="report">Todo el alcance seleccionado</option>
+                      <option value="latest">Material más reciente</option>
+                    </select>
+                  </label>
+                  <label class="inline-toggle">
+                    <input id="publicationPrivacyInput" type="checkbox" checked />
+                    <span id="publicationPrivacyLabel">Aplicar limpieza de privacidad antes de generar</span>
+                  </label>
+                  <button id="clearPublicationScopeButton" class="ghost-button" type="button">Limpiar filtros</button>
+                  <span id="publicationScopeStatus">Fuente general</span>
+                </div>
+              </details>
               <div id="publicationSharedScopeContext" class="shared-scope-context" aria-live="polite"></div>
               <div id="publicationQuickStart" class="publication-quick-start" aria-label="Arranque rapido de publicaciones"></div>
               <form id="publicationForm" class="experience-form">
@@ -935,22 +971,9 @@
                   </label>
                 </div>
                 <div id="publicationTypeHelp" class="publication-type-help"></div>
-                <div class="two-columns">
-                  <label hidden>
-                    Canal
-                    <select id="publicationChannelInput"></select>
-                  </label>
-                  <label>
-                    Fuente
-                    <select id="publicationSourceInput">
-                      <option value="report">Todo el alcance seleccionado</option>
-                      <option value="latest">Material más reciente</option>
-                    </select>
-                  </label>
-                </div>
-                <label class="inline-toggle">
-                  <input id="publicationPrivacyInput" type="checkbox" checked />
-                  <span>Aplicar limpieza de privacidad antes de generar</span>
+                <label hidden>
+                  Canal
+                  <select id="publicationChannelInput"></select>
                 </label>
                 <div class="form-actions">
                   <button id="generatePublicationButton" class="primary-button" type="button">Generar PDF revista premium</button>
@@ -1029,7 +1052,7 @@
             <div class="manual-version-card">
               <div>
                 <span id="manualVersionEyebrow">Versión vigente</span>
-                <strong id="manualVersionValue">20260727-output-workbench-716</strong>
+                <strong id="manualVersionValue">20260727-product-shell-717</strong>
                 <p id="manualVersionSummary">Guía práctica organizada por temas para entender el flujo de la app sin leer todo de corrido.</p>
               </div>
               <div class="manual-guide-grid" aria-label="Estructura del manual">
@@ -1052,23 +1075,31 @@
                 <span id="manualSearchLabel">Buscar en el manual</span>
                 <input id="manualSearchInput" type="search" autocomplete="off" placeholder="Buscar sección, función o palabra clave" />
               </label>
-              <label>
-                <span id="manualReviewFilterLabel">Estado de revisión</span>
-                <select id="manualReviewFilter">
-                  <option value="all">Todas</option>
-                  <option value="pending">Pendientes</option>
-                  <option value="reviewed">Revisadas</option>
-                </select>
-              </label>
               <button id="manualClearSearchButton" class="ghost-button" type="button">Limpiar búsqueda</button>
-              <button id="manualExportMarkdownButton" class="ghost-button" type="button">Exportar Markdown</button>
               <button id="manualExportPdfButton" class="primary-button" type="button">Descargar manual PDF</button>
               <button id="manualExportHtmlButton" class="ghost-button technical-export" type="button" hidden>HTML imprimible</button>
-              <button id="manualMarkAllButton" class="ghost-button" type="button">Marcar todo</button>
-              <button id="manualResetReviewButton" class="ghost-button" type="button">Reiniciar revisión</button>
               <span id="manualResultCount" class="card-meta"></span>
             </div>
-            <div id="manualReviewMeter" class="manual-review-meter"></div>
+            <details class="output-advanced-drawer manual-review-drawer">
+              <summary>
+                <span>Opciones de revisión</span>
+                <small>Controles internos de documentación</small>
+              </summary>
+              <div class="manual-tools">
+                <label>
+                  <span id="manualReviewFilterLabel">Estado de revisión</span>
+                  <select id="manualReviewFilter">
+                    <option value="all">Todas</option>
+                    <option value="pending">Pendientes</option>
+                    <option value="reviewed">Revisadas</option>
+                  </select>
+                </label>
+                <button id="manualExportMarkdownButton" class="ghost-button" type="button">Exportar Markdown</button>
+                <button id="manualMarkAllButton" class="ghost-button" type="button">Marcar todo</button>
+                <button id="manualResetReviewButton" class="ghost-button" type="button">Reiniciar revisión</button>
+              </div>
+              <div id="manualReviewMeter" class="manual-review-meter"></div>
+            </details>
             <div id="manualActiveFilters" class="manual-active-filters"></div>
             <div id="manualSectionChips" class="manual-section-chips"></div>
             <div id="manualContent" class="manual-content"></div>
@@ -1082,12 +1113,6 @@
               <span id="adminHubStatus">Centro operativo</span>
             </div>
             <div class="admin-actions">
-              <button id="embeddingBackfillButton" class="primary-button" type="button">Reindexar busqueda</button>
-              <button id="workspaceBackfillButton" class="ghost-button" type="button">Reparar estructura</button>
-              <button id="refreshOpsButton" class="ghost-button" type="button">Actualizar panel</button>
-              <button id="syncOfflineButton" class="ghost-button" type="button">Actualizar datos del servidor</button>
-              <button id="supabaseDiagnosticsButton" class="ghost-button" type="button">Revisar conexion</button>
-              <button id="supabaseSelfTestButton" class="ghost-button" type="button">Probar nube completa</button>
               <button id="openAdvancedDiagnosticsButton" class="ghost-button" type="button">Diagnostico avanzado</button>
               <span id="embeddingStatus" class="card-meta">Búsqueda vectorial lista para Supabase</span>
             </div>
@@ -1277,6 +1302,6 @@
       </main>
     </div>
 
-    <script src="app.js?v=20260727-output-workbench-716"></script>
+    <script src="app.js?v=20260727-product-shell-717"></script>
 </body>
 </html>

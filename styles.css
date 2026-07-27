@@ -125,6 +125,7 @@ html[data-theme="dark"] textarea::placeholder {
 
 html[data-theme="dark"] .ghost-button,
 html[data-theme="dark"] .nav-item,
+html[data-theme="dark"] .context-nav-item,
 html[data-theme="dark"] .daily-action-link {
   background: rgba(248, 250, 252, 0.04);
   color: var(--ink);
@@ -133,6 +134,8 @@ html[data-theme="dark"] .daily-action-link {
 
 html[data-theme="dark"] .nav-item:hover,
 html[data-theme="dark"] .nav-item.active,
+html[data-theme="dark"] .context-nav-item:hover,
+html[data-theme="dark"] .context-nav-item.active,
 html[data-theme="dark"] .ghost-button:hover {
   background: var(--surface-strong);
   color: var(--ink);
@@ -270,6 +273,32 @@ button,
 
 .nav-item:hover,
 .nav-item.active {
+  border-color: var(--line);
+  background: var(--surface-strong);
+  color: var(--ink);
+}
+
+.context-navigation {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: -8px 0 24px;
+  padding: 0 0 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.context-nav-item {
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.context-nav-item:hover,
+.context-nav-item.active {
   border-color: var(--line);
   background: var(--surface-strong);
   color: var(--ink);
@@ -13370,6 +13399,21 @@ button.asset-processing-summary-card {
     scroll-snap-align: start;
   }
 
+  .context-navigation {
+    flex-wrap: nowrap;
+    margin: -2px -16px 18px;
+    padding: 0 16px 10px;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .context-nav-item {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    scroll-snap-align: start;
+  }
+
   .privacy-panel {
     margin-top: 0;
   }
@@ -13971,6 +14015,25 @@ button.asset-processing-summary-card {
 
   .publication-channel-matrix-grid strong {
     display: none;
+  }
+
+  .sidebar .nav-list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+  }
+
+  .sidebar .nav-item {
+    align-items: center;
+    display: flex;
+    justify-content: center;
+    min-width: 0;
+    padding: 9px 6px;
+    text-align: center;
+    white-space: normal;
   }
 }
 

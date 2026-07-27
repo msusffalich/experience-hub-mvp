@@ -4,6 +4,12 @@ Fecha: 2026-07-27
 Estado: vigente
 Sustituye: contratos que permitían crear experiencias o eventos desde Vibeapp.
 
+Nota de implementación: este documento define el destino canónico. La versión
+de producción conserva temporalmente rutas móviles anteriores mientras
+Vibeapp migra al contrato único de capturas. Esa compatibilidad no cambia la
+responsabilidad funcional descrita aquí y no debe retirarse sin una prueba
+móvil completa.
+
 ## 1. Responsabilidades
 
 ### Vibeapp
@@ -36,6 +42,20 @@ VibePWA organiza y explota la información:
 - genera reportes, hallazgos y publicaciones;
 - exporta historias confirmadas al mapa y a Obsidian;
 - administra cuenta, grupos/personas, privacidad y operación.
+
+La navegación cotidiana se organiza en seis espacios:
+
+1. Inicio
+2. Historias
+3. Evidencia
+4. Inteligencia
+5. Publicar
+6. Cuenta
+
+Agenda, Nueva historia, Línea de tiempo, Hallazgos, Mapa, Ayuda, Operación y
+Automatizaciones aparecen como opciones de su espacio correspondiente. Los
+diagnósticos, reintentos, respaldos y acciones destructivas viven en Cuenta >
+Operación, no en Inicio.
 
 ### Servidor y Supabase
 

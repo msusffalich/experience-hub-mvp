@@ -1,4 +1,4 @@
-const APP_VERSION = "20260727-output-workbench-716";
+const APP_VERSION = "20260727-product-shell-717";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -427,20 +427,20 @@ const i18n = {
   es: {
     languageLabel: "Idioma",
     nav: {
-      auth: "Acceso",
+      auth: "Cuenta",
       dashboard: "Inicio",
-      capture: "Capturar",
-      library: "Librería",
-      assetLibrary: "Archivos",
+      capture: "Nueva historia",
+      library: "Historias",
+      assetLibrary: "Evidencia",
       agenda: "Agenda",
       timeline: "Línea de tiempo",
-      experienceMap: "Mapa de Experiencias",
-      report: "Reportes",
+      experienceMap: "Mapa",
+      report: "Inteligencia",
       publications: "Publicar",
       insights: "Hallazgos",
       automation: "Automatizaciones",
       manual: "Ayuda",
-      admin: "Operacion",
+      admin: "Operación",
     },
     viewTitles: {
       auth: "Acceso seguro",
@@ -1265,15 +1265,15 @@ const i18n = {
   en: {
     languageLabel: "Language",
     nav: {
-      auth: "Access",
+      auth: "Account",
       dashboard: "Home",
-      capture: "Capture",
-      library: "Library",
-      assetLibrary: "Files",
+      capture: "New story",
+      library: "Stories",
+      assetLibrary: "Evidence",
       agenda: "Agenda",
       timeline: "Timeline",
-      experienceMap: "Experience Map",
-      report: "Reports",
+      experienceMap: "Map",
+      report: "Intelligence",
       publications: "Publish",
       insights: "Insights",
       automation: "Automations",
@@ -2118,15 +2118,15 @@ function mergeLocale(base, overrides) {
 i18n.fr = mergeLocale(i18n.en, {
   languageLabel: "Langue",
   nav: {
-    auth: "Accès",
+    auth: "Compte",
     dashboard: "Accueil",
-    capture: "Capturer",
-    library: "Bibliothèque",
-    assetLibrary: "Fichiers",
+    capture: "Nouvelle histoire",
+    library: "Histoires",
+    assetLibrary: "Preuves",
     agenda: "Agenda",
     timeline: "Chronologie",
     experienceMap: "Carte",
-    report: "Rapports",
+    report: "Intelligence",
     publications: "Publier",
     insights: "Enseignements",
     automation: "Automatisations",
@@ -2328,15 +2328,15 @@ i18n.fr = mergeLocale(i18n.en, {
 i18n.pt = mergeLocale(i18n.es, {
   languageLabel: "Idioma",
   nav: {
-    auth: "Acesso",
+    auth: "Conta",
     dashboard: "Início",
-    capture: "Capturar",
-    library: "Biblioteca",
-    assetLibrary: "Arquivos",
+    capture: "Nova história",
+    library: "Histórias",
+    assetLibrary: "Evidências",
     agenda: "Agenda",
     timeline: "Linha do tempo",
     experienceMap: "Mapa",
-    report: "Relatórios",
+    report: "Inteligência",
     publications: "Publicar",
     insights: "Descobertas",
     automation: "Automações",
@@ -4573,6 +4573,11 @@ Object.assign(manualContent, {
       "Vibe te ayuda a capturar momentos, convertirlos en historias y usarlos para recordar, analizar o compartir. No es necesario decidir toda la historia mientras la estás viviendo.",
       "Vibeapp captura desde el móvil o tablet. VibePWA organiza, analiza y presenta la memoria desde la web. Ambos usan la misma cuenta y el servidor es el registro común.",
     ] },
+    { title: "Cómo moverte por VibePWA", body: [
+      "La navegación principal tiene seis espacios: Inicio, Historias, Evidencia, Inteligencia, Publicar y Cuenta.",
+      "Cada espacio muestra solo las opciones relacionadas. Agenda vive en Inicio; Nueva historia y Línea de tiempo en Historias; Reportes, Hallazgos y Mapa en Inteligencia; Ayuda, Operación y Automatizaciones en Cuenta.",
+      "Los filtros técnicos, diagnósticos, respaldos y acciones destructivas no aparecen en el recorrido diario. Están plegados o dentro de Cuenta > Operación.",
+    ] },
     { title: "Captura primero, historia después", body: [
       "Una foto, nota de voz, video, texto o documento puede llegar antes de que exista una historia. Se guarda como evidencia en la Bandeja y espera a que decidas dónde pertenece.",
       "Este orden evita experiencias falsas: una foto no se convierte en una historia por sí sola. La historia nace cuando tú eliges el momento y cuentas qué ocurrió.",
@@ -4611,6 +4616,11 @@ Object.assign(manualContent, {
     { title: "Your Vibe ecosystem", body: [
       "Vibe helps you capture moments, turn them into stories, and use them to remember, understand, or share. You do not need to define the whole story while living it.",
       "Vibeapp captures from mobile or tablet. VibePWA organizes, analyzes, and presents memory on the web. Both use the same account and the server is the shared record.",
+    ] },
+    { title: "Navigate VibePWA", body: [
+      "Primary navigation has six spaces: Home, Stories, Evidence, Intelligence, Publish, and Account.",
+      "Each space shows only related options. Agenda belongs to Home; New story and Timeline to Stories; Reports, Findings, and Map to Intelligence; Help, Operation, and Automations to Account.",
+      "Technical filters, diagnostics, backups, and destructive actions stay out of daily use. They are collapsed or located under Account > Operation.",
     ] },
     { title: "Capture first, structure later", body: [
       "A photo, voice note, video, text, or document may arrive before there is a story. It stays as evidence in the Inbox until you decide where it belongs.",
@@ -4651,6 +4661,11 @@ Object.assign(manualContent, {
       "Vibe vous aide a capturer des moments, a les transformer en histoires et a les utiliser pour vous souvenir, comprendre ou partager. Il n est pas necessaire de definir toute l histoire au moment de la vivre.",
       "Vibeapp capture depuis le mobile ou la tablette. VibePWA organise, analyse et presente la memoire sur le web. Les deux utilisent le meme compte et le serveur est le registre commun.",
     ] },
+    { title: "Naviguer dans VibePWA", body: [
+      "La navigation principale comporte six espaces: Accueil, Histoires, Preuves, Intelligence, Publier et Compte.",
+      "Chaque espace affiche seulement ses options. Agenda appartient a Accueil; Nouvelle histoire et Chronologie a Histoires; Rapports, Enseignements et Carte a Intelligence; Aide, Operation et Automatisations a Compte.",
+      "Les filtres techniques, diagnostics, sauvegardes et actions destructives restent hors de l usage quotidien. Ils sont replies ou places dans Compte > Operation.",
+    ] },
     { title: "Capturer d abord, structurer ensuite", body: [
       "Une photo, une note vocale, une video, un texte ou un document peut arriver avant une histoire. Il reste comme preuve dans la Boite jusqu a ce que vous decidiez ou il appartient.",
       "Cela evite les fausses experiences: une photo ne devient pas une histoire seule. L histoire commence lorsque vous choisissez le moment et racontez ce qui s est passe.",
@@ -4689,6 +4704,11 @@ Object.assign(manualContent, {
     { title: "Seu ecossistema Vibe", body: [
       "Vibe ajuda voce a capturar momentos, transforma-los em historias e usa-los para lembrar, compreender ou compartilhar. Nao e necessario definir toda a historia enquanto voce a vive.",
       "Vibeapp captura no celular ou tablet. VibePWA organiza, analisa e apresenta a memoria na web. Ambos usam a mesma conta e o servidor e o registro comum.",
+    ] },
+    { title: "Navegar no VibePWA", body: [
+      "A navegacao principal tem seis espacos: Inicio, Historias, Evidencias, Inteligencia, Publicar e Conta.",
+      "Cada espaco mostra apenas suas opcoes. Agenda fica em Inicio; Nova historia e Linha do tempo em Historias; Relatorios, Descobertas e Mapa em Inteligencia; Ajuda, Operacao e Automacoes em Conta.",
+      "Filtros tecnicos, diagnosticos, backups e acoes destrutivas ficam fora do uso diario. Eles estao recolhidos ou em Conta > Operacao.",
     ] },
     { title: "Capture primeiro, estruture depois", body: [
       "Uma foto, nota de voz, video, texto ou documento pode chegar antes de existir uma historia. Ele fica como evidencia na Bandeja ate voce decidir a que historia pertence.",
@@ -6157,6 +6177,41 @@ function productViewTitle(view) {
   return label === `viewTitles.${view}` ? productNavLabel(view) : label;
 }
 
+const PRODUCT_NAV_ROOT_BY_VIEW = Object.freeze({
+  auth: "auth",
+  dashboard: "dashboard",
+  agenda: "dashboard",
+  capture: "library",
+  library: "library",
+  timeline: "library",
+  assetLibrary: "assetLibrary",
+  report: "report",
+  insights: "report",
+  experienceMap: "report",
+  publications: "publications",
+  manual: "auth",
+  admin: "auth",
+  automation: "auth",
+});
+
+function productNavRoot(view) {
+  return PRODUCT_NAV_ROOT_BY_VIEW[view] || "dashboard";
+}
+
+function renderContextNavigation(view = getActiveView()) {
+  const navigation = document.getElementById("contextNavigation");
+  if (!navigation) return;
+  const root = productNavRoot(view);
+  let visibleCount = 0;
+  navigation.querySelectorAll(".context-nav-item").forEach((button) => {
+    const visible = button.dataset.navParent === root;
+    button.hidden = !visible;
+    button.classList.toggle("active", visible && button.dataset.view === view);
+    if (visible) visibleCount += 1;
+  });
+  navigation.hidden = visibleCount === 0;
+}
+
 async function hydrateFromApi() {
   const startedAt = performance.now();
   try {
@@ -7407,12 +7462,13 @@ function applyLatestServerDailyBriefing(briefing) {
 }
 
 function setupNavigation() {
-  document.querySelectorAll(".nav-item").forEach((button) => {
+  document.querySelectorAll(".nav-item, .context-nav-item").forEach((button) => {
     button.addEventListener("click", (event) => {
       event.preventDefault();
       safeShowView(button.dataset.view);
     });
   });
+  renderContextNavigation(getActiveView());
 }
 
 function renderPersistenceGateBanner() {
@@ -7938,11 +7994,7 @@ function renderAuthStatePanel() {
 }
 
 function showAuthView() {
-  document.querySelectorAll(".nav-item").forEach((item) => item.classList.remove("active"));
-  document.querySelectorAll(".view").forEach((section) => section.classList.remove("active-view"));
-  document.querySelector('[data-view="auth"]')?.classList.add("active");
-  document.getElementById("authView").classList.add("active-view");
-  document.getElementById("viewTitle").textContent = languageText("Acceso seguro", "Secure access", "Accès sécurisé");
+  showView("auth");
   renderAuthStatePanel();
 }
 
@@ -8022,11 +8074,12 @@ function applyLanguage() {
   document.documentElement.lang = state.language;
   document.querySelector(".language-control span").textContent = t("languageLabel");
   applyDisplayThemeLanguage();
-  document.querySelectorAll(".nav-item").forEach((button) => {
+  document.querySelectorAll(".nav-item, .context-nav-item").forEach((button) => {
     button.textContent = productNavLabel(button.dataset.view);
   });
-  const activeView = document.querySelector(".nav-item.active")?.dataset.view || "dashboard";
+  const activeView = getActiveView();
   document.getElementById("viewTitle").textContent = productViewTitle(activeView);
+  renderContextNavigation(activeView);
   if (document.getElementById("seedButton")) document.getElementById("seedButton").textContent = t("buttons.reset");
   if (document.getElementById("clearDemoButton")) document.getElementById("clearDemoButton").textContent = t("buttons.clearDemo");
   if (document.getElementById("voiceCommandButton")) document.getElementById("voiceCommandButton").textContent = t("buttons.voiceCommand");
@@ -8099,48 +8152,58 @@ function applyLanguage() {
     document.getElementById("authPasswordInput").type === "password" ? t("buttons.showPassword") : t("buttons.hidePassword");
   document.getElementById("manual-heading").textContent = t("viewTitles.manual");
   document.getElementById("manualUpdatedLabel").textContent = t("labels.manualUpdated");
-  document.getElementById("manualVersionEyebrow").textContent = state.language !== "es" ? "Current version" : "Versión vigente";
+  document.getElementById("manualVersionEyebrow").textContent = languageText("Versión vigente", "Current version", "Version active", "Versão atual");
   document.getElementById("manualVersionValue").textContent = APP_VERSION;
-  document.getElementById("manualVersionSummary").textContent = state.language !== "es"
-     ? "Practical guide organized by topic so you can understand the app flow without reading everything line by line."
-    : "Guía práctica organizada por temas para entender el flujo de la app sin leer todo de corrido.";
-  document.getElementById("manualGuideStartTitle").textContent = state.language !== "es" ? "Quick start" : "Inicio rápido";
-  document.getElementById("manualGuideStartText").textContent = state.language !== "es" ? "Capture, Library, Assets, and Reports." : "Captura, Librería, Activos y Reportes.";
-  document.getElementById("manualGuideOperateTitle").textContent = state.language !== "es" ? "Operations" : "Operación";
-  document.getElementById("manualGuideOperateText").textContent = state.language !== "es" ? "Privacy, Supabase, backup, and multi-device use." : "Privacidad, Supabase, respaldo y multidispositivo.";
-  document.getElementById("manualGuideAdminTitle").textContent = state.language !== "es" ? "Administration" : "Administración";
-  document.getElementById("manualGuideAdminText").textContent = state.language !== "es" ? "Quality, diagnostics, and publishing." : "Calidad, diagnóstico y publicación.";
-  document.getElementById("manualSearchLabel").textContent = state.language !== "es" ? "Search the manual" : "Buscar en el manual";
-  document.getElementById("manualVersionSummary").textContent = state.language !== "es"
-     ? "Practical guide organized by topic. Vibeapp captures native context; VibePWA reviews, analyzes, reports, publishes, and administers."
-    : "Guia practica organizada por temas. Vibeapp captura el contexto nativo; VibePWA revisa, analiza, reporta, publica y administra.";
-  document.getElementById("manualGuideStartText").textContent = state.language !== "es"
-     ? "Use Vibeapp to capture; use VibePWA to review Library, Assets, Reports, Findings, and Publications."
-    : "Usa Vibeapp para capturar; usa VibePWA para revisar Libreria, Activos, Reportes, Hallazgos y Publicaciones.";
-  document.getElementById("manualGuideOperateText").textContent = state.language !== "es"
-     ? "Server sync, privacy, backups, and multi-device continuity."
-    : "Sincronizacion de servidor, privacidad, respaldos y continuidad multidispositivo.";
-  document.getElementById("manualGuideAdminText").textContent = state.language !== "es"
-     ? "Connectors, diagnostics, quality, and publishing controls."
-    : "Conectores, diagnostico, calidad y controles de publicacion.";
-  document.getElementById("manualSearchInput").placeholder =
-    state.language !== "es" ? "Search section, feature, or keyword" : "Buscar sección, función o palabra clave";
-  document.getElementById("manualReviewFilterLabel").textContent = state.language !== "es" ? "Review status" : "Estado de revisión";
+  document.getElementById("manualVersionSummary").textContent = languageText(
+    "Guía práctica del ecosistema. Vibeapp captura; VibePWA organiza historias, evidencia, inteligencia y publicaciones.",
+    "Practical ecosystem guide. Vibeapp captures; VibePWA organizes stories, evidence, intelligence, and publications.",
+    "Guide pratique de l'écosystème. Vibeapp capture; VibePWA organise les histoires, les preuves, l'intelligence et les publications.",
+    "Guia prático do ecossistema. Vibeapp captura; VibePWA organiza histórias, evidências, inteligência e publicações.",
+  );
+  document.getElementById("manualGuideStartTitle").textContent = languageText("Uso diario", "Daily use", "Usage quotidien", "Uso diário");
+  document.getElementById("manualGuideStartText").textContent = languageText(
+    "Inicio, Historias, Evidencia, Inteligencia y Publicar.",
+    "Home, Stories, Evidence, Intelligence, and Publish.",
+    "Accueil, Histoires, Preuves, Intelligence et Publier.",
+    "Início, Histórias, Evidências, Inteligência e Publicar.",
+  );
+  document.getElementById("manualGuideOperateTitle").textContent = languageText("Continuidad", "Continuity", "Continuité", "Continuidade");
+  document.getElementById("manualGuideOperateText").textContent = languageText(
+    "Sincronización, privacidad, respaldo y uso multidispositivo.",
+    "Sync, privacy, backup, and multi-device use.",
+    "Synchronisation, confidentialité, sauvegarde et utilisation multi-appareils.",
+    "Sincronização, privacidade, backup e uso em vários dispositivos.",
+  );
+  document.getElementById("manualGuideAdminTitle").textContent = languageText("Cuenta y operación", "Account and operation", "Compte et opérations", "Conta e operação");
+  document.getElementById("manualGuideAdminText").textContent = languageText(
+    "Grupos, ayuda, conectores y diagnósticos.",
+    "Groups, help, connectors, and diagnostics.",
+    "Groupes, aide, connecteurs et diagnostics.",
+    "Grupos, ajuda, conectores e diagnósticos.",
+  );
+  document.getElementById("manualSearchLabel").textContent = languageText("Buscar en el manual", "Search the manual", "Rechercher dans le manuel", "Pesquisar no manual");
+  document.getElementById("manualSearchInput").placeholder = languageText(
+    "Buscar sección, función o palabra clave",
+    "Search section, feature, or keyword",
+    "Rechercher une section, une fonction ou un mot-clé",
+    "Pesquisar seção, função ou palavra-chave",
+  );
+  document.getElementById("manualReviewFilterLabel").textContent = languageText("Estado de revisión", "Review status", "État de révision", "Estado da revisão");
   const manualReviewFilter = document.getElementById("manualReviewFilter");
-  manualReviewFilter.options[0].textContent = state.language !== "es" ? "All" : "Todas";
-  manualReviewFilter.options[1].textContent = state.language !== "es" ? "Pending" : "Pendientes";
-  manualReviewFilter.options[2].textContent = state.language !== "es" ? "Reviewed" : "Revisadas";
-  document.getElementById("manualClearSearchButton").textContent = state.language !== "es" ? "Clear search" : "Limpiar búsqueda";
-  document.getElementById("manualExportMarkdownButton").textContent = state.language !== "es" ? "Export Markdown" : "Exportar Markdown";
+  manualReviewFilter.options[0].textContent = languageText("Todas", "All", "Toutes", "Todas");
+  manualReviewFilter.options[1].textContent = languageText("Pendientes", "Pending", "En attente", "Pendentes");
+  manualReviewFilter.options[2].textContent = languageText("Revisadas", "Reviewed", "Révisées", "Revisadas");
+  document.getElementById("manualClearSearchButton").textContent = languageText("Limpiar búsqueda", "Clear search", "Effacer la recherche", "Limpar pesquisa");
+  document.getElementById("manualExportMarkdownButton").textContent = languageText("Exportar Markdown", "Export Markdown", "Exporter Markdown", "Exportar Markdown");
   document.getElementById("manualExportPdfButton").textContent = languageText(
     "Descargar manual PDF",
     "Download manual PDF",
     "Télécharger le manuel PDF",
     "Baixar manual PDF",
   );
-  document.getElementById("manualExportHtmlButton").textContent = state.language !== "es" ? "Printable HTML" : "HTML imprimible";
-  document.getElementById("manualMarkAllButton").textContent = state.language !== "es" ? "Mark all" : "Marcar todo";
-  document.getElementById("manualResetReviewButton").textContent = state.language !== "es" ? "Reset review" : "Reiniciar revisión";
+  document.getElementById("manualExportHtmlButton").textContent = languageText("HTML imprimible", "Printable HTML", "HTML imprimable", "HTML para impressão");
+  document.getElementById("manualMarkAllButton").textContent = languageText("Marcar todo", "Mark all", "Tout marquer", "Marcar tudo");
+  document.getElementById("manualResetReviewButton").textContent = languageText("Reiniciar revisión", "Reset review", "Réinitialiser la révision", "Reiniciar revisão");
   document.getElementById("asset-library-heading").textContent = t("viewTitles.assetLibrary");
   document.getElementById("assetLibraryIntro").textContent = t("labels.assetLibraryIntro");
   document.getElementById("dashboardAgendaTitle").textContent = t("labels.dashboardAgendaTitle");
@@ -8149,15 +8212,6 @@ function applyLanguage() {
   const dashboardPilotStatus = document.getElementById("dashboardPilotStatus");
   if (dashboardPilotTitle) dashboardPilotTitle.textContent = state.language !== "es" ? "Pilot readiness" : "Preparación del piloto";
   if (dashboardPilotStatus) dashboardPilotStatus.textContent = state.language !== "es" ? "Operational follow-up" : "Seguimiento operativo";
-  const dashboardDataResetButton = document.getElementById("dashboardDataResetButton");
-  if (dashboardDataResetButton) {
-    dashboardDataResetButton.textContent = state.language === "fr" ? "Effacer donnees" : state.language !== "es" ? "Clean data" : "Limpiar datos";
-    dashboardDataResetButton.title = state.language === "fr"
-       ? "Telecharge une sauvegarde puis efface les donnees du cloud avec confirmation."
-      : state.language !== "es"
-         ? "Downloads a backup, then erases cloud data after confirmation."
-        : "Descarga un respaldo y luego borra los datos de nube con confirmacion.";
-  }
   document.getElementById("exportAssetInventoryButton").textContent = t("buttons.exportAssetInventory");
   document.getElementById("exportAssetInventoryCsvButton").textContent = t("buttons.exportAssetInventoryCsv");
   document.getElementById("exportAssetProcessingBacklogButton").textContent = t("buttons.exportAssetProcessingBacklog");
@@ -8248,17 +8302,67 @@ function applyLanguage() {
   document.getElementById("reportPeopleFilter").placeholder = languageText("Persona mencionada", "Mentioned person", "Personne mentionnée", "Pessoa mencionada");
   document.getElementById("reportObjectiveFilter").placeholder = languageText("Objetivo", "Goal", "Objectif", "Objetivo");
   document.getElementById("reportEventFilter").placeholder = languageText("Evento interno", "Internal event", "Événement interne", "Evento interno");
-  document.getElementById("publicationParticipantLabel").textContent = state.language !== "es" ? "Source group / person" : "Grupo / persona fuente";
-  document.getElementById("generatePublicationButton").textContent = state.language !== "es" ? "Generate draft" : "Generar borrador";
+  document.getElementById("publicationParticipantLabel").textContent = languageText(
+    "Grupo / persona fuente",
+    "Source group / person",
+    "Groupe / personne source",
+    "Grupo / pessoa de origem",
+  );
+  document.getElementById("publicationAdvancedTitle").textContent = languageText(
+    "Ajustar selección",
+    "Refine selection",
+    "Affiner la sélection",
+    "Ajustar seleção",
+  );
+  document.getElementById("publicationAdvancedHelp").textContent = languageText(
+    "Área de vida, origen, fecha o cantidad de material",
+    "Life area, source, date, or amount of material",
+    "Domaine de vie, source, date ou quantité de contenu",
+    "Área de vida, origem, data ou quantidade de material",
+  );
+  document.getElementById("publicationCategoryLabel").textContent = languageText("Área de vida", "Life area", "Domaine de vie", "Área de vida");
+  document.getElementById("publicationSourceLabel").textContent = languageText("Origen / conector", "Source / connector", "Source / connecteur", "Origem / conector");
+  document.getElementById("publicationDateFromLabel").textContent = languageText("Desde", "From", "Du", "Desde");
+  document.getElementById("publicationDateToLabel").textContent = languageText("Hasta", "To", "Au", "Até");
+  document.getElementById("publicationSourceModeLabel").textContent = languageText(
+    "Cantidad de material",
+    "Amount of material",
+    "Quantité de contenu",
+    "Quantidade de material",
+  );
+  document.getElementById("publicationPrivacyLabel").textContent = languageText(
+    "Aplicar limpieza de privacidad antes de generar",
+    "Apply privacy cleanup before generating",
+    "Appliquer le nettoyage de confidentialité avant la génération",
+    "Aplicar limpeza de privacidade antes de gerar",
+  );
+  const publicationSourceOptions = [
+    languageText("Todo el alcance seleccionado", "All selected material", "Tout le contenu sélectionné", "Todo o material selecionado"),
+    languageText("Material más reciente", "Most recent material", "Contenu le plus récent", "Material mais recente"),
+  ];
+  Array.from(document.getElementById("publicationSourceInput").options).forEach((option, index) => {
+    option.textContent = publicationSourceOptions[index] || option.textContent;
+  });
+  document.getElementById("generatePublicationButton").textContent = languageText(
+    "Generar PDF revista premium",
+    "Generate premium magazine PDF",
+    "Générer le PDF magazine premium",
+    "Gerar PDF de revista premium",
+  );
+  document.getElementById("exportPublicationPdfButton").textContent = languageText(
+    "Descargar PDF revista premium",
+    "Download premium magazine PDF",
+    "Télécharger le PDF magazine premium",
+    "Baixar PDF de revista premium",
+  );
   document.getElementById("previewPublicationHtmlButton").textContent = t("buttons.previewPublication");
   document.getElementById("copyPublicationTextButton").textContent = t("buttons.copyPublicationText");
   document.getElementById("copyPublicationHtmlButton").textContent = t("buttons.copyPublicationHtml");
   document.getElementById("exportPublicationHtmlButton").textContent = state.language !== "es" ? "Export HTML" : "Exportar HTML";
   document.getElementById("exportPublicationMarkdownButton").textContent = state.language !== "es" ? "Export Markdown" : "Exportar Markdown";
   document.getElementById("exportPublicationPackageButton").textContent = t("buttons.exportPublicationPackage");
-  document.getElementById("publicationHistoryHeading").textContent = state.language !== "es" ? "Drafts" : "Borradores";
+  document.getElementById("publicationHistoryHeading").textContent = languageText("Borradores", "Drafts", "Brouillons", "Rascunhos");
   document.getElementById("automation-heading").textContent = t("viewTitles.automation");
-  document.getElementById("embeddingBackfillButton").textContent = t("buttons.updateEmbeddings");
   document.getElementById("adminHubStatus").textContent = state.language !== "es" ? "Operations center" : "Centro operativo";
   document.getElementById("adminExecutiveTitle").textContent = state.language !== "es" ? "Executive summary" : "Resumen ejecutivo";
   document.getElementById("adminExecutiveHelp").textContent = state.language !== "es" ? "Status, priorities, and publishing" : "Estado, prioridades y publicacion";
@@ -8274,12 +8378,7 @@ function applyLanguage() {
   document.getElementById("adminQualityHelp").textContent = state.language !== "es" ? "Rules, tests, traceability, and records" : "Reglas, pruebas, trazabilidad y registros";
   document.getElementById("adminAdvancedTitle").textContent = state.language !== "es" ? "Advanced diagnostics" : "Diagnostico avanzado";
   document.getElementById("adminAdvancedHelp").textContent = state.language !== "es" ? "Server, test data, integrations, and logs" : "Servidor, datos de prueba, integraciones y registros";
-  document.getElementById("workspaceBackfillButton").textContent = t("buttons.syncWorkspaceStructure");
-  document.getElementById("refreshOpsButton").textContent = t("buttons.refreshOps");
-  document.getElementById("supabaseDiagnosticsButton").textContent = t("buttons.verifySupabase");
-  document.getElementById("supabaseSelfTestButton").textContent = t("buttons.testSupabaseFlow");
   document.getElementById("openAdvancedDiagnosticsButton").textContent = state.language !== "es" ? "Advanced diagnostics" : "Diagnostico avanzado";
-  document.getElementById("syncOfflineButton").textContent = t("buttons.syncOffline");
   if (document.getElementById("adminExportBackupButton")) document.getElementById("adminExportBackupButton").textContent = t("buttons.export");
   if (document.getElementById("adminRestoreBackupButton")) document.getElementById("adminRestoreBackupButton").textContent = t("buttons.restoreBackup");
   if (document.getElementById("clearLocalDataButton")) document.getElementById("clearLocalDataButton").textContent = t("buttons.clearLocalData");
@@ -8315,35 +8414,11 @@ function applyFrenchStaticTextOverrides() {
     authHelp.querySelector("strong").textContent = "Premier accès";
     authHelp.querySelector("p").textContent = "Si tu n'as pas encore d'utilisateur, saisis ton email, crée un mot de passe et clique sur Créer un compte. Les clés techniques du projet ne sont pas des mots de passe.";
   }
-  setText("manualVersionEyebrow", "Version active");
-  setText("manualVersionSummary", "Guide pratique organisé par thème. Vibeapp capture le contexte natif; VibePWA révise, analyse, rapporte, publie et administre.");
-  setText("manualGuideStartTitle", "Démarrage rapide");
-  setText("manualGuideStartText", "Utilise Vibeapp pour capturer; utilise VibePWA pour revoir Bibliothèque, Fichiers, Rapports, Enseignements et Publications.");
-  setText("manualGuideOperateTitle", "Opérations");
-  setText("manualGuideOperateText", "Synchronisation serveur, confidentialité, sauvegardes et continuité multi-appareils.");
-  setText("manualGuideAdminTitle", "Administration");
-  setText("manualGuideAdminText", "Connecteurs, diagnostics, qualité et contrôles de publication.");
-  setText("manualSearchLabel", "Rechercher dans l'aide");
-  setPlaceholder("manualSearchInput", "Rechercher une section, une fonction ou un mot-clé");
-  setText("manualReviewFilterLabel", "État de révision");
-  const manualReviewFilter = document.getElementById("manualReviewFilter");
-  if (manualReviewFilter) {
-    manualReviewFilter.options[0].textContent = "Toutes";
-    manualReviewFilter.options[1].textContent = "En attente";
-    manualReviewFilter.options[2].textContent = "Révisées";
-  }
-  setText("manualClearSearchButton", "Effacer la recherche");
-  setText("manualExportMarkdownButton", "Exporter Markdown");
-  setText("manualExportPdfButton", "Télécharger le PDF édité ReportLab");
-  setText("manualExportHtmlButton", "HTML imprimable");
-  setText("manualMarkAllButton", "Tout marquer");
-  setText("manualResetReviewButton", "Réinitialiser la révision");
   setPlaceholder("experienceMapSearchInput", "Rechercher une expérience, une personne, un lieu ou un objectif");
   setPlaceholder("experienceMapQuestionInput", "Exemple : quels lieux sont liés à une énergie plus élevée ?");
   setPlaceholder("assetSearchInput", "Rechercher fichier, expérience, lieu, personne, format ou date");
   setText("dashboardPilotTitle", "Préparation du pilote");
   setText("dashboardPilotStatus", "Suivi opérationnel");
-  setText("dashboardDataResetButton", "Effacer donnees");
   setText("agendaAdvancedTitle", "Options avancées de calendrier");
   setText("agendaAdvancedHelp", "Importer, exporter et bloquer des jours");
   setText("agendaPilotParticipantLabel", "Groupe/personne lié");
@@ -8355,7 +8430,7 @@ function applyFrenchStaticTextOverrides() {
   setText("reportParticipantLabel", "Groupe/personne dans ce rapport");
   setText("insightsParticipantLabel", "Groupe / personne");
   setText("publicationParticipantLabel", "Groupe / personne source");
-  setText("generatePublicationButton", "Générer le brouillon");
+  setText("generatePublicationButton", "Générer le PDF magazine premium");
   setText("exportPublicationHtmlButton", "Exporter HTML");
   setText("exportPublicationMarkdownButton", "Exporter Markdown");
   setText("publicationHistoryHeading", "Brouillons");
@@ -9275,13 +9350,7 @@ function setupActions() {
   document.getElementById("contextPrimaryButton").addEventListener("click", applyPrimaryContextLocation);
   document.getElementById("contextLocationInput").addEventListener("change", handleContextLocationChange);
   document.getElementById("contextLocationInput").addEventListener("blur", handleContextLocationChange);
-  document.getElementById("embeddingBackfillButton").addEventListener("click", backfillEmbeddings);
-  document.getElementById("workspaceBackfillButton").addEventListener("click", syncWorkspaceStructure);
-  document.getElementById("refreshOpsButton").addEventListener("click", refreshOps);
-  document.getElementById("supabaseDiagnosticsButton").addEventListener("click", runSupabaseDiagnostics);
-  document.getElementById("supabaseSelfTestButton").addEventListener("click", runSupabaseSelfTest);
   document.getElementById("openAdvancedDiagnosticsButton").addEventListener("click", openAdvancedDiagnostics);
-  document.getElementById("syncOfflineButton").addEventListener("click", syncOfflineQueue);
   document.getElementById("clearLocalDataButton")?.addEventListener("click", clearLocalData);
   document.getElementById("unlockLocalButton").addEventListener("click", unlockLocalData);
   document.getElementById("privacyRecommendedButton").addEventListener("click", applyRecommendedPrivacySettings);
@@ -13190,14 +13259,19 @@ function safeShowView(view) {
 }
 
 function showView(view) {
-  const button = document.querySelector(`[data-view="${view}"]`);
   const section = document.getElementById(`${view}View`);
-  if (!button || !section) return;
+  if (!section) return;
+  const root = productNavRoot(view);
+  const rootButton = document.querySelector(`.primary-nav-item[data-nav-root="${root}"]`);
+  const contextButton = document.querySelector(`.context-nav-item[data-view="${view}"]`);
   document.querySelectorAll(".nav-item").forEach((item) => item.classList.remove("active"));
+  document.querySelectorAll(".context-nav-item").forEach((item) => item.classList.remove("active"));
   document.querySelectorAll(".view").forEach((item) => item.classList.remove("active-view"));
-  button.classList.add("active");
+  rootButton?.classList.add("active");
+  contextButton?.classList.add("active");
   section.classList.add("active-view");
   document.getElementById("viewTitle").textContent = productViewTitle(view);
+  renderContextNavigation(view);
   updateUrlForView(view);
   if (!state.deferViewRender) scheduleActiveViewRender(view);
   renderCoreMvpReturnBanner(view);
@@ -13213,8 +13287,9 @@ function scheduleActiveViewRender(view = getActiveView()) {
 }
 
 function getActiveView() {
-  return document.querySelector(".nav-item.active")?.dataset.view
-    || document.querySelector(".active-view")?.id?.replace("View", "")
+  return document.querySelector(".active-view")?.id?.replace("View", "")
+    || document.querySelector(".context-nav-item.active")?.dataset.view
+    || document.querySelector(".nav-item.active")?.dataset.view
     || "dashboard";
 }
 
@@ -36155,7 +36230,8 @@ function renderStartupRecovery(error) {
   const detail = error?.message || String(error || "");
   const dashboard = document.getElementById("dashboardView");
   if (dashboard) dashboard.classList.add("active-view");
-  document.querySelector('[data-view="dashboard"]')?.classList.add("active");
+  document.querySelector('.primary-nav-item[data-nav-root="dashboard"]')?.classList.add("active");
+  renderContextNavigation("dashboard");
   const panel = document.getElementById("dashboardDataStatusPanel") || document.getElementById("dashboardView");
   if (panel) {
     panel.innerHTML = `

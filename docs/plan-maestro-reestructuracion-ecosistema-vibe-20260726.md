@@ -5,6 +5,32 @@ Estado: implementación paralela en curso; producción estable no sustituida
 Alcance: Vibeapp, VibePWA, servidor, Supabase, integraciones, Obsidian,
 reportes, hallazgos, publicaciones, operación y documentación.
 
+## Estado de ejecución al 2026-07-27
+
+La arquitectura objetivo sigue vigente, pero su implementación no debe
+confundirse con la compatibilidad que aún sostiene producción:
+
+- La interfaz de VibePWA ya usa seis espacios principales: Inicio, Historias,
+  Evidencia, Inteligencia, Publicar y Cuenta.
+- Agenda, Nueva historia, Línea de tiempo, Hallazgos, Mapa, Ayuda, Operación y
+  Automatizaciones son rutas contextuales; no compiten en el menú principal.
+- Los filtros técnicos de Evidencia, la exportación a Obsidian y la revisión
+  interna del Manual están plegados y fuera del recorrido cotidiano.
+- Reportes, Hallazgos y Publicaciones conservan un alcance común. Publicaciones
+  muestra primero persona/grupo y material editorial; los filtros de precisión
+  quedan en Ajustar selección.
+- La API objetivo `POST /api/captures` todavía no sustituye las rutas que usa
+  Vibeapp en producción. Las rutas `/api/integration/ingest`,
+  `/api/experiences` y `/api/media` se mantienen hasta completar una migración
+  móvil probada.
+- El contrato objetivo `/api/stories` aún no está implementado como servicio
+  independiente. La lógica de historias continúa en la aplicación actual.
+- Por lo anterior, la Fase 6 permite limpiar navegación, controles duplicados y
+  código aislado, pero no retirar APIs ni adaptadores móviles todavía.
+
+Esta distinción evita declarar terminada una arquitectura que aún conserva
+compatibilidad operativa y evita romper Vibeapp durante la limpieza.
+
 ## 1. Decisión ejecutiva
 
 Vibe se reestructura alrededor de una separación simple:
@@ -559,11 +585,17 @@ Una estimación futura:
 
 ### Fase 6. Limpieza y reemplazo
 
-- retirar rutas antiguas;
-- eliminar escritores duplicados;
-- borrar UI muerta y estilos sin uso;
-- dividir `app.js` y `server.js` por módulos;
-- actualizar caché PWA y navegación;
+- consolidar la navegación de producto en seis espacios;
+- mover opciones contextuales fuera del menú principal;
+- aislar controles técnicos y destructivos en Cuenta > Operación;
+- borrar UI muerta y estilos sin uso cuando una prueba confirme que no tienen
+  consumidores;
+- mantener rutas antiguas mientras Vibeapp dependa de ellas;
+- retirar escritores duplicados solo después de habilitar y validar la ruta
+  canónica de capturas;
+- dividir `app.js` y `server.js` por módulos después de estabilizar los
+  contratos activos;
+- actualizar caché PWA, manual y documentación canónica;
 - cerrar documentación obsoleta con referencia al documento canónico.
 
 ## 13. Estrategia de pruebas

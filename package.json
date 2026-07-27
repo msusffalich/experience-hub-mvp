@@ -26,6 +26,7 @@
     "verify:capture-core": "node scripts/verify-capture-core.mjs && node scripts/verify-capture-supabase-adapters.mjs && node scripts/verify-capture-http.mjs",
     "verify:output-scope": "node scripts/verify-output-scope.mjs",
     "verify:output-workbench": "node scripts/verify-output-workbench.mjs",
+    "verify:product-shell": "node scripts/verify-product-shell.mjs",
     "verify:life-areas": "node scripts/verify-life-area-terminology.mjs",
     "verify:flows": "node scripts/verify-flow-automation.mjs",
     "verify:integrations": "node scripts/verify-integration-contract.mjs",
@@ -41,7 +42,7 @@
     "package:vibeapp:ios": "node scripts/package-vibeapp-ios-handoff.mjs",
     "start": "node server.js",
     "dev": "node server.js",
-    "check": "node --check app.js && node --check server.js && node scripts/smoke-check.mjs && npm run audit:runtime && npm run audit:restructure && npm run verify:obsidian && npm run verify:evidence:v2 && npm run verify:capture-core && npm run verify:output-scope && npm run verify:output-workbench && npm run verify:life-areas",
+    "check": "node --check app.js && node --check server.js && node scripts/smoke-check.mjs && npm run audit:runtime && npm run audit:restructure && npm run verify:obsidian && npm run verify:evidence:v2 && npm run verify:capture-core && npm run verify:output-scope && npm run verify:output-workbench && npm run verify:product-shell && npm run verify:life-areas",
     "test": "npm run check"
   }
 }
