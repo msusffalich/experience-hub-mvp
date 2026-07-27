@@ -108,6 +108,26 @@ const cases = [
     },
   },
   {
+    name: "insights-signal-inventory",
+    script: "insights_pdf_reportlab.py",
+    requiredText: ["mediciones", "No calcula ejes"],
+    payload: {
+      experiences: 0,
+      outputScope: { basis: "evidence", presentationMode: "signal_inventory", evidence: 2, context: 1 },
+      evidenceInventory: {
+        evidence: 2,
+        context: 1,
+        readable: 1,
+        measurements: { records: 2, hasMeasurements: true, metrics: { heartAvg: 68, steps: 4520, sleepMinutes: 420, activeEnergy: 310 } },
+      },
+      evidence: [
+        { name: "foto-playa.jpg", kind: "image", capturedAt: "2026-07-27T10:00:00.000Z", analyticalText: "Foto disponible para revisar." },
+        { name: "nota-de-voz.m4a", kind: "audio", capturedAt: "2026-07-27T10:05:00.000Z" },
+      ],
+      contextEvidence: [{ name: "salud.csv", kind: "biometric", capturedAt: "2026-07-27T10:10:00.000Z" }],
+    },
+  },
+  {
     name: "publication",
     script: "publication_pdf_reportlab.py",
     payload: {

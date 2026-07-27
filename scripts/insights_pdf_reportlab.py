@@ -167,18 +167,29 @@ class CoverBlock(Flowable):
         c.setFillColor(BRAND)
         c.roundRect(0, 0, self.width, self.height, 18, fill=1, stroke=0)
         draw_logo(c, self.width - 1.9 * inch, self.height - 1.05 * inch, 1.35 * inch)
+        output_scope = self.payload.get("outputScope") or {}
+        inventory = self.payload.get("evidenceInventory") or {}
+        is_inventory = output_scope.get("presentationMode") == "signal_inventory"
         c.setFillColor(colors.white)
         c.setFont(FONT_BOLD, 30)
-        c.drawString(0.38 * inch, self.height - 1.42 * inch, "Hallazgos de experiencias")
+        c.drawString(0.38 * inch, self.height - 1.42 * inch, "Señales y mediciones" if is_inventory else "Hallazgos de experiencias")
         c.setFont(FONT_REGULAR, 12)
-        c.drawString(0.4 * inch, self.height - 1.76 * inch, "Diagnóstico visual, ejes humanos y recomendaciones accionables.")
-        output_scope = self.payload.get("outputScope") or {}
-        metrics = [
-            ("Experiencias", self.payload.get("experiences", 0)),
-            ("Evidencias", output_scope.get("evidence", 0)),
-            ("Hallazgos", len(self.payload.get("insights") or [])),
-            ("Contextos", output_scope.get("context", 0)),
-        ]
+        c.drawString(0.4 * inch, self.height - 1.76 * inch, "Registros reales del período, sin inferencias inventadas." if is_inventory else "Diagnóstico visual, ejes humanos y recomendaciones accionables.")
+        metrics = (
+            [
+                ("Evidencias", inventory.get("evidence", 0)),
+                ("Contextos", inventory.get("context", 0)),
+                ("Texto", inventory.get("readable", 0)),
+                ("Mediciones", (inventory.get("measurements") or {}).get("records", 0)),
+            ]
+            if is_inventory
+            else [
+                ("Experiencias", self.payload.get("experiences", 0)),
+                ("Evidencias", output_scope.get("evidence", 0)),
+                ("Hallazgos", len(self.payload.get("insights") or [])),
+                ("Contextos", output_scope.get("context", 0)),
+            ]
+        )
         y = self.height - 2.55 * inch
         for index, (label, value) in enumerate(metrics):
             x = 0.4 * inch + index * 1.28 * inch
@@ -441,12 +452,74 @@ def axis_table(axes):
     return table
 
 
+def evidence_register(items):
+    rows = [[para("Fecha", "Small"), para("Elemento", "Small"), para("Tipo", "Small"), para("Estado", "Small")]]
+    for item in items[:24]:
+        readable = clean(item.get("analyticalText") or item.get("translatedText") or item.get("manualNote") or "")
+        rows.append([
+            para(short(item.get("capturedAt") or item.get("timestamp") or "", 22), "Small"),
+            para(short(item.get("name") or item.get("experienceTitle") or "Elemento sin nombre", 58), "Small"),
+            para(item.get("kind") or "Evidencia", "Small"),
+            para("Con lectura" if readable else "Disponible", "Small"),
+        ])
+    table = Table(rows, colWidths=[1.15 * inch, 2.95 * inch, 0.95 * inch, 0.8 * inch])
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), BRAND),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("GRID", (0, 0), (-1, -1), 0.35, LINE),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 5),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 5),
+        ("TOPPADDING", (0, 0), (-1, -1), 5),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+    ]))
+    return table
+
+
+def build_signal_inventory_story(payload):
+    inventory = payload.get("evidenceInventory") or {}
+    measurements = inventory.get("measurements") or {}
+    metrics = measurements.get("metrics") or {}
+    items = list(payload.get("evidence") or []) + list(payload.get("contextEvidence") or [])
+    has_measurements = bool(measurements.get("hasMeasurements"))
+    records = int(num(measurements.get("records")))
+    story = [CoverBlock(payload), PageBreak()]
+    story.append(para("Resumen factual", "H1x"))
+    story.append(metric_grid([
+        ("Evidencias", inventory.get("evidence", 0)),
+        ("Contextos", inventory.get("context", 0)),
+        ("Texto interpretable", inventory.get("readable", 0)),
+        ("Registros biométricos", records if has_measurements else "-"),
+    ]))
+    story.append(Spacer(1, 10))
+    story.append(two_columns([
+        card("Cómo leer esta salida", "Organiza evidencia y contexto del período. No calcula ejes humanos, cobertura por Áreas de vida ni acciones porque no incluye historias."),
+        card("Uso recomendado", "Revisa el material disponible, completa una historia cuando corresponda o úsalo como respaldo para una publicación."),
+    ]))
+    story.append(para("Mediciones disponibles", "H1x"))
+    story.append(metric_grid([
+        ("Frecuencia cardiaca", f"{round(num(metrics.get('heartAvg')))} bpm" if num(metrics.get("heartAvg")) else "-"),
+        ("Pasos", f"{int(round(num(metrics.get('steps')))):,}" if num(metrics.get("steps")) else "-"),
+        ("Sueño", f"{num(metrics.get('sleepMinutes')) / 60:.1f} h" if num(metrics.get("sleepMinutes")) else "-"),
+        ("Energía activa", f"{round(num(metrics.get('activeEnergy')))} kcal" if num(metrics.get("activeEnergy")) else "-"),
+    ]))
+    story.append(Spacer(1, 8))
+    story.append(para("Las mediciones solo aparecen cuando existen registros reales en el período. Sin registros suficientes, no se estima energía ni se infieren recomendaciones.", "Small"))
+    story.append(para("Registro de evidencia", "H1x"))
+    story.append(evidence_register(items) if items else para("No hay evidencia ni contexto en el período seleccionado.", "Bodyx"))
+    story.append(Spacer(1, 8))
+    story.append(para("Este documento es una lectura factual de señales y mediciones. Los hallazgos por Áreas de vida requieren historias registradas.", "Small"))
+    return story
+
+
 def build_story(payload):
     axes = payload.get("axes") or []
     insights = payload.get("insights") or []
     action_plan = payload.get("actionPlan") or []
     experiences = payload.get("experiences", 0)
     output_scope = payload.get("outputScope") or {}
+    if output_scope.get("presentationMode") == "signal_inventory":
+        return build_signal_inventory_story(payload)
     story = [CoverBlock(payload), PageBreak()]
     story.append(para("Resumen ejecutivo", "H1x"))
     story.append(metric_grid([

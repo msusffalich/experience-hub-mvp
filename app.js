@@ -1,4 +1,4 @@
-const APP_VERSION = "20260727-life-areas-712";
+const APP_VERSION = "20260727-output-roles-713";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -8934,8 +8934,8 @@ function syncAnalyticalScopeInputs() {
   });
   populateIntegrationSourceFilter("insightsSourceFilter", state.insightsFilters.source || "all");
   populateIntegrationSourceFilter("publicationSourceFilter", state.publicationFilters.source || "all");
-  syncOutputBasisSelect("insightsBasisFilter", state.insightsFilters.basis || "all");
-  syncOutputBasisSelect("publicationBasisFilter", state.publicationFilters.basis || "all");
+  syncCustomBasisSelect("insightsBasisFilter", getInsightsBasisOptions(), state.insightsFilters.basis || "all");
+  syncCustomBasisSelect("publicationBasisFilter", getPublicationBasisOptions(), state.publicationFilters.basis || "all");
   updateAnalyticalScopeStatus("insightsScopeStatus", state.insightsFilters, getInsightsOutputScope());
   updateAnalyticalScopeStatus("publicationScopeStatus", state.publicationFilters, getPublicationOutputScope());
 }
@@ -10546,6 +10546,22 @@ function getReportBasisOptions() {
   ];
 }
 
+function getInsightsBasisOptions() {
+  return [
+    ["all", languageText("Lectura de Áreas de vida con evidencia", "Life-area reading with evidence", "Lecture des domaines de vie avec preuves", "Leitura de áreas de vida com evidências")],
+    ["stories", languageText("Lectura de Áreas de vida", "Life-area reading", "Lecture des domaines de vie", "Leitura de áreas de vida")],
+    ["evidence", languageText("Señales y mediciones del período", "Signals and measurements in this period", "Signaux et mesures de la période", "Sinais e medições do período")],
+  ];
+}
+
+function getPublicationBasisOptions() {
+  return [
+    ["all", languageText("Historia y material disponible", "Story and available material", "Histoire et matériel disponible", "História e material disponível")],
+    ["stories", languageText("Historias para publicar", "Stories to publish", "Histoires à publier", "Histórias para publicar")],
+    ["evidence", languageText("Material sin historia", "Material without a story", "Matériel sans histoire", "Material sem história")],
+  ];
+}
+
 function getOutputBasisLabel(value = "all") {
   return getOutputBasisOptions().find(([key]) => key === value)?.[1] || getOutputBasisOptions()[0][1];
 }
@@ -10562,12 +10578,15 @@ function syncOutputBasisSelect(id, value = "all") {
   select.value = options.some(([key]) => key === value) ? value : "all";
 }
 
-function syncReportBasisSelect(value = "all") {
-  const select = document.getElementById("reportBasisFilter");
+function syncCustomBasisSelect(id, options, value = "all") {
+  const select = document.getElementById(id);
   if (!select) return;
-  const options = getReportBasisOptions();
   select.innerHTML = options.map(([key, label]) => `<option value="${key}">${escapeHtml(label)}</option>`).join("");
   select.value = options.some(([key]) => key === value) ? value : "all";
+}
+
+function syncReportBasisSelect(value = "all") {
+  syncCustomBasisSelect("reportBasisFilter", getReportBasisOptions(), value);
 }
 
 function assetMatchesOutputDateRange(asset = {}, dateFrom = "", dateTo = "") {
@@ -10812,6 +10831,10 @@ function getPublicationExperiences() {
 
 function getInsightsOutputScope() {
   return buildAnalyticalOutputScope(state.insightsFilters || {}, "insights");
+}
+
+function getInsightsPresentationMode(scope = {}) {
+  return scope.basis === "evidence" ? "signal_inventory" : "life_area_findings";
 }
 
 function getPublicationOutputScope() {
@@ -21907,7 +21930,6 @@ function getCurrentDashboardAnalyticalParticipantId() {
 function buildSharedAnalyticalScopeFilters(preset = analyticalScopePresets[0]) {
   const filters = {
     pilotParticipantId: getCurrentDashboardAnalyticalParticipantId(),
-    basis: state.reportFilters?.basis || state.insightsFilters?.basis || state.publicationFilters?.basis || "all",
     category: "all",
     source: "all",
     dateFrom: "",
@@ -21929,19 +21951,16 @@ function buildSharedAnalyticalScopeFilters(preset = analyticalScopePresets[0]) {
 function sharedAnalyticalScopeMatchesCurrentFilters(preset) {
   const filters = buildSharedAnalyticalScopeFilters(preset);
   return (state.insightsFilters?.pilotParticipantId || "all") === filters.pilotParticipantId
-    && (state.insightsFilters?.basis || "all") === filters.basis
     && (state.insightsFilters?.category || "all") === filters.category
     && (state.insightsFilters?.source || "all") === filters.source
     && (state.insightsFilters?.dateFrom || "") === filters.dateFrom
     && (state.insightsFilters?.dateTo || "") === filters.dateTo
     && (state.publicationFilters?.pilotParticipantId || "all") === filters.pilotParticipantId
-    && (state.publicationFilters?.basis || "all") === filters.basis
     && (state.publicationFilters?.category || "all") === filters.category
     && (state.publicationFilters?.source || "all") === filters.source
     && (state.publicationFilters?.dateFrom || "") === filters.dateFrom
     && (state.publicationFilters?.dateTo || "") === filters.dateTo
     && (state.reportFilters?.pilotParticipantId || "all") === filters.pilotParticipantId
-    && (state.reportFilters?.basis || "all") === filters.basis
     && (state.reportFilters?.category || "all") === filters.category
     && (state.reportFilters?.source || "all") === filters.source
     && (state.reportFilters?.dateFrom || "") === filters.dateFrom
@@ -22016,13 +22035,6 @@ function renderDashboardAnalyticalScope() {
         `;
       }).join("")}
     </div>
-    <div class="dashboard-scope-presets output-basis-picker" role="group" aria-label="${escapeHtml(languageText("Contenido incluido", "Included content", "Contenu inclus", "Conteudo incluido"))}">
-      ${getOutputBasisOptions().map(([value, label]) => `
-        <button class="${activeFilters.basis === value ? "is-active" : ""}" type="button" data-dashboard-scope-basis="${value}">
-          <strong>${escapeHtml(label)}</strong>
-        </button>
-      `).join("")}
-    </div>
     <div class="dashboard-scope-actions">
       <button class="primary-button" type="button" data-dashboard-scope-open="report">${escapeHtml(labels.report)}</button>
       <button class="ghost-button" type="button" data-dashboard-scope-open="insights">${escapeHtml(labels.insights)}</button>
@@ -22041,7 +22053,7 @@ function applySharedAnalyticalScope(presetId = state.dashboardAnalyticalScopePre
     scope: getReportScopeForSharedFilters(filters),
     period: "all",
     experienceId: "",
-    basis: filters.basis,
+    basis: state.reportFilters.basis || "all",
     category: filters.category,
     source: filters.source,
     pilotParticipantId: filters.pilotParticipantId,
@@ -22056,26 +22068,6 @@ function applySharedAnalyticalScope(presetId = state.dashboardAnalyticalScopePre
 }
 
 function handleDashboardAnalyticalScopeClick(event) {
-  const basisButton = event.target.closest("[data-dashboard-scope-basis]");
-  if (basisButton) {
-    const basis = basisButton.dataset.dashboardScopeBasis || "all";
-    state.reportFilters.basis = basis;
-    state.insightsFilters.basis = basis;
-    state.publicationFilters.basis = basis;
-    syncReportFilterInputs();
-    syncAnalyticalScopeInputs();
-    renderDashboardAnalyticalScope();
-    renderReport();
-    renderInsights();
-    renderPublications();
-    notify(languageText(
-      `Contenido aplicado: ${getOutputBasisLabel(basis)}.`,
-      `Content applied: ${getOutputBasisLabel(basis)}.`,
-      `Contenu applique : ${getOutputBasisLabel(basis)}.`,
-      `Conteudo aplicado: ${getOutputBasisLabel(basis)}.`,
-    ), "success");
-    return;
-  }
   const presetButton = event.target.closest("[data-dashboard-scope-preset]");
   if (presetButton) {
     applySharedAnalyticalScope(presetButton.dataset.dashboardScopePreset || "all");
@@ -30905,6 +30897,7 @@ async function restoreBackupFromFile(event) {
 
 function renderInsights() {
   const outputScope = getInsightsOutputScope();
+  const presentationMode = getInsightsPresentationMode(outputScope);
   const sourceExperiences = outputScope.stories;
   const insights = buildInsights(sourceExperiences);
   const thematicAxes = buildInsightThematicAxes(sourceExperiences);
@@ -30925,6 +30918,20 @@ function renderInsights() {
     state.language !== "es" ? "Findings" : "Hallazgos",
   );
   renderQuestionSuggestions();
+  if (presentationMode === "signal_inventory") {
+    document.getElementById("insightList").innerHTML = `
+      <section class="insight-hub-intro">
+        <span class="report-kicker">${escapeHtml(state.language !== "es" ? "Factual view" : "Vista factual")}</span>
+        <h3>${escapeHtml(state.language !== "es" ? "Signals and measurements in this period" : "Señales y mediciones del período")}</h3>
+        <p>${escapeHtml(state.language !== "es" ? "This view organizes observed evidence and context. It does not infer life-area patterns or actions without stories." : "Esta vista organiza evidencia y contexto observados. No infiere patrones ni acciones por Áreas de vida sin historias.")}</p>
+      </section>
+      ${renderScopedEvidenceSummary(outputScope, languageText("Base factual de los hallazgos", "Findings factual basis", "Base factuelle des enseignements", "Base factual das descobertas"))}
+      ${renderEvidenceInventoryReport(outputScope)}
+      <section class="report-table">${renderEvidenceInventoryTable(outputScope)}</section>
+      ${renderReportMultimodalEvidence([], [...outputScope.evidence, ...outputScope.context])}
+    `;
+    return;
+  }
   document.getElementById("insightList").innerHTML = `
     <section class="insight-hub-intro">
       <span class="report-kicker">${escapeHtml(state.language !== "es" ? "Main output" : "Salida principal")}</span>
@@ -31342,6 +31349,7 @@ function createAgendaEventFromInsightPlan(action, index = 0) {
 
 function buildInsightsExportPayload() {
   const outputScope = getInsightsOutputScope();
+  const presentationMode = getInsightsPresentationMode(outputScope);
   const experiences = outputScope.stories;
   const participantId = state.insightsFilters?.pilotParticipantId || "all";
   const axes = buildInsightThematicAxes(experiences);
@@ -31355,12 +31363,14 @@ function buildInsightsExportPayload() {
     experiences: experiences.length,
     outputScope: {
       basis: outputScope.basis,
+      presentationMode,
       stories: experiences.length,
       evidence: outputScope.evidence.length,
       context: outputScope.context.length,
       excludedUnclassifiedEvidence: outputScope.excludedUnclassifiedEvidence,
     },
     evidenceSummary: buildScopedEvidenceSummary(outputScope),
+    evidenceInventory: buildEvidenceInventoryReport(outputScope),
     evidence: buildReportMultimodalEvidence([], outputScope.evidence),
     contextEvidence: buildReportMultimodalEvidence([], outputScope.context),
     axes,
