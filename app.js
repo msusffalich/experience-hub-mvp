@@ -1,4 +1,4 @@
-const APP_VERSION = "20260727-output-scope-711";
+const APP_VERSION = "20260727-life-areas-712";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -8909,7 +8909,7 @@ function syncReportFilterInputs() {
   if (dateFrom) dateFrom.value = state.reportFilters.dateFrom || "";
   if (dateTo) dateTo.value = state.reportFilters.dateTo || "";
   if (pilotParticipant) pilotParticipant.value = state.reportFilters.pilotParticipantId || "all";
-  syncOutputBasisSelect("reportBasisFilter", state.reportFilters.basis || "all");
+  syncReportBasisSelect(state.reportFilters.basis || "all");
   if (basis) basis.value = state.reportFilters.basis || "all";
   if (people) people.value = state.reportFilters.people || "";
   if (objective) objective.value = state.reportFilters.objective || "";
@@ -10538,14 +10538,34 @@ function getOutputBasisOptions() {
   ];
 }
 
+function getReportBasisOptions() {
+  return [
+    ["all", languageText("Resumen por áreas de vida con evidencia", "Life-area summary with evidence", "Synthese par domaines de vie avec preuves", "Resumo por areas de vida com evidencias")],
+    ["stories", languageText("Cobertura por áreas de vida", "Life-area coverage", "Couverture par domaines de vie", "Cobertura por areas de vida")],
+    ["evidence", languageText("Inventario de evidencia y mediciones", "Evidence and measurement inventory", "Inventaire des preuves et mesures", "Inventario de evidencias e medicoes")],
+  ];
+}
+
 function getOutputBasisLabel(value = "all") {
   return getOutputBasisOptions().find(([key]) => key === value)?.[1] || getOutputBasisOptions()[0][1];
+}
+
+function getReportBasisLabel(value = "all") {
+  return getReportBasisOptions().find(([key]) => key === value)?.[1] || getReportBasisOptions()[0][1];
 }
 
 function syncOutputBasisSelect(id, value = "all") {
   const select = document.getElementById(id);
   if (!select) return;
   const options = getOutputBasisOptions();
+  select.innerHTML = options.map(([key, label]) => `<option value="${key}">${escapeHtml(label)}</option>`).join("");
+  select.value = options.some(([key]) => key === value) ? value : "all";
+}
+
+function syncReportBasisSelect(value = "all") {
+  const select = document.getElementById("reportBasisFilter");
+  if (!select) return;
+  const options = getReportBasisOptions();
   select.innerHTML = options.map(([key, label]) => `<option value="${key}">${escapeHtml(label)}</option>`).join("");
   select.value = options.some(([key]) => key === value) ? value : "all";
 }
@@ -10632,6 +10652,103 @@ function buildScopedEvidenceSummary(scope = {}) {
     context: Array.isArray(scope.context) ? scope.context.length : 0,
     excludedUnclassifiedEvidence: Number(scope.excludedUnclassifiedEvidence || 0),
   };
+}
+
+function getReportPresentationMode(scope = {}) {
+  return scope.basis === "evidence" ? "evidence_inventory" : "life_area_coverage";
+}
+
+function buildScopedBiometricMeasurements(scope = {}) {
+  const from = scope.dateFrom ? new Date(`${scope.dateFrom}T00:00:00`) : null;
+  const to = scope.dateTo ? new Date(`${scope.dateTo}T23:59:59.999`) : null;
+  const rows = getAllBiometricRows().filter((row) => {
+    const date = new Date(row.date || row.capturedAt || row.timestamp || "");
+    if (Number.isNaN(date.getTime())) return false;
+    return (!from || date >= from) && (!to || date <= to);
+  });
+  const metrics = aggregateBiometricRows(rows);
+  return {
+    records: rows.length,
+    metrics,
+    suggestedEnergy: estimateBiometricEnergy(metrics),
+    hasMeasurements: Boolean(rows.length && Object.values(metrics).some((value) => Number(value) > 0)),
+  };
+}
+
+function buildEvidenceInventoryReport(scope = {}) {
+  const assets = [...(scope.evidence || []), ...(scope.context || [])]
+    .slice()
+    .sort((left, right) => new Date(right.capturedAt || right.timestamp || 0) - new Date(left.capturedAt || left.timestamp || 0));
+  const byKind = assets.reduce((result, asset) => {
+    const kind = String(asset.kind || inferMediaKind(asset) || "document").toLowerCase();
+    result[kind] = (result[kind] || 0) + 1;
+    return result;
+  }, {});
+  const readable = assets.filter((asset) =>
+    String(asset.analysisText || asset.translatedText || asset.extractedText || asset.manualNote || asset.previewText || "").trim(),
+  ).length;
+  return {
+    total: assets.length,
+    evidence: (scope.evidence || []).length,
+    context: (scope.context || []).length,
+    readable,
+    byKind,
+    measurements: buildScopedBiometricMeasurements(scope),
+  };
+}
+
+function renderEvidenceInventoryReport(scope = {}) {
+  const inventory = buildEvidenceInventoryReport(scope);
+  const kinds = Object.entries(inventory.byKind)
+    .map(([kind, count]) => `<span>${escapeHtml(getAssetKindLabel(kind))}: ${count}</span>`)
+    .join("");
+  const measurements = inventory.measurements;
+  const metricCards = [
+    [languageText("Registros biométricos", "Biometric records", "Registres biométriques", "Registros biometricos"), measurements.records],
+    [languageText("Frecuencia promedio", "Average heart rate", "Frequence moyenne", "Frequencia media"), measurements.metrics.heartAvg ? `${Math.round(measurements.metrics.heartAvg)} bpm` : "-"],
+    [languageText("Pasos", "Steps", "Pas", "Passos"), measurements.metrics.steps ? Math.round(measurements.metrics.steps).toLocaleString() : "-"],
+    [languageText("Sueño", "Sleep", "Sommeil", "Sono"), measurements.metrics.sleepMinutes ? `${(measurements.metrics.sleepMinutes / 60).toFixed(1)} h` : "-"],
+  ];
+  return `
+    <section class="report-executive-card">
+      <span class="report-kicker">${escapeHtml(languageText("Inventario de evidencia", "Evidence inventory", "Inventaire des preuves", "Inventario de evidencias"))}</span>
+      <h3>${escapeHtml(languageText("Archivos y mediciones del período", "Files and measurements in this period", "Fichiers et mesures de la periode", "Arquivos e medicoes do periodo"))}</h3>
+      <p>${escapeHtml(languageText("Esta vista no calcula balance por Áreas de vida porque no incluye historias. Revisa los archivos disponibles y las mediciones reales del período.", "This view does not calculate life-area balance because it does not include stories. Review the available files and real measurements for the period.", "Cette vue ne calcule pas l equilibre par domaines de vie car elle n inclut pas d histoires.", "Esta visualizacao nao calcula equilibrio por areas de vida porque nao inclui historias."))}</p>
+    </section>
+    <section class="report-finding-section">
+      <h3>${escapeHtml(languageText("Contenido disponible", "Available content", "Contenu disponible", "Conteudo disponivel"))}</h3>
+      <div class="report-finding-grid">
+        <article class="report-finding-card"><span>${escapeHtml(languageText("Evidencia", "Evidence", "Preuves", "Evidencias"))}</span><strong>${inventory.evidence}</strong></article>
+        <article class="report-finding-card"><span>${escapeHtml(languageText("Contexto", "Context", "Contexte", "Contexto"))}</span><strong>${inventory.context}</strong></article>
+        <article class="report-finding-card"><span>${escapeHtml(languageText("Texto interpretable", "Readable text", "Texte lisible", "Texto legivel"))}</span><strong>${inventory.readable}</strong></article>
+        <article class="report-finding-card"><span>${escapeHtml(languageText("Mediciones", "Measurements", "Mesures", "Medicoes"))}</span><strong>${measurements.hasMeasurements ? measurements.records : "-"}</strong></article>
+      </div>
+      <div class="shared-scope-chip-row">${kinds || `<span>${escapeHtml(languageText("Sin tipos de evidencia disponibles", "No evidence types available", "Aucun type de preuve disponible", "Nenhum tipo de evidencia disponivel"))}</span>`}</div>
+    </section>
+    <section class="human-kpi-section">
+      <div class="report-section-heading"><h3>${escapeHtml(languageText("Mediciones disponibles", "Available measurements", "Mesures disponibles", "Medicoes disponiveis"))}</h3></div>
+      <div class="human-kpi-grid">
+        ${metricCards.map(([label, value]) => `<article class="human-kpi-card"><div class="human-kpi-content"><header><span>${escapeHtml(label)}</span></header><strong>${escapeHtml(String(value))}</strong></div></article>`).join("")}
+      </div>
+      <p class="card-meta">${escapeHtml(measurements.hasMeasurements ? languageText("Las mediciones se muestran solo cuando existen registros reales dentro del período seleccionado.", "Measurements are shown only when real records exist in the selected period.", "Les mesures sont affichees uniquement lorsqu il existe des enregistrements reels.", "As medicoes so aparecem quando ha registros reais no periodo.") : languageText("No hay mediciones biométricas legibles dentro de este período. No se estima energía ni balance.", "There are no readable biometric measurements in this period. Energy and balance are not estimated.", "Aucune mesure biométrique lisible dans cette periode.", "Nao ha medicoes biometricas legiveis neste periodo."))}</p>
+    </section>
+  `;
+}
+
+function renderEvidenceInventoryTable(scope = {}) {
+  const assets = [...(scope.evidence || []), ...(scope.context || [])]
+    .slice()
+    .sort((left, right) => new Date(right.capturedAt || right.timestamp || 0) - new Date(left.capturedAt || left.timestamp || 0));
+  if (!assets.length) return `<p class="card-meta">${escapeHtml(languageText("No hay evidencia ni contexto en este alcance.", "There is no evidence or context in this scope.", "Aucune preuve ni contexte dans cette portee.", "Nao ha evidencia nem contexto neste escopo."))}</p>`;
+  return `
+    <table>
+      <thead><tr><th>${escapeHtml(languageText("Fecha", "Date", "Date", "Data"))}</th><th>${escapeHtml(languageText("Elemento", "Item", "Element", "Item"))}</th><th>${escapeHtml(languageText("Tipo", "Type", "Type", "Tipo"))}</th><th>${escapeHtml(languageText("Estado", "Status", "Statut", "Status"))}</th></tr></thead>
+      <tbody>${assets.slice(0, 36).map((asset) => {
+        const text = String(asset.analysisText || asset.translatedText || asset.extractedText || asset.manualNote || asset.previewText || "").trim();
+        return `<tr><td>${escapeHtml(formatShortDate(asset.capturedAt || asset.timestamp || asset.uploadedAt || ""))}</td><td>${escapeHtml(asset.name || getAssetKindLabel(asset.kind))}</td><td>${escapeHtml(getAssetKindLabel(asset.kind || inferMediaKind(asset)))}</td><td>${escapeHtml(text ? languageText("Con lectura", "With reading", "Avec lecture", "Com leitura") : languageText("Disponible", "Available", "Disponible", "Disponivel"))}</td></tr>`;
+      }).join("")}</tbody>
+    </table>
+  `;
 }
 
 function renderScopedEvidenceSummary(scope = {}, title = "") {
@@ -23262,6 +23379,7 @@ function renderReport() {
   updateReportScopeControls();
   const scopedStories = getReportExperiences();
   const outputScope = buildAnalyticalOutputScope(state.reportFilters || {}, "report", scopedStories);
+  const presentationMode = getReportPresentationMode(outputScope);
   const experiences = outputScope.stories;
   const totalMinutes = experiences.reduce((sum, item) => sum + item.duration, 0);
   const attachmentCount = outputScope.evidence.length;
@@ -23297,12 +23415,20 @@ function renderReport() {
     ],
   );
 
-  const stats = [
-    [languageText("Historias", "Stories", "Histoires", "Historias"), experiences.length],
-    [t("metrics.capturedHours"), (totalMinutes / 60).toFixed(1)],
-    [languageText("Evidencias", "Evidence", "Preuves", "Evidencias"), attachmentCount],
-    [languageText("Contextos", "Context", "Contextes", "Contextos"), outputScope.context.length],
-  ];
+  const inventory = buildEvidenceInventoryReport(outputScope);
+  const stats = presentationMode === "evidence_inventory"
+    ? [
+        [languageText("Evidencias", "Evidence", "Preuves", "Evidencias"), inventory.evidence],
+        [languageText("Contextos", "Context", "Contextes", "Contextos"), inventory.context],
+        [languageText("Texto interpretable", "Readable text", "Texte lisible", "Texto legivel"), inventory.readable],
+        [languageText("Registros biometricos", "Biometric records", "Registres biometriques", "Registros biometricos"), inventory.measurements.records || "-"],
+      ]
+    : [
+        [languageText("Historias", "Stories", "Histoires", "Historias"), experiences.length],
+        [t("metrics.capturedHours"), (totalMinutes / 60).toFixed(1)],
+        [languageText("Evidencias", "Evidence", "Preuves", "Evidencias"), attachmentCount],
+        [languageText("Contextos", "Context", "Contextes", "Contextos"), outputScope.context.length],
+      ];
   document.getElementById("reportSummary").innerHTML = stats
     .map(
       ([label, value], index) => `
@@ -23316,6 +23442,18 @@ function renderReport() {
 
   const reportAnalysis = buildExperienceAnalysis(experiences);
   const reportQuality = calculateDataQuality(experiences);
+  if (presentationMode === "evidence_inventory") {
+    document.getElementById("reportFindings").innerHTML = "";
+    document.getElementById("reportCharts").innerHTML = "";
+    document.getElementById("reportCategoryBreakdown").innerHTML = "";
+    document.getElementById("reportTable").innerHTML = renderEvidenceInventoryTable(outputScope);
+    document.getElementById("reportNarrative").innerHTML = `
+      ${renderScopedEvidenceSummary(outputScope, languageText("Base factual del inventario", "Inventory factual basis", "Base factuelle de l inventaire", "Base factual do inventario"))}
+      ${renderEvidenceInventoryReport(outputScope)}
+      ${renderReportMultimodalEvidence([], [...outputScope.evidence, ...outputScope.context])}
+    `;
+    return;
+  }
   document.getElementById("reportFindings").innerHTML = renderReportFindings(reportAnalysis);
   document.getElementById("reportCharts").innerHTML = renderReportCharts(reportAnalysis, experiences);
   document.getElementById("reportCharts").innerHTML += renderHumanKpiSection(experiences, reportAnalysis, reportQuality);
@@ -23328,7 +23466,7 @@ function renderReport() {
         <tr>
           <th>Fecha</th>
           <th>Experiencia</th>
-          <th>Categoría</th>
+          <th>Área de vida</th>
           <th>Objetivo</th>
           <th>Duración</th>
           <th>Energía</th>
@@ -23403,13 +23541,13 @@ function updateReportScopeControls() {
        ? [
           ["all", "All experiences"],
           ["period", "Quick range"],
-          ["filters", "Category / person / origin / objective / event"],
+          ["filters", "Life area / person / origin / objective / event"],
           ["single", "One specific experience"],
         ]
       : [
           ["all", "Todas las experiencias"],
           ["period", "Rango rápido"],
-          ["filters", "Categoría / persona / origen / objetivo / evento"],
+          ["filters", "Área de vida / persona / origen / objetivo / evento"],
           ["single", "Una experiencia específica"],
         ];
   scopeSelect.innerHTML = scopeOptions.map(([value, label]) => `<option value="${value}">${escapeHtml(label)}</option>`).join("");
@@ -23473,21 +23611,21 @@ function renderReportScopeSummary(experiences, outputScope = {}) {
      ? {
         all: "all saved experiences. Filters are off, so the report is a complete baseline.",
         period: `quick range: ${state.reportFilters.period === "all" ? "all history" : `last ${state.reportFilters.period} days`}.`,
-        filters: "active filters by category, group/person, origin, person text, objective, or internal event.",
+        filters: "active filters by life area, group/person, origin, person text, objective, or internal event.",
         single: "one specific experience.",
         empty: "No experiences match this scope.",
       }
     : {
         all: "todas las experiencias guardadas. Se ignoran periodo, categoría, persona, origen y objetivo.",
         period: `solo rango rápido: ${state.reportFilters.period === "all" ? "todo el historial" : `últimos ${state.reportFilters.period} días`}. Se ignoran categoría, persona, origen y objetivo.`,
-        filters: "filtros de categoría, persona, origen, objetivo o evento interno. El rango rápido también aplica si está seleccionado.",
+        filters: "filtros de Área de vida, persona, origen, objetivo o evento interno. El rango rápido también aplica si está seleccionado.",
         single: "una experiencia específica. Se ignoran los demás filtros.",
         empty: "No hay experiencias que coincidan con este alcance.",
       };
   if (state.language === "es") {
     labels.all = "todas las experiencias guardadas. Los filtros estan apagados, asi que sirve como linea base completa.";
     labels.period = `rango rapido: ${state.reportFilters.period === "all" ? "todo el historial" : `ultimos ${state.reportFilters.period} dias`}.`;
-    labels.filters = "filtros activos por categoria, grupo/persona, origen/conector, texto de persona, objetivo o evento interno.";
+    labels.filters = "filtros activos por Área de vida, grupo/persona, origen/conector, texto de persona, objetivo o evento interno.";
     labels.single = "una experiencia especifica.";
   }
   const scopeLabel = labels[state.reportFilters.scope] || labels.all;
@@ -23513,6 +23651,15 @@ function renderReportScopeSummary(experiences, outputScope = {}) {
     : "";
   const evidenceCount = outputScope.evidence?.length || 0;
   const contextCount = outputScope.context?.length || 0;
+  if (getReportPresentationMode(outputScope) === "evidence_inventory") {
+    summary.textContent = languageText(
+      `Este es un inventario de ${evidenceCount} evidencia(s) y ${contextCount} señal(es) de contexto. No calcula cobertura ni balance por Áreas de vida porque no incluye historias.`,
+      `This is an inventory of ${evidenceCount} evidence item(s) and ${contextCount} context signal(s). It does not calculate life-area coverage or balance because it does not include stories.`,
+      `Cet inventaire contient ${evidenceCount} preuve(s) et ${contextCount} signal/signaux de contexte.`,
+      `Este inventario contem ${evidenceCount} evidencia(s) e ${contextCount} sinal(is) de contexto.`,
+    );
+    return;
+  }
   summary.textContent = languageText(
     `Este reporte usa ${experiences.length} historia(s), ${evidenceCount} evidencia(s) y ${contextCount} señal(es) de contexto: ${scopeLabel}. Rango: ${dateText}.${participantText}${sourceText}${eventText}${customDateText}`,
     `This report uses ${experiences.length} story/stories, ${evidenceCount} evidence item(s), and ${contextCount} context signal(s): ${scopeLabel}. Range: ${dateText}.${participantText}${sourceText}${eventText}${customDateText}`,
@@ -25513,7 +25660,9 @@ function formatReportAcceptanceLastAction() {
 function buildReportExportPayload() {
   const scopedStories = getReportExperiences();
   const outputScope = buildAnalyticalOutputScope(state.reportFilters || {}, "report", scopedStories);
+  const presentationMode = getReportPresentationMode(outputScope);
   const reportExperiences = outputScope.stories;
+  const evidenceInventory = buildEvidenceInventoryReport(outputScope);
   const rows = buildReportRows(reportExperiences);
   const analysis = buildExperienceAnalysis(reportExperiences);
   const dataQuality = calculateDataQuality(reportExperiences);
@@ -25538,6 +25687,7 @@ function buildReportExportPayload() {
     filters: { ...state.reportFilters },
     outputScope: {
       basis: outputScope.basis,
+      presentationMode,
       stories: outputScope.stories.length,
       evidence: outputScope.evidence.length,
       context: outputScope.context.length,
@@ -25546,12 +25696,13 @@ function buildReportExportPayload() {
     summary: {
       totalExperiences: reportExperiences.length,
       capturedHours: Number((reportExperiences.reduce((sum, item) => sum + Number(item.duration || 0), 0) / 60).toFixed(1)),
-      averageEnergy: reportExperiences.length ? Number(average(reportExperiences.map((item) => Number(item.energy || 0))).toFixed(1)) : 0,
-      topCategory: displayCategory(getTopCategory(reportExperiences)),
+      averageEnergy: reportExperiences.length ? Number(average(reportExperiences.map((item) => Number(item.energy || 0))).toFixed(1)) : null,
+      topCategory: reportExperiences.length ? displayCategory(getTopCategory(reportExperiences)) : "",
     },
     dataQuality,
     analysis,
     biometricContext: buildBiometricIntelligenceSummary(reportExperiences),
+    evidenceInventory,
     integratedReading: buildIntegratedReportCards(reportExperiences, analysis, dataQuality, buildExperienceMapRoutes(routeGraph)),
     predictiveOutlook: buildPredictiveOutlook(reportExperiences, analysis, dataQuality),
     mapRoutes,

@@ -1,4 +1,6 @@
 import { spawnSync } from "node:child_process";
+import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 
 const candidates = process.platform === "win32" ? ["python", "py"] : ["python3", "python"];
@@ -48,6 +50,45 @@ const cases = [
       kpis: [{ label: "Confiabilidad", score: 82, detail: "Datos suficientes para lectura ejecutiva." }],
       categories: [{ label: "Trabajo", count: 1 }, { label: "Salud", count: 1 }, { label: "Aprendizaje", count: 1 }],
       quality: { score: 82 },
+    },
+  },
+  {
+    name: "report-evidence-inventory",
+    script: "report_pdf_reportlab.py",
+    requiredText: ["Inventario de evidencia y", "No calcula cobertura ni balance"],
+    payload: {
+      outputScope: {
+        basis: "evidence",
+        presentationMode: "evidence_inventory",
+        stories: 0,
+        evidence: 2,
+        context: 1,
+      },
+      summary: {
+        totalExperiences: 0,
+        capturedHours: 0,
+        averageEnergy: null,
+        topCategory: "",
+      },
+      evidenceInventory: {
+        evidence: 2,
+        context: 1,
+        readable: 1,
+        measurements: {
+          records: 2,
+          hasMeasurements: true,
+          metrics: { heartAvg: 68, steps: 4520, sleepMinutes: 420, activeEnergy: 310 },
+        },
+      },
+      multimodalEvidence: [
+        { name: "foto-playa.jpg", kind: "image", capturedAt: "2026-07-27T10:00:00.000Z", analyticalText: "Foto disponible para revisar." },
+        { name: "nota-de-voz.m4a", kind: "audio", capturedAt: "2026-07-27T10:05:00.000Z", manualNote: "Nota de voz disponible." },
+      ],
+      contextEvidence: [
+        { name: "salud.csv", kind: "biometric", capturedAt: "2026-07-27T10:10:00.000Z" },
+      ],
+      rows: [],
+      dataQuality: { score: 0 },
     },
   },
   {
@@ -118,6 +159,24 @@ for (const item of cases) {
   const output = result.stdout;
   if (!output.subarray(0, 5).equals(Buffer.from("%PDF-")) || output.length < 4000) {
     throw new Error(`${item.name} PDF output is invalid or too small (${output.length} bytes).`);
+  }
+  if (item.requiredText?.length) {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "vibe-pdf-"));
+    const tempPdf = path.join(tempDir, `${item.name}.pdf`);
+    try {
+      fs.writeFileSync(tempPdf, output);
+      const extracted = spawnSync(python.command, [...python.args, "-c", "import sys; from pypdf import PdfReader; print('\\n'.join(page.extract_text() or '' for page in PdfReader(sys.argv[1]).pages))", tempPdf], {
+        windowsHide: true,
+        maxBuffer: 4 * 1024 * 1024,
+        env: { ...process.env, PYTHONPATH: pythonPath },
+      });
+      const text = extracted.stdout?.toString("utf8") || "";
+      if (extracted.status !== 0 || item.requiredText.some((required) => !text.includes(required))) {
+        throw new Error(`${item.name} PDF is missing its required inventory content.`);
+      }
+    } finally {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
   }
   console.log(`${item.name} PDF ok (${Math.round(output.length / 1024)} KB)`);
 }
