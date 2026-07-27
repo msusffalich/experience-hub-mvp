@@ -240,9 +240,9 @@ class PublicationDashboard(Flowable):
         w, h = self.width, self.height
         values = [
             ("Experiencias", self.stats.get("experiences", "-"), BLUE),
-            ("Multimedia", self.media_count, colors.HexColor("#0d7c66")),
+            ("Evidencias", self.stats.get("evidence", self.media_count), colors.HexColor("#0d7c66")),
             ("Momentos", self.highlights_count, colors.HexColor("#f2b84b")),
-            ("Energia", f"{self.stats.get('averageEnergy', '-')}/10", colors.HexColor("#7a5cc8")),
+            ("Contextos", self.stats.get("context", 0), colors.HexColor("#7a5cc8")),
         ]
         gap = 7
         card_w = (w - gap * 3) / 4

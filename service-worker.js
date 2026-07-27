@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260726-media-sync-710";
+const CACHE_NAME = "experience-hub-pwa-20260727-output-scope-711";
 const APP_SHELL = [
   "/icons/vibe-logo.jpg",
   "/icons/vibe-logo.png",

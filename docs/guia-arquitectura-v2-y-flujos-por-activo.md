@@ -1,5 +1,9 @@
 # Guía de la arquitectura V2 y flujo operacional por tipo de activo
 
+> **Documento histórico, no vigente.** La ruta V2 fue congelada después de una
+> falla real. La guía canónica es
+> `docs/guia-arquitectura-y-flujos-por-activo-20260727.md`.
+
 Fecha: 2026-07-26  
 Estado: guía de implementación paralela; se actualizará tras el canario real
 

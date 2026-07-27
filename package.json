@@ -18,10 +18,13 @@
     "audit:blueprint": "node scripts/audit-blueprint-flows.mjs",
     "audit:control": "node scripts/audit-control.mjs",
     "audit:runtime": "node scripts/audit-runtime-helpers.mjs",
+    "audit:restructure": "node scripts/inventory-restructure.mjs",
     "verify:obsidian": "node scripts/verify-obsidian-export-contract.mjs",
     "simulate:vibeapp": "node scripts/simulate-vibeapp-sync.mjs",
     "verify:processing": "node scripts/verify-asset-processing-job.mjs",
     "verify:evidence:v2": "node scripts/verify-evidence-pipeline-v2.mjs && node scripts/verify-evidence-pipeline-v2-supabase-adapter.mjs && node scripts/verify-evidence-http-contract-v2.mjs && node scripts/verify-evidence-pipeline-v2-contract.mjs && node scripts/verify-evidence-pipeline-v2-http.mjs",
+    "verify:capture-core": "node scripts/verify-capture-core.mjs && node scripts/verify-capture-supabase-adapters.mjs && node scripts/verify-capture-http.mjs",
+    "verify:output-scope": "node scripts/verify-output-scope.mjs",
     "verify:flows": "node scripts/verify-flow-automation.mjs",
     "verify:integrations": "node scripts/verify-integration-contract.mjs",
     "verify:oura:personal-json": "node scripts/verify-oura-personal-json.mjs",
@@ -36,7 +39,7 @@
     "package:vibeapp:ios": "node scripts/package-vibeapp-ios-handoff.mjs",
     "start": "node server.js",
     "dev": "node server.js",
-    "check": "node --check app.js && node --check server.js && node scripts/smoke-check.mjs && npm run audit:runtime && npm run verify:obsidian && npm run verify:evidence:v2",
+    "check": "node --check app.js && node --check server.js && node scripts/smoke-check.mjs && npm run audit:runtime && npm run audit:restructure && npm run verify:obsidian && npm run verify:evidence:v2 && npm run verify:capture-core && npm run verify:output-scope",
     "test": "npm run check"
   }
 }

@@ -1,5 +1,10 @@
 # Arquitectura V2: evidencia Vibeapp, servidor y VibePWA
 
+> **Documento histórico, no vigente.** La ruta descrita aquí permanece
+> congelada. La arquitectura canónica está en
+> `docs/plan-maestro-reestructuracion-ecosistema-vibe-20260726.md` y
+> `docs/vibe-operating-contract-20260727.md`.
+
 Fecha: 2026-07-26  
 Estado: diseño canónico previo a implementación  
 Alcance: multimedia intencional, experiencias, eventos, reintentos y lectura

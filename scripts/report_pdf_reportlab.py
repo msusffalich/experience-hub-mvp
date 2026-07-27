@@ -621,6 +621,8 @@ def build_story(report):
     categories = report.get("categoryBreakdown") or []
     routes = report.get("mapRoutes") or []
     evidence = report.get("multimodalEvidence") or []
+    context_evidence = report.get("contextEvidence") or []
+    output_scope = report.get("outputScope") or {}
     quality = report.get("dataQuality") or {}
     attachment_count = sum(int(num(row.get("adjuntos") or row.get("attachments"))) for row in rows)
 
@@ -628,8 +630,8 @@ def build_story(report):
     story.extend(cover(report))
     story.extend(section_title("Resumen ejecutivo"))
     story.append(metric_grid([
-        ("Experiencias", summary.get("totalExperiences", len(rows))),
-        ("Adjuntos", attachment_count),
+        ("Historias", output_scope.get("stories", summary.get("totalExperiences", len(rows)))),
+        ("Evidencias", output_scope.get("evidence", attachment_count)),
         ("Energía", f"{summary.get('averageEnergy', 0)}/10"),
         ("Confiabilidad", f"{quality.get('score', 0)}%"),
     ]))

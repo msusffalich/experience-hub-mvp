@@ -1,5 +1,9 @@
 # Vibeapp / VibePWA Operating Contract
 
+> **Documento histórico, no vigente.** Permitía que Vibeapp originara
+> experiencias y describe rutas que están en retirada. El contrato canónico es
+> `docs/vibe-operating-contract-20260727.md`.
+
 Version: 2026-06-24
 
 Current native reference: Vibeapp iOS build `0.5.33+646`.

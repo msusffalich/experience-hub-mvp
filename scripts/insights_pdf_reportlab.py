@@ -172,11 +172,12 @@ class CoverBlock(Flowable):
         c.drawString(0.38 * inch, self.height - 1.42 * inch, "Hallazgos de experiencias")
         c.setFont(FONT_REGULAR, 12)
         c.drawString(0.4 * inch, self.height - 1.76 * inch, "Diagnóstico visual, ejes humanos y recomendaciones accionables.")
+        output_scope = self.payload.get("outputScope") or {}
         metrics = [
             ("Experiencias", self.payload.get("experiences", 0)),
-            ("Ejes", len(self.payload.get("axes") or [])),
+            ("Evidencias", output_scope.get("evidence", 0)),
             ("Hallazgos", len(self.payload.get("insights") or [])),
-            ("Alcance", short(self.payload.get("participant") or "General", 18)),
+            ("Contextos", output_scope.get("context", 0)),
         ]
         y = self.height - 2.55 * inch
         for index, (label, value) in enumerate(metrics):
@@ -445,14 +446,16 @@ def build_story(payload):
     insights = payload.get("insights") or []
     action_plan = payload.get("actionPlan") or []
     experiences = payload.get("experiences", 0)
+    output_scope = payload.get("outputScope") or {}
     story = [CoverBlock(payload), PageBreak()]
     story.append(para("Resumen ejecutivo", "H1x"))
     story.append(metric_grid([
         ("Experiencias", experiences),
+        ("Evidencias", output_scope.get("evidence", 0)),
+        ("Contextos", output_scope.get("context", 0)),
         ("Ejes humanos", len(axes)),
         ("Hallazgos", len(insights)),
         ("Acciones", len(action_plan)),
-        ("Participante", short(payload.get("participant") or "General", 16)),
     ]))
     story.append(Spacer(1, 10))
     story.append(para("Mapa de ejes humanos", "H1x"))

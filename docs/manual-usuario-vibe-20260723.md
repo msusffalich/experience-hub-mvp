@@ -1,6 +1,6 @@
 # Manual integral de usuario Vibe
 
-Versión de referencia: 2026-07-23
+Versión de referencia: 2026-07-27
 Para: personas que desean registrar, organizar, comprender y compartir sus propias experiencias.
 
 ## 1. Bienvenida: qué hace Vibe
@@ -40,7 +40,7 @@ Cuando veas **Sincronizado**, el registro llegó a tu cuenta y puede aparecer en
 
 ## 5. Crear una experiencia o historia
 
-En VibePWA abre **Captura > Nueva experiencia**. El flujo está pensado para que primero cuentes el momento y después ajustes detalles.
+En VibePWA abre **Historias > Crear historia**. Vibeapp no crea experiencias: captura hechos y los sincroniza. En VibePWA primero cuentas el momento y después eliges las piezas que lo acompañan.
 
 1. Escribe un título breve.
 2. Responde con tus palabras: **¿qué ocurrió?** Puedes pegar una transcripción de voz.
@@ -116,35 +116,59 @@ Vibe no toma control directo de los lentes ni descarga su almacenamiento por sí
 
 Oura, Apple Health, Health Connect y otros wearables aportan contexto de salud cuando se autoriza su fuente. No sustituyen las experiencias narradas.
 
-## 12. Leer tu historia: biblioteca, mapa, reportes y hallazgos
+## 12. Elegir qué analizar o publicar
+
+Reportes, Hallazgos y Publicaciones usan el mismo alcance:
+
+1. **Período:** obligatorio; por defecto, los últimos siete días.
+2. **Persona o grupo:** por defecto, tu selección activa.
+3. **Base:** todo lo registrado, solo historias confirmadas o solo evidencia.
+
+Puedes añadir categoría, ubicación, tipo de activo, texto o elementos específicos. La categoría nunca se adivina para una foto o nota suelta: cuando filtras por categoría, Vibe usa historias clasificadas y sus piezas vinculadas, e informa qué evidencia sin clasificar quedó fuera.
+
+El contexto de salud, ubicación, clima, noticias y agenda se incorpora automáticamente cuando corresponde a la persona y al período. Publicaciones añade una confirmación visual final para que veas exactamente qué imágenes, videos, audios, documentos y textos entrarán.
+
+Aunque comparten filtros, no hacen lo mismo:
+
+- **Reportes** presentan hechos, cantidades, evolución y comparaciones. Las experiencias y eventos cuentan como registros confirmados, no como una redacción editorial.
+- **Hallazgos** explican patrones y posibles siguientes acciones, indicando cuántos datos los respaldan y con qué confianza.
+- **Publicaciones** sí convierten las narrativas de tus experiencias y eventos en una historia cronológica y editorial. La evidencia seleccionada la ilustra y la respalda.
+
+En **Contenido** puedes elegir:
+
+- **Historias y evidencia:** recomendado para una publicación completa y para una lectura integral.
+- **Solo historias:** usa experiencias y eventos confirmados, junto con sus activos vinculados.
+- **Solo evidencia:** prepara un dossier cronológico de archivos y mediciones. Vibe no inventa una historia si todavía no la has contado.
+
+## 13. Leer tu historia: biblioteca, mapa, reportes y hallazgos
 
 - **Biblioteca:** revisa y edita experiencias, eventos y activos.
 - **Mapa de experiencias:** explora conexiones por tiempo, personas, lugares, temas y evidencia.
 - **Reportes:** resume un periodo, grupo o selección de experiencias.
 - **Hallazgos:** presenta patrones y siguientes acciones con el nivel de confianza de los datos disponibles.
-- **Publicaciones:** genera un PDF cronológico con historia y multimedia seleccionada.
+- **Publicaciones:** genera un PDF cronológico y editorial usando las narrativas de experiencias y eventos, más la multimedia seleccionada.
 
 Todos parten de la misma base. Mejorar una narración o corregir una experiencia mejora las salidas siguientes.
 
-## 13. Publicar y guardar recuerdos
+## 14. Publicar y guardar recuerdos
 
 En Publicaciones selecciona el alcance y el tipo de PDF. Vibe construye una historia editorial basada en los hechos registrados, no un simple listado de archivos. Puedes incluir o dejar fuera activos multimedia antes de generar.
 
 Cuando hay videos, el paquete editorial puede reunir el PDF y sus videos asociados para que continúes el diseño en VibePub u otra herramienta. El original de tus experiencias no cambia al crear una publicación.
 
-## 14. Obsidian: memoria de largo plazo, opcional
+## 15. Obsidian: memoria de largo plazo, opcional
 
 La exportación a Obsidian crea notas para experiencias que tienen narrativa humana y conserva las zonas donde escribes tus aprendizajes. Es útil para relacionar ideas y trabajar una memoria más profunda con Claude PC.
 
 Obsidian no reemplaza la cuenta Vibe. No borres ni edites masivamente la bóveda sin respaldo. Vibe sigue siendo el lugar donde se captura, estructura y protege el registro de origen.
 
-## 15. Idioma, privacidad y grupos
+## 16. Idioma, privacidad y grupos
 
 Puedes usar Vibe en español, inglés, francés o portugués. Todos los flujos principales deben aparecer completos en el idioma elegido.
 
 Tus datos son privados. Los grupos o personas son separaciones dentro de tu propia cuenta; no abren automáticamente el acceso a alguien más. Puedes crear, archivar o dar de baja grupos desde VibePWA. Antes de eliminar datos de la nube, crea un respaldo desde Operación.
 
-## 16. Cuando algo no parece sincronizado
+## 17. Cuando algo no parece sincronizado
 
 1. Revisa que hayas iniciado sesión en la misma cuenta en ambos dispositivos.
 2. En Vibeapp abre Estado y confirma si hay elementos en cola o reintento.
@@ -154,7 +178,7 @@ Tus datos son privados. Los grupos o personas son separaciones dentro de tu prop
 
 Los controles técnicos están concentrados en Operación para que el uso diario siga siendo simple. Si ves un mensaje confuso, registra la acción y la hora antes de intentar borrar o repetir la captura.
 
-## 17. Ruta recomendada para una primera semana
+## 18. Ruta recomendada para una primera semana
 
 1. Captura algunos momentos reales sin exigirte narrar todo.
 2. Cada noche o cada dos días, abre VibePWA y convierte las piezas importantes en historias.

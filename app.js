@@ -1,4 +1,4 @@
-const APP_VERSION = "20260726-media-sync-710";
+const APP_VERSION = "20260727-output-scope-711";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -4568,7 +4568,7 @@ Object.assign(manualContent, {
       "Este orden evita experiencias falsas: una foto no se convierte en una historia por sí sola. La historia nace cuando tú eliges el momento y cuentas qué ocurrió.",
     ] },
     { title: "Crear una historia", body: [
-      "En Captura > Nueva experiencia escribe un título, cuenta qué ocurrió y selecciona la evidencia del momento. La fecha es la forma más rápida de encontrar tus archivos.",
+      "En Historias > Crear historia escribe un título, cuenta qué ocurrió y selecciona visualmente la evidencia del momento. Vibeapp captura hechos; solo VibePWA crea y reorganiza historias.",
       "Puedes guardar una historia sin evidencia o adoptar una, varias o ninguna pieza. Al guardar, los archivos elegidos dejan la Bandeja y quedan vinculados a esa historia.",
     ] },
     { title: "Narrativa, evidencia y contexto", body: [
@@ -4581,8 +4581,8 @@ Object.assign(manualContent, {
       "Todas las reorganizaciones piden confirmación y conservan el antecedente. Soltar evidencia solo cambia su vínculo: el archivo sigue guardado para que puedas usarlo después.",
     ] },
     { title: "Leer y compartir", body: [
-      "Reportes explican un período, grupo o tema. Hallazgos convierten patrones en próximas acciones. Publicaciones crea un PDF editorial con la evidencia que elijas.",
-      "Las tres vistas usan las mismas historias guardadas. Completar una narrativa o adoptar una foto mejora las salidas futuras sin volver a cargar datos.",
+      "Reportes, Hallazgos y Publicaciones comparten el mismo alcance: período, persona o grupo y base de análisis (todo, historias o evidencia). Categoría, lugar, tipo de activo y texto son filtros opcionales.",
+      "El contexto compatible se incorpora por persona y fecha. Publicaciones añade una confirmación visual final para que veas exactamente qué contenido entrará.",
     ] },
     { title: "Mapa y Obsidian", body: [
       "El Mapa de experiencias es parte de VibePWA y muestra conexiones entre historias, tiempo, personas, lugares y evidencia.",
@@ -4607,7 +4607,7 @@ Object.assign(manualContent, {
       "This prevents false experiences: a photo does not become a story on its own. A story begins when you choose the moment and tell what happened.",
     ] },
     { title: "Create a story", body: [
-      "In Capture > New experience, write a title, describe what happened, and choose the evidence for that moment. Date is the quickest way to find your files.",
+      "In Stories > Create story, write a title, describe what happened, and visually choose the evidence for that moment. Vibeapp captures facts; only VibePWA creates and reorganizes stories.",
       "You can save a story with no evidence or adopt one, several, or no items. On save, selected files leave the Inbox and link to that story.",
     ] },
     { title: "Narrative, evidence, and context", body: [
@@ -4620,8 +4620,8 @@ Object.assign(manualContent, {
       "Every reorganization asks for confirmation and keeps its predecessor. Releasing evidence only changes its link; the original file remains available.",
     ] },
     { title: "Read and share", body: [
-      "Reports explain a period, group, or topic. Findings turn patterns into next steps. Publications creates an editorial PDF using the evidence you choose.",
-      "All three views use the same saved stories. Completing a narrative or adopting a photo improves future outputs without uploading data again.",
+      "Reports, Findings, and Publications share one scope: timeframe, person or group, and analysis basis (all, stories, or evidence). Category, place, asset type, and text are optional filters.",
+      "Compatible context is included by person and date. Publications adds a final visual confirmation so you can see exactly what content will be included.",
     ] },
     { title: "Map and Obsidian", body: [
       "The Experience Map belongs to VibePWA and shows connections across stories, time, people, places, and evidence.",
@@ -4646,7 +4646,7 @@ Object.assign(manualContent, {
       "Cela evite les fausses experiences: une photo ne devient pas une histoire seule. L histoire commence lorsque vous choisissez le moment et racontez ce qui s est passe.",
     ] },
     { title: "Creer une histoire", body: [
-      "Dans Capture > Nouvelle experience, ecrivez un titre, racontez ce qui s est passe et choisissez les preuves du moment. La date est le moyen le plus rapide de retrouver vos fichiers.",
+      "Dans Histoires > Creer une histoire, ecrivez un titre, racontez ce qui s est passe et choisissez visuellement les preuves du moment. Vibeapp capture les faits; seul VibePWA cree et reorganise les histoires.",
       "Vous pouvez enregistrer une histoire sans preuve ou adopter un, plusieurs ou aucun element. Les fichiers choisis quittent la Boite et sont lies a l histoire.",
     ] },
     { title: "Narration, preuve et contexte", body: [
@@ -4659,8 +4659,8 @@ Object.assign(manualContent, {
       "Chaque reorganisation demande confirmation et conserve son antecedent. Liberer une preuve change seulement son lien; le fichier original reste disponible.",
     ] },
     { title: "Lire et partager", body: [
-      "Les rapports expliquent une periode, un groupe ou un sujet. Les enseignements transforment les tendances en prochaines actions. Publications cree un PDF editorial avec les preuves choisies.",
-      "Les trois vues utilisent les memes histoires. Completer une narration ou adopter une photo ameliore les sorties futures sans nouveau chargement.",
+      "Rapports, Enseignements et Publications partagent la meme portee: periode, personne ou groupe et base d analyse (tout, histoires ou preuves). Categorie, lieu, type d actif et texte sont optionnels.",
+      "Le contexte compatible est inclus par personne et date. Publications ajoute une confirmation visuelle finale du contenu.",
     ] },
     { title: "Carte et Obsidian", body: [
       "La Carte des experiences appartient a VibePWA et montre les liens entre histoires, temps, personnes, lieux et preuves.",
@@ -4685,7 +4685,7 @@ Object.assign(manualContent, {
       "Isso evita experiencias falsas: uma foto nao se transforma em historia sozinha. A historia comeca quando voce escolhe o momento e conta o que aconteceu.",
     ] },
     { title: "Criar uma historia", body: [
-      "Em Captura > Nova experiencia, escreva um titulo, conte o que aconteceu e escolha a evidencia daquele momento. A data e a maneira mais rapida de encontrar seus arquivos.",
+      "Em Historias > Criar historia, escreva um titulo, conte o que aconteceu e escolha visualmente a evidencia daquele momento. Vibeapp captura fatos; somente VibePWA cria e reorganiza historias.",
       "Voce pode salvar uma historia sem evidencia ou adotar um, varios ou nenhum item. Ao salvar, os arquivos escolhidos saem da Bandeja e ficam vinculados a historia.",
     ] },
     { title: "Narrativa, evidencia e contexto", body: [
@@ -4698,8 +4698,8 @@ Object.assign(manualContent, {
       "Toda reorganizacao pede confirmacao e conserva seu antecedente. Soltar evidencia apenas muda seu vinculo; o arquivo original continua disponivel.",
     ] },
     { title: "Ler e compartilhar", body: [
-      "Relatorios explicam um periodo, grupo ou tema. Descobertas transformam padroes em proximas acoes. Publicacoes cria um PDF editorial com a evidencia escolhida.",
-      "As tres visoes usam as mesmas historias salvas. Completar uma narrativa ou adotar uma foto melhora as proximas saidas sem enviar dados novamente.",
+      "Relatorios, Descobertas e Publicacoes compartilham o mesmo escopo: periodo, pessoa ou grupo e base de analise (tudo, historias ou evidencias). Categoria, lugar, tipo de ativo e texto sao opcionais.",
+      "O contexto compativel e incluido por pessoa e data. Publicacoes adiciona uma confirmacao visual final do conteudo.",
     ] },
     { title: "Mapa e Obsidian", body: [
       "O Mapa de Experiencias pertence ao VibePWA e mostra conexoes entre historias, tempo, pessoas, lugares e evidencia.",
@@ -5132,30 +5132,30 @@ const state = {
   dashboardFilters: {
     pilotParticipantId: "all",
   },
-  dashboardAnalyticalScopePresetId: "all",
+  dashboardAnalyticalScopePresetId: "last7",
   insightsFilters: {
     pilotParticipantId: "all",
+    basis: "all",
     category: "all",
     source: "all",
-    dateFrom: "",
-    dateTo: "",
+    ...getDefaultOutputScopeDates(),
   },
   publicationFilters: {
     pilotParticipantId: "all",
+    basis: "all",
     category: "all",
     source: "all",
-    dateFrom: "",
-    dateTo: "",
+    ...getDefaultOutputScopeDates(),
   },
   reportFilters: {
-    scope: "all",
-    period: "all",
+    scope: "filters",
+    period: "7",
     experienceId: "",
+    basis: "all",
     category: "all",
     source: "all",
     pilotParticipantId: "all",
-    dateFrom: "",
-    dateTo: "",
+    ...getDefaultOutputScopeDates(),
     people: "",
     objective: "",
     eventQuery: "",
@@ -8642,6 +8642,10 @@ function setupFilters() {
   document.getElementById("insightsPilotParticipantFilter").addEventListener("change", (event) => {
     setAnalyticalParticipantScope(event.target.value, "insights");
   });
+  document.getElementById("insightsBasisFilter").addEventListener("change", (event) => {
+    state.insightsFilters.basis = event.target.value || "all";
+    renderInsights();
+  });
   document.getElementById("insightsCategoryFilter").addEventListener("change", (event) => {
     state.insightsFilters.category = event.target.value || "all";
     renderInsights();
@@ -8659,12 +8663,22 @@ function setupFilters() {
     renderInsights();
   });
   document.getElementById("clearInsightsScopeButton").addEventListener("click", () => {
-    state.insightsFilters = { pilotParticipantId: "all", category: "all", source: "all", dateFrom: "", dateTo: "" };
+    state.insightsFilters = {
+      pilotParticipantId: "all",
+      basis: "all",
+      category: "all",
+      source: "all",
+      ...getDefaultOutputScopeDates(),
+    };
     syncAnalyticalScopeInputs();
     renderInsights();
   });
   document.getElementById("publicationPilotParticipantFilter").addEventListener("change", (event) => {
     setAnalyticalParticipantScope(event.target.value, "publications");
+  });
+  document.getElementById("publicationBasisFilter").addEventListener("change", (event) => {
+    state.publicationFilters.basis = event.target.value || "all";
+    renderPublications();
   });
   document.getElementById("publicationCategoryFilter").addEventListener("change", (event) => {
     state.publicationFilters.category = event.target.value || "all";
@@ -8683,7 +8697,13 @@ function setupFilters() {
     renderPublications();
   });
   document.getElementById("clearPublicationScopeButton").addEventListener("click", () => {
-    state.publicationFilters = { pilotParticipantId: "all", category: "all", source: "all", dateFrom: "", dateTo: "" };
+    state.publicationFilters = {
+      pilotParticipantId: "all",
+      basis: "all",
+      category: "all",
+      source: "all",
+      ...getDefaultOutputScopeDates(),
+    };
     syncAnalyticalScopeInputs();
     renderPublications();
   });
@@ -8842,6 +8862,12 @@ function setupFilters() {
     syncReportFilterInputs();
     renderReport();
   });
+  document.getElementById("reportBasisFilter").addEventListener("change", (event) => {
+    state.reportFilters.basis = event.target.value || "all";
+    if (state.reportFilters.scope !== "single") state.reportFilters.scope = "filters";
+    syncReportFilterInputs();
+    renderReport();
+  });
   document.getElementById("reportPeopleFilter").addEventListener("input", (event) => {
     state.reportFilters.people = event.target.value.trim().toLowerCase();
     if (state.reportFilters.people && state.reportFilters.scope !== "single") state.reportFilters.scope = "filters";
@@ -8870,6 +8896,7 @@ function syncReportFilterInputs() {
   const dateFrom = document.getElementById("reportDateFromFilter");
   const dateTo = document.getElementById("reportDateToFilter");
   const pilotParticipant = document.getElementById("reportPilotParticipantFilter");
+  const basis = document.getElementById("reportBasisFilter");
   const people = document.getElementById("reportPeopleFilter");
   const objective = document.getElementById("reportObjectiveFilter");
   const eventQuery = document.getElementById("reportEventFilter");
@@ -8882,6 +8909,8 @@ function syncReportFilterInputs() {
   if (dateFrom) dateFrom.value = state.reportFilters.dateFrom || "";
   if (dateTo) dateTo.value = state.reportFilters.dateTo || "";
   if (pilotParticipant) pilotParticipant.value = state.reportFilters.pilotParticipantId || "all";
+  syncOutputBasisSelect("reportBasisFilter", state.reportFilters.basis || "all");
+  if (basis) basis.value = state.reportFilters.basis || "all";
   if (people) people.value = state.reportFilters.people || "";
   if (objective) objective.value = state.reportFilters.objective || "";
   if (eventQuery) eventQuery.value = state.reportFilters.eventQuery || "";
@@ -8905,14 +8934,29 @@ function syncAnalyticalScopeInputs() {
   });
   populateIntegrationSourceFilter("insightsSourceFilter", state.insightsFilters.source || "all");
   populateIntegrationSourceFilter("publicationSourceFilter", state.publicationFilters.source || "all");
-  updateAnalyticalScopeStatus("insightsScopeStatus", state.insightsFilters, getInsightsExperiences().length);
-  updateAnalyticalScopeStatus("publicationScopeStatus", state.publicationFilters, getPublicationExperiences().length);
+  syncOutputBasisSelect("insightsBasisFilter", state.insightsFilters.basis || "all");
+  syncOutputBasisSelect("publicationBasisFilter", state.publicationFilters.basis || "all");
+  updateAnalyticalScopeStatus("insightsScopeStatus", state.insightsFilters, getInsightsOutputScope());
+  updateAnalyticalScopeStatus("publicationScopeStatus", state.publicationFilters, getPublicationOutputScope());
 }
 
 function updateAnalyticalScopeStatus(statusId, filters = {}, count = 0) {
   const status = statusId ? document.getElementById(statusId) : null;
   if (!status) return;
   const parts = buildAnalyticalScopeParts(filters);
+  if (count && typeof count === "object") {
+    const baseText = parts.length ? parts.join(" / ") : languageText("Fuente general", "General source", "Source generale", "Fonte geral");
+    const stories = Array.isArray(count.stories) ? count.stories.length : 0;
+    const evidence = Array.isArray(count.evidence) ? count.evidence.length : 0;
+    const context = Array.isArray(count.context) ? count.context.length : 0;
+    status.textContent = `${baseText} / ${languageText(
+      `${stories} historias, ${evidence} evidencias, ${context} contextos`,
+      `${stories} stories, ${evidence} evidence items, ${context} context signals`,
+      `${stories} histoires, ${evidence} preuves, ${context} contextes`,
+      `${stories} historias, ${evidence} evidencias, ${context} contextos`,
+    )}`;
+    return;
+  }
   const base = parts.length ? parts.join(" · ") : state.language !== "es" ? "General source" : "Fuente general";
   status.textContent = `${base} · ${count} ${state.language !== "es" ? "items" : "experiencias"}`;
 }
@@ -8924,6 +8968,7 @@ function buildAnalyticalScopeParts(filters = {}) {
   if (filters.category && filters.category !== "all") parts.push(displayCategory(filters.category));
   if (filters.source && filters.source !== "all") parts.push(getIntegrationSourceFilterLabel(filters.source));
   if (filters.dateFrom || filters.dateTo) parts.push(`${filters.dateFrom || "inicio"} - ${filters.dateTo || "hoy"}`);
+  parts.push(getOutputBasisLabel(filters.basis || "all"));
   return parts;
 }
 
@@ -8947,6 +8992,14 @@ function renderSharedScopeContext(containerId, filters = {}, count = 0, outputLa
       };
   const parts = [...buildAnalyticalScopeParts(filters), ...extraParts.filter(Boolean)].filter(Boolean);
   const visibleParts = parts.length ? parts : [labels.fallback];
+  const countLabel = count && typeof count === "object"
+    ? languageText(
+        `${count.stories?.length || 0} historias / ${count.evidence?.length || 0} evidencias / ${count.context?.length || 0} contextos`,
+        `${count.stories?.length || 0} stories / ${count.evidence?.length || 0} evidence items / ${count.context?.length || 0} context signals`,
+        `${count.stories?.length || 0} histoires / ${count.evidence?.length || 0} preuves / ${count.context?.length || 0} contextes`,
+        `${count.stories?.length || 0} historias / ${count.evidence?.length || 0} evidencias / ${count.context?.length || 0} contextos`,
+      )
+    : `${count} ${labels.count}`;
   container.innerHTML = `
     <div>
       <strong>${escapeHtml(labels.title)}</strong>
@@ -8955,14 +9008,15 @@ function renderSharedScopeContext(containerId, filters = {}, count = 0, outputLa
     <div class="shared-scope-chip-row">
       <span>${escapeHtml(labels.output)}: ${escapeHtml(outputLabel || "-")}</span>
       ${visibleParts.slice(0, 6).map((part) => `<span>${escapeHtml(part)}</span>`).join("")}
-      <span>${count} ${escapeHtml(labels.count)}</span>
+      <span>${escapeHtml(countLabel)}</span>
     </div>
   `;
 }
 
 function generateReportFromScope() {
   renderReport();
-  const count = getReportExperiences().length;
+  const outputScope = getReportOutputScope();
+  const count = outputScope.stories.length;
   const scope = state.reportFilters.scope || "all";
   const scopeText = getReportScopeLabel(scope);
   setReportFlowStatus(
@@ -8976,21 +9030,26 @@ function generateReportFromScope() {
 
 function resetReportScope() {
   state.reportFilters = {
-    scope: "all",
-    period: "all",
+    scope: "filters",
+    period: "7",
     experienceId: "",
+    basis: "all",
     category: "all",
     source: "all",
     pilotParticipantId: "all",
-    dateFrom: "",
-    dateTo: "",
+    ...getDefaultOutputScopeDates(),
     people: "",
     objective: "",
     eventQuery: "",
   };
   syncReportFilterInputs();
   renderReport();
-  setReportFlowStatus(state.language !== "es" ? "Scope cleared. The report now uses all saved experiences." : "Alcance limpiado. El reporte ahora usa todas las experiencias guardadas.");
+  setReportFlowStatus(languageText(
+    "Alcance restablecido a los ultimos 7 dias con historias y evidencia.",
+    "Scope reset to the last 7 days with stories and evidence.",
+    "Portee reinitialisee aux 7 derniers jours avec histoires et preuves.",
+    "Escopo redefinido para os ultimos 7 dias com historias e evidencias.",
+  ));
 }
 
 function scrollToReportAcceptance() {
@@ -10461,6 +10520,157 @@ function experienceMatchesDateRange(item, dateFrom = "", dateTo = "") {
   return true;
 }
 
+function getDefaultOutputScopeDates(reference = new Date()) {
+  const end = new Date(reference);
+  const start = new Date(reference);
+  start.setDate(start.getDate() - 6);
+  return {
+    dateFrom: toDateFilterValue(start),
+    dateTo: toDateFilterValue(end),
+  };
+}
+
+function getOutputBasisOptions() {
+  return [
+    ["all", languageText("Historias y evidencia", "Stories and evidence", "Histoires et preuves", "Historias e evidencias")],
+    ["stories", languageText("Solo historias confirmadas", "Confirmed stories only", "Histoires confirmees uniquement", "Somente historias confirmadas")],
+    ["evidence", languageText("Solo evidencia registrada", "Recorded evidence only", "Preuves enregistrees uniquement", "Somente evidencias registradas")],
+  ];
+}
+
+function getOutputBasisLabel(value = "all") {
+  return getOutputBasisOptions().find(([key]) => key === value)?.[1] || getOutputBasisOptions()[0][1];
+}
+
+function syncOutputBasisSelect(id, value = "all") {
+  const select = document.getElementById(id);
+  if (!select) return;
+  const options = getOutputBasisOptions();
+  select.innerHTML = options.map(([key, label]) => `<option value="${key}">${escapeHtml(label)}</option>`).join("");
+  select.value = options.some(([key]) => key === value) ? value : "all";
+}
+
+function assetMatchesOutputDateRange(asset = {}, dateFrom = "", dateTo = "") {
+  return experienceMatchesDateRange({
+    timestamp: asset.capturedAt || asset.timestamp || asset.uploadedAt || asset.createdAt || "",
+  }, dateFrom, dateTo);
+}
+
+function assetMatchesOutputParticipant(asset = {}, participantId = "all") {
+  if (!participantId || participantId === "all") return true;
+  const directId = asset.pilotParticipantId || asset.participantId || asset.groupId || asset.metadata?.participantId || "";
+  if (directId) return normalizePilotParticipantId(directId) === normalizePilotParticipantId(participantId);
+  const parent = asset.experienceId ? state.experiences.find((item) => item.id === asset.experienceId) : null;
+  return parent ? experienceMatchesPilotParticipant(parent, participantId) : false;
+}
+
+function isOutputContextAsset(asset = {}) {
+  if (asset.contextOnly) return true;
+  const profile = getIntegrationSourceProfile(asset);
+  const text = [
+    asset.evidenceType,
+    asset.payloadType,
+    asset.kind,
+    asset.type,
+    asset.name,
+    profile.family,
+    profile.payloadType,
+  ].filter(Boolean).join(" ").toLowerCase();
+  return /(biometric|biometr|health|sleep|readiness|heart|steps|location|gps|weather|climate|news|agenda|sensor|context)/.test(text);
+}
+
+function buildAnalyticalOutputScope(filters = {}, outputType = "report", storiesOverride = null) {
+  const basis = ["all", "stories", "evidence"].includes(filters.basis) ? filters.basis : "all";
+  const stories = Array.isArray(storiesOverride)
+    ? storiesOverride
+    : getExperiencesByAnalyticalFilters(filters);
+  const selectedStoryIds = new Set(stories.map((item) => item.id).filter(Boolean));
+  const participantId = filters.pilotParticipantId || "all";
+  const source = filters.source || "all";
+  const category = filters.category || "all";
+  const allAssets = collectMultimodalAssets()
+    .filter((asset) => assetMatchesOutputDateRange(asset, filters.dateFrom || "", filters.dateTo || ""))
+    .filter((asset) => assetMatchesOutputParticipant(asset, participantId))
+    .filter((asset) => experienceMatchesIntegrationSource(asset, source));
+  const context = allAssets.filter(isOutputContextAsset);
+  const eligibleEvidence = allAssets.filter((asset) => !isOutputContextAsset(asset));
+  const evidence = eligibleEvidence.filter((asset) => {
+    if (category === "all") return true;
+    return Boolean(asset.experienceId && selectedStoryIds.has(asset.experienceId));
+  });
+  const visibleStories = basis === "evidence" ? [] : stories;
+  const visibleEvidence = basis === "stories"
+    ? evidence.filter((asset) => asset.experienceId && selectedStoryIds.has(asset.experienceId))
+    : evidence;
+  return {
+    outputType,
+    basis,
+    stories: visibleStories,
+    evidence: visibleEvidence,
+    context,
+    excludedUnclassifiedEvidence: category === "all" ? 0 : Math.max(0, eligibleEvidence.length - evidence.length),
+    dateFrom: filters.dateFrom || "",
+    dateTo: filters.dateTo || "",
+    participantId,
+  };
+}
+
+function buildScopedEvidenceSummary(scope = {}) {
+  const evidence = Array.isArray(scope.evidence) ? scope.evidence : [];
+  const byKind = evidence.reduce((acc, asset) => {
+    const kind = String(asset.kind || inferMediaKind(asset) || "document").toLowerCase();
+    acc[kind] = (acc[kind] || 0) + 1;
+    return acc;
+  }, {});
+  const withReadableText = evidence.filter((asset) =>
+    String(asset.analysisText || asset.translatedText || asset.extractedText || asset.manualNote || asset.previewText || "").trim(),
+  ).length;
+  return {
+    total: evidence.length,
+    byKind,
+    withReadableText,
+    context: Array.isArray(scope.context) ? scope.context.length : 0,
+    excludedUnclassifiedEvidence: Number(scope.excludedUnclassifiedEvidence || 0),
+  };
+}
+
+function renderScopedEvidenceSummary(scope = {}, title = "") {
+  const summary = buildScopedEvidenceSummary(scope);
+  const sourceExplanation = scope.outputType === "publication"
+    ? languageText(
+        "Los relatos de experiencias y eventos forman la historia editorial; la evidencia y el contexto la documentan y enriquecen.",
+        "Experience and event narratives form the editorial story; evidence and context document and enrich it.",
+        "Les recits d'experiences et d'evenements forment l'histoire editoriale ; les preuves et le contexte l'enrichissent.",
+        "Os relatos de experiencias e eventos formam a historia editorial; evidencias e contexto a documentam e enriquecem.",
+      )
+    : languageText(
+        "La lectura se basa en hechos y datos observables del periodo. Los registros estructurados, la evidencia y el contexto se mantienen diferenciados.",
+        "The reading is based on observable facts and data from the period. Structured records, evidence, and context remain distinct.",
+        "La lecture repose sur les faits et les donnees observables de la periode. Registres, preuves et contexte restent distincts.",
+        "A leitura se baseia em fatos e dados observaveis do periodo. Registros, evidencias e contexto permanecem separados.",
+      );
+  const kinds = Object.entries(summary.byKind)
+    .map(([kind, count]) => `${getAssetKindLabel(kind)}: ${count}`)
+    .join(" / ");
+  return `
+    <section class="shared-scope-context output-evidence-summary">
+      <div>
+        <strong>${escapeHtml(title || languageText("Fuentes del alcance", "Scope sources", "Sources de la portee", "Fontes do escopo"))}</strong>
+        <p>${escapeHtml(sourceExplanation)}</p>
+      </div>
+      <div class="shared-scope-chip-row">
+        <span>${summary.total} ${escapeHtml(languageText("evidencias", "evidence items", "preuves", "evidencias"))}</span>
+        <span>${summary.withReadableText} ${escapeHtml(languageText("con texto interpretable", "with readable text", "avec texte lisible", "com texto legivel"))}</span>
+        <span>${summary.context} ${escapeHtml(languageText("señales de contexto", "context signals", "signaux de contexte", "sinais de contexto"))}</span>
+        ${kinds ? `<span>${escapeHtml(kinds)}</span>` : ""}
+        ${summary.excludedUnclassifiedEvidence
+          ? `<span>${summary.excludedUnclassifiedEvidence} ${escapeHtml(languageText("sin clasificar, excluidas por categoría", "unclassified, excluded by category", "non classees, exclues par categorie", "nao classificadas, excluidas por categoria"))}</span>`
+          : ""}
+      </div>
+    </section>
+  `;
+}
+
 function getExperiencesByAnalyticalFilters(filters = {}) {
   return filterExperiencesByAnalyticalFilters(state.experiences.filter((item) => !isSupersededExperience(item)), filters);
 }
@@ -10476,11 +10686,23 @@ function filterExperiencesByAnalyticalFilters(experiences = [], filters = {}) {
 }
 
 function getInsightsExperiences() {
-  return getExperiencesByAnalyticalFilters(state.insightsFilters || {});
+  return getInsightsOutputScope().stories;
 }
 
 function getPublicationExperiences() {
-  return getExperiencesByAnalyticalFilters(state.publicationFilters || {});
+  return getPublicationOutputScope().stories;
+}
+
+function getInsightsOutputScope() {
+  return buildAnalyticalOutputScope(state.insightsFilters || {}, "insights");
+}
+
+function getPublicationOutputScope() {
+  return buildAnalyticalOutputScope(state.publicationFilters || {}, "publication");
+}
+
+function getReportOutputScope() {
+  return buildAnalyticalOutputScope(state.reportFilters || {}, "report", getReportExperiences());
 }
 
 function getIntegrationSourceFilterOptions() {
@@ -21568,6 +21790,7 @@ function getCurrentDashboardAnalyticalParticipantId() {
 function buildSharedAnalyticalScopeFilters(preset = analyticalScopePresets[0]) {
   const filters = {
     pilotParticipantId: getCurrentDashboardAnalyticalParticipantId(),
+    basis: state.reportFilters?.basis || state.insightsFilters?.basis || state.publicationFilters?.basis || "all",
     category: "all",
     source: "all",
     dateFrom: "",
@@ -21589,16 +21812,19 @@ function buildSharedAnalyticalScopeFilters(preset = analyticalScopePresets[0]) {
 function sharedAnalyticalScopeMatchesCurrentFilters(preset) {
   const filters = buildSharedAnalyticalScopeFilters(preset);
   return (state.insightsFilters?.pilotParticipantId || "all") === filters.pilotParticipantId
+    && (state.insightsFilters?.basis || "all") === filters.basis
     && (state.insightsFilters?.category || "all") === filters.category
     && (state.insightsFilters?.source || "all") === filters.source
     && (state.insightsFilters?.dateFrom || "") === filters.dateFrom
     && (state.insightsFilters?.dateTo || "") === filters.dateTo
     && (state.publicationFilters?.pilotParticipantId || "all") === filters.pilotParticipantId
+    && (state.publicationFilters?.basis || "all") === filters.basis
     && (state.publicationFilters?.category || "all") === filters.category
     && (state.publicationFilters?.source || "all") === filters.source
     && (state.publicationFilters?.dateFrom || "") === filters.dateFrom
     && (state.publicationFilters?.dateTo || "") === filters.dateTo
     && (state.reportFilters?.pilotParticipantId || "all") === filters.pilotParticipantId
+    && (state.reportFilters?.basis || "all") === filters.basis
     && (state.reportFilters?.category || "all") === filters.category
     && (state.reportFilters?.source || "all") === filters.source
     && (state.reportFilters?.dateFrom || "") === filters.dateFrom
@@ -21647,7 +21873,8 @@ function renderDashboardAnalyticalScope() {
   if (status) status.textContent = labels.status;
   const activePreset = analyticalScopePresets.find((preset) => preset.id === state.dashboardAnalyticalScopePresetId) || analyticalScopePresets[0];
   const activeFilters = buildSharedAnalyticalScopeFilters(activePreset);
-  const activeCount = filterExperiencesByAnalyticalFilters(state.experiences, activeFilters).length;
+  const activeScope = buildAnalyticalOutputScope(activeFilters, "report");
+  const activeCount = activeScope.stories.length + activeScope.evidence.length;
   box.innerHTML = `
     <div class="dashboard-scope-summary">
       <div>
@@ -21672,6 +21899,13 @@ function renderDashboardAnalyticalScope() {
         `;
       }).join("")}
     </div>
+    <div class="dashboard-scope-presets output-basis-picker" role="group" aria-label="${escapeHtml(languageText("Contenido incluido", "Included content", "Contenu inclus", "Conteudo incluido"))}">
+      ${getOutputBasisOptions().map(([value, label]) => `
+        <button class="${activeFilters.basis === value ? "is-active" : ""}" type="button" data-dashboard-scope-basis="${value}">
+          <strong>${escapeHtml(label)}</strong>
+        </button>
+      `).join("")}
+    </div>
     <div class="dashboard-scope-actions">
       <button class="primary-button" type="button" data-dashboard-scope-open="report">${escapeHtml(labels.report)}</button>
       <button class="ghost-button" type="button" data-dashboard-scope-open="insights">${escapeHtml(labels.insights)}</button>
@@ -21690,6 +21924,7 @@ function applySharedAnalyticalScope(presetId = state.dashboardAnalyticalScopePre
     scope: getReportScopeForSharedFilters(filters),
     period: "all",
     experienceId: "",
+    basis: filters.basis,
     category: filters.category,
     source: filters.source,
     pilotParticipantId: filters.pilotParticipantId,
@@ -21704,6 +21939,26 @@ function applySharedAnalyticalScope(presetId = state.dashboardAnalyticalScopePre
 }
 
 function handleDashboardAnalyticalScopeClick(event) {
+  const basisButton = event.target.closest("[data-dashboard-scope-basis]");
+  if (basisButton) {
+    const basis = basisButton.dataset.dashboardScopeBasis || "all";
+    state.reportFilters.basis = basis;
+    state.insightsFilters.basis = basis;
+    state.publicationFilters.basis = basis;
+    syncReportFilterInputs();
+    syncAnalyticalScopeInputs();
+    renderDashboardAnalyticalScope();
+    renderReport();
+    renderInsights();
+    renderPublications();
+    notify(languageText(
+      `Contenido aplicado: ${getOutputBasisLabel(basis)}.`,
+      `Content applied: ${getOutputBasisLabel(basis)}.`,
+      `Contenu applique : ${getOutputBasisLabel(basis)}.`,
+      `Conteudo aplicado: ${getOutputBasisLabel(basis)}.`,
+    ), "success");
+    return;
+  }
   const presetButton = event.target.closest("[data-dashboard-scope-preset]");
   if (presetButton) {
     applySharedAnalyticalScope(presetButton.dataset.dashboardScopePreset || "all");
@@ -21781,6 +22036,7 @@ function reportQuickStartMatchesCurrentFilters(item) {
     "scope",
     "period",
     "experienceId",
+    "basis",
     "category",
     "source",
     "pilotParticipantId",
@@ -21797,6 +22053,7 @@ function buildReportQuickStartFilters(item) {
     scope: "all",
     period: "all",
     experienceId: "",
+    basis: state.reportFilters?.basis || "all",
     category: "all",
     source: "all",
     pilotParticipantId: state.reportFilters?.pilotParticipantId || "all",
@@ -23003,28 +23260,31 @@ window.exportExperienceMapMarkdown = exportExperienceMapMarkdown;
 
 function renderReport() {
   updateReportScopeControls();
-  const experiences = getReportExperiences();
+  const scopedStories = getReportExperiences();
+  const outputScope = buildAnalyticalOutputScope(state.reportFilters || {}, "report", scopedStories);
+  const experiences = outputScope.stories;
   const totalMinutes = experiences.reduce((sum, item) => sum + item.duration, 0);
-  const attachmentCount = experiences.reduce((sum, item) => sum + (item.attachments?.length || 0), 0);
+  const attachmentCount = outputScope.evidence.length;
   const avgEnergy = experiences.length ? average(experiences.map((item) => item.energy)).toFixed(1) : "0.0";
   const firstDate = experiences[0]?.timestamp;
   const lastDate = experiences[experiences.length - 1]?.timestamp;
   renderReportAcceptancePanel();
   document.getElementById("reportRangeLabel").textContent =
     firstDate && lastDate ? `${formatShortDate(firstDate)} - ${formatShortDate(lastDate)}` : state.language !== "es" ? "No range" : "Sin rango";
-  renderReportScopeSummary(experiences);
+  renderReportScopeSummary(experiences, outputScope);
   const reportQuickStart = document.getElementById("reportQuickStart");
   if (reportQuickStart) reportQuickStart.innerHTML = renderReportQuickStart(experiences);
   renderSharedScopeContext(
     "reportSharedScopeContext",
     {
       pilotParticipantId: state.reportFilters.pilotParticipantId || "all",
+      basis: state.reportFilters.basis || "all",
       category: state.reportFilters.category || "all",
       source: state.reportFilters.source || "all",
       dateFrom: state.reportFilters.dateFrom || "",
       dateTo: state.reportFilters.dateTo || "",
     },
-    experiences.length,
+    outputScope,
     state.language !== "es" ? "Report" : "Reporte",
     [
       getReportScopeLabel(state.reportFilters.scope),
@@ -23038,10 +23298,10 @@ function renderReport() {
   );
 
   const stats = [
-    [t("metrics.total"), experiences.length],
+    [languageText("Historias", "Stories", "Histoires", "Historias"), experiences.length],
     [t("metrics.capturedHours"), (totalMinutes / 60).toFixed(1)],
-    [t("metrics.media"), attachmentCount],
-    [t("metrics.avgEnergy"), avgEnergy],
+    [languageText("Evidencias", "Evidence", "Preuves", "Evidencias"), attachmentCount],
+    [languageText("Contextos", "Context", "Contextes", "Contextos"), outputScope.context.length],
   ];
   document.getElementById("reportSummary").innerHTML = stats
     .map(
@@ -23096,6 +23356,7 @@ function renderReport() {
   `;
 
   document.getElementById("reportNarrative").innerHTML = `
+    ${renderScopedEvidenceSummary(outputScope, languageText("Base factual del reporte", "Report factual basis", "Base factuelle du rapport", "Base factual do relatorio"))}
     <section class="report-executive-card">
       <span class="report-kicker">${t("labels.reportExecutive")}</span>
       <h3>${escapeHtml(displayCategory(getTopCategory(experiences)))}</h3>
@@ -23117,7 +23378,7 @@ function renderReport() {
     ${renderReportBiometricImpact(experiences)}
     ${renderLivingMemoryLog(experiences, reportAnalysis)}
     ${renderReportEventTimeline(experiences)}
-    ${renderReportMultimodalEvidence(experiences)}
+    ${renderReportMultimodalEvidence(experiences, outputScope.evidence)}
     <p class="report-next-step">${t("report.next")}</p>
   `;
 }
@@ -23203,7 +23464,7 @@ function updateReportScopeControls() {
   }
 }
 
-function renderReportScopeSummary(experiences) {
+function renderReportScopeSummary(experiences, outputScope = {}) {
   const summary = document.getElementById("reportScopeSummary");
   const title = document.getElementById("reportScopeTitle");
   if (!summary || !title) return;
@@ -23250,15 +23511,22 @@ function renderReportScopeSummary(experiences) {
        ? ` Selected dates: ${state.reportFilters.dateFrom || "start"} to ${state.reportFilters.dateTo || "today"}.`
       : ` Fechas seleccionadas: ${state.reportFilters.dateFrom || "inicio"} a ${state.reportFilters.dateTo || "hoy"}.`
     : "";
-  summary.textContent = state.language !== "es"
-     ? `This report analyzes ${experiences.length} experience(s): ${scopeLabel}. Range: ${dateText}.${participantText}${sourceText}${eventText}${customDateText}`
-    : `Este reporte analiza ${experiences.length} experiencia(s): ${scopeLabel}. Rango: ${dateText}.${participantText}${sourceText}${eventText}${customDateText}`;
+  const evidenceCount = outputScope.evidence?.length || 0;
+  const contextCount = outputScope.context?.length || 0;
+  summary.textContent = languageText(
+    `Este reporte usa ${experiences.length} historia(s), ${evidenceCount} evidencia(s) y ${contextCount} señal(es) de contexto: ${scopeLabel}. Rango: ${dateText}.${participantText}${sourceText}${eventText}${customDateText}`,
+    `This report uses ${experiences.length} story/stories, ${evidenceCount} evidence item(s), and ${contextCount} context signal(s): ${scopeLabel}. Range: ${dateText}.${participantText}${sourceText}${eventText}${customDateText}`,
+    `Ce rapport utilise ${experiences.length} histoire(s), ${evidenceCount} preuve(s) et ${contextCount} signal/signaux de contexte. Periode : ${dateText}.`,
+    `Este relatorio usa ${experiences.length} historia(s), ${evidenceCount} evidencia(s) e ${contextCount} sinal(is) de contexto. Periodo: ${dateText}.`,
+  );
 }
 
-function buildReportMultimodalEvidence(experiences) {
+function buildReportMultimodalEvidence(experiences, scopedEvidence = null) {
   const experienceIds = new Set(experiences.map((item) => item.id));
-  return collectMultimodalAssets()
-    .filter((asset) => experienceIds.has(asset.experienceId))
+  const sourceAssets = Array.isArray(scopedEvidence)
+    ? scopedEvidence
+    : collectMultimodalAssets().filter((asset) => experienceIds.has(asset.experienceId));
+  return sourceAssets
     .map((asset) => ({
       assetId: asset.assetKey,
       name: asset.name || getAssetKindLabel(asset.kind),
@@ -23288,12 +23556,11 @@ function buildReportMultimodalEvidence(experiences) {
       eventTitle: asset.eventTitle || asset.metadata?.linkedEventTitle || "",
       eventOrder: Number(asset.eventOrder || asset.metadata?.linkedEventOrder || 0),
     }))
-    .filter((item) => item.analyticalText || item.translatedText || item.originalText || item.manualNote || item.manualTags.length || item.externalTreatment)
-    .slice(0, 12);
+    .slice(0, 24);
 }
 
-function renderReportMultimodalEvidence(experiences) {
-  const evidence = buildReportMultimodalEvidence(experiences);
+function renderReportMultimodalEvidence(experiences, scopedEvidence = null) {
+  const evidence = buildReportMultimodalEvidence(experiences, scopedEvidence);
   return `
     <section class="report-multimodal-evidence">
       <div class="report-section-heading">
@@ -24819,7 +25086,7 @@ function downloadReport() {
 }
 
 function markReportExport(format, payload = buildReportExportPayload(), status = "ok") {
-  const reportExperiences = getReportExperiences();
+  const reportExperiences = getReportOutputScope().stories;
   state.reportExportAudit = {
     ...(state.reportExportAudit || {}),
     [format]: {
@@ -24844,7 +25111,7 @@ function markReportAcceptanceReview() {
     review: {
       at: new Date().toISOString(),
       status: "ok",
-      experiences: getReportExperiences().length,
+      experiences: getReportOutputScope().stories.length,
       filters: { ...state.reportFilters },
       score: calculateReportAcceptanceReadiness().score,
       summary: payload.summary,
@@ -25029,11 +25296,12 @@ function buildReportAcceptanceChecksLegacy() {
 
 function buildReportAcceptanceChecks() {
   const audit = state.reportExportAudit || {};
-  const reportExperiences = getReportExperiences();
+  const outputScope = getReportOutputScope();
+  const reportExperiences = outputScope.stories;
   const payload = buildReportExportPayload();
   const hasNarrative = Boolean(payload.analysis?.executive?.length && payload.integratedReading?.length);
   const hasCharts = Boolean(payload.energyTrend?.length || payload.categoryBreakdown?.length);
-  const hasEvidence = reportExperiences.length >= 3;
+  const hasEvidence = reportExperiences.length >= 3 || outputScope.evidence.length > 0 || outputScope.context.length > 0;
   const labels =
     state.language !== "es"
        ? {
@@ -25243,8 +25511,10 @@ function formatReportAcceptanceLastAction() {
 }
 
 function buildReportExportPayload() {
-  const rows = buildReportRows();
-  const reportExperiences = getReportExperiences();
+  const scopedStories = getReportExperiences();
+  const outputScope = buildAnalyticalOutputScope(state.reportFilters || {}, "report", scopedStories);
+  const reportExperiences = outputScope.stories;
+  const rows = buildReportRows(reportExperiences);
   const analysis = buildExperienceAnalysis(reportExperiences);
   const dataQuality = calculateDataQuality(reportExperiences);
   const routeGraph = buildReportExperienceMapGraph(reportExperiences);
@@ -25266,6 +25536,13 @@ function buildReportExportPayload() {
     generatedAt: new Date().toISOString(),
     language: state.language,
     filters: { ...state.reportFilters },
+    outputScope: {
+      basis: outputScope.basis,
+      stories: outputScope.stories.length,
+      evidence: outputScope.evidence.length,
+      context: outputScope.context.length,
+      excludedUnclassifiedEvidence: outputScope.excludedUnclassifiedEvidence,
+    },
     summary: {
       totalExperiences: reportExperiences.length,
       capturedHours: Number((reportExperiences.reduce((sum, item) => sum + Number(item.duration || 0), 0) / 60).toFixed(1)),
@@ -25281,7 +25558,8 @@ function buildReportExportPayload() {
     eventTimeline: buildReportEventTimeline(reportExperiences),
     humanKpis: buildHumanKpis(reportExperiences, analysis, dataQuality),
     humanCorrelations: buildHumanCorrelations(reportExperiences, analysis),
-    multimodalEvidence: buildReportMultimodalEvidence(reportExperiences),
+    multimodalEvidence: buildReportMultimodalEvidence(reportExperiences, outputScope.evidence),
+    contextEvidence: buildReportMultimodalEvidence([], outputScope.context),
     livingMemory: buildLivingMemoryLog(reportExperiences, analysis),
     categoryBreakdown: buildCategoryBreakdown(reportExperiences),
     blueprintCategoryReading: buildCategoryBreakdown(reportExperiences).map(buildBlueprintCategoryReading).filter(Boolean),
@@ -25589,16 +25867,21 @@ function generatePublicationDraft() {
   const style = document.getElementById("publicationStyleInput").value;
   const channel = PUBLICATION_OUTPUT_CHANNEL;
   const privacy = document.getElementById("publicationPrivacyInput").checked;
-  const publicationExperiences = getPublicationExperiences();
-  const reportExperiences = filterExperiencesByAnalyticalFilters(getReportExperiences(), state.publicationFilters || {});
+  const outputScope = getPublicationOutputScope();
+  const publicationExperiences = outputScope.stories;
   const experiences = source === "latest"
      ? [...publicationExperiences].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 8)
-    : reportExperiences;
-  if (!experiences.length) {
+    : publicationExperiences;
+  const evidence = source === "latest"
+    ? [...outputScope.evidence]
+        .sort((a, b) => new Date(b.capturedAt || b.timestamp || 0) - new Date(a.capturedAt || a.timestamp || 0))
+        .slice(0, 24)
+    : outputScope.evidence;
+  if (!experiences.length && !evidence.length) {
     document.getElementById("publicationStatus").textContent = t("labels.publicationEmpty");
     return;
   }
-  const draft = buildPublicationDraft({ experiences, type, style, channel, privacy });
+  const draft = buildPublicationDraft({ experiences, evidence, context: outputScope.context, type, style, channel, privacy });
   const template = publicationTemplates.find((item) => item.id === draft.templateId) || publicationTemplates.find((item) => item.id === resolvePublicationTemplateId(type, style, channel));
   draft.body = applyPublicationTemplateStructure(draft, template);
   state.currentPublicationDraft = draft;
@@ -25615,11 +25898,11 @@ function generatePublicationDraft() {
   document.getElementById("publicationStatus").textContent = t("labels.publicationGenerated");
 }
 
-function buildPublicationDraft({ experiences, type, style, channel, privacy }) {
+function buildPublicationDraft({ experiences, evidence = [], context = [], type, style, channel, privacy }) {
   const analysis = buildExperienceAnalysis(experiences);
   const title = buildPublicationTitle(type, experiences);
   const chronologicalExperiences = [...experiences].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-  const media = applyRecommendedPublicationMediaSelection(collectPublicationMedia(chronologicalExperiences), { type, channel });
+  const media = applyRecommendedPublicationMediaSelection(collectPublicationMedia(chronologicalExperiences, evidence), { type, channel });
   const mediaCount = media.filter((item) => item.included !== false).length;
   const category = cleanPublicationCategoryLabel(displayCategory(getTopCategory(chronologicalExperiences)));
   const avgEnergy = chronologicalExperiences.length ? Number(average(chronologicalExperiences.map((item) => Number(item.energy || 0))).toFixed(1)) : 0;
@@ -25631,11 +25914,28 @@ function buildPublicationDraft({ experiences, type, style, channel, privacy }) {
     location: cleanPublicationLocation(item.location),
     note: cleanPublicationText(item.notes || item.objective || ""),
   }));
-  const timeline = buildPublicationTimelineItems(chronologicalExperiences, media);
-  const rawSummary = buildPublicationSummary(chronologicalExperiences, analysis, category, avgEnergy);
+  const timeline = [
+    ...buildPublicationTimelineItems(chronologicalExperiences, media),
+    ...buildPublicationEvidenceTimelineItems(evidence, chronologicalExperiences.length),
+  ].sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
+  const rawSummary = chronologicalExperiences.length
+    ? buildPublicationSummary(chronologicalExperiences, analysis, category, avgEnergy)
+    : languageText(
+        `${evidence.length} evidencia(s) del periodo, ordenadas cronologicamente y listas para revision editorial. No se atribuye una historia ni una categoria que el usuario no haya confirmado.`,
+        `${evidence.length} evidence item(s) from the period, ordered chronologically and ready for editorial review. No unconfirmed story or category is assigned.`,
+        `${evidence.length} preuve(s) de la periode, classees chronologiquement et pretes pour revision editoriale. Aucune histoire non confirmee n'est attribuee.`,
+        `${evidence.length} evidencias do periodo, ordenadas cronologicamente e prontas para revisao editorial. Nenhuma historia nao confirmada e atribuida.`,
+      );
   const people = filterPublicationPeople(topValues(chronologicalExperiences.flatMap((item) => splitPeople(item.people)), 10)).slice(0, 4);
   const locations = filterPublicationLocations(topValues(chronologicalExperiences.map((item) => item.location).filter(Boolean), 10)).slice(0, 4);
-  const rawBody = buildPublicationBody({ title, type, style, channel, experiences: chronologicalExperiences, analysis, mediaCount, category, avgEnergy, highlights, media, people, locations });
+  const rawBody = chronologicalExperiences.length
+    ? buildPublicationBody({ title, type, style, channel, experiences: chronologicalExperiences, analysis, mediaCount, category, avgEnergy, highlights, media, people, locations })
+    : [
+        rawSummary,
+        "",
+        languageText("Material registrado", "Recorded material", "Materiel enregistre", "Material registrado"),
+        buildPublicationMediaLines(media),
+      ].join("\n");
   const pages = buildPublicationPages({
     title,
     type,
@@ -25661,6 +25961,12 @@ function buildPublicationDraft({ experiences, type, style, channel, privacy }) {
     style,
     channel,
     filters: { ...state.publicationFilters },
+    outputScope: {
+      basis: state.publicationFilters.basis || "all",
+      stories: experiences.length,
+      evidence: evidence.length,
+      context: context.length,
+    },
     templateId: resolvePublicationTemplateId(type, style, channel),
     approvalStatus: "review",
     approvedAt: "",
@@ -25676,6 +25982,8 @@ function buildPublicationDraft({ experiences, type, style, channel, privacy }) {
     purpose: buildPublicationPurpose(type, channel),
     stats: {
       experiences: experiences.length,
+      evidence: evidence.length,
+      context: context.length,
       media: mediaCount,
       mediaAvailable: media.length,
       category,
@@ -25722,8 +26030,8 @@ function buildPublicationPages({ title, type, style, channel, experiences, analy
       title,
       subtitle: `${typeLabel} - ${styleLabel} - ${channel}`,
       body: state.language !== "es"
-         ? `A publication prepared from ${experiences.length} experience(s), ${dateRange}. Main focus: ${category}.`
-        : `Publicacion preparada a partir de ${experiences.length} experiencia(s), ${dateRange}. Foco principal: ${category}.`,
+         ? `A publication prepared from ${experiences.length} experience narratives and ${selectedMedia.length} evidence items, ${dateRange}. Main focus: ${category}.`
+        : `Publicacion preparada a partir de ${experiences.length} relatos de experiencias y ${selectedMedia.length} evidencias, ${dateRange}. Foco principal: ${category}.`,
       mediaIds: firstImage ? [firstImage.id] : [],
     },
     {
@@ -26358,10 +26666,16 @@ function buildPublicationMediaLines(selectedMedia = []) {
   }).join("\n");
 }
 
-function collectPublicationMedia(experiences) {
+function collectPublicationMedia(experiences, scopedEvidence = []) {
   const experienceIds = new Set(experiences.map((experience) => experience.id));
-  return collectMultimodalAssets()
-    .filter((asset) => experienceIds.has(asset.experienceId))
+  const linkedAssets = collectMultimodalAssets().filter((asset) => experienceIds.has(asset.experienceId));
+  const uniqueAssets = [...linkedAssets, ...(Array.isArray(scopedEvidence) ? scopedEvidence : [])]
+    .reduce((map, asset) => {
+      const key = asset.id || asset.assetKey || `${asset.name || "asset"}:${asset.capturedAt || asset.timestamp || ""}`;
+      if (!map.has(key)) map.set(key, asset);
+      return map;
+    }, new Map());
+  return [...uniqueAssets.values()]
     .map((asset) => ({
       id: asset.id || asset.assetKey || createId(),
       name: asset.name || "media",
@@ -26387,6 +26701,35 @@ function collectPublicationMedia(experiences) {
       needsSync: !asset.url && !asset.dataUrl,
     }))
     .slice(0, 24);
+}
+
+function buildPublicationEvidenceTimelineItems(evidence = [], startOrder = 0) {
+  return [...evidence]
+    .sort((a, b) => new Date(a.capturedAt || a.timestamp || 0) - new Date(b.capturedAt || b.timestamp || 0))
+    .slice(0, 40)
+    .map((asset, index) => ({
+      id: asset.id || asset.assetKey || createId(),
+      order: startOrder + index + 1,
+      title: getPublicationFriendlyAssetName(asset),
+      date: asset.capturedAt || asset.timestamp || asset.uploadedAt || "",
+      category: "",
+      location: cleanPublicationLocation(asset.location || asset.metadata?.location || ""),
+      people: "",
+      objective: languageText("Evidencia registrada", "Recorded evidence", "Preuve enregistree", "Evidencia registrada"),
+      note: cleanPublicationText(asset.translatedText || asset.analysisText || asset.manualNote || asset.extractedText || asset.previewText || ""),
+      energy: 0,
+      duration: 0,
+      internalEvents: [],
+      mediaIds: [asset.id || asset.assetKey].filter(Boolean),
+      mediaSummary: [{
+        id: asset.id || asset.assetKey || "",
+        name: asset.name || "",
+        kind: getPublicationMediaKindLabel(asset),
+        type: asset.type || "",
+        text: cleanPublicationText(asset.translatedText || asset.analysisText || asset.manualNote || asset.extractedText || asset.previewText || ""),
+      }],
+      evidenceOnly: true,
+    }));
 }
 
 function buildPublicationTimelineItems(experiences = [], media = []) {
@@ -26432,7 +26775,9 @@ function buildPublicationTimelineItems(experiences = [], media = []) {
 }
 
 function buildPublicationTitle(type, experiences) {
-  const category = displayCategory(getTopCategory(experiences));
+  const category = experiences.length
+    ? displayCategory(getTopCategory(experiences))
+    : languageText("Evidencia del periodo", "Period evidence", "Preuves de la periode", "Evidencias do periodo");
   if (state.language !== "es") {
     if (type === "Resumen ejecutivo") return `Premium PDF - Executive summary: ${category}`;
     if (type === "Álbum experiencial") return `Premium PDF - Experience album: ${category}`;
@@ -26523,8 +26868,8 @@ function buildPublicationBody({ title, type, style, channel, experiences, analys
   const dateRange = formatPublicationDateRange(experiences);
   const interpretation = buildPublicationInterpretationSummary(media);
   const intro = state.language !== "es"
-     ? `This premium PDF turns ${experiences.length} experience(s) from ${dateRange} into a chronological, readable story. The focus is ${category}, with ${mediaCount} selected media item(s).`
-    : `Este PDF premium convierte ${experiences.length} experiencia(s) de ${dateRange} en una historia cronológica y legible. El foco es ${category}, con ${mediaCount} elemento(s) multimedia seleccionados.`;
+     ? `This premium PDF turns ${experiences.length} experiences from ${dateRange} into a chronological, readable story. The focus is ${category}, with ${mediaCount} selected media items.`
+    : `Este PDF premium convierte ${experiences.length} experiencias de ${dateRange} en una historia cronológica y legible. El foco es ${category}, con ${mediaCount} elementos multimedia seleccionados.`;
   const narrative = state.language !== "es"
      ? `${analysis.focus} Average energy was ${avgEnergy}/10. The value of the publication is not to copy every record, but to explain what happened, what changed, and why the selected moments matter.`
     : `${analysis.focus} La energia media fue ${avgEnergy}/10. El valor de la publicacion no es copiar cada registro, sino explicar que paso, que cambio y por que importan los momentos seleccionados.`;
@@ -26692,6 +27037,7 @@ function describeInsightQuickStart(item) {
 function insightQuickStartMatchesCurrentFilters(item) {
   const filters = buildInsightQuickStartFilters(item);
   return (state.insightsFilters.category || "all") === filters.category
+    && (state.insightsFilters.basis || "all") === filters.basis
     && (state.insightsFilters.source || "all") === filters.source
     && (state.insightsFilters.dateFrom || "") === filters.dateFrom
     && (state.insightsFilters.dateTo || "") === filters.dateTo;
@@ -26700,6 +27046,7 @@ function insightQuickStartMatchesCurrentFilters(item) {
 function buildInsightQuickStartFilters(item) {
   const base = {
     pilotParticipantId: state.insightsFilters?.pilotParticipantId || "all",
+    basis: state.insightsFilters?.basis || "all",
     category: "all",
     source: "all",
     dateFrom: "",
@@ -26743,17 +27090,18 @@ function handleInsightsQuickStart(event) {
 
 function renderPublications() {
   const draft = state.currentPublicationDraft || state.publicationDrafts[0] || null;
+  const outputScope = getPublicationOutputScope();
   syncAnalyticalScopeInputs();
   renderSharedScopeContext(
     "publicationSharedScopeContext",
     state.publicationFilters,
-    getPublicationExperiences().length,
+    outputScope,
     state.language !== "es" ? "Publications" : "Publicaciones",
   );
   document.getElementById("publicationCount").textContent = `${state.publicationDrafts.length} ${t("labels.items")}`;
   const quickStart = document.getElementById("publicationQuickStart");
   if (quickStart) quickStart.innerHTML = renderPublicationQuickStart();
-  document.getElementById("publicationPreview").innerHTML = `${renderPublicationScopeRecommendation()}${draft ? renderPublicationPreview(draft) : `<p class="card-meta">${t("labels.publicationEmpty")}</p>`}`;
+  document.getElementById("publicationPreview").innerHTML = `${renderScopedEvidenceSummary(outputScope, languageText("Material editorial disponible", "Available editorial material", "Materiel editorial disponible", "Material editorial disponivel"))}${renderPublicationScopeRecommendation()}${draft ? renderPublicationPreview(draft) : `<p class="card-meta">${t("labels.publicationEmpty")}</p>`}`;
   document.getElementById("publicationDraftList").innerHTML = state.publicationDrafts.length
     ? state.publicationDrafts.map(renderPublicationDraftItem).join("")
     : `<p class="card-meta">${t("labels.publicationHistoryEmpty")}</p>`;
@@ -26839,8 +27187,8 @@ function renderPublicationQuickStart() {
     </section>
     <details class="user-advanced-drawer publication-action-drawer">
       <summary>
-        <span>${escapeHtml(state.language !== "es" ? "More PDF structures" : "Mas estructuras PDF")}</span>
-        <small>${escapeHtml(state.language !== "es" ? "All options export to the same premium PDF output." : "Todas las opciones exportan la misma salida PDF premium.")}</small>
+        <span>${escapeHtml(state.language !== "es" ? "More PDF structures" : "Más estructuras PDF")}</span>
+        <small>${escapeHtml(state.language !== "es" ? "Each structure produces an editorial PDF ready to download." : "Cada estructura genera un PDF editorial listo para descargar.")}</small>
       </summary>
       ${renderPublicationChannelFormatPicker()}
     </details>
@@ -27040,9 +27388,9 @@ function renderPublicationFlowSteps(draft) {
         ["4", "Final PDF", "Review and download"],
       ]
     : [
-        ["1", "Fuente seleccionada", `${draft.stats.experiences} experiencia(s)`],
+        ["1", "Fuente seleccionada", `${draft.stats.experiences} experiencias`],
         ["2", "Texto listo para editar", "Titulo, resumen e historia"],
-        ["3", "Multimedia seleccionada", `${included} elemento(s)`],
+        ["3", "Multimedia seleccionada", `${included} elementos`],
         ["4", "PDF final", "Revisar y descargar"],
       ];
   return `
@@ -29348,8 +29696,8 @@ function displayPublicationStyle(style) {
   return map[style] || style;
 }
 
-function buildReportRows() {
-  return getReportExperiences().map((item) => ({
+function buildReportRows(experiences = getReportOutputScope().stories) {
+  return experiences.map((item) => ({
     fecha: formatDate(item.timestamp),
     titulo: item.title,
     "categoría": displayCategory(item.category),
@@ -30405,7 +30753,8 @@ async function restoreBackupFromFile(event) {
 }
 
 function renderInsights() {
-  const sourceExperiences = getInsightsExperiences();
+  const outputScope = getInsightsOutputScope();
+  const sourceExperiences = outputScope.stories;
   const insights = buildInsights(sourceExperiences);
   const thematicAxes = buildInsightThematicAxes(sourceExperiences);
   const actionPlan = buildInsightActionPlan(sourceExperiences, insights, thematicAxes);
@@ -30416,12 +30765,12 @@ function renderInsights() {
   if (scopeLabel) {
     const scopeParts = buildAnalyticalScopeParts(state.insightsFilters);
     const base = scopeParts.length ? scopeParts.join(" · ") : state.language !== "es" ? "General view" : "Vista general";
-    scopeLabel.textContent = `${base} · ${sourceExperiences.length} ${t("labels.items")}`;
+    scopeLabel.textContent = `${base} / ${sourceExperiences.length} ${languageText("historias", "stories", "histoires", "historias")} / ${outputScope.evidence.length} ${languageText("evidencias", "evidence items", "preuves", "evidencias")}`;
   }
   renderSharedScopeContext(
     "insightsSharedScopeContext",
     state.insightsFilters,
-    sourceExperiences.length,
+    outputScope,
     state.language !== "es" ? "Findings" : "Hallazgos",
   );
   renderQuestionSuggestions();
@@ -30431,6 +30780,7 @@ function renderInsights() {
       <h3>${escapeHtml(state.language !== "es" ? "Experience findings by human theme" : "Hallazgos de experiencias por eje humano")}</h3>
       <p>${escapeHtml(state.language !== "es" ? "This view turns experiences, energy, people, places, events, and assets into a clear reading. Use the thematic axes first; then review the prioritized findings." : "Esta vista convierte experiencias, energía, personas, lugares, eventos y activos en una lectura clara. Primero revisa los ejes temáticos; luego los hallazgos priorizados.")}</p>
     </section>
+    ${renderScopedEvidenceSummary(outputScope, languageText("Fuentes de los hallazgos", "Findings sources", "Sources des enseignements", "Fontes das descobertas"))}
     <section class="insight-axis-grid" aria-label="${escapeHtml(state.language !== "es" ? "Analysis themes" : "Ejes de análisis")}">
       ${renderBiometricContextPanel(sourceExperiences, {
         title: languageText("Biometría para hallazgos", "Biometrics for findings", "Biométrie pour les enseignements", "Biometria para descobertas"),
@@ -30840,7 +31190,8 @@ function createAgendaEventFromInsightPlan(action, index = 0) {
 }
 
 function buildInsightsExportPayload() {
-  const experiences = getInsightsExperiences();
+  const outputScope = getInsightsOutputScope();
+  const experiences = outputScope.stories;
   const participantId = state.insightsFilters?.pilotParticipantId || "all";
   const axes = buildInsightThematicAxes(experiences);
   const insights = buildInsights(experiences);
@@ -30851,6 +31202,16 @@ function buildInsightsExportPayload() {
     participant: participantId === "all" ? (state.language !== "es" ? "All groups/people" : "Todos los grupos/personas") : getPilotParticipantName(participantId),
     filters: { ...state.insightsFilters },
     experiences: experiences.length,
+    outputScope: {
+      basis: outputScope.basis,
+      stories: experiences.length,
+      evidence: outputScope.evidence.length,
+      context: outputScope.context.length,
+      excludedUnclassifiedEvidence: outputScope.excludedUnclassifiedEvidence,
+    },
+    evidenceSummary: buildScopedEvidenceSummary(outputScope),
+    evidence: buildReportMultimodalEvidence([], outputScope.evidence),
+    contextEvidence: buildReportMultimodalEvidence([], outputScope.context),
     axes,
     insights,
     actionPlan,
@@ -30865,6 +31226,8 @@ function buildInsightsMarkdown() {
     `- ${state.language !== "es" ? "Generated" : "Generado"}: ${formatDate(payload.generatedAt)}`,
     `- ${state.language !== "es" ? "Scope" : "Alcance"}: ${payload.participant}`,
     `- ${state.language !== "es" ? "Experiences" : "Experiencias"}: ${payload.experiences}`,
+    `- ${languageText("Evidencias", "Evidence items", "Preuves", "Evidencias")}: ${payload.outputScope.evidence}`,
+    `- ${languageText("Contextos", "Context signals", "Contextes", "Contextos")}: ${payload.outputScope.context}`,
     "",
     `## ${state.language !== "es" ? "Human themes" : "Ejes humanos"}`,
     "",

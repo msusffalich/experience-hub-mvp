@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { existsSync, mkdtempSync, rmSync, readFileSync, writeFileSync, unlinkSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, readFileSync, writeFileSync, unlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -24,6 +24,9 @@ const cdpPort = Number(process.env.VIBE_E2E_CDP_PORT || 9347);
 const baseUrl = `http://127.0.0.1:${appPort}`;
 const targetUrl = `${baseUrl}/index.html?v=${encodeURIComponent(version)}&view=dashboard&e2e=local-${Date.now()}`;
 const userDataDir = mkdtempSync(path.join(tmpdir(), "vibe-local-e2e-"));
+const visualAuditEnabled = process.env.VIBE_E2E_VISUAL_AUDIT === "1";
+const visualAuditDir = path.resolve("output", "playwright");
+if (visualAuditEnabled) mkdirSync(visualAuditDir, { recursive: true });
 const protectedDataFiles = [
   "data/experience-store.json",
   "data/operation-log.json",
@@ -443,6 +446,23 @@ try {
   })()`, 30000);
   console.log("shared scope E2E ok");
 
+  await evaluate(cdp, `(async () => {
+    document.querySelector('button[data-view="publications"]')?.click();
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    const basis = document.getElementById("publicationBasisFilter");
+    if (!basis) throw new Error("publication basis selector missing");
+    basis.value = "evidence";
+    basis.dispatchEvent(new Event("change", { bubbles: true }));
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    document.getElementById("generatePublicationButton")?.click();
+    await new Promise((resolve) => setTimeout(resolve, 900));
+    const draft = window.__vibeDebugState?.currentPublicationDraft || null;
+    const preview = document.getElementById("publicationPreview")?.innerText || "";
+    if (!/evidenc|preuve/i.test(preview)) throw new Error("evidence-only publication scope not visible");
+    return { preview };
+  })()`, 30000);
+  console.log("publication evidence-only scope E2E ok");
+
   const outputFlows = [
     {
       name: "report",
@@ -496,6 +516,7 @@ try {
       }
       throw new Error("${flow.name} did not reach final PDF ready state");
     })()`, 70000);
+    await captureVisualAudit(cdp, flow.name);
     console.log(`${flow.name} output E2E ok: ${String(result.text).split("\\n").slice(0, 3).join(" | ")}`);
   }
 
@@ -520,3 +541,14 @@ try {
     } catch {}
   });
 }
+
+async function captureVisualAudit(cdp, name) {
+  if (!visualAuditEnabled) return;
+  const { data } = await cdp("Page.captureScreenshot", {
+    format: "png",
+    captureBeyondViewport: false,
+  });
+  writeFileSync(path.join(visualAuditDir, `vibe-${name}.png`), Buffer.from(data, "base64"));
+}
+
+process.exit(0);

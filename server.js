@@ -11,6 +11,8 @@ import { tmpdir } from "node:os";
 import { createEvidencePipelineV2, EvidencePipelineError } from "./lib/evidence-pipeline-v2.mjs";
 import { createSupabaseEvidenceV2Adapters } from "./lib/evidence-pipeline-v2-supabase.mjs";
 import { normalizeExperienceSubmissionV2 } from "./lib/evidence-http-contract-v2.mjs";
+import { createCaptureOrchestrator, CapturePipelineError } from "./lib/capture/capture-orchestrator.mjs";
+import { createSupabaseCaptureAdapters } from "./lib/capture/capture-supabase-adapters.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 await loadDotEnv();
@@ -32,12 +34,17 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const SUPABASE_STORAGE_BUCKET = process.env.SUPABASE_STORAGE_BUCKET || "experience-media";
 const EVIDENCE_PIPELINE_V2_BUCKET = process.env.EVIDENCE_PIPELINE_V2_BUCKET || "experience-media-v2";
 const EVIDENCE_PIPELINE_MODE = String(process.env.EVIDENCE_PIPELINE_MODE || "off").trim().toLowerCase();
+const EVIDENCE_PIPELINE_V2_FROZEN = !["0", "false", "no", "off"].includes(
+  String(process.env.EVIDENCE_PIPELINE_V2_FROZEN ?? "true").trim().toLowerCase(),
+);
 const EVIDENCE_PIPELINE_CANARY_USERS = new Set(
   String(process.env.EVIDENCE_PIPELINE_CANARY_USERS || "")
     .split(",")
     .map((value) => value.trim().toLowerCase())
     .filter(Boolean),
 );
+const CAPTURE_PIPELINE_MODE = String(process.env.CAPTURE_PIPELINE_MODE || "off").trim().toLowerCase();
+const CAPTURE_PIPELINE_BUCKET = process.env.CAPTURE_PIPELINE_BUCKET || "vibe-captures";
 const ASSET_UPLOAD_ATTEMPTS_TABLE = "asset_upload_attempts";
 const MAX_JSON_BODY_LENGTH = Number(process.env.MAX_JSON_BODY_LENGTH || 40_000_000);
 const MAX_MEDIA_BODY_LENGTH = Number(process.env.MAX_MEDIA_BODY_LENGTH || 90_000_000);
@@ -627,6 +634,27 @@ async function handleApi(req, res, url) {
       sendJson(res, 201, await upsertAgendaEvent(agendaEvent, user));
       return;
     }
+  }
+
+  if (url.pathname === "/api/captures/status" && req.method === "GET") {
+    const user = await getRequestUser(req);
+    sendJson(res, 200, await getCapturePipelineStatus(user));
+    return;
+  }
+
+  if (url.pathname === "/api/captures" && req.method === "POST") {
+    const user = await getRequestUser(req);
+    assertCapturePipelineAccess();
+    sendJson(res, 201, await receiveCapture(req, user));
+    return;
+  }
+
+  if (url.pathname.startsWith("/api/captures/operations/") && req.method === "GET") {
+    const user = await getRequestUser(req);
+    assertCapturePipelineAccess();
+    const operationId = decodeURIComponent(url.pathname.replace("/api/captures/operations/", ""));
+    sendJson(res, 200, await getCaptureReceipt(operationId, user));
+    return;
   }
 
   if (url.pathname === "/api/v2/status" && req.method === "GET") {
@@ -6726,6 +6754,13 @@ function classifyUploadError(error) {
 }
 
 function assertEvidencePipelineV2Access(user = {}) {
+  if (EVIDENCE_PIPELINE_V2_FROZEN) {
+    throw new HttpError(
+      503,
+      "evidence_pipeline_v2_frozen",
+      "La ruta experimental esta congelada para proteger los datos mientras se reemplaza por el flujo unico de capturas.",
+    );
+  }
   if (!["canary", "on"].includes(EVIDENCE_PIPELINE_MODE)) {
     throw new HttpError(404, "evidence_pipeline_v2_disabled");
   }
@@ -6737,10 +6772,205 @@ function assertEvidencePipelineV2Access(user = {}) {
   }
 }
 
+function assertCapturePipelineAccess() {
+  if (CAPTURE_PIPELINE_MODE !== "on") {
+    throw new HttpError(
+      503,
+      "capture_pipeline_disabled",
+      "La nueva ruta de capturas permanece aislada hasta completar migracion y pruebas.",
+    );
+  }
+  if (activePersistence() !== "supabase") {
+    throw new HttpError(503, "capture_pipeline_requires_supabase");
+  }
+}
+
+async function getCapturePipelineStatus(user = {}) {
+  const checks = {
+    persistence: { ok: activePersistence() === "supabase", detail: activePersistence() },
+    operationLedger: { ok: false, detail: "not_checked" },
+    captureCatalog: { ok: false, detail: "not_checked" },
+    storySeparation: { ok: false, detail: "not_checked" },
+    storageBucket: { ok: false, detail: "not_checked" },
+  };
+  if (CAPTURE_PIPELINE_MODE !== "on" || activePersistence() !== "supabase" || !isSupabaseConfigured()) {
+    return {
+      ok: true,
+      ready: false,
+      mode: CAPTURE_PIPELINE_MODE,
+      architecture: "capture_first_story_later",
+      checks,
+    };
+  }
+
+  const workspace = await getWorkspaceContext(user);
+  if (!workspace?.id) {
+    checks.persistence = { ok: false, detail: "workspace_unavailable" };
+    return {
+      ok: true,
+      ready: false,
+      mode: CAPTURE_PIPELINE_MODE,
+      architecture: "capture_first_story_later",
+      checks,
+    };
+  }
+
+  checks.operationLedger = await runEvidenceV2ReadinessCheck(async () => {
+    await supabaseRest("capture_operations", {
+      searchParams: {
+        select: "operation_id,state",
+        owner_user_id: `eq.${user.id}`,
+        workspace_id: `eq.${workspace.id}`,
+        limit: "1",
+      },
+      accessToken: user.accessToken,
+    });
+    return "available";
+  });
+  checks.captureCatalog = await runEvidenceV2ReadinessCheck(async () => {
+    await supabaseRest("capture_records", {
+      searchParams: {
+        select: "capture_id,intent,kind,occurred_at,storage_path",
+        owner_user_id: `eq.${user.id}`,
+        workspace_id: `eq.${workspace.id}`,
+        limit: "1",
+      },
+      accessToken: user.accessToken,
+    });
+    return "available";
+  });
+  checks.storySeparation = await runEvidenceV2ReadinessCheck(async () => {
+    await supabaseRest("story_evidence_links", {
+      searchParams: { select: "story_id,capture_id,event_id", limit: "1" },
+      accessToken: user.accessToken,
+    });
+    return "capture_does_not_write_story_links";
+  });
+  checks.storageBucket = await runEvidenceV2ReadinessCheck(async () => {
+    const response = await fetch(
+      `${SUPABASE_URL}/storage/v1/bucket/${encodeURIComponent(CAPTURE_PIPELINE_BUCKET)}`,
+      { headers: supabaseServerKeyHeaders() },
+    );
+    const text = await response.text();
+    if (!response.ok) throw new Error(`supabase_storage_bucket_${response.status}: ${text}`);
+    const bucket = text ? JSON.parse(text) : {};
+    if (bucket.public === true) throw new Error("capture_bucket_must_be_private");
+    return "available_private";
+  });
+  return {
+    ok: true,
+    ready: Object.values(checks).every((check) => check.ok),
+    mode: CAPTURE_PIPELINE_MODE,
+    architecture: "capture_first_story_later",
+    checks,
+  };
+}
+
+async function createCapturePipelineForUser(user) {
+  const workspace = await getWorkspaceContext(user);
+  if (!workspace?.id) throw new HttpError(503, "capture_pipeline_workspace_unavailable");
+  const adapters = createSupabaseCaptureAdapters({
+    rest: supabaseRest,
+    rpc: supabaseRpc,
+    storage: {
+      exists: (storagePath) => supabaseObjectExists(CAPTURE_PIPELINE_BUCKET, storagePath),
+      put: (storagePath, bytes, metadata) =>
+        uploadSupabaseObjectToBucket(CAPTURE_PIPELINE_BUCKET, storagePath, bytes, metadata),
+    },
+    ownerUserId: user.id,
+    workspaceId: workspace.id,
+    accessToken: user.accessToken,
+    bucket: CAPTURE_PIPELINE_BUCKET,
+  });
+  return {
+    orchestrator: createCaptureOrchestrator(adapters),
+    workspaceId: workspace.id,
+  };
+}
+
+async function receiveCapture(req, user) {
+  const contentType = String(req.headers["content-type"] || "");
+  let body;
+  if (contentType.includes("multipart/form-data")) {
+    const upload = await readMultipartMedia(req, contentType);
+    const media = upload.media || {};
+    const metadata = isPlainObject(media.metadata) ? media.metadata : {};
+    body = {
+      ...media,
+      captureId: media.captureId || media.id || media.assetId,
+      idempotencyKey:
+        String(req.headers["idempotency-key"] || "").trim() ||
+        metadata.idempotencyKey ||
+        media.sourceId ||
+        media.captureId ||
+        media.id,
+      intent: media.intent || metadata.intent,
+      kind: media.kind || inferServerMediaKind(normalizeMedia(media)),
+      occurredAt: media.occurredAt || media.capturedAt,
+      bytes: upload.bytes,
+      filename: media.filename || media.name,
+      mimeType: media.mimeType || media.type,
+      metadata,
+    };
+  } else if (contentType.includes("application/json")) {
+    body = await readJson(req);
+    body.idempotencyKey =
+      String(req.headers["idempotency-key"] || "").trim() ||
+      body.idempotencyKey;
+  } else {
+    throw new HttpError(415, "capture_content_type_unsupported");
+  }
+
+  const { orchestrator, workspaceId } = await createCapturePipelineForUser(user);
+  try {
+    return await orchestrator.accept({
+      ...body,
+      ownerUserId: user.id,
+      workspaceId,
+    });
+  } catch (error) {
+    throw capturePipelineHttpError(error);
+  }
+}
+
+async function getCaptureReceipt(operationId, user) {
+  const { orchestrator } = await createCapturePipelineForUser(user);
+  const receipt = await orchestrator.getReceipt(operationId);
+  if (!receipt) throw new HttpError(404, "capture_operation_not_found");
+  return receipt;
+}
+
+function capturePipelineHttpError(error) {
+  if (!(error instanceof CapturePipelineError) && !error?.code?.startsWith?.("capture_")) return error;
+  const statusCode =
+    error.code === "capture_idempotency_conflict" || error.code === "capture_content_conflict"
+      ? 409
+      : error.retryable === false
+        ? 400
+        : 503;
+  return new HttpError(statusCode, error.code || "capture_pipeline_failed", error.detail || error.message);
+}
+
 async function getEvidencePipelineV2Status(user = {}) {
   const userCandidates = [user.id, user.email]
     .map((value) => String(value || "").trim().toLowerCase())
     .filter(Boolean);
+  if (EVIDENCE_PIPELINE_V2_FROZEN) {
+    return {
+      ok: true,
+      ready: false,
+      frozen: true,
+      mode: EVIDENCE_PIPELINE_MODE,
+      enabledForUser: false,
+      reason: "replacement_in_progress",
+      checks: {
+        access: {
+          ok: false,
+          detail: "frozen_by_server_guard",
+        },
+      },
+    };
+  }
   const enabledForUser =
     EVIDENCE_PIPELINE_MODE === "on" ||
     (
@@ -6762,6 +6992,7 @@ async function getEvidencePipelineV2Status(user = {}) {
     return {
       ok: true,
       ready: false,
+      frozen: false,
       mode: EVIDENCE_PIPELINE_MODE,
       enabledForUser,
       checks,
@@ -6774,6 +7005,7 @@ async function getEvidencePipelineV2Status(user = {}) {
     return {
       ok: true,
       ready: false,
+      frozen: false,
       mode: EVIDENCE_PIPELINE_MODE,
       enabledForUser,
       checks,
@@ -6839,6 +7071,7 @@ async function getEvidencePipelineV2Status(user = {}) {
   return {
     ok: true,
     ready: Object.values(checks).every((check) => check.ok),
+    frozen: false,
     mode: EVIDENCE_PIPELINE_MODE,
     enabledForUser,
     bucket: EVIDENCE_PIPELINE_V2_BUCKET,

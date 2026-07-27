@@ -1,6 +1,6 @@
 # Registro de brechas de producto Vibe
 
-Fecha: 2026-06-06
+Fecha: 2026-07-27
 
 Este archivo evita que los pendientes queden escondidos en conversaciones, notas o supuestos. Todo punto abierto debe vivir aqui hasta cerrarse con prueba.
 
@@ -24,6 +24,10 @@ Este archivo evita que los pendientes queden escondidos en conversaciones, notas
 
 | Area | Brecha | Estado real | Prueba requerida | Criterio de cierre |
 |---|---|---|---|---|
+| Captura Vibeapp -> servidor | La ruta experimental mezcló captura con experiencia y perdió/rechazó elementos reales | Bloqueada y en reemplazo | Matriz real de texto, imagen, audio, video, documento y contexto; sin señal; reinicio; respuesta perdida; reintento | Una sola ruta conserva original, catálogo y recibo; VibePWA muestra el mismo registro; ningún elemento desaparece |
+| Arquitectura de historias | Rutas y documentos antiguos aún permiten crear experiencias desde Vibeapp | Reestructuración en curso | Inventario automático + pruebas de separación + UI de historia en VibePWA | Vibeapp no envía campos de historia; VibePWA es único escritor de experiencias/eventos |
+| UI/UX VibePWA | Navegación y formularios mezclan producto, operación y legado | Reestructuración en curso | Auditoría visual en escritorio/tableta/móvil y recorridos con usuario no técnico | Inicio, Historias, Evidencia, Inteligencia, Publicar y Cuenta cubren los flujos sin controles técnicos visibles |
+| Alcance analítico | Reportes, Hallazgos y Publicaciones aplican filtros similares con implementaciones separadas | Núcleo común listo; UI pendiente | Misma selección produce el mismo conjunto en las tres salidas | Período, persona/grupo y base común; categoría opcional; Publicaciones confirma contenido visual |
 | Apple Health directo | Leer HealthKit nativo sin archivo manual | Pendiente hardware/API | iPhone real + permisos HealthKit + prueba de lectura por tipo de dato | Captura real crea contexto biometrico sin importar archivo |
 | Android tablet | Validar layout y flujo Android tablet | Bloqueado por falta de dispositivo/tablet emulada | Tablet Android fisica o AVD tablet + instalacion/lanzamiento + flujo tactil | Vibeapp abre, navega y captura sin desbordes en tablet Android |
 | Android build futuro | Migrar Kotlin Gradle Plugin a Built-in Kotlin cuando Flutter lo exija | Deuda tecnica no bloqueante | Revisar plugins file_picker, image_picker_android, package_info_plus y record_android; ejecutar build con Flutter futuro | Build Android sin advertencia KGP |

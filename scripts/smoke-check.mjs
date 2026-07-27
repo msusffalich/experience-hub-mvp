@@ -223,6 +223,14 @@ assert(files.index.includes("captureEventPreview") && files.app.includes("functi
 assert(files.styles.includes(".capture-event-card") && files.app.includes("Capture shows a live Event preview"), "Event preview UI or manual documentation is missing.");
 assert(files.index.includes("reportEventFilter") && files.app.includes("state.reportFilters.eventQuery"), "Reports cannot filter by internal event text.");
 assert(
+  files.index.includes("reportBasisFilter") &&
+    files.index.includes("insightsBasisFilter") &&
+    files.index.includes("publicationBasisFilter") &&
+    files.app.includes("buildAnalyticalOutputScope") &&
+    files.app.includes("buildPublicationEvidenceTimelineItems"),
+  "Reports, Findings, and Publications must share a facts/evidence/story scope without converting loose evidence into stories.",
+);
+assert(
   files.index.includes("reportSourceFilter")
     && files.index.includes("insightsSourceFilter")
     && files.index.includes("publicationSourceFilter")
