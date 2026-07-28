@@ -1,4 +1,4 @@
-const APP_VERSION = "20260728-product-shell-module-725";
+const APP_VERSION = "20260728-account-shell-module-726";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -8036,41 +8036,31 @@ function renderAuthStatePanel() {
     if (heading) heading.textContent = languageText("Mi cuenta", "My account", "Mon compte", "Minha conta");
     if (headingStatus) headingStatus.textContent = languageText("Sesión activa", "Active session", "Session active", "Sessão ativa");
     panel.classList.add("account-summary-panel");
-    panel.innerHTML = `
-      <div class="account-summary-intro">
-        <div>
-          <span class="report-kicker">${escapeHtml(languageText("Cuenta Vibe", "Vibe account", "Compte Vibe", "Conta Vibe"))}</span>
-          <h3>${escapeHtml(state.session.user.email)}</h3>
-          <p>${escapeHtml(languageText(
-            "Tu cuenta conecta Vibeapp y VibePWA. Desde aquí accedes a ayuda, preferencias y controles operativos.",
-            "Your account connects Vibeapp and VibePWA. Access help, preferences, and operational controls here.",
-            "Votre compte relie Vibeapp et VibePWA. Accédez ici à l'aide, aux préférences et aux contrôles opérationnels.",
-            "Sua conta conecta Vibeapp e VibePWA. Acesse aqui ajuda, preferências e controles operacionais.",
-          ))}</p>
-        </div>
-        <span class="sync-status-chip ${connectivity.tone === "ok" ? "is-ok" : connectivity.tone === "neutral" ? "is-neutral" : "is-warn"}">${escapeHtml(connectivity.text)}</span>
-      </div>
-      <div class="account-summary-grid">
-        <article>
-          <span>${escapeHtml(languageText("Idioma", "Language", "Langue", "Idioma"))}</span>
-          <strong>${escapeHtml(String(state.language || "es").toUpperCase())}</strong>
-          <small>${escapeHtml(languageText("Se cambia en la barra superior.", "Change it in the top bar.", "Modifiez-la dans la barre supérieure.", "Altere na barra superior."))}</small>
-        </article>
-        <article>
-          <span>${escapeHtml(languageText("Privacidad", "Privacy", "Confidentialité", "Privacidade"))}</span>
-          <strong>${escapeHtml(languageText("Tus datos, tu control", "Your data, your control", "Vos données, votre contrôle", "Seus dados, seu controle"))}</strong>
-          <small>${escapeHtml(languageText("Preferencias y respaldos viven en Operación.", "Preferences and backups live in Operation.", "Les préférences et sauvegardes se trouvent dans Opération.", "Preferências e backups ficam em Operação."))}</small>
-        </article>
-      </div>
-      <div class="account-primary-actions">
-        <button class="primary-button" type="button" data-account-action="profile">${escapeHtml(languageText("Perfil y dispositivos", "Profile and devices", "Profil et appareils", "Perfil e dispositivos"))}</button>
-        <button class="ghost-button" type="button" data-account-action="privacy">${escapeHtml(languageText("Privacidad y respaldos", "Privacy and backups", "Confidentialité et sauvegardes", "Privacidade e backups"))}</button>
-        <button class="ghost-button" type="button" data-account-action="help">${escapeHtml(languageText("Ayuda", "Help", "Aide", "Ajuda"))}</button>
-        <button class="ghost-button" type="button" data-account-action="automation">${escapeHtml(languageText("Automatizaciones", "Automations", "Automatisations", "Automações"))}</button>
-        <button class="ghost-button" type="button" data-account-action="operation">${escapeHtml(languageText("Operación", "Operation", "Opération", "Operação"))}</button>
-        <button class="ghost-button" type="button" data-account-action="signout">${escapeHtml(t("buttons.signOut"))}</button>
-      </div>
-    `;
+    panel.innerHTML = window.VibeAccountShell?.renderSignedIn({
+      email: state.session.user.email,
+      language: state.language,
+      connectivity,
+      labels: {
+        kicker: languageText("Cuenta Vibe", "Vibe account", "Compte Vibe", "Conta Vibe"),
+        description: languageText(
+          "Tu cuenta conecta Vibeapp y VibePWA. Desde aquí accedes a ayuda, preferencias y controles operativos.",
+          "Your account connects Vibeapp and VibePWA. Access help, preferences, and operational controls here.",
+          "Votre compte relie Vibeapp et VibePWA. Accédez ici à l'aide, aux préférences et aux contrôles opérationnels.",
+          "Sua conta conecta Vibeapp e VibePWA. Acesse aqui ajuda, preferências e controles operacionais.",
+        ),
+        language: languageText("Idioma", "Language", "Langue", "Idioma"),
+        languageHelp: languageText("Se cambia en la barra superior.", "Change it in the top bar.", "Modifiez-la dans la barre supérieure.", "Altere na barra superior."),
+        privacy: languageText("Privacidad", "Privacy", "Confidentialité", "Privacidade"),
+        privacyValue: languageText("Tus datos, tu control", "Your data, your control", "Vos données, votre contrôle", "Seus dados, seu controle"),
+        privacyHelp: languageText("Preferencias y respaldos viven en Operación.", "Preferences and backups live in Operation.", "Les préférences et sauvegardes se trouvent dans Opération.", "Preferências e backups ficam em Operação."),
+        profile: languageText("Perfil y dispositivos", "Profile and devices", "Profil et appareils", "Perfil e dispositivos"),
+        backups: languageText("Privacidad y respaldos", "Privacy and backups", "Confidentialité et sauvegardes", "Privacidade e backups"),
+        help: languageText("Ayuda", "Help", "Aide", "Ajuda"),
+        automation: languageText("Automatizaciones", "Automations", "Automatisations", "Automações"),
+        operation: languageText("Operación", "Operation", "Opération", "Operação"),
+        signOut: t("buttons.signOut"),
+      },
+    }) || "";
     return;
   }
 
@@ -8099,15 +8089,15 @@ function renderAuthStatePanel() {
     [refreshReady, refreshReady ? t("labels.authRefreshReady") : t("labels.authRefreshMissing")],
   ];
   if (!state.pendingAuthReturn) {
-    panel.innerHTML = `
-      <strong>${escapeHtml(languageText("Una cuenta para todo Vibe", "One account for all of Vibe", "Un compte pour tout Vibe", "Uma conta para todo o Vibe"))}</strong>
-      <p>${escapeHtml(languageText(
+    panel.innerHTML = window.VibeAccountShell?.renderSignedOutIntro({
+      title: languageText("Una cuenta para todo Vibe", "One account for all of Vibe", "Un compte pour tout Vibe", "Uma conta para todo o Vibe"),
+      description: languageText(
         "Usa el mismo correo en Vibeapp y VibePWA para mantener tus capturas, historias y archivos sincronizados.",
         "Use the same email in Vibeapp and VibePWA to keep captures, stories, and files synchronized.",
         "Utilisez la même adresse dans Vibeapp et VibePWA pour synchroniser captures, histoires et fichiers.",
         "Use o mesmo e-mail no Vibeapp e no VibePWA para sincronizar capturas, histórias e arquivos.",
-      ))}</p>
-    `;
+      ),
+    }) || "";
     return;
   }
   panel.innerHTML = `
@@ -8132,20 +8122,14 @@ function renderAuthStatePanel() {
 function handleAccountAction(event) {
   const action = event.target.closest("[data-account-action]")?.dataset.accountAction;
   if (!action) return;
-  if (action === "signout") {
+  const resolution = window.VibeAccountShell?.resolveAction(action);
+  if (resolution?.kind === "signout") {
     signOut();
     return;
   }
-  const target = {
-    help: { view: "manual", focus: "manualSearchInput" },
-    operation: { view: "admin", focus: "productSettingsPanel" },
-    privacy: { view: "admin", focus: "privacy-title" },
-    profile: { view: "admin", focus: "profileForm" },
-    automation: { view: "automation", focus: "skillList" },
-  }[action];
-  if (!target) return;
-  safeShowView(target.view);
-  requestAnimationFrame(() => focusAppElement(target.focus));
+  if (resolution?.kind !== "navigate") return;
+  safeShowView(resolution.view);
+  requestAnimationFrame(() => focusAppElement(resolution.focus));
 }
 
 function showAuthView() {

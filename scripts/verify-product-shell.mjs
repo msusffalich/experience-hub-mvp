@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 
 const app = readFileSync("app.js", "utf8");
 const productShell = readFileSync("product-shell.js", "utf8");
+const accountShell = readFileSync("account-shell.js", "utf8");
 const index = readFileSync("index.html", "utf8");
 const styles = readFileSync("styles.css", "utf8");
 const failures = [];
@@ -109,9 +110,9 @@ expect(styles.includes(".context-navigation"), "Contextual navigation styles are
 expect(styles.includes(".context-nav-item"), "Contextual navigation item styles are missing.");
 expect(styles.includes(".context-nav-root"), "Contextual return styles are missing.");
 expect(index.includes('class="space-action-bar"'), "Stories must expose frequent actions inside the space.");
-expect(app.includes('data-account-action="help"'), "Account must expose Help without relying on contextual navigation.");
-expect(app.includes('data-account-action="operation"'), "Account must expose Operation without relying on contextual navigation.");
-expect(app.includes('data-account-action="automation"'), "Account must expose Automations without relying on contextual navigation.");
+expect(accountShell.includes('data-account-action="help"'), "Account must expose Help without relying on contextual navigation.");
+expect(accountShell.includes('data-account-action="operation"'), "Account must expose Operation without relying on contextual navigation.");
+expect(accountShell.includes('data-account-action="automation"'), "Account must expose Automations without relying on contextual navigation.");
 expect(styles.includes(".output-primary-controls"), "Publication primary controls need a stable layout.");
 expect(index.includes('id="capture-heading">Nueva historia</h2>'), "The story workflow must not be labeled as quick capture.");
 expect(index.includes('id="storyBuilderStepper"'), "New story must expose a real three-step editor.");

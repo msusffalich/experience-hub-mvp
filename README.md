@@ -14,6 +14,8 @@ secundarias se abren dentro de su espacio padre y los controles tecnicos viven e
 
 - `product-shell.js`: contrato unico de navegacion, activacion de vistas y retorno
   contextual. No contiene datos, persistencia ni reglas de negocio.
+- `account-shell.js`: presentacion de Cuenta y resolucion de sus acciones
+  permitidas. No accede a tokens, API ni almacenamiento.
 - `app.js`: estado de interfaz y orquestacion de los flujos funcionales.
 - `server.js`: API, persistencia, sincronizacion e integraciones.
 - `database/`: contratos y migraciones de Supabase.
