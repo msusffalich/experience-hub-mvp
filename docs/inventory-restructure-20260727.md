@@ -9,7 +9,7 @@ Generado por `npm run audit:restructure`. Este documento no decide que se borra;
 - Botones con identificador detectados: 61.
 - Funciones escritoras o reconciliadoras detectadas: 27.
 - Documentos candidatos a canonicos: 10.
-- Documentos historicos o de soporte: 35.
+- Documentos historicos o de soporte: 36.
 
 ## Vistas
 
@@ -158,46 +158,46 @@ Generado por `npm run audit:restructure`. Este documento no decide que se borra;
 - `connectLocalObsidianVaultButton`: Conectar bóveda del PC (index.html:718)
 - `forgetLocalObsidianVaultButton`: Quitar conexión local (index.html:719)
 - `experienceMapAskButton`: Consultar (index.html:725)
-- `resetReportScopeInlineButton`: Limpiar filtros (index.html:815)
-- `generateReportButton`: Generar reporte (index.html:821)
-- `downloadEditedReportPdfButton`: Descargar PDF (index.html:822)
-- `resetReportScopeButton`: Restaurar vista (index.html:823)
-- `clearInsightsScopeButton`: Limpiar filtros (index.html:900)
-- `exportInsightsPdfButton`: Descargar PDF de hallazgos (index.html:906)
-- `exportInsightsHtmlButton`: Descargar HTML (index.html:907)
-- `exportInsightsMarkdownButton`: Exportar Markdown (index.html:908)
-- `askButton`: Consultar (index.html:921)
-- `clearPublicationScopeButton`: Limpiar filtros (index.html:989)
-- `generatePublicationButton`: Generar PDF revista premium (index.html:1012)
-- `exportPublicationPdfButton`: Descargar PDF revista premium (index.html:1013)
-- `exportPublicationPackageButton`: Descargar PDF + videos (index.html:1014)
-- `launchPublicationChannelButton`: Preparar canal (index.html:1015)
-- `previewPublicationHtmlButton`: Vista imprimible (index.html:1023)
-- `exportPublicationHtmlButton`: Exportar HTML (index.html:1024)
-- `exportPublicationMarkdownButton`: Exportar Markdown (index.html:1025)
-- `copyPublicationTextButton`: Copiar texto (index.html:1026)
-- `copyPublicationHtmlButton`: Copiar HTML (index.html:1027)
-- `manualClearSearchButton`: Limpiar búsqueda (index.html:1111)
-- `manualExportPdfButton`: Descargar manual PDF (index.html:1112)
-- `manualExportHtmlButton`: HTML imprimible (index.html:1113)
-- `manualExportMarkdownButton`: Exportar Markdown (index.html:1130)
-- `manualMarkAllButton`: Marcar todo (index.html:1131)
-- `manualResetReviewButton`: Reiniciar revisión (index.html:1132)
-- `openAdvancedDiagnosticsButton`: Diagnostico avanzado (index.html:1149)
-- `privacyRecommendedButton`: Aplicar recomendado (index.html:1175)
-- `toggleLocalKeyButton`: Mostrar clave (index.html:1176)
-- `rotateLocalKeyButton`: Aplicar clave (index.html:1177)
-- `unlockLocalButton`: Desbloquear local (index.html:1178)
-- `exportAssetInventoryButton`: Exportar inventario (index.html:1230)
-- `exportAssetInventoryCsvButton`: CSV inventario (index.html:1231)
-- `exportAssetProcessingBacklogButton`: Exportar pendientes (index.html:1232)
-- `exportAssetProcessingBacklogCsvButton`: CSV pendientes (index.html:1233)
-- `exportAssetProcessingChecklistButton`: Checklist de revisión (index.html:1234)
-- `exportAssetMetadataTemplateButton`: Plantilla CSV (index.html:1235)
-- `exportAssetEditableMetadataCsvButton`: CSV edición (index.html:1236)
-- `suggestFilteredAssetTextButton`: Sugerir texto filtrado (index.html:1237)
-- `importAssetMetadataButton`: Importar metadatos (index.html:1238)
-- `saveProfileButton`: Guardar perfil (index.html:1296)
+- `resetReportScopeInlineButton`: Limpiar filtros (index.html:816)
+- `generateReportButton`: Generar reporte (index.html:822)
+- `downloadEditedReportPdfButton`: Descargar PDF (index.html:823)
+- `resetReportScopeButton`: Restaurar vista (index.html:824)
+- `clearInsightsScopeButton`: Limpiar filtros (index.html:910)
+- `exportInsightsPdfButton`: Descargar PDF de hallazgos (index.html:916)
+- `exportInsightsHtmlButton`: Descargar HTML (index.html:917)
+- `exportInsightsMarkdownButton`: Exportar Markdown (index.html:918)
+- `askButton`: Consultar (index.html:931)
+- `clearPublicationScopeButton`: Limpiar filtros (index.html:1011)
+- `generatePublicationButton`: Generar PDF revista premium (index.html:1048)
+- `exportPublicationPdfButton`: Descargar PDF revista premium (index.html:1049)
+- `exportPublicationPackageButton`: Descargar PDF + videos (index.html:1050)
+- `launchPublicationChannelButton`: Preparar canal (index.html:1051)
+- `previewPublicationHtmlButton`: Vista imprimible (index.html:1059)
+- `exportPublicationHtmlButton`: Exportar HTML (index.html:1060)
+- `exportPublicationMarkdownButton`: Exportar Markdown (index.html:1061)
+- `copyPublicationTextButton`: Copiar texto (index.html:1062)
+- `copyPublicationHtmlButton`: Copiar HTML (index.html:1063)
+- `manualClearSearchButton`: Limpiar búsqueda (index.html:1147)
+- `manualExportPdfButton`: Descargar manual PDF (index.html:1148)
+- `manualExportHtmlButton`: HTML imprimible (index.html:1149)
+- `manualExportMarkdownButton`: Exportar Markdown (index.html:1166)
+- `manualMarkAllButton`: Marcar todo (index.html:1167)
+- `manualResetReviewButton`: Reiniciar revisión (index.html:1168)
+- `openAdvancedDiagnosticsButton`: Diagnostico avanzado (index.html:1185)
+- `privacyRecommendedButton`: Aplicar recomendado (index.html:1211)
+- `toggleLocalKeyButton`: Mostrar clave (index.html:1212)
+- `rotateLocalKeyButton`: Aplicar clave (index.html:1213)
+- `unlockLocalButton`: Desbloquear local (index.html:1214)
+- `exportAssetInventoryButton`: Exportar inventario (index.html:1266)
+- `exportAssetInventoryCsvButton`: CSV inventario (index.html:1267)
+- `exportAssetProcessingBacklogButton`: Exportar pendientes (index.html:1268)
+- `exportAssetProcessingBacklogCsvButton`: CSV pendientes (index.html:1269)
+- `exportAssetProcessingChecklistButton`: Checklist de revisión (index.html:1270)
+- `exportAssetMetadataTemplateButton`: Plantilla CSV (index.html:1271)
+- `exportAssetEditableMetadataCsvButton`: CSV edición (index.html:1272)
+- `suggestFilteredAssetTextButton`: Sugerir texto filtrado (index.html:1273)
+- `importAssetMetadataButton`: Importar metadatos (index.html:1274)
+- `saveProfileButton`: Guardar perfil (index.html:1332)
 
 ## Documentacion candidata a canonica
 
@@ -240,6 +240,7 @@ Debe conservarse fuera del recorrido normal del usuario y no presentarse como co
 - `handcheck-vibepwa-720-evidencia-visual.md`
 - `handcheck-vibepwa-721-editor-historias.md`
 - `handcheck-vibepwa-722-biblioteca-curacion.md`
+- `handcheck-vibepwa-723-inteligencia-publicacion.md`
 - `inventory-restructure-20260727.md`
 - `oura-openapi-connector.md`
 - `runbook-canario-evidence-pipeline-v2.md`

@@ -1,4 +1,4 @@
-const APP_VERSION = "20260728-library-curation-722";
+const APP_VERSION = "20260728-intelligence-publishing-723";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -8379,6 +8379,19 @@ function applyLanguage() {
   document.getElementById("publicationMoreHelp").textContent = state.language !== "es" ? "HTML, Markdown, and copies" : "HTML, Markdown y copias";
   document.getElementById("reportParticipantLabel").textContent = languageText("Grupo / persona", "Group / person", "Groupe / personne", "Grupo / pessoa");
   document.getElementById("insightsParticipantLabel").textContent = languageText("Grupo / persona", "Group / person", "Groupe / personne", "Grupo / pessoa");
+  document.getElementById("report-heading").textContent = languageText("Reporte de balance y mediciones", "Balance and measurements report", "Rapport d’équilibre et de mesures", "Relatório de equilíbrio e medições");
+  document.getElementById("insights-heading").textContent = languageText("Hallazgos", "Findings", "Enseignements", "Descobertas");
+  document.getElementById("publications-heading").textContent = languageText("Crear publicación", "Create publication", "Créer une publication", "Criar publicação");
+  document.getElementById("insightsScopeTitle").textContent = languageText("¿Qué quieres comprender?", "What do you want to understand?", "Que souhaitez-vous comprendre ?", "O que você quer compreender?");
+  document.getElementById("insightsScopeHelp").textContent = languageText("Elige el enfoque principal de los hallazgos.", "Choose the main focus of the findings.", "Choisissez l’angle principal des enseignements.", "Escolha o foco principal das descobertas.");
+  document.getElementById("insightsPeriodLabel").textContent = languageText("Período", "Period", "Période", "Período");
+  document.getElementById("publicationMaterialTitle").textContent = languageText("Elige el material", "Choose the material", "Choisissez le contenu", "Escolha o material");
+  document.getElementById("publicationMaterialHelp").textContent = languageText("Vibe puede usar historias, evidencia suelta o ambas.", "Vibe can use stories, loose evidence, or both.", "Vibe peut utiliser des histoires, des preuves isolées ou les deux.", "A Vibe pode usar histórias, evidências soltas ou ambas.");
+  document.getElementById("publicationPeriodLabel").textContent = languageText("Período", "Period", "Période", "Período");
+  document.getElementById("publicationFormatTitle").textContent = languageText("Elige el formato", "Choose the format", "Choisissez le format", "Escolha o formato");
+  document.getElementById("publicationFormatHelp").textContent = languageText("Selecciona la estructura que mejor cuenta este material.", "Select the structure that best presents this material.", "Choisissez la structure qui présente le mieux ce contenu.", "Selecione a estrutura que melhor apresenta este material.");
+  document.getElementById("publicationGenerateTitle").textContent = languageText("Genera y revisa", "Generate and review", "Générez et vérifiez", "Gere e revise");
+  document.getElementById("publicationGenerateHelp").textContent = languageText("Crea el borrador, revisa el resultado y descarga el PDF.", "Create the draft, review the result, and download the PDF.", "Créez le brouillon, vérifiez le résultat et téléchargez le PDF.", "Crie o rascunho, revise o resultado e baixe o PDF.");
   document.getElementById("reportBasisLabel").textContent = languageText("Tipo de reporte", "Report type", "Type de rapport", "Tipo de relatório");
   document.getElementById("reportPeriodLabel").textContent = languageText("Período", "Period", "Période", "Período");
   document.getElementById("reportAdvancedTitle").textContent = languageText("Acotar el reporte", "Refine the report", "Affiner le rapport", "Refinar o relatório");
@@ -8923,6 +8936,10 @@ function setupFilters() {
   document.getElementById("insightsPilotParticipantFilter").addEventListener("change", (event) => {
     setAnalyticalParticipantScope(event.target.value, "insights");
   });
+  document.getElementById("insightsIntentPicker").addEventListener("click", handleOutputIntentClick);
+  document.getElementById("insightsPeriodFilter").addEventListener("change", (event) => {
+    applyOutputPeriod("insights", event.target.value);
+  });
   document.getElementById("insightsBasisFilter").addEventListener("change", (event) => {
     state.insightsFilters.basis = event.target.value || "all";
     renderInsights();
@@ -8956,6 +8973,10 @@ function setupFilters() {
   });
   document.getElementById("publicationPilotParticipantFilter").addEventListener("change", (event) => {
     setAnalyticalParticipantScope(event.target.value, "publications");
+  });
+  document.getElementById("publicationIntentPicker").addEventListener("click", handleOutputIntentClick);
+  document.getElementById("publicationPeriodFilter").addEventListener("change", (event) => {
+    applyOutputPeriod("publications", event.target.value);
   });
   document.getElementById("publicationBasisFilter").addEventListener("change", (event) => {
     state.publicationFilters.basis = event.target.value || "all";
@@ -9107,11 +9128,9 @@ function setupFilters() {
     setReportFlowStatus(state.language !== "es" ? "Specific experience selected. The report is ready to generate." : "Experiencia específica seleccionada. El reporte está listo para generar.");
   });
   document.getElementById("reportPeriodFilter").addEventListener("change", (event) => {
-    state.reportFilters.period = event.target.value;
-    if (event.target.value !== "all" && state.reportFilters.scope !== "single") state.reportFilters.scope = "period";
-    syncReportFilterInputs();
-    renderReport();
+    applyOutputPeriod("report", event.target.value);
   });
+  document.getElementById("reportIntentPicker").addEventListener("click", handleOutputIntentClick);
   document.getElementById("reportCategoryFilter").addEventListener("change", (event) => {
     state.reportFilters.category = event.target.value;
     if (event.target.value !== "all" && state.reportFilters.scope !== "single") state.reportFilters.scope = "filters";
@@ -9217,6 +9236,8 @@ function syncAnalyticalScopeInputs() {
   populateIntegrationSourceFilter("publicationSourceFilter", state.publicationFilters.source || "all");
   syncCustomBasisSelect("insightsBasisFilter", getInsightsBasisOptions(), state.insightsFilters.basis || "all");
   syncCustomBasisSelect("publicationBasisFilter", getPublicationBasisOptions(), state.publicationFilters.basis || "all");
+  syncOutputPeriodSelect("insightsPeriodFilter", state.insightsFilters, "insights");
+  syncOutputPeriodSelect("publicationPeriodFilter", state.publicationFilters, "publications");
   updateAnalyticalScopeStatus("insightsScopeStatus", state.insightsFilters, getInsightsOutputScope());
   updateAnalyticalScopeStatus("publicationScopeStatus", state.publicationFilters, getPublicationOutputScope());
 }
@@ -9224,7 +9245,8 @@ function syncAnalyticalScopeInputs() {
 function updateAnalyticalScopeStatus(statusId, filters = {}, count = 0) {
   const status = statusId ? document.getElementById(statusId) : null;
   if (!status) return;
-  const parts = buildAnalyticalScopeParts(filters);
+  const outputType = statusId.startsWith("publication") ? "publications" : statusId.startsWith("insights") ? "insights" : "report";
+  const parts = buildAnalyticalScopeParts(filters, outputType);
   if (count && typeof count === "object") {
     const baseText = parts.length ? parts.join(" / ") : languageText("Fuente general", "General source", "Source generale", "Fonte geral");
     const stories = Array.isArray(count.stories) ? count.stories.length : 0;
@@ -9242,36 +9264,34 @@ function updateAnalyticalScopeStatus(statusId, filters = {}, count = 0) {
   status.textContent = `${base} · ${count} ${state.language !== "es" ? "items" : "experiencias"}`;
 }
 
-function buildAnalyticalScopeParts(filters = {}) {
+function buildAnalyticalScopeParts(filters = {}, outputType = "report") {
   const parts = [];
   const participantName = filters.pilotParticipantId && filters.pilotParticipantId !== "all" ? getPilotParticipantName(filters.pilotParticipantId) : "";
   if (participantName) parts.push(participantName);
   if (filters.category && filters.category !== "all") parts.push(displayCategory(filters.category));
   if (filters.source && filters.source !== "all") parts.push(getIntegrationSourceFilterLabel(filters.source));
   if (filters.dateFrom || filters.dateTo) parts.push(`${filters.dateFrom || "inicio"} - ${filters.dateTo || "hoy"}`);
-  parts.push(getOutputBasisLabel(filters.basis || "all"));
+  const basisLabel = outputType === "publications"
+    ? getPublicationBasisOptions().find(([value]) => value === (filters.basis || "all"))?.[1]
+    : outputType === "insights"
+      ? getInsightsBasisOptions().find(([value]) => value === (filters.basis || "all"))?.[1]
+      : getReportBasisLabel(filters.basis || "all");
+  parts.push(basisLabel || getOutputBasisLabel(filters.basis || "all"));
   return parts;
 }
 
 function renderSharedScopeContext(containerId, filters = {}, count = 0, outputLabel = "", extraParts = []) {
   const container = document.getElementById(containerId);
   if (!container) return;
-  const labels = state.language !== "es"
-     ? {
-        title: "Scope used in this output",
-        fallback: "Full view",
-        count: "experiences",
-        aligned: "Aligned with the shared analytical scope.",
-        output: "Output",
-      }
-    : {
-        title: "Alcance usado en esta salida",
-        fallback: "Vista completa",
-        count: "experiencias",
-        aligned: "Alineado con el alcance analitico compartido.",
-        output: "Salida",
-      };
-  const parts = [...buildAnalyticalScopeParts(filters), ...extraParts.filter(Boolean)].filter(Boolean);
+  const labels = {
+    title: languageText("Material seleccionado", "Selected material", "Contenu sélectionné", "Material selecionado"),
+    fallback: languageText("Vista completa", "Full view", "Vue complète", "Visão completa"),
+    count: languageText("experiencias", "experiences", "expériences", "experiências"),
+    aligned: languageText("Esto es lo que Vibe usará para crear la salida.", "This is what Vibe will use to create the output.", "Voici ce que Vibe utilisera pour créer le résultat.", "Isto é o que a Vibe usará para criar a saída."),
+    output: languageText("Resultado", "Output", "Résultat", "Resultado"),
+  };
+  const outputType = containerId.startsWith("publication") ? "publications" : containerId.startsWith("insights") ? "insights" : "report";
+  const parts = [...buildAnalyticalScopeParts(filters, outputType), ...extraParts.filter(Boolean)].filter(Boolean);
   const visibleParts = parts.length ? parts : [labels.fallback];
   const countLabel = count && typeof count === "object"
     ? languageText(
@@ -10829,6 +10849,138 @@ function getPublicationBasisOptions() {
   ];
 }
 
+function getOutputIntentOptions(outputType = "report") {
+  const definitions = {
+    report: [
+      ["all", languageText("Balance completo", "Complete balance", "Équilibre complet", "Equilíbrio completo"), languageText("Áreas de vida, evidencia y mediciones en una sola lectura.", "Life areas, evidence, and measurements in one reading.", "Domaines de vie, preuves et mesures dans une même lecture.", "Áreas de vida, evidências e medições em uma só leitura.")],
+      ["stories", languageText("Balance de vida", "Life balance", "Équilibre de vie", "Equilíbrio de vida"), languageText("Cobertura, duración y tendencias de las historias por Área de vida.", "Coverage, duration, and story trends by Life area.", "Couverture, durée et tendances des histoires par domaine de vie.", "Cobertura, duração e tendências das histórias por Área de vida.")],
+      ["evidence", languageText("Mediciones", "Measurements", "Mesures", "Medições"), languageText("Biometría, archivos y señales observadas, sin inferir historias.", "Biometrics, files, and observed signals without inferring stories.", "Biométrie, fichiers et signaux observés sans déduire d’histoires.", "Biometria, arquivos e sinais observados sem inferir histórias.")],
+    ],
+    insights: [
+      ["all", languageText("Patrones respaldados", "Evidence-backed patterns", "Tendances étayées", "Padrões sustentados"), languageText("Relaciona historias, Áreas de vida, evidencia y contexto.", "Connects stories, Life areas, evidence, and context.", "Relie histoires, domaines de vie, preuves et contexte.", "Relaciona histórias, Áreas de vida, evidências e contexto.")],
+      ["stories", languageText("Patrones de vida", "Life patterns", "Tendances de vie", "Padrões de vida"), languageText("Busca recurrencias y oportunidades dentro de las historias.", "Looks for recurring themes and opportunities in stories.", "Recherche des récurrences et des possibilités dans les histoires.", "Busca recorrências e oportunidades nas histórias.")],
+      ["evidence", languageText("Señales observadas", "Observed signals", "Signaux observés", "Sinais observados"), languageText("Organiza mediciones y archivos sin producir recomendaciones personales.", "Organizes measurements and files without personal recommendations.", "Organise les mesures et les fichiers sans recommandations personnelles.", "Organiza medições e arquivos sem recomendações pessoais.")],
+    ],
+    publications: [
+      ["all", languageText("Historia completa", "Complete story", "Histoire complète", "História completa"), languageText("Combina relatos y material disponible para construir la publicación.", "Combines stories and available material to build the publication.", "Combine récits et contenu disponible pour construire la publication.", "Combina relatos e material disponível para construir a publicação.")],
+      ["stories", languageText("Solo relatos", "Stories only", "Récits uniquement", "Somente relatos"), languageText("Publica historias confirmadas y los archivos que ya les pertenecen.", "Publishes confirmed stories and their linked files.", "Publie les histoires confirmées et leurs fichiers liés.", "Publica histórias confirmadas e seus arquivos vinculados.")],
+      ["evidence", languageText("Álbum de evidencias", "Evidence album", "Album de preuves", "Álbum de evidências"), languageText("Ordena material suelto por fecha sin inventar una historia.", "Orders loose material by date without inventing a story.", "Classe le contenu isolé par date sans inventer d’histoire.", "Ordena material solto por data sem inventar uma história.")],
+    ],
+  };
+  return definitions[outputType] || definitions.report;
+}
+
+function renderOutputIntentPicker(targetId, outputType, activeBasis = "all") {
+  const target = document.getElementById(targetId);
+  if (!target) return;
+  target.innerHTML = getOutputIntentOptions(outputType)
+    .map(([value, title, detail], index) => `
+      <button
+        class="output-intent-option ${value === activeBasis ? "is-active" : ""}"
+        type="button"
+        data-output-intent="${escapeHtml(outputType)}"
+        data-output-basis="${escapeHtml(value)}"
+        aria-pressed="${value === activeBasis ? "true" : "false"}"
+      >
+        <b>${index + 1}</b>
+        <span>
+          <strong>${escapeHtml(title)}</strong>
+          <small>${escapeHtml(detail)}</small>
+        </span>
+      </button>
+    `)
+    .join("");
+}
+
+function getOutputPeriodOptions() {
+  return [
+    ["all", languageText("Todo el historial", "All history", "Tout l’historique", "Todo o histórico")],
+    ["7", languageText("Últimos 7 días", "Last 7 days", "7 derniers jours", "Últimos 7 dias")],
+    ["30", languageText("Últimos 30 días", "Last 30 days", "30 derniers jours", "Últimos 30 dias")],
+    ["90", languageText("Últimos 90 días", "Last 90 days", "90 derniers jours", "Últimos 90 dias")],
+  ];
+}
+
+function getOutputPeriodDates(days, reference = new Date()) {
+  const count = Number(days);
+  if (!Number.isFinite(count) || count <= 0) return { dateFrom: "", dateTo: "" };
+  const end = new Date(reference);
+  const start = new Date(reference);
+  start.setDate(start.getDate() - Math.max(0, count - 1));
+  return { dateFrom: toDateFilterValue(start), dateTo: toDateFilterValue(end) };
+}
+
+function getOutputPeriodValue(filters = {}, outputType = "") {
+  if (outputType === "report" && ["all", "7", "30", "90"].includes(String(filters.period || ""))) {
+    return String(filters.period || "all");
+  }
+  if (!filters.dateFrom && !filters.dateTo) return "all";
+  return ["7", "30", "90"].find((value) => {
+    const range = getOutputPeriodDates(value);
+    return range.dateFrom === (filters.dateFrom || "") && range.dateTo === (filters.dateTo || "");
+  }) || "custom";
+}
+
+function syncOutputPeriodSelect(id, filters = {}, outputType = "") {
+  const select = document.getElementById(id);
+  if (!select) return;
+  const active = getOutputPeriodValue(filters, outputType);
+  const options = getOutputPeriodOptions();
+  if (active === "custom") {
+    options.push(["custom", languageText("Fechas personalizadas", "Custom dates", "Dates personnalisées", "Datas personalizadas")]);
+  }
+  select.innerHTML = options.map(([value, label]) => `<option value="${value}">${escapeHtml(label)}</option>`).join("");
+  select.value = active;
+}
+
+function applyOutputPeriod(outputType, value = "all") {
+  const normalized = ["7", "30", "90"].includes(String(value)) ? String(value) : "all";
+  if (outputType === "report") {
+    state.reportFilters.period = normalized;
+    state.reportFilters.dateFrom = "";
+    state.reportFilters.dateTo = "";
+    if (state.reportFilters.scope !== "single") {
+      const hasPrecision = state.reportFilters.category !== "all"
+        || state.reportFilters.source !== "all"
+        || state.reportFilters.pilotParticipantId !== "all"
+        || state.reportFilters.people
+        || state.reportFilters.objective
+        || state.reportFilters.eventQuery;
+      state.reportFilters.scope = hasPrecision ? "filters" : normalized === "all" ? "all" : "period";
+    }
+    syncReportFilterInputs();
+    renderReport();
+    return;
+  }
+  const filters = outputType === "insights" ? state.insightsFilters : state.publicationFilters;
+  const range = normalized === "all" ? { dateFrom: "", dateTo: "" } : getOutputPeriodDates(normalized);
+  filters.dateFrom = range.dateFrom;
+  filters.dateTo = range.dateTo;
+  syncAnalyticalScopeInputs();
+  if (outputType === "insights") renderInsights();
+  else renderPublications();
+}
+
+function handleOutputIntentClick(event) {
+  const button = event.target.closest("[data-output-intent][data-output-basis]");
+  if (!button) return;
+  const outputType = button.dataset.outputIntent;
+  const basis = ["all", "stories", "evidence"].includes(button.dataset.outputBasis) ? button.dataset.outputBasis : "all";
+  if (outputType === "report") {
+    state.reportFilters.basis = basis;
+    syncReportFilterInputs();
+    renderReport();
+  } else if (outputType === "insights") {
+    state.insightsFilters.basis = basis;
+    syncAnalyticalScopeInputs();
+    renderInsights();
+  } else if (outputType === "publications") {
+    state.publicationFilters.basis = basis;
+    syncAnalyticalScopeInputs();
+    renderPublications();
+  }
+}
+
 function getOutputBasisLabel(value = "all") {
   return getOutputBasisOptions().find(([key]) => key === value)?.[1] || getOutputBasisOptions()[0][1];
 }
@@ -10988,21 +11140,16 @@ function renderOutputModeGuide(targetId, scope = {}, outputType = "report") {
             result: languageText("Relaciona historias, áreas de vida, evidencia y contexto para priorizar hallazgos.", "Connects stories, life areas, evidence, and context to prioritize findings.", "Relie histoires, domaines de vie, preuves et contexte pour hiérarchiser les enseignements.", "Relaciona histórias, áreas de vida, evidências e contexto para priorizar descobertas."),
           };
   target.innerHTML = `
-    <article>
-      <span>${escapeHtml(languageText("Vista elegida", "Selected view", "Vue choisie", "Visão escolhida"))}</span>
+    <div class="output-reading-summary">
+      <span>${escapeHtml(languageText("Lectura elegida", "Selected reading", "Lecture choisie", "Leitura escolhida"))}</span>
       <strong>${escapeHtml(copy.title)}</strong>
-      <p>${escapeHtml(copy.question)}</p>
-    </article>
-    <article>
-      <span>${escapeHtml(languageText("Base utilizada", "Source base", "Base utilisée", "Base utilizada"))}</span>
-      <strong>${stories} ${escapeHtml(languageText("historias", "stories", "histoires", "histórias"))}</strong>
-      <p>${evidence} ${escapeHtml(languageText("evidencias", "evidence items", "preuves", "evidências"))} · ${context} ${escapeHtml(languageText("señales de contexto", "context signals", "signaux de contexte", "sinais de contexto"))}</p>
-    </article>
-    <article>
-      <span>${escapeHtml(languageText("Cómo leerla", "How to read it", "Comment la lire", "Como interpretar"))}</span>
-      <strong>${escapeHtml(languageText("Resultado esperado", "Expected result", "Résultat attendu", "Resultado esperado"))}</strong>
       <p>${escapeHtml(copy.result)}</p>
-    </article>
+    </div>
+    <div class="output-reading-counts" aria-label="${escapeHtml(languageText("Material incluido", "Included material", "Contenu inclus", "Material incluído"))}">
+      <span>${stories} ${escapeHtml(languageText("historias", "stories", "histoires", "histórias"))}</span>
+      <span>${evidence} ${escapeHtml(languageText("evidencias", "evidence items", "preuves", "evidências"))}</span>
+      <span>${context} ${escapeHtml(languageText("contextos", "context signals", "contextes", "contextos"))}</span>
+    </div>
   `;
 }
 
@@ -24016,6 +24163,7 @@ function renderReport() {
   const firstDate = experiences[0]?.timestamp;
   const lastDate = experiences[experiences.length - 1]?.timestamp;
   renderReportAcceptancePanel();
+  renderOutputIntentPicker("reportIntentPicker", "report", state.reportFilters.basis || "all");
   renderOutputModeGuide("reportModeGuide", outputScope, "report");
   document.getElementById("reportRangeLabel").textContent =
     firstDate && lastDate ? `${formatShortDate(firstDate)} - ${formatShortDate(lastDate)}` : state.language !== "es" ? "No range" : "Sin rango";
@@ -24033,7 +24181,7 @@ function renderReport() {
       dateTo: state.reportFilters.dateTo || "",
     },
     outputScope,
-    state.language !== "es" ? "Report" : "Reporte",
+    languageText("Reporte", "Report", "Rapport", "Relatório"),
     [
       getReportScopeLabel(state.reportFilters.scope),
       state.reportFilters.period && state.reportFilters.period !== "all"
@@ -24230,7 +24378,7 @@ function renderReportScopeSummary(experiences, outputScope = {}) {
   const summary = document.getElementById("reportScopeSummary");
   const title = document.getElementById("reportScopeTitle");
   if (!summary || !title) return;
-  title.textContent = state.language !== "es" ? "Report scope" : "Alcance del reporte";
+  title.textContent = languageText("¿Qué quieres revisar?", "What do you want to review?", "Que souhaitez-vous examiner ?", "O que você quer revisar?");
   const labels = state.language !== "es"
      ? {
         all: "all saved experiences. Filters are off, so the report is a complete baseline.",
@@ -27970,11 +28118,12 @@ function renderPublications() {
   const draft = state.currentPublicationDraft || state.publicationDrafts[0] || null;
   const outputScope = getPublicationOutputScope();
   syncAnalyticalScopeInputs();
+  renderOutputIntentPicker("publicationIntentPicker", "publications", state.publicationFilters.basis || "all");
   renderSharedScopeContext(
     "publicationSharedScopeContext",
     state.publicationFilters,
     outputScope,
-    state.language !== "es" ? "Publications" : "Publicaciones",
+    languageText("Publicación", "Publication", "Publication", "Publicação"),
   );
   document.getElementById("publicationCount").textContent = `${state.publicationDrafts.length} ${t("labels.items")}`;
   const quickStart = document.getElementById("publicationQuickStart");
@@ -31638,6 +31787,7 @@ function renderInsights() {
   const thematicAxes = buildInsightThematicAxes(sourceExperiences);
   const actionPlan = buildInsightActionPlan(sourceExperiences, insights, thematicAxes);
   syncAnalyticalScopeInputs();
+  renderOutputIntentPicker("insightsIntentPicker", "insights", state.insightsFilters.basis || "all");
   renderOutputModeGuide("insightsModeGuide", outputScope, "insights");
   const quickStart = document.getElementById("insightsQuickStart");
   if (quickStart) quickStart.innerHTML = renderInsightsQuickStart();
@@ -31651,7 +31801,7 @@ function renderInsights() {
     "insightsSharedScopeContext",
     state.insightsFilters,
     outputScope,
-    state.language !== "es" ? "Findings" : "Hallazgos",
+    languageText("Hallazgos", "Findings", "Enseignements", "Descobertas"),
   );
   renderQuestionSuggestions();
   if (presentationMode === "signal_inventory") {

@@ -1,7 +1,7 @@
 # Blueprint de producción del ecosistema Vibe 1.0
 
 Estado: referencia integral de producto, operación y evolución
-Fecha: 2026-07-23
+Fecha: 2026-07-28
 Alcance: Vibeapp, VibePWA, API Vibe, Supabase, Obsidian, Claude PC y VibePub.
 
 ## 1. Resumen ejecutivo
@@ -85,6 +85,12 @@ Capacidades principales:
 - mapa de experiencias, reportes, hallazgos, publicaciones y exportación Markdown;
 - administración de grupos, datos, respaldos y operación;
 - manual integrado en español, inglés, francés y portugués.
+
+La zona de Inteligencia no presenta el modelo de datos como un tablero
+técnico. Reportes y Hallazgos ofrecen primero una intención de lectura, una
+persona o grupo y un período. Publicaciones usa tres etapas: material, formato
+y generación. Los filtros de Área de vida, origen y fechas exactas siguen
+disponibles como precisión opcional.
 
 La interfaz de Historias separa lectura y curación. La tarjeta muestra primero
 la portada, el relato y sus piezas; procedencia, línea de tiempo y borrado son
@@ -189,15 +195,31 @@ Bienestar es una dimensión o estado, no una actividad. Hogar es un lugar, no un
 
 El usuario puede editar cuando ya tiene perspectiva. Puede liberar una evidencia, pasarla a otra historia, fusionar historias del mismo episodio, dividir una historia larga, promover un evento a experiencia o degradar una experiencia menor a evento. El sistema conserva antecedentes y no destruye de forma silenciosa.
 
-### 8.4 Lectura, reportes y hallazgos
+### 8.4 Inteligencia y publicación
+
+Las tres salidas comparten persona o grupo, período y reglas de selección, pero
+responden preguntas distintas:
+
+| Salida | Elección principal | Resultado |
+| --- | --- | --- |
+| Reporte | Balance completo, balance de vida o mediciones. | Cantidades, cobertura, evolución, comparaciones y evidencia observable. |
+| Hallazgos | Patrones respaldados, patrones de vida o señales observadas. | Patrones priorizados, confianza y siguientes acciones cuando existe base. |
+| Publicación | Historia completa, solo relatos o álbum de evidencia. | PDF editorial cronológico; nunca inventa un relato para material suelto. |
+
+Cada pantalla informa el inventario que utilizará antes de generar. La
+evidencia sin historia conserva valor en reportes de medición, vistas de
+señales y álbumes cronológicos. El Mapa y Obsidian continúan recibiendo
+únicamente historias confirmadas.
+
+### 8.5 Lectura, reportes y hallazgos
 
 Reportes, Hallazgos y Publicaciones consumen la misma base de experiencias. Un filtro por fecha, grupo/persona, categoría o experiencia delimita el alcance. Los resultados muestran evidencia y contexto solo cuando existen. No presentan energía, sueño, categoría ni conclusiones clínicas como si fueran datos seguros cuando no hay base suficiente.
 
-### 8.5 Publicación editorial
+### 8.6 Publicación editorial
 
 El usuario define el alcance y el tipo de publicación. Vibe ordena cronológicamente las experiencias y evidencia elegida, desarrolla una narrativa editorial fiel a los hechos y genera un PDF. Cuando existen videos, el paquete editorial puede incluir el PDF y los videos relacionados para descargar y editar con VibePub u otra herramienta.
 
-### 8.6 Mapa de conocimiento con Obsidian
+### 8.7 Mapa de conocimiento con Obsidian
 
 VibePWA exporta experiencias narradas a una bóveda local configurada. El export valida que la ruta sea una bóveda real, genera notas y mapa en un lote, conserva la zona humana de las notas y no borra automáticamente memorias curadas. Obsidian sirve para profundizar aprendizajes y relaciones, no para competir con la base de datos.
 

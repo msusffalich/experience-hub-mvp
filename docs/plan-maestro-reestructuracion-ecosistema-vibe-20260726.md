@@ -143,6 +143,32 @@ No se reescriben las operaciones de persistencia. Mover, liberar, unir,
 dividir, promover y degradar siguen usando sus controladores y registros de
 curación existentes.
 
+### Bloque 723: Inteligencia y publicación comprensibles
+
+Este bloque convierte Reportes, Hallazgos y Publicaciones en tres recorridos
+coherentes, sin exigir que la persona interprete el modelo interno:
+
+- **Reportes** pregunta si se desea revisar el balance completo, el balance de
+  vida o solamente las mediciones.
+- **Hallazgos** pregunta si se desean patrones respaldados, patrones de vida o
+  solamente señales observadas.
+- **Publicaciones** pregunta si se desea construir una historia completa, usar
+  solo relatos confirmados o preparar un álbum cronológico de evidencia.
+- Persona o grupo y período son controles principales en las tres salidas.
+- Área de vida, origen y fechas exactas permanecen disponibles dentro de
+  filtros opcionales.
+- Cada pantalla muestra, antes de generar, cuántas historias, evidencias y
+  señales de contexto utilizará.
+- Publicaciones presenta tres etapas visibles: elegir material, elegir formato
+  y generar o revisar.
+- Las opciones antiguas de base se conservan internamente para compatibilidad,
+  pero ya no compiten con el selector visual.
+- Español, inglés, francés y portugués usan el mismo recorrido y significado.
+
+No cambia la fuente de verdad ni los generadores de PDF. El bloque reutiliza
+el alcance compartido y simplifica la selección, de modo que la salida siga
+siendo reproducible sin exponer controles técnicos en la vista principal.
+
 ## 1. Decisión ejecutiva
 
 Vibe se reestructura alrededor de una separación simple:
@@ -690,10 +716,16 @@ Una estimación futura:
 
 ### Fase 5. Inteligencia y publicación
 
-- adaptar reportes, hallazgos y publicaciones a evidencia, historias o ambos;
-- validar PDF, ZIP y multimedia;
-- verificar que datos sin historia sigan aportando valor;
-- verificar que Obsidian reciba solo historias confirmadas.
+- adaptar reportes, hallazgos y publicaciones a evidencia, historias o ambos:
+  **implementado en 723**;
+- ofrecer intención, persona o grupo y período como selección principal:
+  **implementado en 723**;
+- validar PDF, ZIP y multimedia: **PDF de las tres salidas validado en 723; ZIP
+  multimedia conserva el contrato existente**;
+- verificar que datos sin historia sigan aportando valor: **validado mediante
+  inventario de mediciones y álbum de evidencia**;
+- verificar que Obsidian reciba solo historias confirmadas: **contrato
+  preservado y cubierto por la verificación de release**.
 
 ### Fase 6. Limpieza y reemplazo
 

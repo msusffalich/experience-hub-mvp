@@ -167,11 +167,16 @@ Oura, Apple Health, Health Connect y otros wearables aportan contexto de salud c
 
 ## 12. Elegir qué analizar o publicar
 
-Reportes, Hallazgos y Publicaciones usan el mismo alcance:
+Reportes, Hallazgos y Publicaciones empiezan de la misma forma. No necesitas
+conocer el modelo interno ni completar todos los filtros:
 
-1. **Período:** obligatorio; por defecto, los últimos siete días.
-2. **Persona o grupo:** por defecto, tu selección activa.
-3. **Base:** todo lo registrado, solo historias confirmadas o solo evidencia.
+1. Elige la **lectura** o el **material** con una tarjeta visual.
+2. Elige la **persona o grupo**.
+3. Elige el **período**.
+4. Revisa el resumen que indica cuántas historias, evidencias y señales de
+   contexto se incluirán.
+5. Genera la salida. Los filtros por Área de vida, origen o fechas exactas
+   están disponibles solo cuando necesitas precisar más.
 
 Puedes añadir categoría, ubicación, tipo de activo, texto o elementos específicos. La categoría nunca se adivina para una foto o nota suelta: cuando filtras por categoría, Vibe usa historias clasificadas y sus piezas vinculadas, e informa qué evidencia sin clasificar quedó fuera.
 
@@ -179,15 +184,20 @@ El contexto de salud, ubicación, clima, noticias y agenda se incorpora automát
 
 Aunque comparten filtros, no hacen lo mismo:
 
-- **Reportes** presentan hechos, cantidades, evolución y comparaciones. Las experiencias y eventos cuentan como registros confirmados, no como una redacción editorial.
-- **Hallazgos** explican patrones y posibles siguientes acciones, indicando cuántos datos los respaldan y con qué confianza.
-- **Publicaciones** sí convierten las narrativas de tus experiencias y eventos en una historia cronológica y editorial. La evidencia seleccionada la ilustra y la respalda.
+- **Reportes** permiten elegir **Balance completo**, **Balance de vida** o
+  **Mediciones**. Presentan hechos, cantidades, evolución y comparaciones. Las
+  historias cuentan como registros confirmados, no como redacción editorial.
+- **Hallazgos** permiten elegir **Patrones respaldados**, **Patrones de vida** o
+  **Señales observadas**. Explican patrones y posibles siguientes acciones,
+  indicando qué datos los respaldan y con qué confianza.
+- **Publicaciones** permiten elegir **Historia completa**, **Solo relatos** o
+  **Álbum de evidencias**. Las dos primeras convierten las narrativas
+  confirmadas en una historia cronológica y editorial. El álbum ordena
+  material suelto sin inventar un relato.
 
-En **Contenido** puedes elegir:
-
-- **Historias y evidencia:** recomendado para una publicación completa y para una lectura integral.
-- **Solo historias:** usa experiencias y eventos confirmados, junto con sus activos vinculados.
-- **Solo evidencia:** prepara un dossier cronológico de archivos y mediciones. Vibe no inventa una historia si todavía no la has contado.
+En Publicaciones verás tres etapas: **Elige el material**, **Elige el formato**
+y **Genera y revisa**. El resultado principal es un PDF editorial. Cuando hay
+videos relacionados, también puedes descargar el paquete con PDF y videos.
 
 ## 13. Leer tu historia: biblioteca, mapa, reportes y hallazgos
 

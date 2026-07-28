@@ -16,14 +16,22 @@ function expectSingleId(id) {
 
 [
   "reportPrimaryControls",
+  "reportIntentPicker",
   "reportModeGuide",
   "reportAdvancedFilters",
   "reportPeriodFilter",
   "reportQuickStart",
   "insightsPrimaryControls",
+  "insightsIntentPicker",
+  "insightsPeriodFilter",
   "insightsModeGuide",
   "insightsAdvancedFilters",
   "insightsQuickStart",
+  "publicationIntentPicker",
+  "publicationPeriodFilter",
+  "publicationMaterialTitle",
+  "publicationFormatTitle",
+  "publicationGenerateTitle",
 ].forEach(expectSingleId);
 
 expect(!index.includes('class="report-flow-steps"'), "The obsolete three-step report control strip must stay removed.");
@@ -32,10 +40,18 @@ expect(index.indexOf('id="reportQuickStart"') > index.indexOf('id="reportAdvance
 expect(index.indexOf('id="insightsQuickStart"') > index.indexOf('id="insightsAdvancedFilters"'), "Finding presets must remain inside advanced filters.");
 expect(app.includes('renderOutputModeGuide("reportModeGuide", outputScope, "report")'), "Report mode guidance is not rendered.");
 expect(app.includes('renderOutputModeGuide("insightsModeGuide", outputScope, "insights")'), "Insights mode guidance is not rendered.");
+expect(app.includes('renderOutputIntentPicker("reportIntentPicker", "report"'), "The report intent picker is not rendered.");
+expect(app.includes('renderOutputIntentPicker("insightsIntentPicker", "insights"'), "The findings intent picker is not rendered.");
+expect(app.includes('renderOutputIntentPicker("publicationIntentPicker", "publications"'), "The publication intent picker is not rendered.");
+expect(app.includes('applyOutputPeriod("report"'), "The report quick-period selector is not connected.");
+expect(app.includes('applyOutputPeriod("insights"'), "The findings quick-period selector is not connected.");
+expect(app.includes('applyOutputPeriod("publications"'), "The publication quick-period selector is not connected.");
 expect(app.includes("Las áreas de vida agrupan las historias."), "The distinction between life areas and human interpretation themes is missing.");
 expect(app.includes("As áreas de vida agrupam as histórias."), "Portuguese guidance is missing.");
 expect(app.includes("Les domaines de vie regroupent les histoires."), "French guidance is missing.");
 expect(styles.includes(".output-primary-controls"), "Primary output-control styling is missing.");
+expect(styles.includes(".output-intent-picker"), "Output intent-picker styling is missing.");
+expect(styles.includes(".output-stage-heading"), "Publication stage styling is missing.");
 expect(styles.includes(".output-mode-guide"), "Output mode-guide styling is missing.");
 expect(styles.includes(".output-advanced-drawer"), "Advanced output-filter styling is missing.");
 

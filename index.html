@@ -19,10 +19,10 @@
         }
       })();
     </script>
-    <link rel="manifest" href="manifest.webmanifest?v=20260728-library-curation-722" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260728-intelligence-publishing-723" />
     <link rel="icon" href="icons/vibe-icon-192.png" type="image/png" />
     <link rel="apple-touch-icon" href="icons/vibe-apple-touch.png" />
-    <link rel="stylesheet" href="styles.css?v=20260728-library-curation-722" />
+    <link rel="stylesheet" href="styles.css?v=20260728-intelligence-publishing-723" />
   </head>
   <body>
     <noscript>
@@ -736,16 +736,17 @@
           <div class="report-layout">
             <section class="panel">
               <div class="panel-heading">
-                <h2 id="report-heading">Reporte de experiencias</h2>
+                <h2 id="report-heading">Reporte de balance y mediciones</h2>
                 <span id="reportRangeLabel"></span>
               </div>
               <section id="reportScopePanel" class="report-scope-panel" aria-label="Alcance del reporte">
                 <div class="output-workbench-heading">
-                  <strong id="reportScopeTitle">Alcance del reporte</strong>
-                  <p id="reportScopeSummary">Este reporte analiza el filtro activo.</p>
+                  <strong id="reportScopeTitle">¿Qué quieres revisar?</strong>
+                  <p id="reportScopeSummary">Elige una lectura. Puedes precisar el alcance después.</p>
                 </div>
+                <div id="reportIntentPicker" class="output-intent-picker" aria-label="Lectura del reporte"></div>
                 <div id="reportPrimaryControls" class="output-primary-controls">
-                  <label>
+                  <label class="output-native-select">
                     <span id="reportBasisLabel">Tipo de reporte</span>
                     <select id="reportBasisFilter" aria-label="Tipo de reporte">
                       <option value="all">Áreas de vida + evidencia</option>
@@ -851,11 +852,16 @@
           <div class="split-layout">
             <section class="panel">
               <div class="panel-heading">
-                <h2 id="insights-heading">Hallazgos accionables</h2>
+                <h2 id="insights-heading">Hallazgos</h2>
                 <span id="insightScopeLabel">Generados localmente</span>
               </div>
+              <div class="output-workbench-heading">
+                <strong id="insightsScopeTitle">¿Qué quieres comprender?</strong>
+                <p id="insightsScopeHelp">Elige el enfoque principal de los hallazgos.</p>
+              </div>
+              <div id="insightsIntentPicker" class="output-intent-picker" aria-label="Lectura de hallazgos"></div>
               <div id="insightsPrimaryControls" class="output-primary-controls insights-primary-controls">
-                <label>
+                <label class="output-native-select">
                   <span id="insightsBasisLabel">Tipo de lectura</span>
                   <select id="insightsBasisFilter" aria-label="Tipo de lectura de hallazgos">
                     <option value="all">Áreas de vida + evidencia</option>
@@ -868,6 +874,10 @@
                   <select id="insightsPilotParticipantFilter">
                     <option value="all">Todos los grupos/personas</option>
                   </select>
+                </label>
+                <label>
+                  <span id="insightsPeriodLabel">Período</span>
+                  <select id="insightsPeriodFilter" aria-label="Período de los hallazgos"></select>
                 </label>
               </div>
               <div id="insightsModeGuide" class="output-mode-guide" aria-live="polite"></div>
@@ -930,9 +940,17 @@
           <div class="publication-layout">
             <section class="panel">
               <div class="panel-heading">
-                <h2 id="publications-heading">Publicaciones Inteligentes</h2>
+                <h2 id="publications-heading">Crear publicación</h2>
                 <span id="publicationStatus">Borradores locales</span>
               </div>
+              <div class="output-stage-heading">
+                <b>1</b>
+                <div>
+                  <strong id="publicationMaterialTitle">Elige el material</strong>
+                  <p id="publicationMaterialHelp">Vibe puede usar historias, evidencia suelta o ambas.</p>
+                </div>
+              </div>
+              <div id="publicationIntentPicker" class="output-intent-picker" aria-label="Material de la publicación"></div>
               <div class="output-primary-controls publication-primary-controls">
                 <label>
                   <span id="publicationParticipantLabel">Grupo / persona fuente</span>
@@ -940,13 +958,17 @@
                     <option value="all">Todos los grupos/personas</option>
                   </select>
                 </label>
-                <label>
+                <label class="output-native-select">
                   Material editorial
                   <select id="publicationBasisFilter" aria-label="Material editorial de la publicación">
                     <option value="all">Historia y material disponible</option>
                     <option value="stories">Historias para publicar</option>
                     <option value="evidence">Material sin historia</option>
                   </select>
+                </label>
+                <label>
+                  <span id="publicationPeriodLabel">Período</span>
+                  <select id="publicationPeriodFilter" aria-label="Período de la publicación"></select>
                 </label>
               </div>
               <details id="publicationAdvancedFilters" class="output-advanced-drawer">
@@ -991,8 +1013,22 @@
                 </div>
               </details>
               <div id="publicationSharedScopeContext" class="shared-scope-context" aria-live="polite"></div>
+              <div class="output-stage-heading">
+                <b>2</b>
+                <div>
+                  <strong id="publicationFormatTitle">Elige el formato</strong>
+                  <p id="publicationFormatHelp">Selecciona la estructura que mejor cuenta este material.</p>
+                </div>
+              </div>
               <div id="publicationQuickStart" class="publication-quick-start" aria-label="Arranque rapido de publicaciones"></div>
               <form id="publicationForm" class="experience-form">
+                <div class="output-stage-heading">
+                  <b>3</b>
+                  <div>
+                    <strong id="publicationGenerateTitle">Genera y revisa</strong>
+                    <p id="publicationGenerateHelp">Crea el borrador, revisa el resultado y descarga el PDF.</p>
+                  </div>
+                </div>
                 <div class="two-columns">
                   <label>
                     Tipo
@@ -1085,7 +1121,7 @@
             <div class="manual-version-card">
               <div>
                 <span id="manualVersionEyebrow">Versión vigente</span>
-                <strong id="manualVersionValue">20260728-library-curation-722</strong>
+                <strong id="manualVersionValue">20260728-intelligence-publishing-723</strong>
                 <p id="manualVersionSummary">Guía práctica organizada por temas para entender el flujo de la app sin leer todo de corrido.</p>
               </div>
               <div class="manual-guide-grid" aria-label="Estructura del manual">
@@ -1335,6 +1371,6 @@
       </main>
     </div>
 
-    <script src="app.js?v=20260728-library-curation-722"></script>
+    <script src="app.js?v=20260728-intelligence-publishing-723"></script>
 </body>
 </html>
