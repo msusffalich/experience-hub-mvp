@@ -20,6 +20,25 @@
     sans-serif;
 }
 
+@media (max-width: 720px) {
+  .account-summary-intro {
+    display: grid;
+  }
+
+  .account-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .account-primary-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .account-primary-actions button {
+    width: 100%;
+  }
+}
+
 [hidden] {
   display: none !important;
 }
@@ -330,7 +349,10 @@ button,
 }
 
 .privacy-option {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: start;
+  width: 100%;
 }
 
 .privacy-option span,
@@ -338,6 +360,7 @@ button,
   display: grid;
   gap: 3px;
   min-width: 0;
+  width: 100%;
 }
 
 .privacy-option strong,
@@ -356,6 +379,7 @@ button,
 }
 
 .privacy-option input {
+  width: auto;
   margin-top: 2px;
   flex: 0 0 auto;
 }
@@ -2316,9 +2340,18 @@ html[data-theme="dark"] .capture-evidence-inbox {
   width: min(100%, 620px);
 }
 
+.account-mode .auth-layout {
+  width: min(100%, 960px);
+}
+
 .auth-layout .panel {
   max-width: 100%;
   overflow: hidden;
+}
+
+.auth-entry-panel {
+  display: grid;
+  gap: 14px;
 }
 
 .auth-actions {
@@ -2364,6 +2397,66 @@ html[data-theme="dark"] .capture-evidence-inbox {
 
 .auth-state-panel > strong {
   font-size: 14px;
+}
+
+.account-summary-panel {
+  gap: 16px;
+  padding: 18px;
+}
+
+.account-summary-intro {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.account-summary-intro h3 {
+  margin: 5px 0;
+  overflow-wrap: anywhere;
+  font-size: 22px;
+}
+
+.account-summary-intro p {
+  max-width: 620px;
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.account-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.account-summary-grid article {
+  display: grid;
+  gap: 5px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  background: var(--surface-strong);
+  min-width: 0;
+}
+
+.account-summary-grid span,
+.account-summary-grid small {
+  color: var(--muted);
+}
+
+.account-summary-grid strong {
+  overflow-wrap: anywhere;
+}
+
+.account-primary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.account-primary-actions button {
+  min-height: 42px;
 }
 
 .auth-state-grid {

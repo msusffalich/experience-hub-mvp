@@ -475,6 +475,46 @@ try {
   })()`, 30000);
   console.log("publication evidence-only scope E2E ok");
 
+  await evaluate(cdp, `(async () => {
+    window.__vibeE2EPreviousSession = state.session;
+    state.session = {
+      access_token: "e2e-account-token",
+      refresh_token: "e2e-account-refresh",
+      user: { email: "usuario.vibe@example.com" },
+    };
+    renderAuthStatePanel();
+    showView("auth");
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    const entry = document.getElementById("authEntryPanel");
+    const summary = document.querySelector(".account-summary-panel");
+    if (!entry?.hidden) throw new Error("signed-in account still shows sign-in controls");
+    if (!summary || summary.offsetParent === null) throw new Error("signed-in account summary is not visible");
+    return true;
+  })()`);
+  await captureVisualAudit(cdp, "account");
+  await evaluate(cdp, `(async () => {
+    const privacyButton = document.querySelector('[data-account-action="privacy"]');
+    if (!privacyButton) throw new Error("account privacy action missing");
+    privacyButton.click();
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+    if (!document.getElementById("adminView")?.classList.contains("active-view")) {
+      throw new Error("account privacy action did not open Operation");
+    }
+    if (document.querySelectorAll("#adminView .admin-section-drawer[open]").length) {
+      throw new Error("Operation opened technical drawers by default");
+    }
+    return true;
+  })()`);
+  await captureVisualAudit(cdp, "operation");
+  await evaluate(cdp, `(() => {
+    state.session = window.__vibeE2EPreviousSession || null;
+    delete window.__vibeE2EPreviousSession;
+    renderAuthStatePanel();
+    renderAuthStatus();
+    return true;
+  })()`);
+  console.log("account E2E ok");
+
   const outputFlows = [
     {
       name: "report",
@@ -564,6 +604,10 @@ async function captureVisualAudit(cdp, name) {
     captureVisible: !!document.getElementById("experienceForm")?.offsetParent,
     energyType: document.getElementById("energyInput")?.type || "",
     energyValue: document.getElementById("energyInput")?.value || "",
+    accountSummaryVisible: !!document.querySelector(".account-summary-panel")?.offsetParent,
+    authEntryHidden: !!document.getElementById("authEntryPanel")?.hidden,
+    operationVisible: !!document.getElementById("adminView")?.classList.contains("active-view"),
+    openOperationDrawers: document.querySelectorAll("#adminView .admin-section-drawer[open]").length,
   }))()`);
   if (desktopAudit.pageWidth > desktopAudit.viewport + 2) {
     throw new Error(`${name} desktop layout overflows horizontally (${desktopAudit.pageWidth}px > ${desktopAudit.viewport}px).`);
@@ -573,6 +617,12 @@ async function captureVisualAudit(cdp, name) {
   }
   if (name === "new-story" && (!desktopAudit.captureVisible || desktopAudit.energyType !== "number" || desktopAudit.energyValue !== "")) {
     throw new Error("New story is missing its form or optional empty perceived-energy input.");
+  }
+  if (name === "account" && (!desktopAudit.accountSummaryVisible || !desktopAudit.authEntryHidden)) {
+    throw new Error("Signed-in account summary is missing or sign-in controls remain visible.");
+  }
+  if (name === "operation" && (!desktopAudit.operationVisible || desktopAudit.openOperationDrawers)) {
+    throw new Error("Operation is not visible or technical drawers opened by default.");
   }
   const desktop = await cdp("Page.captureScreenshot", {
     format: "png",
@@ -590,9 +640,13 @@ async function captureVisualAudit(cdp, name) {
   const mobileAudit = await evaluate(cdp, `(() => ({
     viewport: document.documentElement.clientWidth,
     pageWidth: document.documentElement.scrollWidth,
+    privacyCopyWidth: document.querySelector(".product-privacy-panel .privacy-option > span")?.getBoundingClientRect().width || 0,
   }))()`);
   if (mobileAudit.pageWidth > mobileAudit.viewport + 2) {
     throw new Error(`${name} mobile layout overflows horizontally (${mobileAudit.pageWidth}px > ${mobileAudit.viewport}px).`);
+  }
+  if (name === "operation" && mobileAudit.privacyCopyWidth < 180) {
+    throw new Error(`Operation privacy copy is too narrow on mobile (${mobileAudit.privacyCopyWidth}px).`);
   }
   const mobile = await cdp("Page.captureScreenshot", {
     format: "png",

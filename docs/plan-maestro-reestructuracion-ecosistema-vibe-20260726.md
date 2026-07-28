@@ -55,6 +55,25 @@ Este bloque consolida dos decisiones sin alterar los contratos móviles:
 
 Las rutas usadas por Vibeapp, el servidor y Supabase no cambian en este bloque.
 
+### Bloque 719: Cuenta simple y Operación bajo demanda
+
+Este bloque reduce la exposición de controles internos sin tocar servidor,
+Supabase ni contratos móviles:
+
+- La vista **Cuenta** distingue acceso y sesión activa.
+- Una persona autenticada ve su correo, sincronización, idioma, privacidad y
+  tres acciones claras; no vuelve a ver el formulario de inicio de sesión.
+- Perfil y Privacidad abren la sección correspondiente de Operación.
+- Los paneles operativos y técnicos permanecen plegados inicialmente.
+- El bloque de privacidad usa una geometría estable en escritorio y móvil para
+  evitar palabras partidas o controles desplazados.
+- ES, EN, FR y PT comparten el mismo comportamiento y significado.
+- Las pruebas de producto comprueban la sesión activa, el salto a Operación,
+  los paneles plegados y el ancho legible de Privacidad en móvil.
+
+No cambia autenticación, persistencia, sincronización ni propiedad de los
+datos. Es una reorganización de presentación y navegación.
+
 ## 1. Decisión ejecutiva
 
 Vibe se reestructura alrededor de una separación simple:

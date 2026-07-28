@@ -1,4 +1,4 @@
-const APP_VERSION = "20260727-product-integrity-718";
+const APP_VERSION = "20260727-account-operation-719";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -443,7 +443,7 @@ const i18n = {
       admin: "Operación",
     },
     viewTitles: {
-      auth: "Acceso seguro",
+      auth: "Cuenta",
       dashboard: "Inicio",
       capture: "Nueva historia",
       library: "Librería de experiencias",
@@ -1281,7 +1281,7 @@ const i18n = {
       admin: "Operation",
     },
     viewTitles: {
-      auth: "Secure access",
+      auth: "Account",
       dashboard: "Home",
       capture: "New story",
       library: "Experience library",
@@ -2134,7 +2134,7 @@ i18n.fr = mergeLocale(i18n.en, {
     admin: "Operation",
   },
   viewTitles: {
-    auth: "Accès sécurisé",
+    auth: "Compte",
     dashboard: "Accueil",
     capture: "Nouvelle histoire",
     library: "Bibliothèque d'expériences",
@@ -2344,7 +2344,7 @@ i18n.pt = mergeLocale(i18n.es, {
     admin: "Operação",
   },
   viewTitles: {
-    auth: "Acesso seguro",
+    auth: "Conta",
     dashboard: "Início",
     capture: "Nova história",
     library: "Biblioteca de experiências",
@@ -4609,6 +4609,7 @@ Object.assign(manualContent, {
     ] },
     { title: "Grupos, privacidad y ayuda", body: [
       "Los grupos/personas son privados y sirven para ordenar Familia, Viaje, Proyecto o Equipo. Archivar uno no borra su historial.",
+      "Cuenta muestra tu correo, idioma y accesos directos a Perfil y Privacidad. Si ya iniciaste sesión, no vuelve a mostrar el formulario de acceso.",
       "Cuando la barra indica Sincronizado, tus datos ya están disponibles en los otros dispositivos. Operación concentra respaldo, restauración y ayuda de sincronización para cuando realmente la necesites.",
     ] },
   ],
@@ -4653,6 +4654,7 @@ Object.assign(manualContent, {
     ] },
     { title: "Groups, privacy, and help", body: [
       "Groups/persons are private and organize Family, Travel, Project, or Team. Archiving one does not erase its history.",
+      "Account shows your email, language, and direct access to Profile and Privacy. Once signed in, it does not show the sign-in form again.",
       "When the bar says Synced, data is available on your other devices. Operation contains backup, restore, and synchronization help when you actually need it.",
     ] },
   ],
@@ -4697,6 +4699,7 @@ Object.assign(manualContent, {
     ] },
     { title: "Groupes, confidentialite et aide", body: [
       "Les groupes/personnes sont prives et organisent Famille, Voyage, Projet ou Equipe. Archiver un groupe n efface pas son historique.",
+      "Compte affiche votre adresse, la langue et des acces directs au Profil et a la Confidentialite. Une session active ne montre plus le formulaire de connexion.",
       "Lorsque la barre indique Synchronise, vos donnees sont disponibles sur vos autres appareils. Operation contient sauvegarde, restauration et aide de synchronisation quand vous en avez besoin.",
     ] },
   ],
@@ -4741,6 +4744,7 @@ Object.assign(manualContent, {
     ] },
     { title: "Grupos, privacidade e ajuda", body: [
       "Grupos/pessoas sao privados e organizam Familia, Viagem, Projeto ou Equipe. Arquivar um grupo nao apaga seu historico.",
+      "Conta mostra seu e-mail, idioma e acessos diretos a Perfil e Privacidade. Depois de entrar, o formulario de acesso nao aparece novamente.",
       "Quando a barra indica Sincronizado, os dados estao disponiveis nos outros dispositivos. Operacao concentra backup, restauracao e ajuda de sincronizacao quando necessario.",
     ] },
   ],
@@ -7741,6 +7745,7 @@ function setupAuth() {
     event.preventDefault();
     authenticate("signin");
   });
+  document.getElementById("authStatePanel").addEventListener("click", handleAccountAction);
   document.getElementById("signInButton").addEventListener("click", () => authenticate("signin"));
   document.getElementById("signUpButton").addEventListener("click", () => authenticate("signup"));
   document.getElementById("resetPasswordButton").addEventListener("click", recoverPassword);
@@ -7988,6 +7993,60 @@ async function refreshUserSyncStatus() {
 function renderAuthStatePanel() {
   const panel = document.getElementById("authStatePanel");
   if (!panel) return;
+  const entryPanel = document.getElementById("authEntryPanel");
+  const heading = document.getElementById("auth-heading");
+  const headingStatus = document.getElementById("auth-heading-status");
+  const emailInput = document.getElementById("authEmailInput");
+  const passwordInput = document.getElementById("authPasswordInput");
+  const signedIn = Boolean(state.session?.access_token && state.session?.user?.email);
+  document.getElementById("authView")?.classList.toggle("account-mode", signedIn);
+  if (entryPanel) entryPanel.hidden = signedIn;
+  if (emailInput) emailInput.required = !signedIn;
+  if (passwordInput) passwordInput.required = !signedIn;
+
+  if (signedIn) {
+    const connectivity = getConnectivitySummary();
+    if (heading) heading.textContent = languageText("Mi cuenta", "My account", "Mon compte", "Minha conta");
+    if (headingStatus) headingStatus.textContent = languageText("Sesión activa", "Active session", "Session active", "Sessão ativa");
+    panel.classList.add("account-summary-panel");
+    panel.innerHTML = `
+      <div class="account-summary-intro">
+        <div>
+          <span class="report-kicker">${escapeHtml(languageText("Cuenta Vibe", "Vibe account", "Compte Vibe", "Conta Vibe"))}</span>
+          <h3>${escapeHtml(state.session.user.email)}</h3>
+          <p>${escapeHtml(languageText(
+            "Tu cuenta conecta Vibeapp y VibePWA. Desde aquí accedes a ayuda, preferencias y controles operativos.",
+            "Your account connects Vibeapp and VibePWA. Access help, preferences, and operational controls here.",
+            "Votre compte relie Vibeapp et VibePWA. Accédez ici à l'aide, aux préférences et aux contrôles opérationnels.",
+            "Sua conta conecta Vibeapp e VibePWA. Acesse aqui ajuda, preferências e controles operacionais.",
+          ))}</p>
+        </div>
+        <span class="sync-status-chip ${connectivity.tone === "ok" ? "is-ok" : connectivity.tone === "neutral" ? "is-neutral" : "is-warn"}">${escapeHtml(connectivity.text)}</span>
+      </div>
+      <div class="account-summary-grid">
+        <article>
+          <span>${escapeHtml(languageText("Idioma", "Language", "Langue", "Idioma"))}</span>
+          <strong>${escapeHtml(String(state.language || "es").toUpperCase())}</strong>
+          <small>${escapeHtml(languageText("Se cambia en la barra superior.", "Change it in the top bar.", "Modifiez-la dans la barre supérieure.", "Altere na barra superior."))}</small>
+        </article>
+        <article>
+          <span>${escapeHtml(languageText("Privacidad", "Privacy", "Confidentialité", "Privacidade"))}</span>
+          <strong>${escapeHtml(languageText("Tus datos, tu control", "Your data, your control", "Vos données, votre contrôle", "Seus dados, seu controle"))}</strong>
+          <small>${escapeHtml(languageText("Preferencias y respaldos viven en Operación.", "Preferences and backups live in Operation.", "Les préférences et sauvegardes se trouvent dans Opération.", "Preferências e backups ficam em Operação."))}</small>
+        </article>
+      </div>
+      <div class="account-primary-actions">
+        <button class="primary-button" type="button" data-account-action="profile">${escapeHtml(languageText("Perfil y dispositivos", "Profile and devices", "Profil et appareils", "Perfil e dispositivos"))}</button>
+        <button class="ghost-button" type="button" data-account-action="privacy">${escapeHtml(languageText("Privacidad y respaldos", "Privacy and backups", "Confidentialité et sauvegardes", "Privacidade e backups"))}</button>
+        <button class="ghost-button" type="button" data-account-action="signout">${escapeHtml(t("buttons.signOut"))}</button>
+      </div>
+    `;
+    return;
+  }
+
+  panel.classList.remove("account-summary-panel");
+  if (heading) heading.textContent = languageText("Iniciar sesión", "Sign in", "Se connecter", "Entrar");
+  if (headingStatus) headingStatus.textContent = languageText("Acceso seguro", "Secure access", "Accès sécurisé", "Acesso seguro");
   const configReady = Boolean(state.config?.supabaseUrl && state.config?.supabasePublishableKey);
   const tokenReady = Boolean(state.session?.access_token);
   const refreshReady = Boolean(state.session?.refresh_token);
@@ -8009,6 +8068,18 @@ function renderAuthStatePanel() {
     [tokenReady, tokenReady ? t("labels.authTokenReady") : t("labels.authTokenMissing")],
     [refreshReady, refreshReady ? t("labels.authRefreshReady") : t("labels.authRefreshMissing")],
   ];
+  if (!state.pendingAuthReturn) {
+    panel.innerHTML = `
+      <strong>${escapeHtml(languageText("Una cuenta para todo Vibe", "One account for all of Vibe", "Un compte pour tout Vibe", "Uma conta para todo o Vibe"))}</strong>
+      <p>${escapeHtml(languageText(
+        "Usa el mismo correo en Vibeapp y VibePWA para mantener tus capturas, historias y archivos sincronizados.",
+        "Use the same email in Vibeapp and VibePWA to keep captures, stories, and files synchronized.",
+        "Utilisez la même adresse dans Vibeapp et VibePWA pour synchroniser captures, histoires et fichiers.",
+        "Use o mesmo e-mail no Vibeapp e no VibePWA para sincronizar capturas, histórias e arquivos.",
+      ))}</p>
+    `;
+    return;
+  }
   panel.innerHTML = `
     <strong>${t("labels.authStateTitle")}</strong>
     <div class="auth-state-grid">
@@ -8026,6 +8097,25 @@ function renderAuthStatePanel() {
     <p class="card-meta">${escapeHtml(pendingReturn)}</p>
     <p class="auth-next-step"><strong>${t("labels.authNextStep")}:</strong> ${escapeHtml(nextStep)}</p>
   `;
+}
+
+function handleAccountAction(event) {
+  const action = event.target.closest("[data-account-action]")?.dataset.accountAction;
+  if (!action) return;
+  if (action === "signout") {
+    signOut();
+    return;
+  }
+  const target = {
+    help: { view: "manual", focus: "manualSearchInput" },
+    operation: { view: "admin", focus: "productSettingsPanel" },
+    privacy: { view: "admin", focus: "privacy-title" },
+    profile: { view: "admin", focus: "profileForm" },
+    automation: { view: "automation", focus: "skillList" },
+  }[action];
+  if (!target) return;
+  safeShowView(target.view);
+  requestAnimationFrame(() => focusAppElement(target.focus));
 }
 
 function showAuthView() {
@@ -8119,7 +8209,7 @@ function applyLanguage() {
   if (document.getElementById("clearDemoButton")) document.getElementById("clearDemoButton").textContent = t("buttons.clearDemo");
   if (document.getElementById("voiceCommandButton")) document.getElementById("voiceCommandButton").textContent = t("buttons.voiceCommand");
   if (document.getElementById("reloadAppButton")) document.getElementById("reloadAppButton").textContent = t("buttons.reloadApp");
-  document.getElementById("privacy-title").textContent = languageText("Privacidad", "Privacy", "Confidentialite");
+  document.getElementById("privacy-title").textContent = languageText("Privacidad", "Privacy", "Confidentialité", "Privacidade");
   document.getElementById("privacyLocalTitle").textContent = t("labels.privacyLocalTitle");
   document.getElementById("privacyLocalHelp").textContent = t("labels.privacyLocalHelp");
   document.getElementById("privacyAnalyticsTitle").textContent = t("labels.privacyAnalyticsTitle");

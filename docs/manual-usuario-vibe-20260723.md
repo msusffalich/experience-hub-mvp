@@ -191,3 +191,28 @@ Los controles técnicos están concentrados en Operación para que el uso diario
 5. Genera una publicación PDF para un viaje, una semana de trabajo o un recuerdo familiar.
 
 Vibe mejora cuando tu memoria mantiene el control: captura con libertad, organiza con calma y conserva los hechos con honestidad.
+
+## 19. Cuenta y Operación
+
+**Cuenta** muestra el estado de tu sesión, el correo que une Vibeapp con
+VibePWA, el idioma y accesos simples a perfil, dispositivos, privacidad y
+respaldos. Cuando ya iniciaste sesión, Vibe no vuelve a mostrarte el formulario
+de acceso.
+
+**Operación** concentra los controles que no necesitas durante el uso diario:
+actualizar datos, revisar la nube, respaldar, restaurar, administrar grupos y
+consultar diagnósticos. Sus temas permanecen cerrados hasta que eliges abrir
+uno. Así puedes llegar directamente a Privacidad o Perfil sin cargar una
+pantalla interminable de controles.
+
+Ruta recomendada:
+
+1. Usa **Cuenta** para confirmar con qué correo estás trabajando.
+2. Entra a **Perfil y dispositivos** para revisar tu información y fuentes.
+3. Entra a **Privacidad y respaldos** antes de cambios importantes o para
+   descargar una copia.
+4. Abre otras secciones de **Operación** solo cuando necesites esa tarea.
+
+En móvil, las explicaciones y controles deben conservar palabras completas y
+no desbordar la pantalla. Cuenta y Operación están disponibles en español,
+inglés, francés y portugués.

@@ -57,6 +57,17 @@ expect(index.includes("asset-technical-filters"), "Asset technical controls are 
 expect(index.includes("manual-review-drawer"), "Manual review controls are not isolated.");
 expect(index.includes("map-export-drawer"), "Obsidian export controls are not isolated.");
 expect(index.includes('id="publicationAdvancedFilters"'), "Publication precision filters must be isolated from the primary workflow.");
+expect(index.includes('id="authEntryPanel"'), "Account must separate sign-in controls from the signed-in summary.");
+expect(app.includes("function handleAccountAction(event)"), "Account actions must use one explicit controller.");
+expect(app.includes('entryPanel.hidden = signedIn'), "Signed-in users must not see the sign-in form.");
+expect(app.includes('account-mode", signedIn'), "Account layout must distinguish the signed-in state.");
+expect(styles.includes(".account-summary-panel"), "Signed-in account summary styles are missing.");
+expect(!index.includes('class="admin-section-drawer" open'), "Operation technical drawers must stay collapsed by default.");
+[
+  '"Mi cuenta", "My account", "Mon compte", "Minha conta"',
+  '"Privacidad", "Privacy", "Confidentialité", "Privacidade"',
+  '"Perfil y dispositivos", "Profile and devices", "Profil et appareils", "Perfil e dispositivos"',
+].forEach((copy) => expect(app.includes(copy), `Account locale contract is incomplete: ${copy}`));
 
 [
   "embeddingBackfillButton",
