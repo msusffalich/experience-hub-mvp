@@ -1,4 +1,4 @@
-const APP_VERSION = "20260728-account-shell-module-726";
+const APP_VERSION = "20260728-capture-compat-observer-727";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";

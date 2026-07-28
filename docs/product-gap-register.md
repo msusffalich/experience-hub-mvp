@@ -24,7 +24,7 @@ Este archivo evita que los pendientes queden escondidos en conversaciones, notas
 
 | Area | Brecha | Estado real | Prueba requerida | Criterio de cierre |
 |---|---|---|---|---|
-| Captura Vibeapp -> servidor | La ruta experimental mezcló captura con experiencia y perdió/rechazó elementos reales | Bloqueada y en reemplazo | Matriz real de texto, imagen, audio, video, documento y contexto; sin señal; reinicio; respuesta perdida; reintento | Una sola ruta conserva original, catálogo y recibo; VibePWA muestra el mismo registro; ningún elemento desaparece |
+| Captura Vibeapp -> servidor | La ruta experimental mezcló captura con experiencia y perdió/rechazó elementos reales | Núcleo canónico aislado; observación de compatibilidad activa en 727 | Revisar `/api/captures/status` con tráfico real y ejecutar matriz de texto, imagen, audio, video, documento y contexto; sin señal; reinicio; respuesta perdida; reintento | Una sola ruta conserva original, catálogo y recibo; VibePWA muestra el mismo registro; ningún elemento desaparece |
 | Arquitectura de historias | Rutas y documentos antiguos aún permiten crear experiencias desde Vibeapp | Reestructuración en curso | Inventario automático + pruebas de separación + UI de historia en VibePWA | Vibeapp no envía campos de historia; VibePWA es único escritor de experiencias/eventos |
 | UI/UX VibePWA | Navegación y formularios mezclan producto, operación y legado | Reestructuración en curso | Auditoría visual en escritorio/tableta/móvil y recorridos con usuario no técnico | Inicio, Historias, Evidencia, Inteligencia, Publicar y Cuenta cubren los flujos sin controles técnicos visibles |
 | Alcance analítico | Reportes, Hallazgos y Publicaciones aplican filtros similares con implementaciones separadas | Núcleo común listo; UI pendiente | Misma selección produce el mismo conjunto en las tres salidas | Período, persona/grupo y base común; categoría opcional; Publicaciones confirma contenido visual |
@@ -36,6 +36,13 @@ Este archivo evita que los pendientes queden escondidos en conversaciones, notas
 | Meta/Oakley/Ray-Ban | Captura visual e importacion de fotos/videos desde Meta AI/Galeria | Pendiente hardware/API | Media real importada desde lentes + JSON/HTML de cuenta si aplica | Fotos/videos quedan como activos con origen Meta y procesamiento correcto; voz de V se mantiene en telefono/tablet |
 | iPad/tablets | UX y layout tactil | Listo parcial / Android bloqueado | iPad instalo/lanzo Vibeapp 536; flujo general OK; falta revalidar Vibeapp 537 para feedback de `V`; tablet Android bloqueada por falta de dispositivo | Captura, Estado, Cuenta, Archivos, navegacion y comando `V` sin desbordes ni silencios |
 | Wake-up nativo con app cerrada | Activar Vibe desde iOS/Android sin tener la pantalla abierta | Pendiente hardware/API | iPhone/Android real + App Intents/Shortcuts o servicio nativo aprobado por el sistema | `V` dispara una accion segura de captura sin abrir flujo manual, dentro de las reglas de cada OS |
+
+### Condicion previa del corte movil
+
+La copia Vibeapp del repositorio Windows declara `0.4.7+568`, mientras los
+handchecks describen builds `0.5.34+656/660` instaladas. Antes de cambiar el
+endpoint movil se debe copiar la fuente exacta de la build vigente y verificar
+que codigo auditado, compilado e instalado corresponden a la misma version.
 
 ## Brechas cerradas recientes
 

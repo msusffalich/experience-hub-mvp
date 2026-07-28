@@ -27,6 +27,9 @@ try {
   assert.equal(status.mode, "off");
   assert.equal(status.ready, false);
   assert.equal(status.architecture, "capture_first_story_later");
+  assert.equal(status.compatibility.mode, "observe_only");
+  assert.equal(status.compatibility.writesDuplicated, false);
+  assert.equal(status.compatibility.observed, 0);
 
   const postResponse = await fetch(`http://127.0.0.1:${port}/api/captures`, {
     method: "POST",

@@ -16,6 +16,9 @@ secundarias se abren dentro de su espacio padre y los controles tecnicos viven e
   contextual. No contiene datos, persistencia ni reglas de negocio.
 - `account-shell.js`: presentacion de Cuenta y resolucion de sus acciones
   permitidas. No accede a tokens, API ni almacenamiento.
+- `lib/capture/`: contrato, orquestador y adaptadores de la ruta unica de
+  capturas. `capture-compatibility.mjs` observa las rutas moviles anteriores y
+  mide su equivalencia sin duplicar escrituras.
 - `app.js`: estado de interfaz y orquestacion de los flujos funcionales.
 - `server.js`: API, persistencia, sincronizacion e integraciones.
 - `database/`: contratos y migraciones de Supabase.

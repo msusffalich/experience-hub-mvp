@@ -13,6 +13,11 @@ import { createSupabaseEvidenceV2Adapters } from "./lib/evidence-pipeline-v2-sup
 import { normalizeExperienceSubmissionV2 } from "./lib/evidence-http-contract-v2.mjs";
 import { createCaptureOrchestrator, CapturePipelineError } from "./lib/capture/capture-orchestrator.mjs";
 import { createSupabaseCaptureAdapters } from "./lib/capture/capture-supabase-adapters.mjs";
+import {
+  createCaptureCompatibilityMonitor,
+  inspectLegacyIntegrationCapture,
+  inspectLegacyMediaCapture,
+} from "./lib/capture/capture-compatibility.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 await loadDotEnv();
@@ -45,6 +50,8 @@ const EVIDENCE_PIPELINE_CANARY_USERS = new Set(
 );
 const CAPTURE_PIPELINE_MODE = String(process.env.CAPTURE_PIPELINE_MODE || "off").trim().toLowerCase();
 const CAPTURE_PIPELINE_BUCKET = process.env.CAPTURE_PIPELINE_BUCKET || "vibe-captures";
+const CAPTURE_COMPATIBILITY_MONITOR_LIMIT = 250;
+const captureCompatibilityMonitors = new Map();
 const ASSET_UPLOAD_ATTEMPTS_TABLE = "asset_upload_attempts";
 const MAX_JSON_BODY_LENGTH = Number(process.env.MAX_JSON_BODY_LENGTH || 40_000_000);
 const MAX_MEDIA_BODY_LENGTH = Number(process.env.MAX_MEDIA_BODY_LENGTH || 90_000_000);
@@ -554,6 +561,7 @@ async function handleApi(req, res, url) {
   if (url.pathname === "/api/integration/ingest" && req.method === "POST") {
     const user = await getRequestUser(req);
     const body = await readJson(req);
+    observeLegacyIntegrationBatch(body, user);
     sendJson(res, 201, await ingestIntegrationSignals(body, user));
     return;
   }
@@ -691,11 +699,22 @@ async function handleApi(req, res, url) {
     const contentType = req.headers["content-type"] || "";
     if (contentType.includes("multipart/form-data")) {
       const upload = await readMultipartMedia(req, contentType);
+      getCaptureCompatibilityMonitor(user).record(inspectLegacyMediaCapture(upload.media, {
+        route: "/api/media",
+        ownerUserId: user.id,
+        bytes: upload.bytes,
+        idempotencyKey: String(req.headers["idempotency-key"] || "").trim(),
+      }));
       const saved = await saveMediaBuffer(upload.media, upload.bytes, user);
       sendJson(res, 201, await upsertAssetEvidence(saved, user, { requireRemote: true }));
       return;
     }
     const media = await readJson(req);
+    getCaptureCompatibilityMonitor(user).record(inspectLegacyMediaCapture(media, {
+      route: "/api/media",
+      ownerUserId: user.id,
+      idempotencyKey: String(req.headers["idempotency-key"] || "").trim(),
+    }));
     const saved = await saveMedia(media, user);
     sendJson(res, 201, await upsertAssetEvidence(saved, user, { requireRemote: true }));
     return;
@@ -2622,6 +2641,32 @@ function validateIntegrationSignal(signal = {}, user = null) {
     normalized,
     acceptedAt: new Date().toISOString(),
   };
+}
+
+function observeLegacyIntegrationBatch(body = {}, user = { id: LOCAL_USER_ID }) {
+  const signals = Array.isArray(body.signals)
+    ? body.signals
+    : Array.isArray(body)
+      ? body
+      : [body.signal || body].filter(Boolean);
+  for (const signal of signals) {
+    getCaptureCompatibilityMonitor(user).record(inspectLegacyIntegrationCapture(signal, {
+      route: "/api/integration/ingest",
+      ownerUserId: user.id,
+    }));
+  }
+}
+
+function getCaptureCompatibilityMonitor(user = { id: LOCAL_USER_ID }) {
+  const key = String(user.id || LOCAL_USER_ID);
+  if (!captureCompatibilityMonitors.has(key)) {
+    if (captureCompatibilityMonitors.size >= CAPTURE_COMPATIBILITY_MONITOR_LIMIT) {
+      const oldestKey = captureCompatibilityMonitors.keys().next().value;
+      captureCompatibilityMonitors.delete(oldestKey);
+    }
+    captureCompatibilityMonitors.set(key, createCaptureCompatibilityMonitor());
+  }
+  return captureCompatibilityMonitors.get(key);
 }
 
 async function ingestIntegrationSignals(body = {}, user = { id: LOCAL_USER_ID }) {
@@ -6799,6 +6844,7 @@ async function getCapturePipelineStatus(user = {}) {
       ready: false,
       mode: CAPTURE_PIPELINE_MODE,
       architecture: "capture_first_story_later",
+      compatibility: getCaptureCompatibilityMonitor(user).snapshot(),
       checks,
     };
   }
@@ -6811,6 +6857,7 @@ async function getCapturePipelineStatus(user = {}) {
       ready: false,
       mode: CAPTURE_PIPELINE_MODE,
       architecture: "capture_first_story_later",
+      compatibility: getCaptureCompatibilityMonitor(user).snapshot(),
       checks,
     };
   }
@@ -6862,6 +6909,7 @@ async function getCapturePipelineStatus(user = {}) {
     ready: Object.values(checks).every((check) => check.ok),
     mode: CAPTURE_PIPELINE_MODE,
     architecture: "capture_first_story_later",
+    compatibility: getCaptureCompatibilityMonitor(user).snapshot(),
     checks,
   };
 }

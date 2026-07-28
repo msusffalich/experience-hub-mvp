@@ -21,6 +21,7 @@ const files = {
   reset: readFileSync("reset.html", "utf8"),
   manifest: readFileSync("manifest.webmanifest", "utf8"),
   server: readFileSync("server.js", "utf8"),
+  captureCompatibility: readFileSync("lib/capture/capture-compatibility.mjs", "utf8"),
   packageJson: readFileSync("package.json", "utf8"),
   requirements: readFileSync("requirements.txt", "utf8"),
   railpack: readFileSync("railpack.json", "utf8"),
@@ -75,6 +76,27 @@ assert(files.reset.includes(version) && files.reset.includes("getRegistrations")
 assert(files.serviceWorker.includes("NETWORK_ONLY_PATHS") && files.serviceWorker.includes('"/product-shell.js"') && files.serviceWorker.includes('"/account-shell.js"') && files.serviceWorker.includes('"/app.js"') && files.serviceWorker.includes('cache: "no-store"'), "service-worker.js must never cache the app shell files.");
 assert(files.productShell.includes("global.VibeProductShell = Object.freeze") && files.productShell.includes("function activate("), "The product shell module contract is incomplete.");
 assert(files.accountShell.includes("global.VibeAccountShell = Object.freeze") && files.accountShell.includes("function renderSignedIn("), "The account shell module contract is incomplete.");
+assert(
+  files.captureCompatibility.includes("inspectLegacyIntegrationCapture")
+    && files.captureCompatibility.includes("inspectLegacyMediaCapture")
+    && files.captureCompatibility.includes('mode: "observe_only"')
+    && files.captureCompatibility.includes("writesDuplicated: false"),
+  "Capture compatibility observer must translate legacy inputs without duplicating writes.",
+);
+assert(
+  files.server.includes("observeLegacyIntegrationBatch(body, user)")
+    && files.server.includes("getCaptureCompatibilityMonitor(user).record(inspectLegacyMediaCapture")
+    && files.server.includes("compatibility: getCaptureCompatibilityMonitor(user).snapshot()")
+    && files.server.includes("const captureCompatibilityMonitors = new Map()")
+    && files.server.includes("const CAPTURE_COMPATIBILITY_MONITOR_LIMIT = 250")
+    && files.server.includes("captureCompatibilityMonitors.size >= CAPTURE_COMPATIBILITY_MONITOR_LIMIT"),
+  "Legacy capture routes must report compatibility through the observe-only monitor.",
+);
+assert(
+  files.packageJson.includes('"verify:capture-compatibility"')
+    && files.packageJson.includes("npm run verify:capture-compatibility"),
+  "Release checks must protect the capture compatibility observer.",
+);
 assert(files.app.includes("const fullAmbitionOverall") && files.app.includes("Current delivery") && files.app.includes("Entrega actual"), "Global progress must separate current delivery from full future ambition.");
 assert(files.app.includes("const operatingPwaScore") && files.app.includes("Release PWA verificable") && files.app.includes("verifiable PWA gate"), "Global progress must include the verified PWA delivery gate.");
 assert(files.app.includes("Ruta operativa al 90") && files.app.includes("Operating route to 90"), "Global progress must separate the operating route from future native/connectors horizon.");

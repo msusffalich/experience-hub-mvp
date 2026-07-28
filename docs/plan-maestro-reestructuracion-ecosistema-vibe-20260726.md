@@ -758,6 +758,22 @@ Estado al cierre del bloque 724:
   posterior, porque requiere fronteras de módulos y pruebas de contrato
   independientes; no se realizará como reescritura masiva.
 
+### Estado al cierre del bloque 727
+
+- `product-shell.js` y `account-shell.js` ya separan navegacion y Cuenta sin
+  mover datos, autenticacion ni persistencia;
+- la ruta canonica `POST /api/captures` sigue aislada hasta completar el corte
+  movil;
+- `capture-compatibility.mjs` traduce en memoria las entradas de
+  `/api/integration/ingest` y `/api/media` al contrato canonico;
+- el modo es exclusivamente `observe_only`: no escribe otra copia, no cambia
+  la respuesta de produccion y no crea historias;
+- `/api/captures/status` expone conteos de compatibilidad por ruta y motivo para
+  decidir el corte con evidencia real;
+- medios sin bytes completos quedan identificados como incompatibles; referencias
+  antiguas a experiencias o eventos quedan como diagnostico y se excluyen del
+  comando canonico, sin bloquear el flujo vigente.
+
 ## 13. Estrategia de pruebas
 
 ### 13.1 Niveles
