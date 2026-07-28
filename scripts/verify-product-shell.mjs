@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 
 const app = readFileSync("app.js", "utf8");
+const productShell = readFileSync("product-shell.js", "utf8");
 const index = readFileSync("index.html", "utf8");
 const styles = readFileSync("styles.css", "utf8");
 const failures = [];
@@ -49,10 +50,14 @@ expect(index.includes('id="contextNavigationRootButton"'), "Secondary tools need
 expect(index.includes('id="contextNavigationLabel"'), "Secondary tools need a clear location label.");
 expect(app.includes('document.querySelectorAll(".nav-item, .context-nav-item")'), "Primary and contextual navigation must share the same event binding.");
 expect(app.includes('document.getElementById("contextNavigationRootButton")?.addEventListener'), "The contextual return control is not bound.");
-expect(app.includes("const isRootView = view === root;"), "Primary spaces must hide the contextual toolbar.");
-expect(app.includes("navigation.hidden = isRootView"), "Contextual navigation must only appear inside a secondary tool.");
+expect(index.indexOf("product-shell.js") < index.indexOf("app.js"), "The product shell module must load before app.js.");
+expect(productShell.includes("const isRootView = view === navRoot;"), "Primary spaces must hide the contextual toolbar.");
+expect(productShell.includes("navigation.hidden = isRootView"), "Contextual navigation must only appear inside a secondary tool.");
 expect(app.includes("function getProductViewContract(view)"), "Navigation must use the DOM-backed product view contract.");
-expect(app.includes("if (!section || !root || !rootButton) return null;"), "Navigation must reject incomplete view contracts.");
+expect(app.includes("window.VibeProductShell?.getViewContract(view)"), "app.js must delegate view contracts to the product shell module.");
+expect(app.includes("window.VibeProductShell?.activate(view)"), "app.js must delegate view activation to the product shell module.");
+expect(productShell.includes("if (!section || !navRoot || !rootButton) return null;"), "Navigation must reject incomplete view contracts.");
+expect(productShell.includes("global.VibeProductShell = Object.freeze"), "The product shell must expose one immutable public contract.");
 expect(app.includes("if (getProductViewContract(view)) safeShowView(view);"), "Initial URL navigation must validate the same product view contract.");
 expect(!app.includes("PRODUCT_NAV_ROOT_BY_VIEW"), "Navigation roots must not be duplicated in JavaScript.");
 expect(!index.includes('onclick="showView(') && !app.includes('onclick="showView('), "Inline view navigation must stay removed.");
@@ -76,6 +81,9 @@ expect(app.includes('entryPanel.hidden = signedIn'), "Signed-in users must not s
 expect(app.includes('account-mode", signedIn'), "Account layout must distinguish the signed-in state.");
 expect(styles.includes(".account-summary-panel"), "Signed-in account summary styles are missing.");
 expect(!index.includes('class="admin-section-drawer" open'), "Operation technical drawers must stay collapsed by default.");
+expect(index.includes('class="operation-history-drawer"'), "Historical validation controls need one isolated audit drawer.");
+expect(index.indexOf('id="adminAdvancedDrawer"') < index.indexOf('id="coreMvpGatePanel"'), "Historical validation controls must remain inside Advanced diagnostics.");
+expect(styles.includes(".operation-history-drawer"), "Historical validation drawer styles are missing.");
 [
   '"Mi cuenta", "My account", "Mon compte", "Minha conta"',
   '"Privacidad", "Privacy", "Confidentialité", "Privacidade"',

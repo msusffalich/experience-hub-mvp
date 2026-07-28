@@ -9,7 +9,7 @@ Generado por `npm run audit:restructure`. Este documento no decide que se borra;
 - Botones con identificador detectados: 62.
 - Funciones escritoras o reconciliadoras detectadas: 27.
 - Documentos candidatos a canonicos: 10.
-- Documentos historicos o de soporte: 38.
+- Documentos historicos o de soporte: 39.
 
 ## Vistas
 
@@ -189,16 +189,16 @@ Generado por `npm run audit:restructure`. Este documento no decide que se borra;
 - `toggleLocalKeyButton`: Mostrar clave (index.html:1220)
 - `rotateLocalKeyButton`: Aplicar clave (index.html:1221)
 - `unlockLocalButton`: Desbloquear local (index.html:1222)
-- `exportAssetInventoryButton`: Exportar inventario (index.html:1274)
-- `exportAssetInventoryCsvButton`: CSV inventario (index.html:1275)
-- `exportAssetProcessingBacklogButton`: Exportar pendientes (index.html:1276)
-- `exportAssetProcessingBacklogCsvButton`: CSV pendientes (index.html:1277)
-- `exportAssetProcessingChecklistButton`: Checklist de revisión (index.html:1278)
-- `exportAssetMetadataTemplateButton`: Plantilla CSV (index.html:1279)
-- `exportAssetEditableMetadataCsvButton`: CSV edición (index.html:1280)
-- `suggestFilteredAssetTextButton`: Sugerir texto filtrado (index.html:1281)
-- `importAssetMetadataButton`: Importar metadatos (index.html:1282)
-- `saveProfileButton`: Guardar perfil (index.html:1340)
+- `exportAssetInventoryButton`: Exportar inventario (index.html:1269)
+- `exportAssetInventoryCsvButton`: CSV inventario (index.html:1270)
+- `exportAssetProcessingBacklogButton`: Exportar pendientes (index.html:1271)
+- `exportAssetProcessingBacklogCsvButton`: CSV pendientes (index.html:1272)
+- `exportAssetProcessingChecklistButton`: Checklist de revisión (index.html:1273)
+- `exportAssetMetadataTemplateButton`: Plantilla CSV (index.html:1274)
+- `exportAssetEditableMetadataCsvButton`: CSV edición (index.html:1275)
+- `suggestFilteredAssetTextButton`: Sugerir texto filtrado (index.html:1276)
+- `importAssetMetadataButton`: Importar metadatos (index.html:1277)
+- `saveProfileButton`: Guardar perfil (index.html:1335)
 
 ## Documentacion candidata a canonica
 
@@ -243,6 +243,7 @@ Debe conservarse fuera del recorrido normal del usuario y no presentarse como co
 - `handcheck-vibepwa-722-biblioteca-curacion.md`
 - `handcheck-vibepwa-723-inteligencia-publicacion.md`
 - `handcheck-vibepwa-724-navegacion-limpieza.md`
+- `handcheck-vibepwa-725-modulo-producto.md`
 - `inventory-restructure-20260727.md`
 - `oura-openapi-connector.md`
 - `README.md`

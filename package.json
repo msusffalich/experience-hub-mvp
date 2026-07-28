@@ -43,7 +43,7 @@
     "package:vibeapp:ios": "node scripts/package-vibeapp-ios-handoff.mjs",
     "start": "node server.js",
     "dev": "node server.js",
-    "check": "node --check app.js && node --check server.js && node scripts/smoke-check.mjs && npm run audit:runtime && npm run audit:restructure && npm run verify:obsidian && npm run verify:evidence:v2 && npm run verify:capture-core && npm run verify:output-scope && npm run verify:output-workbench && npm run verify:product-shell && npm run verify:energy-integrity && npm run verify:life-areas",
+    "check": "node --check product-shell.js && node --check app.js && node --check server.js && node scripts/smoke-check.mjs && npm run audit:runtime && npm run audit:restructure && npm run verify:obsidian && npm run verify:evidence:v2 && npm run verify:capture-core && npm run verify:output-scope && npm run verify:output-workbench && npm run verify:product-shell && npm run verify:energy-integrity && npm run verify:life-areas",
     "test": "npm run check"
   }
 }

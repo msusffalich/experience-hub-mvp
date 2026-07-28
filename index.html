@@ -19,10 +19,10 @@
         }
       })();
     </script>
-    <link rel="manifest" href="manifest.webmanifest?v=20260728-product-navigation-724" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260728-product-shell-module-725" />
     <link rel="icon" href="icons/vibe-icon-192.png" type="image/png" />
     <link rel="apple-touch-icon" href="icons/vibe-apple-touch.png" />
-    <link rel="stylesheet" href="styles.css?v=20260728-product-navigation-724" />
+    <link rel="stylesheet" href="styles.css?v=20260728-product-shell-module-725" />
   </head>
   <body>
     <noscript>
@@ -1129,7 +1129,7 @@
             <div class="manual-version-card">
               <div>
                 <span id="manualVersionEyebrow">Versión vigente</span>
-                <strong id="manualVersionValue">20260728-product-navigation-724</strong>
+                <strong id="manualVersionValue">20260728-product-shell-module-725</strong>
                 <p id="manualVersionSummary">Guía práctica organizada por temas para entender el flujo de la app sin leer todo de corrido.</p>
               </div>
               <div class="manual-guide-grid" aria-label="Estructura del manual">
@@ -1243,7 +1243,6 @@
                 <div id="multiDevicePersistencePanel" class="multi-device-persistence-panel"></div>
                 <div id="supabaseDiagnostics" class="supabase-diagnostics"></div>
                 <div id="supabaseSelfTest" class="supabase-diagnostics"></div>
-                <div id="supabasePilotGatePanel" class="supabase-pilot-gate-panel"></div>
                 <div id="offlineQueuePanel" class="offline-queue-panel"></div>
               </details>
 
@@ -1254,10 +1253,6 @@
                 </summary>
                 <div id="pilotParticipantsPanel" class="pilot-participants-panel"></div>
                 <div id="pilotFeedbackPanel" class="pilot-feedback-panel"></div>
-                <div id="pilotReadinessPanel" class="pilot-readiness-panel"></div>
-                <div id="pilotInviteKitPanel" class="pilot-invite-kit-panel"></div>
-                <div id="pilotTestPlanPanel" class="pilot-test-panel"></div>
-                <div id="pilotClosureRecordPanel" class="pilot-closure-record-panel"></div>
               </details>
 
               <details class="admin-section-drawer">
@@ -1350,11 +1345,6 @@
                 </summary>
                 <div id="systemHealth" class="health-grid"></div>
                 <div id="developmentRulesPanel" class="development-rules-panel"></div>
-                <div id="coreMvpGatePanel" class="core-mvp-gate-panel"></div>
-                <div id="quickQaPanel" class="quick-qa-panel"></div>
-                <div id="mvpFlowPanel" class="mvp-flow-panel"></div>
-                <div id="mvpClosurePanel" class="mvp-closure-panel"></div>
-                <div id="uiQualityPanel" class="ui-quality-panel"></div>
               </details>
 
               <details id="adminAdvancedDrawer" class="admin-section-drawer" tabindex="-1">
@@ -1367,6 +1357,22 @@
                 <div id="externalIntegrationPanel" class="external-integration-panel"></div>
                 <div id="parallelWorkstreamsPanel" class="parallel-workstreams-panel"></div>
                 <div id="parallelBacklog" class="parallel-backlog"></div>
+                <details class="operation-history-drawer">
+                  <summary>
+                    <span>Registro histórico de validación</span>
+                    <small>Controles anteriores conservados para auditoría</small>
+                  </summary>
+                  <div id="supabasePilotGatePanel" class="supabase-pilot-gate-panel"></div>
+                  <div id="pilotReadinessPanel" class="pilot-readiness-panel"></div>
+                  <div id="pilotInviteKitPanel" class="pilot-invite-kit-panel"></div>
+                  <div id="pilotTestPlanPanel" class="pilot-test-panel"></div>
+                  <div id="pilotClosureRecordPanel" class="pilot-closure-record-panel"></div>
+                  <div id="coreMvpGatePanel" class="core-mvp-gate-panel"></div>
+                  <div id="quickQaPanel" class="quick-qa-panel"></div>
+                  <div id="mvpFlowPanel" class="mvp-flow-panel"></div>
+                  <div id="mvpClosurePanel" class="mvp-closure-panel"></div>
+                  <div id="uiQualityPanel" class="ui-quality-panel"></div>
+                </details>
                 <div class="panel-heading compact-heading">
                   <h2>Tareas y registros</h2>
                   <span>Operación del servidor local</span>
@@ -1379,6 +1385,7 @@
       </main>
     </div>
 
-    <script src="app.js?v=20260728-product-navigation-724"></script>
+    <script src="product-shell.js?v=20260728-product-shell-module-725"></script>
+    <script src="app.js?v=20260728-product-shell-module-725"></script>
 </body>
 </html>

@@ -11295,6 +11295,38 @@ button.asset-processing-summary-card {
   margin-top: 14px;
 }
 
+.operation-history-drawer {
+  border: 1px dashed rgba(18, 33, 61, 0.18);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.operation-history-drawer > summary {
+  display: grid;
+  gap: 3px;
+  cursor: pointer;
+  padding: 12px;
+}
+
+.operation-history-drawer > summary span {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.operation-history-drawer > summary small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.operation-history-drawer[open] {
+  padding: 0 12px 12px;
+}
+
+.operation-history-drawer[open] > :not(summary) + :not(summary) {
+  margin-top: 12px;
+}
+
 .admin-two-column-section {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

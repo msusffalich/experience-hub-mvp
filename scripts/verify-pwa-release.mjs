@@ -1,6 +1,7 @@
 import { readFileSync, statSync } from "node:fs";
 
 const app = readFileSync("app.js", "utf8");
+const productShell = readFileSync("product-shell.js", "utf8");
 const index = readFileSync("index.html", "utf8");
 const serviceWorker = readFileSync("service-worker.js", "utf8");
 const reset = readFileSync("reset.html", "utf8");
@@ -15,12 +16,14 @@ const check = (condition, message) => {
 };
 
 check(index.includes(`app.js?v=${version}`), "index.html does not reference the current app.js version.");
+check(index.includes(`product-shell.js?v=${version}`), "index.html does not reference the current product shell version.");
 check(index.includes(`styles.css?v=${version}`), "index.html does not reference the current styles.css version.");
 check(index.includes(`manifest.webmanifest?v=${version}`), "index.html does not reference the current manifest version.");
 check(serviceWorker.includes(version), "service-worker.js cache name does not include the current app version.");
 check(reset.includes(version), "reset.html does not redirect to the current app version.");
 check(reset.includes("getRegistrations") && reset.includes("caches.keys"), "reset.html must clear service workers and app caches.");
-check(serviceWorker.includes("NETWORK_ONLY_PATHS") && serviceWorker.includes('"/app.js"') && serviceWorker.includes('cache: "no-store"'), "service worker must bypass caching for app shell files.");
+check(serviceWorker.includes("NETWORK_ONLY_PATHS") && serviceWorker.includes('"/product-shell.js"') && serviceWorker.includes('"/app.js"') && serviceWorker.includes('cache: "no-store"'), "service worker must bypass caching for app shell files.");
+check(productShell.includes("global.VibeProductShell = Object.freeze"), "product shell module contract is incomplete.");
 check(app.includes("const fullAmbitionOverall") && app.includes("Current delivery") && app.includes("Entrega actual"), "global progress must separate current delivery from full future ambition.");
 check(app.includes("const operatingPwaScore") && app.includes("Release PWA verificable") && app.includes("verifiable PWA gate"), "global progress must include the verified PWA delivery gate.");
 check(app.includes("Ruta operativa al 90") && app.includes("Operating route to 90"), "global progress must separate the operating route from future native/connectors horizon.");

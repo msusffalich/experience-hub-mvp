@@ -1,6 +1,29 @@
-﻿# Experience Hub MVP
+﻿# VibePWA
 
-MVP local basado en el documento `Meta_ecosistema__Universo_de_Experiencias_Ecosistema.pdf`.
+Aplicacion web del Ecosistema Vibe para estructurar historias, organizar evidencia,
+producir inteligencia personal y preparar publicaciones. La aplicacion comparte
+identidad, datos y contratos de sincronizacion con Vibeapp; Supabase es la fuente
+de verdad de los registros del usuario.
+
+La interfaz de producto se organiza en seis espacios estables: `Inicio`,
+`Historias`, `Evidencia`, `Inteligencia`, `Publicar` y `Cuenta`. Las herramientas
+secundarias se abren dentro de su espacio padre y los controles tecnicos viven en
+`Cuenta > Operacion`, fuera del flujo cotidiano.
+
+## Arquitectura del producto
+
+- `product-shell.js`: contrato unico de navegacion, activacion de vistas y retorno
+  contextual. No contiene datos, persistencia ni reglas de negocio.
+- `app.js`: estado de interfaz y orquestacion de los flujos funcionales.
+- `server.js`: API, persistencia, sincronizacion e integraciones.
+- `database/`: contratos y migraciones de Supabase.
+- `scripts/`: verificadores de release, contratos y recorridos operativos.
+- `docs/`: manual, blueprint de produccion, handchecks e inventarios.
+
+Los identificadores internos con nombres historicos se conservan mientras formen
+parte de datos persistidos, pruebas o exportaciones. No deben reaparecer en la
+navegacion cotidiana. Se retiran unicamente cuando una auditoria demuestra que no
+tienen consumidores.
 
 ## Arranque local
 
@@ -18,9 +41,12 @@ node start-server.cjs
 
 Ese helper inicia `server.js` desacoplado y deja logs en `server-live-current.log` y `server-live-current.err.log`.
 
-## Alcance ajustado para piloto de 50 usuarios
+## Registro historico de validacion
 
-El cierre inmediato se redefine como un piloto controlado para máximo 50 usuarios. El objetivo es terminar antes con una app estable, usable y auditable, sin esperar automatizaciones de escala masiva.
+Los controles usados durante etapas anteriores se conservan unicamente para
+auditoria y trazabilidad. En la interfaz estan agrupados dentro de `Operacion >
+Diagnostico avanzado > Registro historico de validacion`; no definen el flujo
+actual del producto.
 
 Incluido en el cierre del piloto: captura, librería, Activos multimodales, Reportes, Diario, Agenda local, Publicaciones con aprobación humana, Supabase/Auth/Storage básico, privacidad, respaldos, importación/exportación y revisión humana de pendientes.
 

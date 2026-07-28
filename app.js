@@ -1,4 +1,4 @@
-const APP_VERSION = "20260728-product-navigation-724";
+const APP_VERSION = "20260728-product-shell-module-725";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -6217,61 +6217,29 @@ function productViewTitle(view) {
 }
 
 function getProductViewContract(view) {
-  const normalizedView = String(view || "").trim();
-  if (!normalizedView) return null;
-  const section = document.getElementById(`${normalizedView}View`);
-  const primaryButton = document.querySelector(`.primary-nav-item[data-view="${normalizedView}"]`);
-  const contextButton = document.querySelector(`.context-nav-item[data-view="${normalizedView}"]`);
-  const root = primaryButton?.dataset.navRoot || contextButton?.dataset.navParent || "";
-  const rootButton = root
-    ? document.querySelector(`.primary-nav-item[data-nav-root="${root}"]`)
-    : null;
-  if (!section || !root || !rootButton) return null;
-  return {
-    view: normalizedView,
-    section,
-    root,
-    rootButton,
-    contextButton,
-  };
+  return window.VibeProductShell?.getViewContract(view) || null;
 }
 
 function productNavRoot(view) {
-  return getProductViewContract(view)?.root || "dashboard";
+  return window.VibeProductShell?.rootFor(view) || "dashboard";
 }
 
 function renderContextNavigation(view = getActiveView()) {
-  const navigation = document.getElementById("contextNavigation");
-  if (!navigation) return;
   const root = productNavRoot(view);
-  const isRootView = view === root;
-  const label = document.getElementById("contextNavigationLabel");
-  const rootButton = document.getElementById("contextNavigationRootButton");
-  let visibleCount = 0;
-  navigation.querySelectorAll(".context-nav-item").forEach((button) => {
-    const visible = !isRootView && button.dataset.navParent === root && button.dataset.view !== view;
-    button.hidden = !visible;
-    button.classList.remove("active");
-    if (visible) visibleCount += 1;
-  });
-  if (label) {
-    label.textContent = languageText(
+  window.VibeProductShell?.renderContext(view, {
+    current: languageText(
       `Estás en ${productViewTitle(view)}`,
       `You are in ${productViewTitle(view)}`,
       `Vous êtes dans ${productViewTitle(view)}`,
       `Você está em ${productViewTitle(view)}`,
-    );
-  }
-  if (rootButton) {
-    rootButton.dataset.view = root;
-    rootButton.textContent = languageText(
+    ),
+    back: languageText(
       `Volver a ${productNavLabel(root)}`,
       `Back to ${productNavLabel(root)}`,
       `Retour à ${productNavLabel(root)}`,
       `Voltar para ${productNavLabel(root)}`,
-    );
-  }
-  navigation.hidden = isRootView || (!visibleCount && !rootButton);
+    ),
+  });
 }
 
 async function hydrateFromApi() {
@@ -13620,18 +13588,8 @@ function safeShowView(view) {
 }
 
 function showView(view) {
-  const contract = getProductViewContract(view);
+  const contract = window.VibeProductShell?.activate(view);
   if (!contract) return;
-  const { section, rootButton } = contract;
-  document.querySelectorAll(".nav-item").forEach((item) => item.classList.remove("active"));
-  document.querySelectorAll(".context-nav-item").forEach((item) => item.classList.remove("active"));
-  document.querySelectorAll(".view").forEach((item) => item.classList.remove("active-view"));
-  rootButton?.classList.add("active");
-  document.querySelectorAll(".primary-nav-item").forEach((item) => {
-    if (item === rootButton) item.setAttribute("aria-current", "page");
-    else item.removeAttribute("aria-current");
-  });
-  section.classList.add("active-view");
   document.getElementById("viewTitle").textContent = productViewTitle(view);
   renderContextNavigation(view);
   updateUrlForView(view);

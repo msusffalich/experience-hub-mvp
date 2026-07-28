@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 
 const files = {
   app: readFileSync("app.js", "utf8"),
+  productShell: readFileSync("product-shell.js", "utf8"),
   index: readFileSync("index.html", "utf8"),
   serviceWorker: readFileSync("service-worker.js", "utf8"),
   reset: readFileSync("reset.html", "utf8"),
@@ -26,10 +27,12 @@ for (const [name, text] of Object.entries({
 }
 
 check(files.index.includes(`app.js?v=${version}`), "index.html is not loading the current app.js.");
+check(files.index.includes(`product-shell.js?v=${version}`), "index.html is not loading the current product shell.");
 check(files.index.includes(`styles.css?v=${version}`), "index.html is not loading the current styles.css.");
 check(files.index.includes(`manifest.webmanifest?v=${version}`), "index.html is not loading the current manifest.");
 check(files.serviceWorker.includes(`experience-hub-pwa-${version}`), "service-worker cache name is not aligned with APP_VERSION.");
-check(files.serviceWorker.includes("NETWORK_ONLY_PATHS") && files.serviceWorker.includes('"/app.js"') && files.serviceWorker.includes('cache: "no-store"'), "app shell files must bypass the service worker cache.");
+check(files.serviceWorker.includes("NETWORK_ONLY_PATHS") && files.serviceWorker.includes('"/product-shell.js"') && files.serviceWorker.includes('"/app.js"') && files.serviceWorker.includes('cache: "no-store"'), "app shell files must bypass the service worker cache.");
+check(files.productShell.includes("global.VibeProductShell = Object.freeze"), "product-shell.js does not expose the stable navigation contract.");
 check(files.reset.includes("getRegistrations") && files.reset.includes("caches.keys"), "reset.html must clear service workers and caches.");
 
 check(files.app.includes("const fullAmbitionOverall"), "global progress does not separate current delivery from future ambition.");

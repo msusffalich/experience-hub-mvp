@@ -1,4 +1,4 @@
-const CACHE_NAME = "experience-hub-pwa-20260728-product-navigation-724";
+const CACHE_NAME = "experience-hub-pwa-20260728-product-shell-module-725";
 const APP_SHELL = [
   "/icons/vibe-logo.jpg",
   "/icons/vibe-logo.png",
@@ -10,6 +10,7 @@ const APP_SHELL = [
 const NETWORK_ONLY_PATHS = new Set([
   "/",
   "/index.html",
+  "/product-shell.js",
   "/app.js",
   "/styles.css",
   "/manifest.webmanifest",

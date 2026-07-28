@@ -14,6 +14,7 @@ function readTextTree(dir, extension = ".dart") {
 
 const files = {
   app: readFileSync("app.js", "utf8"),
+  productShell: readFileSync("product-shell.js", "utf8"),
   index: readFileSync("index.html", "utf8"),
   serviceWorker: readFileSync("service-worker.js", "utf8"),
   reset: readFileSync("reset.html", "utf8"),
@@ -62,13 +63,15 @@ const version = versionMatch?.[1] || "";
 const packageJson = JSON.parse(files.packageJson);
 
 assert(Boolean(version), "APP_VERSION was not found in app.js.");
+assert(files.index.includes(`product-shell.js?v=${version}`), "index.html does not load the current product shell version.");
 assert(files.index.includes(`app.js?v=${version}`), "index.html does not load the current app.js version.");
 assert(files.index.includes(`styles.css?v=${version}`), "index.html does not load the current styles.css version.");
 assert(files.index.includes(`manifest.webmanifest?v=${version}`), "index.html does not load the current manifest version.");
 assert(!files.index.includes("includes(theme)  theme"), "index.html has a broken theme ternary before app boot.");
 assert(files.serviceWorker.includes(`experience-hub-pwa-${version}`), "service-worker.js cache name does not match APP_VERSION.");
 assert(files.reset.includes(version) && files.reset.includes("getRegistrations") && files.reset.includes("caches.keys"), "reset.html must clear PWA caches and redirect to the current version.");
-assert(files.serviceWorker.includes("NETWORK_ONLY_PATHS") && files.serviceWorker.includes('"/app.js"') && files.serviceWorker.includes('cache: "no-store"'), "service-worker.js must never cache the app shell files.");
+assert(files.serviceWorker.includes("NETWORK_ONLY_PATHS") && files.serviceWorker.includes('"/product-shell.js"') && files.serviceWorker.includes('"/app.js"') && files.serviceWorker.includes('cache: "no-store"'), "service-worker.js must never cache the app shell files.");
+assert(files.productShell.includes("global.VibeProductShell = Object.freeze") && files.productShell.includes("function activate("), "The product shell module contract is incomplete.");
 assert(files.app.includes("const fullAmbitionOverall") && files.app.includes("Current delivery") && files.app.includes("Entrega actual"), "Global progress must separate current delivery from full future ambition.");
 assert(files.app.includes("const operatingPwaScore") && files.app.includes("Release PWA verificable") && files.app.includes("verifiable PWA gate"), "Global progress must include the verified PWA delivery gate.");
 assert(files.app.includes("Ruta operativa al 90") && files.app.includes("Operating route to 90"), "Global progress must separate the operating route from future native/connectors horizon.");
