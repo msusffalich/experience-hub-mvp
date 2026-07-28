@@ -19,10 +19,10 @@
         }
       })();
     </script>
-    <link rel="manifest" href="manifest.webmanifest?v=20260727-story-editor-721" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260728-library-curation-722" />
     <link rel="icon" href="icons/vibe-icon-192.png" type="image/png" />
     <link rel="apple-touch-icon" href="icons/vibe-apple-touch.png" />
-    <link rel="stylesheet" href="styles.css?v=20260727-story-editor-721" />
+    <link rel="stylesheet" href="styles.css?v=20260728-library-curation-722" />
   </head>
   <body>
     <noscript>
@@ -452,24 +452,27 @@
               <h2 id="library-heading">Librería de experiencias</h2>
               <span id="libraryCount"></span>
             </div>
-            <div class="filters">
-              <input id="librarySearchInput" type="search" placeholder="Buscar en la librería" />
-              <select id="libraryCategory"></select>
-              <select id="libraryMediaFilter">
-                <option value="all">Todo el contenido</option>
-                <option value="with-media">Con imagen/video</option>
-                <option value="without-media">Sin adjuntos</option>
-              </select>
-              <select id="librarySourceFilter">
-                <option value="all">Todos los orígenes</option>
-                <option value="manual">Captura manual</option>
-                <option value="daily-briefing">Diario</option>
-                <option value="agenda">Agenda</option>
-              </select>
-              <select id="libraryPilotParticipantFilter">
-                <option value="all">Todos los grupos/personas</option>
-              </select>
-            </div>
+            <details class="library-filter-drawer">
+              <summary id="libraryFilterSummary">Filtrar historias</summary>
+              <div class="filters">
+                <input id="librarySearchInput" type="search" placeholder="Buscar en la librería" />
+                <select id="libraryCategory"></select>
+                <select id="libraryMediaFilter">
+                  <option value="all">Todo el contenido</option>
+                  <option value="with-media">Con imagen/video</option>
+                  <option value="without-media">Sin adjuntos</option>
+                </select>
+                <select id="librarySourceFilter">
+                  <option value="all">Todos los orígenes</option>
+                  <option value="manual">Captura manual</option>
+                  <option value="daily-briefing">Diario</option>
+                  <option value="agenda">Agenda</option>
+                </select>
+                <select id="libraryPilotParticipantFilter">
+                  <option value="all">Todos los grupos/personas</option>
+                </select>
+              </div>
+            </details>
             <div id="libraryGrid" class="library-grid"></div>
           </div>
         </section>
@@ -1082,7 +1085,7 @@
             <div class="manual-version-card">
               <div>
                 <span id="manualVersionEyebrow">Versión vigente</span>
-                <strong id="manualVersionValue">20260727-story-editor-721</strong>
+                <strong id="manualVersionValue">20260728-library-curation-722</strong>
                 <p id="manualVersionSummary">Guía práctica organizada por temas para entender el flujo de la app sin leer todo de corrido.</p>
               </div>
               <div class="manual-guide-grid" aria-label="Estructura del manual">
@@ -1332,6 +1335,6 @@
       </main>
     </div>
 
-    <script src="app.js?v=20260727-story-editor-721"></script>
+    <script src="app.js?v=20260728-library-curation-722"></script>
 </body>
 </html>

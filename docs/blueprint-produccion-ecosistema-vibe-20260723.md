@@ -86,6 +86,13 @@ Capacidades principales:
 - administración de grupos, datos, respaldos y operación;
 - manual integrado en español, inglés, francés y portugués.
 
+La interfaz de Historias separa lectura y curación. La tarjeta muestra primero
+la portada, el relato y sus piezas; procedencia, línea de tiempo y borrado son
+secundarios. Reorganizar no presenta seis herramientas simultáneas: la persona
+elige mover archivos, unir, dividir o cambiar el nivel historia/evento, y la
+aplicación abre una sola operación guiada. En móvil, los filtros permanecen
+plegados hasta que la persona los solicita.
+
 ### 4.3 API Vibe y Supabase: el registro común
 
 La API Node y Supabase forman la fuente única de verdad. Toda experiencia, evento, activo y señal de contexto se guarda una sola vez en el registro común, sin importar si fue creada desde Vibeapp o VibePWA.

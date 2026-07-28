@@ -1,4 +1,4 @@
-const APP_VERSION = "20260727-story-editor-721";
+const APP_VERSION = "20260728-library-curation-722";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -446,7 +446,7 @@ const i18n = {
       auth: "Cuenta",
       dashboard: "Inicio",
       capture: "Nueva historia",
-      library: "Librería de experiencias",
+      library: "Historias",
       assetLibrary: "Evidencia",
       agenda: "Agenda Inteligente",
       timeline: "Línea de tiempo contextual",
@@ -1284,7 +1284,7 @@ const i18n = {
       auth: "Account",
       dashboard: "Home",
       capture: "New story",
-      library: "Experience library",
+      library: "Stories",
       assetLibrary: "Evidence",
       agenda: "Intelligent Agenda",
       timeline: "Contextual timeline",
@@ -2137,7 +2137,7 @@ i18n.fr = mergeLocale(i18n.en, {
     auth: "Compte",
     dashboard: "Accueil",
     capture: "Nouvelle histoire",
-    library: "Bibliothèque d'expériences",
+    library: "Histoires",
     assetLibrary: "Preuves",
     agenda: "Agenda intelligent",
     timeline: "Chronologie contextuelle",
@@ -2347,7 +2347,7 @@ i18n.pt = mergeLocale(i18n.es, {
     auth: "Conta",
     dashboard: "Início",
     capture: "Nova história",
-    library: "Biblioteca de experiências",
+    library: "Histórias",
     assetLibrary: "Evidências",
     agenda: "Agenda inteligente",
     timeline: "Linha do tempo contextual",
@@ -5047,6 +5047,8 @@ const state = {
   displayTheme: loadDisplayTheme(),
   pendingAttachments: [],
   captureStoryStep: 1,
+  curationExperienceId: "",
+  curationMode: "overview",
   selectedEvidenceAssetIds: new Set(),
   evidenceAdoptionStatus: null,
   evidenceInboxDateFilter: "capture",
@@ -8331,6 +8333,8 @@ function applyLanguage() {
   document.getElementById("manualMarkAllButton").textContent = languageText("Marcar todo", "Mark all", "Tout marquer", "Marcar tudo");
   document.getElementById("manualResetReviewButton").textContent = languageText("Reiniciar revisión", "Reset review", "Réinitialiser la révision", "Reiniciar revisão");
   document.getElementById("asset-library-heading").textContent = t("viewTitles.assetLibrary");
+  document.getElementById("library-heading").textContent = languageText("Tus historias", "Your stories", "Vos histoires", "Suas histórias");
+  document.getElementById("libraryFilterSummary").textContent = languageText("Filtrar historias", "Filter stories", "Filtrer les histoires", "Filtrar histórias");
   document.getElementById("assetLibraryIntro").textContent = t("labels.assetLibraryIntro");
   document.getElementById("dashboardAgendaTitle").textContent = t("labels.dashboardAgendaTitle");
   document.getElementById("dashboardAgendaStatus").textContent = t("labels.dashboardAgendaStatus");
@@ -13008,7 +13012,15 @@ async function persistCuratedExperiences(experiences = []) {
 }
 
 function toggleExperienceCuration(id) {
-  state.curationExperienceId = state.curationExperienceId === id ? "" : id;
+  const isClosing = state.curationExperienceId === id;
+  state.curationExperienceId = isClosing ? "" : id;
+  state.curationMode = "overview";
+  renderLibrary();
+}
+
+function setExperienceCurationMode(id, mode = "overview") {
+  state.curationExperienceId = id;
+  state.curationMode = ["overview", "evidence", "merge", "split", "levels"].includes(mode) ? mode : "overview";
   renderLibrary();
 }
 
@@ -17431,6 +17443,7 @@ function renderLibrary() {
   const items = getFilteredLibraryExperiences();
   const filtersActive = areLibraryFiltersActive();
   const lastSaved = state.lastSavedExperienceId ? state.experiences.find((item) => item.id === state.lastSavedExperienceId) : null;
+  const curationItem = items.find((item) => item.id === state.curationExperienceId);
   document.getElementById("libraryCount").textContent = `${items.length} ${t("labels.items")}`;
   const notice = buildLibraryVisibilityNotice(items, filtersActive, lastSaved);
   document.getElementById("libraryGrid").innerHTML =
@@ -17438,36 +17451,69 @@ function renderLibrary() {
     (items.length === 0
       ? `<p class="card-meta">${escapeHtml(t("labels.noLibrary"))}</p>`
       : items
-          .map(
-            (item) => `
-              <article class="library-card ${item.id === state.lastSavedExperienceId ? "is-last-saved" : ""}">
-                ${renderPrimaryMedia(item)}
-                <div>
-                  <p class="card-meta">${formatDate(item.timestamp)}</p>
-                  <h3>${escapeHtml(item.title)}</h3>
-                  <div class="pill-row">
-                    <span class="pill">${displayCategory(item.category)}</span>
-                    <span class="pill">${escapeHtml(getExperienceSourceLabel(item))}</span>
-                    ${getExperiencePilotParticipantLabel(item) ? `<span class="pill">${escapeHtml(state.language !== "es" ? "Pilot" : "Piloto")}: ${escapeHtml(getExperiencePilotParticipantLabel(item))}</span>` : ""}
-                    ${item.objective ? `<span class="pill">${escapeHtml(item.objective)}</span>` : ""}
-                    <span class="pill">${normalizeExperienceEvents(item.events || [], item.id).length} ${state.language !== "es" ? "events" : "eventos"}</span>
-                    <span class="pill">${item.attachments?.length || 0} ${t("labels.attachments")}</span>
-                    <span class="pill">${escapeHtml(item.mood)}</span>
-                  </div>
-                  <p>${escapeHtml(item.notes || (state.language !== "es" ? "No notes." : "Sin notas."))}</p>
-                  ${renderLibraryEventPreview(item)}
-                </div>
-                <div class="timeline-actions">
-                  <button class="ghost-button" type="button" onclick="editExperience('${item.id}')">${t("buttons.edit")}</button>
-                  <button class="ghost-button" type="button" onclick="showExperienceInTimeline('${item.id}')">${t("buttons.viewTimeline")}</button>
-                  <button class="ghost-button" type="button" onclick="toggleExperienceCuration('${item.id}')">${state.language === "es" ? "Organizar" : state.language === "fr" ? "Organiser" : state.language === "pt" ? "Organizar" : "Organize"}</button>
-                  <button class="danger-button" type="button" onclick="deleteExperience('${item.id}')">${t("buttons.delete")}</button>
-                </div>
-                ${renderStoryCurationPanel(item)}
-              </article>
-            `,
-          )
-          .join(""));
+          .map((item) => renderLibraryStoryCard(item))
+          .join("") + (curationItem ? renderStoryCurationPanel(curationItem) : ""));
+}
+
+function getLibraryStoryLabels() {
+  if (state.language === "fr") return {
+    events: "événements", files: "fichiers", edit: "Modifier", view: "Voir la chronologie",
+    organize: "Réorganiser", more: "Plus d'options", source: "Origine", delete: "Supprimer",
+    noNarrative: "Cette histoire n'a pas encore de récit.", participant: "Pour",
+  };
+  if (state.language === "pt") return {
+    events: "eventos", files: "arquivos", edit: "Editar", view: "Ver linha do tempo",
+    organize: "Reorganizar", more: "Mais opções", source: "Origem", delete: "Excluir",
+    noNarrative: "Esta história ainda não tem narrativa.", participant: "Para",
+  };
+  if (state.language === "en") return {
+    events: "events", files: "files", edit: "Edit", view: "View timeline",
+    organize: "Reorganize", more: "More options", source: "Source", delete: "Delete",
+    noNarrative: "This story does not have a narrative yet.", participant: "For",
+  };
+  return {
+    events: "eventos", files: "archivos", edit: "Editar", view: "Ver línea de tiempo",
+    organize: "Reorganizar", more: "Más opciones", source: "Origen", delete: "Borrar",
+    noNarrative: "Esta historia todavía no tiene relato.", participant: "Para",
+  };
+}
+
+function renderLibraryStoryCard(item) {
+  const labels = getLibraryStoryLabels();
+  const events = normalizeExperienceEvents(item.events || [], item.id);
+  const attachments = item.attachments || [];
+  const narrative = getExperienceNarrativeTextForExport(item);
+  const participant = getExperiencePilotParticipantLabel(item);
+  return `
+    <article class="library-card ${item.id === state.lastSavedExperienceId ? "is-last-saved" : ""}">
+      ${renderPrimaryMedia(item)}
+      <div class="library-card-content">
+        <div class="library-card-heading">
+          <p class="card-meta">${formatDate(item.timestamp)}</p>
+          <span class="pill">${displayCategory(item.category)}</span>
+        </div>
+        <h3>${escapeHtml(item.title)}</h3>
+        <p class="library-card-narrative ${narrative ? "" : "is-empty"}">${escapeHtml(narrative || labels.noNarrative)}</p>
+        <div class="library-card-facts" aria-label="${escapeHtml(labels.more)}">
+          <span><strong>${events.length}</strong> ${escapeHtml(labels.events)}</span>
+          <span><strong>${attachments.length}</strong> ${escapeHtml(labels.files)}</span>
+          ${participant ? `<span><strong>${escapeHtml(labels.participant)}:</strong> ${escapeHtml(participant)}</span>` : ""}
+        </div>
+        ${renderLibraryEventPreview(item)}
+      </div>
+      <div class="library-card-actions">
+        <button class="primary-button" type="button" onclick="editExperience('${item.id}')">${escapeHtml(labels.edit)}</button>
+        <button class="ghost-button" type="button" onclick="toggleExperienceCuration('${item.id}')">${escapeHtml(labels.organize)}</button>
+        <details class="library-more-actions">
+          <summary>${escapeHtml(labels.more)}</summary>
+          <div>
+            <button class="text-button" type="button" onclick="showExperienceInTimeline('${item.id}')">${escapeHtml(labels.view)}</button>
+            <p class="card-meta">${escapeHtml(labels.source)}: ${escapeHtml(getExperienceSourceLabel(item))}</p>
+            <button class="danger-button" type="button" onclick="deleteExperience('${item.id}')">${escapeHtml(labels.delete)}</button>
+          </div>
+        </details>
+      </div>
+    </article>`;
 }
 
 function areLibraryFiltersActive() {
@@ -23458,10 +23504,18 @@ function renderStoryCurationPanel(item) {
       : language === "pt"
         ? { title: "Organizar esta historia", help: "Reorganize sem excluir: mova arquivos, una historias ou transforme um evento em historia propria.", evidence: "Evidencia vinculada", noEvidence: "Esta historia ainda nao tem arquivos vinculados.", release: "Soltar", move: "Mover para...", moveAction: "Mover", merge: "Unir a outra historia", mergeAction: "Unir historias", split: "Dividir esta historia", splitHelp: "Marque quando começa a segunda parte.", splitAction: "Dividir em duas", demote: "Transformar esta historia em evento", demoteAction: "Mover como evento", choose: "Selecionar historia", events: "Eventos importantes", promote: "Transformar evento em historia", promoteAction: "Criar historia a partir do evento", noEvents: "Nao ha eventos para reorganizar.", record: "Cada operacao fica registrada; arquivos nao sao excluidos ao reorganizar." }
         : { title: "Organize this story", help: "Rearrange without deleting: move files, merge stories, or make an event its own story.", evidence: "Linked evidence", noEvidence: "This story has no linked files yet.", release: "Release", move: "Move to...", moveAction: "Move", merge: "Merge with another story", mergeAction: "Merge stories", split: "Split this story", splitHelp: "Set when the second part begins.", splitAction: "Split in two", demote: "Turn this story into an event", demoteAction: "Move as event", choose: "Choose a story", events: "Meaningful events", promote: "Turn event into a story", promoteAction: "Create story from event", noEvents: "There are no events to reorganize.", record: "Every operation is recorded; rearranging never deletes files." };
+  const guide = language === "es"
+    ? { question: "¿Qué quieres cambiar?", back: "Volver a las opciones", evidence: "Mover archivos", evidenceHelp: "Pasa evidencia a otra historia o devuélvela a la bandeja.", merge: "Unir historias", mergeHelp: "Junta dos relatos del mismo episodio.", split: "Dividir historia", splitHelp: "Separa una historia larga en dos partes.", levels: "Cambiar nivel", levelsHelp: "Convierte un evento en historia o una historia en evento." }
+    : language === "fr"
+      ? { question: "Que voulez-vous modifier ?", back: "Retour aux options", evidence: "Déplacer des fichiers", evidenceHelp: "Déplacez une preuve ou remettez-la dans la boîte.", merge: "Unir des histoires", mergeHelp: "Réunissez deux récits du même épisode.", split: "Diviser l'histoire", splitHelp: "Séparez une longue histoire en deux.", levels: "Changer de niveau", levelsHelp: "Transformez un événement en histoire ou inversement." }
+      : language === "pt"
+        ? { question: "O que você quer mudar?", back: "Voltar às opções", evidence: "Mover arquivos", evidenceHelp: "Mova uma evidência ou devolva-a à bandeja.", merge: "Unir histórias", mergeHelp: "Junte dois relatos do mesmo episódio.", split: "Dividir história", splitHelp: "Separe uma história longa em duas.", levels: "Mudar nível", levelsHelp: "Transforme um evento em história ou o contrário." }
+        : { question: "What do you want to change?", back: "Back to options", evidence: "Move files", evidenceHelp: "Move evidence or return it to the inbox.", merge: "Merge stories", mergeHelp: "Join two accounts of the same episode.", split: "Split story", splitHelp: "Separate a long story into two.", levels: "Change level", levelsHelp: "Turn an event into a story or the other way around." };
   const targets = getCurationTargetExperiences(item.id);
   const targetOptions = [`<option value="">${escapeHtml(labels.choose)}</option>`, ...targets.map((target) => `<option value="${escapeHtml(target.id)}">${escapeHtml(target.title)} · ${escapeHtml(formatDate(target.timestamp))}</option>`)].join("");
   const attachments = item.attachments || [];
   const events = normalizeExperienceEvents(item.events || [], item.id);
+  const mode = state.curationMode || "overview";
   return `
     <section class="story-curation-panel" aria-label="${escapeHtml(labels.title)}">
       <header>
@@ -23471,14 +23525,34 @@ function renderStoryCurationPanel(item) {
         </div>
         <button class="icon-button" type="button" aria-label="${escapeHtml(language === "es" ? "Cerrar organización" : "Close organizing")}" onclick="toggleExperienceCuration('${item.id}')">×</button>
       </header>
-      <div class="story-curation-grid">
-        <section>
+      ${mode === "overview" ? `
+        <h4>${escapeHtml(guide.question)}</h4>
+        <div class="story-curation-action-grid">
+          ${[
+            ["evidence", "▣", guide.evidence, guide.evidenceHelp],
+            ["merge", "⊕", guide.merge, guide.mergeHelp],
+            ["split", "⑂", guide.split, guide.splitHelp],
+            ["levels", "↕", guide.levels, guide.levelsHelp],
+          ].map(([key, icon, title, help]) => `
+            <button type="button" onclick="setExperienceCurationMode('${item.id}', '${key}')">
+              <span aria-hidden="true">${icon}</span>
+              <strong>${escapeHtml(title)}</strong>
+              <small>${escapeHtml(help)}</small>
+            </button>`).join("")}
+        </div>` : `
+        <button class="text-button story-curation-back" type="button" onclick="setExperienceCurationMode('${item.id}', 'overview')">← ${escapeHtml(guide.back)}</button>`}
+      <div class="story-curation-grid is-single-action ${mode === "overview" ? "is-hidden" : ""}">
+        <section class="${mode === "evidence" ? "" : "is-hidden"}">
           <h4>${escapeHtml(labels.evidence)}</h4>
           ${attachments.length ? attachments.map((asset) => {
             const assetId = getAttachmentId(asset);
             return `
               <div class="story-curation-item">
-                <strong>${escapeHtml(asset.name || "Archivo")}</strong>
+                <div class="story-curation-preview">${renderAttachmentMedia(asset, { primary: false }) || `<span>${escapeHtml(asset.kind || asset.type || "Archivo")}</span>`}</div>
+                <div class="story-curation-item-copy">
+                  <strong>${escapeHtml(asset.name || "Archivo")}</strong>
+                  <small>${escapeHtml(asset.kind || asset.type || "")}</small>
+                </div>
                 <div class="story-curation-controls">
                   <select id="curationMoveTarget-${escapeHtml(item.id)}-${escapeHtml(assetId)}">${targetOptions}</select>
                   <button class="ghost-button" type="button" onclick="reassignEvidenceFromCuration('${item.id}', '${escapeHtml(assetId)}', document.getElementById('curationMoveTarget-${escapeHtml(item.id)}-${escapeHtml(assetId)}').value)">${escapeHtml(labels.moveAction)}</button>
@@ -23487,25 +23561,33 @@ function renderStoryCurationPanel(item) {
               </div>`;
           }).join("") : `<p class="card-meta">${escapeHtml(labels.noEvidence)}</p>`}
         </section>
-        <section>
-          <h4>${escapeHtml(labels.merge)}</h4>
-          <div class="story-curation-controls stack-controls">
-            <select id="curationMergeTarget-${escapeHtml(item.id)}">${targetOptions}</select>
-            <button class="primary-button" type="button" onclick="mergeExperiencesFromCuration('${item.id}')">${escapeHtml(labels.mergeAction)}</button>
+        <section class="${mode === "evidence" ? "is-hidden" : ""}">
+          <div class="${mode === "merge" ? "" : "is-hidden"}">
+            <h4>${escapeHtml(labels.merge)}</h4>
+            <div class="story-curation-controls stack-controls">
+              <select id="curationMergeTarget-${escapeHtml(item.id)}">${targetOptions}</select>
+              <button class="primary-button" type="button" onclick="mergeExperiencesFromCuration('${item.id}')">${escapeHtml(labels.mergeAction)}</button>
+            </div>
           </div>
-          <h4>${escapeHtml(labels.split)}</h4>
-          <p class="card-meta">${escapeHtml(labels.splitHelp)}</p>
-          <div class="story-curation-controls stack-controls">
-            <input id="curationSplitAt-${escapeHtml(item.id)}" type="datetime-local" min="${escapeHtml(toDatetimeLocal(item.timestamp))}" max="${escapeHtml(toDatetimeLocal(new Date(new Date(item.timestamp || Date.now()).getTime() + Number(item.duration || 0) * 60000).toISOString()))}">
-            <button class="ghost-button" type="button" onclick="splitExperienceFromCuration('${item.id}')">${escapeHtml(labels.splitAction)}</button>
+          <div class="${mode === "split" ? "" : "is-hidden"}">
+            <h4>${escapeHtml(labels.split)}</h4>
+            <p class="card-meta">${escapeHtml(labels.splitHelp)}</p>
+            <div class="story-curation-controls stack-controls">
+              <input id="curationSplitAt-${escapeHtml(item.id)}" type="datetime-local" min="${escapeHtml(toDatetimeLocal(item.timestamp))}" max="${escapeHtml(toDatetimeLocal(new Date(new Date(item.timestamp || Date.now()).getTime() + Number(item.duration || 0) * 60000).toISOString()))}">
+              <button class="primary-button" type="button" onclick="splitExperienceFromCuration('${item.id}')">${escapeHtml(labels.splitAction)}</button>
+            </div>
           </div>
-          <h4>${escapeHtml(labels.demote)}</h4>
-          <div class="story-curation-controls stack-controls">
-            <select id="curationDegradeTarget-${escapeHtml(item.id)}">${targetOptions}</select>
-            <button class="ghost-button" type="button" onclick="degradeExperienceFromCuration('${item.id}')">${escapeHtml(labels.demoteAction)}</button>
-          </div>
-          <h4>${escapeHtml(labels.events)}</h4>
-          ${events.length ? `
+          <div class="${mode === "levels" ? "story-curation-levels" : "is-hidden"}">
+            <div>
+              <h4>${escapeHtml(labels.demote)}</h4>
+              <div class="story-curation-controls stack-controls">
+                <select id="curationDegradeTarget-${escapeHtml(item.id)}">${targetOptions}</select>
+                <button class="ghost-button" type="button" onclick="degradeExperienceFromCuration('${item.id}')">${escapeHtml(labels.demoteAction)}</button>
+              </div>
+            </div>
+            <div>
+              <h4>${escapeHtml(labels.events)}</h4>
+              ${events.length ? `
             <div class="story-curation-controls stack-controls">
               <select id="curationPromoteEvent-${escapeHtml(item.id)}">
                 <option value="">${escapeHtml(labels.promote)}</option>
@@ -23513,6 +23595,8 @@ function renderStoryCurationPanel(item) {
               </select>
               <button class="ghost-button" type="button" onclick="promoteEventFromCuration('${item.id}')">${escapeHtml(labels.promoteAction)}</button>
             </div>` : `<p class="card-meta">${escapeHtml(labels.noEvents)}</p>`}
+            </div>
+          </div>
         </section>
       </div>
       <p class="story-curation-note">${escapeHtml(labels.record)}</p>

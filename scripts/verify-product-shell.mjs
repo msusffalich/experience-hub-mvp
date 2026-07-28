@@ -103,6 +103,16 @@ expect(app.includes("function setCaptureStoryStep("), "Story editor step control
 expect(app.includes("function renderStoryBuilderReview("), "Story editor review renderer is missing.");
 expect(styles.includes(".story-builder-stepper"), "Story editor stepper styles are missing.");
 expect(styles.includes(".story-review-evidence-strip"), "Story review evidence preview styles are missing.");
+expect(app.includes("function renderLibraryStoryCard("), "Library must use the simplified story card renderer.");
+expect(app.includes("function setExperienceCurationMode("), "Story curation needs an explicit guided-action controller.");
+expect(app.includes('state.curationMode = "overview"'), "Story curation must open on the action chooser.");
+expect(app.includes('class="story-curation-action-grid"'), "Story curation action chooser is missing.");
+expect(app.includes('class="library-more-actions"'), "Secondary Library actions must use progressive disclosure.");
+expect(styles.includes(".library-card-narrative"), "Library narrative-first card styles are missing.");
+expect(styles.includes(".story-curation-preview"), "Story curation evidence previews are missing.");
+expect(styles.includes(".story-curation-action-grid"), "Story curation action styles are missing.");
+expect(index.includes('class="library-filter-drawer"'), "Library filters must collapse on small screens.");
+expect(styles.includes(".library-filter-drawer:not([open]) > .filters"), "Responsive Library filter disclosure styles are missing.");
 
 [
   'auth: "Cuenta"',

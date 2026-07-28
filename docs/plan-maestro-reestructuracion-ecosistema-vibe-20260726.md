@@ -118,6 +118,31 @@ No cambia el contrato de historias, la adopción de evidencia, Supabase,
 Storage ni la sincronización con Vibeapp. El bloque reorganiza la interacción y
 añade una compuerta visual antes del guardado.
 
+### Bloque 722: Biblioteca y curación visual
+
+Este bloque convierte la Biblioteca en una superficie para leer y reorganizar
+historias, no en un tablero operativo:
+
+- El título superior se reduce a **Historias** y el panel se presenta como
+  **Tus historias**.
+- Cada tarjeta prioriza portada, fecha, Área de vida, título, relato y conteos
+  de eventos y archivos.
+- **Editar** y **Reorganizar** son las dos acciones visibles. Línea de tiempo,
+  procedencia y borrado permanecen bajo **Más opciones**.
+- En móvil, los filtros se pliegan bajo **Filtrar historias** para que el
+  contenido aparezca en la primera pantalla.
+- Reorganizar abre un selector con cuatro intenciones: mover archivos, unir,
+  dividir o cambiar el nivel historia/evento.
+- Solo se muestran los controles de la intención elegida.
+- Los archivos vinculados tienen vista previa visual durante la curación.
+- Español, inglés, francés y portugués comparten el mismo contrato.
+- Las verificaciones E2E comprueban la navegación guiada, los cuatro modos, el
+  comportamiento móvil y la ausencia de desbordes.
+
+No se reescriben las operaciones de persistencia. Mover, liberar, unir,
+dividir, promover y degradar siguen usando sus controladores y registros de
+curación existentes.
+
 ## 1. Decisión ejecutiva
 
 Vibe se reestructura alrededor de una separación simple:

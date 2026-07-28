@@ -465,6 +465,54 @@ try {
   }
 
   await evaluate(cdp, `(async () => {
+    const nav = document.querySelector('button[data-view="library"]');
+    if (!nav) throw new Error("library nav missing for visual curation audit");
+    nav.click();
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    const cards = Array.from(document.querySelectorAll("#libraryGrid .library-card"));
+    if (cards.length < 3) throw new Error("library visual audit needs at least three seeded stories");
+    if (cards.some((card) => !card.querySelector(".library-card-narrative") || !card.querySelector(".library-more-actions"))) {
+      throw new Error("library story cards are missing narrative-first content or progressive disclosure");
+    }
+    return true;
+  })()`);
+  await captureVisualAudit(cdp, "library");
+
+  await evaluate(cdp, `(() => {
+    const card = document.querySelector("#libraryGrid .library-card");
+    const organize = Array.from(card?.querySelectorAll(".library-card-actions > button") || [])
+      .find((button) => /reorganizar|reorganize|réorganiser/i.test(button.textContent || ""));
+    if (!organize) throw new Error("guided organize action is missing from the story card");
+    organize.click();
+    const chooser = document.querySelector(".story-curation-action-grid");
+    if (!chooser || chooser.querySelectorAll("button").length !== 4) {
+      throw new Error("story curation must open with exactly four guided choices");
+    }
+    if (!document.querySelector(".story-curation-grid")?.classList.contains("is-hidden")) {
+      throw new Error("story curation controls must stay hidden until an action is chosen");
+    }
+    chooser.scrollIntoView({ block: "center" });
+    return true;
+  })()`);
+  await captureVisualAudit(cdp, "library-curation");
+
+  await evaluate(cdp, `(() => {
+    const card = document.querySelector("#libraryGrid .library-card");
+    const id = card?.querySelector(".library-card-actions > button")?.getAttribute("onclick")?.match(/'([^']+)'/)?.[1];
+    if (!id) throw new Error("story id is missing during guided curation audit");
+    for (const mode of ["evidence", "merge", "split", "levels"]) {
+      setExperienceCurationMode(id, mode);
+      const panel = document.querySelector(".story-curation-panel");
+      const visibleSections = Array.from(panel?.querySelectorAll(".story-curation-grid > section, .story-curation-grid > section > div") || [])
+        .filter((node) => !node.classList.contains("is-hidden") && node.offsetParent !== null);
+      if (!panel || !visibleSections.length) throw new Error("curation mode did not reveal its controls: " + mode);
+    }
+    setExperienceCurationMode(id, "overview");
+    return true;
+  })()`);
+  console.log("guided story curation E2E ok");
+
+  await evaluate(cdp, `(async () => {
     const nav = document.querySelector('button[data-view="assetLibrary"]');
     if (!nav) throw new Error("evidence nav missing for gallery audit");
     nav.click();
@@ -686,9 +734,11 @@ async function captureVisualAudit(cdp, name) {
     operationVisible: !!document.getElementById("adminView")?.classList.contains("active-view"),
     openOperationDrawers: document.querySelectorAll("#adminView .admin-section-drawer[open]").length,
     evidenceCardOverflow: Math.max(0, ...Array.from(document.querySelectorAll("#assetLibraryGrid .asset-card")).map((node) => node.scrollWidth - node.clientWidth)),
+    libraryCardOverflow: Math.max(0, ...Array.from(document.querySelectorAll("#libraryGrid .library-card")).map((node) => node.scrollWidth - node.clientWidth)),
     storyStepCount: document.querySelectorAll("#storyBuilderStepper [data-story-step]").length,
     storyActiveStep: document.querySelector("#storyBuilderStepper [data-story-step].is-active")?.dataset.storyStep || "",
     storyVisiblePanels: Array.from(document.querySelectorAll("[data-story-step-panel]")).filter((node) => node.offsetParent !== null).length,
+    libraryFilterDrawerOpen: !!document.querySelector(".library-filter-drawer")?.open,
   }))()`);
   if (desktopAudit.pageWidth > desktopAudit.viewport + 2) {
     throw new Error(`${name} desktop layout overflows horizontally (${desktopAudit.pageWidth}px > ${desktopAudit.viewport}px).`);
@@ -715,6 +765,9 @@ async function captureVisualAudit(cdp, name) {
   if (name === "evidence-gallery" && desktopAudit.evidenceCardOverflow > 2) {
     throw new Error(`Evidence cards overflow on desktop by ${desktopAudit.evidenceCardOverflow}px.`);
   }
+  if (name.startsWith("library") && desktopAudit.libraryCardOverflow > 2) {
+    throw new Error(`Library cards overflow on desktop by ${desktopAudit.libraryCardOverflow}px.`);
+  }
   const desktop = await cdp("Page.captureScreenshot", {
     format: "png",
     captureBeyondViewport: false,
@@ -728,11 +781,20 @@ async function captureVisualAudit(cdp, name) {
     mobile: true,
   });
   await sleep(350);
+  if (name === "library-curation") {
+    await evaluate(cdp, `(() => {
+      document.querySelector(".story-curation-panel")?.scrollIntoView({ block: "start" });
+      return true;
+    })()`);
+    await sleep(200);
+  }
   const mobileAudit = await evaluate(cdp, `(() => ({
     viewport: document.documentElement.clientWidth,
     pageWidth: document.documentElement.scrollWidth,
     privacyCopyWidth: document.querySelector(".product-privacy-panel .privacy-option > span")?.getBoundingClientRect().width || 0,
     evidenceCardOverflow: Math.max(0, ...Array.from(document.querySelectorAll("#assetLibraryGrid .asset-card")).map((node) => node.scrollWidth - node.clientWidth)),
+    libraryCardOverflow: Math.max(0, ...Array.from(document.querySelectorAll("#libraryGrid .library-card")).map((node) => node.scrollWidth - node.clientWidth)),
+    libraryFilterDrawerOpen: !!document.querySelector(".library-filter-drawer")?.open,
   }))()`);
   if (mobileAudit.pageWidth > mobileAudit.viewport + 2) {
     throw new Error(`${name} mobile layout overflows horizontally (${mobileAudit.pageWidth}px > ${mobileAudit.viewport}px).`);
@@ -742,6 +804,12 @@ async function captureVisualAudit(cdp, name) {
   }
   if (name === "evidence-gallery" && mobileAudit.evidenceCardOverflow > 2) {
     throw new Error(`Evidence cards overflow on mobile by ${mobileAudit.evidenceCardOverflow}px.`);
+  }
+  if (name.startsWith("library") && mobileAudit.libraryCardOverflow > 2) {
+    throw new Error(`Library cards overflow on mobile by ${mobileAudit.libraryCardOverflow}px.`);
+  }
+  if (name === "library" && mobileAudit.libraryFilterDrawerOpen) {
+    throw new Error("Library filters must stay collapsed by default on mobile.");
   }
   const mobile = await cdp("Page.captureScreenshot", {
     format: "png",

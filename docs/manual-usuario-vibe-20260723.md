@@ -1,6 +1,6 @@
 # Manual integral de usuario Vibe
 
-Versión de referencia: 2026-07-27
+Versión de referencia: 2026-07-28
 Para: personas que desean registrar, organizar, comprender y compartir sus propias experiencias.
 
 ## 1. Bienvenida: qué hace Vibe
@@ -113,9 +113,19 @@ procesamiento, etiquetas y trazabilidad no ocupan la vista principal: están
 dentro de **Revisar y ver detalles**. Abre esa sección solo cuando necesites
 corregir texto, traducir, procesar o consultar información técnica.
 
-## 9. Organizar una historia sin perderla
+## 9. Reorganizar una historia sin perderla
 
-En **Biblioteca > Organizar** puedes hacer cambios después de haber vivido el momento:
+En **Historias > Reorganizar** puedes hacer cambios después de haber vivido el
+momento. Primero eliges qué quieres cambiar; Vibe muestra únicamente las
+herramientas de esa acción. No necesitas interpretar un panel técnico ni
+completar campos que no corresponden.
+
+La tarjeta de cada historia prioriza su portada, fecha, Área de vida, título,
+relato y cantidad de eventos o archivos. **Editar** abre el relato.
+**Reorganizar** abre cuatro decisiones: mover archivos, unir historias, dividir
+la historia o cambiar el nivel entre historia y evento. La línea de tiempo,
+el origen y el borrado quedan en **Más opciones** para evitar acciones
+accidentales.
 
 | Acción | Qué ocurre |
 | --- | --- |
@@ -126,7 +136,14 @@ En **Biblioteca > Organizar** puedes hacer cambios después de haber vivido el m
 | Promover evento | Un evento importante se vuelve historia propia. |
 | Degradar experiencia | Una historia menor pasa a ser evento de otra historia. |
 
-Vibe conserva el antecedente de estas operaciones para que no se pierda la memoria. Antes de confirmar, revisa la vista previa y el destino de cada evidencia.
+Cuando mueves archivos, Vibe presenta una miniatura o reproductor para
+reconocer fotos, videos y audios sin depender del nombre técnico del archivo.
+Vibe conserva el antecedente de estas operaciones para que no se pierda la
+memoria. Antes de confirmar, revisa la vista previa y el destino.
+
+En teléfonos, los filtros de Historias permanecen plegados bajo **Filtrar
+historias**. Ábrelos solo cuando necesites buscar por Área de vida, contenido,
+origen o grupo/persona.
 
 ## 10. Salud, ubicación, clima y noticias
 
