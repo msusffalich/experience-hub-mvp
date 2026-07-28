@@ -11,6 +11,7 @@ function expect(condition, message) {
 
 const primaryRoots = ["dashboard", "library", "assetLibrary", "report", "publications", "auth"];
 const contextualViews = ["agenda", "capture", "timeline", "insights", "experienceMap", "manual", "admin", "automation"];
+const assetCardRenderer = app.slice(app.indexOf("function renderAssetCard("), app.indexOf("async function handleAssetLibraryClick("));
 const primaryButtons = [...index.matchAll(/<button\b[^>]*class="[^"]*\bprimary-nav-item\b[^"]*"[^>]*>/g)].map((match) => match[0]);
 const contextualButtons = [...index.matchAll(/<button\b[^>]*class="[^"]*\bcontext-nav-item\b[^"]*"[^>]*>/g)].map((match) => match[0]);
 
@@ -54,6 +55,13 @@ expect(!index.includes('id="dashboardDataResetButton"'), "Destructive data reset
 
 expect(index.includes('id="assetAdvancedFilters"'), "Asset technical filters must remain available in a collapsed advanced drawer.");
 expect(index.includes("asset-technical-filters"), "Asset technical controls are not isolated.");
+expect(index.includes('id="asset-library-heading">Evidencia</h2>'), "The evidence view must use the user-facing Evidence title.");
+expect(app.includes('class="asset-card-details"'), "Evidence cards must isolate review controls in a progressive-disclosure drawer.");
+expect(app.includes('class="asset-card-technical-details"'), "Evidence technical metadata must stay behind a second detail level.");
+expect(app.includes('data-edit-asset-experience='), "Evidence cards must preserve the edit-story action.");
+expect(!assetCardRenderer.includes('onclick="editExperience('), "Evidence cards must not use inline edit handlers.");
+expect(styles.includes(".asset-card-summary"), "Evidence gallery summary styles are missing.");
+expect(styles.includes(".asset-card-details-content"), "Evidence detail drawer styles are missing.");
 expect(index.includes("manual-review-drawer"), "Manual review controls are not isolated.");
 expect(index.includes("map-export-drawer"), "Obsidian export controls are not isolated.");
 expect(index.includes('id="publicationAdvancedFilters"'), "Publication precision filters must be isolated from the primary workflow.");
@@ -101,6 +109,10 @@ expect(index.includes('id="capture-heading">Nueva historia</h2>'), "The story wo
   'capture: "New story"',
   'capture: "Nouvelle histoire"',
   'capture: "Nova história"',
+  'assetLibrary: "Evidencia"',
+  'assetLibrary: "Evidence"',
+  'assetLibrary: "Preuves"',
+  'assetLibrary: "Evidências"',
 ].forEach((term) => {
   expect(app.includes(term), `Four-language product navigation is incomplete: ${term}.`);
 });

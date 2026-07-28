@@ -74,6 +74,28 @@ Supabase ni contratos móviles:
 No cambia autenticación, persistencia, sincronización ni propiedad de los
 datos. Es una reorganización de presentación y navegación.
 
+### Bloque 720: Evidencia como galería visual
+
+Este bloque reemplaza la ficha operativa expuesta por una galería comprensible
+sin retirar capacidades:
+
+- La vista se llama **Evidencia** en español, inglés, francés y portugués.
+- Las métricas visibles resumen total, imágenes, videos, audios, documentos y
+  archivos por sincronizar.
+- Cada tarjeta comienza con la vista previa real, fecha, historia vinculada,
+  una síntesis corta y acciones para abrir, descargar o editar la historia.
+- Nombres internos, identificadores, procesamiento, etiquetas, traducción,
+  almacenamiento y trazabilidad permanecen disponibles dentro de
+  **Revisar y ver detalles** y **Detalles técnicos**, cerrados inicialmente.
+- Imagen, video, audio y documento cuentan con una vista previa comprobada.
+- La galería y sus tarjetas no desbordan horizontalmente en escritorio ni en
+  móvil.
+- La prueba E2E conserva captura, edición, eliminación, evidencia, alcance
+  compartido y generación de Reportes, Hallazgos y Publicaciones.
+
+No cambia Storage, Supabase, sincronización, procesamiento ni vínculos con
+historias. Es una mejora de jerarquía visual y divulgación progresiva.
+
 ## 1. Decisión ejecutiva
 
 Vibe se reestructura alrededor de una separación simple:

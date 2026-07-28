@@ -85,6 +85,27 @@ La Bandeja de evidencia muestra archivos que llegaron sin una experiencia defini
 
 Los archivos originales se conservan en Activos. Adoptar una evidencia no la convierte en texto ni la elimina del sistema.
 
+### Explorar la galería de Evidencia
+
+Abre **Evidencia** para recorrer todo lo que has capturado, aunque todavía no
+forme parte de una historia. La pantalla presenta primero el contenido:
+
+- una miniatura para imágenes;
+- reproducción y vista previa para videos;
+- reproductor para audios;
+- lectura inicial para textos y documentos;
+- fecha e historia vinculada, cuando existe.
+
+Puedes buscar por palabra, tipo o fecha. Las métricas superiores muestran
+cuántas imágenes, videos, audios y documentos hay, además de cualquier archivo
+pendiente de sincronización.
+
+Cada tarjeta ofrece las acciones cotidianas **Abrir**, **Descargar** y, cuando
+corresponde, **Editar historia**. Los nombres internos, identificadores,
+procesamiento, etiquetas y trazabilidad no ocupan la vista principal: están
+dentro de **Revisar y ver detalles**. Abre esa sección solo cuando necesites
+corregir texto, traducir, procesar o consultar información técnica.
+
 ## 9. Organizar una historia sin perderla
 
 En **Biblioteca > Organizar** puedes hacer cambios después de haber vivido el momento:

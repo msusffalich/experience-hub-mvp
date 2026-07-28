@@ -7030,6 +7030,28 @@ textarea {
   align-items: stretch;
 }
 
+#assetMetricGrid.compact-metric-grid {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0;
+}
+
+#assetMetricGrid .compact-metric {
+  min-height: 72px;
+  padding: 10px 12px;
+}
+
+#assetMetricGrid .compact-metric span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+#assetMetricGrid .compact-metric strong {
+  margin-top: 6px;
+  font-size: 22px;
+}
+
 .asset-card {
   display: grid;
   grid-template-rows: auto 1fr;
@@ -7180,6 +7202,101 @@ textarea {
   gap: 10px;
   min-width: 0;
   text-align: left;
+}
+
+.asset-card-primary-status,
+.asset-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.asset-card-primary-status {
+  justify-content: space-between;
+}
+
+.asset-card-date {
+  margin: -3px 0 0;
+}
+
+.asset-card-summary {
+  min-height: 3.2em;
+  margin: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.asset-card-summary.is-empty {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.asset-card-actions {
+  margin-top: 2px;
+}
+
+.asset-card-actions .ghost-button {
+  flex: 1 1 auto;
+  justify-content: center;
+  min-width: 0;
+}
+
+.asset-card-details {
+  margin-top: 2px;
+  border-top: 1px solid var(--line);
+}
+
+.asset-card-details > summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2px;
+  padding: 12px 2px 2px;
+  color: var(--accent-dark);
+  cursor: pointer;
+  list-style-position: inside;
+}
+
+.asset-card-details > summary span {
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.asset-card-details > summary small {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.asset-card-details-content {
+  display: grid;
+  gap: 10px;
+  padding-top: 12px;
+}
+
+.asset-card-secondary-status {
+  gap: 6px;
+}
+
+.asset-card-technical-details {
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-strong);
+}
+
+.asset-card-technical-details > summary {
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.asset-technical-filename {
+  margin: 10px 0;
+  overflow-wrap: anywhere;
 }
 
 .asset-open-link {
@@ -7654,6 +7771,39 @@ button.asset-processing-summary-card {
 .asset-meta-list dd {
   margin: 0;
   overflow-wrap: anywhere;
+}
+
+@media (max-width: 720px) {
+  #assetMetricGrid.compact-metric-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  #assetMetricGrid .compact-metric {
+    min-height: 68px;
+    padding: 9px 10px;
+  }
+
+  #assetMetricGrid .compact-metric span {
+    font-size: 11px;
+    overflow-wrap: anywhere;
+  }
+
+  #assetMetricGrid .compact-metric strong {
+    font-size: 20px;
+  }
+
+  .asset-card-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .asset-card-actions .ghost-button:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
+  .asset-meta-list {
+    grid-template-columns: 1fr;
+  }
 }
 
 .agenda-list {

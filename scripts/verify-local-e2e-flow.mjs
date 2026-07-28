@@ -428,6 +428,46 @@ try {
   }
 
   await evaluate(cdp, `(async () => {
+    const nav = document.querySelector('button[data-view="assetLibrary"]');
+    if (!nav) throw new Error("evidence nav missing for gallery audit");
+    nav.click();
+    await new Promise((resolve) => setTimeout(resolve, 900));
+    const cards = Array.from(document.querySelectorAll("#assetLibraryGrid .asset-card"));
+    if (cards.length < 3) throw new Error("evidence gallery needs at least three seeded cards");
+    if (document.querySelectorAll("#assetLibraryGrid .asset-card-details[open]").length) {
+      throw new Error("evidence review details must stay collapsed by default");
+    }
+    if (document.querySelectorAll("#assetLibraryGrid .asset-card-technical-details[open]").length) {
+      throw new Error("evidence technical details must stay collapsed by default");
+    }
+    if (!cards.every((card) => card.querySelector(".asset-preview") && card.querySelector(".asset-card-actions"))) {
+      throw new Error("every evidence card needs a preview and a compact action row");
+    }
+    const previewKinds = [
+      document.querySelector("#assetLibraryGrid .asset-preview img"),
+      document.querySelector("#assetLibraryGrid .asset-preview video, #assetLibraryGrid .asset-preview-video-demo"),
+      document.querySelector("#assetLibraryGrid .asset-preview audio, #assetLibraryGrid .asset-preview-audio"),
+      document.querySelector("#assetLibraryGrid .asset-preview-document"),
+    ];
+    if (previewKinds.some((preview) => !preview)) {
+      throw new Error("seeded evidence gallery must render image, video, audio, and document previews");
+    }
+    const firstDetails = cards[0].querySelector(".asset-card-details");
+    firstDetails.open = true;
+    if (!firstDetails.querySelector(".asset-metadata-form") || !firstDetails.querySelector(".asset-card-technical-details")) {
+      throw new Error("evidence review drawer lost metadata or technical traceability");
+    }
+    firstDetails.open = false;
+    const visibleText = cards.map((card) => card.innerText || "").join("\\n");
+    if (/metadataFingerprint|externalPayloadType|assetKey/i.test(visibleText)) {
+      throw new Error("technical field names leaked into the daily evidence gallery");
+    }
+    return true;
+  })()`);
+  await captureVisualAudit(cdp, "evidence-gallery");
+  console.log("evidence gallery E2E ok");
+
+  await evaluate(cdp, `(async () => {
     const dashboardNav = document.querySelector('button[data-view="dashboard"]');
     if (!dashboardNav) throw new Error("dashboard nav missing before shared scope");
     dashboardNav.click();
@@ -608,6 +648,7 @@ async function captureVisualAudit(cdp, name) {
     authEntryHidden: !!document.getElementById("authEntryPanel")?.hidden,
     operationVisible: !!document.getElementById("adminView")?.classList.contains("active-view"),
     openOperationDrawers: document.querySelectorAll("#adminView .admin-section-drawer[open]").length,
+    evidenceCardOverflow: Math.max(0, ...Array.from(document.querySelectorAll("#assetLibraryGrid .asset-card")).map((node) => node.scrollWidth - node.clientWidth)),
   }))()`);
   if (desktopAudit.pageWidth > desktopAudit.viewport + 2) {
     throw new Error(`${name} desktop layout overflows horizontally (${desktopAudit.pageWidth}px > ${desktopAudit.viewport}px).`);
@@ -623,6 +664,9 @@ async function captureVisualAudit(cdp, name) {
   }
   if (name === "operation" && (!desktopAudit.operationVisible || desktopAudit.openOperationDrawers)) {
     throw new Error("Operation is not visible or technical drawers opened by default.");
+  }
+  if (name === "evidence-gallery" && desktopAudit.evidenceCardOverflow > 2) {
+    throw new Error(`Evidence cards overflow on desktop by ${desktopAudit.evidenceCardOverflow}px.`);
   }
   const desktop = await cdp("Page.captureScreenshot", {
     format: "png",
@@ -641,12 +685,16 @@ async function captureVisualAudit(cdp, name) {
     viewport: document.documentElement.clientWidth,
     pageWidth: document.documentElement.scrollWidth,
     privacyCopyWidth: document.querySelector(".product-privacy-panel .privacy-option > span")?.getBoundingClientRect().width || 0,
+    evidenceCardOverflow: Math.max(0, ...Array.from(document.querySelectorAll("#assetLibraryGrid .asset-card")).map((node) => node.scrollWidth - node.clientWidth)),
   }))()`);
   if (mobileAudit.pageWidth > mobileAudit.viewport + 2) {
     throw new Error(`${name} mobile layout overflows horizontally (${mobileAudit.pageWidth}px > ${mobileAudit.viewport}px).`);
   }
   if (name === "operation" && mobileAudit.privacyCopyWidth < 180) {
     throw new Error(`Operation privacy copy is too narrow on mobile (${mobileAudit.privacyCopyWidth}px).`);
+  }
+  if (name === "evidence-gallery" && mobileAudit.evidenceCardOverflow > 2) {
+    throw new Error(`Evidence cards overflow on mobile by ${mobileAudit.evidenceCardOverflow}px.`);
   }
   const mobile = await cdp("Page.captureScreenshot", {
     format: "png",

@@ -9,7 +9,7 @@ Generado por `npm run audit:restructure`. Este documento no decide que se borra;
 - Botones con identificador detectados: 61.
 - Funciones escritoras o reconciliadoras detectadas: 27.
 - Documentos candidatos a canonicos: 10.
-- Documentos historicos o de soporte: 32.
+- Documentos historicos o de soporte: 33.
 
 ## Vistas
 
@@ -237,6 +237,7 @@ Debe conservarse fuera del recorrido normal del usuario y no presentarse como co
 - `handcheck-vibeapp-pipeline-v2-offline.md`
 - `handcheck-vibepwa-718-integridad-producto.md`
 - `handcheck-vibepwa-719-cuenta-operacion.md`
+- `handcheck-vibepwa-720-evidencia-visual.md`
 - `inventory-restructure-20260727.md`
 - `oura-openapi-connector.md`
 - `runbook-canario-evidence-pipeline-v2.md`

@@ -1,4 +1,4 @@
-const APP_VERSION = "20260727-account-operation-719";
+const APP_VERSION = "20260727-evidence-gallery-720";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -447,7 +447,7 @@ const i18n = {
       dashboard: "Inicio",
       capture: "Nueva historia",
       library: "Librería de experiencias",
-      assetLibrary: "Activos multimodales",
+      assetLibrary: "Evidencia",
       agenda: "Agenda Inteligente",
       timeline: "Línea de tiempo contextual",
       experienceMap: "Mapa de interrelaciones",
@@ -558,7 +558,7 @@ const i18n = {
       noLibrary: "No hay experiencias en la librería para esos filtros.",
       noTimeline: "No hay experiencias para esos filtros.",
       noAttachments: "No hay adjuntos multimedia todavía.",
-      assetLibraryIntro: "Inventario de imágenes, videos, audios y documentos asociados a experiencias. Permite revisar disponibilidad, etiquetas y metadatos manuales.",
+      assetLibraryIntro: "Tus fotos, videos, audios, textos y documentos en una galería visual. Abre una pieza para verla o despliega sus detalles cuando necesites revisarla.",
       assetLibraryEmpty: "No hay activos multimodales para esos filtros.",
       assetLinkedExperience: "Experiencia vinculada",
       assetStorage: "Almacenamiento",
@@ -1285,7 +1285,7 @@ const i18n = {
       dashboard: "Home",
       capture: "New story",
       library: "Experience library",
-      assetLibrary: "Files",
+      assetLibrary: "Evidence",
       agenda: "Intelligent Agenda",
       timeline: "Contextual timeline",
       experienceMap: "Relationship map",
@@ -1396,7 +1396,7 @@ const i18n = {
       noLibrary: "No library experiences match these filters.",
       noTimeline: "No experiences match these filters.",
       noAttachments: "No media attachments yet.",
-      assetLibraryIntro: "Inventory of images, videos, audio, and documents linked to experiences. It supports readiness review, tags, and manual metadata.",
+      assetLibraryIntro: "Your photos, videos, audio, text, and documents in one visual gallery. Open an item to view it or expand its details when you need to review it.",
       assetLibraryEmpty: "No multimodal assets match those filters.",
       assetLinkedExperience: "Linked experience",
       assetStorage: "Storage",
@@ -2138,7 +2138,7 @@ i18n.fr = mergeLocale(i18n.en, {
     dashboard: "Accueil",
     capture: "Nouvelle histoire",
     library: "Bibliothèque d'expériences",
-    assetLibrary: "Fichiers multimodaux",
+    assetLibrary: "Preuves",
     agenda: "Agenda intelligent",
     timeline: "Chronologie contextuelle",
     experienceMap: "Carte des relations",
@@ -2262,7 +2262,7 @@ i18n.fr = mergeLocale(i18n.en, {
     environmentalUnavailable: "Environnement non disponible",
     geopoliticalUnavailable: "Aucun signal géopolitique récent",
     contextNoArticles: "Aucun article récent n'a été trouvé pour ce lieu.",
-    assetLibraryIntro: "Inventaire des images, vidéos, audios et documents associés aux expériences.",
+    assetLibraryIntro: "Vos photos, vidéos, audios, textes et documents dans une galerie visuelle. Ouvrez un élément ou dépliez ses détails pour le réviser.",
     assetLibraryEmpty: "Aucun fichier multimodal pour ces filtres.",
     assetLinkedExperience: "Expérience liée",
     assetStorage: "Stockage",
@@ -2348,7 +2348,7 @@ i18n.pt = mergeLocale(i18n.es, {
     dashboard: "Início",
     capture: "Nova história",
     library: "Biblioteca de experiências",
-    assetLibrary: "Arquivos multimodais",
+    assetLibrary: "Evidências",
     agenda: "Agenda inteligente",
     timeline: "Linha do tempo contextual",
     experienceMap: "Mapa de relações",
@@ -2423,7 +2423,7 @@ i18n.pt = mergeLocale(i18n.es, {
     noLibrary: "Não há experiências na biblioteca para esses filtros.",
     noTimeline: "Não há experiências para esses filtros.",
     noAttachments: "Ainda não há anexos multimídia.",
-    assetLibraryIntro: "Inventário de imagens, vídeos, áudios e documentos associados a experiências.",
+    assetLibraryIntro: "Suas fotos, vídeos, áudios, textos e documentos em uma galeria visual. Abra um item ou expanda os detalhes quando precisar revisá-lo.",
     assetLibraryEmpty: "Não há arquivos multimodais para esses filtros.",
     biometricAssetPanelTitle: "Backup biométrico",
     biometricAssetPanelHelp: "Vibeapp é a fonte normal de biometria, localização, clima, notícias e contexto móvel. Use esta importação apenas para histórico, backup ou recuperação.",
@@ -18172,23 +18172,25 @@ function renderAssetActiveFilters() {
   const container = document.getElementById("assetActiveFilters");
   if (!container) return;
   const chips = buildAssetActiveFilterChips();
+  if (!chips.length) {
+    container.hidden = true;
+    container.innerHTML = "";
+    return;
+  }
+  container.hidden = false;
   container.innerHTML = `
     <section>
       <strong>${escapeHtml(t("labels.assetActiveFiltersTitle"))}</strong>
       <div class="pill-row">
-        ${
-          chips.length
-            ? chips
-                .map(
-                  (chip) => `
-                    <button class="pill asset-filter-chip" type="button" data-asset-clear-filter="${escapeHtml(chip.key)}" title="${escapeHtml(t("labels.assetRemoveFilter"))}">
-                      <span>${escapeHtml(chip.label)}</span><b>x</b>
-                    </button>
-                  `,
-                )
-                .join("")
-            : `<span class="pill">${escapeHtml(t("labels.assetActiveFiltersEmpty"))}</span>`
-        }
+        ${chips
+          .map(
+            (chip) => `
+              <button class="pill asset-filter-chip" type="button" data-asset-clear-filter="${escapeHtml(chip.key)}" title="${escapeHtml(t("labels.assetRemoveFilter"))}">
+                <span>${escapeHtml(chip.label)}</span><b>x</b>
+              </button>
+            `,
+          )
+          .join("")}
       </div>
     </section>
   `;
@@ -18280,34 +18282,19 @@ function renderAssetImportSummary() {
 }
 
 function buildAssetMetrics(assets) {
-  const userAssets = assets.filter((asset) => !asset.isDemo).length;
-  const withAnalysis = assets.filter((asset) => String(asset.analysisText || "").trim()).length;
-  const withoutAnalysis = Math.max(0, assets.length - withAnalysis);
-  const suggestedAnalysis = assets.filter((asset) => asset.analysisSuggested).length;
-  const remoteAssets = assets.filter((asset) => isRemoteAsset(asset)).length;
+  const images = assets.filter((asset) => asset.kind === "image").length;
+  const videos = assets.filter((asset) => asset.kind === "video").length;
+  const audio = assets.filter((asset) => asset.kind === "audio").length;
+  const documents = assets.filter((asset) => ["document", "archive"].includes(asset.kind)).length;
   const syncPending = assets.filter((asset) => buildAssetStorageStatus(asset).needsSync).length;
-  const processingPending = assets.filter((asset) => !buildAssetProcessingStatus(asset).ready).length;
-  return state.language !== "es"
-     ? [
-        ["Assets", assets.length],
-        ["User assets", userAssets],
-        ["With analytical text", withAnalysis],
-        ["Pending text", withoutAnalysis],
-        ["Pending processing", processingPending],
-        [t("labels.assetSuggestedAnalysisMetric"), suggestedAnalysis],
-        ["Server/Supabase", remoteAssets],
-        ["Pending sync", syncPending],
-      ]
-    : [
-        ["Activos", assets.length],
-        ["Activos del usuario", userAssets],
-        ["Con texto analítico", withAnalysis],
-        ["Texto pendiente", withoutAnalysis],
-        ["Procesamiento pendiente", processingPending],
-        [t("labels.assetSuggestedAnalysisMetric"), suggestedAnalysis],
-        ["Servidor/Supabase", remoteAssets],
-        ["Sincronización pendiente", syncPending],
-      ];
+  return [
+    [languageText("Evidencias", "Evidence", "Preuves", "Evidências"), assets.length],
+    [languageText("Imágenes", "Images", "Images", "Imagens"), images],
+    [languageText("Videos", "Videos", "Vidéos", "Vídeos"), videos],
+    [languageText("Audios", "Audio", "Audios", "Áudios"), audio],
+    [languageText("Documentos", "Documents", "Documents", "Documentos"), documents],
+    [languageText("Por sincronizar", "Pending sync", "À synchroniser", "Por sincronizar"), syncPending],
+  ];
 }
 
 function renderAssetProcessingSummary(assets) {
@@ -19722,24 +19709,52 @@ function renderAssetCard(asset) {
       ? t("labels.assetExtractionGuided")
       : "";
   const externalProfile = getExternalAssetProfile(asset);
+  const linkedExperience = String(asset.experienceTitle || "").trim();
+  const displayTitle = linkedExperience || getAssetKindLabel(asset.kind);
+  const summaryText = String(asset.manualNote || translatedText || extractedText || asset.analysisText || "").trim();
+  const detailsTitle = languageText("Revisar y ver detalles", "Review and details", "Réviser et voir les détails", "Revisar e ver detalhes");
+  const detailsHelp = languageText(
+    "Texto, etiquetas, procesamiento y trazabilidad",
+    "Text, tags, processing, and traceability",
+    "Texte, étiquettes, traitement et traçabilité",
+    "Texto, etiquetas, processamento e rastreabilidade",
+  );
   return `
     <article class="asset-card">
       ${renderAssetPreview(asset)}
       <div class="asset-card-body">
-        <div class="pill-row">
+        <div class="asset-card-primary-status">
           <span class="pill">${escapeHtml(getAssetKindLabel(asset.kind))}</span>
-          <span class="pill">${escapeHtml(displayCategory(asset.category))}</span>
-          <span class="pill ${asset.isDemo ? "pill-review" : "pill-approved"}">${escapeHtml(getAssetProvenanceLabel(asset))}</span>
           <span class="pill ${storageStatus.needsSync ? "pill-review" : "pill-approved"}">${escapeHtml(storageStatus.label)}</span>
-          <span class="pill ${hasAnalysisText ? "pill-approved" : "pill-review"}">${escapeHtml(hasAnalysisText ? t("labels.assetAnalysisWithText") : t("labels.assetAnalysisWithoutText"))}</span>
-          <span class="pill ${translatedText ? "pill-approved" : "pill-review"}">${escapeHtml(translatedText ? t("labels.assetTranslationReady") : t("labels.assetTranslationMissing"))}</span>
-          ${externalProfile.hasProfile ? `<span class="pill pill-approved">${escapeHtml(externalProfile.label)}</span>` : ""}
-          ${asset.analysisSuggested ? `<span class="pill pill-review">${escapeHtml(t("labels.assetSuggestedAnalysisBadge"))}</span>` : ""}
-          <span class="pill ${readiness.ready ? "pill-approved" : "pill-review"}">${escapeHtml(readiness.label)}</span>
-          <span class="pill ${processing.ready ? "pill-approved" : "pill-review"}">${escapeHtml(processing.label)}</span>
         </div>
-        <h3>${escapeHtml(asset.name || getAssetKindLabel(asset.kind))}</h3>
-        <p class="card-meta">${escapeHtml(formatDate(asset.timestamp))} · ${escapeHtml(asset.location || (state.language !== "es" ? "No location" : "Sin ubicación"))}</p>
+        <h3>${escapeHtml(displayTitle)}</h3>
+        <p class="card-meta asset-card-date">${escapeHtml(formatDate(asset.timestamp))}${asset.eventTitle ? ` · ${escapeHtml(asset.eventTitle)}` : ""}</p>
+        ${
+          summaryText
+            ? `<p class="asset-card-summary">${escapeHtml(summaryText.slice(0, 240))}${summaryText.length > 240 ? "…" : ""}</p>`
+            : `<p class="asset-card-summary is-empty">${escapeHtml(languageText("Sin descripción todavía.", "No description yet.", "Pas encore de description.", "Ainda sem descrição."))}</p>`
+        }
+        <div class="asset-card-actions">
+          ${asset.url || asset.dataUrl ? `<a class="ghost-button asset-open-link" href="${escapeHtml(asset.url || asset.dataUrl)}" target="_blank" rel="noreferrer">${escapeHtml(languageText("Abrir", "Open", "Ouvrir", "Abrir"))}</a>` : ""}
+          ${asset.url || asset.dataUrl ? `<a class="ghost-button asset-open-link" href="${escapeHtml(asset.url || asset.dataUrl)}" download="${escapeHtml(asset.name || "asset")}">${escapeHtml(t("labels.assetDownloadFile"))}</a>` : ""}
+          ${asset.contextOnly || !asset.experienceId ? "" : `<button class="ghost-button" type="button" data-edit-asset-experience="${escapeHtml(asset.experienceId)}">${escapeHtml(languageText("Editar historia", "Edit story", "Modifier l'histoire", "Editar história"))}</button>`}
+        </div>
+        <details class="asset-card-details">
+          <summary>
+            <span>${escapeHtml(detailsTitle)}</span>
+            <small>${escapeHtml(detailsHelp)}</small>
+          </summary>
+          <div class="asset-card-details-content">
+            <div class="pill-row asset-card-secondary-status">
+              <span class="pill">${escapeHtml(displayCategory(asset.category))}</span>
+              <span class="pill ${asset.isDemo ? "pill-review" : "pill-approved"}">${escapeHtml(getAssetProvenanceLabel(asset))}</span>
+              <span class="pill ${hasAnalysisText ? "pill-approved" : "pill-review"}">${escapeHtml(hasAnalysisText ? t("labels.assetAnalysisWithText") : t("labels.assetAnalysisWithoutText"))}</span>
+              <span class="pill ${translatedText ? "pill-approved" : "pill-review"}">${escapeHtml(translatedText ? t("labels.assetTranslationReady") : t("labels.assetTranslationMissing"))}</span>
+              ${externalProfile.hasProfile ? `<span class="pill pill-approved">${escapeHtml(externalProfile.label)}</span>` : ""}
+              ${asset.analysisSuggested ? `<span class="pill pill-review">${escapeHtml(t("labels.assetSuggestedAnalysisBadge"))}</span>` : ""}
+              <span class="pill ${readiness.ready ? "pill-approved" : "pill-review"}">${escapeHtml(readiness.label)}</span>
+              <span class="pill ${processing.ready ? "pill-approved" : "pill-review"}">${escapeHtml(processing.label)}</span>
+            </div>
         <section class="asset-readiness-panel">
           <strong>${escapeHtml(t("labels.assetReadiness"))}: ${escapeHtml(readiness.label)}</strong>
           <p>${escapeHtml(readiness.detail)}</p>
@@ -19838,28 +19853,36 @@ function renderAssetCard(asset) {
             <button class="ghost-button" type="submit">${state.language !== "es" ? "Save metadata" : "Guardar metadatos"}</button>
           </div>
         </form>
-        <dl class="asset-meta-list">
-          <div><dt>${t("labels.assetId")}</dt><dd>${escapeHtml(asset.assetKey)}</dd></div>
-          <div><dt>${t("labels.assetLinkedExperience")}</dt><dd>${escapeHtml(asset.experienceTitle)}</dd></div>
-          <div><dt>${escapeHtml(state.language !== "es" ? "Linked event" : "Evento vinculado")}</dt><dd>${escapeHtml(asset.eventTitle || (state.language !== "es" ? "Whole experience" : "Toda la experiencia"))}</dd></div>
-          <div><dt>${t("labels.assetStorage")}</dt><dd>${escapeHtml(asset.storageLabel)}</dd></div>
-          <div><dt>${t("labels.assetLanguage")}</dt><dd>${escapeHtml(String(detectedLanguage || asset.language || "-").toUpperCase())}</dd></div>
-          <div><dt>${t("labels.assetDevice")}</dt><dd>${escapeHtml(asset.device)}</dd></div>
-          <div><dt>${escapeHtml(state.language !== "es" ? "Source type" : "Tipo de origen")}</dt><dd>${escapeHtml(asset.sourceType || "-")}</dd></div>
-          <div><dt>${escapeHtml(state.language !== "es" ? "External profile" : "Perfil externo")}</dt><dd>${escapeHtml(externalProfile.hasProfile ? `${externalProfile.source || "-"} / ${externalProfile.payloadType || "-"}` : "-")}</dd></div>
-          <div><dt>${escapeHtml(state.language !== "es" ? "Captured" : "Capturado")}</dt><dd>${escapeHtml(asset.capturedAt ? formatDate(asset.capturedAt) : "-")}</dd></div>
-          <div><dt>${escapeHtml(state.language !== "es" ? "Trace" : "Trazabilidad")}</dt><dd>${escapeHtml(asset.metadataFingerprint || "-")}</dd></div>
-        </dl>
-        <button class="ghost-button asset-open-link" type="button" data-copy-asset-id="${escapeHtml(asset.assetKey)}">${escapeHtml(t("labels.assetCopyId"))}</button>
-        ${asset.url || asset.dataUrl ? `<a class="ghost-button asset-open-link" href="${asset.url || asset.dataUrl}" target="_blank" rel="noreferrer">${state.language !== "es" ? "Open file" : "Abrir archivo"}</a>` : ""}
-        ${asset.url || asset.dataUrl ? `<a class="ghost-button asset-open-link" href="${asset.url || asset.dataUrl}" download="${escapeHtml(asset.name || "asset")}" target="_blank" rel="noreferrer">${escapeHtml(t("labels.assetDownloadFile"))}</a>` : ""}
-        ${asset.contextOnly ? "" : `<button class="ghost-button" type="button" onclick="editExperience('${escapeHtml(asset.experienceId)}')">${t("buttons.edit")}</button>`}
+        <details class="asset-card-technical-details">
+          <summary>${escapeHtml(languageText("Detalles técnicos", "Technical details", "Détails techniques", "Detalhes técnicos"))}</summary>
+          <p class="card-meta asset-technical-filename">${escapeHtml(asset.name || "-")}</p>
+          <dl class="asset-meta-list">
+            <div><dt>${t("labels.assetId")}</dt><dd>${escapeHtml(asset.assetKey)}</dd></div>
+            <div><dt>${t("labels.assetLinkedExperience")}</dt><dd>${escapeHtml(asset.experienceTitle)}</dd></div>
+            <div><dt>${escapeHtml(languageText("Evento vinculado", "Linked event", "Événement lié", "Evento vinculado"))}</dt><dd>${escapeHtml(asset.eventTitle || languageText("Toda la experiencia", "Whole experience", "Toute l'expérience", "Toda a experiência"))}</dd></div>
+            <div><dt>${t("labels.assetStorage")}</dt><dd>${escapeHtml(asset.storageLabel)}</dd></div>
+            <div><dt>${t("labels.assetLanguage")}</dt><dd>${escapeHtml(String(detectedLanguage || asset.language || "-").toUpperCase())}</dd></div>
+            <div><dt>${t("labels.assetDevice")}</dt><dd>${escapeHtml(asset.device)}</dd></div>
+            <div><dt>${escapeHtml(languageText("Tipo de origen", "Source type", "Type de source", "Tipo de origem"))}</dt><dd>${escapeHtml(asset.sourceType || "-")}</dd></div>
+            <div><dt>${escapeHtml(languageText("Perfil externo", "External profile", "Profil externe", "Perfil externo"))}</dt><dd>${escapeHtml(externalProfile.hasProfile ? `${externalProfile.source || "-"} / ${externalProfile.payloadType || "-"}` : "-")}</dd></div>
+            <div><dt>${escapeHtml(languageText("Capturado", "Captured", "Capturé", "Capturado"))}</dt><dd>${escapeHtml(asset.capturedAt ? formatDate(asset.capturedAt) : "-")}</dd></div>
+            <div><dt>${escapeHtml(languageText("Trazabilidad", "Trace", "Traçabilité", "Rastreabilidade"))}</dt><dd>${escapeHtml(asset.metadataFingerprint || "-")}</dd></div>
+          </dl>
+          <button class="ghost-button asset-open-link" type="button" data-copy-asset-id="${escapeHtml(asset.assetKey)}">${escapeHtml(t("labels.assetCopyId"))}</button>
+        </details>
+          </div>
+        </details>
       </div>
     </article>
   `;
 }
 
 async function handleAssetLibraryClick(event) {
+  const editExperienceButton = event.target.closest("[data-edit-asset-experience]");
+  if (editExperienceButton?.dataset.editAssetExperience) {
+    editExperience(editExperienceButton.dataset.editAssetExperience);
+    return;
+  }
   const storageActionButton = event.target.closest("[data-asset-storage-action]");
   if (storageActionButton?.dataset.assetStorageAction === "repair") {
     await repairPendingAssetsFromLibrary();

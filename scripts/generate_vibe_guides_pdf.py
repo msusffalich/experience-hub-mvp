@@ -145,6 +145,14 @@ def safe(text: str) -> str:
     return html.escape(text)
 
 
+def inline(text: str) -> str:
+    """Convert the small inline Markdown subset used by the Vibe guides."""
+    escaped = safe(text)
+    escaped = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", escaped)
+    escaped = re.sub(r"`([^`]+)`", r'<font name="Courier">\1</font>', escaped)
+    return escaped
+
+
 def styles():
     base = getSampleStyleSheet()
     return {
@@ -189,12 +197,12 @@ def parse_markdown(path: Path):
                     image.hAlign = "RIGHT"
                     document.append(image)
                     document.append(Spacer(1, 5))
-                document.append(Paragraph(safe(stripped[2:]), s["title"]))
+                document.append(Paragraph(inline(stripped[2:]), s["title"]))
                 document.extend(diagrams_for(path))
                 title_seen = True
             else:
                 document.append(PageBreak())
-                document.append(Paragraph(safe(stripped[2:]), s["title"]))
+                document.append(Paragraph(inline(stripped[2:]), s["title"]))
             index += 1
             continue
         if stripped.startswith(("Estado:", "Fecha:", "Versión de referencia:", "Para:")):
@@ -209,11 +217,11 @@ def parse_markdown(path: Path):
             document.append(Paragraph("<br/>".join(safe(value) for value in metadata), s["subtitle"]))
             continue
         if stripped.startswith("## "):
-            document.append(Paragraph(safe(stripped[3:]), s["h1"]))
+            document.append(Paragraph(inline(stripped[3:]), s["h1"]))
             index += 1
             continue
         if stripped.startswith("### "):
-            document.append(Paragraph(safe(stripped[4:]), s["h2"]))
+            document.append(Paragraph(inline(stripped[4:]), s["h2"]))
             index += 1
             continue
         if stripped.startswith("```"):
@@ -228,7 +236,7 @@ def parse_markdown(path: Path):
         if stripped.startswith("|"):
             rows, index = split_table(lines, index)
             if rows:
-                table_data = [[Paragraph(safe(cell), s["body"]) for cell in row] for row in rows]
+                table_data = [[Paragraph(inline(cell), s["body"]) for cell in row] for row in rows]
                 width = 6.45 * inch
                 col_count = max(len(row) for row in rows)
                 table = Table(table_data, colWidths=[width / col_count] * col_count, repeatRows=1, hAlign="LEFT")
@@ -246,25 +254,29 @@ def parse_markdown(path: Path):
                 document.append(table)
                 document.append(Spacer(1, 8))
             continue
-        if stripped.startswith("- ") or stripped.startswith("1. "):
+        if stripped.startswith("- ") or re.match(r"^\d+\.\s", stripped):
             text = re.sub(r"^(?:- |\d+\. )", "", stripped)
-            document.append(Paragraph("- " + safe(text), s["bullet"]))
+            document.append(Paragraph("- " + inline(text), s["bullet"]))
             index += 1
             continue
         if stripped.startswith("> "):
             quote = ParagraphStyle("Quote", parent=s["body"], leftIndent=12, borderColor=TEAL, borderWidth=2, borderPadding=8, backColor=colors.HexColor("#F2FAF8"))
-            document.append(Paragraph(safe(stripped[2:]), quote))
+            document.append(Paragraph(inline(stripped[2:]), quote))
             index += 1
             continue
         paragraph = [stripped]
         index += 1
         while index < len(lines):
             next_line = lines[index].strip()
-            if not next_line or next_line.startswith(("#", "|", "- ", "1. ", "```", "> ")):
+            if (
+                not next_line
+                or next_line.startswith(("#", "|", "- ", "```", "> "))
+                or re.match(r"^\d+\.\s", next_line)
+            ):
                 break
             paragraph.append(next_line)
             index += 1
-        document.append(Paragraph(safe(" ".join(paragraph)), s["body"]))
+        document.append(Paragraph(inline(" ".join(paragraph)), s["body"]))
     return document
 
 
