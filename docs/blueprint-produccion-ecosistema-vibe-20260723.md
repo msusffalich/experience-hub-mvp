@@ -99,6 +99,15 @@ elige mover archivos, unir, dividir o cambiar el nivel historia/evento, y la
 aplicación abre una sola operación guiada. En móvil, los filtros permanecen
 plegados hasta que la persona los solicita.
 
+La navegación de producto tiene seis espacios canónicos: Inicio, Historias,
+Evidencia, Inteligencia, Publicar y Cuenta. Agenda, Nueva historia, Línea de
+tiempo, Hallazgos, Mapa, Ayuda, Operación y Automatizaciones son herramientas
+secundarias y no compiten con esa navegación. Las pantallas principales ofrecen
+sus acciones frecuentes dentro del contenido; al entrar a una herramienta
+secundaria aparece una ruta corta para volver al espacio padre. El estado activo
+usa `aria-current`, de modo que la jerarquía también sea comprensible para
+tecnologías de asistencia.
+
 ### 4.3 API Vibe y Supabase: el registro común
 
 La API Node y Supabase forman la fuente única de verdad. Toda experiencia, evento, activo y señal de contexto se guarda una sola vez en el registro común, sin importar si fue creada desde Vibeapp o VibePWA.

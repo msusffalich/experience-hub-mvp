@@ -6,10 +6,10 @@ Generado por `npm run audit:restructure`. Este documento no decide que se borra;
 
 - Rutas API detectadas: 74.
 - Vistas de navegacion detectadas: 14.
-- Botones con identificador detectados: 61.
+- Botones con identificador detectados: 62.
 - Funciones escritoras o reconciliadoras detectadas: 27.
 - Documentos candidatos a canonicos: 10.
-- Documentos historicos o de soporte: 36.
+- Documentos historicos o de soporte: 38.
 
 ## Vistas
 
@@ -19,14 +19,14 @@ Generado por `npm run audit:restructure`. Este documento no decide que se borra;
 - `report` (index.html:47)
 - `publications` (index.html:48)
 - `auth` (index.html:49)
-- `agenda` (index.html:85)
-- `capture` (index.html:86)
-- `timeline` (index.html:87)
-- `insights` (index.html:88)
-- `experienceMap` (index.html:89)
-- `manual` (index.html:90)
-- `admin` (index.html:91)
-- `automation` (index.html:92)
+- `agenda` (index.html:87)
+- `capture` (index.html:88)
+- `timeline` (index.html:89)
+- `insights` (index.html:90)
+- `experienceMap` (index.html:91)
+- `manual` (index.html:92)
+- `admin` (index.html:93)
+- `automation` (index.html:94)
 
 ## Rutas API
 
@@ -137,67 +137,68 @@ Generado por `npm run audit:restructure`. Este documento no decide que se borra;
 
 ## Controles identificados
 
-- `togglePasswordButton`: Mostrar (index.html:120)
-- `signInButton`: Entrar (index.html:123)
-- `signUpButton`: Crear cuenta (index.html:124)
-- `resetPasswordButton`: Recuperar contraseña (index.html:125)
-- `resendConfirmationButton`: Reenviar confirmación (index.html:126)
-- `dailyRefreshButton`: Actualizar diario (index.html:249)
-- `contextPrimaryButton`: Usar ubicación principal (index.html:283)
-- `captureQuickGroupAddButton`: Crear y seleccionar (index.html:376)
-- `recordAudioButton`: Grabar audio (index.html:431)
-- `clearFormButton`: Limpiar (index.html:439)
-- `clearAssetFiltersButton`: Limpiar filtros (index.html:509)
-- `importBiometricAssetButton`: Importar histórico (index.html:534)
-- `exportAgendaIcsButton`: Exportar calendario (index.html:572)
-- `importAgendaIcsButton`: Importar .ics (index.html:573)
-- `agendaSaveBlockedDatesButton`: Guardar bloqueos (index.html:581)
-- `agendaClearButton`: Limpiar (index.html:648)
-- `agendaSaveButton`: Guardar evento (index.html:649)
-- `experienceMapExportButton`: Exportar mapa y notas (index.html:714)
-- `connectLocalObsidianVaultButton`: Conectar bóveda del PC (index.html:718)
-- `forgetLocalObsidianVaultButton`: Quitar conexión local (index.html:719)
-- `experienceMapAskButton`: Consultar (index.html:725)
-- `resetReportScopeInlineButton`: Limpiar filtros (index.html:816)
-- `generateReportButton`: Generar reporte (index.html:822)
-- `downloadEditedReportPdfButton`: Descargar PDF (index.html:823)
-- `resetReportScopeButton`: Restaurar vista (index.html:824)
-- `clearInsightsScopeButton`: Limpiar filtros (index.html:910)
-- `exportInsightsPdfButton`: Descargar PDF de hallazgos (index.html:916)
-- `exportInsightsHtmlButton`: Descargar HTML (index.html:917)
-- `exportInsightsMarkdownButton`: Exportar Markdown (index.html:918)
-- `askButton`: Consultar (index.html:931)
-- `clearPublicationScopeButton`: Limpiar filtros (index.html:1011)
-- `generatePublicationButton`: Generar PDF revista premium (index.html:1048)
-- `exportPublicationPdfButton`: Descargar PDF revista premium (index.html:1049)
-- `exportPublicationPackageButton`: Descargar PDF + videos (index.html:1050)
-- `launchPublicationChannelButton`: Preparar canal (index.html:1051)
-- `previewPublicationHtmlButton`: Vista imprimible (index.html:1059)
-- `exportPublicationHtmlButton`: Exportar HTML (index.html:1060)
-- `exportPublicationMarkdownButton`: Exportar Markdown (index.html:1061)
-- `copyPublicationTextButton`: Copiar texto (index.html:1062)
-- `copyPublicationHtmlButton`: Copiar HTML (index.html:1063)
-- `manualClearSearchButton`: Limpiar búsqueda (index.html:1147)
-- `manualExportPdfButton`: Descargar manual PDF (index.html:1148)
-- `manualExportHtmlButton`: HTML imprimible (index.html:1149)
-- `manualExportMarkdownButton`: Exportar Markdown (index.html:1166)
-- `manualMarkAllButton`: Marcar todo (index.html:1167)
-- `manualResetReviewButton`: Reiniciar revisión (index.html:1168)
-- `openAdvancedDiagnosticsButton`: Diagnostico avanzado (index.html:1185)
-- `privacyRecommendedButton`: Aplicar recomendado (index.html:1211)
-- `toggleLocalKeyButton`: Mostrar clave (index.html:1212)
-- `rotateLocalKeyButton`: Aplicar clave (index.html:1213)
-- `unlockLocalButton`: Desbloquear local (index.html:1214)
-- `exportAssetInventoryButton`: Exportar inventario (index.html:1266)
-- `exportAssetInventoryCsvButton`: CSV inventario (index.html:1267)
-- `exportAssetProcessingBacklogButton`: Exportar pendientes (index.html:1268)
-- `exportAssetProcessingBacklogCsvButton`: CSV pendientes (index.html:1269)
-- `exportAssetProcessingChecklistButton`: Checklist de revisión (index.html:1270)
-- `exportAssetMetadataTemplateButton`: Plantilla CSV (index.html:1271)
-- `exportAssetEditableMetadataCsvButton`: CSV edición (index.html:1272)
-- `suggestFilteredAssetTextButton`: Sugerir texto filtrado (index.html:1273)
-- `importAssetMetadataButton`: Importar metadatos (index.html:1274)
-- `saveProfileButton`: Guardar perfil (index.html:1332)
+- `contextNavigationRootButton`: Volver (index.html:86)
+- `togglePasswordButton`: Mostrar (index.html:122)
+- `signInButton`: Entrar (index.html:125)
+- `signUpButton`: Crear cuenta (index.html:126)
+- `resetPasswordButton`: Recuperar contraseña (index.html:127)
+- `resendConfirmationButton`: Reenviar confirmación (index.html:128)
+- `dailyRefreshButton`: Actualizar diario (index.html:252)
+- `contextPrimaryButton`: Usar ubicación principal (index.html:286)
+- `captureQuickGroupAddButton`: Crear y seleccionar (index.html:379)
+- `recordAudioButton`: Grabar audio (index.html:434)
+- `clearFormButton`: Limpiar (index.html:442)
+- `clearAssetFiltersButton`: Limpiar filtros (index.html:517)
+- `importBiometricAssetButton`: Importar histórico (index.html:542)
+- `exportAgendaIcsButton`: Exportar calendario (index.html:580)
+- `importAgendaIcsButton`: Importar .ics (index.html:581)
+- `agendaSaveBlockedDatesButton`: Guardar bloqueos (index.html:589)
+- `agendaClearButton`: Limpiar (index.html:656)
+- `agendaSaveButton`: Guardar evento (index.html:657)
+- `experienceMapExportButton`: Exportar mapa y notas (index.html:722)
+- `connectLocalObsidianVaultButton`: Conectar bóveda del PC (index.html:726)
+- `forgetLocalObsidianVaultButton`: Quitar conexión local (index.html:727)
+- `experienceMapAskButton`: Consultar (index.html:733)
+- `resetReportScopeInlineButton`: Limpiar filtros (index.html:824)
+- `generateReportButton`: Generar reporte (index.html:830)
+- `downloadEditedReportPdfButton`: Descargar PDF (index.html:831)
+- `resetReportScopeButton`: Restaurar vista (index.html:832)
+- `clearInsightsScopeButton`: Limpiar filtros (index.html:918)
+- `exportInsightsPdfButton`: Descargar PDF de hallazgos (index.html:924)
+- `exportInsightsHtmlButton`: Descargar HTML (index.html:925)
+- `exportInsightsMarkdownButton`: Exportar Markdown (index.html:926)
+- `askButton`: Consultar (index.html:939)
+- `clearPublicationScopeButton`: Limpiar filtros (index.html:1019)
+- `generatePublicationButton`: Generar PDF revista premium (index.html:1056)
+- `exportPublicationPdfButton`: Descargar PDF revista premium (index.html:1057)
+- `exportPublicationPackageButton`: Descargar PDF + videos (index.html:1058)
+- `launchPublicationChannelButton`: Preparar canal (index.html:1059)
+- `previewPublicationHtmlButton`: Vista imprimible (index.html:1067)
+- `exportPublicationHtmlButton`: Exportar HTML (index.html:1068)
+- `exportPublicationMarkdownButton`: Exportar Markdown (index.html:1069)
+- `copyPublicationTextButton`: Copiar texto (index.html:1070)
+- `copyPublicationHtmlButton`: Copiar HTML (index.html:1071)
+- `manualClearSearchButton`: Limpiar búsqueda (index.html:1155)
+- `manualExportPdfButton`: Descargar manual PDF (index.html:1156)
+- `manualExportHtmlButton`: HTML imprimible (index.html:1157)
+- `manualExportMarkdownButton`: Exportar Markdown (index.html:1174)
+- `manualMarkAllButton`: Marcar todo (index.html:1175)
+- `manualResetReviewButton`: Reiniciar revisión (index.html:1176)
+- `openAdvancedDiagnosticsButton`: Diagnostico avanzado (index.html:1193)
+- `privacyRecommendedButton`: Aplicar recomendado (index.html:1219)
+- `toggleLocalKeyButton`: Mostrar clave (index.html:1220)
+- `rotateLocalKeyButton`: Aplicar clave (index.html:1221)
+- `unlockLocalButton`: Desbloquear local (index.html:1222)
+- `exportAssetInventoryButton`: Exportar inventario (index.html:1274)
+- `exportAssetInventoryCsvButton`: CSV inventario (index.html:1275)
+- `exportAssetProcessingBacklogButton`: Exportar pendientes (index.html:1276)
+- `exportAssetProcessingBacklogCsvButton`: CSV pendientes (index.html:1277)
+- `exportAssetProcessingChecklistButton`: Checklist de revisión (index.html:1278)
+- `exportAssetMetadataTemplateButton`: Plantilla CSV (index.html:1279)
+- `exportAssetEditableMetadataCsvButton`: CSV edición (index.html:1280)
+- `suggestFilteredAssetTextButton`: Sugerir texto filtrado (index.html:1281)
+- `importAssetMetadataButton`: Importar metadatos (index.html:1282)
+- `saveProfileButton`: Guardar perfil (index.html:1340)
 
 ## Documentacion candidata a canonica
 
@@ -241,8 +242,10 @@ Debe conservarse fuera del recorrido normal del usuario y no presentarse como co
 - `handcheck-vibepwa-721-editor-historias.md`
 - `handcheck-vibepwa-722-biblioteca-curacion.md`
 - `handcheck-vibepwa-723-inteligencia-publicacion.md`
+- `handcheck-vibepwa-724-navegacion-limpieza.md`
 - `inventory-restructure-20260727.md`
 - `oura-openapi-connector.md`
+- `README.md`
 - `runbook-canario-evidence-pipeline-v2.md`
 - `story-curation-operations-20260723.md`
 - `ux-ui-audit.md`

@@ -1,4 +1,4 @@
-const APP_VERSION = "20260728-intelligence-publishing-723";
+const APP_VERSION = "20260728-product-navigation-724";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -4237,6 +4237,14 @@ manualContent.es = [
     ],
   },
   {
+    title: "Como moverte por VibePWA",
+    body: [
+      "La barra principal tiene seis espacios: Inicio, Historias, Evidencia, Inteligencia, Publicar y Cuenta.",
+      "Las acciones frecuentes aparecen dentro de cada espacio. Historias ofrece Nueva historia, Linea de tiempo y Mapa; Cuenta ofrece Ayuda, Perfil, Privacidad, Automatizaciones y Operacion.",
+      "Agenda, Linea de tiempo, Mapa, Ayuda y Operacion son herramientas secundarias. Al abrirlas veras donde estas y un boton Volver a para regresar al espacio principal.",
+    ],
+  },
+  {
     title: "Narrativa humana",
     body: [
       "Narrativa es lenguaje humano que cuenta que viviste: texto escrito, nota manual, voz transcrita o voz de un video narrado.",
@@ -4322,6 +4330,14 @@ manualContent.en = [
     ],
   },
   {
+    title: "Moving around VibePWA",
+    body: [
+      "The main navigation has six spaces: Home, Stories, Evidence, Intelligence, Publish, and Account.",
+      "Frequent actions live inside each space. Stories offers New story, Timeline, and Map; Account offers Help, Profile, Privacy, Automations, and Operation.",
+      "Agenda, Timeline, Map, Help, and Operation are secondary tools. When you open one, Vibe shows where you are and a Back to button for the parent space.",
+    ],
+  },
+  {
     title: "Human Narrative",
     body: [
       "Narrative is human language explaining what you lived: written text, manual note, transcribed voice, or the spoken track of a narrated video.",
@@ -4404,6 +4420,14 @@ manualContent.fr = [
       "Utilise Vibeapp pour la capture rapide: texte, voix, photo, video, localisation, biometrie disponible et contexte du jour.",
       "Utilise VibePWA pour revoir bibliotheque, actifs, agenda, carte, rapports, enseignements, publications, manuel et administration.",
       "Dans VibePWA, Accueil sert au travail normal de l'utilisateur. Operation et Administration concentrent diagnostics, sauvegardes, maintenance et controles produit.",
+    ],
+  },
+  {
+    title: "Se deplacer dans VibePWA",
+    body: [
+      "La navigation principale contient six espaces: Accueil, Histoires, Preuves, Intelligence, Publier et Compte.",
+      "Les actions frequentes se trouvent dans chaque espace. Histoires donne acces a Nouvelle histoire, Chronologie et Carte; Compte donne acces a Aide, Profil, Confidentialite, Automatisations et Operation.",
+      "Agenda, Chronologie, Carte, Aide et Operation sont des outils secondaires. Leur ecran indique ou vous etes et propose Retour a pour revenir a l'espace parent.",
     ],
   },
   {
@@ -4504,6 +4528,14 @@ manualContent.pt = [
       "Use Vibeapp para captura rápida: texto, voz, foto, vídeo, localização, biometria disponível e contexto do dia.",
       "Use VibePWA para revisar Biblioteca, Arquivos, Agenda, Mapa, Relatórios, Descobertas, Publicações, Manual e Administração.",
       "Em VibePWA, Início é para o uso normal. Operação e Administração concentram diagnósticos, backups, manutenção e controles do produto.",
+    ],
+  },
+  {
+    title: "Como navegar no VibePWA",
+    body: [
+      "A navegacao principal tem seis espacos: Inicio, Historias, Evidencias, Inteligencia, Publicar e Conta.",
+      "As acoes frequentes ficam dentro de cada espaco. Historias oferece Nova historia, Linha do tempo e Mapa; Conta oferece Ajuda, Perfil, Privacidade, Automacoes e Operacao.",
+      "Agenda, Linha do tempo, Mapa, Ajuda e Operacao sao ferramentas secundarias. Ao abrir uma delas, o Vibe mostra onde voce esta e um botao Voltar para o espaco principal.",
     ],
   },
   {
@@ -6212,14 +6244,34 @@ function renderContextNavigation(view = getActiveView()) {
   const navigation = document.getElementById("contextNavigation");
   if (!navigation) return;
   const root = productNavRoot(view);
+  const isRootView = view === root;
+  const label = document.getElementById("contextNavigationLabel");
+  const rootButton = document.getElementById("contextNavigationRootButton");
   let visibleCount = 0;
   navigation.querySelectorAll(".context-nav-item").forEach((button) => {
-    const visible = button.dataset.navParent === root;
+    const visible = !isRootView && button.dataset.navParent === root && button.dataset.view !== view;
     button.hidden = !visible;
-    button.classList.toggle("active", visible && button.dataset.view === view);
+    button.classList.remove("active");
     if (visible) visibleCount += 1;
   });
-  navigation.hidden = visibleCount === 0;
+  if (label) {
+    label.textContent = languageText(
+      `Estás en ${productViewTitle(view)}`,
+      `You are in ${productViewTitle(view)}`,
+      `Vous êtes dans ${productViewTitle(view)}`,
+      `Você está em ${productViewTitle(view)}`,
+    );
+  }
+  if (rootButton) {
+    rootButton.dataset.view = root;
+    rootButton.textContent = languageText(
+      `Volver a ${productNavLabel(root)}`,
+      `Back to ${productNavLabel(root)}`,
+      `Retour à ${productNavLabel(root)}`,
+      `Voltar para ${productNavLabel(root)}`,
+    );
+  }
+  navigation.hidden = isRootView || (!visibleCount && !rootButton);
 }
 
 async function hydrateFromApi() {
@@ -7510,6 +7562,10 @@ function setupNavigation() {
       safeShowView(button.dataset.view);
     });
   });
+  document.getElementById("contextNavigationRootButton")?.addEventListener("click", (event) => {
+    event.preventDefault();
+    safeShowView(event.currentTarget.dataset.view);
+  });
   renderContextNavigation(getActiveView());
 }
 
@@ -8041,6 +8097,9 @@ function renderAuthStatePanel() {
       <div class="account-primary-actions">
         <button class="primary-button" type="button" data-account-action="profile">${escapeHtml(languageText("Perfil y dispositivos", "Profile and devices", "Profil et appareils", "Perfil e dispositivos"))}</button>
         <button class="ghost-button" type="button" data-account-action="privacy">${escapeHtml(languageText("Privacidad y respaldos", "Privacy and backups", "Confidentialité et sauvegardes", "Privacidade e backups"))}</button>
+        <button class="ghost-button" type="button" data-account-action="help">${escapeHtml(languageText("Ayuda", "Help", "Aide", "Ajuda"))}</button>
+        <button class="ghost-button" type="button" data-account-action="automation">${escapeHtml(languageText("Automatizaciones", "Automations", "Automatisations", "Automações"))}</button>
+        <button class="ghost-button" type="button" data-account-action="operation">${escapeHtml(languageText("Operación", "Operation", "Opération", "Operação"))}</button>
         <button class="ghost-button" type="button" data-account-action="signout">${escapeHtml(t("buttons.signOut"))}</button>
       </div>
     `;
@@ -13563,12 +13622,15 @@ function safeShowView(view) {
 function showView(view) {
   const contract = getProductViewContract(view);
   if (!contract) return;
-  const { section, rootButton, contextButton } = contract;
+  const { section, rootButton } = contract;
   document.querySelectorAll(".nav-item").forEach((item) => item.classList.remove("active"));
   document.querySelectorAll(".context-nav-item").forEach((item) => item.classList.remove("active"));
   document.querySelectorAll(".view").forEach((item) => item.classList.remove("active-view"));
   rootButton?.classList.add("active");
-  contextButton?.classList.add("active");
+  document.querySelectorAll(".primary-nav-item").forEach((item) => {
+    if (item === rootButton) item.setAttribute("aria-current", "page");
+    else item.removeAttribute("aria-current");
+  });
   section.classList.add("active-view");
   document.getElementById("viewTitle").textContent = productViewTitle(view);
   renderContextNavigation(view);

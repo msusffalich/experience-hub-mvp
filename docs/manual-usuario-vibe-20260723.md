@@ -21,6 +21,25 @@ Vibe sirve tanto para recordar una vida personal como para revisar una jornada d
 
 Vibeapp y VibePWA trabajan sobre la misma información. Vibeapp es rápido para capturar; VibePWA es cómodo para mirar el conjunto y editar con calma.
 
+### Cómo moverte por VibePWA
+
+La barra principal tiene solo seis espacios:
+
+| Espacio | Qué haces allí |
+| --- | --- |
+| Inicio | Ves el día, señales recientes, Agenda y accesos frecuentes. |
+| Historias | Creas, lees, editas y reorganizas experiencias. |
+| Evidencia | Recorres fotos, videos, audios, textos y documentos. |
+| Inteligencia | Generas reportes, hallazgos y exploras el mapa. |
+| Publicar | Eliges material y produces el PDF editorial. |
+| Cuenta | Revisas sesión, perfil, ayuda, privacidad y operación. |
+
+Las herramientas secundarias no aparecen como otro menú mientras estás en una
+pantalla principal. Cuando entras a Agenda, Línea de tiempo, Mapa, Ayuda u
+Operación, Vibe muestra una franja breve con **Volver a...** y las otras
+herramientas del mismo espacio. Así siempre sabes dónde estás sin recorrer una
+lista técnica.
+
 ## 3. La idea más importante: capturar no es contar toda la historia
 
 Hay dos momentos distintos:

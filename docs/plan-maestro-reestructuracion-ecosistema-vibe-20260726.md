@@ -742,6 +742,22 @@ Una estimación futura:
 - actualizar caché PWA, manual y documentación canónica;
 - cerrar documentación obsoleta con referencia al documento canónico.
 
+Estado al cierre del bloque 724:
+
+- seis espacios principales consolidados y protegidos por prueba;
+- la barra contextual ya no aparece en las pantallas principales;
+- las herramientas secundarias muestran ubicación, retorno al espacio padre y
+  solo herramientas hermanas;
+- Inicio, Historias y Cuenta exponen sus acciones frecuentes dentro del
+  contenido, sin depender de un segundo menú;
+- Cuenta reúne accesos a Ayuda, Perfil, Privacidad, Automatizaciones y
+  Operación;
+- `docs/README.md` declara las fuentes canónicas y separa los handchecks
+  históricos;
+- la división física de `app.js` y `server.js` queda para un bloque técnico
+  posterior, porque requiere fronteras de módulos y pruebas de contrato
+  independientes; no se realizará como reescritura masiva.
+
 ## 13. Estrategia de pruebas
 
 ### 13.1 Niveles

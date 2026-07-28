@@ -19,10 +19,10 @@
         }
       })();
     </script>
-    <link rel="manifest" href="manifest.webmanifest?v=20260728-intelligence-publishing-723" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260728-product-navigation-724" />
     <link rel="icon" href="icons/vibe-icon-192.png" type="image/png" />
     <link rel="apple-touch-icon" href="icons/vibe-apple-touch.png" />
-    <link rel="stylesheet" href="styles.css?v=20260728-intelligence-publishing-723" />
+    <link rel="stylesheet" href="styles.css?v=20260728-product-navigation-724" />
   </head>
   <body>
     <noscript>
@@ -81,7 +81,9 @@
             <input id="restoreBackupInput" class="sr-only" type="file" accept="application/json,.json" />
           </div>
         </header>
-        <nav id="contextNavigation" class="context-navigation" aria-label="Opciones de la sección">
+        <nav id="contextNavigation" class="context-navigation" aria-label="Opciones de la sección" hidden>
+          <span id="contextNavigationLabel" class="context-navigation-label">Dentro de esta sección</span>
+          <button id="contextNavigationRootButton" class="context-nav-root" type="button">Volver</button>
           <button class="context-nav-item" data-view="agenda" data-nav-parent="dashboard" type="button">Agenda</button>
           <button class="context-nav-item" data-view="capture" data-nav-parent="library" type="button">Nueva historia</button>
           <button class="context-nav-item" data-view="timeline" data-nav-parent="library" type="button">Línea de tiempo</button>
@@ -186,6 +188,7 @@
               <button class="ghost-button" type="button" data-backlog-view="library">Ver historias</button>
               <button class="ghost-button" type="button" data-backlog-view="assetLibrary">Ver evidencia</button>
               <button class="ghost-button" type="button" data-backlog-view="report">Abrir Inteligencia</button>
+              <button class="ghost-button" type="button" data-backlog-view="agenda">Ver Agenda</button>
             </div>
           </section>
           <section class="panel dashboard-analytical-scope-panel">
@@ -451,6 +454,11 @@
             <div class="panel-heading">
               <h2 id="library-heading">Librería de experiencias</h2>
               <span id="libraryCount"></span>
+            </div>
+            <div class="space-action-bar" aria-label="Acciones de Historias">
+              <button class="primary-button" type="button" data-backlog-view="capture">Nueva historia</button>
+              <button class="ghost-button" type="button" data-backlog-view="timeline">Línea de tiempo</button>
+              <button class="ghost-button" type="button" data-backlog-view="experienceMap">Explorar mapa</button>
             </div>
             <details class="library-filter-drawer">
               <summary id="libraryFilterSummary">Filtrar historias</summary>
@@ -1121,7 +1129,7 @@
             <div class="manual-version-card">
               <div>
                 <span id="manualVersionEyebrow">Versión vigente</span>
-                <strong id="manualVersionValue">20260728-intelligence-publishing-723</strong>
+                <strong id="manualVersionValue">20260728-product-navigation-724</strong>
                 <p id="manualVersionSummary">Guía práctica organizada por temas para entender el flujo de la app sin leer todo de corrido.</p>
               </div>
               <div class="manual-guide-grid" aria-label="Estructura del manual">
@@ -1371,6 +1379,6 @@
       </main>
     </div>
 
-    <script src="app.js?v=20260728-intelligence-publishing-723"></script>
+    <script src="app.js?v=20260728-product-navigation-724"></script>
 </body>
 </html>

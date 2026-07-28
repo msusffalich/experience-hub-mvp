@@ -45,7 +45,12 @@ contextualViews.forEach((view) => {
 });
 
 expect(index.includes('id="contextNavigation"'), "Contextual navigation container is missing.");
+expect(index.includes('id="contextNavigationRootButton"'), "Secondary tools need an explicit return to their parent space.");
+expect(index.includes('id="contextNavigationLabel"'), "Secondary tools need a clear location label.");
 expect(app.includes('document.querySelectorAll(".nav-item, .context-nav-item")'), "Primary and contextual navigation must share the same event binding.");
+expect(app.includes('document.getElementById("contextNavigationRootButton")?.addEventListener'), "The contextual return control is not bound.");
+expect(app.includes("const isRootView = view === root;"), "Primary spaces must hide the contextual toolbar.");
+expect(app.includes("navigation.hidden = isRootView"), "Contextual navigation must only appear inside a secondary tool.");
 expect(app.includes("function getProductViewContract(view)"), "Navigation must use the DOM-backed product view contract.");
 expect(app.includes("if (!section || !root || !rootButton) return null;"), "Navigation must reject incomplete view contracts.");
 expect(app.includes("if (getProductViewContract(view)) safeShowView(view);"), "Initial URL navigation must validate the same product view contract.");
@@ -94,6 +99,11 @@ expect(app.includes("selftest: runSupabaseSelfTest"), "Supabase self-test must r
 
 expect(styles.includes(".context-navigation"), "Contextual navigation styles are missing.");
 expect(styles.includes(".context-nav-item"), "Contextual navigation item styles are missing.");
+expect(styles.includes(".context-nav-root"), "Contextual return styles are missing.");
+expect(index.includes('class="space-action-bar"'), "Stories must expose frequent actions inside the space.");
+expect(app.includes('data-account-action="help"'), "Account must expose Help without relying on contextual navigation.");
+expect(app.includes('data-account-action="operation"'), "Account must expose Operation without relying on contextual navigation.");
+expect(app.includes('data-account-action="automation"'), "Account must expose Automations without relying on contextual navigation.");
 expect(styles.includes(".output-primary-controls"), "Publication primary controls need a stable layout.");
 expect(index.includes('id="capture-heading">Nueva historia</h2>'), "The story workflow must not be labeled as quick capture.");
 expect(index.includes('id="storyBuilderStepper"'), "New story must expose a real three-step editor.");

@@ -306,6 +306,23 @@ button,
   border-bottom: 1px solid var(--line);
 }
 
+.context-navigation-label {
+  margin-right: 4px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.context-nav-root {
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-strong);
+  color: var(--ink);
+  font-weight: 800;
+}
+
 .context-nav-item {
   min-height: 38px;
   padding: 8px 12px;
@@ -321,6 +338,13 @@ button,
   border-color: var(--line);
   background: var(--surface-strong);
   color: var(--ink);
+}
+
+.space-action-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 18px;
 }
 
 .product-privacy-panel {
@@ -14269,6 +14293,11 @@ button.asset-processing-summary-card {
     -webkit-overflow-scrolling: touch;
   }
 
+  .context-navigation-label {
+    display: none;
+  }
+
+  .context-nav-root,
   .context-nav-item {
     flex: 0 0 auto;
     white-space: nowrap;
