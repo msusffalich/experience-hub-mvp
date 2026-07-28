@@ -40,7 +40,7 @@ Cuando veas **Sincronizado**, el registro llegó a tu cuenta y puede aparecer en
 
 ## 5. Crear una experiencia o historia
 
-En VibePWA abre **Historias > Crear historia**. Vibeapp no crea experiencias: captura hechos y los sincroniza. En VibePWA primero cuentas el momento y después eliges las piezas que lo acompañan.
+En VibePWA abre **Historias > Nueva historia**. Vibeapp no crea experiencias: captura hechos y los sincroniza. En VibePWA primero cuentas el momento y después eliges las piezas que lo acompañan.
 
 1. Escribe un título breve.
 2. Responde con tus palabras: **¿qué ocurrió?** Puedes pegar una transcripción de voz.
@@ -105,6 +105,10 @@ Vibe conserva el antecedente de estas operaciones para que no se pierda la memor
 Vibe usa los datos de salud, ubicación, clima, noticias y agenda como contexto. Sirven para recordar condiciones alrededor de una experiencia y para enriquecer reportes.
 
 La biometría puede incluir frecuencia cardíaca, pasos, actividad, sueño o recuperación cuando existe una fuente autorizada. Si una lectura no existe, Vibe muestra que falta; no la interpreta como cero. La energía sugerida es una lectura auxiliar, nunca un diagnóstico.
+
+La **energía percibida** es distinta: es una valoración personal y opcional de 1 a 10 que puedes añadir al contar una historia. Déjala vacía cuando no la registraste. Vibe no completa ese vacío con cero, con un promedio ni con un valor predeterminado.
+
+En Inicio, Reportes, Hallazgos y Publicaciones, la energía media incluye solo valoraciones personales realmente registradas. Si no hay suficientes, verás **Sin dato**. Cuando hay biometría, Vibe puede mostrarla como señal separada o usarla en una lectura combinada, pero no la presenta como si fuera una valoración escrita por ti.
 
 El clima, las noticias y la agenda se actualizan desde la información disponible de la experiencia y de los conectores autorizados. No sustituyen tu relato de lo que realmente viviste.
 

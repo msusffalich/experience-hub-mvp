@@ -31,6 +31,30 @@ confundirse con la compatibilidad que aún sostiene producción:
 Esta distinción evita declarar terminada una arquitectura que aún conserva
 compatibilidad operativa y evita romper Vibeapp durante la limpieza.
 
+### Bloque 718: integridad de interfaz y energía
+
+Este bloque consolida dos decisiones sin alterar los contratos móviles:
+
+- El árbol visible de navegación en `index.html` es la única fuente que define
+  qué espacio principal contiene cada vista. La aplicación ya no mantiene un
+  segundo mapa manual en JavaScript que pueda divergir.
+- La acción se llama **Nueva historia** en español, inglés, francés y portugués.
+- La energía percibida es opcional, pertenece al usuario y no tiene valor
+  predeterminado.
+- Las historias creadas desde agenda, noticias o comandos rápidos no inventan
+  energía percibida.
+- La ausencia de energía no se transforma en cero, energía baja, riesgo ni
+  tendencia negativa.
+- Inicio, Reportes, Hallazgos, Publicaciones y Mapa muestran **Sin dato** cuando
+  no hay lecturas explícitas suficientes.
+- Los KPI compuestos redistribuyen el peso entre señales disponibles. La
+  biometría puede aportar una señal separada, pero nunca se presenta como una
+  calificación percibida escrita por la persona.
+- Dos verificadores automáticos protegen estas reglas:
+  `verify:product-shell` y `verify:energy-integrity`.
+
+Las rutas usadas por Vibeapp, el servidor y Supabase no cambian en este bloque.
+
 ## 1. Decisión ejecutiva
 
 Vibe se reestructura alrededor de una separación simple:

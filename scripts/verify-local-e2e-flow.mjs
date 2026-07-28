@@ -206,6 +206,18 @@ try {
 
   await evaluate(cdp, `(async () => {
     const nav = document.querySelector('button[data-view="capture"]');
+    if (!nav) throw new Error("new-story nav missing before visual audit");
+    nav.click();
+    await new Promise((resolve) => setTimeout(resolve, 900));
+    const energy = document.getElementById("energyInput");
+    if (!energy || energy.type !== "number") throw new Error("optional perceived-energy input missing");
+    if (energy.value !== "") throw new Error("perceived energy must be empty before user input");
+    return true;
+  })()`);
+  await captureVisualAudit(cdp, "new-story");
+
+  await evaluate(cdp, `(async () => {
+    const nav = document.querySelector('button[data-view="capture"]');
     if (!nav) throw new Error("capture nav missing");
     nav.click();
     await new Promise((resolve) => setTimeout(resolve, 900));
@@ -549,12 +561,18 @@ async function captureVisualAudit(cdp, name) {
     pageWidth: document.documentElement.scrollWidth,
     visiblePrimaryControls: Array.from(document.querySelectorAll(".output-primary-controls")).filter((node) => node.offsetParent !== null).length,
     visibleModeGuides: Array.from(document.querySelectorAll(".output-mode-guide")).filter((node) => node.offsetParent !== null).length,
+    captureVisible: !!document.getElementById("experienceForm")?.offsetParent,
+    energyType: document.getElementById("energyInput")?.type || "",
+    energyValue: document.getElementById("energyInput")?.value || "",
   }))()`);
   if (desktopAudit.pageWidth > desktopAudit.viewport + 2) {
     throw new Error(`${name} desktop layout overflows horizontally (${desktopAudit.pageWidth}px > ${desktopAudit.viewport}px).`);
   }
   if (["report", "insights"].includes(name) && (!desktopAudit.visiblePrimaryControls || !desktopAudit.visibleModeGuides)) {
     throw new Error(`${name} is missing the primary controls or reading guide.`);
+  }
+  if (name === "new-story" && (!desktopAudit.captureVisible || desktopAudit.energyType !== "number" || desktopAudit.energyValue !== "")) {
+    throw new Error("New story is missing its form or optional empty perceived-energy input.");
   }
   const desktop = await cdp("Page.captureScreenshot", {
     format: "png",

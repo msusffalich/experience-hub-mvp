@@ -1,4 +1,4 @@
-const APP_VERSION = "20260727-product-shell-717";
+const APP_VERSION = "20260727-product-integrity-718";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -445,7 +445,7 @@ const i18n = {
     viewTitles: {
       auth: "Acceso seguro",
       dashboard: "Inicio",
-      capture: "Captura rápida",
+      capture: "Nueva historia",
       library: "Librería de experiencias",
       assetLibrary: "Activos multimodales",
       agenda: "Agenda Inteligente",
@@ -456,7 +456,7 @@ const i18n = {
       insights: "Hallazgos accionables",
       automation: "Capacidades, rutinas y MCP",
       manual: "Manual del Usuario",
-      admin: "Operacion y administracion",
+      admin: "Operación",
     },
     buttons: {
       reset: "Cargar ejemplo",
@@ -1258,7 +1258,7 @@ const i18n = {
     },
     report: {
       narrative: (count, media, category, energy) =>
-        `La librería contiene ${count} experiencias con ${media} imágenes o videos guardados. El Área de vida principal es ${category} y la energía promedio es ${energy}/10.`,
+        `La librería contiene ${count} experiencias con ${media} imágenes o videos guardados. El Área de vida principal es ${category} y la energía promedio registrada es ${energy}.`,
       next: "El siguiente paso natural es conectar este reporte con exportación PDF, búsqueda semántica y reportes por semana, objetivo o persona.",
     },
   },
@@ -1283,7 +1283,7 @@ const i18n = {
     viewTitles: {
       auth: "Secure access",
       dashboard: "Home",
-      capture: "Quick capture",
+      capture: "New story",
       library: "Experience library",
       assetLibrary: "Files",
       agenda: "Intelligent Agenda",
@@ -1294,7 +1294,7 @@ const i18n = {
       insights: "Actionable insights",
       automation: "Skills, Routines and MCPs",
       manual: "Help",
-      admin: "Operation and administration",
+      admin: "Operation",
     },
     buttons: {
       reset: "Load example",
@@ -2096,7 +2096,7 @@ const i18n = {
     },
     report: {
       narrative: (count, media, category, energy) =>
-        `The library contains ${count} experiences with ${media} saved images or videos. The primary life area is ${category}, and average energy is ${energy}/10.`,
+        `The library contains ${count} experiences with ${media} saved images or videos. The primary life area is ${category}, and recorded average energy is ${energy}.`,
       next: "The natural next step is PDF export, semantic search, and reports by week, goal, or person.",
     },
   },
@@ -2136,7 +2136,7 @@ i18n.fr = mergeLocale(i18n.en, {
   viewTitles: {
     auth: "Accès sécurisé",
     dashboard: "Accueil",
-    capture: "Capture rapide",
+    capture: "Nouvelle histoire",
     library: "Bibliothèque d'expériences",
     assetLibrary: "Fichiers multimodaux",
     agenda: "Agenda intelligent",
@@ -2147,7 +2147,7 @@ i18n.fr = mergeLocale(i18n.en, {
     insights: "Enseignements actionnables",
     automation: "Capacités, routines et MCP",
     manual: "Aide",
-    admin: "Operation and administration",
+    admin: "Opération",
   },
   buttons: {
     reset: "Charger un exemple",
@@ -2320,7 +2320,7 @@ i18n.fr = mergeLocale(i18n.en, {
   },
   report: {
     narrative: (count, media, category, energy) =>
-      `La bibliothèque contient ${count} expériences avec ${media} images ou vidéos enregistrées. Le domaine de vie principal est ${category}, et l'énergie moyenne est ${energy}/10.`,
+      `La bibliothèque contient ${count} expériences avec ${media} images ou vidéos enregistrées. Le domaine de vie principal est ${category}, et l'énergie moyenne enregistrée est ${energy}.`,
     next: "La prochaine étape naturelle est l'export PDF, la recherche sémantique et les rapports par semaine, objectif ou personne.",
   },
 });
@@ -2346,7 +2346,7 @@ i18n.pt = mergeLocale(i18n.es, {
   viewTitles: {
     auth: "Acesso seguro",
     dashboard: "Início",
-    capture: "Captura rápida",
+    capture: "Nova história",
     library: "Biblioteca de experiências",
     assetLibrary: "Arquivos multimodais",
     agenda: "Agenda inteligente",
@@ -2357,7 +2357,7 @@ i18n.pt = mergeLocale(i18n.es, {
     insights: "Descobertas acionáveis",
     automation: "Capacidades, rotinas e MCP",
     manual: "Manual do Usuário",
-    admin: "Operação e administração",
+    admin: "Operação",
   },
   buttons: {
     reset: "Carregar exemplo",
@@ -2467,7 +2467,7 @@ i18n.pt = mergeLocale(i18n.es, {
   },
   report: {
     narrative: (count, media, category, energy) =>
-      `A biblioteca contém ${count} experiências com ${media} imagens ou vídeos salvos. A área de vida principal é ${category}, e a energia média é ${energy}/10.`,
+      `A biblioteca contém ${count} experiências com ${media} imagens ou vídeos salvos. A área de vida principal é ${category}, e a energia média registrada é ${energy}.`,
     next: "O próximo passo natural é gerar PDF, busca semântica e relatórios por semana, objetivo ou pessoa.",
   },
 });
@@ -2972,7 +2972,7 @@ const manualContent = {
         "Muestra total de experiencias, horas registradas, energía media y Área de vida principal.",
         "Próximos eventos muestra los eventos inmediatos de Agenda con tiempo relativo, ubicación, tipo, estado y acceso directo a Agenda.",
         "Las tarjetas de próximos eventos también señalan si un evento fue importado desde .ics, si cae en un día bloqueado o si tiene conflicto horario.",
-        "Energía media es el promedio de las calificaciones de energía registradas en las experiencias visibles. La energía se captura en escala 1-10.",
+        "Energía media usa únicamente valores 1-10 que la persona registró de forma explícita. Si no hay lecturas suficientes, Vibe muestra Sin dato y no interpreta la ausencia como energía baja.",
         "Adjuntos multimedia cuenta imágenes, videos y audios guardados. No es una media estadística.",
         "Calidad de captura mide completitud de objetivo, ubicación, personas, notas y adjuntos para estimar qué tan confiables serán los reportes y hallazgos.",
         "Hallazgos accionables permite convertir cada recomendación en un evento de Agenda con fecha sugerida, prioridad, descripción y recordatorio.",
@@ -3009,8 +3009,8 @@ const manualContent = {
     {
       title: "Conceptos clave: energía y adjuntos",
       items: [
-        "Energía: valor subjetivo de 1 a 10 que indica cuánta vitalidad, foco o disponibilidad sentiste durante la experiencia. 1 significa muy baja energía; 10 significa energía muy alta.",
-        "Energía media: promedio de todas las calificaciones de energía dentro del rango o filtro seleccionado. Sirve para detectar tendencia, no como diagnóstico médico.",
+        "Energía percibida: valor subjetivo y opcional de 1 a 10 que indica cuánta vitalidad, foco o disponibilidad sentiste durante la experiencia. Déjalo vacío si no lo registraste.",
+        "Energía media: promedio exclusivo de las lecturas explícitas dentro del rango o filtro seleccionado. Sin lecturas suficientes se muestra Sin dato; nunca se completa con cero ni con un valor predeterminado.",
         "Impacto biométrico: cuando importas biometría desde Activos, Reportes cruza esos registros por fecha/hora con las experiencias filtradas. Muestra cobertura, energía sugerida, sueño, pasos, frecuencia y riesgo contextual. Es apoyo analítico, no diagnóstico médico.",
         "Adjuntos multimedia: cantidad de imágenes, videos o audios asociados a una experiencia o reporte. Cuando veas Adjuntos, se refiere a archivos guardados, no a promedio.",
         "Media, en inglés, significa archivos multimedia; por claridad, la interfaz en español usa Adjuntos multimedia.",
@@ -3204,7 +3204,7 @@ const manualContent = {
         "Los arranques rapidos de Hallazgos permiten entrar directo a Ultimos 7 dias, Salud, Trabajo, Social, Aprendizaje o Datos de dispositivos. Cada boton aplica filtros, reconstruye hallazgos, plan de accion y exportaciones con el mismo alcance.",
         "Publicaciones incluye estructuras editoriales para PDF premium: album, reporte narrativo, resumen ejecutivo, jornada de trabajo, dashboard, ficha de salud y dossier. Ya no depende de canales sociales dentro de la app.",
         "En Reportes y Publicaciones, las acciones principales quedan visibles. Las opciones tecnicas quedan plegadas para no confundir al usuario.",
-        "La columna Energía muestra el valor 1-10 capturado en cada experiencia. La métrica Energía media muestra el promedio del conjunto filtrado.",
+        "La columna Energía muestra el valor 1-10 registrado en cada experiencia o Sin dato cuando falta. La métrica Energía media promedia solo los valores realmente registrados del conjunto filtrado.",
         "La columna Adjuntos muestra cuántos archivos multimedia tiene cada experiencia.",
         "Hallazgos del análisis resume tendencia de energía, foco dominante, riesgo y acción recomendada para el conjunto filtrado.",
         "Lectura integrada cruza el reporte con rutas del Mapa de Experiencias para conectar energía alta, saturación, aprendizaje y vínculos sociales/lugares con acciones concretas.",
@@ -3631,7 +3631,7 @@ const manualContent = {
         "Shows total experiences, logged hours, average energy, and primary life area.",
         "Upcoming events shows immediate Agenda events with relative time, location, type, status, and direct access to Agenda.",
         "Upcoming event cards also show whether an event was imported from .ics, falls on a blocked day, or has a schedule conflict.",
-        "Average energy is the mean of the energy ratings recorded in the visible experiences. Energy is captured on a 1-10 scale.",
+        "Average energy uses only 1-10 values explicitly recorded by the person. When there are not enough readings, Vibe shows No data and never interprets absence as low energy.",
         "Media attachments counts saved images, videos, and audio files. It is not a statistical average.",
         "Capture quality measures completeness of objective, location, people, notes, and attachments to estimate how reliable reports and insights will be.",
         "Actionable Insights can turn each recommendation into an Agenda event with a suggested date, priority, description, and reminder.",
@@ -3668,8 +3668,8 @@ const manualContent = {
     {
       title: "Key Concepts: Energy And Media Attachments",
       items: [
-        "Energy: a subjective 1-10 value that indicates how much vitality, focus, or availability you felt during the experience. 1 means very low energy; 10 means very high energy.",
-        "Average energy: the mean of all energy ratings within the selected range or filter. It helps detect trends and is not a medical diagnosis.",
+        "Perceived energy: an optional subjective 1-10 value indicating how much vitality, focus, or availability you felt during the experience. Leave it empty when you did not record it.",
+        "Average energy: the mean of explicit readings within the selected range or filter. Without enough readings Vibe shows No data; it never fills the gap with zero or a default.",
         "Biometric impact: when you import biometrics from Assets, Reports matches those records by date/time against the filtered experiences. It shows coverage, suggested energy, sleep, steps, heart rate, and contextual risk. It is analytical support, not a medical diagnosis.",
         "Media attachments: the number of images, videos, or audio files linked to an experience or report.",
         "In Spanish, the interface uses Adjuntos multimedia to avoid confusing media files with average.",
@@ -3856,7 +3856,7 @@ const manualContent = {
         "The report PDF is executive: it summarizes what matters, limits repeated evidence, and leaves full technical detail to JSON or CSV.",
         "The Group/person in this report selector filters the analysis by account subgroup. If you choose one, the report, PDF, and exports use that same scope.",
         "In Reports and Publications, the main actions stay visible. Technical options such as JSON, CSV, HTML, Markdown, copies, and packages stay folded to avoid confusing the user.",
-        "The Energy column shows the 1-10 value captured in each experience. Average energy shows the mean for the filtered set.",
+        "The Energy column shows the recorded 1-10 value or No data when absent. Average energy includes only actually recorded values in the filtered set.",
         "The Attachments column shows how many media files each experience has.",
         "Analysis findings summarize energy trend, dominant focus, risk, and recommended action for the filtered set.",
         "Integrated reading connects the report with Experience Map routes, linking high energy, saturation, learning, and social/place routes to concrete actions.",
@@ -6177,25 +6177,28 @@ function productViewTitle(view) {
   return label === `viewTitles.${view}` ? productNavLabel(view) : label;
 }
 
-const PRODUCT_NAV_ROOT_BY_VIEW = Object.freeze({
-  auth: "auth",
-  dashboard: "dashboard",
-  agenda: "dashboard",
-  capture: "library",
-  library: "library",
-  timeline: "library",
-  assetLibrary: "assetLibrary",
-  report: "report",
-  insights: "report",
-  experienceMap: "report",
-  publications: "publications",
-  manual: "auth",
-  admin: "auth",
-  automation: "auth",
-});
+function getProductViewContract(view) {
+  const normalizedView = String(view || "").trim();
+  if (!normalizedView) return null;
+  const section = document.getElementById(`${normalizedView}View`);
+  const primaryButton = document.querySelector(`.primary-nav-item[data-view="${normalizedView}"]`);
+  const contextButton = document.querySelector(`.context-nav-item[data-view="${normalizedView}"]`);
+  const root = primaryButton?.dataset.navRoot || contextButton?.dataset.navParent || "";
+  const rootButton = root
+    ? document.querySelector(`.primary-nav-item[data-nav-root="${root}"]`)
+    : null;
+  if (!section || !root || !rootButton) return null;
+  return {
+    view: normalizedView,
+    section,
+    root,
+    rootButton,
+    contextButton,
+  };
+}
 
 function productNavRoot(view) {
-  return PRODUCT_NAV_ROOT_BY_VIEW[view] || "dashboard";
+  return getProductViewContract(view)?.root || "dashboard";
 }
 
 function renderContextNavigation(view = getActiveView()) {
@@ -6671,13 +6674,45 @@ function getExperienceCategoryForExport(experience = {}) {
   return normalized;
 }
 
-function getExperienceEnergyForExport(experience = {}) {
+function getRecordedExperienceEnergy(experience = {}) {
   const raw = Number(experience.energy);
   if (!Number.isFinite(raw) || raw < 1 || raw > 10) return null;
   const source = String(experience.metadata?.energySource || experience.energySource || "").toLowerCase();
   if (source === "default" || source === "placeholder") return null;
   if ((raw === 5 || raw === 7) && (isExperienceMapContextSignal(experience) || isTechnicalMediaOnlyExperience(experience))) return null;
   return raw;
+}
+
+function getExperienceEnergyForExport(experience = {}) {
+  return getRecordedExperienceEnergy(experience);
+}
+
+function getRecordedEnergyValues(experiences = []) {
+  return (Array.isArray(experiences) ? experiences : [])
+    .map((experience) => getRecordedExperienceEnergy(experience))
+    .filter((energy) => Number.isFinite(energy));
+}
+
+function averageRecordedEnergy(experiences = []) {
+  const values = getRecordedEnergyValues(experiences);
+  return values.length ? average(values) : null;
+}
+
+function formatRecordedEnergyMetric(value) {
+  const energy = Number(value);
+  return Number.isFinite(energy) && energy >= 1 && energy <= 10
+    ? `${Number(energy.toFixed(1))}/10`
+    : languageText("Sin dato", "No data", "Aucune donnée", "Sem dados");
+}
+
+function isLowRecordedEnergy(experience = {}, threshold = 4) {
+  const energy = getRecordedExperienceEnergy(experience);
+  return energy != null && energy <= threshold;
+}
+
+function isHighRecordedEnergy(experience = {}, threshold = 7) {
+  const energy = getRecordedExperienceEnergy(experience);
+  return energy != null && energy >= threshold;
 }
 
 function saveExperiences() {
@@ -7063,7 +7098,7 @@ function isRemoteExperienceEquivalentToPending(local = {}, remote = {}) {
   const comparableMatches = comparableFields.every((field) => normalizeOfflineComparableText(local[field]) === normalizeOfflineComparableText(remote[field]));
   const numericMatches =
     Number(local.duration || 0) === Number(remote.duration || 0) &&
-    Number(local.energy || 0) === Number(remote.energy || 0);
+    getRecordedExperienceEnergy(local) === getRecordedExperienceEnergy(remote);
   if (comparableMatches && numericMatches) return true;
   return normalizeOfflineComparableText(local.title) === normalizeOfflineComparableText(remote.title) &&
     normalizeOfflineComparableText(local.timestamp) === normalizeOfflineComparableText(remote.timestamp) &&
@@ -11891,6 +11926,11 @@ async function readForm() {
   const events = parseExperienceEventsInput(document.getElementById("experienceEventsInput")?.value || "", id);
   const attachments = linkAttachmentsToEvents([...state.pendingAttachments, ...(await readSelectedFiles())], events);
   const pilotParticipantId = document.getElementById("pilotParticipantInput")?.value || "";
+  const energyInput = document.getElementById("energyInput")?.value?.trim() || "";
+  const parsedEnergy = energyInput ? Number(energyInput) : null;
+  const energy = Number.isFinite(parsedEnergy) && parsedEnergy >= 1 && parsedEnergy <= 10
+    ? parsedEnergy
+    : null;
   return {
     id,
     title: document.getElementById("titleInput").value.trim(),
@@ -11901,7 +11941,8 @@ async function readForm() {
     timestamp: new Date(document.getElementById("timestampInput").value).toISOString(),
     duration: Number(document.getElementById("durationInput").value),
     mood: document.getElementById("moodInput").value,
-    energy: Number(document.getElementById("energyInput").value),
+    energy,
+    energySource: energy == null ? null : "user",
     location: document.getElementById("locationInput").value.trim() || "Sin ubicación",
     people: document.getElementById("peopleInput").value.trim() || "Sin personas",
     notes: document.getElementById("notesInput").value.trim(),
@@ -11925,7 +11966,7 @@ function clearForm() {
   document.getElementById("objectiveInput").value = "";
   const eventsInput = document.getElementById("experienceEventsInput");
   if (eventsInput) eventsInput.value = "";
-  document.getElementById("energyInput").value = 7;
+  document.getElementById("energyInput").value = "";
   document.getElementById("timestampInput").value = toDatetimeLocal(new Date().toISOString());
   renderAttachmentPreview();
   renderCaptureEvidenceInbox();
@@ -13197,7 +13238,7 @@ function loadExperienceIntoForm(experience) {
   document.getElementById("timestampInput").value = toDatetimeLocal(experience.timestamp);
   document.getElementById("durationInput").value = experience.duration;
   document.getElementById("moodInput").value = experience.mood;
-  document.getElementById("energyInput").value = experience.energy;
+  document.getElementById("energyInput").value = getRecordedExperienceEnergy(experience) ?? "";
   document.getElementById("locationInput").value = experience.location;
   document.getElementById("peopleInput").value = experience.people;
   document.getElementById("notesInput").value = experience.notes;
@@ -13259,11 +13300,9 @@ function safeShowView(view) {
 }
 
 function showView(view) {
-  const section = document.getElementById(`${view}View`);
-  if (!section) return;
-  const root = productNavRoot(view);
-  const rootButton = document.querySelector(`.primary-nav-item[data-nav-root="${root}"]`);
-  const contextButton = document.querySelector(`.context-nav-item[data-view="${view}"]`);
+  const contract = getProductViewContract(view);
+  if (!contract) return;
+  const { section, rootButton, contextButton } = contract;
   document.querySelectorAll(".nav-item").forEach((item) => item.classList.remove("active"));
   document.querySelectorAll(".context-nav-item").forEach((item) => item.classList.remove("active"));
   document.querySelectorAll(".view").forEach((item) => item.classList.remove("active-view"));
@@ -13922,7 +13961,7 @@ function handleEvidenceInboxAction(event) {
 function applyInitialViewFromUrl() {
   const params = new URLSearchParams(window.location.search);
   const view = params.get("view") || (window.location.hash || "").replace("#", "");
-  if (view && document.querySelector(`[data-view="${view}"]`)) safeShowView(view);
+  if (getProductViewContract(view)) safeShowView(view);
 }
 
 async function handleIntegrationReturnFromUrl() {
@@ -14063,7 +14102,10 @@ function renderMetrics() {
   const experiences = getDashboardExperiences();
   const total = experiences.length;
   const minutes = experiences.reduce((sum, item) => sum + item.duration, 0);
-  const avgEnergy = total ? average(experiences.map((item) => item.energy)).toFixed(1) : "0.0";
+  const recordedEnergy = averageRecordedEnergy(experiences);
+  const avgEnergy = recordedEnergy == null
+    ? languageText("Sin dato", "No data", "Aucune donnée", "Sem dados")
+    : recordedEnergy.toFixed(1);
   const topCategory = getTopCategory(experiences);
   const metrics = [
     [t("metrics.experiences"), total],
@@ -14360,7 +14402,7 @@ function renderDashboardAgenda() {
     box.innerHTML = `
       <article class="dashboard-agenda-empty">
         <p>${escapeHtml(t("labels.dashboardAgendaEmpty"))}</p>
-        <button class="ghost-button" type="button" onclick="showView('agenda')">${escapeHtml(t("labels.dashboardAgendaOpen"))}</button>
+        <button class="ghost-button" type="button" data-backlog-view="agenda">${escapeHtml(t("labels.dashboardAgendaOpen"))}</button>
       </article>
     `;
     return;
@@ -14393,7 +14435,7 @@ function renderDashboardAgenda() {
             <span class="pill">${escapeHtml(displayAgendaPriority(event.priority))}</span>
             ${badges.map((badge) => `<span class="pill agenda-alert-pill">${escapeHtml(badge)}</span>`).join("")}
           </div>
-          <button class="ghost-button" type="button" onclick="showView('agenda')">${escapeHtml(t("labels.dashboardAgendaOpen"))}</button>
+          <button class="ghost-button" type="button" data-backlog-view="agenda">${escapeHtml(t("labels.dashboardAgendaOpen"))}</button>
         </article>
       `;
     })
@@ -14436,7 +14478,7 @@ function renderRecentSignals() {
       (item) => `
         <article class="signal-card">
           <strong>${item.title}</strong>
-          <span>${formatDate(item.timestamp)} · ${displayCategory(item.category)} · energía ${item.energy}/10</span>
+          <span>${formatDate(item.timestamp)} · ${displayCategory(item.category)} · ${formatRecordedEnergyMetric(getRecordedExperienceEnergy(item))}</span>
         </article>
       `,
     )
@@ -14540,7 +14582,9 @@ function renderBiometricCaptureContext() {
   if (!box) return;
   const timestamp = document.getElementById("timestampInput")?.value || "";
   const duration = Number(document.getElementById("durationInput")?.value || 0);
-  const energy = Number(document.getElementById("energyInput")?.value || 0);
+  const energyRaw = document.getElementById("energyInput")?.value?.trim() || "";
+  const energy = energyRaw ? Number(energyRaw) : null;
+  const hasPerceivedEnergy = Number.isFinite(energy) && energy >= 1 && energy <= 10;
   const signal = buildBiometricSignalForTimestamp(timestamp, duration);
   if (!state.biometricImports?.length) {
     box.innerHTML = `
@@ -14558,9 +14602,16 @@ function renderBiometricCaptureContext() {
   }
   const suggestedEnergy = Number(signal.energySuggestion);
   const hasEnergySuggestion = Number.isFinite(suggestedEnergy) && suggestedEnergy > 0;
-  const difference = hasEnergySuggestion ? Math.abs(suggestedEnergy - energy) : 0;
+  const difference = hasEnergySuggestion && hasPerceivedEnergy ? Math.abs(suggestedEnergy - energy) : null;
   const diffText = !hasEnergySuggestion
     ? (state.language !== "es" ? "There is not enough biometric evidence to suggest an energy value yet." : "Aún no hay evidencia biométrica suficiente para sugerir un valor de energía.")
+    : !hasPerceivedEnergy
+      ? languageText(
+          "No registraste energía percibida. Puedes conservar solo las mediciones o aplicar esta sugerencia explícitamente.",
+          "You did not record perceived energy. You can keep only the measurements or explicitly apply this suggestion.",
+          "Vous n'avez pas enregistré d'énergie perçue. Vous pouvez conserver uniquement les mesures ou appliquer explicitement cette suggestion.",
+          "Você não registrou energia percebida. Pode manter apenas as medições ou aplicar explicitamente esta sugestão.",
+        )
     : difference >= 3
       ? (state.language !== "es" ? "Your perceived energy differs from the biometric suggestion; keep both as context." : "Tu energía percibida difiere de la sugerencia biométrica; conviene conservar ambas señales.")
       : (state.language !== "es" ? "Biometric signal is consistent with the current energy value." : "La señal biométrica es consistente con el valor actual de energía.");
@@ -15924,7 +15975,8 @@ async function saveDailyArticleAsExperience() {
     timestamp: article.seenAt ? new Date(article.seenAt).toISOString() : new Date().toISOString(),
     duration: 10,
     mood: state.language !== "es" ? "Reflective" : "Reflexivo",
-    energy: 5,
+    energy: null,
+    energySource: null,
     location: state.dailyBriefing?.location || inferPrimaryLocation() || "Sin ubicación",
     people: state.language !== "es" ? "Public context" : "Contexto público",
     notes: [
@@ -16270,7 +16322,8 @@ async function saveVoiceQuickExperience(note, originalTranscript = "") {
     duration: inferDurationFromTranscript(note),
     objective: state.language !== "es" ? "Quick voice capture" : "Captura rápida por voz",
     mood: "",
-    energy: 5,
+    energy: null,
+    energySource: null,
     location: "",
     people: participantFields.pilotParticipantName || "",
     attachments: [],
@@ -21236,7 +21289,8 @@ async function convertAgendaEventToExperience(event) {
     timestamp: event.endAt,
     duration: Math.max(1, Math.round((new Date(event.endAt) - new Date(event.startAt)) / 60000)),
     mood: "Enfocado",
-    energy: 6,
+    energy: null,
+    energySource: null,
     location: event.location || "Sin ubicación",
     people: event.participants || "Sin personas",
     notes: `${event.description || ""}\n\n${state.language !== "es" ? "Source event" : "Evento de origen"}: ${event.type} · ${event.status}`.trim(),
@@ -21314,7 +21368,7 @@ function renderTimeline() {
                 <span class="pill">${escapeHtml(getExperienceSourceLabel(item))}</span>
                 ${item.objective ? `<span class="pill">${escapeHtml(item.objective)}</span>` : ""}
                 <span class="pill">${escapeHtml(item.mood)}</span>
-                <span class="pill">${state.language !== "es" ? "energy" : "energía"} ${item.energy}/10</span>
+                <span class="pill">${state.language !== "es" ? "energy" : "energía"} ${formatRecordedEnergyMetric(getRecordedExperienceEnergy(item))}</span>
                 <span class="pill">${escapeHtml(item.location)}</span>
               </div>
               ${renderMediaStrip(item)}
@@ -21390,19 +21444,20 @@ function buildExperienceMapGraph() {
   const links = [];
   const factorMap = new Map();
   experiences.forEach((experience, index) => {
+    const recordedEnergy = getRecordedExperienceEnergy(experience);
     nodes.push({
       id: experience.id,
       kind: "experience",
       label: experience.title || displayCategory(experience.category),
       category: normalizeCategoryName(experience.category),
-      energy: Number(experience.energy || 0),
+      energy: recordedEnergy,
       mood: experience.mood,
       timestamp: experience.timestamp,
       objective: experience.objective,
       people: experience.people,
       location: experience.location,
       notes: experience.notes,
-      size: 8 + Math.min(10, Number(experience.energy || 0)),
+      size: 12 + (recordedEnergy == null ? 0 : Math.min(6, Math.max(0, recordedEnergy - 4))),
       index,
     });
     getExperienceMapFactors(experience).forEach((factor) => {
@@ -21470,7 +21525,8 @@ function normalizeFactorValue(value) {
 }
 
 function getEnergyBand(energy) {
-  const value = Number(energy || 0);
+  const value = Number(energy);
+  if (!Number.isFinite(value) || value < 1 || value > 10) return "";
   if (value >= 8) return "high";
   if (value >= 5) return "medium";
   return "low";
@@ -21478,6 +21534,7 @@ function getEnergyBand(energy) {
 
 function getEnergyBandLabel(energy) {
   const band = getEnergyBand(energy);
+  if (!band) return languageText("Energía sin registrar", "Energy not recorded", "Énergie non enregistrée", "Energia não registrada");
   if (state.language !== "es") return band === "high" ? "High energy" : band === "medium" ? "Stable energy" : "Low energy";
   return band === "high" ? "Energía alta" : band === "medium" ? "Energía estable" : "Energía baja";
 }
@@ -21577,7 +21634,7 @@ function renderExperienceMapBoardRoute(route) {
   return `
     <button class="map-route-mini ${escapeHtml(route.tone)} ${selected}" type="button" data-map-route-id="${escapeHtml(route.id)}">
       <strong>${escapeHtml(route.title)}</strong>
-      <span>${route.items.length} ${state.language !== "es" ? "experiences" : "experiencias"} · ${route.avgEnergy}/10</span>
+      <span>${route.items.length} ${state.language !== "es" ? "experiences" : "experiencias"} · ${formatRecordedEnergyMetric(route.avgEnergy)}</span>
     </button>
   `;
 }
@@ -21609,7 +21666,7 @@ function renderExperienceMapNode(node, graph, routeNodeIds = new Set()) {
     <g class="map-node ${node.kind} ${tone} ${selected} ${connected} ${routeActive}" data-map-node-id="${escapeHtml(node.id)}" transform="translate(${node.x} ${node.y})" tabindex="0">
       <circle r="${node.size}" filter="url(#mapNodeShadow)"></circle>
       <text y="${node.size + 14}" text-anchor="middle">${escapeHtml(label)}</text>
-      <title>${escapeHtml(node.label)}${node.kind === "experience" ? ` · ${displayCategory(node.category)} · ${node.energy}/10` : ""}</title>
+      <title>${escapeHtml(node.label)}${node.kind === "experience" ? ` · ${displayCategory(node.category)} · ${formatRecordedEnergyMetric(node.energy)}` : ""}</title>
     </g>
   `;
 }
@@ -21650,7 +21707,7 @@ function buildExperienceMapRoutes(graph, options = {}) {
       id: "high-energy",
       title: t("labels.experienceMapRouteEnergy"),
       tone: "energy",
-      matcher: (item) => Number(item.energy || 0) >= 8,
+      matcher: (item) => isHighRecordedEnergy(item, 8),
       description:
         state.language !== "es"
            ? "Experiences where vitality, focus, or personal availability was strongest."
@@ -21660,7 +21717,7 @@ function buildExperienceMapRoutes(graph, options = {}) {
       id: "saturation",
       title: t("labels.experienceMapRouteSaturation"),
       tone: "saturation",
-      matcher: (item) => Number(item.energy || 0) <= 4 || normalizeComparableText(item.mood).includes("satur"),
+      matcher: (item) => isLowRecordedEnergy(item, 4) || normalizeComparableText(item.mood).includes("satur"),
       description:
         state.language !== "es"
            ? "Moments that may need recovery, pacing, or a lighter routine."
@@ -21793,7 +21850,7 @@ function renderExperienceMapDetail(graph) {
       <h3>${escapeHtml(selected.label)}</h3>
       <div class="map-detail-meta">
         <span>${escapeHtml(selected.kind === "experience" ? displayCategory(selected.category) : getRelationTypeLabel(selected.type))}</span>
-        ${selected.kind === "experience" ? `<span>${selected.energy}/10</span><span>${escapeHtml(formatShortDate(selected.timestamp))}</span>` : `<span>${selected.count} ${t("labels.experienceMapLinks").toLowerCase()}</span>`}
+        ${selected.kind === "experience" ? `<span>${escapeHtml(formatRecordedEnergyMetric(selected.energy))}</span><span>${escapeHtml(formatShortDate(selected.timestamp))}</span>` : `<span>${selected.count} ${t("labels.experienceMapLinks").toLowerCase()}</span>`}
       </div>
       ${experience?.notes ? `<p>${escapeHtml(summarizeNote(experience.notes, ""))}</p>` : ""}
       ${
@@ -21872,7 +21929,7 @@ function answerExperienceMapQuestion() {
       <h3>${escapeHtml(questionText)}</h3>
       <div class="question-answer-metrics">
         <article><span>${t("labels.experienceMapQuestionFocus")}</span><strong>${escapeHtml(analysis.focus)}</strong></article>
-        <article><span>${t("metrics.avgEnergy")}</span><strong>${analysis.avgEnergy}/10</strong></article>
+        <article><span>${t("metrics.avgEnergy")}</span><strong>${escapeHtml(formatRecordedEnergyMetric(analysis.avgEnergy))}</strong></article>
         <article><span>${t("labels.experienceMapLinks")}</span><strong>${analysis.linkCount}</strong></article>
       </div>
       <p>${escapeHtml(analysis.summary)}</p>
@@ -21883,7 +21940,7 @@ function answerExperienceMapQuestion() {
             (item) => `
               <article>
                 <strong>${escapeHtml(item.label)}</strong>
-                <span>${escapeHtml(displayCategory(item.category))} · ${item.energy}/10 · ${escapeHtml(formatShortDate(item.timestamp))}</span>
+                <span>${escapeHtml(displayCategory(item.category))} · ${escapeHtml(formatRecordedEnergyMetric(item.energy))} · ${escapeHtml(formatShortDate(item.timestamp))}</span>
               </article>
             `,
           )
@@ -21920,7 +21977,7 @@ function buildExperienceMapQuestionAnalysis(graph, questionText) {
   if (!graph.experiences.length) {
     return {
       focus: t("labels.experienceMapEmpty"),
-      avgEnergy: "0.0",
+      avgEnergy: null,
       linkCount: 0,
       items: [],
       summary: t("labels.experienceMapEmpty"),
@@ -21939,9 +21996,12 @@ function buildExperienceMapQuestionAnalysis(graph, questionText) {
       ? factorIntent.items
       : tokenItems.length
         ? tokenItems
-        : [...graph.experiences].sort((a, b) => Number(b.energy || 0) - Number(a.energy || 0)).slice(0, 4);
+        : [...graph.experiences]
+            .sort((a, b) => (getRecordedExperienceEnergy(b) ?? -1) - (getRecordedExperienceEnergy(a) ?? -1))
+            .slice(0, 4);
   const items = selectedItems.slice(0, 5);
-  const avgEnergy = items.length ? average(items.map((item) => Number(item.energy || 0))).toFixed(1) : "0.0";
+  const recordedAverage = averageRecordedEnergy(items);
+  const avgEnergy = recordedAverage == null ? null : recordedAverage.toFixed(1);
   const focus = routeMatch?.title || factorIntent.label || (state.language !== "es" ? "General relationship reading" : "Lectura general de relaciones");
   const factorText = topFactors.map((factor) => `${factor.label} (${factor.count})`).join(", ");
   const summary = buildExperienceMapQuestionSummary({ graph, routeMatch, factorIntent, items, factorText, avgEnergy });
@@ -21996,13 +22056,19 @@ function buildExperienceMapQuestionSummary({ graph, routeMatch, factorIntent, it
   if (!items.length) return state.language !== "es" ? "The map has no matching experiences for this question yet." : "El mapa todavía no tiene experiencias que coincidan con esta pregunta.";
   const names = items.slice(0, 3).map((item) => item.label).join(", ");
   if (state.language !== "es") {
-    if (routeMatch) return `${routeMatch.title} includes ${items.length} related experiences, with average energy ${avgEnergy}/10. Key examples: ${names}.`;
+    if (routeMatch) {
+      const energyText = avgEnergy == null ? "without enough recorded energy for an average" : `with average recorded energy ${avgEnergy}/10`;
+      return `${routeMatch.title} includes ${items.length} related experiences, ${energyText}. Key examples: ${names}.`;
+    }
     if (factorIntent.label) return `${factorIntent.label} connects ${items.length} experiences. This suggests a repeated context worth observing.`;
     return factorText
       ? `The strongest clusters are ${factorText}. The most relevant examples for your question are ${names}.`
       : `The most relevant examples for your question are ${names}. More repeated factors will make the reading stronger.`;
   }
-  if (routeMatch) return `${routeMatch.title} incluye ${items.length} experiencias relacionadas, con energía media de ${avgEnergy}/10. Ejemplos clave: ${names}.`;
+  if (routeMatch) {
+    const energyText = avgEnergy == null ? "sin suficiente energía registrada para calcular un promedio" : `con energía registrada media de ${avgEnergy}/10`;
+    return `${routeMatch.title} incluye ${items.length} experiencias relacionadas, ${energyText}. Ejemplos clave: ${names}.`;
+  }
   if (factorIntent.label) return `${factorIntent.label} conecta ${items.length} experiencias. Esto sugiere un contexto repetido que conviene observar.`;
   return factorText
     ? `Los núcleos más fuertes son ${factorText}. Los ejemplos más relevantes para tu pregunta son ${names}.`
@@ -22015,13 +22081,13 @@ function buildExperienceMapQuestionAction(routeMatch, factorIntent, avgEnergy) {
     if (routeMatch?.id === "saturation") return "Plan recovery or reduce load around similar contexts, then capture whether energy improves.";
     if (routeMatch?.id === "learning") return "Turn the repeated learning into a concrete next action or reusable note.";
     if (factorIntent.label) return "Review whether this person or place consistently improves, drains, or organizes your experiences.";
-    return Number(avgEnergy) >= 7 ? "Use these experiences as candidates for routines." : "Add more notes, people, and places to improve the map reading.";
+    return avgEnergy != null && Number(avgEnergy) >= 7 ? "Use these experiences as candidates for routines." : "Add more notes, people, and places to improve the map reading.";
   }
   if (routeMatch?.id === "high-energy") return "Repite las condiciones de estas experiencias y compara las próximas capturas contra esta ruta.";
   if (routeMatch?.id === "saturation") return "Planifica recuperación o reduce carga en contextos similares; luego captura si la energía mejora.";
   if (routeMatch?.id === "learning") return "Convierte el aprendizaje repetido en una acción concreta o una nota reutilizable.";
   if (factorIntent.label) return "Revisa si esta persona o lugar mejora, drena u organiza tus experiencias de forma consistente.";
-  return Number(avgEnergy) >= 7 ? "Usa estas experiencias como candidatas para rutinas." : "Agrega más notas, personas y lugares para mejorar la lectura del mapa.";
+  return avgEnergy != null && Number(avgEnergy) >= 7 ? "Usa estas experiencias como candidatas para rutinas." : "Agrega más notas, personas y lugares para mejorar la lectura del mapa.";
 }
 
 function buildExperienceMapAnswerText(graph, topFactors) {
@@ -22088,7 +22154,7 @@ function exportExperienceKnowledgeMapMarkdown() {
       ? routes.flatMap((route) => [
           `### ${route.title}`,
           "",
-          `- ${t("metrics.avgEnergy")}: ${route.avgEnergy}/10`,
+          `- ${t("metrics.avgEnergy")}: ${formatRecordedEnergyMetric(route.avgEnergy)}`,
           route.dominant ? `- ${state.language !== "es" ? "Dominant category" : "Categoría dominante"}: ${route.dominant}` : "",
           `- ${state.language !== "es" ? "Experiences" : "Experiencias"}: ${route.items.map((item) => `[[${item.label}]]`).join(" · ")}`,
           "",
@@ -22408,7 +22474,7 @@ function formatExperienceMapNodeMarkdown(node) {
   const energyLabel = state.language !== "es" ? "Energy" : "Energía";
   const details = [
     `${displayCategory(node.category)}`,
-    `${energyLabel}: ${node.energy}/10`,
+    `${energyLabel}: ${formatRecordedEnergyMetric(node.energy)}`,
     formatShortDate(node.timestamp),
   ];
   const context = [node.location, node.people, node.objective].filter(Boolean).join(" · ");
@@ -23573,7 +23639,8 @@ function renderReport() {
   const experiences = outputScope.stories;
   const totalMinutes = experiences.reduce((sum, item) => sum + item.duration, 0);
   const attachmentCount = outputScope.evidence.length;
-  const avgEnergy = experiences.length ? average(experiences.map((item) => item.energy)).toFixed(1) : "0.0";
+  const recordedEnergy = averageRecordedEnergy(experiences);
+  const avgEnergy = formatRecordedEnergyMetric(recordedEnergy);
   const firstDate = experiences[0]?.timestamp;
   const lastDate = experiences[experiences.length - 1]?.timestamp;
   renderReportAcceptancePanel();
@@ -23674,7 +23741,7 @@ function renderReport() {
                 <td>${displayCategory(item.category)}</td>
                 <td>${escapeHtml(item.objective || "-")}</td>
                 <td>${item.duration} min</td>
-                <td>${item.energy}/10</td>
+                <td>${escapeHtml(formatRecordedEnergyMetric(getRecordedExperienceEnergy(item)))}</td>
                 <td>${item.attachments?.length || 0}</td>
               </tr>
             `,
@@ -24044,10 +24111,11 @@ function buildPredictiveOutlook(experiences, analysis, quality) {
   const midpoint = Math.max(1, Math.floor(sorted.length / 2));
   const previous = sorted.slice(0, midpoint);
   const recent = sorted.slice(midpoint);
-  const previousEnergy = average(previous.map((item) => Number(item.energy || 0)));
-  const recentEnergy = average(recent.map((item) => Number(item.energy || 0)));
-  const energyDelta = recentEnergy - previousEnergy;
-  const recentSaturationPct = pct(recent.filter((item) => item.mood === "Saturado" || Number(item.energy || 0) <= 4).length, recent.length);
+  const previousEnergy = averageRecordedEnergy(previous);
+  const recentEnergy = averageRecordedEnergy(recent);
+  const hasEnergyTrend = previousEnergy != null && recentEnergy != null;
+  const energyDelta = hasEnergyTrend ? recentEnergy - previousEnergy : 0;
+  const recentSaturationPct = pct(recent.filter((item) => item.mood === "Saturado" || isLowRecordedEnergy(item)).length, recent.length);
   const workPct = pct(recent.filter((item) => normalizeCategoryName(item.category) === "Trabajo").length, recent.length);
   const recoveryPct = pct(recent.filter((item) => ["Salud", "Espiritualidad", "Viajes / Paseos"].includes(normalizeCategoryName(item.category))).length, recent.length);
   const contextImpact = Number(state.contextImpact?.impactScore || 0);
@@ -24055,8 +24123,9 @@ function buildPredictiveOutlook(experiences, analysis, quality) {
   const riskScore = clampScore((recentSaturationPct * 0.42) + (Math.max(0, workPct - recoveryPct) * 0.24) + (Math.max(0, -energyDelta) * 11) + (contextImpact * 0.14) + (biometricSummary.biometricRiskScore * 0.1));
   const confidence = Math.round(clampScore((Math.min(1, experiences.length / 14) * 40) + (quality.score * 0.34) + (analysis.categoryBreakdown.length >= 3 ? 10 : 0) + (state.contextImpact ? 8 : 0) + Math.min(8, biometricSummary.coveragePct * 0.08)));
   const tone = confidence >= 72 ? "strong" : confidence >= 48 ? "medium" : "low";
-  const direction =
-    energyDelta >= 0.45
+  const direction = !hasEnergyTrend
+    ? languageText("sin energía suficiente", "not enough energy data", "énergie insuffisante", "energia insuficiente")
+    : energyDelta >= 0.45
       ? state.language !== "es" ? "upward" : "al alza"
       : energyDelta <= -0.45
         ? state.language !== "es" ? "downward" : "a la baja"
@@ -24172,7 +24241,7 @@ function renderIntegratedReportReading(experiences, analysis, quality) {
                   (route) => `
                     <article class="report-route-pill route-${escapeHtml(route.tone)}">
                       <strong>${escapeHtml(route.title)}</strong>
-                      <span>${route.items.length} ${t("labels.experienceMapNodes")} · ${route.avgEnergy}/10</span>
+                      <span>${route.items.length} ${t("labels.experienceMapNodes")} · ${formatRecordedEnergyMetric(route.avgEnergy)}</span>
                     </article>
                   `,
                 )
@@ -24198,7 +24267,7 @@ function buildReportExperienceMapGraph(experiences) {
 }
 
 function buildIntegratedReportCards(experiences, analysis, quality, routes) {
-  const avgEnergy = experiences.length ? average(experiences.map((item) => Number(item.energy || 0))) : 0;
+  const avgEnergy = averageRecordedEnergy(experiences);
   const saturationRate = pct(analysis.saturated.length, experiences.length);
   const highEnergyRoute = routes.find((route) => route.id === "high-energy");
   const saturationRoute = routes.find((route) => route.id === "saturation");
@@ -24206,13 +24275,20 @@ function buildIntegratedReportCards(experiences, analysis, quality, routes) {
   const socialRoute = routes.find((route) => route.id === "social-place");
   const cards = [
     {
-      tone: avgEnergy >= 7 ? "strong" : avgEnergy >= 5 ? "medium" : "risk",
+      tone: avgEnergy == null ? "medium" : avgEnergy >= 7 ? "strong" : avgEnergy >= 5 ? "medium" : "risk",
       title: state.language !== "es" ? "Energy and recovery" : "Energía y recuperación",
-      priority: avgEnergy >= 7 ? localizedPriority("medium") : localizedPriority("high"),
+      priority: avgEnergy == null ? localizedPriority("medium") : avgEnergy >= 7 ? localizedPriority("medium") : localizedPriority("high"),
       evidence: highEnergyRoute
         ? `${highEnergyRoute.items.length} ${state.language !== "es" ? "experiences in the high-energy route" : "experiencias en la ruta de energía alta"}`
-        : `${t("metrics.avgEnergy")}: ${avgEnergy.toFixed(1)}/10`,
-      action: avgEnergy >= 7
+        : `${t("metrics.avgEnergy")}: ${formatRecordedEnergyMetric(avgEnergy)}`,
+      action: avgEnergy == null
+        ? languageText(
+            "Registra energía solo cuando la percibas; mientras tanto, usa biometría, estado emocional y contexto sin inventar un valor.",
+            "Record energy only when you perceive it; meanwhile use biometrics, mood, and context without inventing a value.",
+            "Enregistrez l'énergie seulement lorsqu'elle est perçue; utilisez entre-temps la biométrie, l'état émotionnel et le contexte sans inventer de valeur.",
+            "Registre energia apenas quando percebê-la; enquanto isso, use biometria, estado emocional e contexto sem inventar um valor.",
+          )
+        : avgEnergy >= 7
         ? (state.language !== "es" ? "Repeat high-energy conditions and turn them into routines." : "Repite las condiciones de energía alta y conviértelas en rutinas.")
         : (state.language !== "es" ? "Reduce load and capture recovery conditions for the next week." : "Reduce carga y captura condiciones de recuperación durante la próxima semana."),
     },
@@ -24370,7 +24446,9 @@ function getMemoryMarker(label) {
 function buildLivingMemoryLog(experiences, analysis) {
   if (!experiences.length) return [];
   const sorted = [...experiences].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-  const highEnergy = [...experiences].sort((a, b) => Number(b.energy || 0) - Number(a.energy || 0))[0];
+  const highEnergy = [...experiences]
+    .filter((item) => getRecordedExperienceEnergy(item) != null)
+    .sort((a, b) => getRecordedExperienceEnergy(b) - getRecordedExperienceEnergy(a))[0];
   const learning = experiences.find((item) => normalizeCategoryName(item.category) === "Aprendizaje" || /aprend|lesson|insight/i.test(item.notes || ""));
   const recent = sorted[0];
   const topCategory = displayCategory(analysis.topCategory || getTopCategory(experiences));
@@ -24381,8 +24459,8 @@ function buildLivingMemoryLog(experiences, analysis) {
       title: highEnergy.title || topCategory,
       detail:
         state.language !== "es"
-           ? `Energy reached ${highEnergy.energy}/10 in ${displayCategory(highEnergy.category)}. Preserve the context: ${highEnergy.location || "no location"}${highEnergy.people ? `, with ${highEnergy.people}` : ""}.`
-          : `La energía llegó a ${highEnergy.energy}/10 en ${displayCategory(highEnergy.category)}. Conviene preservar el contexto: ${highEnergy.location || "sin ubicación"}${highEnergy.people ? `, con ${highEnergy.people}` : ""}.`,
+           ? `Recorded energy reached ${formatRecordedEnergyMetric(getRecordedExperienceEnergy(highEnergy))} in ${displayCategory(highEnergy.category)}. Preserve the context: ${highEnergy.location || "no location"}${highEnergy.people ? `, with ${highEnergy.people}` : ""}.`
+          : `La energía registrada llegó a ${formatRecordedEnergyMetric(getRecordedExperienceEnergy(highEnergy))} en ${displayCategory(highEnergy.category)}. Conviene preservar el contexto: ${highEnergy.location || "sin ubicación"}${highEnergy.people ? `, con ${highEnergy.people}` : ""}.`,
     });
   }
   if (learning) {
@@ -24623,21 +24701,62 @@ function renderHumanCorrelationCard(item) {
 
 function buildHumanKpis(experiences, analysis, quality) {
   if (!experiences.length) return [];
-  const avgEnergy = average(experiences.map((item) => Number(item.energy || 0)));
+  const recordedEnergy = getRecordedEnergyValues(experiences);
+  const avgEnergy = recordedEnergy.length ? average(recordedEnergy) : null;
   const biometricSummary = summarizeBiometricSignalsForExperiences(experiences);
-  const highEnergyPct = pct(experiences.filter((item) => Number(item.energy || 0) >= 7).length, experiences.length);
-  const lowEnergyPct = pct(experiences.filter((item) => Number(item.energy || 0) <= 4).length, experiences.length);
+  const highEnergyPct = recordedEnergy.length ? pct(recordedEnergy.filter((energy) => energy >= 7).length, recordedEnergy.length) : null;
+  const lowEnergyPct = recordedEnergy.length ? pct(recordedEnergy.filter((energy) => energy <= 4).length, recordedEnergy.length) : null;
   const saturatedPct = pct(experiences.filter((item) => item.mood === "Saturado").length, experiences.length);
   const socialPct = pct(experiences.filter((item) => item.category === "Social" || hasMeaningfulPeople(item.people)).length, experiences.length);
   const recoveryPct = pct(experiences.filter((item) => ["Salud", "Espiritualidad", "Viajes / Paseos"].includes(normalizeCategoryName(item.category))).length, experiences.length);
   const workPct = pct(experiences.filter((item) => normalizeCategoryName(item.category) === "Trabajo").length, experiences.length);
   const learningPct = pct(experiences.filter((item) => normalizeCategoryName(item.category) === "Aprendizaje" || String(item.notes || "").toLowerCase().includes("aprendi")).length, experiences.length);
   const balanceScore = clampScore(100 - Math.abs(workPct - recoveryPct));
-  const stabilityScore = clampScore(100 - saturatedPct - Math.max(0, lowEnergyPct - 15));
-  const biometricEnergyScore = biometricSummary.averageSuggestedEnergy ? biometricSummary.averageSuggestedEnergy * 10 : avgEnergy * 10;
-  const wellnessScore = clampScore((avgEnergy * 10 * 0.3) + (biometricEnergyScore * 0.12) + (stabilityScore * 0.22) + (recoveryPct * 0.16) + (quality.score * 0.2));
-  const stressLoad = clampScore((saturatedPct * 0.52) + (lowEnergyPct * 0.28) + Math.max(0, workPct - recoveryPct) * 0.1 + biometricSummary.biometricRiskScore * 0.1);
-  const resilience = clampScore((highEnergyPct * 0.26) + (stabilityScore * 0.31) + (learningPct * 0.18) + (quality.score * 0.15) + biometricSummary.coveragePct * 0.1);
+  const stabilityScore = clampScore(100 - saturatedPct - Math.max(0, (lowEnergyPct ?? 15) - 15));
+  const biometricEnergyScore = biometricSummary.averageSuggestedEnergy ? biometricSummary.averageSuggestedEnergy * 10 : null;
+  const wellnessScore = combineWeightedScores([
+    { score: avgEnergy == null ? null : avgEnergy * 10, weight: 0.3 },
+    { score: biometricEnergyScore, weight: 0.12 },
+    { score: stabilityScore, weight: 0.22 },
+    { score: recoveryPct, weight: 0.16 },
+    { score: quality.score, weight: 0.2 },
+  ]);
+  const stressLoad = combineWeightedScores([
+    { score: saturatedPct, weight: 0.52 },
+    { score: lowEnergyPct, weight: 0.28 },
+    { score: Math.max(0, workPct - recoveryPct), weight: 0.1 },
+    { score: biometricSummary.biometricRiskScore, weight: 0.1 },
+  ]);
+  const resilience = combineWeightedScores([
+    { score: highEnergyPct, weight: 0.26 },
+    { score: stabilityScore, weight: 0.31 },
+    { score: learningPct, weight: 0.18 },
+    { score: quality.score, weight: 0.15 },
+    { score: biometricSummary.coveragePct, weight: 0.1 },
+  ]);
+  const dailyEnergyScore = combineWeightedScores([
+    { score: avgEnergy == null ? null : avgEnergy * 10, weight: 0.7 },
+    { score: biometricEnergyScore, weight: 0.3 },
+  ]);
+  const lifeSatisfactionScore = combineWeightedScores([
+    { score: highEnergyPct, weight: 0.45 },
+    { score: recoveryPct, weight: 0.25 },
+    { score: socialPct, weight: 0.15 },
+    { score: quality.score, weight: 0.15 },
+  ]);
+  const dailyEnergyDetail = avgEnergy == null
+    ? languageText(
+        `No hay energía percibida registrada; la lectura usa ${biometricSummary.coveragePct ? `biometría con ${Math.round(biometricSummary.coveragePct)}% de cobertura` : "solo las señales disponibles, sin inventar un valor"}.`,
+        `No perceived energy was recorded; this reading uses ${biometricSummary.coveragePct ? `biometrics with ${Math.round(biometricSummary.coveragePct)}% coverage` : "only available signals, without inventing a value"}.`,
+        `Aucune énergie perçue n'a été enregistrée ; cette lecture utilise ${biometricSummary.coveragePct ? `la biométrie avec une couverture de ${Math.round(biometricSummary.coveragePct)} %` : "uniquement les signaux disponibles, sans inventer de valeur"}.`,
+        `Nenhuma energia percebida foi registrada; esta leitura usa ${biometricSummary.coveragePct ? `biometria com ${Math.round(biometricSummary.coveragePct)}% de cobertura` : "somente os sinais disponíveis, sem inventar um valor"}.`,
+      )
+    : languageText(
+        `Energía percibida: ${formatRecordedEnergyMetric(avgEnergy)}; cobertura biométrica: ${Math.round(biometricSummary.coveragePct)}%.`,
+        `Perceived energy: ${formatRecordedEnergyMetric(avgEnergy)}; biometric coverage: ${Math.round(biometricSummary.coveragePct)}%.`,
+        `Énergie perçue : ${formatRecordedEnergyMetric(avgEnergy)} ; couverture biométrique : ${Math.round(biometricSummary.coveragePct)} %.`,
+        `Energia percebida: ${formatRecordedEnergyMetric(avgEnergy)}; cobertura biométrica: ${Math.round(biometricSummary.coveragePct)}%.`,
+      );
   return [
     {
       id: "human-wellness",
@@ -24678,15 +24797,13 @@ function buildHumanKpis(experiences, analysis, quality) {
     {
       id: "daily-energy",
       label: localizedHumanKpiLabel("daily-energy"),
-      score: Math.round(clampScore((avgEnergy * 10 * 0.7) + (biometricEnergyScore * 0.3))),
-      detail: state.language !== "es"
-         ? `Perceived energy is ${avgEnergy.toFixed(1)}/10; biometrics cover ${Math.round(biometricSummary.coveragePct)}% of the filtered set.`
-        : `La energía percibida es ${avgEnergy.toFixed(1)}/10; la biometría cubre ${Math.round(biometricSummary.coveragePct)}% del conjunto filtrado.`,
+      score: Math.round(dailyEnergyScore),
+      detail: dailyEnergyDetail,
     },
     {
       id: "life-satisfaction",
       label: localizedHumanKpiLabel("life-satisfaction"),
-      score: Math.round(clampScore((highEnergyPct * 0.45) + (recoveryPct * 0.25) + (socialPct * 0.15) + (quality.score * 0.15))),
+      score: Math.round(lifeSatisfactionScore),
       detail: state.language !== "es" ? "Proxy based on high energy, recovery, social connection, and capture depth." : "Proxy basado en alta energía, recuperación, conexión social y profundidad de captura.",
     },
   ];
@@ -25127,13 +25244,17 @@ function buildHumanCorrelations(experiences, analysis) {
   const weatherItems = experiences.filter((item) => ["calor", "lluvia", "clima", "frio", "viento", "humedad"].some((token) => `${item.location || ""} ${item.notes || ""}`.toLowerCase().includes(token)));
   const contextScore = state.contextImpact?.impactScore || 0;
   const saturatedPct = pct(experiences.filter((item) => item.mood === "Saturado").length, experiences.length);
-  const lowEnergyPct = pct(experiences.filter((item) => Number(item.energy || 0) <= 4).length, experiences.length);
+  const recordedEnergy = getRecordedEnergyValues(experiences);
+  const lowEnergyPct = recordedEnergy.length ? pct(recordedEnergy.filter((energy) => energy <= 4).length, recordedEnergy.length) : 0;
+  const socialEnergy = averageRecordedEnergy(socialItems);
+  const recoveryEnergy = averageRecordedEnergy(recoveryItems);
+  const learningEnergy = averageRecordedEnergy(learningItems);
   const biometricSummary = summarizeBiometricSignalsForExperiences(experiences);
   const correlations = [
     buildCorrelationResult({
       source: state.language !== "es" ? "Work -> saturation" : "Trabajo -> saturación",
       title: state.language !== "es" ? "Work pressure and saturation" : "Presión de trabajo y saturación",
-      score: workItems.length ? Math.round((pct(workItems.filter((item) => item.mood === "Saturado" || Number(item.energy || 0) <= 4).length, workItems.length) * 0.8) + Math.min(20, workItems.length * 2)) : 0,
+      score: workItems.length ? Math.round((pct(workItems.filter((item) => item.mood === "Saturado" || isLowRecordedEnergy(item)).length, workItems.length) * 0.8) + Math.min(20, workItems.length * 2)) : 0,
       detail: state.language !== "es"
          ? `${workItems.length} work experiences compared against saturation and low energy.`
         : `${workItems.length} experiencias de trabajo comparadas contra saturación y baja energía.`,
@@ -25142,7 +25263,7 @@ function buildHumanCorrelations(experiences, analysis) {
     buildCorrelationResult({
       source: state.language !== "es" ? "Socialization -> wellbeing" : "Socialización -> bienestar",
       title: state.language !== "es" ? "Social connection and energy" : "Conexión social y energía",
-      score: socialItems.length ? Math.round(average(socialItems.map((item) => Number(item.energy || 0))) * 10) : 0,
+      score: socialEnergy == null ? 0 : Math.round(socialEnergy * 10),
       detail: state.language !== "es"
          ? `${socialItems.length} experiences include people or social context.`
         : `${socialItems.length} experiencias incluyen personas o contexto social.`,
@@ -25152,7 +25273,7 @@ function buildHumanCorrelations(experiences, analysis) {
     buildCorrelationResult({
       source: state.language !== "es" ? "Travel/recovery -> energy" : "Viajes/recuperación -> energía",
       title: state.language !== "es" ? "Recovery contexts and energy" : "Contextos de recuperación y energía",
-      score: recoveryItems.length ? Math.round(average(recoveryItems.map((item) => Number(item.energy || 0))) * 10) : 0,
+      score: recoveryEnergy == null ? 0 : Math.round(recoveryEnergy * 10),
       detail: state.language !== "es"
          ? `${recoveryItems.length} recovery, health, home, spirituality, or travel/walk experiences analyzed.`
         : `${recoveryItems.length} experiencias de recuperación, salud, hogar, espiritualidad o viajes/paseos analizadas.`,
@@ -25162,7 +25283,12 @@ function buildHumanCorrelations(experiences, analysis) {
     buildCorrelationResult({
       source: state.language !== "es" ? "Learning -> resilience" : "Aprendizaje -> resiliencia",
       title: state.language !== "es" ? "Learning and resilience" : "Aprendizaje y resiliencia",
-      score: learningItems.length ? Math.round((pct(learningItems.length, experiences.length) * 0.5) + (average(learningItems.map((item) => Number(item.energy || 0))) * 5)) : 0,
+      score: learningItems.length
+        ? Math.round(combineWeightedScores([
+            { score: pct(learningItems.length, experiences.length), weight: 0.5 },
+            { score: learningEnergy == null ? null : learningEnergy * 10, weight: 0.5 },
+          ]))
+        : 0,
       detail: state.language !== "es"
          ? `${learningItems.length} learning signals appear in categories or notes.`
         : `${learningItems.length} señales de aprendizaje aparecen en categorías o notas.`,
@@ -25215,14 +25341,23 @@ function clampScore(value) {
   return Math.max(0, Math.min(100, Number(value) || 0));
 }
 
+function combineWeightedScores(parts = []) {
+  const validParts = parts.filter((part) => Number.isFinite(part?.score) && Number(part?.weight) > 0);
+  const totalWeight = validParts.reduce((sum, part) => sum + Number(part.weight), 0);
+  if (!totalWeight) return 0;
+  return clampScore(validParts.reduce((sum, part) => sum + (Number(part.score) * Number(part.weight)), 0) / totalWeight);
+}
+
 function buildEnergyTrendPoints(experiences) {
   const grouped = experiences.reduce((acc, item) => {
     const key = formatShortDate(item.timestamp);
     if (!acc[key]) acc[key] = [];
-    acc[key].push(Number(item.energy || 0));
+    const energy = getRecordedExperienceEnergy(item);
+    if (energy != null) acc[key].push(energy);
     return acc;
   }, {});
   return Object.entries(grouped)
+    .filter(([, values]) => values.length)
     .map(([label, values]) => ({ label, energy: Number(average(values).toFixed(1)) }))
     .slice(-12);
 }
@@ -25247,7 +25382,7 @@ function renderCategoryBreakdown(rows, totalMinutes) {
               <article class="category-breakdown-row">
                 <div>
                   <strong>${escapeHtml(displayCategory(row.category))}</strong>
-                  <p class="card-meta">${row.count} ${t("metrics.experiences").toLowerCase()} · ${(row.minutes / 60).toFixed(1)} ${t("labels.hoursShort")} · ${t("metrics.avgEnergy")}: ${row.avgEnergy}/10 · ${row.saturated} ${t("labels.saturatedShort")} · ${row.attachments} ${t("labels.attachments")}</p>
+                  <p class="card-meta">${row.count} ${t("metrics.experiences").toLowerCase()} · ${(row.minutes / 60).toFixed(1)} ${t("labels.hoursShort")} · ${t("metrics.avgEnergy")}: ${formatRecordedEnergyMetric(row.avgEnergy)} · ${row.saturated} ${t("labels.saturatedShort")} · ${row.attachments} ${t("labels.attachments")}</p>
                 </div>
                 <div class="category-share">
                   <span>${share}%</span>
@@ -25288,7 +25423,7 @@ function renderBlueprintCategoryCard(reading) {
         <span>${reading.count} ${t("metrics.experiences").toLowerCase()}</span>
       </header>
       <div class="blueprint-category-metrics">
-        <span>${t("metrics.avgEnergy")}: ${reading.avgEnergy}/10</span>
+        <span>${t("metrics.avgEnergy")}: ${formatRecordedEnergyMetric(reading.avgEnergy)}</span>
         <span>${t("labels.saturatedShort")}: ${reading.saturated}</span>
       </div>
       <div class="category-reading-copy">
@@ -25881,7 +26016,9 @@ function buildReportExportPayload() {
     summary: {
       totalExperiences: reportExperiences.length,
       capturedHours: Number((reportExperiences.reduce((sum, item) => sum + Number(item.duration || 0), 0) / 60).toFixed(1)),
-      averageEnergy: reportExperiences.length ? Number(average(reportExperiences.map((item) => Number(item.energy || 0))).toFixed(1)) : null,
+      averageEnergy: averageRecordedEnergy(reportExperiences) == null
+        ? null
+        : Number(averageRecordedEnergy(reportExperiences).toFixed(1)),
       topCategory: reportExperiences.length ? displayCategory(getTopCategory(reportExperiences)) : "",
     },
     dataQuality,
@@ -25971,7 +26108,7 @@ function downloadPrintableReport() {
           .map((row) => {
             const maxMinutes = Math.max(...payload.categoryBreakdown.map((item) => Number(item.minutes || 0)), 1);
             const width = Math.max(4, Math.round((Number(row.minutes || 0) / maxMinutes) * 100));
-            return `<article class="chart-row"><span>${escapeHtml(displayCategory(row.category))}</span><div class="meter"><i style="width:${width}%"></i></div><strong>${row.avgEnergy}/10</strong></article>`;
+            return `<article class="chart-row"><span>${escapeHtml(displayCategory(row.category))}</span><div class="meter"><i style="width:${width}%"></i></div><strong>${escapeHtml(formatRecordedEnergyMetric(row.avgEnergy))}</strong></article>`;
           })
           .join("")}
       </section>`
@@ -25996,7 +26133,7 @@ function downloadPrintableReport() {
   const routes = payload.mapRoutes.length
      ? `<section>
         <h2>${escapeHtml(t("labels.reportMapRoutes"))}</h2>
-        <ul>${payload.mapRoutes.map((route) => `<li><strong>${escapeHtml(route.title)}</strong>: ${route.count} · ${route.avgEnergy}/10 · ${escapeHtml(route.dominant || "")}</li>`).join("")}</ul>
+        <ul>${payload.mapRoutes.map((route) => `<li><strong>${escapeHtml(route.title)}</strong>: ${route.count} · ${escapeHtml(formatRecordedEnergyMetric(route.avgEnergy))} · ${escapeHtml(route.dominant || "")}</li>`).join("")}</ul>
       </section>`
     : "";
   const multimodalEvidence = payload.multimodalEvidence.length
@@ -26072,7 +26209,7 @@ function downloadPrintableReport() {
   <h1>Reporte de experiencias</h1>
   <p class="meta">Generado: ${escapeHtml(formatDate(payload.generatedAt))}</p>
   <section>
-    <p>${escapeHtml(t("report.narrative")(payload.summary.totalExperiences, payload.rows.reduce((sum, row) => sum + Number(row.adjuntos || 0), 0), payload.summary.topCategory, payload.summary.averageEnergy.toFixed(1)))}</p>
+    <p>${escapeHtml(t("report.narrative")(payload.summary.totalExperiences, payload.rows.reduce((sum, row) => sum + Number(row.adjuntos || 0), 0), payload.summary.topCategory, formatRecordedEnergyMetric(payload.summary.averageEnergy)))}</p>
     ${reliability}
     ${context}
     ${eventTimeline}
@@ -26081,7 +26218,7 @@ function downloadPrintableReport() {
     <article class="stat"><span>Total</span><strong>${payload.summary.totalExperiences}</strong></article>
     <article class="stat"><span>Horas</span><strong>${payload.summary.capturedHours}</strong></article>
     <article class="stat"><span>Adjuntos</span><strong>${payload.rows.reduce((sum, row) => sum + Number(row.adjuntos || 0), 0)}</strong></article>
-    <article class="stat"><span>Energía media</span><strong>${payload.summary.averageEnergy.toFixed(1)}</strong></article>
+    <article class="stat"><span>Energía media</span><strong>${escapeHtml(formatRecordedEnergyMetric(payload.summary.averageEnergy))}</strong></article>
   </section>
   ${integrated}
   ${predictive}
@@ -26241,7 +26378,8 @@ function buildPublicationDraft({ experiences, evidence = [], context = [], type,
   const media = applyRecommendedPublicationMediaSelection(collectPublicationMedia(chronologicalExperiences, evidence), { type, channel });
   const mediaCount = media.filter((item) => item.included !== false).length;
   const category = cleanPublicationCategoryLabel(displayCategory(getTopCategory(chronologicalExperiences)));
-  const avgEnergy = chronologicalExperiences.length ? Number(average(chronologicalExperiences.map((item) => Number(item.energy || 0))).toFixed(1)) : 0;
+  const recordedPublicationEnergy = averageRecordedEnergy(chronologicalExperiences);
+  const avgEnergy = recordedPublicationEnergy == null ? null : Number(recordedPublicationEnergy.toFixed(1));
   const highlights = chronologicalExperiences.slice(0, 8).map((item) => ({
     title: cleanPublicationText(item.title || (state.language !== "es" ? "Recorded experience" : "Experiencia registrada")),
     date: item.timestamp,
@@ -26375,7 +26513,7 @@ function buildPublicationPages({ title, type, style, channel, experiences, analy
       layoutTemplate: "executive-summary",
       title: state.language !== "es" ? "Editorial summary" : "Resumen editorial",
       subtitle: state.language !== "es" ? "What this piece should communicate" : "Lo que esta pieza debe comunicar",
-      body: `${summary}\n\n${state.language !== "es" ? "People" : "Personas"}: ${peopleText}\n${state.language !== "es" ? "Places" : "Lugares"}: ${locationText}\n${state.language !== "es" ? "Average energy" : "Energia media"}: ${avgEnergy}/10`,
+      body: `${summary}\n\n${state.language !== "es" ? "People" : "Personas"}: ${peopleText}\n${state.language !== "es" ? "Places" : "Lugares"}: ${locationText}\n${state.language !== "es" ? "Recorded average energy" : "Energía media registrada"}: ${formatRecordedEnergyMetric(avgEnergy)}`,
       mediaIds: [],
     },
     {
@@ -27091,7 +27229,7 @@ function buildPublicationTimelineItems(experiences = [], media = []) {
         people: splitPeople(experience.people).join(", "),
         objective: cleanPublicationText(experience.objective || ""),
         note: cleanPublicationText(experience.notes || experience.objective || ""),
-        energy: Number(experience.energy || 0),
+        energy: getRecordedExperienceEnergy(experience),
         duration: Number(experience.duration || 0),
         internalEvents: internalEvents.map((event, eventIndex) => ({
           title: cleanPublicationText(event.title || event.name || `${state.language !== "es" ? "Event" : "Evento"} ${eventIndex + 1}`),
@@ -27133,9 +27271,25 @@ function buildPublicationTitle(type, experiences) {
 }
 
 function buildPublicationSummary(experiences, analysis, category, avgEnergy) {
-  return state.language !== "es"
-     ? `${experiences.length} experiences centered on ${category}, with average energy of ${avgEnergy}/10. Main reading: ${analysis.focus}`
-    : `${experiences.length} experiencias centradas en ${category}, con energía media de ${avgEnergy}/10. Lectura principal: ${analysis.focus}`;
+  const energyText = avgEnergy == null
+    ? languageText(
+        "sin energía percibida registrada suficiente para calcular un promedio",
+        "without enough recorded perceived energy to calculate an average",
+        "sans énergie perçue enregistrée suffisante pour calculer une moyenne",
+        "sem energia percebida registrada suficiente para calcular uma média",
+      )
+    : languageText(
+        `con energía media registrada de ${formatRecordedEnergyMetric(avgEnergy)}`,
+        `with recorded average energy of ${formatRecordedEnergyMetric(avgEnergy)}`,
+        `avec une énergie moyenne enregistrée de ${formatRecordedEnergyMetric(avgEnergy)}`,
+        `com energia média registrada de ${formatRecordedEnergyMetric(avgEnergy)}`,
+      );
+  return languageText(
+    `${experiences.length} experiencias centradas en ${category}, ${energyText}. Lectura principal: ${analysis.focus}`,
+    `${experiences.length} experiences centered on ${category}, ${energyText}. Main reading: ${analysis.focus}`,
+    `${experiences.length} expériences centrées sur ${category}, ${energyText}. Lecture principale : ${analysis.focus}`,
+    `${experiences.length} experiências centradas em ${category}, ${energyText}. Leitura principal: ${analysis.focus}`,
+  );
 }
 
 function buildPublicationPurpose(type, channel) {
@@ -27165,8 +27319,8 @@ function buildPublicationBodyLegacy({ title, type, style, channel, experiences, 
      ? `This ${displayPublicationType(type).toLowerCase()} is prepared for ${channel}, with a ${displayPublicationStyle(style).toLowerCase()} tone. It turns ${experiences.length} experiences from ${dateRange} into a shareable memory with ${mediaCount} media attachments and a dominant focus on ${category}.`
     : `Esta pieza de tipo ${displayPublicationType(type).toLowerCase()} está preparada para ${channel}, con tono ${displayPublicationStyle(style).toLowerCase()}. Convierte ${experiences.length} experiencias de ${dateRange} en una memoria compartible con ${mediaCount} adjuntos multimedia y foco dominante en ${category}.`;
   const narrative = state.language !== "es"
-     ? `What should remain: ${analysis.focus} Average energy was ${avgEnergy}/10. The point is not to publish every detail, but to preserve the moments that explain the experience.`
-    : `Lo que debería quedar en la memoria: ${analysis.focus} La energía media fue ${avgEnergy}/10. La idea no es publicar todo, sino preservar los momentos que explican la experiencia.`;
+     ? `What should remain: ${analysis.focus} Recorded average energy: ${formatRecordedEnergyMetric(avgEnergy)}. The point is not to publish every detail, but to preserve the moments that explain the experience.`
+    : `Lo que debería quedar en la memoria: ${analysis.focus} Energía media registrada: ${formatRecordedEnergyMetric(avgEnergy)}. La idea no es publicar todo, sino preservar los momentos que explican la experiencia.`;
   const context = state.language !== "es"
      ? `People and places: ${people.length ? people.join(", ") : "not specified"} · ${locations.length ? locations.join(", ") : "no location specified"}.`
     : `Personas y lugares: ${people.length ? people.join(", ") : "sin personas indicadas"} · ${locations.length ? locations.join(", ") : "sin ubicación indicada"}.`;
@@ -27206,9 +27360,25 @@ function buildPublicationBody({ title, type, style, channel, experiences, analys
   const intro = state.language !== "es"
      ? `This premium PDF turns ${experiences.length} experiences from ${dateRange} into a chronological, readable story. The focus is ${category}, with ${mediaCount} selected media items.`
     : `Este PDF premium convierte ${experiences.length} experiencias de ${dateRange} en una historia cronológica y legible. El foco es ${category}, con ${mediaCount} elementos multimedia seleccionados.`;
-  const narrative = state.language !== "es"
-     ? `${analysis.focus} Average energy was ${avgEnergy}/10. The value of the publication is not to copy every record, but to explain what happened, what changed, and why the selected moments matter.`
-    : `${analysis.focus} La energia media fue ${avgEnergy}/10. El valor de la publicacion no es copiar cada registro, sino explicar que paso, que cambio y por que importan los momentos seleccionados.`;
+  const energySentence = avgEnergy == null
+    ? languageText(
+        "No se registró suficiente energía percibida para atribuir un promedio.",
+        "Not enough perceived energy was recorded to attribute an average.",
+        "L'énergie perçue enregistrée est insuffisante pour attribuer une moyenne.",
+        "Não foi registrada energia percebida suficiente para atribuir uma média.",
+      )
+    : languageText(
+        `La energía media registrada fue ${formatRecordedEnergyMetric(avgEnergy)}.`,
+        `Recorded average energy was ${formatRecordedEnergyMetric(avgEnergy)}.`,
+        `L'énergie moyenne enregistrée était de ${formatRecordedEnergyMetric(avgEnergy)}.`,
+        `A energia média registrada foi ${formatRecordedEnergyMetric(avgEnergy)}.`,
+      );
+  const narrative = languageText(
+    `${analysis.focus} ${energySentence} El valor de la publicación no es copiar cada registro, sino explicar qué pasó, qué cambió y por qué importan los momentos seleccionados.`,
+    `${analysis.focus} ${energySentence} The value of the publication is not to copy every record, but to explain what happened, what changed, and why the selected moments matter.`,
+    `${analysis.focus} ${energySentence} La valeur de la publication n'est pas de copier chaque enregistrement, mais d'expliquer ce qui s'est passé, ce qui a changé et pourquoi les moments choisis comptent.`,
+    `${analysis.focus} ${energySentence} O valor da publicação não é copiar cada registro, mas explicar o que aconteceu, o que mudou e por que os momentos selecionados importam.`,
+  );
   const context = state.language !== "es"
      ? `People and places: ${cleanPeople.length ? cleanPeople.join(", ") : "not specified"} - ${cleanLocations.length ? cleanLocations.join(", ") : "no location specified"}.`
     : `Personas y lugares: ${cleanPeople.length ? cleanPeople.join(", ") : "sin personas indicadas"} - ${cleanLocations.length ? cleanLocations.join(", ") : "sin ubicacion indicada"}.`;
@@ -31294,12 +31464,19 @@ function buildInsightThematicAxes(experiences = []) {
   const total = Math.max(1, experiences.length);
   return getInsightThematicDefinitions().map((axis) => {
     const items = experiences.filter((item) => axis.categories.includes(normalizeCategoryName(item.category)));
-    const avgEnergy = items.length ? Number(average(items.map((item) => Number(item.energy || 0))).toFixed(1)) : 0;
-    const saturated = items.filter((item) => item.mood === "Saturado" || Number(item.energy || 0) <= 4).length;
+    const recordedAverage = averageRecordedEnergy(items);
+    const avgEnergy = recordedAverage == null ? null : Number(recordedAverage.toFixed(1));
+    const saturated = items.filter((item) => item.mood === "Saturado" || isLowRecordedEnergy(item)).length;
     const assets = items.reduce((sum, item) => sum + (item.attachments?.length || 0), 0);
-    const score = items.length ? Math.round((items.length / total) * 45 + avgEnergy * 5 + Math.max(0, 10 - saturated * 2)) : 0;
+    const score = items.length
+      ? Math.round(combineWeightedScores([
+          { score: (items.length / total) * 100, weight: 0.45 },
+          { score: avgEnergy == null ? null : avgEnergy * 10, weight: 0.45 },
+          { score: Math.max(0, 100 - saturated * 20), weight: 0.1 },
+        ]))
+      : 0;
     const status = items.length
-      ? avgEnergy >= 7 && saturated === 0
+      ? avgEnergy != null && avgEnergy >= 7 && saturated === 0
         ? languageText("Favorable", "Favorable", "Favorable", "Favorável")
         : saturated
           ? languageText("Requiere atención", "Needs attention", "Demande de l’attention", "Requer atenção")
@@ -31318,7 +31495,7 @@ function renderInsightAxisCard(axis) {
       </div>
       <div class="insight-axis-metrics">
         <article><span>${escapeHtml(languageText("Historias", "Stories", "Histoires", "Histórias"))}</span><strong>${axis.items.length}</strong></article>
-        <article><span>${escapeHtml(languageText("Energía", "Energy", "Énergie", "Energia"))}</span><strong>${axis.avgEnergy}/10</strong></article>
+        <article><span>${escapeHtml(languageText("Energía", "Energy", "Énergie", "Energia"))}</span><strong>${escapeHtml(formatRecordedEnergyMetric(axis.avgEnergy))}</strong></article>
         <article><span>${escapeHtml(languageText("Evidencias", "Evidence", "Preuves", "Evidências"))}</span><strong>${axis.assets}</strong></article>
       </div>
       <div class="insight-meter" aria-hidden="true"><span style="width:${Math.max(4, axis.score)}%"></span></div>
@@ -31434,7 +31611,7 @@ function buildInsightActionPlan(experiences = getInsightsExperiences(), insights
     addAction({
       title: state.language !== "es" ? `Go deeper into ${topAxis.title}` : `Profundizar ${topAxis.title}`,
       priority: topAxis.saturated ? localizedPriority("high") : localizedPriority("medium"),
-      evidence: `${topAxis.items.length} ${state.language !== "es" ? "experiences" : "experiencias"} · ${state.language !== "es" ? "energy" : "energía"} ${topAxis.avgEnergy}/10 · ${topAxis.status}`,
+      evidence: `${topAxis.items.length} ${state.language !== "es" ? "experiences" : "experiencias"} · ${state.language !== "es" ? "energy" : "energía"} ${formatRecordedEnergyMetric(topAxis.avgEnergy)} · ${topAxis.status}`,
       why: state.language !== "es"
          ? "This is where your data is speaking most clearly right now."
         : "Este es el eje donde tus datos están hablando con más claridad ahora.",
@@ -31637,7 +31814,7 @@ function buildInsightsMarkdown() {
       `### ${axis.title}`,
       `- ${state.language !== "es" ? "Status" : "Estado"}: ${axis.status}`,
       `- ${state.language !== "es" ? "Experiences" : "Experiencias"}: ${axis.items.length}`,
-      `- ${state.language !== "es" ? "Average energy" : "Energía media"}: ${axis.avgEnergy}/10`,
+      `- ${state.language !== "es" ? "Average energy" : "Energía media"}: ${formatRecordedEnergyMetric(axis.avgEnergy)}`,
       `- ${state.language !== "es" ? "Question" : "Pregunta"}: ${axis.question}`,
       `- ${state.language !== "es" ? "Action" : "Acción"}: ${axis.action}`,
       "",
@@ -31690,7 +31867,7 @@ function buildInsightsHtml() {
   <p class="meta">${escapeHtml(state.language !== "es" ? "Generated" : "Generado")}: ${escapeHtml(formatDate(payload.generatedAt))} · ${escapeHtml(state.language !== "es" ? "Scope" : "Alcance")}: ${escapeHtml(payload.participant)} · ${payload.experiences} ${escapeHtml(state.language !== "es" ? "experiences" : "experiencias")}</p>
   <h2>${escapeHtml(state.language !== "es" ? "Human themes" : "Ejes humanos")}</h2>
   <section class="grid">
-    ${payload.axes.map((axis) => `<article><span>${escapeHtml(axis.status)}</span><h3>${escapeHtml(axis.title)}</h3><p><strong>${axis.items.length}</strong> ${escapeHtml(state.language !== "es" ? "experiences" : "experiencias")} · ${axis.avgEnergy}/10 · ${axis.assets} ${escapeHtml(state.language !== "es" ? "assets" : "activos")}</p><p>${escapeHtml(axis.question)}</p><p><strong>${escapeHtml(state.language !== "es" ? "Action" : "Acción")}:</strong> ${escapeHtml(axis.action)}</p></article>`).join("")}
+    ${payload.axes.map((axis) => `<article><span>${escapeHtml(axis.status)}</span><h3>${escapeHtml(axis.title)}</h3><p><strong>${axis.items.length}</strong> ${escapeHtml(state.language !== "es" ? "experiences" : "experiencias")} · ${escapeHtml(formatRecordedEnergyMetric(axis.avgEnergy))} · ${axis.assets} ${escapeHtml(state.language !== "es" ? "assets" : "activos")}</p><p>${escapeHtml(axis.question)}</p><p><strong>${escapeHtml(state.language !== "es" ? "Action" : "Acción")}:</strong> ${escapeHtml(axis.action)}</p></article>`).join("")}
   </section>
   <h2>${escapeHtml(state.language !== "es" ? "7-day action plan" : "Plan de acción 7 días")}</h2>
   <section class="grid">
@@ -40144,14 +40321,15 @@ function buildExperienceAnalysis(experiences) {
   const midpoint = Math.floor(list.length / 2);
   const previous = list.slice(0, midpoint);
   const recent = list.slice(midpoint);
-  const recentEnergy = recent.length ? average(recent.map((item) => item.energy)) : 0;
-  const previousEnergy = previous.length ? average(previous.map((item) => item.energy)) : recentEnergy;
-  const energyDelta = recent.length && previous.length ? Number((recentEnergy - previousEnergy).toFixed(1)) : 0;
+  const recentEnergy = averageRecordedEnergy(recent);
+  const previousEnergy = averageRecordedEnergy(previous);
+  const hasEnergyTrend = recentEnergy != null && previousEnergy != null;
+  const energyDelta = hasEnergyTrend ? Number((recentEnergy - previousEnergy).toFixed(1)) : null;
   const topCategory = getTopCategory(list);
   const categoryBreakdown = buildCategoryBreakdown(list);
   const saturated = list.filter((item) => item.mood === "Saturado");
-  const highEnergy = list.filter((item) => item.energy >= 8);
-  const lowEnergy = list.filter((item) => item.energy <= 4);
+  const highEnergy = list.filter((item) => isHighRecordedEnergy(item, 8));
+  const lowEnergy = list.filter((item) => isLowRecordedEnergy(item, 4));
   const learnings = list.filter((item) => item.category === "Aprendizaje" || String(item.notes || "").toLowerCase().includes("aprendi"));
   const topObjective = topValue(list.map((item) => item.objective).filter(Boolean));
   const topPerson = topValue(list.flatMap((item) => splitListField(item.people)));
@@ -40159,6 +40337,13 @@ function buildExperienceAnalysis(experiences) {
   const biometricContext = buildBiometricIntelligenceSummary(list);
   const trend = list.length < 4
     ? (state.language !== "es" ? "At least four experiences are needed for a reliable trend." : "Se necesitan al menos cuatro experiencias para una tendencia confiable.")
+    : !hasEnergyTrend
+      ? languageText(
+          "No hay energía percibida registrada en ambos periodos; no se atribuye una tendencia energética.",
+          "Perceived energy was not recorded in both periods, so no energy trend is attributed.",
+          "L'énergie perçue n'a pas été enregistrée dans les deux périodes; aucune tendance énergétique n'est attribuée.",
+          "A energia percebida não foi registrada nos dois períodos; nenhuma tendência energética é atribuída.",
+        )
     : energyDelta > 0.5
       ? (state.language !== "es" ? `Recent energy is up ${energyDelta} points versus the previous period.` : `La energía reciente sube ${energyDelta} puntos frente al periodo anterior.`)
       : energyDelta < -0.5
@@ -40170,7 +40355,7 @@ function buildExperienceAnalysis(experiences) {
   const risk = saturated.length || lowEnergy.length
     ? (state.language !== "es" ? `${saturated.length} saturated experiences and ${lowEnergy.length} low-energy experiences need follow-up.` : `${saturated.length} experiencias saturadas y ${lowEnergy.length} con energía baja requieren seguimiento.`)
     : (state.language !== "es" ? "There are no strong saturation or low-energy signals in the filtered set." : "No hay señales fuertes de saturación o energía baja en el conjunto filtrado.");
-  const energyDrivers = topLocation || topPerson
+  const energyDrivers = highEnergy.length && (topLocation || topPerson)
     ? state.language !== "es"
         ? `Higher-energy contexts can be compared with ${topLocation ? `location ${topLocation}` : `person ${topPerson}`}.`
       : `Los contextos de mayor energía se pueden comparar con ${topLocation ? `ubicación ${topLocation}` : `persona ${topPerson}`}.`
@@ -40205,7 +40390,8 @@ function buildCategoryBreakdown(experiences) {
     }
     acc[category].count += 1;
     acc[category].minutes += Number(item.duration || 0);
-    acc[category].energy.push(Number(item.energy || 0));
+    const energy = getRecordedExperienceEnergy(item);
+    if (energy != null) acc[category].energy.push(energy);
     acc[category].saturated += item.mood === "Saturado" ? 1 : 0;
     acc[category].attachments += item.attachments?.length || 0;
     return acc;
@@ -40213,7 +40399,7 @@ function buildCategoryBreakdown(experiences) {
   return Object.values(grouped)
     .map((row) => ({
       ...row,
-      avgEnergy: row.energy.length ? Number(average(row.energy).toFixed(1)) : 0,
+      avgEnergy: row.energy.length ? Number(average(row.energy).toFixed(1)) : null,
       energy: undefined,
     }))
     .sort((a, b) => b.minutes - a.minutes || b.count - a.count);
@@ -40253,7 +40439,7 @@ async function answerQuestion() {
   );
 
   const target = matches.length ? matches : scopedExperiences;
-  const avg = target.length ? average(target.map((item) => item.energy)).toFixed(1) : "0.0";
+  const avg = averageRecordedEnergy(target);
   const categoriesFound = [...new Set(target.map((item) => displayCategory(item.category)))].slice(0, 4).join(", ");
   const sample = target.slice(0, 3);
   answerBox.innerHTML = `
@@ -40262,7 +40448,7 @@ async function answerQuestion() {
       <h3>${escapeHtml(question)}</h3>
       <div class="question-answer-metrics">
         <article><span>${state.language !== "es" ? "Matches" : "Coincidencias"}</span><strong>${matches.length}</strong></article>
-        <article><span>${t("metrics.avgEnergy")}</span><strong>${avg}/10</strong></article>
+        <article><span>${t("metrics.avgEnergy")}</span><strong>${escapeHtml(formatRecordedEnergyMetric(avg))}</strong></article>
         <article><span>${state.language !== "es" ? "Categories" : "Categorías"}</span><strong>${escapeHtml(categoriesFound || (state.language !== "es" ? "no data" : "sin datos"))}</strong></article>
       </div>
       <p>${state.contextImpact ? `${state.language !== "es" ? "Current external context" : "Contexto externo actual"}: ${escapeHtml(state.contextImpact.summary)}` : (state.language !== "es" ? "This answer will be enriched automatically when city-level context is available." : "Esta respuesta se enriquecerá automáticamente cuando haya contexto de ciudad disponible.")}</p>
@@ -40274,7 +40460,7 @@ async function answerQuestion() {
                   (item) => `
                     <article>
                       <strong>${escapeHtml(item.title)}</strong>
-                      <span>${escapeHtml(displayCategory(item.category))} · ${formatShortDate(item.timestamp)} · ${item.energy}/10</span>
+                      <span>${escapeHtml(displayCategory(item.category))} · ${formatShortDate(item.timestamp)} · ${escapeHtml(formatRecordedEnergyMetric(getRecordedExperienceEnergy(item)))}</span>
                     </article>
                   `,
                 )

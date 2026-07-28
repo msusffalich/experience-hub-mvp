@@ -180,7 +180,7 @@ assert(files.schemaSql.includes("allowed_mime_types = NULL"), "Base schema still
 assert(files.storageFormatsSql.includes("allowed_mime_types = NULL"), "Storage format migration does not allow all app-supported media/document formats.");
 assert(files.server.includes("storage-accept-all-supported-media.sql"), "Supabase diagnostics do not point to the Storage MIME migration.");
 assert(files.app.includes("invalid_mime_type para PDF") && files.app.includes("invalid_mime_type for PDF"), "Manual does not explain PDF MIME bucket remediation.");
-assert(files.index.includes("dashboard-primary-panel") && files.index.includes("Nueva experiencia"), "Dashboard does not expose primary daily actions.");
+assert(files.index.includes("dashboard-primary-panel") && files.index.includes("Nueva historia"), "Dashboard does not expose primary daily actions.");
 assert(files.index.includes("dashboardDataStatusPanel") && files.app.includes("function renderDashboardDataStatusPanel") && files.app.includes("renderDashboardStateAndProgressPanels"), "Dashboard does not expose the current data/status guard.");
 assert(files.app.includes("function ensureDashboardTopPanel") && files.app.includes("resolveGlobalProgressContainer"), "Dashboard cannot recover progress/data panels from stale HTML.");
 assert(files.app.includes("clearAppShellCaches") && files.app.includes("caches.keys"), "Refresh app does not clear stale app-shell caches.");
