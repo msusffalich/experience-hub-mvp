@@ -96,6 +96,13 @@ expect(styles.includes(".context-navigation"), "Contextual navigation styles are
 expect(styles.includes(".context-nav-item"), "Contextual navigation item styles are missing.");
 expect(styles.includes(".output-primary-controls"), "Publication primary controls need a stable layout.");
 expect(index.includes('id="capture-heading">Nueva historia</h2>'), "The story workflow must not be labeled as quick capture.");
+expect(index.includes('id="storyBuilderStepper"'), "New story must expose a real three-step editor.");
+expect((index.match(/data-story-step="/g) || []).length >= 3, "Story editor must expose Tell, Choose, and Review steps.");
+expect(index.includes('id="storyBuilderReview"'), "Story editor review summary is missing.");
+expect(app.includes("function setCaptureStoryStep("), "Story editor step controller is missing.");
+expect(app.includes("function renderStoryBuilderReview("), "Story editor review renderer is missing.");
+expect(styles.includes(".story-builder-stepper"), "Story editor stepper styles are missing.");
+expect(styles.includes(".story-review-evidence-strip"), "Story review evidence preview styles are missing.");
 
 [
   'auth: "Cuenta"',

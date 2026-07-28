@@ -1,4 +1,4 @@
-const APP_VERSION = "20260727-evidence-gallery-720";
+const APP_VERSION = "20260727-story-editor-721";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";
@@ -5046,6 +5046,7 @@ const state = {
   manualReview: loadManualReview(),
   displayTheme: loadDisplayTheme(),
   pendingAttachments: [],
+  captureStoryStep: 1,
   selectedEvidenceAssetIds: new Set(),
   evidenceAdoptionStatus: null,
   evidenceInboxDateFilter: "capture",
@@ -8222,7 +8223,7 @@ function applyLanguage() {
   renderVersionNotice();
   if (document.getElementById("exportButton")) document.getElementById("exportButton").textContent = t("buttons.export");
   if (document.getElementById("restoreButton")) document.getElementById("restoreButton").textContent = t("buttons.restoreBackup");
-  document.querySelector("#experienceForm .primary-button").textContent = t("buttons.save");
+  document.querySelector('#experienceForm button[type="submit"]').textContent = t("buttons.save");
   document.getElementById("clearFormButton").textContent = t("buttons.clear");
   document.getElementById("attachmentInputLabel").textContent = t("labels.attachmentInputLabel");
   renderCaptureFlowSplit();
@@ -8688,6 +8689,12 @@ function setupForm() {
   document.getElementById("mediaInput").addEventListener("change", handleMediaSelection);
   form.addEventListener("input", renderCaptureWritingCoach);
   form.addEventListener("change", renderCaptureWritingCoach);
+  form.addEventListener("input", () => {
+    if (state.captureStoryStep === 3) renderStoryBuilderReview();
+  });
+  form.addEventListener("change", () => {
+    if (state.captureStoryStep === 3) renderStoryBuilderReview();
+  });
   document.getElementById("timestampInput")?.addEventListener("change", renderBiometricCaptureContext);
   document.getElementById("durationInput")?.addEventListener("change", renderBiometricCaptureContext);
   document.getElementById("timestampInput")?.addEventListener("change", renderCaptureEvidenceInbox);
@@ -8707,6 +8714,7 @@ function setupForm() {
   document.getElementById("captureEvidenceInbox")?.addEventListener("change", handleEvidenceInboxSelection);
   document.getElementById("captureEvidenceInbox")?.addEventListener("click", handleEvidenceInboxAction);
   document.getElementById("captureSaveStatus")?.addEventListener("click", handleCaptureSaveStatusClick);
+  form.addEventListener("click", handleStoryBuilderNavigation);
 }
 
 function getCaptureCategoryLabel(category) {
@@ -12044,6 +12052,7 @@ async function readForm() {
 function clearForm() {
   document.getElementById("editingId").value = "";
   document.getElementById("experienceForm").reset();
+  state.captureStoryStep = 1;
   state.pendingAttachments = [];
   state.captureDraftAutosave.lastSignature = "";
   if (state.captureDraftAutosave.timer) clearTimeout(state.captureDraftAutosave.timer);
@@ -12061,6 +12070,7 @@ function clearForm() {
   renderAttachmentPreview();
   renderCaptureEvidenceInbox();
   renderCaptureWritingCoach();
+  renderCaptureFlowSplit();
 }
 
 function requiresRemotePersistence() {
@@ -13318,6 +13328,7 @@ function editExperience(id) {
 }
 
 function loadExperienceIntoForm(experience) {
+  state.captureStoryStep = 1;
   document.getElementById("editingId").value = experience.id;
   document.getElementById("titleInput").value = experience.title;
   document.getElementById("categoryInput").value = experience.category;
@@ -13342,6 +13353,7 @@ function loadExperienceIntoForm(experience) {
   state.pendingAttachments = [...(experience.attachments || [])];
   renderAttachmentPreview();
   renderCaptureEvidenceInbox();
+  renderCaptureFlowSplit();
   showView("capture");
 }
 
@@ -13821,21 +13833,184 @@ function renderCaptureFlowSplit() {
   const title = document.getElementById("storyBuilderTitle");
   const help = document.getElementById("captureFlowHelp");
   if (!title) return;
+  const step = Math.min(3, Math.max(1, Number(state.captureStoryStep) || 1));
+  state.captureStoryStep = step;
+  const labels = [
+    {
+      name: languageText("Contar", "Tell", "Raconter", "Contar"),
+      hint: languageText("Tu relato", "Your story", "Votre recit", "Seu relato"),
+      eyebrow: languageText("Tu historia", "Your story", "Votre histoire", "Sua historia"),
+      title: languageText("Cuenta el momento", "Tell the moment", "Racontez le moment", "Conte o momento"),
+      help: languageText(
+        "Escribe o pega la transcripcion de lo que viviste. Puedes completar los detalles despues.",
+        "Write or paste a transcription of what you lived. You can complete the details later.",
+        "Ecrivez ou collez la transcription de ce que vous avez vecu. Vous pourrez completer les details ensuite.",
+        "Escreva ou cole a transcricao do que voce viveu. Voce pode completar os detalhes depois.",
+      ),
+    },
+    {
+      name: languageText("Elegir", "Choose", "Choisir", "Escolher"),
+      hint: languageText("Fotos y archivos", "Photos and files", "Photos et fichiers", "Fotos e arquivos"),
+      eyebrow: languageText("Tus recuerdos", "Your memories", "Vos souvenirs", "Suas lembrancas"),
+      title: languageText("Elige la evidencia", "Choose the evidence", "Choisissez les preuves", "Escolha as evidencias"),
+      help: languageText(
+        "Mira las vistas previas y marca solo lo que pertenece a esta historia.",
+        "Review the previews and select only what belongs to this story.",
+        "Regardez les apercus et choisissez uniquement ce qui appartient a cette histoire.",
+        "Veja as visualizacoes e selecione apenas o que pertence a esta historia.",
+      ),
+    },
+    {
+      name: languageText("Revisar", "Review", "Verifier", "Revisar"),
+      hint: languageText("Antes de guardar", "Before saving", "Avant d'enregistrer", "Antes de salvar"),
+      eyebrow: languageText("Todo listo", "Ready", "Tout est pret", "Tudo pronto"),
+      title: languageText("Revisa tu historia", "Review your story", "Verifiez votre histoire", "Revise sua historia"),
+      help: languageText(
+        "Confirma el relato y los recuerdos elegidos. Agrega contexto solo si aporta valor.",
+        "Confirm the story and selected memories. Add context only when it adds value.",
+        "Confirmez le recit et les souvenirs choisis. Ajoutez du contexte uniquement s'il est utile.",
+        "Confirme o relato e as lembrancas escolhidas. Adicione contexto apenas se trouxer valor.",
+      ),
+    },
+  ];
+  const active = labels[step - 1];
   if (context) context.textContent = languageText("Historia", "Story", "Histoire", "Historia");
-  if (status) status.textContent = languageText("Paso 1 de 3", "Step 1 of 3", "Etape 1 sur 3", "Passo 1 de 3");
-  if (eyebrow) eyebrow.textContent = languageText("Tu historia", "Your story", "Votre histoire", "Sua historia");
-  if (title) title.textContent = languageText(
-    "Cuenta el momento",
-    "Tell the moment",
-    "Racontez le moment",
-    "Conte o momento",
+  if (status) status.textContent = languageText(`Paso ${step} de 3`, `Step ${step} of 3`, `Etape ${step} sur 3`, `Passo ${step} de 3`);
+  if (eyebrow) eyebrow.textContent = active.eyebrow;
+  if (title) title.textContent = active.title;
+  if (help) help.textContent = active.help;
+  document.querySelectorAll("[data-story-step-panel]").forEach((panel) => {
+    panel.hidden = Number(panel.dataset.storyStepPanel) !== step;
+  });
+  document.querySelectorAll("[data-story-step]").forEach((button, index) => {
+    const item = labels[index];
+    const buttonStep = Number(button.dataset.storyStep);
+    button.classList.toggle("is-active", buttonStep === step);
+    button.classList.toggle("is-complete", buttonStep < step);
+    if (buttonStep === step) button.setAttribute("aria-current", "step");
+    else button.removeAttribute("aria-current");
+    const strong = button.querySelector("strong");
+    const small = button.querySelector("small");
+    if (strong) strong.textContent = item.name;
+    if (small) small.textContent = item.hint;
+  });
+  const nextEvidence = document.querySelector('[data-story-next-step="2"]');
+  const nextReview = document.querySelector('[data-story-next-step="3"]');
+  const backButtons = document.querySelectorAll("[data-story-previous-step]");
+  if (nextEvidence) nextEvidence.textContent = languageText("Elegir evidencia", "Choose evidence", "Choisir les preuves", "Escolher evidencias");
+  if (nextReview) nextReview.textContent = languageText("Revisar historia", "Review story", "Verifier l'histoire", "Revisar historia");
+  backButtons.forEach((button) => {
+    button.textContent = languageText("Volver", "Back", "Retour", "Voltar");
+  });
+  const clearButton = document.getElementById("clearFormButton");
+  if (clearButton) clearButton.textContent = languageText("Limpiar", "Clear", "Effacer", "Limpar");
+  const submitButton = document.querySelector('#experienceForm button[type="submit"]');
+  if (submitButton) submitButton.textContent = languageText("Guardar historia", "Save story", "Enregistrer l'histoire", "Salvar historia");
+  const details = document.querySelector(".story-builder-details > summary");
+  if (details) details.textContent = languageText("Agregar contexto opcional", "Add optional context", "Ajouter un contexte facultatif", "Adicionar contexto opcional");
+  if (step === 3) renderStoryBuilderReview();
+}
+
+function getStoryBuilderSelectedEvidence() {
+  const selected = state.selectedEvidenceAssetIds instanceof Set ? state.selectedEvidenceAssetIds : new Set();
+  const inboxAssets = getEvidenceInboxAssets({ ignoreDate: true }).filter((asset) => selected.has(asset.id));
+  return [...(state.pendingAttachments || []), ...inboxAssets];
+}
+
+function renderStoryBuilderReview() {
+  const box = document.getElementById("storyBuilderReview");
+  if (!box) return;
+  const title = String(document.getElementById("titleInput")?.value || "").trim();
+  const notes = String(document.getElementById("notesInput")?.value || "").trim();
+  const category = String(document.getElementById("categoryInput")?.value || "").trim();
+  const participantId = String(document.getElementById("pilotParticipantInput")?.value || "").trim();
+  const participant = getPilotParticipantName(participantId) || languageText(
+    "Usuario principal",
+    "Main user",
+    "Utilisateur principal",
+    "Usuario principal",
   );
-  if (help) help.textContent = languageText(
-    "Escribe o pega la transcripcion de lo que viviste. Puedes completar los detalles despues.",
-    "Write or paste a transcription of what you lived. You can complete the details later.",
-    "Ecrivez ou collez la transcription de ce que vous avez vecu. Vous pourrez completer les details ensuite.",
-    "Escreva ou cole a transcricao do que voce viveu. Voce pode completar os detalhes depois.",
-  );
+  const timestamp = document.getElementById("timestampInput")?.value;
+  const assets = getStoryBuilderSelectedEvidence();
+  const events = parseExperienceEventsInput(document.getElementById("experienceEventsInput")?.value || "", "review");
+  const narrativeState = notes
+    ? languageText("Narrativa incluida", "Narrative included", "Recit inclus", "Narrativa incluida")
+    : languageText("Narrativa pendiente", "Narrative pending", "Recit en attente", "Narrativa pendente");
+  const evidenceState = assets.length
+    ? languageText(`${assets.length} recuerdo(s) elegido(s)`, `${assets.length} memory item(s) selected`, `${assets.length} souvenir(s) choisi(s)`, `${assets.length} lembranca(s) escolhida(s)`)
+    : languageText("Sin evidencia elegida", "No evidence selected", "Aucune preuve choisie", "Nenhuma evidencia escolhida");
+  box.innerHTML = `
+    <div class="story-review-heading">
+      <div>
+        <span>${escapeHtml(narrativeState)}</span>
+        <h3>${escapeHtml(title || languageText("Historia sin titulo", "Untitled story", "Histoire sans titre", "Historia sem titulo"))}</h3>
+        <p>${escapeHtml(notes || languageText(
+          "Puedes guardarla ahora y completar el relato despues.",
+          "You can save it now and complete the story later.",
+          "Vous pouvez l'enregistrer maintenant et completer le recit plus tard.",
+          "Voce pode salva-la agora e completar o relato depois.",
+        ))}</p>
+      </div>
+      <button class="ghost-button small-button" type="button" data-story-step="1">${escapeHtml(languageText("Editar relato", "Edit story", "Modifier le recit", "Editar relato"))}</button>
+    </div>
+    <div class="story-review-facts">
+      <span><strong>${escapeHtml(languageText("Momento", "Moment", "Moment", "Momento"))}</strong>${escapeHtml(timestamp ? formatDate(new Date(timestamp).toISOString()) : languageText("Sin fecha", "No date", "Sans date", "Sem data"))}</span>
+      <span><strong>${escapeHtml(languageText("Area de vida", "Life area", "Domaine de vie", "Area de vida"))}</strong>${escapeHtml(category ? displayCategory(category) : languageText("Sin elegir", "Not selected", "Non choisi", "Nao selecionada"))}</span>
+      <span><strong>${escapeHtml(languageText("Para", "For", "Pour", "Para"))}</strong>${escapeHtml(participant)}</span>
+      <span><strong>${escapeHtml(languageText("Eventos", "Events", "Evenements", "Eventos"))}</strong>${escapeHtml(String(events.length))}</span>
+    </div>
+    <section class="story-review-evidence">
+      <div>
+        <strong>${escapeHtml(evidenceState)}</strong>
+        <button class="ghost-button small-button" type="button" data-story-step="2">${escapeHtml(languageText("Cambiar seleccion", "Change selection", "Modifier la selection", "Alterar selecao"))}</button>
+      </div>
+      ${assets.length
+        ? `<div class="story-review-evidence-strip">${assets.slice(0, 8).map((asset) => renderEvidenceInboxPreview(asset)).join("")}</div>`
+        : `<p>${escapeHtml(languageText(
+            "Una historia puede guardarse sin archivos. La evidencia seguira disponible para agregarla despues.",
+            "A story can be saved without files. Evidence remains available to add later.",
+            "Une histoire peut etre enregistree sans fichiers. Les preuves restent disponibles pour plus tard.",
+            "Uma historia pode ser salva sem arquivos. As evidencias continuam disponiveis para depois.",
+          ))}</p>`}
+    </section>
+  `;
+}
+
+function validateStoryBuilderBasics() {
+  const fields = [
+    document.getElementById("titleInput"),
+    document.getElementById("timestampInput"),
+    document.getElementById("categoryInput"),
+  ].filter(Boolean);
+  const invalid = fields.find((field) => !field.checkValidity());
+  if (!invalid) return true;
+  invalid.reportValidity();
+  invalid.focus();
+  return false;
+}
+
+function setCaptureStoryStep(nextStep, options = {}) {
+  const step = Math.min(3, Math.max(1, Number(nextStep) || 1));
+  if (step > 1 && options.validate !== false && !validateStoryBuilderBasics()) {
+    state.captureStoryStep = 1;
+    renderCaptureFlowSplit();
+    return false;
+  }
+  state.captureStoryStep = step;
+  renderCaptureFlowSplit();
+  if (options.focus !== false) {
+    document.getElementById("storyBuilderStepper")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  return true;
+}
+
+function handleStoryBuilderNavigation(event) {
+  const direct = event.target.closest("[data-story-step]");
+  const next = event.target.closest("[data-story-next-step]");
+  const previous = event.target.closest("[data-story-previous-step]");
+  const target = direct?.dataset.storyStep || next?.dataset.storyNextStep || previous?.dataset.storyPreviousStep;
+  if (!target) return;
+  setCaptureStoryStep(target, { validate: !previous });
 }
 
 function renderEvidenceInboxPreview(asset = {}) {

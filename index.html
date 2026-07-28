@@ -19,10 +19,10 @@
         }
       })();
     </script>
-    <link rel="manifest" href="manifest.webmanifest?v=20260727-evidence-gallery-720" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260727-story-editor-721" />
     <link rel="icon" href="icons/vibe-icon-192.png" type="image/png" />
     <link rel="apple-touch-icon" href="icons/vibe-apple-touch.png" />
-    <link rel="stylesheet" href="styles.css?v=20260727-evidence-gallery-720" />
+    <link rel="stylesheet" href="styles.css?v=20260727-story-editor-721" />
   </head>
   <body>
     <noscript>
@@ -296,7 +296,24 @@
               <div id="captureSaveStatus" class="capture-save-status" aria-live="polite"></div>
               <form id="experienceForm" class="experience-form">
                 <input id="editingId" type="hidden" />
-                <section class="story-builder-primary" aria-labelledby="storyBuilderTitle">
+                <nav id="storyBuilderStepper" class="story-builder-stepper" aria-label="Pasos para crear una historia">
+                  <button type="button" data-story-step="1" aria-current="step">
+                    <span>1</span>
+                    <strong>Contar</strong>
+                    <small>Tu relato</small>
+                  </button>
+                  <button type="button" data-story-step="2">
+                    <span>2</span>
+                    <strong>Elegir</strong>
+                    <small>Fotos y archivos</small>
+                  </button>
+                  <button type="button" data-story-step="3">
+                    <span>3</span>
+                    <strong>Revisar</strong>
+                    <small>Antes de guardar</small>
+                  </button>
+                </nav>
+                <section class="story-builder-primary" data-story-step-panel="1" aria-labelledby="storyBuilderTitle">
                   <div class="story-builder-heading">
                     <div>
                       <p class="section-eyebrow" id="captureFlowEyebrow">Tu historia</p>
@@ -329,15 +346,19 @@
                       <select id="pilotParticipantInput" name="pilotParticipantId"></select>
                     </label>
                   </div>
+                  <div class="story-step-actions is-forward">
+                    <button class="primary-button" type="button" data-story-next-step="2">Elegir evidencia</button>
+                  </div>
                 </section>
 
-                <section id="captureEvidenceInbox" class="capture-evidence-inbox" aria-live="polite"></section>
-
-                <div class="form-actions story-builder-save-actions">
-                  <button class="ghost-button" id="clearFormButton" type="button">Limpiar</button>
-                  <button class="primary-button" type="submit">Guardar historia</button>
+                <section id="captureEvidenceInbox" class="capture-evidence-inbox" data-story-step-panel="2" aria-live="polite"></section>
+                <div class="story-step-actions" data-story-step-panel="2">
+                  <button class="ghost-button" type="button" data-story-previous-step="1">Volver</button>
+                  <button class="primary-button" type="button" data-story-next-step="3">Revisar historia</button>
                 </div>
 
+                <section class="story-builder-review" data-story-step-panel="3">
+                  <div id="storyBuilderReview" class="story-builder-review-summary" aria-live="polite"></div>
                 <details class="story-builder-details">
                   <summary>Detalles opcionales</summary>
                   <p class="story-builder-details-help">Agrega contexto si ayuda a entender el momento o mejora tus reportes.</p>
@@ -413,6 +434,12 @@
                   <div id="audioCaptureGuide" class="audio-capture-guide"></div>
                   <div id="attachmentPreview" class="attachment-preview" aria-live="polite"></div>
                 </details>
+                  <div class="form-actions story-builder-save-actions">
+                    <button class="ghost-button" type="button" data-story-previous-step="2">Volver</button>
+                    <button class="ghost-button" id="clearFormButton" type="button">Limpiar</button>
+                    <button class="primary-button" type="submit">Guardar historia</button>
+                  </div>
+                </section>
               </form>
             </section>
 
@@ -1055,7 +1082,7 @@
             <div class="manual-version-card">
               <div>
                 <span id="manualVersionEyebrow">Versión vigente</span>
-                <strong id="manualVersionValue">20260727-evidence-gallery-720</strong>
+                <strong id="manualVersionValue">20260727-story-editor-721</strong>
                 <p id="manualVersionSummary">Guía práctica organizada por temas para entender el flujo de la app sin leer todo de corrido.</p>
               </div>
               <div class="manual-guide-grid" aria-label="Estructura del manual">
@@ -1305,6 +1332,6 @@
       </main>
     </div>
 
-    <script src="app.js?v=20260727-evidence-gallery-720"></script>
+    <script src="app.js?v=20260727-story-editor-721"></script>
 </body>
 </html>

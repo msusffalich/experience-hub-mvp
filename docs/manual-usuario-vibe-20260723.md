@@ -40,13 +40,20 @@ Cuando veas **Sincronizado**, el registro llegó a tu cuenta y puede aparecer en
 
 ## 5. Crear una experiencia o historia
 
-En VibePWA abre **Historias > Nueva historia**. Vibeapp no crea experiencias: captura hechos y los sincroniza. En VibePWA primero cuentas el momento y después eliges las piezas que lo acompañan.
+En VibePWA abre **Historias > Nueva historia**. Vibeapp no crea experiencias:
+captura hechos y los sincroniza. El editor de VibePWA presenta tres pasos reales:
 
-1. Escribe un título breve.
-2. Responde con tus palabras: **¿qué ocurrió?** Puedes pegar una transcripción de voz.
-3. Elige la actividad principal, por ejemplo Trabajo, Paseo, Aprendizaje, Social o Entretenimiento.
-4. Usa la fecha para encontrar fotos, audios, videos o documentos de ese día en la Bandeja.
-5. Selecciona las piezas que pertenecen a la historia y guarda.
+1. **Contar:** escribe un título breve, explica con tus palabras qué ocurrió y
+   elige el momento, el área de vida y la persona o grupo.
+2. **Elegir:** mira las vistas previas de fotos, audios, videos, textos o
+   documentos de esa fecha. Marca únicamente lo que pertenece a la historia.
+3. **Revisar:** confirma el relato, la fecha, el área, el destinatario y la
+   evidencia seleccionada antes de guardar.
+
+Puedes regresar a cualquier paso sin perder lo escrito. En **Revisar** también
+puedes abrir **Agregar contexto opcional** para registrar ubicación, personas,
+estado emocional, energía percibida, eventos o agenda. Estos datos no
+interrumpen el recorrido principal.
 
 No es obligatorio tener evidencia para crear una experiencia. Una narración clara por sí misma ya puede ser una historia valiosa.
 

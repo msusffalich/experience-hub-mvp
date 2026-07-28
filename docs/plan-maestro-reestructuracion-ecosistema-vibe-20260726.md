@@ -96,6 +96,28 @@ sin retirar capacidades:
 No cambia Storage, Supabase, sincronización, procesamiento ni vínculos con
 historias. Es una mejora de jerarquía visual y divulgación progresiva.
 
+### Bloque 721: Historias como editor visual
+
+Este bloque convierte el indicador decorativo de pasos en un recorrido real:
+
+- **Contar** concentra título, narrativa, momento, área de vida y persona o
+  grupo.
+- **Elegir** presenta las vistas previas de la evidencia disponible y permite
+  seleccionar solo lo que pertenece a la historia.
+- **Revisar** resume el relato, los datos esenciales y la evidencia antes de
+  guardar.
+- La persona puede volver a cualquier paso sin perder el contenido.
+- Ubicación, personas, estado emocional, energía, eventos, agenda y carga
+  manual permanecen disponibles como contexto opcional plegado.
+- La revisión final informa claramente cuando falta narrativa o cuando la
+  historia no lleva archivos; ninguno de los dos casos inventa información.
+- Escritorio y móvil mantienen los mismos tres pasos, sin desbordes ni campos
+  técnicos en el recorrido principal.
+
+No cambia el contrato de historias, la adopción de evidencia, Supabase,
+Storage ni la sincronización con Vibeapp. El bloque reorganiza la interacción y
+añade una compuerta visual antes del guardado.
+
 ## 1. Decisión ejecutiva
 
 Vibe se reestructura alrededor de una separación simple:

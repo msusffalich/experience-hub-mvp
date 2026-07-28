@@ -215,6 +215,34 @@ try {
     return true;
   })()`);
   await captureVisualAudit(cdp, "new-story");
+  await evaluate(cdp, `(() => {
+    const setValue = (id, value) => {
+      const node = document.getElementById(id);
+      if (!node) throw new Error(id + " missing during story-step audit");
+      node.value = value;
+      node.dispatchEvent(new Event("input", { bubbles: true }));
+      node.dispatchEvent(new Event("change", { bubbles: true }));
+    };
+    setValue("titleInput", "Historia visual de prueba");
+    setValue("categoryInput", "Trabajo");
+    setValue("timestampInput", "2026-07-27T18:30");
+    document.querySelector('[data-story-next-step="2"]')?.click();
+    return document.querySelector('[data-story-step="2"].is-active') !== null;
+  })()`);
+  await captureVisualAudit(cdp, "new-story-evidence");
+  await evaluate(cdp, `(() => {
+    document.querySelector('[data-story-next-step="3"]')?.click();
+    const review = document.getElementById("storyBuilderReview")?.innerText || "";
+    if (!document.querySelector('[data-story-step="3"].is-active') || !review.includes("Historia visual de prueba")) {
+      throw new Error("Story review step did not render during visual audit");
+    }
+    return true;
+  })()`);
+  await captureVisualAudit(cdp, "new-story-review");
+  await evaluate(cdp, `(() => {
+    document.getElementById("clearFormButton")?.click();
+    return document.querySelector('[data-story-step="1"].is-active') !== null;
+  })()`);
 
   await evaluate(cdp, `(async () => {
     const nav = document.querySelector('button[data-view="capture"]');
@@ -247,6 +275,15 @@ try {
     mediaInput.files = dt.files;
     mediaInput.dispatchEvent(new Event("change", { bubbles: true }));
     await new Promise((resolve) => setTimeout(resolve, 700));
+    document.querySelector('[data-story-next-step="2"]')?.click();
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    if (!document.querySelector('[data-story-step="2"].is-active')) throw new Error("Story editor did not open the evidence step");
+    if (!document.getElementById("captureEvidenceInbox")?.offsetParent) throw new Error("Evidence step is not visible");
+    document.querySelector('[data-story-next-step="3"]')?.click();
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    if (!document.querySelector('[data-story-step="3"].is-active')) throw new Error("Story editor did not open the review step");
+    const review = document.getElementById("storyBuilderReview")?.innerText || "";
+    if (!review.includes(title) || !/1 recuerdo|1 memory/i.test(review)) throw new Error("Story review does not summarize the title and selected evidence");
     const form = document.getElementById("experienceForm");
     if (!form) throw new Error("experienceForm missing");
     form.requestSubmit();
@@ -649,6 +686,9 @@ async function captureVisualAudit(cdp, name) {
     operationVisible: !!document.getElementById("adminView")?.classList.contains("active-view"),
     openOperationDrawers: document.querySelectorAll("#adminView .admin-section-drawer[open]").length,
     evidenceCardOverflow: Math.max(0, ...Array.from(document.querySelectorAll("#assetLibraryGrid .asset-card")).map((node) => node.scrollWidth - node.clientWidth)),
+    storyStepCount: document.querySelectorAll("#storyBuilderStepper [data-story-step]").length,
+    storyActiveStep: document.querySelector("#storyBuilderStepper [data-story-step].is-active")?.dataset.storyStep || "",
+    storyVisiblePanels: Array.from(document.querySelectorAll("[data-story-step-panel]")).filter((node) => node.offsetParent !== null).length,
   }))()`);
   if (desktopAudit.pageWidth > desktopAudit.viewport + 2) {
     throw new Error(`${name} desktop layout overflows horizontally (${desktopAudit.pageWidth}px > ${desktopAudit.viewport}px).`);
@@ -656,8 +696,15 @@ async function captureVisualAudit(cdp, name) {
   if (["report", "insights"].includes(name) && (!desktopAudit.visiblePrimaryControls || !desktopAudit.visibleModeGuides)) {
     throw new Error(`${name} is missing the primary controls or reading guide.`);
   }
-  if (name === "new-story" && (!desktopAudit.captureVisible || desktopAudit.energyType !== "number" || desktopAudit.energyValue !== "")) {
-    throw new Error("New story is missing its form or optional empty perceived-energy input.");
+  if (name === "new-story" && (
+    !desktopAudit.captureVisible
+    || desktopAudit.energyType !== "number"
+    || desktopAudit.energyValue !== ""
+    || desktopAudit.storyStepCount !== 3
+    || desktopAudit.storyActiveStep !== "1"
+    || desktopAudit.storyVisiblePanels !== 1
+  )) {
+    throw new Error("New story is missing its three-step editor or optional empty perceived-energy input.");
   }
   if (name === "account" && (!desktopAudit.accountSummaryVisible || !desktopAudit.authEntryHidden)) {
     throw new Error("Signed-in account summary is missing or sign-in controls remain visible.");
