@@ -36,6 +36,7 @@ build/
 .android/
 .railway/
 tmp/
+artifacts/vibepwa-next/
 **/*.p12
 vibeapp/android/key.properties
 vibeapp/android/*.jks

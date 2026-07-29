@@ -13,6 +13,12 @@ import { createSupabaseEvidenceV2Adapters } from "./lib/evidence-pipeline-v2-sup
 import { normalizeExperienceSubmissionV2 } from "./lib/evidence-http-contract-v2.mjs";
 import { createCaptureOrchestrator, CapturePipelineError } from "./lib/capture/capture-orchestrator.mjs";
 import { createSupabaseCaptureAdapters } from "./lib/capture/capture-supabase-adapters.mjs";
+import { createDirectUploadService } from "./lib/capture/direct-upload-service.mjs";
+import {
+  DIRECT_UPLOAD_CONTRACT_VERSION,
+  DIRECT_UPLOAD_THRESHOLD_BYTES,
+  directUploadContractSummary,
+} from "./lib/capture/direct-upload-contract.mjs";
 import {
   createCaptureCompatibilityMonitor,
   inspectLegacyIntegrationCapture,
@@ -71,6 +77,10 @@ const CAPTURE_STORAGE_PROBE_TTL_MS = Math.max(
 const CAPTURE_STORAGE_TIMEOUT_MS = Math.max(
   5_000,
   Number(process.env.CAPTURE_STORAGE_TIMEOUT_MS || 30_000),
+);
+const CAPTURE_MAX_FILE_BYTES = Math.max(
+  DIRECT_UPLOAD_THRESHOLD_BYTES,
+  Number(process.env.CAPTURE_MAX_FILE_BYTES || 100 * 1024 * 1024),
 );
 const captureCompatibilityMonitors = new Map();
 let captureStorageProbeCache = null;
@@ -402,6 +412,28 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (url.pathname === "/api/mobile/auth/refresh" && req.method === "POST") {
+    const body = await readJson(req);
+    const refreshToken = String(body.refreshToken || body.refresh_token || "").trim();
+    if (!refreshToken) {
+      throw new HttpError(400, "missing_refresh_token", "La sesión no puede renovarse.");
+    }
+    const auth = await refreshSupabasePasswordToken(refreshToken);
+    sendJson(res, 200, {
+      ok: true,
+      accessToken: auth.access_token,
+      refreshToken: auth.refresh_token || refreshToken,
+      tokenType: auth.token_type || "bearer",
+      expiresIn: auth.expires_in || null,
+      expiresAt: auth.expires_at || null,
+      user: {
+        id: auth.user?.id || "",
+        email: auth.user?.email || "",
+      },
+    });
+    return;
+  }
+
   if (url.pathname === "/api/mobile/assistant/message" && req.method === "POST") {
     const user = await getRequestUser(req);
     const body = await readJson(req);
@@ -679,6 +711,32 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (url.pathname === "/api/captures/uploads" && req.method === "POST") {
+    const user = await getRequestUser(req);
+    assertCapturePipelineAccess(user);
+    const body = await readJson(req);
+    sendJson(res, 201, await authorizeDirectCaptureUpload(body, user));
+    return;
+  }
+
+  if (url.pathname === "/api/captures/commit" && req.method === "POST") {
+    const user = await getRequestUser(req);
+    assertCapturePipelineAccess(user);
+    const body = await readJson(req);
+    sendJson(res, 201, await commitDirectCaptureUpload(body, user));
+    return;
+  }
+
+  if (url.pathname === "/api/captures" && req.method === "GET") {
+    const user = await getRequestUser(req);
+    assertCapturePipelineAccess(user);
+    sendJson(res, 200, await listCaptureRecordsForUser(user, {
+      intent: url.searchParams.get("intent") || "",
+      limit: Number(url.searchParams.get("limit") || 250),
+    }));
+    return;
+  }
+
   if (url.pathname === "/api/captures" && req.method === "POST") {
     const user = await getRequestUser(req);
     assertCapturePipelineAccess(user);
@@ -691,6 +749,14 @@ async function handleApi(req, res, url) {
     assertCapturePipelineAccess(user);
     const operationId = decodeURIComponent(url.pathname.replace("/api/captures/operations/", ""));
     sendJson(res, 200, await getCaptureReceipt(operationId, user));
+    return;
+  }
+
+  if (url.pathname.startsWith("/api/captures/") && url.pathname.endsWith("/download") && req.method === "GET") {
+    const user = await getRequestUser(req);
+    assertCapturePipelineAccess(user);
+    const captureId = decodeURIComponent(url.pathname.replace("/api/captures/", "").replace("/download", ""));
+    sendJson(res, 200, await getCaptureRecordDownload(captureId, user));
     return;
   }
 
@@ -3958,6 +4024,38 @@ async function signInSupabasePassword(email, password) {
   return data;
 }
 
+async function refreshSupabasePasswordToken(refreshToken) {
+  if (activePersistence() !== "supabase") {
+    throw new HttpError(503, "supabase_not_active", "La nube de Vibe no está lista para renovar la sesión.");
+  }
+  const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+    method: "POST",
+    headers: {
+      apikey: SUPABASE_PUBLISHABLE_KEY,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ refresh_token: refreshToken }),
+  });
+  const text = await response.text();
+  if (!response.ok) {
+    throw new HttpError(
+      response.status === 400 ? 401 : response.status,
+      "refresh_rejected",
+      cleanAuthError(text),
+    );
+  }
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new HttpError(502, "refresh_invalid_response", "Vibe no recibió una renovación válida.");
+  }
+  if (!data?.access_token) {
+    throw new HttpError(502, "refresh_missing_token", "Vibe no recibió la sesión renovada.");
+  }
+  return data;
+}
+
 async function handleMobileAssistantMessage(body = {}, user = {}) {
   const system = limitAssistantText(body.system, 4000, "system");
   const text = limitAssistantText(body.text || body.userText || body.prompt, 8000, "text");
@@ -6607,22 +6705,48 @@ async function deleteExperienceRecord(id, user = { id: LOCAL_USER_ID }) {
 
 async function deleteExperienceCompanionRows(id, user = { id: LOCAL_USER_ID }) {
   if (workspaceSchemaUnavailableRecently()) return;
-  await Promise.all(
-    ["experience_events", "assets"].map(async (table) => {
-      try {
-        await supabaseRest(table, {
-          method: "DELETE",
-          searchParams: { experience_id: `eq.${id}` },
-          headers: { Prefer: "return=minimal" },
-          accessToken: user.accessToken,
-        });
-      } catch (error) {
-        workspaceSchemaState.available = false;
-        workspaceSchemaState.checkedAt = new Date().toISOString();
-        workspaceSchemaState.error = sanitizeDiagnosticError(error);
-      }
-    }),
-  );
+  try {
+    await supabaseRest("experience_events", {
+      method: "DELETE",
+      searchParams: { experience_id: `eq.${id}` },
+      headers: { Prefer: "return=minimal" },
+      accessToken: user.accessToken,
+    });
+
+    const now = new Date().toISOString();
+    const releasePatch = {
+      experience_id: null,
+      event_id: null,
+      adoption_status: "inbox",
+      adopted_at: null,
+      adoption_method: "released_from_deleted_story",
+      adoption_confidence: null,
+      updated_at: now,
+    };
+    try {
+      await supabaseRest("assets", {
+        method: "PATCH",
+        searchParams: { experience_id: `eq.${id}` },
+        headers: { Prefer: "return=minimal" },
+        body: JSON.stringify(releasePatch),
+        accessToken: user.accessToken,
+      });
+    } catch (error) {
+      if (!isAssetOptionalAdoptionColumnError(error)) throw error;
+      await supabaseRest("assets", {
+        method: "PATCH",
+        searchParams: { experience_id: `eq.${id}` },
+        headers: { Prefer: "return=minimal" },
+        body: JSON.stringify(removeAssetOptionalAdoptionColumns(releasePatch)),
+        accessToken: user.accessToken,
+      });
+    }
+  } catch (error) {
+    workspaceSchemaState.available = false;
+    workspaceSchemaState.checkedAt = new Date().toISOString();
+    workspaceSchemaState.error = sanitizeDiagnosticError(error);
+    throw error;
+  }
 }
 
 async function saveMedia(media, user = { id: LOCAL_USER_ID }) {
@@ -7031,6 +7155,7 @@ function captureContractSummary() {
       completeState: "complete",
     },
     maxMultipartRequestBytes: MAX_MEDIA_BODY_LENGTH,
+    directUpload: directUploadContractSummary(CAPTURE_MAX_FILE_BYTES),
   };
 }
 
@@ -7054,6 +7179,148 @@ async function createCapturePipelineForUser(user) {
     orchestrator: createCaptureOrchestrator(adapters),
     workspaceId: workspace.id,
   };
+}
+
+async function listCaptureRecordsForUser(user, options = {}) {
+  if (activePersistence() !== "supabase") return [];
+  const workspace = await getWorkspaceContext(user);
+  if (!workspace?.id) return [];
+  const limit = Math.max(1, Math.min(Number(options.limit || 250), 500));
+  const searchParams = {
+    owner_user_id: `eq.${user.id}`,
+    workspace_id: `eq.${workspace.id}`,
+    order: "occurred_at.desc",
+    limit: String(limit),
+  };
+  if (options.intent) searchParams.intent = `eq.${String(options.intent)}`;
+  const rows = await supabaseRest("capture_records", {
+    searchParams,
+    accessToken: user.accessToken,
+  });
+  return rows.map((row) => ({
+    id: row.capture_id,
+    captureId: row.capture_id,
+    ownerUserId: row.owner_user_id,
+    workspaceId: row.workspace_id,
+    participantId: row.participant_id || "",
+    intent: row.intent,
+    kind: row.kind,
+    occurredAt: row.occurred_at,
+    capturedAt: row.occurred_at,
+    text: row.text_content || "",
+    filename: row.filename || "",
+    name: row.filename || row.text_content || row.kind,
+    mimeType: row.mime_type || "",
+    type: row.mime_type || "",
+    sizeBytes: Number(row.size_bytes || 0),
+    size: Number(row.size_bytes || 0),
+    metadata: row.metadata || {},
+    source: row.source || {},
+    sourceType: row.source?.app || "",
+    sourceDevice: row.source?.device || "",
+    checksum: row.checksum || "",
+    storageBucket: row.storage_bucket || "",
+    storagePath: row.storage_path || "",
+    path: row.storage_path || "",
+    adoptionStatus: "inbox",
+    targetLayer: row.intent === "context" ? "context" : "evidence",
+    durable: true,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }));
+}
+
+async function getCaptureRecordDownload(captureId, user) {
+  const cleanId = String(captureId || "").trim();
+  if (!cleanId) throw new HttpError(400, "capture_id_required");
+  if (activePersistence() !== "supabase") throw new HttpError(503, "supabase_not_active");
+  const workspace = await getWorkspaceContext(user);
+  if (!workspace?.id) throw new HttpError(503, "workspace_unavailable");
+  const rows = await supabaseRest("capture_records", {
+    searchParams: {
+      capture_id: `eq.${cleanId}`,
+      owner_user_id: `eq.${user.id}`,
+      workspace_id: `eq.${workspace.id}`,
+      limit: "1",
+    },
+    accessToken: user.accessToken,
+  });
+  const row = rows[0];
+  if (!row) throw new HttpError(404, "capture_not_found");
+  if (!row.storage_path) throw new HttpError(409, "capture_binary_unavailable");
+  return {
+    ok: true,
+    captureId: cleanId,
+    url: await createSignedObjectUrl(row.storage_path, row.storage_bucket || CAPTURE_PIPELINE_BUCKET),
+    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+  };
+}
+
+async function createDirectUploadServiceForUser(user) {
+  const workspace = await getWorkspaceContext(user);
+  if (!workspace?.id) throw new HttpError(503, "capture_pipeline_workspace_unavailable");
+  const adapters = createSupabaseCaptureAdapters({
+    rest: supabaseRest,
+    rpc: supabaseRpc,
+    storage: {
+      exists: (storagePath) => supabaseObjectExists(CAPTURE_PIPELINE_BUCKET, storagePath),
+      put: (storagePath, bytes, metadata) =>
+        uploadSupabaseObjectToBucket(CAPTURE_PIPELINE_BUCKET, storagePath, bytes, metadata),
+    },
+    ownerUserId: user.id,
+    workspaceId: workspace.id,
+    accessToken: user.accessToken,
+    bucket: CAPTURE_PIPELINE_BUCKET,
+  });
+  return {
+    service: createDirectUploadService({
+      operations: adapters.operations,
+      catalog: adapters.catalog,
+      storage: {
+        stat: (storagePath) => getSupabaseObjectInfo(CAPTURE_PIPELINE_BUCKET, storagePath),
+        createSignedUpload: (storagePath, metadata) =>
+          createSupabaseSignedUpload(CAPTURE_PIPELINE_BUCKET, storagePath, metadata),
+      },
+      maxFileBytes: CAPTURE_MAX_FILE_BYTES,
+    }),
+    workspaceId: workspace.id,
+  };
+}
+
+async function authorizeDirectCaptureUpload(body, user) {
+  const { service, workspaceId } = await createDirectUploadServiceForUser(user);
+  try {
+    return await service.authorize({
+      ...body,
+      ownerUserId: user.id,
+      workspaceId,
+    });
+  } catch (error) {
+    throw capturePipelineHttpError(error);
+  }
+}
+
+async function commitDirectCaptureUpload(body, user) {
+  const { service, workspaceId } = await createDirectUploadServiceForUser(user);
+  try {
+    const command = {
+      ...body,
+      ownerUserId: user.id,
+      workspaceId,
+    };
+    const receipt = await service.commit(command);
+    const projection = await materializeCaptureForVibePwa({
+      ...command,
+      size: Number(command.sizeBytes || 0),
+    }, receipt, user);
+    return {
+      ...receipt,
+      visible: true,
+      projection,
+    };
+  } catch (error) {
+    throw capturePipelineHttpError(error);
+  }
 }
 
 async function receiveCapture(req, user) {
@@ -7675,18 +7942,130 @@ async function uploadSupabaseObjectToBucket(bucket, objectPath, bytes, metadata 
 }
 
 async function supabaseObjectExists(bucket, objectPath) {
+  return Boolean(await getSupabaseObjectInfo(bucket, objectPath));
+}
+
+async function getSupabaseObjectInfo(bucket, objectPath) {
   const cleanBucket = encodeURIComponent(String(bucket || ""));
   const cleanPath = encodeStorageObjectPath(objectPath);
-  const response = await fetchCaptureStorage(`${SUPABASE_URL}/storage/v1/object/info/${cleanBucket}/${cleanPath}`, {
-    method: "GET",
-    headers: supabaseServerKeyHeaders(),
-  });
-  if (response.status === 404) return false;
+  const response = await fetchCaptureStorage(
+    `${SUPABASE_URL}/storage/v1/object/info/${cleanBucket}/${cleanPath}`,
+    {
+      method: "GET",
+      headers: supabaseServerKeyHeaders(),
+    },
+  );
+  if (response.status === 404) return null;
+  const text = await response.text();
   if (!response.ok) {
-    const text = await response.text();
     throw new Error(`supabase_storage_info_${response.status}: ${text}`);
   }
-  return true;
+  let payload = {};
+  try {
+    payload = text ? JSON.parse(text) : {};
+  } catch {
+    throw new Error("supabase_storage_info_invalid_json");
+  }
+  const metadata = payload.metadata && typeof payload.metadata === "object"
+    ? payload.metadata
+    : {};
+  return {
+    path: objectPath,
+    sizeBytes: Number(metadata.size ?? payload.size ?? payload.metadata?.contentLength ?? 0),
+    mimeType: String(
+      metadata.mimetype ||
+      metadata.contentType ||
+      payload.mimetype ||
+      payload.content_type ||
+      "",
+    ),
+    etag: String(metadata.eTag || metadata.etag || payload.etag || ""),
+    updatedAt: payload.updated_at || payload.updatedAt || "",
+  };
+}
+
+async function createSupabaseSignedUpload(bucket, objectPath, metadata = {}) {
+  const cleanBucket = encodeURIComponent(String(bucket || ""));
+  const cleanPath = encodeStorageObjectPath(objectPath);
+  const response = await fetchCaptureStorage(
+    `${SUPABASE_URL}/storage/v1/object/upload/sign/${cleanBucket}/${cleanPath}`,
+    {
+      method: "POST",
+      headers: {
+        ...supabaseServerKeyHeaders(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({}),
+    },
+  );
+  const text = await response.text();
+  if (!response.ok) {
+    throw new Error(`supabase_storage_sign_upload_${response.status}: ${text}`);
+  }
+  let payload = {};
+  try {
+    payload = text ? JSON.parse(text) : {};
+  } catch {
+    throw new Error("supabase_storage_sign_upload_invalid_json");
+  }
+  const rawUrl = String(
+    payload.signedUrl ||
+    payload.signedURL ||
+    payload.url ||
+    "",
+  );
+  const signedUrl = resolveSupabaseStorageUrl(rawUrl);
+  const token = String(payload.token || new URL(signedUrl).searchParams.get("token") || "");
+  if (!signedUrl || !token) {
+    throw new Error("supabase_storage_sign_upload_missing_token");
+  }
+  const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
+  return {
+    bucket,
+    signedUrl,
+    token,
+    expiresAt,
+    tusEndpoint: `${supabaseDirectStorageOrigin()}/storage/v1/upload/resumable`,
+    tusMetadata: buildTusMetadata({
+      bucketName: bucket,
+      objectName: objectPath,
+      contentType: metadata.contentType || "application/octet-stream",
+      cacheControl: "3600",
+      metadata: JSON.stringify({
+        captureId: metadata.captureId || "",
+        checksum: metadata.checksum || "",
+      }),
+    }),
+    chunkBytes: DIRECT_UPLOAD_THRESHOLD_BYTES,
+  };
+}
+
+function resolveSupabaseStorageUrl(value) {
+  if (/^https?:\/\//i.test(value)) return value;
+  if (!value) return "";
+  const normalized = value.startsWith("/") ? value : `/${value}`;
+  return normalized.startsWith("/storage/v1/")
+    ? `${SUPABASE_URL}${normalized}`
+    : `${SUPABASE_URL}/storage/v1${normalized}`;
+}
+
+function supabaseDirectStorageOrigin() {
+  try {
+    const url = new URL(SUPABASE_URL);
+    if (url.hostname.endsWith(".supabase.co")) {
+      url.hostname = url.hostname.replace(/\.supabase\.co$/, ".storage.supabase.co");
+    }
+    return url.origin;
+  } catch {
+    return SUPABASE_URL;
+  }
+}
+
+function buildTusMetadata(values = {}) {
+  return Object.entries(values)
+    .filter(([, value]) => value !== undefined && value !== null && String(value) !== "")
+    .map(([key, value]) => `${key} ${Buffer.from(String(value), "utf8").toString("base64")}`)
+    .join(",");
 }
 
 async function downloadSupabaseObjectFromBucket(bucket, objectPath) {
@@ -7783,8 +8162,8 @@ function encodeStorageObjectPath(objectPath) {
     .join("/");
 }
 
-async function createSignedObjectUrl(objectPath) {
-  const response = await fetch(`${SUPABASE_URL}/storage/v1/object/sign/${SUPABASE_STORAGE_BUCKET}/${objectPath}`, {
+async function createSignedObjectUrl(objectPath, bucket = SUPABASE_STORAGE_BUCKET) {
+  const response = await fetch(`${SUPABASE_URL}/storage/v1/object/sign/${encodeURIComponent(bucket)}/${encodeStorageObjectPath(objectPath)}`, {
     method: "POST",
     headers: {
       ...supabaseServerKeyHeaders(),

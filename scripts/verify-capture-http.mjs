@@ -28,6 +28,10 @@ async function verifyOffMode() {
     assert.deepEqual(payload.contract.intents.context, ["biometric", "location", "weather", "news", "agenda", "sensor"]);
     assert.equal(payload.contract.forbiddenStoryFields.includes("experienceId"), true);
     assert.equal(payload.contract.retry.completeState, "complete");
+    assert.equal(payload.contract.directUpload.authorizeEndpoint, "/api/captures/uploads");
+    assert.equal(payload.contract.directUpload.commitEndpoint, "/api/captures/commit");
+    assert.equal(payload.contract.directUpload.binaryTransport, "direct_to_supabase_storage");
+    assert.equal(payload.contract.directUpload.resumableUpload.protocol, "tus");
     assert.equal(payload.compatibility.mode, "observe_only");
     assert.equal(payload.compatibility.writesDuplicated, false);
     assert.equal(payload.compatibility.observed, 0);
@@ -35,7 +39,30 @@ async function verifyOffMode() {
     const post = await postTextCapture(baseUrl, "off-capture");
     assert.equal(post.response.status, 503);
     assert.equal(post.payload.error, "capture_pipeline_disabled");
+
+    const direct = await postDirectAuthorization(baseUrl, "off-direct");
+    assert.equal(direct.response.status, 503);
+    assert.equal(direct.payload.error, "capture_pipeline_disabled");
   });
+}
+
+async function postDirectAuthorization(baseUrl, captureId) {
+  const response = await fetch(`${baseUrl}/api/captures/uploads`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      captureId,
+      idempotencyKey: captureId,
+      intent: "evidence",
+      kind: "image",
+      occurredAt: "2026-07-29T18:00:00-04:00",
+      filename: "foto.jpg",
+      mimeType: "image/jpeg",
+      sizeBytes: 5,
+      checksum: "a".repeat(64),
+    }),
+  });
+  return { response, payload: await response.json() };
 }
 
 async function verifyCanaryGuard() {
