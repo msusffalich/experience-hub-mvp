@@ -23,6 +23,7 @@ await verifyTransientRetry();
 await verifyCatalogResumeAfterBinaryWasStored();
 verifyStoryFieldsAreRejected();
 verifyInvalidKindPairIsRejected();
+verifyOriginalDateIsRequired();
 
 console.log("Capture core: types, isolation, idempotency and retry passed.");
 
@@ -157,6 +158,24 @@ function verifyInvalidKindPairIsRejected() {
     }),
     (error) => {
       assert.equal(error.code, "capture_kind_invalid");
+      return true;
+    },
+  );
+}
+
+function verifyOriginalDateIsRequired() {
+  assert.throws(
+    () => normalizeCaptureCommand({
+      ...base,
+      occurredAt: "",
+      intent: "evidence",
+      kind: "text",
+      captureId: "missing-date",
+      idempotencyKey: "missing-date-operation",
+      text: "La fecha original no puede inventarse.",
+    }),
+    (error) => {
+      assert.equal(error.code, "capture_occurred_at_required");
       return true;
     },
   );

@@ -93,6 +93,17 @@ assert(
   "Legacy capture routes must report compatibility through the observe-only monitor.",
 );
 assert(
+  files.server.includes('const CAPTURE_PIPELINE_MODES = new Set(["off", "canary", "on"])')
+    && files.server.includes("const CAPTURE_PIPELINE_CANARY_USERS = new Set(")
+    && files.server.includes("function capturePipelineEnabledForUser(")
+    && files.server.includes("capture_pipeline_canary_only")
+    && files.server.includes("function captureContractSummary()")
+    && files.server.includes("function resolveCaptureIdempotencyKey(")
+    && files.server.includes("capture_idempotency_key_mismatch")
+    && files.server.includes('semantics: "one_request_one_capture"'),
+  "The canonical capture route must expose one contract and a per-user canary guard.",
+);
+assert(
   files.packageJson.includes('"verify:capture-compatibility"')
     && files.packageJson.includes("npm run verify:capture-compatibility"),
   "Release checks must protect the capture compatibility observer.",

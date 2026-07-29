@@ -774,6 +774,21 @@ Estado al cierre del bloque 724:
   antiguas a experiencias o eventos quedan como diagnostico y se excluyen del
   comando canonico, sin bloquear el flujo vigente.
 
+### Estado al cierre del bloque 728
+
+- `/api/captures` admite configuracion `off | canary | on`;
+- el canario se limita por id o correo autenticado, sin exponer la lista;
+- `GET /api/captures/status` publica preparacion, habilitacion del usuario,
+  motivo y contrato movil;
+- el contrato fija una captura por solicitud, recibo durable, consulta por
+  operacion y reintento con la misma clave;
+- texto y contexto usan JSON; archivos usan multipart `file` + `metadata`;
+- Vibeapp no puede enviar campos de experiencia, evento o historia;
+- V1 permanece sin cambios y la ruta canonica sigue apagada hasta el GO
+  controlado;
+- la fuente movil declarada vigente es `0.5.34+663`; la copia Windows
+  `0.4.7+568` queda expresamente descartada para implementar el corte.
+
 ## 13. Estrategia de pruebas
 
 ### 13.1 Niveles

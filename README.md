@@ -22,6 +22,15 @@ secundarias se abren dentro de su espacio padre y los controles tecnicos viven e
 - `app.js`: estado de interfaz y orquestacion de los flujos funcionales.
 - `server.js`: API, persistencia, sincronizacion e integraciones.
 - `database/`: contratos y migraciones de Supabase.
+
+La ruta canonica de capturas se controla con:
+
+- `CAPTURE_PIPELINE_MODE=off|canary|on`;
+- `CAPTURE_PIPELINE_CANARY_USERS=id-o-correo[,id-o-correo]`;
+- `CAPTURE_PIPELINE_BUCKET=vibe-captures`.
+
+El contrato movil vigente esta en
+`docs/capture-api-contract-20260728.md`.
 - `scripts/`: verificadores de release, contratos y recorridos operativos.
 - `docs/`: manual, blueprint de produccion, handchecks e inventarios.
 

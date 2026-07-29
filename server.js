@@ -48,8 +48,19 @@ const EVIDENCE_PIPELINE_CANARY_USERS = new Set(
     .map((value) => value.trim().toLowerCase())
     .filter(Boolean),
 );
-const CAPTURE_PIPELINE_MODE = String(process.env.CAPTURE_PIPELINE_MODE || "off").trim().toLowerCase();
+const CAPTURE_PIPELINE_MODES = new Set(["off", "canary", "on"]);
+const requestedCapturePipelineMode = String(process.env.CAPTURE_PIPELINE_MODE || "off").trim().toLowerCase();
+const CAPTURE_PIPELINE_MODE = CAPTURE_PIPELINE_MODES.has(requestedCapturePipelineMode)
+  ? requestedCapturePipelineMode
+  : "off";
+const CAPTURE_PIPELINE_CANARY_USERS = new Set(
+  String(process.env.CAPTURE_PIPELINE_CANARY_USERS || "")
+    .split(",")
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean),
+);
 const CAPTURE_PIPELINE_BUCKET = process.env.CAPTURE_PIPELINE_BUCKET || "vibe-captures";
+const CAPTURE_CONTRACT_VERSION = "2026-07-28.1";
 const CAPTURE_COMPATIBILITY_MONITOR_LIMIT = 250;
 const captureCompatibilityMonitors = new Map();
 const ASSET_UPLOAD_ATTEMPTS_TABLE = "asset_upload_attempts";
@@ -652,14 +663,14 @@ async function handleApi(req, res, url) {
 
   if (url.pathname === "/api/captures" && req.method === "POST") {
     const user = await getRequestUser(req);
-    assertCapturePipelineAccess();
+    assertCapturePipelineAccess(user);
     sendJson(res, 201, await receiveCapture(req, user));
     return;
   }
 
   if (url.pathname.startsWith("/api/captures/operations/") && req.method === "GET") {
     const user = await getRequestUser(req);
-    assertCapturePipelineAccess();
+    assertCapturePipelineAccess(user);
     const operationId = decodeURIComponent(url.pathname.replace("/api/captures/operations/", ""));
     sendJson(res, 200, await getCaptureReceipt(operationId, user));
     return;
@@ -6817,20 +6828,40 @@ function assertEvidencePipelineV2Access(user = {}) {
   }
 }
 
-function assertCapturePipelineAccess() {
-  if (CAPTURE_PIPELINE_MODE !== "on") {
+function capturePipelineEnabledForUser(user = {}) {
+  if (CAPTURE_PIPELINE_MODE === "on") return true;
+  if (CAPTURE_PIPELINE_MODE !== "canary") return false;
+  const candidates = [user.id, user.email]
+    .map((value) => String(value || "").trim().toLowerCase())
+    .filter(Boolean);
+  return candidates.some((value) => CAPTURE_PIPELINE_CANARY_USERS.has(value));
+}
+
+function assertCapturePipelineAccess(user = {}) {
+  if (!["canary", "on"].includes(CAPTURE_PIPELINE_MODE)) {
     throw new HttpError(
       503,
       "capture_pipeline_disabled",
       "La nueva ruta de capturas permanece aislada hasta completar migracion y pruebas.",
     );
   }
+  if (!capturePipelineEnabledForUser(user)) {
+    throw new HttpError(
+      403,
+      "capture_pipeline_canary_only",
+      "La ruta unica de capturas aun esta habilitada solo para el usuario canario.",
+    );
+  }
   if (activePersistence() !== "supabase") {
     throw new HttpError(503, "capture_pipeline_requires_supabase");
+  }
+  if (!isSupabaseConfigured()) {
+    throw new HttpError(503, "capture_pipeline_supabase_unavailable");
   }
 }
 
 async function getCapturePipelineStatus(user = {}) {
+  const enabledForUser = capturePipelineEnabledForUser(user);
   const checks = {
     persistence: { ok: activePersistence() === "supabase", detail: activePersistence() },
     operationLedger: { ok: false, detail: "not_checked" },
@@ -6838,13 +6869,23 @@ async function getCapturePipelineStatus(user = {}) {
     storySeparation: { ok: false, detail: "not_checked" },
     storageBucket: { ok: false, detail: "not_checked" },
   };
-  if (CAPTURE_PIPELINE_MODE !== "on" || activePersistence() !== "supabase" || !isSupabaseConfigured()) {
+  const statusBase = {
+    ok: true,
+    mode: CAPTURE_PIPELINE_MODE,
+    enabledForUser,
+    architecture: "capture_first_story_later",
+    contract: captureContractSummary(),
+    compatibility: getCaptureCompatibilityMonitor(user).snapshot(),
+  };
+  if (!["canary", "on"].includes(CAPTURE_PIPELINE_MODE) || activePersistence() !== "supabase" || !isSupabaseConfigured()) {
     return {
-      ok: true,
+      ...statusBase,
       ready: false,
-      mode: CAPTURE_PIPELINE_MODE,
-      architecture: "capture_first_story_later",
-      compatibility: getCaptureCompatibilityMonitor(user).snapshot(),
+      reason: !["canary", "on"].includes(CAPTURE_PIPELINE_MODE)
+        ? "pipeline_off"
+        : !enabledForUser
+          ? "user_not_enabled"
+          : "supabase_unavailable",
       checks,
     };
   }
@@ -6853,11 +6894,9 @@ async function getCapturePipelineStatus(user = {}) {
   if (!workspace?.id) {
     checks.persistence = { ok: false, detail: "workspace_unavailable" };
     return {
-      ok: true,
+      ...statusBase,
       ready: false,
-      mode: CAPTURE_PIPELINE_MODE,
-      architecture: "capture_first_story_later",
-      compatibility: getCaptureCompatibilityMonitor(user).snapshot(),
+      reason: "workspace_unavailable",
       checks,
     };
   }
@@ -6904,13 +6943,50 @@ async function getCapturePipelineStatus(user = {}) {
     if (bucket.public === true) throw new Error("capture_bucket_must_be_private");
     return "available_private";
   });
+  const ready = Object.values(checks).every((check) => check.ok);
   return {
-    ok: true,
-    ready: Object.values(checks).every((check) => check.ok),
-    mode: CAPTURE_PIPELINE_MODE,
-    architecture: "capture_first_story_later",
-    compatibility: getCaptureCompatibilityMonitor(user).snapshot(),
+    ...statusBase,
+    ready,
+    reason: !ready
+      ? "infrastructure_not_ready"
+      : enabledForUser
+        ? "ready"
+        : "user_not_enabled",
     checks,
+  };
+}
+
+function captureContractSummary() {
+  return {
+    version: CAPTURE_CONTRACT_VERSION,
+    endpoint: "/api/captures",
+    receiptEndpoint: "/api/captures/operations/{operationId}",
+    contentTypes: ["application/json", "multipart/form-data"],
+    multipartFields: {
+      file: "binary_required",
+      metadata: "json_required",
+    },
+    semantics: "one_request_one_capture",
+    intents: {
+      evidence: ["text", "image", "audio", "video", "document"],
+      context: ["biometric", "location", "weather", "news", "agenda", "sensor"],
+    },
+    required: ["captureId", "idempotencyKey", "intent", "kind", "occurredAt"],
+    optional: ["participantId", "text", "filename", "mimeType", "metadata", "source"],
+    forbiddenStoryFields: [
+      "experienceId",
+      "eventId",
+      "storyId",
+      "parentExperienceId",
+      "requestedExperienceId",
+      "requestedEventId",
+    ],
+    retry: {
+      rule: "reuse_same_capture_id_and_idempotency_key",
+      receiptRequired: ["ok", "durable", "operationId", "captureId", "state"],
+      completeState: "complete",
+    },
+    maxMultipartRequestBytes: MAX_MEDIA_BODY_LENGTH,
   };
 }
 
@@ -6943,15 +7019,14 @@ async function receiveCapture(req, user) {
     const upload = await readMultipartMedia(req, contentType);
     const media = upload.media || {};
     const metadata = isPlainObject(media.metadata) ? media.metadata : {};
+    const headerIdempotencyKey = String(req.headers["idempotency-key"] || "").trim();
     body = {
       ...media,
       captureId: media.captureId || media.id || media.assetId,
-      idempotencyKey:
-        String(req.headers["idempotency-key"] || "").trim() ||
-        metadata.idempotencyKey ||
-        media.sourceId ||
-        media.captureId ||
-        media.id,
+      idempotencyKey: resolveCaptureIdempotencyKey(
+        [headerIdempotencyKey, media.idempotencyKey, metadata.idempotencyKey],
+        [media.sourceId, media.captureId, media.id],
+      ),
       intent: media.intent || metadata.intent,
       kind: media.kind || inferServerMediaKind(normalizeMedia(media)),
       occurredAt: media.occurredAt || media.capturedAt,
@@ -6962,9 +7037,9 @@ async function receiveCapture(req, user) {
     };
   } else if (contentType.includes("application/json")) {
     body = await readJson(req);
-    body.idempotencyKey =
-      String(req.headers["idempotency-key"] || "").trim() ||
-      body.idempotencyKey;
+    body.idempotencyKey = resolveCaptureIdempotencyKey(
+      [String(req.headers["idempotency-key"] || "").trim(), body.idempotencyKey],
+    );
   } else {
     throw new HttpError(415, "capture_content_type_unsupported");
   }
@@ -6979,6 +7054,20 @@ async function receiveCapture(req, user) {
   } catch (error) {
     throw capturePipelineHttpError(error);
   }
+}
+
+function resolveCaptureIdempotencyKey(explicitValues = [], fallbackValues = []) {
+  const unique = [...new Set(explicitValues.map((value) => String(value || "").trim()).filter(Boolean))];
+  if (unique.length > 1) {
+    throw new HttpError(
+      400,
+      "capture_idempotency_key_mismatch",
+      "La clave de reintento debe ser identica en la cabecera y el contenido.",
+    );
+  }
+  return unique[0] ||
+    fallbackValues.map((value) => String(value || "").trim()).find(Boolean) ||
+    "";
 }
 
 async function getCaptureReceipt(operationId, user) {
