@@ -244,8 +244,31 @@ GRANT EXECUTE ON FUNCTION claim_capture_operation(
 ) TO authenticated, service_role;
 
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-VALUES ('vibe-captures', 'vibe-captures', false, 104857600, NULL)
+VALUES ('experience-media', 'experience-media', false, 104857600, NULL)
 ON CONFLICT (id) DO UPDATE
 SET public = false,
     file_size_limit = EXCLUDED.file_size_limit,
     allowed_mime_types = EXCLUDED.allowed_mime_types;
+
+-- Final verification. Every value must return true before enabling the canary.
+SELECT
+  to_regclass('public.capture_operations') IS NOT NULL AS operation_ledger_ready,
+  to_regclass('public.capture_records') IS NOT NULL AS capture_catalog_ready,
+  to_regclass('public.story_evidence_links') IS NOT NULL AS story_links_ready,
+  to_regprocedure(
+    'public.claim_capture_operation(text,text,text,uuid,uuid,text,text,text,text)'
+  ) IS NOT NULL AS claim_function_ready,
+  EXISTS (
+    SELECT 1
+    FROM storage.buckets
+    WHERE id = 'experience-media'
+      AND public = false
+      AND file_size_limit = 104857600
+  ) AS private_bucket_ready,
+  NOT EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'capture_records'
+      AND column_name IN ('experience_id', 'event_id', 'story_id')
+  ) AS capture_story_separation_ready;

@@ -247,7 +247,14 @@ assert(files.server.includes("/api/integration/meta-wearables/manifest") && file
 assert(files.ouraConnectorDoc.includes("Apple Health / HealthKit") && files.ouraConnectorDoc.includes("Samsung / Android Health Connect") && files.ouraConnectorDoc.includes("Meta Wearables"), "Device connector documentation is missing Apple, Samsung/Health Connect, or Meta sections.");
 assert(files.app.includes("Rutas Apple, Samsung y Meta") && files.app.includes("Apple, Samsung, and Meta routes"), "Manual/Admin does not document the Apple, Samsung, and Meta connector routes.");
 assert(files.server.includes("/api/integration/device/selftest") && files.server.includes("function runDeviceConnectorSelfTest"), "Server does not expose the unified device connector self-test.");
-assert(files.server.includes("/api/integration/ingest") && files.server.includes("function ingestIntegrationSignal") && files.app.includes("/api/integration/ingest"), "Server/manual do not expose validated integration ingest.");
+assert(
+  files.server.includes("/api/integration/ingest")
+    && files.server.includes("function ingestIntegrationSignal")
+    && files.server.includes("/api/captures")
+    && files.app.includes("POST /api/captures")
+    && files.app.includes("ruta canonica movil"),
+  "Server/manual must keep legacy connector ingest available while presenting POST /api/captures as the canonical mobile route.",
+);
 assert(files.server.includes("completed_with_deferred_context") && files.server.includes("queuePostIngestContextRefresh") && files.server.includes("integration_ingest_background_refresh_completed"), "Integration ingest must acknowledge mobile writes before slow context/news refreshes finish.");
 assert(files.server.includes("integration_ingest_background_refresh_retry_scheduled") && files.server.includes("POST_INGEST_CONTEXT_REFRESH_RETRY_DELAYS_MS") && files.server.includes("integration_ingest_background_refresh_failed"), "Deferred integration context refresh must log failures and retry instead of failing silently.");
 assert(files.app.includes("runDeviceConnectorSelfTest") && files.app.includes("data-device-action=\"run-device-connectors\"") && files.app.includes("Prueba de conectores"), "Admin device panel does not expose the connector self-test.");

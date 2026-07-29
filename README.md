@@ -27,7 +27,14 @@ La ruta canonica de capturas se controla con:
 
 - `CAPTURE_PIPELINE_MODE=off|canary|on`;
 - `CAPTURE_PIPELINE_CANARY_USERS=id-o-correo[,id-o-correo]`;
-- `CAPTURE_PIPELINE_BUCKET=vibe-captures`.
+- `SUPABASE_STORAGE_BUCKET=experience-media`.
+
+`POST /api/captures` is the only normal entrypoint for Vibeapp captures.
+The server stores binary evidence under the `captures/` prefix in the shared
+private bucket, records a durable receipt, and then projects the capture to the
+VibePWA evidence inbox, Agenda, or ambient context. Legacy mobile routes remain
+temporarily available only for compatibility and are not used by the current
+capture flow.
 
 El contrato movil vigente esta en
 `docs/capture-api-contract-20260728.md`.
@@ -328,6 +335,9 @@ GET /api/experiences
 POST /api/experiences
 PUT /api/experiences/:id
 DELETE /api/experiences/:id
+GET /api/captures/status
+POST /api/captures
+GET /api/captures/:captureId
 POST /api/media
 GET /api/context/impact?location=San%20Juan
 GET /api/daily-briefing?location=San%20Juan&locale=es

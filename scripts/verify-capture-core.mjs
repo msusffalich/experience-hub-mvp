@@ -95,6 +95,8 @@ async function verifyTransientRetry() {
   };
   await assert.rejects(() => orchestrator.accept(payload), (error) => {
     assert.equal(error.retryable, true);
+    assert.equal(error.stage, "storage");
+    assert.equal(error.code, "capture_storage_write_failed");
     assert.equal(error.operation.state, CAPTURE_STATES.RETRY_PENDING);
     return true;
   });

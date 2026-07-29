@@ -1,7 +1,7 @@
 # Guía de arquitectura y flujo operacional por tipo de activo
 
-Fecha: 2026-07-27
-Estado: referencia canónica de implementación y operación
+Fecha: 2026-07-29
+Estado: referencia canónica de implementación, operación y prueba automática
 
 ## 1. La regla que simplifica el sistema
 
@@ -171,8 +171,33 @@ una historia humana confirmada.
 | Filtro sin resultados | explica qué alcance no encontró datos |
 | Proveedor externo cae | captura y datos existentes siguen operativos |
 
-## 9. Criterio de cierre
+## 9. Agente probador automático
+
+Antes de publicar una versión, Capture Guardian levanta el servidor real contra
+servicios controlados y recorre de forma autónoma:
+
+- texto, imagen, audio, video y documento;
+- biometría en JSON y archivo;
+- ubicación, Agenda, clima, noticias y sensores;
+- carga JSON y multipart con bytes y MIME reales;
+- captura inmediata y envío diferido después de recuperar conexión;
+- respuesta perdida, reintento con la misma clave y ausencia de duplicados;
+- fallo temporal de Storage y continuación desde la etapa alcanzada;
+- recibo, consulta de estado, reconciliación y proyección visible en VibePWA;
+- rechazo de datos que intenten crear historias o eventos desde la captura;
+- compatibilidad temporal de las rutas anteriores sin convertirlas en la ruta principal.
+
+El comando `npm run verify:capture-guardian` falla indicando el tipo de activo y
+la etapa exacta. También forma parte de `npm run check` y de
+`npm run verify:release`.
+
+Cuando el canario está activo, `/api/health` realiza además una operación real y
+reversible en Storage: escribe, lee y elimina un archivo. Railway no puede
+declarar verde una versión cuya ruta binaria esté rota.
+
+## 10. Criterio de cierre
 
 Un flujo está terminado cuando el original, el catálogo, el recibo y la vista del
-usuario coinciden. Un test sintético ayuda, pero no sustituye la prueba real del
-tipo de activo y escenario que declara cubrir.
+usuario coinciden. La suite automática es la barrera obligatoria antes del
+despliegue; la prueba en dispositivo confirma el producto, pero ya no se utiliza
+para descubrir fallos básicos del servidor.

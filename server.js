@@ -59,10 +59,21 @@ const CAPTURE_PIPELINE_CANARY_USERS = new Set(
     .map((value) => value.trim().toLowerCase())
     .filter(Boolean),
 );
-const CAPTURE_PIPELINE_BUCKET = process.env.CAPTURE_PIPELINE_BUCKET || "vibe-captures";
+// Captures and the established multimedia flow share one private storage service.
+// The captures/ prefix keeps the new ledger isolated without introducing a second bucket.
+const CAPTURE_PIPELINE_BUCKET = SUPABASE_STORAGE_BUCKET;
 const CAPTURE_CONTRACT_VERSION = "2026-07-28.1";
 const CAPTURE_COMPATIBILITY_MONITOR_LIMIT = 250;
+const CAPTURE_STORAGE_PROBE_TTL_MS = Math.max(
+  30_000,
+  Number(process.env.CAPTURE_STORAGE_PROBE_TTL_MS || 300_000),
+);
+const CAPTURE_STORAGE_TIMEOUT_MS = Math.max(
+  5_000,
+  Number(process.env.CAPTURE_STORAGE_TIMEOUT_MS || 30_000),
+);
 const captureCompatibilityMonitors = new Map();
+let captureStorageProbeCache = null;
 const ASSET_UPLOAD_ATTEMPTS_TABLE = "asset_upload_attempts";
 const MAX_JSON_BODY_LENGTH = Number(process.env.MAX_JSON_BODY_LENGTH || 40_000_000);
 const MAX_MEDIA_BODY_LENGTH = Number(process.env.MAX_MEDIA_BODY_LENGTH || 90_000_000);
@@ -325,8 +336,16 @@ processRoutineSchedules().catch(() => {});
 
 async function handleApi(req, res, url) {
   if (url.pathname === "/api/health" && req.method === "GET") {
-    sendJson(res, 200, {
-      status: "ok",
+    const captureStorage =
+      ["canary", "on"].includes(CAPTURE_PIPELINE_MODE) &&
+      activePersistence() === "supabase" &&
+      isSupabaseConfigured()
+        ? await runEvidenceV2ReadinessCheck(
+          async () => verifyCaptureStorageRoundTrip({ id: "server-health" }),
+        )
+        : { ok: true, detail: "capture_pipeline_not_active" };
+    sendJson(res, captureStorage.ok ? 200 : 503, {
+      status: captureStorage.ok ? "ok" : "degraded",
       service: "experience-hub-api",
       host: HOST,
       port: PORT,
@@ -344,6 +363,11 @@ async function handleApi(req, res, url) {
         geopolitical: { status: "available", provider: "GDELT DOC 2.0", mode: "on-demand" },
       },
       routineScheduler: { status: "active", intervalSeconds: 60 },
+      capturePipeline: {
+        mode: CAPTURE_PIPELINE_MODE,
+        bucket: CAPTURE_PIPELINE_BUCKET,
+        storageRoundTrip: captureStorage,
+      },
       jobs: getJobSummary(),
       timestamp: new Date().toISOString(),
     });
@@ -6868,6 +6892,7 @@ async function getCapturePipelineStatus(user = {}) {
     captureCatalog: { ok: false, detail: "not_checked" },
     storySeparation: { ok: false, detail: "not_checked" },
     storageBucket: { ok: false, detail: "not_checked" },
+    storageRoundTrip: { ok: false, detail: "not_checked" },
   };
   const statusBase = {
     ok: true,
@@ -6933,7 +6958,7 @@ async function getCapturePipelineStatus(user = {}) {
     return "capture_does_not_write_story_links";
   });
   checks.storageBucket = await runEvidenceV2ReadinessCheck(async () => {
-    const response = await fetch(
+    const response = await fetchCaptureStorage(
       `${SUPABASE_URL}/storage/v1/bucket/${encodeURIComponent(CAPTURE_PIPELINE_BUCKET)}`,
       { headers: supabaseServerKeyHeaders() },
     );
@@ -6943,6 +6968,9 @@ async function getCapturePipelineStatus(user = {}) {
     if (bucket.public === true) throw new Error("capture_bucket_must_be_private");
     return "available_private";
   });
+  checks.storageRoundTrip = checks.storageBucket.ok
+    ? await runEvidenceV2ReadinessCheck(async () => verifyCaptureStorageRoundTrip(user))
+    : { ok: false, detail: "storage_bucket_unavailable" };
   const ready = Object.values(checks).every((check) => check.ok);
   return {
     ...statusBase,
@@ -7046,13 +7074,132 @@ async function receiveCapture(req, user) {
 
   const { orchestrator, workspaceId } = await createCapturePipelineForUser(user);
   try {
-    return await orchestrator.accept({
+    const receipt = await orchestrator.accept({
       ...body,
       ownerUserId: user.id,
       workspaceId,
     });
+    const projection = await materializeCaptureForVibePwa(body, receipt, user);
+    return {
+      ...receipt,
+      visible: true,
+      projection,
+    };
   } catch (error) {
     throw capturePipelineHttpError(error);
+  }
+}
+
+async function materializeCaptureForVibePwa(body = {}, receipt = {}, user = {}) {
+  try {
+    const metadata = isPlainObject(body.metadata) ? body.metadata : {};
+    const source = isPlainObject(body.source) ? body.source : {};
+    if (body.intent === "evidence") {
+      const asset = await upsertAssetEvidence({
+        id: receipt.captureId,
+        name: body.filename || `${body.kind || "evidence"}-${receipt.captureId}`,
+        kind: body.kind,
+        type: body.mimeType || (body.kind === "text" ? "text/plain" : "application/octet-stream"),
+        size: Number(body.bytes?.length || body.size || 0),
+        storage: receipt.storagePath ? "supabase" : "text",
+        path: receipt.storagePath || "",
+        previewText: body.kind === "text" ? body.text || "" : "",
+        analysisText: body.kind === "text" ? body.text || "" : "",
+        sourceType: source.app || "vibeapp",
+        sourceDevice: source.device || "",
+        sourceId: receipt.captureId,
+        participantId: body.participantId || "",
+        capturedAt: body.occurredAt,
+        uploadedAt: new Date().toISOString(),
+        adoptionStatus: "inbox",
+        targetLayer: "evidence",
+        payloadType: body.kind,
+        metadata: {
+          ...metadata,
+          captureId: receipt.captureId,
+          operationId: receipt.operationId,
+          idempotencyKey: body.idempotencyKey,
+          sourcePlatform: source.platform || "",
+          capturedOffline: source.capturedOffline === true,
+          adoptionStatus: "inbox",
+          inboxReason: "waiting_for_experience_adoption",
+        },
+      }, user, { requireRemote: true });
+      return { target: "assets", id: asset.id || receipt.captureId };
+    }
+
+    if (body.kind === "agenda") {
+      const startAt = metadata.startAt || metadata.start_at || body.occurredAt;
+      const endAt = metadata.endAt || metadata.end_at ||
+        new Date(new Date(startAt).getTime() + 60 * 60 * 1000).toISOString();
+      const agendaEvent = await upsertAgendaEvent({
+        id: receipt.captureId,
+        title: metadata.title || body.text || "Evento desde Vibeapp",
+        description: metadata.description || metadata.text || body.text || "",
+        startAt,
+        endAt,
+        location: metadata.location || "Sin ubicación",
+        participants: metadata.participants || "",
+        pilotParticipantId: body.participantId || "",
+        source: source.app || "vibeapp",
+        sourceType: source.app || "vibeapp",
+        metadata: {
+          ...metadata,
+          captureId: receipt.captureId,
+          operationId: receipt.operationId,
+          capturedOffline: source.capturedOffline === true,
+        },
+      }, user);
+      return { target: "agenda", id: agendaEvent.id || receipt.captureId };
+    }
+
+    const contextSignal = await upsertContextSignal({
+      id: receipt.captureId,
+      ownerUserId: user.id,
+      participantId: body.participantId || "",
+      sourceType: source.app || "vibeapp",
+      sourceDevice: source.device || "",
+      sourceId: receipt.captureId,
+      signalType: body.kind,
+      capturedAt: body.occurredAt,
+      validFrom: metadata.validFrom || metadata.startAt || body.occurredAt,
+      validTo: metadata.validTo || metadata.endAt || null,
+      location: metadata.location || (
+        body.kind === "location" && Number.isFinite(Number(metadata.latitude)) && Number.isFinite(Number(metadata.longitude))
+          ? `${metadata.latitude}, ${metadata.longitude}`
+          : ""
+      ),
+      metrics: isPlainObject(metadata.metrics) ? metadata.metrics : (
+        body.kind === "biometric" || body.kind === "sensor" || body.kind === "weather"
+          ? metadata
+          : {}
+      ),
+      payload: {
+        ...metadata,
+        text: body.text || "",
+        filename: body.filename || "",
+        mimeType: body.mimeType || "",
+        storagePath: receipt.storagePath || "",
+      },
+      metadata: {
+        captureId: receipt.captureId,
+        operationId: receipt.operationId,
+        capturedOffline: source.capturedOffline === true,
+      },
+    }, user);
+    return { target: "context", id: contextSignal.id || receipt.captureId };
+  } catch (error) {
+    const pipelineError = new CapturePipelineError(
+      "capture_projection_failed",
+      String(error?.detail || error?.message || error || "capture_projection_failed"),
+      { stage: "projection", cause: error },
+    );
+    pipelineError.operation = {
+      operationId: receipt.operationId,
+      captureId: receipt.captureId,
+      state: receipt.state,
+    };
+    throw pipelineError;
   }
 }
 
@@ -7074,7 +7221,49 @@ async function getCaptureReceipt(operationId, user) {
   const { orchestrator } = await createCapturePipelineForUser(user);
   const receipt = await orchestrator.getReceipt(operationId);
   if (!receipt) throw new HttpError(404, "capture_operation_not_found");
-  return receipt;
+  if (!receipt.durable) return { ...receipt, visible: false };
+  try {
+    const rows = await supabaseRest("capture_records", {
+      searchParams: {
+        select: "*",
+        capture_id: `eq.${receipt.captureId}`,
+        owner_user_id: `eq.${user.id}`,
+        limit: "1",
+      },
+      accessToken: user.accessToken,
+    });
+    const row = rows[0];
+    if (!row) throw new Error("capture_record_missing_during_reconciliation");
+    const projection = await materializeCaptureForVibePwa({
+      captureId: row.capture_id,
+      idempotencyKey: receipt.operationId,
+      participantId: row.participant_id || "",
+      intent: row.intent,
+      kind: row.kind,
+      occurredAt: row.occurred_at,
+      text: row.text_content || "",
+      filename: row.filename || "",
+      mimeType: row.mime_type || "",
+      size: Number(row.size_bytes || 0),
+      metadata: row.metadata || {},
+      source: row.source || {},
+    }, receipt, user);
+    return { ...receipt, visible: true, projection };
+  } catch (error) {
+    throw capturePipelineHttpError(error instanceof CapturePipelineError
+      ? error
+      : Object.assign(new CapturePipelineError(
+        "capture_projection_reconciliation_failed",
+        String(error?.message || error || "capture_projection_reconciliation_failed"),
+        { stage: "projection", cause: error },
+      ), {
+        operation: {
+          operationId: receipt.operationId,
+          captureId: receipt.captureId,
+          state: receipt.state,
+        },
+      }));
+  }
 }
 
 function capturePipelineHttpError(error) {
@@ -7085,7 +7274,18 @@ function capturePipelineHttpError(error) {
       : error.retryable === false
         ? 400
         : 503;
-  return new HttpError(statusCode, error.code || "capture_pipeline_failed", error.detail || error.message);
+  return new HttpError(
+    statusCode,
+    error.code || "capture_pipeline_failed",
+    {
+      message: error.detail || error.message,
+      stage: error.stage || error.operation?.lastError?.stage || "unknown",
+      retryable: error.retryable !== false,
+      operationId: error.operation?.operationId || "",
+      captureId: error.operation?.captureId || "",
+      state: error.operation?.state || "",
+    },
+  );
 }
 
 async function getEvidencePipelineV2Status(user = {}) {
@@ -7424,7 +7624,7 @@ function dataUrlToBuffer(dataUrl) {
 
 async function uploadSupabaseObject(objectPath, contentType, bytes) {
   const url = `${SUPABASE_URL}/storage/v1/object/${SUPABASE_STORAGE_BUCKET}/${objectPath}`;
-  const response = await fetch(url, {
+  const response = await fetchCaptureStorage(url, {
     method: "POST",
     headers: {
       ...supabaseServerKeyHeaders(),
@@ -7447,7 +7647,7 @@ async function uploadSupabaseObjectToBucket(bucket, objectPath, bytes, metadata 
     method: "POST",
     headers: {
       ...supabaseServerKeyHeaders(),
-      "Content-Type": metadata.contentType || "application/octet-stream",
+      "Content-Type": metadata.contentType || metadata.mimeType || "application/octet-stream",
       "x-upsert": "true",
     },
     body: bytes,
@@ -7461,7 +7661,7 @@ async function uploadSupabaseObjectToBucket(bucket, objectPath, bytes, metadata 
 async function supabaseObjectExists(bucket, objectPath) {
   const cleanBucket = encodeURIComponent(String(bucket || ""));
   const cleanPath = encodeStorageObjectPath(objectPath);
-  const response = await fetch(`${SUPABASE_URL}/storage/v1/object/info/${cleanBucket}/${cleanPath}`, {
+  const response = await fetchCaptureStorage(`${SUPABASE_URL}/storage/v1/object/info/${cleanBucket}/${cleanPath}`, {
     method: "GET",
     headers: supabaseServerKeyHeaders(),
   });
@@ -7471,6 +7671,85 @@ async function supabaseObjectExists(bucket, objectPath) {
     throw new Error(`supabase_storage_info_${response.status}: ${text}`);
   }
   return true;
+}
+
+async function downloadSupabaseObjectFromBucket(bucket, objectPath) {
+  const cleanBucket = encodeURIComponent(String(bucket || ""));
+  const cleanPath = encodeStorageObjectPath(objectPath);
+  const response = await fetchCaptureStorage(
+    `${SUPABASE_URL}/storage/v1/object/authenticated/${cleanBucket}/${cleanPath}`,
+    {
+      method: "GET",
+      headers: supabaseServerKeyHeaders(),
+    },
+  );
+  const bytes = Buffer.from(await response.arrayBuffer());
+  if (!response.ok) {
+    throw new Error(`supabase_storage_download_${response.status}: ${bytes.toString("utf8").slice(0, 240)}`);
+  }
+  return bytes;
+}
+
+async function fetchCaptureStorage(url, options = {}) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), CAPTURE_STORAGE_TIMEOUT_MS);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      throw new Error(`capture_storage_timeout_${CAPTURE_STORAGE_TIMEOUT_MS}ms`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function verifyCaptureStorageRoundTrip(user = {}) {
+  const now = Date.now();
+  if (
+    captureStorageProbeCache?.ok &&
+    now - Number(captureStorageProbeCache.checkedAtMs || 0) < CAPTURE_STORAGE_PROBE_TTL_MS
+  ) {
+    return captureStorageProbeCache.detail;
+  }
+
+  const probeId = randomUUID();
+  const owner = String(user.id || "server").replace(/[^a-zA-Z0-9_-]/g, "-").slice(0, 80);
+  const objectPath = `${owner}/captures/_health/${probeId}.txt`;
+  const expected = Buffer.from(`vibe-capture-storage-probe:${probeId}`, "utf8");
+  let uploaded = false;
+  try {
+    await uploadSupabaseObjectToBucket(
+      CAPTURE_PIPELINE_BUCKET,
+      objectPath,
+      expected,
+      { mimeType: "text/plain; charset=utf-8" },
+    );
+    uploaded = true;
+    if (!(await supabaseObjectExists(CAPTURE_PIPELINE_BUCKET, objectPath))) {
+      throw new Error("capture_storage_probe_not_visible_after_upload");
+    }
+    const downloaded = await downloadSupabaseObjectFromBucket(CAPTURE_PIPELINE_BUCKET, objectPath);
+    if (!downloaded.equals(expected)) {
+      throw new Error("capture_storage_probe_content_mismatch");
+    }
+    const deletion = await deleteSupabaseObjectsFromBucket(CAPTURE_PIPELINE_BUCKET, [objectPath]);
+    if (deletion.failed > 0) {
+      throw new Error(deletion.warnings[0] || "capture_storage_probe_delete_failed");
+    }
+    uploaded = false;
+    if (await supabaseObjectExists(CAPTURE_PIPELINE_BUCKET, objectPath)) {
+      throw new Error("capture_storage_probe_still_exists_after_delete");
+    }
+    const detail = `write_read_delete_ok:${CAPTURE_PIPELINE_BUCKET}`;
+    captureStorageProbeCache = { ok: true, detail, checkedAtMs: now };
+    return detail;
+  } finally {
+    if (uploaded) {
+      await deleteSupabaseObjectsFromBucket(CAPTURE_PIPELINE_BUCKET, [objectPath]).catch(() => {});
+    }
+  }
 }
 
 function encodeStorageObjectPath(objectPath) {
@@ -8103,11 +8382,15 @@ async function deleteSupabaseObject(objectPath) {
 }
 
 async function deleteSupabaseObjects(objectPaths = []) {
+  return deleteSupabaseObjectsFromBucket(SUPABASE_STORAGE_BUCKET, objectPaths);
+}
+
+async function deleteSupabaseObjectsFromBucket(bucket, objectPaths = []) {
   const uniquePaths = [...new Set(objectPaths.map((item) => String(item || "").trim()).filter(Boolean))];
   const summary = { deleted: 0, failed: 0, warnings: [] };
   for (let index = 0; index < uniquePaths.length; index += 100) {
     const batch = uniquePaths.slice(index, index + 100);
-    const response = await fetch(`${SUPABASE_URL}/storage/v1/object/${SUPABASE_STORAGE_BUCKET}`, {
+    const response = await fetchCaptureStorage(`${SUPABASE_URL}/storage/v1/object/${encodeURIComponent(String(bucket || ""))}`, {
       method: "DELETE",
       headers: {
         ...supabaseServerKeyHeaders(),
@@ -11786,19 +12069,31 @@ function createId() {
 
 function readJson(req) {
   return new Promise((resolve, reject) => {
-    let body = "";
+    const chunks = [];
+    let length = 0;
+    let tooLarge = false;
     req.on("data", (chunk) => {
-      body += chunk;
-      if (body.length > MAX_JSON_BODY_LENGTH) {
-        reject(new Error("payload_too_large"));
-        req.destroy();
+      length += chunk.length;
+      if (length > MAX_JSON_BODY_LENGTH) {
+        tooLarge = true;
+        return;
       }
+      if (!tooLarge) chunks.push(chunk);
     });
     req.on("end", () => {
+      if (tooLarge) {
+        reject(new HttpError(
+          413,
+          "json_payload_too_large",
+          `La solicitud supera el limite de ${MAX_JSON_BODY_LENGTH} bytes.`,
+        ));
+        return;
+      }
       try {
+        const body = Buffer.concat(chunks).toString("utf8");
         resolve(body ? JSON.parse(body) : {});
       } catch {
-        reject(new Error("invalid_json"));
+        reject(new HttpError(400, "invalid_json"));
       }
     });
     req.on("error", reject);
@@ -11809,16 +12104,22 @@ function readRawBody(req, maxLength = MAX_MEDIA_BODY_LENGTH) {
   return new Promise((resolve, reject) => {
     const chunks = [];
     let length = 0;
+    let tooLarge = false;
     req.on("data", (chunk) => {
       length += chunk.length;
       if (length > maxLength) {
-        reject(new Error("payload_too_large"));
-        req.destroy();
+        tooLarge = true;
         return;
       }
-      chunks.push(chunk);
+      if (!tooLarge) chunks.push(chunk);
     });
-    req.on("end", () => resolve(Buffer.concat(chunks)));
+    req.on("end", () => {
+      if (tooLarge) {
+        reject(new Error("payload_too_large"));
+        return;
+      }
+      resolve(Buffer.concat(chunks));
+    });
     req.on("error", reject);
   });
 }
@@ -11826,18 +12127,30 @@ function readRawBody(req, maxLength = MAX_MEDIA_BODY_LENGTH) {
 async function readMultipartMedia(req, contentType) {
   const boundaryMatch = contentType.match(/boundary=(?:"([^"]+)"|([^;]+))/i);
   const boundary = boundaryMatch?.[1] || boundaryMatch?.[2];
-  if (!boundary) throw new Error("missing_multipart_boundary");
-  const body = await readRawBody(req, MAX_MEDIA_BODY_LENGTH);
+  if (!boundary) throw new HttpError(400, "capture_multipart_boundary_required");
+  let body;
+  try {
+    body = await readRawBody(req, MAX_MEDIA_BODY_LENGTH);
+  } catch (error) {
+    if (String(error?.message || error) === "payload_too_large") {
+      throw new HttpError(
+        413,
+        "capture_payload_too_large",
+        `El archivo supera el limite de ${MAX_MEDIA_BODY_LENGTH} bytes.`,
+      );
+    }
+    throw error;
+  }
   const parts = parseMultipartParts(body, boundary);
   const filePart = parts.find((part) => part.name === "file");
-  if (!filePart?.content?.length) throw new Error("missing_media_file");
+  if (!filePart?.content?.length) throw new HttpError(400, "capture_file_required");
   const metaPart = parts.find((part) => part.name === "metadata");
   let metadata = {};
   if (metaPart?.content?.length) {
     try {
       metadata = JSON.parse(metaPart.content.toString("utf8"));
     } catch {
-      throw new Error("invalid_media_metadata");
+      throw new HttpError(400, "capture_metadata_invalid");
     }
   }
   return {
