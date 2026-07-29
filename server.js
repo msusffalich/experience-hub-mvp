@@ -336,16 +336,9 @@ processRoutineSchedules().catch(() => {});
 
 async function handleApi(req, res, url) {
   if (url.pathname === "/api/health" && req.method === "GET") {
-    const captureStorage =
-      ["canary", "on"].includes(CAPTURE_PIPELINE_MODE) &&
-      activePersistence() === "supabase" &&
-      isSupabaseConfigured()
-        ? await runEvidenceV2ReadinessCheck(
-          async () => verifyCaptureStorageRoundTrip({ id: "server-health" }),
-        )
-        : { ok: true, detail: "capture_pipeline_not_active" };
-    sendJson(res, captureStorage.ok ? 200 : 503, {
-      status: captureStorage.ok ? "ok" : "degraded",
+    const captureStorage = getCaptureStorageHealthSnapshot();
+    sendJson(res, 200, {
+      status: "ok",
       service: "experience-hub-api",
       host: HOST,
       port: PORT,
@@ -366,6 +359,7 @@ async function handleApi(req, res, url) {
       capturePipeline: {
         mode: CAPTURE_PIPELINE_MODE,
         bucket: CAPTURE_PIPELINE_BUCKET,
+        readinessEndpoint: "/api/captures/status",
         storageRoundTrip: captureStorage,
       },
       jobs: getJobSummary(),
@@ -1012,6 +1006,28 @@ async function handleApi(req, res, url) {
   }
 
   sendJson(res, 404, { error: "not_found" });
+}
+
+function getCaptureStorageHealthSnapshot() {
+  if (
+    !["canary", "on"].includes(CAPTURE_PIPELINE_MODE) ||
+    activePersistence() !== "supabase" ||
+    !isSupabaseConfigured()
+  ) {
+    return { ok: null, detail: "capture_pipeline_not_active", checkedAt: null };
+  }
+  if (!captureStorageProbeCache) {
+    return {
+      ok: null,
+      detail: "readiness_checked_separately",
+      checkedAt: null,
+    };
+  }
+  return {
+    ok: captureStorageProbeCache.ok,
+    detail: captureStorageProbeCache.detail,
+    checkedAt: new Date(captureStorageProbeCache.checkedAtMs).toISOString(),
+  };
 }
 
 async function loadDotEnv() {
@@ -7745,6 +7761,13 @@ async function verifyCaptureStorageRoundTrip(user = {}) {
     const detail = `write_read_delete_ok:${CAPTURE_PIPELINE_BUCKET}`;
     captureStorageProbeCache = { ok: true, detail, checkedAtMs: now };
     return detail;
+  } catch (error) {
+    captureStorageProbeCache = {
+      ok: false,
+      detail: sanitizeDiagnosticError(error).slice(0, 500),
+      checkedAtMs: Date.now(),
+    };
+    throw error;
   } finally {
     if (uploaded) {
       await deleteSupabaseObjectsFromBucket(CAPTURE_PIPELINE_BUCKET, [objectPath]).catch(() => {});

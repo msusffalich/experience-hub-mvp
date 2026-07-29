@@ -1,4 +1,4 @@
-# Handcheck VibePWA 729 - Capture Guardian
+# Handcheck VibePWA 730 - Capture Guardian
 
 Fecha: 2026-07-29
 
@@ -27,8 +27,10 @@ Railway apareciera verde aunque una foto pudiera fallar después.
 5. La consulta del recibo reconcilia una proyección incompleta sin duplicar el
    archivo.
 6. Una captura no crea por sí sola una experiencia, evento o historia.
-7. El healthcheck de Railway realiza escritura, lectura y borrado real en
-   Storage y devuelve `503 degraded` si cualquiera falla.
+7. El healthcheck de Railway confirma la disponibilidad de VibePWA sin esperar
+   servicios externos. La ruta autenticada `/api/captures/status` realiza la
+   escritura, lectura y borrado real en Storage. Si cualquiera falla, bloquea
+   capturas con diagnóstico sin derribar la aplicación.
 8. Los errores indican etapa, posibilidad de reintento, operación y estado
    durable alcanzado.
 
@@ -52,6 +54,8 @@ Resultado: **verde**.
 - Errores HTTP 401, 403, 413, 415 y 503.
 - Rechazo de campos de experiencia, evento o historia.
 - Ausencia de regresión de compatibilidad durante el canario.
+- Aislamiento de falla: Storage puede fallar, VibePWA sigue disponible y las
+  capturas quedan bloqueadas hasta recuperar la dependencia.
 
 Comandos ejecutados:
 
@@ -93,5 +97,7 @@ La versión solo puede pasar a producción cuando:
 
 1. `npm run verify:release` termina verde;
 2. Railway termina verde;
-3. `/api/health` informa `storageRoundTrip.ok=true`;
-4. la prueba automática de Vibeapp confirma JSON y multipart por la ruta única.
+3. `/api/health` responde verde sin esperar Storage;
+4. `/api/captures/status` informa `ready=true` y
+   `storageRoundTrip.ok=true`;
+5. la prueba automática de Vibeapp confirma JSON y multipart por la ruta única.

@@ -1,4 +1,4 @@
-const APP_VERSION = "20260729-capture-guardian-729";
+const APP_VERSION = "20260729-capture-liveness-split-730";
 const VOICE_ASSISTANT_NAME = "V";
 const PILOT_TARGET_USERS = 3;
 const PRIMARY_PARTICIPANT_ID = "primary-user-miguel";

@@ -1,4 +1,4 @@
-# Capture Guardian 729
+# Capture Guardian 730
 
 ## Objetivo
 
@@ -45,9 +45,11 @@ El probador cubre:
    tipo y etapa.
 2. **Verificacion de release:** la matriz forma parte de `npm run check` y
    bloquea el commit/despliegue cuando existe una regresion.
-3. **Healthcheck de Railway:** cuando el canario esta activo, `/api/health`
-   ejecuta una prueba real y reversible de escribir, leer y borrar un archivo.
-   Railway recibe `503 degraded` si Storage no completa las tres operaciones.
+3. **Aislamiento de servicios:** `/api/health` confirma que VibePWA esta
+   disponible sin esperar dependencias externas. La ruta autenticada
+   `/api/captures/status` ejecuta la prueba real y reversible de escribir, leer
+   y borrar un archivo. Si Storage falla, las capturas quedan bloqueadas con
+   diagnostico, pero la aplicacion permanece disponible.
 
 ## Errores observables
 
@@ -76,6 +78,8 @@ No se solicita una prueba manual en iPhone hasta que:
 
 1. `npm run verify:capture-guardian` termine verde;
 2. `npm run check` termine verde;
-3. Railway muestre `/api/health` verde con `storageRoundTrip.ok=true`.
+3. Railway muestre `/api/health` verde;
+4. `/api/captures/status` informe `ready=true` y
+   `storageRoundTrip.ok=true`.
 
 La prueba final de Vibeapp es confirmatoria, no diagnostica.

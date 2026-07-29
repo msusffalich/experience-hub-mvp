@@ -2,7 +2,7 @@
 
 Fecha: 2026-07-28
 Version del contrato: `2026-07-28.1`
-Version de servidor: `20260729-capture-guardian-729`
+Version de servidor: `20260729-capture-liveness-split-730`
 Estado: preparado para canario; apagado por defecto
 
 ## Proposito

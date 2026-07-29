@@ -175,6 +175,8 @@ try {
   appProcess = await startApplicationServer(appPort, supabaseDouble.baseUrl);
   const baseUrl = `http://127.0.0.1:${appPort}`;
 
+  await collectResult("A", "pipeline", "liveness_isolation", () =>
+    verifyLivenessIsolation(baseUrl, supabaseDouble.state));
   await collectResult("A", "pipeline", "status", () =>
     verifyPipelineReadiness(baseUrl, supabaseDouble.state));
   for (const captureCase of CAPTURE_CASES) {
@@ -306,6 +308,37 @@ async function verifyPipelineReadiness(baseUrl, state) {
     assert.equal(state.objects.size, 0, "storageRoundTrip left its probe object behind");
   });
   console.log("[PASS] pipeline stage=status storageRoundTrip=write/read/delete");
+}
+
+async function verifyLivenessIsolation(baseUrl, state) {
+  await step("pipeline", "liveness.storage_failure", async () => {
+    state.failures.storageUploads = 1;
+
+    const health = await requestJson(`${baseUrl}/api/health`);
+    assert.equal(health.response.status, 200, describeHttp(health));
+    assert.equal(health.payload.status, "ok");
+    assert.equal(health.payload.capturePipeline?.readinessEndpoint, "/api/captures/status");
+    assert.equal(
+      state.failures.storageUploads,
+      1,
+      "liveness healthcheck must not consume a Storage request",
+    );
+
+    const readiness = await requestJson(`${baseUrl}/api/captures/status`, {
+      headers: authHeaders(),
+    });
+    assert.equal(readiness.response.status, 200, describeHttp(readiness));
+    assert.equal(readiness.payload.ready, false);
+    assert.equal(readiness.payload.reason, "infrastructure_not_ready");
+    assert.equal(readiness.payload.checks?.storageRoundTrip?.ok, false);
+    assert.equal(state.failures.storageUploads, 0);
+
+    const healthAfterFailure = await requestJson(`${baseUrl}/api/health`);
+    assert.equal(healthAfterFailure.response.status, 200, describeHttp(healthAfterFailure));
+    assert.equal(healthAfterFailure.payload.status, "ok");
+    assert.equal(healthAfterFailure.payload.capturePipeline?.storageRoundTrip?.ok, false);
+  });
+  console.log("[PASS] pipeline stage=liveness_isolation app=available captures=blocked");
 }
 
 async function verifyCaptureCase(baseUrl, state, captureCase) {
