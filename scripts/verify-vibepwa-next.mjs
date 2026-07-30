@@ -9,6 +9,7 @@ const files = {
   app: await readFile(new URL("src/app.js", root), "utf8"),
   api: await readFile(new URL("src/api.js", root), "utf8"),
   upload: await readFile(new URL("src/direct-upload.js", root), "utf8"),
+  queue: await readFile(new URL("src/upload-queue.js", root), "utf8"),
   zip: await readFile(new URL("src/zip.js", root), "utf8"),
   i18n: await readFile(new URL("src/i18n.js", root), "utf8"),
   manual: await readFile(new URL("src/manual.js", root), "utf8"),
@@ -30,28 +31,35 @@ for (const language of ["es", "en", "fr", "pt"]) {
   assert.match(files.manual, new RegExp(`\\b${language}: \\{`));
 }
 for (const endpoint of [
-  "/api/profile",
-  "/api/experiences",
-  "/api/assets",
-  "/api/captures/status",
-  "/api/report/pdf",
-  "/api/insights/pdf",
-  "/api/publication/pdf",
+  "/api/v2/profile",
+  "/api/v2/groups",
+  "/api/v2/experiences",
+  "/api/v2/assets",
+  "/api/v2/captures/status",
+  "/api/v2/context/summary",
+  "/api/v2/integrations/oura/status",
+  "/api/v2/outputs/report/pdf",
+  "/api/v2/outputs/insights/pdf",
+  "/api/v2/outputs/publication/pdf",
 ]) {
   assert.equal(files.app.includes(endpoint) || files.api.includes(endpoint), true, `${endpoint} missing`);
 }
-assert.match(files.upload, /\/api\/captures\/uploads/);
-assert.match(files.upload, /\/api\/captures\/commit/);
+assert.match(files.upload, /\/api\/v2\/captures\/uploads/);
+assert.match(files.upload, /\/api\/v2\/captures\/commit/);
 assert.match(files.upload, /crypto\.subtle\.digest\("SHA-256"/);
 assert.match(files.upload, /Tus-Resumable/);
 assert.match(files.upload, /method: "HEAD"/);
-assert.match(files.upload, /localStorage\.setItem\(resumeKey/);
-assert.match(files.api, /\/api\/mobile\/auth\/refresh/);
+assert.doesNotMatch(files.upload, /localStorage\./);
+assert.match(files.queue, /indexedDB\.open/);
+assert.match(files.queue, /idempotencyKey/);
+assert.match(files.queue, /occurredAt/);
+assert.match(files.api, /\/api\/v2\/auth\/refresh/);
 assert.match(files.api, /refreshPromise/);
 assert.match(files.api, /if \(!refreshed\.invalid\) throw refreshed\.error/);
 assert.match(files.zip, /0x06054b50/);
 assert.match(files.worker, /vibe-next-/);
-assert.match(server, /url\.pathname === "\/api\/mobile\/auth\/refresh"/);
+assert.match(server, /url\.pathname\.startsWith\("\/api\/v2\/"\)/);
+assert.match(server, /createVibeApiV2/);
 assert.match(server, /released_from_deleted_story/);
 assert.doesNotMatch(
   server.match(/async function deleteExperienceCompanionRows[\s\S]*?\n\}/)?.[0] || "",

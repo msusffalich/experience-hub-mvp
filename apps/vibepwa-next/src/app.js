@@ -2,6 +2,12 @@ import { downloadBlob, getSession, loadWorkspace, request, setSession, signIn } 
 import { uploadEvidence } from "./direct-upload.js";
 import { icon } from "./icons.js";
 import { supportedLanguages, translator } from "./i18n.js";
+import {
+  drainUploadQueue,
+  enqueueUpload,
+  getUploadQueueSummary,
+  retryQueuedUpload,
+} from "./upload-queue.js";
 import { createZip } from "./zip.js";
 
 const app = document.getElementById("app");
@@ -13,7 +19,20 @@ const state = {
   language: localStorage.getItem("vibe-next-language") || "es",
   theme: localStorage.getItem("vibe-next-theme") || "light",
   loading: false,
-  data: { health: null, profile: {}, experiences: [], assets: [], captures: [], agenda: [], capture: null },
+  data: {
+    health: null,
+    profile: {},
+    groups: [],
+    experiences: [],
+    assets: [],
+    captures: [],
+    agenda: [],
+    capture: null,
+    context: null,
+    contextSignals: [],
+    oura: null,
+  },
+  offlineQueue: { total: 0, pending: 0, uploading: 0, retry_pending: 0 },
   filters: { search: "", area: "", from: "", to: "" },
   selectedPublicationStories: new Set(),
   modal: null,
@@ -44,6 +63,22 @@ async function boot() {
     return;
   }
   await refreshData();
+  await refreshOfflineQueue();
+  showIntegrationCallback();
+  if (navigator.onLine && state.offlineQueue.total > 0) drainOfflineUploads();
+}
+
+window.addEventListener("online", () => drainOfflineUploads());
+
+function showIntegrationCallback() {
+  const url = new URL(window.location.href);
+  if (url.searchParams.get("integration") !== "oura") return;
+  const status = url.searchParams.get("status");
+  toast(status === "connected" ? t("connected") : `${t("integrationIssue")}: ${url.searchParams.get("reason") || "oura"}`, status !== "connected");
+  url.searchParams.delete("integration");
+  url.searchParams.delete("status");
+  url.searchParams.delete("reason");
+  history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
 }
 
 async function refreshData() {
@@ -94,7 +129,7 @@ function renderLogin() {
           <h2>${escapeHtml(t("signIn"))}</h2>
           <p>${escapeHtml(t("loginHelp"))}</p>
           <div class="field"><label for="loginEmail">${escapeHtml(t("email"))}</label><input id="loginEmail" name="email" type="email" autocomplete="email" required /></div>
-          <div class="field"><label for="loginPassword">${escapeHtml(t("password"))}</label><input id="loginPassword" name="password" type="password" autocomplete="current-password" required /></div>
+          <div class="field"><label for="loginPassword">${escapeHtml(t("password"))}</label><div class="password-field"><input id="loginPassword" name="password" type="password" autocomplete="current-password" required /><button type="button" data-toggle-password>${escapeHtml(t("showPassword"))}</button></div></div>
           <button class="button full" type="submit">${icon("arrow")}${escapeHtml(t("signIn"))}</button>
         </form>
       </section>
@@ -110,6 +145,12 @@ function renderLogin() {
       toast(error.message, true);
       button.disabled = false;
     }
+  });
+  document.querySelector("[data-toggle-password]")?.addEventListener("click", (event) => {
+    const input = document.getElementById("loginPassword");
+    const show = input.type === "password";
+    input.type = show ? "text" : "password";
+    event.currentTarget.textContent = t(show ? "hidePassword" : "showPassword");
   });
 }
 
@@ -205,6 +246,7 @@ function evidenceView() {
       <label class="button">${icon("upload")}${escapeHtml(t("uploadEvidence"))}<input id="evidenceFileInput" type="file" hidden /></label>
     </section>
     ${state.upload ? uploadStatus() : ""}
+    ${offlineQueueStatus()}
     ${filterToolbar(false)}
     ${assets.length ? `<div class="evidence-grid">${assets.map(evidenceTile).join("")}</div>` : `<div class="empty">${escapeHtml(t("noEvidence"))}</div>`}`;
 }
@@ -232,7 +274,7 @@ function intelligenceView() {
     <section class="action-grid">
       <div class="action-cell"><h3>${escapeHtml(t("report"))}</h3><p>${escapeHtml(t("reportHelp"))}</p><button class="button secondary" data-action="generate-report">${icon("download")}${escapeHtml(t("generate"))}</button></div>
       <div class="action-cell"><h3>${escapeHtml(t("findings"))}</h3><p>${escapeHtml(t("findingsHelp"))}</p><button class="button secondary" data-action="generate-findings">${icon("download")}${escapeHtml(t("generate"))}</button></div>
-      <div class="action-cell"><h3>${escapeHtml(t("knowledgeMap"))}</h3><p>${escapeHtml(t("knowledgeMapHelp"))}</p><a class="button secondary" href="/index.html?view=experience-map">${icon("map")}${escapeHtml(t("openMap"))}</a></div>
+      <div class="action-cell"><h3>${escapeHtml(t("knowledgeMap"))}</h3><p>${escapeHtml(t("knowledgeMapHelp"))}</p><button class="button secondary" data-action="export-obsidian">${icon("map")}${escapeHtml(t("openMap"))}</button></div>
     </section>`;
 }
 
@@ -262,6 +304,8 @@ function publishView() {
 function accountView() {
   const profile = state.data.profile || {};
   const capture = state.data.capture || {};
+  const groups = state.data.groups || [];
+  const oura = state.data.oura || {};
   return `
     <section class="page-heading">
       <div><p class="eyebrow">${escapeHtml(t("account"))}</p><h2>${escapeHtml(t("profile"))}</h2><p>${escapeHtml(profile.email || state.session?.user?.email || "")}</p></div>
@@ -275,9 +319,33 @@ function accountView() {
         <div><h3>${escapeHtml(t("appearance"))}</h3><p>${escapeHtml(t("appearanceHelp"))}</p></div>
         <div class="segmented"><button data-theme-choice="light" class="${state.theme === "light" ? "active" : ""}">${icon("sun")}${escapeHtml(t("light"))}</button><button data-theme-choice="dark" class="${state.theme === "dark" ? "active" : ""}">${icon("moon")}${escapeHtml(t("dark"))}</button></div>
       </div>
+      <section class="account-block">
+        <div class="section-heading"><div><h3>${escapeHtml(t("groups"))}</h3><p>${escapeHtml(t("groupsHelp"))}</p></div></div>
+        <form id="groupForm" class="inline-form">
+          <input name="displayName" aria-label="${escapeAttr(t("groupName"))}" placeholder="${escapeAttr(t("groupName"))}" required />
+          <input name="segment" aria-label="${escapeAttr(t("groupNote"))}" placeholder="${escapeAttr(t("groupNote"))}" />
+          <button class="button secondary" type="submit">${icon("plus")}${escapeHtml(t("addGroup"))}</button>
+        </form>
+        <div class="group-list">
+          ${groups.length ? groups.map(groupRow).join("") : `<p class="muted-copy">${escapeHtml(t("noGroups"))}</p>`}
+        </div>
+      </section>
+      <section class="account-block">
+        <div class="settings-row">
+          <div><h3>Oura Ring</h3><p>${escapeHtml(t("ouraHelp"))}</p></div>
+          <div class="account-actions">
+            <span class="tag ${oura.connected ? "accent" : ""}">${escapeHtml(oura.connected ? t("connected") : t("notConnected"))}</span>
+            ${oura.connected
+              ? `<button class="button secondary small" data-action="oura-sync">${icon("refresh")}${escapeHtml(t("syncNow"))}</button><button class="button danger small" data-action="oura-disconnect">${escapeHtml(t("disconnect"))}</button>`
+              : `<button class="button secondary small" data-action="oura-connect">${icon("arrow")}${escapeHtml(t("connect"))}</button>`}
+          </div>
+        </div>
+        ${oura.lastSyncAt ? `<p class="muted-copy">${escapeHtml(t("lastSync"))}: ${escapeHtml(formatLongDate(oura.lastSyncAt))}</p>` : ""}
+        ${oura.lastError ? `<p class="error-copy">${escapeHtml(t("integrationIssue"))}</p>` : ""}
+      </section>
       <div class="settings-row">
         <div><h3>${escapeHtml(t("about"))}</h3><p>${escapeHtml(t("parallelHelp"))}</p></div>
-        <div><span class="tag">VibePWA 2</span> <a class="button secondary small" href="./manual.html">Manual</a> <a class="button secondary small" href="/index.html?view=dashboard">${escapeHtml(t("legacy"))}</a></div>
+        <div><span class="tag">VibePWA 2</span> <a class="button secondary small" href="./manual.html">Manual</a></div>
       </div>
       <details class="operation">
         <summary>${escapeHtml(t("operations"))}</summary>
@@ -287,10 +355,36 @@ function accountView() {
           ${operationRow(t("captures"), capture.enabled === false ? t("unavailable") : t("available"))}
           ${operationRow("Contrato", capture.contract?.version || capture.contractVersion || "—")}
           ${operationRow(t("binaryFiles"), capture.contract?.directUpload?.binaryTransport || "direct_to_supabase_storage")}
+          ${operationRow(t("offlineQueue"), String(state.offlineQueue.total || 0))}
         </div>
       </details>
       <div style="margin-top:24px"><button class="button danger" data-action="sign-out">${icon("logout")}${escapeHtml(t("signOut"))}</button></div>
     </div>`;
+}
+
+function groupRow(group) {
+  return `<div class="group-row">
+    <div><strong>${escapeHtml(group.displayName || "")}</strong><span>${escapeHtml(group.segment || t("noNote"))}</span></div>
+    <span class="tag">${escapeHtml(group.status === "inactive" ? t("inactive") : t("active"))}</span>
+    ${group.status === "inactive" ? "" : `<button class="button danger small" data-group-deactivate="${escapeAttr(group.id)}">${escapeHtml(t("deactivate"))}</button>`}
+  </div>`;
+}
+
+function activeGroups() {
+  return (state.data.groups || []).filter((group) => group.status !== "inactive");
+}
+
+function eventEditorRows(events = []) {
+  if (!events.length) return `<p class="muted-copy">${escapeHtml(t("noEvents"))}</p>`;
+  return events.map((event, index) => `
+    <div class="event-editor-row" data-event-row data-event-id="${escapeAttr(event.id || "")}">
+      <div class="event-editor-head"><strong>${escapeHtml(`${t("event")} ${index + 1}`)}</strong><button class="button danger icon-only small" type="button" data-remove-event="${index}" title="${escapeAttr(t("removeEvent"))}">${icon("delete")}</button></div>
+      <div class="field-grid">
+        <div class="field"><label>${escapeHtml(t("eventTitle"))}</label><input data-event-title value="${escapeAttr(event.title || "")}" /></div>
+        <div class="field"><label>${escapeHtml(t("date"))}</label><input data-event-time type="datetime-local" value="${localDateTimeValue(event.timestamp || new Date())}" /></div>
+      </div>
+      <div class="field"><label>${escapeHtml(t("eventNarrative"))}</label><textarea data-event-narrative placeholder="${escapeAttr(t("eventNarrativeHelp"))}">${escapeHtml(event.narrativeText || event.description || "")}</textarea></div>
+    </div>`).join("");
 }
 
 function bindShellEvents() {
@@ -319,6 +413,7 @@ function bindViewEvents() {
   });
   document.getElementById("evidenceFileInput")?.addEventListener("change", handleEvidenceFile);
   document.querySelector("[data-action='retry-upload']")?.addEventListener("click", retryEvidenceUpload);
+  document.querySelector("[data-action='retry-queue']")?.addEventListener("click", drainOfflineUploads);
   document.querySelectorAll("[data-asset-download]").forEach((button) => button.addEventListener("click", () => downloadAsset(button.dataset.assetDownload)));
   document.querySelectorAll("[data-publication-story]").forEach((input) => {
     input.addEventListener("change", () => {
@@ -335,6 +430,14 @@ function bindViewEvents() {
   document.querySelector("[data-action='generate-report']")?.addEventListener("click", () => generatePdf("report"));
   document.querySelector("[data-action='generate-findings']")?.addEventListener("click", () => generatePdf("findings"));
   document.querySelector("[data-action='generate-publication']")?.addEventListener("click", generatePublication);
+  document.querySelector("[data-action='export-obsidian']")?.addEventListener("click", exportObsidian);
+  document.getElementById("groupForm")?.addEventListener("submit", saveGroup);
+  document.querySelectorAll("[data-group-deactivate]").forEach((button) => {
+    button.addEventListener("click", () => deactivateGroup(button.dataset.groupDeactivate));
+  });
+  document.querySelector("[data-action='oura-connect']")?.addEventListener("click", connectOura);
+  document.querySelector("[data-action='oura-sync']")?.addEventListener("click", syncOura);
+  document.querySelector("[data-action='oura-disconnect']")?.addEventListener("click", disconnectOura);
   document.querySelector("[data-action='sign-out']")?.addEventListener("click", () => {
     setSession(null);
     state.session = null;
@@ -347,7 +450,7 @@ function bindViewEvents() {
     document.documentElement.lang = state.language;
     render();
     try {
-      state.data.profile = await request("/api/profile", {
+      state.data.profile = await request("/api/v2/profile", {
         method: "PUT",
         body: { ...state.data.profile, language: state.language },
       });
@@ -363,11 +466,88 @@ function bindViewEvents() {
   }));
 }
 
+async function exportObsidian() {
+  const button = document.querySelector("[data-action='export-obsidian']");
+  if (button) button.disabled = true;
+  try {
+    const result = await request("/api/v2/obsidian/export", { method: "POST" });
+    toast(`${t("generated")} ${Number(result.count || 0)}`);
+  } catch (error) {
+    toast(error.message, true);
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+
+async function saveGroup(event) {
+  event.preventDefault();
+  const button = event.currentTarget.querySelector("button");
+  button.disabled = true;
+  const form = new FormData(event.currentTarget);
+  try {
+    await request("/api/v2/groups", {
+      method: "POST",
+      body: {
+        displayName: form.get("displayName"),
+        segment: form.get("segment"),
+      },
+    });
+    toast(t("groupSaved"));
+    await refreshData();
+  } catch (error) {
+    toast(error.message, true);
+    button.disabled = false;
+  }
+}
+
+async function deactivateGroup(id) {
+  if (!id || !window.confirm(t("confirmDeactivateGroup"))) return;
+  try {
+    await request(`/api/v2/groups/${encodeURIComponent(id)}`, { method: "DELETE" });
+    toast(t("groupDeactivated"));
+    await refreshData();
+  } catch (error) {
+    toast(error.message, true);
+  }
+}
+
+async function connectOura() {
+  try {
+    const result = await request("/api/v2/integrations/oura/authorize", { method: "POST" });
+    if (!result.authorizationUrl) throw new Error("oura_authorization_url_missing");
+    window.location.assign(result.authorizationUrl);
+  } catch (error) {
+    toast(error.message, true);
+  }
+}
+
+async function syncOura() {
+  try {
+    const result = await request("/api/v2/integrations/oura/sync", { method: "POST", body: {} });
+    toast(`${t("ouraSynced")}: ${Number(result.records || 0)}`);
+    await refreshData();
+  } catch (error) {
+    toast(error.message, true);
+  }
+}
+
+async function disconnectOura() {
+  if (!window.confirm(t("confirmDisconnect"))) return;
+  try {
+    await request("/api/v2/integrations/oura", { method: "DELETE" });
+    toast(t("disconnected"));
+    await refreshData();
+  } catch (error) {
+    toast(error.message, true);
+  }
+}
+
 function openStoryModal(story = null) {
   const linkedAssets = story ? assetsForStory(story) : [];
   state.modal = {
     type: "story",
     story,
+    events: structuredClone(story?.events || []),
     linkedAtOpen: new Set(linkedAssets.map((item) => item.id).filter(Boolean)),
     selected: new Set(linkedAssets.map((item) => item.id).filter(Boolean)),
   };
@@ -401,11 +581,16 @@ function renderModal() {
                 <div class="field"><label for="storyDate">${escapeHtml(t("date"))}</label><input id="storyDate" name="timestamp" type="datetime-local" value="${localDateTimeValue(story.timestamp || new Date())}" required /></div>
                 <div class="field"><label for="storyPlace">${escapeHtml(t("place"))}</label><input id="storyPlace" name="location" value="${escapeAttr(cleanDefault(story.location))}" /></div>
                 <div class="field"><label for="storyPeople">${escapeHtml(t("people"))}</label><input id="storyPeople" name="people" value="${escapeAttr(cleanDefault(story.people))}" /></div>
+                <div class="field"><label for="storyGroup">${escapeHtml(t("groupPerson"))}</label><select id="storyGroup" name="participantId"><option value="">${escapeHtml(t("primaryUser"))}</option>${activeGroups().map((group) => `<option value="${escapeAttr(group.id)}" ${group.id === story.participantId ? "selected" : ""}>${escapeHtml(group.displayName)}</option>`).join("")}</select></div>
               </div>
+            </section>
+            <section class="form-section">
+              <div class="section-heading"><div><h3>3. ${escapeHtml(t("events"))}</h3><p>${escapeHtml(t("eventsHelp"))}</p></div><button class="button secondary small" type="button" data-add-event>${icon("plus")}${escapeHtml(t("addEvent"))}</button></div>
+              <div id="eventEditor" class="event-editor">${eventEditorRows(state.modal.events)}</div>
             </section>
           </div>
           <aside>
-            <div class="section-heading"><div><h3>3. ${escapeHtml(t("chooseEvidence"))}</h3><p>${pending.length} ${escapeHtml(t("pending"))}</p></div></div>
+            <div class="section-heading"><div><h3>4. ${escapeHtml(t("chooseEvidence"))}</h3><p>${pending.length} ${escapeHtml(t("pending"))}</p></div></div>
             <div class="evidence-picker">${choices.length ? `<div class="picker-grid">${choices.map((asset) => pickerItem(asset, state.modal.selected.has(asset.id))).join("")}</div>` : `<div class="empty">${escapeHtml(t("noEvidence"))}</div>`}</div>
           </aside>
         </div>
@@ -422,6 +607,21 @@ function renderModal() {
     else state.modal.selected.delete(input.value);
   }));
   wrapper.querySelector("#storyForm")?.addEventListener("submit", saveStory);
+  wrapper.querySelector("[data-add-event]")?.addEventListener("click", () => {
+    state.modal.events.push({
+      id: crypto.randomUUID(),
+      title: "",
+      narrativeText: "",
+      timestamp: story.timestamp || new Date().toISOString(),
+    });
+    renderModal();
+  });
+  wrapper.querySelectorAll("[data-remove-event]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.modal.events.splice(Number(button.dataset.removeEvent), 1);
+      renderModal();
+    });
+  });
   wrapper.querySelector("[data-delete-story]")?.addEventListener("click", deleteCurrentStory);
   hydrateAssetPreviews(wrapper);
 }
@@ -439,34 +639,33 @@ async function saveStory(event) {
     timestamp: new Date(form.get("timestamp")).toISOString(),
     location: form.get("location"),
     people: form.get("people"),
+    participantId: form.get("participantId"),
     mood: existing.mood || "",
     energy: existing.energy ?? null,
     attachments: existing.attachments || [],
+    captureIds: Array.from(state.modal.selected).filter((id) => {
+      const asset = allAssets().find((item) => item.id === id);
+      return Boolean(asset?.captureId);
+    }),
+    legacyAssetIds: Array.from(state.modal.selected).filter((id) => {
+      const asset = allAssets().find((item) => item.id === id);
+      return Boolean(asset && !asset.captureId);
+    }),
+    events: Array.from(event.currentTarget.querySelectorAll("[data-event-row]")).map((row) => ({
+      id: row.dataset.eventId || crypto.randomUUID(),
+      title: row.querySelector("[data-event-title]")?.value || "",
+      narrativeText: row.querySelector("[data-event-narrative]")?.value || "",
+      timestamp: new Date(row.querySelector("[data-event-time]")?.value || form.get("timestamp")).toISOString(),
+    })),
     metadata: { ...(existing.metadata || {}), narrativeOrigin: form.get("notes") ? "human_text" : "pending" },
   };
   const submit = event.currentTarget.querySelector("[type='submit']");
   submit.disabled = true;
   try {
-    const saved = await request(existing.id ? `/api/experiences/${encodeURIComponent(existing.id)}` : "/api/experiences", {
+    const saved = await request(existing.id ? `/api/v2/experiences/${encodeURIComponent(existing.id)}` : "/api/v2/experiences", {
       method: existing.id ? "PUT" : "POST",
       body: payload,
     });
-    const selected = new Set(state.modal.selected);
-    const linkedAtOpen = state.modal.linkedAtOpen || new Set();
-    const added = Array.from(selected).filter((id) => !linkedAtOpen.has(id));
-    const removed = Array.from(linkedAtOpen).filter((id) => !selected.has(id));
-    if (added.length) {
-      await request("/api/assets/adopt", {
-        method: "POST",
-        body: { experienceId: saved.id, assetIds: added, method: "story_editor" },
-      });
-    }
-    if (removed.length) {
-      await request("/api/assets/reassign", {
-        method: "POST",
-        body: { assetIds: removed, release: true },
-      });
-    }
     closeModal();
     toast(t("storySaved"));
     await refreshData();
@@ -482,7 +681,7 @@ async function deleteCurrentStory() {
   const button = document.querySelector("[data-delete-story]");
   if (button) button.disabled = true;
   try {
-    await request(`/api/experiences/${encodeURIComponent(story.id)}`, { method: "DELETE" });
+    await request(`/api/v2/experiences/${encodeURIComponent(story.id)}`, { method: "DELETE" });
     closeModal();
     toast(t("storyDeleted"));
     await refreshData();
@@ -501,19 +700,26 @@ async function handleEvidenceFile(event) {
   const file = event.target.files?.[0];
   if (!file) return;
   const captureId = crypto.randomUUID();
-  state.upload = {
-    file,
+  const queued = await enqueueUpload(file, {
     captureId,
     idempotencyKey: `web-${captureId}`,
+    occurredAt: new Date(file.lastModified || Date.now()).toISOString(),
+    source: { app: "vibepwa", platform: "web" },
+  });
+  state.upload = {
+    queueId: queued.queueId,
+    captureId: queued.captureId,
+    idempotencyKey: queued.idempotencyKey,
     name: file.name,
     progress: 2,
     status: t("uploading"),
   };
+  await refreshOfflineQueue();
   await runEvidenceUpload();
 }
 
 async function retryEvidenceUpload() {
-  if (!state.upload?.file) return;
+  if (!state.upload?.queueId) return;
   state.upload.error = false;
   state.upload.progress = 2;
   state.upload.status = t("uploading");
@@ -522,26 +728,80 @@ async function retryEvidenceUpload() {
 
 async function runEvidenceUpload() {
   const current = state.upload;
-  if (!current?.file) return;
+  if (!current?.queueId) return;
   render();
   try {
-    await uploadEvidence(current.file, {
-      captureId: current.captureId,
-      idempotencyKey: current.idempotencyKey,
+    await retryQueuedUpload(current.queueId, uploadEvidence, {
       onProgress(progress) {
-        state.upload.progress = progress;
-        const bar = document.querySelector(".upload-progress span");
-        if (bar) bar.style.width = `${progress}%`;
+        updateUploadProgress(progress);
       },
     });
-    state.upload = { name: current.name, progress: 100, status: t("ready") };
+    state.upload = { name: current.name, progress: 100, status: t("ready"), queueId: "" };
     toast(t("evidenceSaved"));
+    await refreshOfflineQueue();
     await refreshData();
   } catch (error) {
-    state.upload = { name: file.name, progress: 100, status: `${t("failed")}: ${error.message}`, error: true };
+    const waitingForConnection = !navigator.onLine;
+    state.upload = {
+      ...current,
+      progress: waitingForConnection ? 4 : 100,
+      status: waitingForConnection ? t("queuedOffline") : `${t("failed")}: ${error.message}`,
+      error: true,
+    };
+    await refreshOfflineQueue();
     render();
-    toast(error.message, true);
+    toast(waitingForConnection ? t("queuedOffline") : error.message, !waitingForConnection);
   }
+}
+
+async function refreshOfflineQueue() {
+  try {
+    state.offlineQueue = await getUploadQueueSummary();
+  } catch {
+    state.offlineQueue = { total: 0, pending: 0, uploading: 0, retry_pending: 0 };
+  }
+}
+
+async function drainOfflineUploads() {
+  if (!state.session?.accessToken || !navigator.onLine) return;
+  await drainUploadQueue(uploadEvidence, {
+    onItemStart(item) {
+      state.upload = {
+        queueId: item.queueId,
+        captureId: item.captureId,
+        idempotencyKey: item.idempotencyKey,
+        name: item.filename,
+        progress: 2,
+        status: t("uploading"),
+      };
+      render();
+    },
+    onProgress(_item, progress) {
+      updateUploadProgress(progress);
+    },
+    onItemComplete(item) {
+      state.upload = { name: item.filename, progress: 100, status: t("ready"), queueId: "" };
+    },
+    onItemError(item, error) {
+      state.upload = {
+        queueId: item.queueId,
+        captureId: item.captureId,
+        idempotencyKey: item.idempotencyKey,
+        name: item.filename,
+        progress: 100,
+        status: `${t("failed")}: ${error.message}`,
+        error: true,
+      };
+    },
+  });
+  await refreshOfflineQueue();
+  await refreshData();
+}
+
+function updateUploadProgress(progress) {
+  state.upload.progress = progress;
+  const bar = document.querySelector(".upload-progress span");
+  if (bar) bar.style.width = `${progress}%`;
 }
 
 async function downloadAsset(assetId) {
@@ -549,10 +809,10 @@ async function downloadAsset(assetId) {
     const asset = allAssets().find((item) => item.id === assetId);
     let result;
     try {
-      result = await request(`/api/assets/${encodeURIComponent(assetId)}/download`);
+      result = await request(`/api/v2/assets/${encodeURIComponent(assetId)}/download`);
     } catch (error) {
       if (!asset?.captureId || error.status !== 404) throw error;
-      result = await request(`/api/captures/${encodeURIComponent(asset.captureId)}/download`);
+      result = await request(`/api/v2/captures/${encodeURIComponent(asset.captureId)}/download`);
     }
     window.open(result.url || result.signedUrl, "_blank", "noopener");
   } catch (error) {
@@ -563,7 +823,7 @@ async function downloadAsset(assetId) {
 async function generatePdf(type) {
   const stories = filteredStories();
   const payload = analyticalPayload(stories);
-  const endpoint = type === "report" ? "/api/report/pdf" : "/api/insights/pdf";
+  const endpoint = type === "report" ? "/api/v2/outputs/report/pdf" : "/api/v2/outputs/insights/pdf";
   try {
     const blob = await request(endpoint, {
       method: "POST",
@@ -587,7 +847,7 @@ async function generatePublication() {
   const enrichedStories = await enrichPublicationStories(stories);
   const html = publicationHtml(title, enrichedStories);
   try {
-    const blob = await request("/api/publication/pdf", {
+    const blob = await request("/api/v2/outputs/publication/pdf", {
       method: "POST",
       body: {
         title,
@@ -630,7 +890,7 @@ async function enrichPublicationStories(stories) {
       const id = attachment.id || attachment.assetId;
       if (!id) return attachment;
       try {
-        const result = await request(`/api/assets/${encodeURIComponent(id)}/download`);
+        const result = await request(`/api/v2/assets/${encodeURIComponent(id)}/download`);
         return { ...attachment, resolvedUrl: result.url || result.signedUrl || "" };
       } catch {
         return attachment;
@@ -671,10 +931,10 @@ async function hydrateAssetPreviews(root = document) {
       try {
         let result;
         try {
-          result = await request(`/api/assets/${encodeURIComponent(asset.id)}/download`);
+          result = await request(`/api/v2/assets/${encodeURIComponent(asset.id)}/download`);
         } catch (error) {
           if (!asset.captureId || error.status !== 404) throw error;
-          result = await request(`/api/captures/${encodeURIComponent(asset.captureId)}/download`);
+          result = await request(`/api/v2/captures/${encodeURIComponent(asset.captureId)}/download`);
         }
         url = result.url || result.signedUrl || "";
       } catch {
@@ -767,6 +1027,10 @@ function dedupeAssets(assets = []) {
 function analyticalPayload(stories) {
   const counts = areaCounts(stories);
   const energy = recordedEnergy(stories);
+  const context = state.data.context || {};
+  const signals = state.data.contextSignals || [];
+  const metrics = cleanMetrics(context.metrics || {});
+  const evidence = allAssets();
   return {
     generatedAt: new Date().toISOString(),
     language: state.language,
@@ -797,8 +1061,43 @@ function analyticalPayload(stories) {
     })),
     experiences: stories,
     findings: buildFindings(stories),
-    biometricContext: { status: "available_when_captured" },
+    evidenceInventory: {
+      total: evidence.length,
+      images: evidence.filter((item) => evidenceKind(item) === "image").length,
+      videos: evidence.filter((item) => evidenceKind(item) === "video").length,
+      audio: evidence.filter((item) => evidenceKind(item) === "audio").length,
+      documents: evidence.filter((item) => evidenceKind(item) === "document").length,
+    },
+    biometricContext: {
+      status: context.biometricSignals > 0 ? "available" : "not_available",
+      records: Number(context.biometricSignals || 0),
+      metrics,
+      energy: Number.isFinite(Number(context.energy)) ? Number(context.energy) : null,
+    },
+    contextEvidence: {
+      records: signals.length,
+      latestLocation: context.latestLocation || "",
+      latestWeather: context.latestWeather || null,
+      latestNews: context.latestNews || null,
+      signals,
+    },
   };
+}
+
+function cleanMetrics(metrics) {
+  return Object.fromEntries(Object.entries(metrics || {})
+    .filter(([key, value]) => !key.startsWith("_") && Number.isFinite(Number(value)))
+    .map(([key, value]) => [key, Number(value)]));
+}
+
+function evidenceKind(item = {}) {
+  const kind = String(item.kind || "").toLowerCase();
+  if (["image", "video", "audio", "document"].includes(kind)) return kind;
+  const mime = String(item.mimeType || item.type || "").toLowerCase();
+  if (mime.startsWith("image/")) return "image";
+  if (mime.startsWith("video/")) return "video";
+  if (mime.startsWith("audio/")) return "audio";
+  return "document";
 }
 
 function buildFindings(stories) {
@@ -866,7 +1165,13 @@ function operationRow(label, value) {
 }
 
 function uploadStatus() {
-  return `<section class="inbox-panel" style="min-height:0;margin-bottom:20px"><strong>${escapeHtml(state.upload.name)}</strong><p class="evidence-detail">${escapeHtml(state.upload.status)}</p><div class="upload-progress"><span style="width:${state.upload.progress}%"></span></div>${state.upload.error && state.upload.file ? `<button class="button secondary small" data-action="retry-upload">${icon("refresh")}${escapeHtml(t("retry"))}</button>` : ""}</section>`;
+  return `<section class="inbox-panel" style="min-height:0;margin-bottom:20px"><strong>${escapeHtml(state.upload.name)}</strong><p class="evidence-detail">${escapeHtml(state.upload.status)}</p><div class="upload-progress"><span style="width:${state.upload.progress}%"></span></div>${state.upload.error && state.upload.queueId && navigator.onLine ? `<button class="button secondary small" data-action="retry-upload">${icon("refresh")}${escapeHtml(t("retry"))}</button>` : ""}</section>`;
+}
+
+function offlineQueueStatus() {
+  if (!state.offlineQueue.total) return "";
+  const detail = navigator.onLine ? t("queuedRetry") : t("queuedOffline");
+  return `<section class="queue-status" role="status"><div>${icon("cloud")}<span><strong>${state.offlineQueue.total} ${escapeHtml(t("offlineQueue"))}</strong><small>${escapeHtml(detail)}</small></span></div>${navigator.onLine ? `<button class="button secondary small" data-action="retry-queue">${icon("refresh")}${escapeHtml(t("retry"))}</button>` : ""}</section>`;
 }
 
 function assetFallback(asset) {

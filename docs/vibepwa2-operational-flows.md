@@ -1,187 +1,278 @@
-# VibePWA 2 - arquitectura y flujos operativos
+# VibePWA 2 - flujos operativos
 
-Estado: listo para validación canaria
-Fecha: 2026-07-29
-Documento canónico de implementación: `docs/vibepwa2-architecture.md`
+Estado: guía funcional y operativa de Backend 2
 
-## 1. Propósito
+Contrato relacionado: `docs/vibepwa2-backend2-architecture.md`
 
-Vibe conserva hechos multimodales y permite darles sentido después. El sistema
-separa dos trabajos que ocurren en momentos distintos:
+## 1. Dos trabajos, una sola fuente de verdad
 
-1. **capturar:** registrar un hecho con la menor fricción posible;
-2. **estructurar:** reunir evidencia, redactar una historia y producir
-   inteligencia o publicaciones.
+Vibe separa captura y estructuración para que cada tarea ocurra en el momento
+adecuado:
 
-Vibeapp se especializa en el primer trabajo. VibePWA se especializa en el
-segundo. Ambos usan la misma identidad, servidor y fuente de datos.
+- **Vibeapp captura:** texto, voz, foto, video, documentos y contexto móvil.
+- **VibePWA 2 estructura:** revisa, adopta, narra, analiza y publica.
+- **Backend 2 y Supabase conservan:** identidad, archivos, catálogo, historias
+  y vínculos.
 
-## 2. Componentes y responsabilidad
+La separación no crea dos bases de datos. Todo termina en el mismo registro.
 
-| Componente | Responsabilidad |
-| --- | --- |
-| Vibeapp | Captura inmediata, cola local, reintentos y contexto móvil |
-| VibePWA 2 | Historias, curación visual, evidencia, reportes y publicaciones |
-| Railway | Autorización, validación, catálogo, PDF y coordinación |
-| Supabase Auth | Identidad y sesión |
-| Supabase Database | Ledger, catálogo, historias, eventos y vínculos |
-| Supabase Storage | Binarios privados |
-| Obsidian | Mapa derivado para curación y aprendizaje |
-| Vibepub/MagStudio | Edición editorial posterior |
+## 2. Flujo general
 
-Obsidian y Vibepub consumen resultados. No son fuentes de transacciones.
+```mermaid
+flowchart LR
+    A["Capturar en Vibeapp"] --> B["Cola local durable"]
+    B --> C["Backend 2 /api/v2"]
+    C --> D["Database + Storage"]
+    D --> E["Bandeja visual en VibePWA 2"]
+    E --> F["Historia y eventos"]
+    D --> G["Reportes y hallazgos"]
+    F --> H["Publicaciones"]
+    F --> I["Mapa y Obsidian"]
+```
 
-## 3. Registro canónico
+Una evidencia puede permanecer sin historia y seguir participando en reportes,
+hallazgos o publicaciones según el alcance elegido.
 
-Una captura conserva:
+## 3. Flujo por tipo de activo
 
-- `captureId`;
-- `idempotencyKey`;
-- propietario y espacio;
-- intención: evidencia o contexto;
+### 3.1 Texto y voz transcrita
+
+1. Vibeapp asigna identidad y hora original.
+2. Conserva el texto en la cola local.
+3. Envía JSON a `POST /api/v2/captures`.
+4. Backend 2 valida, registra y responde `complete`.
+5. VibePWA 2 lo muestra en Evidencia.
+
+Si el texto cuenta qué vivió la persona, puede convertirse en narrativa humana.
+Una etiqueta o nombre de archivo no es narrativa.
+
+### 3.2 Imagen
+
+1. El móvil conserva el original.
+2. Calcula SHA-256, MIME y tamaño.
+3. Solicita autorización de carga.
+4. Sube a Storage privado.
+5. Confirma el commit.
+6. El servidor verifica el archivo y crea el catálogo.
+7. VibePWA muestra una miniatura, no un identificador técnico.
+
+OCR o visión automática enriquecen la evidencia, pero no sustituyen el relato
+humano.
+
+### 3.3 Audio
+
+Usa la ruta binaria. El archivo original queda preservado. La transcripción
+puede ser narrativa si contiene un relato humano real.
+
+### 3.4 Video
+
+Usa carga directa reanudable cuando el tamaño o la red lo requieran. El video
+se presenta con miniatura y controles de reproducción. Si contiene voz, la
+transcripción puede aportar narrativa; el metraje sin voz es evidencia visual.
+
+### 3.5 Documento
+
+Se guarda como binario. OCR, resumen o interpretación son derivados. Un
+informe, examen o paper es un artefacto; no se convierte automáticamente en
+experiencia.
+
+### 3.6 Biometría y sensores
+
+- Muestras pequeñas viajan como JSON.
+- Exportaciones históricas viajan como archivo.
+- Se conserva la hora y la fuente.
+- Un valor ausente se omite.
+- Nunca se interpreta sueño no medido como cero horas.
+
+HealthKit y Health Connect se leen desde Vibeapp. La PWA solo ofrece importación
+de respaldo o recuperación.
+
+### 3.7 Ubicación
+
+Se almacena como contexto con fecha, coordenadas y precisión. Puede ayudar a
+agrupar evidencia o enriquecer una historia, pero no crea una historia sola.
+
+### 3.8 Clima y noticias
+
+Vibeapp aporta el contexto cercano al momento. Backend 2 lo normaliza y puede
+completarlo con fuentes externas. El guardado del hecho no espera una consulta
+lenta; el enriquecimiento se registra como trabajo posterior observable.
+
+### 3.9 Agenda
+
+Una cita se guarda como planificación. No crea experiencia ni evento vivido. Si
+el usuario relata después lo ocurrido, VibePWA puede crear una historia y
+referenciar la agenda como contexto.
+
+## 4. Captura sin conexión
+
+1. El usuario captura normalmente.
+2. La cola indica “Se enviará cuando vuelva la conexión”.
+3. El elemento conserva la hora original y no desaparece al cerrar la app.
+4. Al reconectar, Vibeapp renueva la sesión si hace falta.
+5. Reutiliza el mismo `captureId` e `idempotencyKey`.
+6. Reanuda el archivo desde el último byte confirmado.
+7. Solo elimina la copia local cuando el servidor responde `complete`.
+
+Si el servidor ya había terminado antes del timeout, el reintento devuelve el
+mismo resultado sin duplicar.
+
+## 5. Bandeja y adopción visual
+
+VibePWA 2 organiza la evidencia por:
+
+- fecha;
+- persona/grupo;
 - tipo;
-- fecha real del hecho;
-- origen y dispositivo;
-- texto o referencia al binario;
-- SHA-256, MIME y tamaño cuando hay archivo.
+- cercanía temporal a la historia;
+- estado: pendiente o vinculada.
 
-Una captura no necesita una experiencia padre. La historia se crea después y
-adopta la evidencia que el usuario elige.
+La interfaz muestra:
 
-## 4. Flujo por tipo de activo
+- miniatura para imagen y video;
+- reproductor para audio y video;
+- extracto para texto;
+- nombre legible e icono para documento;
+- resumen claro para contexto.
 
-### Texto
+El usuario selecciona lo que pertenece a la historia. La evidencia no elegida
+permanece disponible.
 
-1. El dispositivo conserva el texto y su identidad.
-2. Envía JSON a `POST /api/captures`.
-3. El servidor registra la operación y el catálogo.
-4. Responde `complete`.
-5. El texto aparece en Evidencia y puede convertirse en narrativa humana.
+## 6. Historias y eventos
 
-### Foto
+### Crear
 
-1. El dispositivo calcula SHA-256.
-2. Solicita autorización en `POST /api/captures/uploads`.
-3. Sube la foto directamente a Storage privado.
-4. Confirma en `POST /api/captures/commit`.
-5. El servidor verifica tamaño y MIME, registra el activo y responde
-   `complete`.
+1. Elegir persona/grupo y fecha o rango.
+2. Revisar evidencia sugerida.
+3. Escribir o dictar la narrativa.
+4. Elegir área de vida cuando corresponda.
+5. Añadir eventos opcionales.
+6. Guardar todo en una transacción.
 
-### Audio
+### Editar
 
-Sigue el flujo de foto. Una transcripción de voz humana puede aportar
-narrativa; el archivo de audio se conserva como evidencia.
+Se puede cambiar narrativa, título, período, área, lugar, personas, eventos y
+evidencia vinculada.
 
-### Video
+### Reorganizar
 
-Sigue el flujo binario. Por encima de 6 MiB usa TUS en bloques de 6 MiB. La
-ubicación de reanudación se conserva mientras el cliente mantiene la carga. Si
-se pierde la red, se consulta el desplazamiento remoto y continúa desde el
-último bloque confirmado.
+Se permite:
 
-### Documento
+- quitar evidencia sin borrar el archivo;
+- unir historias;
+- dividir una historia;
+- convertir un evento en historia;
+- mover una historia como evento de otra;
+- eliminar una historia y devolver sus activos a la bandeja.
 
-Sigue el flujo binario. OCR o lectura automática son contexto derivado. El
-documento no se convierte por sí solo en narrativa de una experiencia.
+Cada operación conserva trazabilidad. Una reorganización no debe dejar
+duplicados activos ni huérfanos silenciosos en Obsidian.
 
-### Biometría y sensores
+## 7. Grupos y personas
 
-Una muestra pequeña viaja como JSON. Un archivo histórico usa carga directa.
-Se guarda como contexto y nunca se interpreta un dato ausente como cero.
+El usuario principal administra sus grupos/personas en Cuenta. Cada captura e
+historia queda asociada al valor seleccionado. Si no hay grupos, se usa el
+usuario principal sin bloquear el flujo.
 
-### Ubicación
+Desactivar no significa borrar. Los datos históricos permanecen disponibles
+en consultas y salidas autorizadas.
 
-Viaja como JSON con su fecha y precisión. Es contexto temporal; no crea una
-historia.
+## 8. Reportes, hallazgos y publicaciones
 
-### Clima, noticias y agenda
+### Selector común
 
-Son contexto. El servidor guarda primero el dato recibido y ejecuta cualquier
-enriquecimiento después. Una agenda no crea automáticamente una experiencia.
+1. Período.
+2. Persona/grupo.
+3. Área de vida, opcional.
+4. Base de información:
+   - todo lo registrado;
+   - historias confirmadas;
+   - evidencia.
 
-## 5. Reintentos y trabajo sin conexión
+### Reportes
 
-- El archivo permanece en el dispositivo hasta recibir `complete`.
-- Todo reintento usa el mismo `captureId` y `idempotencyKey`.
-- Repetir la misma operación devuelve el mismo resultado.
-- Reutilizar la clave con otro archivo produce un conflicto visible.
-- Un timeout no se interpreta como pérdida: el cliente consulta o reintenta.
-- `retry_pending` conserva el elemento en la cola.
-- `needs_attention` conserva el elemento y explica el motivo.
-- Una sesión vencida se renueva por `/api/mobile/auth/refresh`. Las solicitudes
-  paralelas comparten una sola renovación.
-- Una falla temporal durante la renovación no borra la sesión local. Solo un
-  token de renovación rechazado obliga a iniciar sesión otra vez.
+Ordenan actividad, cobertura, mediciones y evolución. Deben declarar qué datos
+existen y cuáles faltan.
 
-## 6. Curación de historias
+### Hallazgos
 
-El editor de Historias permite:
+Separan:
 
-- crear una historia sin evidencia;
-- añadir o quitar evidencia sin borrar el archivo;
-- editar título, narrativa, área, fecha, lugar y personas;
-- borrar una historia y devolver su evidencia a la bandeja;
-- usar el mismo conjunto de datos para reportes, hallazgos y publicaciones.
+- observación comprobable;
+- interpretación;
+- nivel de confianza;
+- siguiente acción redactada de forma humana.
 
-La evidencia original no se destruye al reorganizar una historia.
+### Publicaciones
 
-## 7. Estados y confirmación
+Pueden usar historias y eventos como hilo narrativo, más los activos y
+mediciones seleccionados. El PDF y, si hay videos, el paquete editorial,
+mantienen orden cronológico y referencias claras.
 
-| Estado | Comportamiento del usuario |
+## 9. Obsidian
+
+1. VibePWA prepara una vista previa.
+2. Valida que la ruta sea una bóveda real.
+3. Exporta historias confirmadas y activos referenciados.
+4. Regenera la zona automática.
+5. Preserva la curaduría humana.
+6. Reporta candidatos obsoletos para revisión; no los borra en automático.
+
+El mapa debe usar el mismo conjunto exportable y las mismas reglas que las
+notas.
+
+## 10. Integraciones de salud
+
+### Oura
+
+1. El usuario conecta su cuenta mediante OAuth oficial.
+2. Backend 2 cifra los tokens.
+3. Sincroniza colecciones autorizadas.
+4. Los webhooks válidos crean trabajos durables.
+5. Los datos se normalizan como contexto.
+6. Desconectar revoca el vínculo y deja intactos los datos históricos según la
+   política de retención.
+
+### Apple y Android
+
+- Vibeapp solicita permisos granulares.
+- HealthKit o Health Connect entregan datos al móvil.
+- Vibeapp envía muestras normalizadas por `/api/v2`.
+- Samsung/Galaxy se integra preferentemente mediante Health Connect.
+
+## 11. Fallos y reintentos
+
+| Situación | Respuesta del sistema |
 | --- | --- |
-| `received` | El servidor reconoció la operación |
-| `storing` | El binario está en curso |
-| `binary_stored` | Storage confirmó el archivo |
-| `cataloging` | Se crea el registro visible |
-| `complete` | Archivo y registro están confirmados |
-| `retry_pending` | Se reintenta sin crear un duplicado |
-| `needs_attention` | Se conserva y se muestra una causa comprensible |
+| Sin red | Conservar y reintentar |
+| Sesión vencida | Renovar una vez y repetir |
+| Timeout | Consultar recibo antes de duplicar |
+| Storage temporalmente indisponible | `retry_pending` |
+| Archivo distinto con la misma clave | `needs_attention` |
+| Dato inválido | Rechazo claro; conservar para corrección |
+| Enriquecimiento externo fallido | Trabajo pendiente o fallido visible |
+| PDF fallido | Error visible; no descargar sustituto silencioso |
+| Obsidian inválido | No escribir y explicar la ruta requerida |
 
-La interfaz solo muestra “Guardado” después de `complete`.
+## 12. Operación diaria
 
-## 8. Observabilidad
+El usuario común solo necesita:
 
-La información técnica vive en `Cuenta > Operación y diagnóstico`. Debe
-mostrar:
+- estado de sincronización;
+- elementos pendientes;
+- causa comprensible cuando algo requiere atención.
 
-- disponibilidad de API;
-- persistencia;
-- versión del contrato;
-- estado de capturas;
-- último error por etapa;
-- operación y captura relacionadas.
+La operación técnica muestra:
 
-No se registran claves, tokens, contraseñas ni contenido sensible completo.
+- versión de aplicación y contrato;
+- liveness y readiness;
+- Database y Storage;
+- trabajos pendientes o fallidos;
+- última etapa confirmada;
+- identificadores necesarios para soporte.
 
-## 9. Seguridad
+## 13. Cuatro idiomas
 
-- Storage es privado.
-- Las rutas se separan por usuario.
-- La API deriva propietario y espacio desde la sesión; no confía en valores
-  enviados por el cliente.
-- La clave de servicio nunca llega al navegador o al móvil.
-- Las descargas usan enlaces temporales.
-
-## 10. Despliegue
-
-VibePWA 2 se mantiene en paralelo. El orden de promoción es:
-
-1. pruebas locales;
-2. migración SQL;
-3. canario de un usuario;
-4. matriz real de activos;
-5. iPhone, iPad, escritorio y Android/emulador;
-6. comparación de conteos;
-7. promoción;
-8. ventana de rollback.
-
-La aplicación anterior no se elimina hasta completar la ventana de rollback.
-
-## 11. Referencias técnicas verificadas
-
-- [Supabase: cargas reanudables TUS](https://supabase.com/docs/guides/storage/uploads/resumable-uploads)
-- [Supabase: cargar con URL firmada](https://supabase.com/docs/reference/javascript/file-buckets-uploadtosignedurl)
-- [Supabase: control de acceso en Storage](https://supabase.com/docs/guides/storage/security/access-control)
-
-Estas referencias confirman el umbral recomendado de 6 MiB, los bloques TUS
-de 6 MiB, el uso de tokens firmados y las políticas RLS para Storage privado.
+ES, EN, FR y PT tienen el mismo alcance funcional. Mensajes, formularios,
+errores, confirmaciones, ayuda y operación deben estar traducidos. El idioma no
+modifica los datos almacenados ni la lógica del servidor.

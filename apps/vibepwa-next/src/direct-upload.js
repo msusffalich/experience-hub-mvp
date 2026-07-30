@@ -1,4 +1,9 @@
 import { request } from "./api.js";
+import {
+  deleteTransferCheckpoint,
+  getTransferCheckpoint,
+  setTransferCheckpoint,
+} from "./upload-queue.js";
 
 const STANDARD_LIMIT = 6 * 1024 * 1024;
 
@@ -21,14 +26,16 @@ export async function uploadEvidence(file, options = {}) {
     source: {
       app: "vibepwa",
       platform: "web",
-      capturedOffline: false,
+      ...options.source,
+      capturedOffline: options.capturedOffline === true,
     },
     metadata: {
+      ...options.metadata,
       caption: options.caption || "",
       originalLastModified: file.lastModified || null,
     },
   };
-  const authorization = await request("/api/captures/uploads", {
+  const authorization = await request("/api/v2/captures/uploads", {
     method: "POST",
     body: command,
   });
@@ -43,7 +50,7 @@ export async function uploadEvidence(file, options = {}) {
       // A mobile network can drop the response after Storage persisted the
       // bytes. Confirm before asking the user to send the file again.
       try {
-        return await request("/api/captures/commit", {
+        return await request("/api/v2/captures/commit", {
           method: "POST",
           body: command,
         });
@@ -52,7 +59,7 @@ export async function uploadEvidence(file, options = {}) {
       }
     }
   }
-  return request("/api/captures/commit", {
+  return request("/api/v2/captures/commit", {
     method: "POST",
     body: command,
   });
@@ -74,10 +81,10 @@ async function uploadStandard(file, upload, onProgress) {
 
 async function uploadTus(file, upload, onProgress) {
   const resumeKey = tusResumeKey(file, upload);
-  let location = localStorage.getItem(resumeKey) || "";
+  let location = await getTransferCheckpoint(resumeKey);
   let offset = location ? await readTusOffset(location, upload.token) : null;
   if (offset == null || offset > file.size) {
-    localStorage.removeItem(resumeKey);
+    await deleteTransferCheckpoint(resumeKey);
     const createResponse = await fetchWithRetry(upload.tusEndpoint, {
       method: "POST",
       headers: {
@@ -92,7 +99,7 @@ async function uploadTus(file, upload, onProgress) {
     const locationHeader = createResponse.headers.get("Location");
     if (!locationHeader) throw new Error("tus_location_missing");
     location = new URL(locationHeader, upload.tusEndpoint).toString();
-    localStorage.setItem(resumeKey, location);
+    await setTransferCheckpoint(resumeKey, location);
     offset = Number(createResponse.headers.get("Upload-Offset") || 0);
   }
   const chunkBytes = Number(upload.chunkBytes || STANDARD_LIMIT);
@@ -118,7 +125,7 @@ async function uploadTus(file, upload, onProgress) {
     offset = Number(response.headers.get("Upload-Offset") || offset + chunk.size);
     onProgress?.(Math.min(85, Math.round((offset / file.size) * 80)));
   }
-  localStorage.removeItem(resumeKey);
+  await deleteTransferCheckpoint(resumeKey);
 }
 
 async function readTusOffset(location, token) {

@@ -1,4 +1,4 @@
-const CACHE = "vibe-next-20260729-2";
+const CACHE = "vibe-next-20260730-1";
 const SHELL = [
   "./index.html",
   "./manual.html",
@@ -9,6 +9,7 @@ const SHELL = [
   "./src/manual.js",
   "./src/icons.js",
   "./src/direct-upload.js",
+  "./src/upload-queue.js",
   "./src/zip.js",
   "/icons/vibe-icon-192.png",
   "/icons/vibe-icon-512.png",

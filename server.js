@@ -24,6 +24,7 @@ import {
   inspectLegacyIntegrationCapture,
   inspectLegacyMediaCapture,
 } from "./lib/capture/capture-compatibility.mjs";
+import { createVibeApiV2 } from "./apps/vibe-api-v2/src/app.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 await loadDotEnv();
@@ -317,12 +318,28 @@ const defaultRoutines = [
   },
 ];
 
+const vibeApiV2 = createVibeApiV2();
+
 const server = createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://${req.headers.host}`);
 
+    if (url.pathname.startsWith("/api/v2/")) {
+      const handledByV2 = await vibeApiV2.handle(req, res);
+      if (handledByV2) return;
+    }
+
     if (url.pathname.startsWith("/api/")) {
       await handleApi(req, res, url);
+      return;
+    }
+
+    if (url.pathname === "/vibe2" || url.pathname === "/vibepwa2") {
+      res.writeHead(302, {
+        Location: "/apps/vibepwa-next/index.html",
+        "Cache-Control": "no-store",
+      });
+      res.end();
       return;
     }
 
@@ -341,8 +358,10 @@ server.listen(PORT, HOST, () => {
   const displayHost = HOST === "0.0.0.0" ? "localhost" : HOST;
   console.log(`Experience Hub MVP running at http://${displayHost}:${PORT}/index.html`);
 });
-setInterval(() => processRoutineSchedules().catch(() => {}), 60_000);
-processRoutineSchedules().catch(() => {});
+if (process.env.NODE_ENV !== "test") {
+  setInterval(() => processRoutineSchedules().catch(() => {}), 60_000);
+  processRoutineSchedules().catch(() => {});
+}
 
 async function handleApi(req, res, url) {
   if (url.pathname === "/api/health" && req.method === "GET") {

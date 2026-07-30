@@ -26,6 +26,9 @@
     "verify:capture-core": "node scripts/verify-capture-core.mjs && node scripts/verify-capture-supabase-adapters.mjs && node scripts/verify-capture-http.mjs",
     "verify:direct-upload": "node scripts/verify-direct-upload-service.mjs",
     "verify:vibepwa-next": "node scripts/verify-vibepwa-next.mjs",
+    "verify:vibe-api-v2": "node scripts/verify-vibe-api-v2.mjs && node scripts/verify-vibe-api-v2-capture-runtime.mjs",
+    "verify:vibepwa2:e2e": "node scripts/verify-vibepwa2-e2e.mjs",
+    "verify:vibepwa2:production": "node scripts/verify-vibepwa2-production.mjs",
     "verify:capture-guardian": "node scripts/verify-capture-matrix.mjs",
     "verify:capture-compatibility": "node scripts/verify-capture-compatibility.mjs",
     "verify:output-scope": "node scripts/verify-output-scope.mjs",
@@ -48,7 +51,7 @@
     "package:vibeapp:ios": "node scripts/package-vibeapp-ios-handoff.mjs",
     "start": "node server.js",
     "dev": "node server.js",
-    "check": "node --check product-shell.js && node --check account-shell.js && node --check lib/capture/capture-compatibility.mjs && node --check lib/capture/direct-upload-contract.mjs && node --check lib/capture/direct-upload-service.mjs && node --check apps/vibepwa-next/src/app.js && node --check apps/vibepwa-next/src/api.js && node --check apps/vibepwa-next/src/direct-upload.js && node --check app.js && node --check server.js && node scripts/smoke-check.mjs && npm run audit:runtime && npm run audit:restructure && npm run verify:obsidian && npm run verify:evidence:v2 && npm run verify:capture-core && npm run verify:direct-upload && npm run verify:vibepwa-next && npm run verify:capture-guardian && npm run verify:capture-compatibility && npm run verify:output-scope && npm run verify:output-workbench && npm run verify:product-shell && npm run verify:account-shell && npm run verify:energy-integrity && npm run verify:life-areas",
+    "check": "node --check product-shell.js && node --check account-shell.js && node --check lib/capture/capture-compatibility.mjs && node --check lib/capture/direct-upload-contract.mjs && node --check lib/capture/direct-upload-service.mjs && node --check apps/vibepwa-next/src/app.js && node --check apps/vibepwa-next/src/api.js && node --check apps/vibepwa-next/src/direct-upload.js && node --check apps/vibepwa-next/src/upload-queue.js && node --check apps/vibepwa-next/src/i18n.js && node --check apps/vibepwa-next/src/manual.js && node --check apps/vibe-api-v2/src/app.mjs && node --check apps/vibe-api-v2/src/integrations.mjs && node --check app.js && node --check server.js && node scripts/smoke-check.mjs && npm run verify:vibe-api-v2 && npm run verify:vibepwa2:e2e && npm run audit:runtime && npm run audit:restructure && npm run verify:obsidian && npm run verify:evidence:v2 && npm run verify:capture-core && npm run verify:direct-upload && npm run verify:vibepwa-next && npm run verify:capture-guardian && npm run verify:capture-compatibility && npm run verify:output-scope && npm run verify:output-workbench && npm run verify:product-shell && npm run verify:account-shell && npm run verify:energy-integrity && npm run verify:life-areas",
     "test": "npm run check"
   }
 }

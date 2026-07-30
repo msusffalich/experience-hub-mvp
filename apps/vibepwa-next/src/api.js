@@ -15,7 +15,7 @@ export function setSession(session) {
 }
 
 export async function signIn(email, password) {
-  const response = await request("/api/mobile/auth/sign-in", {
+  const response = await request("/api/v2/auth/sign-in", {
     method: "POST",
     body: { email, password },
     auth: false,
@@ -89,7 +89,7 @@ async function performSessionRefresh() {
     return { ok: false, invalid: true, error: new Error("session_refresh_unavailable") };
   }
   try {
-    const response = await fetch("/api/mobile/auth/refresh", {
+    const response = await fetch("/api/v2/auth/refresh", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refreshToken: session.refreshToken }),
@@ -123,25 +123,20 @@ async function performSessionRefresh() {
 }
 
 export async function loadWorkspace() {
-  const [health, profile, experiences, assets, captures, agenda, capture] = await Promise.all([
-    request("/api/health", { auth: false }),
-    request("/api/profile"),
-    request("/api/experiences"),
-    optionalRequest("/api/assets", []),
-    optionalRequest("/api/captures?intent=evidence", []),
-    optionalRequest("/api/agenda", []),
-    optionalRequest("/api/captures/status", { enabledForUser: false }),
+  const [health, profile, groups, experiences, assets, captures, agenda, capture, context, contextSignals, oura] = await Promise.all([
+    request("/api/v2/health"),
+    request("/api/v2/profile"),
+    request("/api/v2/groups"),
+    request("/api/v2/experiences"),
+    request("/api/v2/assets"),
+    request("/api/v2/captures?intent=evidence"),
+    request("/api/v2/agenda"),
+    request("/api/v2/captures/status"),
+    request("/api/v2/context/summary"),
+    request("/api/v2/context/signals"),
+    request("/api/v2/integrations/oura/status"),
   ]);
-  return { health, profile, experiences, assets, captures, agenda, capture };
-}
-
-async function optionalRequest(path, fallback) {
-  try {
-    return await request(path);
-  } catch (error) {
-    if (error.status === 401) throw error;
-    return fallback;
-  }
+  return { health, profile, groups, experiences, assets, captures, agenda, capture, context, contextSignals, oura };
 }
 
 export function downloadBlob(blob, filename) {
