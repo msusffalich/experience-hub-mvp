@@ -1,1 +1,4 @@
 reportlab==4.4.4
+# publication_pdf_reportlab.py importa PIL (Image, ImageFile, ImageOps).
+# Sin esta dependencia, /api/publication/pdf devuelve 503 siempre.
+pillow==11.0.0

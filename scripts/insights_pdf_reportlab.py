@@ -452,7 +452,14 @@ def axis_table(axes):
         rows.append([
             para(axis.get("title", ""), "Small"),
             para(str(len(axis.get("items") or [])), "Small"),
-            para(f"{axis.get('avgEnergy', 0)}/10", "Small"),
+            # El default 0 de .get() no se aplicaba: la clave existe con valor
+            # None, asi que la tabla imprimia literalmente "None/10".
+            para(
+                f"{axis['avgEnergy']}/10"
+                if axis.get("avgEnergy") not in (None, "")
+                else t("no_data"),
+                "Small",
+            ),
             para(human_action(axis.get("action", ""), 95), "Small"),
         ])
     table = Table(rows, colWidths=[1.35 * inch, 0.75 * inch, 0.62 * inch, 2.95 * inch])
@@ -574,12 +581,21 @@ def build_story(payload):
     story.append(para(t("human_axis_map"), "H1x"))
     story.append(axis_cards(axes))
     story.append(Spacer(1, 8))
-    avg_axis_energy = sum(num(axis.get("avgEnergy")) for axis in axes) / max(1, len(axes))
-    coverage = min(100, (sum(len(axis.get("items") or []) for axis in axes) / max(1, len(axes) * max(1, num(experiences)))) * 100)
-    story.append(two_columns([
-        Waffle(t("thematic_coverage"), coverage, t("axes_with_evidence")),
-        Waffle(t("axis_average_energy"), avg_axis_energy * 10, t("aggregated_energy")),
-    ]))
+    # Media solo sobre ejes CON dato: rellenar las ausencias con 0 hundia el
+    # resultado (energia 8/10 en un eje de ocho => 1.0 => waffle al 10%).
+    axis_energies = [
+        num(axis.get("avgEnergy")) for axis in axes if axis.get("avgEnergy") not in (None, "")
+    ]
+    avg_axis_energy = (sum(axis_energies) / len(axis_energies)) if axis_energies else None
+    # Cobertura tematica = ejes CON evidencia / ejes totales (que es lo que dice
+    # la etiqueta). La formula anterior dividia por len(axes) * experiencias, y
+    # como cada experiencia cae en un solo eje, no podia superar el 12,5%.
+    covered_axes = sum(1 for axis in axes if (axis.get("items") or []))
+    coverage = (covered_axes / max(1, len(axes))) * 100
+    waffles = [Waffle(t("thematic_coverage"), coverage, t("axes_with_evidence"))]
+    if avg_axis_energy is not None:
+        waffles.append(Waffle(t("axis_average_energy"), avg_axis_energy * 10, t("aggregated_energy")))
+    story.append(two_columns(waffles))
     story.append(para(t("action_plan"), "H1x"))
     plan_cards = []
     for index, action in enumerate(action_plan[:6]):

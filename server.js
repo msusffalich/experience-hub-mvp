@@ -5,7 +5,7 @@ import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { gzipSync, inflateRawSync } from "node:zlib";
 import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
-import { execFile, spawn } from "node:child_process";
+import { execFile, spawn, spawnSync } from "node:child_process";
 import { promisify } from "node:util";
 import { tmpdir } from "node:os";
 import { createEvidencePipelineV2, EvidencePipelineError } from "./lib/evidence-pipeline-v2.mjs";
@@ -192,29 +192,35 @@ const OBSIDIAN_EXPORT_TARGETS = {
   document: "04_Assets/Documents",
   biometrics: "04_Assets/Biometrics",
   biometric: "04_Assets/Biometrics",
-  notes: "10_Atomic_Notes",
-  atomic_note: "10_Atomic_Notes",
-  moc: "20_Maps_of_Content",
-  map: "20_Maps_of_Content",
+  // ZONA CURADA (10_Atomic_Notes, 20_Maps_of_Content, 30_Projects,
+  // 40_Publications): la escribe SOLO el humano. Un proceso automatico no debe
+  // tener destino ahi. Todo lo generado por maquina va a 05_Generated, que por
+  // contrato se sobrescribe entero. Esto es el defecto E2 de la auditoria de la
+  // boveda: el mapa se escribia dentro de 20_Maps_of_Content pisando curaduria.
+  notes: "05_Generated",
+  atomic_note: "05_Generated",
+  moc: "05_Generated",
+  map: "05_Generated",
   generated: "05_Generated",
   generated_map: "05_Generated",
   generated_report: "05_Generated",
-  projects: "30_Projects",
-  project: "30_Projects",
-  publications: "40_Publications",
-  publication: "40_Publications",
+  projects: "05_Generated",
+  project: "05_Generated",
+  publications: "05_Generated",
+  publication: "05_Generated",
   reference: "50_Reference",
   manual: "50_Reference",
 };
 const OBSIDIAN_AUTO_START = "<!-- vibe:auto -->";
 const OBSIDIAN_AUTO_END = "<!-- /vibe:auto -->";
 const execFileAsync = promisify(execFile);
+// En Linux (Railway) el binario habitual es `python3`; `python` suele no existir.
+// Se prueba python3 antes que python fuera de Windows. Los candidatos se
+// VALIDAN ejecutando --version, no por nombre (ver findPythonExecutable).
 const PYTHON_EXECUTABLE_CANDIDATES = [
   process.env.PYTHON_EXECUTABLE,
   process.env.PYTHON_PATH,
-  "C:\\Users\\msusf\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe",
-  "python",
-  "python3",
+  ...(process.platform === "win32" ? ["python", "python3", "py"] : ["python3", "python"]),
 ].filter(Boolean);
 
 const mimeTypes = {
@@ -405,6 +411,10 @@ async function handleApi(req, res, url) {
       degraded.push("capture_storage_unverified");
     }
     if (Number(jobsSummary?.failed || 0) > 0) degraded.push(`jobs_failed:${jobsSummary.failed}`);
+    // Sin Python/ReportLab TODAS las salidas PDF devuelven 503. Antes el health
+    // no lo miraba y respondia "ok" con el 100% de los PDF rotos.
+    const pdfRuntime = getPdfRuntimeState();
+    if (!pdfRuntime.ok) degraded.push(`pdf_exports_unavailable:${pdfRuntime.detail}`);
     sendJson(res, 200, {
       status: appDegraded.length ? "degraded" : "ok",
       degraded,
@@ -431,7 +441,12 @@ async function handleApi(req, res, url) {
         readinessEndpoint: "/api/captures/status",
         storageRoundTrip: captureStorage,
       },
-      jobs: getJobSummary(),
+      pdfExports: {
+        ok: pdfRuntime.ok,
+        detail: pdfRuntime.detail,
+        python: pdfRuntime.python || null,
+      },
+      jobs: jobsSummary,
       timestamp: new Date().toISOString(),
     });
     return;
@@ -1088,7 +1103,9 @@ async function handleApi(req, res, url) {
   }
 
   if (url.pathname === "/api/obsidian/export" && req.method === "POST") {
-    const user = await getOptionalRequestUser(req);
+    // Escribe markdown en el sistema de ficheros de la boveda: exige sesion.
+    // Con getOptionalRequestUser, un POST anonimo podia escribir en la boveda.
+    const user = await getRequestUser(req);
     const body = await readJson(req);
     sendJson(res, 201, await saveObsidianExport(body, user));
     return;
@@ -10910,8 +10927,63 @@ function runReportLabProcess(pythonExecutable, scriptPath, payload) {
   });
 }
 
+let cachedPythonExecutable = null;
+
+// Antes devolvia SIEMPRE el literal "python" sin comprobar que existiera: en
+// Railway (Debian) ese binario no existe -> spawn ENOENT -> 503 permanente en
+// los cuatro PDF. Ahora cada candidato se valida ejecutando --version.
 function findPythonExecutable() {
-  return PYTHON_EXECUTABLE_CANDIDATES.find((candidate) => candidate === "python" || candidate === "python3" || existsSync(candidate)) || "";
+  if (cachedPythonExecutable !== null) return cachedPythonExecutable;
+  for (const candidate of PYTHON_EXECUTABLE_CANDIDATES) {
+    const isPath = candidate.includes("/") || candidate.includes("\\");
+    if (isPath) {
+      if (existsSync(candidate)) {
+        cachedPythonExecutable = candidate;
+        return cachedPythonExecutable;
+      }
+      continue;
+    }
+    try {
+      const probe = spawnSync(candidate, ["--version"], { stdio: "ignore", windowsHide: true });
+      if (probe.status === 0) {
+        cachedPythonExecutable = candidate;
+        return cachedPythonExecutable;
+      }
+    } catch {
+      // candidato no ejecutable: se prueba el siguiente
+    }
+  }
+  cachedPythonExecutable = "";
+  return cachedPythonExecutable;
+}
+
+// Comprueba que exista Python Y que reportlab sea importable. Se usa en el
+// health: antes un despliegue sin Python respondia status "ok" con el 100% de
+// las salidas PDF rotas.
+let cachedPdfRuntimeState = null;
+function getPdfRuntimeState() {
+  if (cachedPdfRuntimeState) return cachedPdfRuntimeState;
+  const python = findPythonExecutable();
+  if (!python) {
+    cachedPdfRuntimeState = { ok: false, detail: "python_not_found", python: "" };
+    return cachedPdfRuntimeState;
+  }
+  try {
+    const probe = spawnSync(python, ["-c", "import reportlab"], {
+      stdio: "ignore",
+      windowsHide: true,
+      env: {
+        ...process.env,
+        PYTHONPATH: [path.join(__dirname, ".python"), process.env.PYTHONPATH].filter(Boolean).join(path.delimiter),
+      },
+    });
+    cachedPdfRuntimeState = probe.status === 0
+      ? { ok: true, detail: "reportlab_available", python }
+      : { ok: false, detail: "reportlab_import_failed", python };
+  } catch (error) {
+    cachedPdfRuntimeState = { ok: false, detail: sanitizeDiagnosticError(error), python };
+  }
+  return cachedPdfRuntimeState;
 }
 
 function findChromeExecutable() {

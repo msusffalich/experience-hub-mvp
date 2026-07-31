@@ -176,14 +176,33 @@ async function pollContextRefresh(jobId, userInitiated) {
 }
 
 async function finishContextRefresh(job, userInitiated) {
-  const waitingForLocation = job.result?.status === "waiting_for_location";
+  // El job puede terminar "complete" y aun asi traer un contexto vacio: el
+  // servidor marca status unavailable/partial cuando los proveedores fallan.
+  // Antes se decia siempre "Contexto actualizado con los datos mas recientes".
+  const resultStatus = job.result?.status;
+  const waitingForLocation = resultStatus === "waiting_for_location";
+  const failed = resultStatus === "unavailable";
+  const partial = resultStatus === "partial";
+  const degraded = Array.isArray(job.result?.degraded) ? job.result.degraded : [];
   state.contextRefreshQueued = false;
-  state.contextRefreshStatus = waitingForLocation ? "waiting_location" : "complete";
+  state.contextRefreshStatus = waitingForLocation
+    ? "waiting_location"
+    : failed
+      ? "failed"
+      : "complete";
   state.data = await loadWorkspace(state.data);
   render();
   hydrateAssetPreviews();
   if (userInitiated) {
-    toast(t(waitingForLocation ? "contextWaitingLocation" : "contextRefreshComplete"), waitingForLocation);
+    if (waitingForLocation) {
+      toast(t("contextWaitingLocation"), true);
+    } else if (failed) {
+      toast(`${t("contextRefreshFailed")}${degraded.length ? ` (${degraded.join(", ")})` : ""}`, true);
+    } else if (partial) {
+      toast(`${t("contextRefreshComplete")} — ${degraded.join(", ")}: ${t("failed")}`, true);
+    } else {
+      toast(t("contextRefreshComplete"));
+    }
   }
 }
 
@@ -716,8 +735,21 @@ function bindViewEvents() {
   });
   document.querySelectorAll("[data-filter]").forEach((input) => {
     input.addEventListener("input", () => {
-      state.filters[input.dataset.filter] = input.value;
+      const key = input.dataset.filter;
+      const caret = input.selectionStart;
+      state.filters[key] = input.value;
+      // render() reemplaza el innerHTML y destruye el input con el foco: sin
+      // restaurarlo, el usuario escribia una letra y perdia el teclado.
       render();
+      const restored = document.querySelector(`[data-filter="${key}"]`);
+      if (restored) {
+        restored.focus();
+        try {
+          restored.setSelectionRange(caret, caret);
+        } catch {
+          // los input type=date no admiten setSelectionRange
+        }
+      }
       hydrateAssetPreviews();
     });
   });
@@ -1177,8 +1209,12 @@ async function runEvidenceUpload() {
 async function refreshOfflineQueue() {
   try {
     state.offlineQueue = await getUploadQueueSummary();
-  } catch {
-    state.offlineQueue = { total: 0, pending: 0, uploading: 0, retry_pending: 0 };
+    state.offlineQueueError = "";
+  } catch (error) {
+    // Antes se fabricaba "0 pendientes" cuando la lectura de la cola fallaba:
+    // el banner desaparecia y el usuario concluia que todo se habia subido.
+    // Se conserva el ultimo valor conocido y se registra el error.
+    state.offlineQueueError = error?.message || "queue_unavailable";
   }
 }
 
@@ -1285,17 +1321,42 @@ async function generatePublication() {
     const videos = enrichedStories.flatMap((story) =>
       (story.attachments || []).filter((item) => assetKind(item) === "video" && item.resolvedUrl),
     );
+    // Antes: `if (response.ok)` sin else descartaba en silencio cada video con
+    // URL caducada, se descargaba igual un zip "pdf-videos" incompleto y se
+    // cantaba "Archivo generado". Ahora se cuentan los fallos y se avisa.
+    let missingVideos = 0;
     if (videos.length) {
       const entries = [{ name: "publicacion-vibe.pdf", blob }];
-      for (const video of videos) {
-        const response = await fetch(video.resolvedUrl);
-        if (response.ok) entries.push({ name: video.name || video.filename || "video.mp4", blob: await response.blob() });
+      for (const [index, video] of videos.entries()) {
+        let ok = false;
+        try {
+          const response = await fetch(video.resolvedUrl);
+          if (response.ok) {
+            // Prefijo por indice: dos adjuntos homonimos colisionaban en el zip.
+            const name = video.name || video.filename || "video.mp4";
+            entries.push({
+              name: `videos/${String(index + 1).padStart(2, "0")}-${name}`,
+              blob: await response.blob(),
+            });
+            ok = true;
+          }
+        } catch {
+          ok = false;
+        }
+        if (!ok) missingVideos += 1;
+      }
+      if (missingVideos === videos.length) {
+        throw new Error(`${t("failed")}: ${missingVideos}/${videos.length} ${t("kind.video")}`);
       }
       downloadBlob(await createZip(entries), "publicacion-vibe-pdf-videos.zip");
     } else {
       downloadBlob(blob, "publicacion-vibe.pdf");
     }
-    toast(t("generated"));
+    if (missingVideos > 0) {
+      toast(`${t("generated")} — ${missingVideos}/${videos.length} ${t("kind.video")}: ${t("failed")}`, true);
+    } else {
+      toast(t("generated"));
+    }
   } catch (error) {
     toast(error.message, true);
   }
@@ -1728,6 +1789,11 @@ function uploadStatus() {
 }
 
 function offlineQueueStatus() {
+  // Si no se pudo leer la cola, hay que decirlo: ocultar el banner equivale a
+  // afirmar que no queda nada pendiente.
+  if (state.offlineQueueError) {
+    return `<section class="queue-status" role="status"><div>${icon("warning")}<span><strong>${escapeHtml(t("offlineQueue"))}</strong><small>${escapeHtml(state.offlineQueueError)}</small></span></div><button class="button secondary small" data-action="retry-queue">${icon("refresh")}${escapeHtml(t("retry"))}</button></section>`;
+  }
   if (!state.offlineQueue.total) return "";
   const detail = navigator.onLine ? t("queuedRetry") : t("queuedOffline");
   return `<section class="queue-status" role="status"><div>${icon("cloud")}<span><strong>${state.offlineQueue.total} ${escapeHtml(t("offlineQueue"))}</strong><small>${escapeHtml(detail)}</small></span></div>${navigator.onLine ? `<button class="button secondary small" data-action="retry-queue">${icon("refresh")}${escapeHtml(t("retry"))}</button>` : ""}</section>`;

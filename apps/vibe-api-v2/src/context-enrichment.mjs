@@ -143,12 +143,32 @@ export function createContextEnrichmentService({
     const weather = resultOrUnavailable(weatherResult, "weather");
     const news = resultOrUnavailable(newsResult, "news");
     const entertainment = resultOrUnavailable(entertainmentResult, "entertainment");
-    const impact = calculateImpact(weather, news, locale);
+    // `status` era el literal "available": los tres proveedores podian fallar y
+    // la app decia "Contexto actualizado con los datos mas recientes", ademas de
+    // afirmar "impacto bajo, sin presiones externas" sobre datos inexistentes.
+    const failedProviders = [
+      ["weather", weather],
+      ["news", news],
+      ["entertainment", entertainment],
+    ]
+      .filter(([, value]) => value?.status === "unavailable")
+      .map(([name]) => name);
+    const weatherAndNewsDown = failedProviders.includes("weather") && failedProviders.includes("news");
+    const impact = weatherAndNewsDown ? null : calculateImpact(weather, news, locale);
     const generatedAt = new Date().toISOString();
+    const status = failedProviders.length === 3
+      ? "unavailable"
+      : failedProviders.length
+        ? "partial"
+        : "available";
     const payload = {
-      status: "available",
+      status,
+      degraded: failedProviders,
       generatedAt,
-      nextRefreshAt: new Date(Date.now() + REFRESH_HOURS * 3_600_000).toISOString(),
+      // Un contexto vacio no debe bloquear el auto-refresco 6 horas.
+      nextRefreshAt: new Date(
+        Date.now() + (status === "available" ? REFRESH_HOURS * 3_600_000 : 15 * 60_000),
+      ).toISOString(),
       location: place,
       weather,
       news,

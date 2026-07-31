@@ -40,11 +40,15 @@ export function createObsidianService({ config, stories }) {
     for (const file of [...bundle.files, bundle.map]) {
       const target = path.join(vault, file.path);
       await mkdir(path.dirname(target), { recursive: true });
-      const final = file.path.startsWith("02_Experiences/")
-        ? await mergeHumanZone(target, file.markdown)
-        : file.markdown;
-      await writeFile(target, final, "utf8");
-      written.push(file.path);
+      let finalContent = file.markdown;
+      let finalTarget = target;
+      if (file.path.startsWith("02_Experiences/")) {
+        const merged = await mergeHumanZone(target, file.markdown);
+        finalContent = merged.content;
+        finalTarget = merged.path;
+      }
+      await writeFile(finalTarget, finalContent, "utf8");
+      written.push(path.relative(vault, finalTarget).split(path.sep).join("/"));
     }
     for (const relative of written) {
       const target = path.resolve(vault, relative);
@@ -67,38 +71,57 @@ async function resolveVault(configured) {
   return vault;
 }
 
+// Devuelve { content, path } — `path` puede diferir del original si hay que
+// versionar para NO pisar una nota sin marcadores.
+//
+// La version anterior reconstruia la zona humana a partir de dos secciones
+// fijas (### Aprendizajes y ### Notas). Eso: (a) borraba
+// "### Decisiones o acciones" en cada reexport; (b) corrompia
+// "### Notas editoriales" porque indexOf("### Notas") casa con su prefijo;
+// (c) sobrescribia entera cualquier nota sin marcadores. Ahora se conserva
+// TODO lo posterior a <!-- /vibe:auto --> tal cual, sin parsear secciones.
 async function mergeHumanZone(target, generated) {
   let existing = "";
   try {
     existing = await readFile(target, "utf8");
   } catch {}
-  const human = extractHuman(existing);
+
   const autoEnd = generated.indexOf(AUTO_END);
-  const rawAuto = autoEnd >= 0 ? generated.slice(0, autoEnd + AUTO_END.length) : generated;
-  const generatedAuto = rawAuto.replace(
+  const generatedAuto = autoEnd >= 0 ? generated.slice(0, autoEnd + AUTO_END.length) : generated;
+
+  if (!existing.trim()) {
+    return { content: generated, path: target };
+  }
+
+  const existingEnd = existing.indexOf(AUTO_END);
+  if (existingEnd < 0) {
+    // Nota sin marcadores: no es nuestra o fue escrita a mano. No se pisa.
+    return { content: generated, path: await versionedPath(target) };
+  }
+
+  // Todo lo que hay tras el bloque automatico es del humano: se copia literal.
+  const humanZone = existing.slice(existingEnd + AUTO_END.length);
+  const hasLearnings = /###\s*Aprendizajes\s*\n+\s*\S/.test(humanZone);
+  const withState = generatedAuto.replace(
     /^learnings:\s*(?:pending|ok)\s*$/m,
-    `learnings: ${human.learnings ? "ok" : "pending"}`,
+    `learnings: ${hasLearnings ? "ok" : "pending"}`,
   );
-  return `${generatedAuto}\n\n${HUMAN_HEADING}\n\n### Aprendizajes\n${human.learnings}\n\n### Notas\n${human.notes}\n`;
+  return { content: `${withState}${humanZone}`, path: target };
 }
 
-function extractHuman(text) {
-  const normalized = String(text || "").replace("## Curaduria humana", HUMAN_HEADING);
-  const start = normalized.indexOf(HUMAN_HEADING);
-  if (start < 0) return { learnings: "", notes: "" };
-  const zone = normalized.slice(start);
-  return {
-    learnings: section(zone, "### Aprendizajes"),
-    notes: section(zone, "### Notas"),
-  };
-}
-
-function section(text, heading) {
-  const start = text.indexOf(heading);
-  if (start < 0) return "";
-  const body = text.slice(start + heading.length);
-  const next = body.search(/\n###\s/);
-  return (next >= 0 ? body.slice(0, next) : body).trim();
+async function versionedPath(target) {
+  const dir = path.dirname(target);
+  const ext = path.extname(target);
+  const stem = path.basename(target, ext);
+  for (let index = 2; index < 100; index += 1) {
+    const candidate = path.join(dir, `${stem} ${index}${ext}`);
+    try {
+      await access(candidate);
+    } catch {
+      return candidate;
+    }
+  }
+  return path.join(dir, `${stem} ${Date.now()}${ext}`);
 }
 
 function markdown(story) {
@@ -174,7 +197,14 @@ function assetFilename(asset) {
 function mapMarkdown(items) {
   const narrated = items.filter((story) => Boolean(humanNarrative(story))).length;
   const categories = new Map();
-  items.forEach((story) => categories.set(story.category, (categories.get(story.category) || 0) + 1));
+  // Sin este guard, las historias sin categoria entraban con clave undefined y
+  // producian un wikilink literal "[[undefined]]", ademas de contarse como
+  // "area de vida observada".
+  items.forEach((story) => {
+    const area = String(story.category || "").trim();
+    if (!area) return;
+    categories.set(area, (categories.get(area) || 0) + 1);
+  });
   return `---
 type: generated_map
 updated_at: "${new Date().toISOString()}"
@@ -194,10 +224,23 @@ ${[...categories.entries()].map(([area, count]) => `- [[${area}]]: ${count}`).jo
 `;
 }
 
+// Un umbral de 8 caracteres contaba "IMG_2024.jpg" como narrativa humana e
+// inflaba la metrica. Se exige longitud razonable y se descartan los textos que
+// son en realidad nombres de fichero o rutas.
+const MIN_NARRATIVE_LENGTH = 24;
+
+function isLowValueNarrative(text) {
+  if (/^[\w .,()-]+\.(jpg|jpeg|png|heic|gif|mp4|mov|m4a|mp3|wav|pdf|docx?|txt)$/i.test(text)) return true;
+  if (/^(https?:\/\/|[a-z]:\\|\/)/i.test(text)) return true;
+  return !/\s/.test(text);
+}
+
 function humanNarrative(story) {
   const own = String(story.notes || "").trim();
-  if (own.length >= 8) return own;
-  return (story.events || []).map((event) => String(event.narrativeText || "").trim()).find((text) => text.length >= 8) || "";
+  if (own.length >= MIN_NARRATIVE_LENGTH && !isLowValueNarrative(own)) return own;
+  return (story.events || [])
+    .map((event) => String(event.narrativeText || "").trim())
+    .find((text) => text.length >= MIN_NARRATIVE_LENGTH && !isLowValueNarrative(text)) || "";
 }
 
 function filename(story) {
