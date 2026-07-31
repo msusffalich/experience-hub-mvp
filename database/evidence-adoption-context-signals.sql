@@ -62,7 +62,7 @@ CREATE INDEX IF NOT EXISTS context_signals_workspace_participant_time_idx
 
 ALTER TABLE context_signals ENABLE ROW LEVEL SECURITY;
 
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE context_signals TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE context_signals TO authenticated, service_role;
 
 DROP POLICY IF EXISTS "Members can manage context signals" ON context_signals;
 

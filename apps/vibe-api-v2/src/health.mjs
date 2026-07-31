@@ -46,28 +46,43 @@ export function createHealthService({ config, supabase, capture }) {
   }
 
   async function databaseCheck() {
-    try {
-      const tables = [
-        ["profiles", "user_id"],
-        ["capture_operations", "operation_id"],
-        ["capture_records", "capture_id"],
-        ["story_evidence_links", "capture_id"],
-        ["experience_events", "event_id"],
-        ["vibe_jobs_v2", "job_id"],
-        ["integration_connections_v2", "connection_id"],
-        ["integration_oauth_states_v2", "state"],
-        ["agenda_events", "event_id"],
-        ["context_signals", "signal_id"],
-        ["daily_briefings", "user_id"],
-      ];
-      await Promise.all(tables.map(([table, column]) => supabase.rest(table, {
-        auth: "service",
-        query: { select: column, limit: "1" },
-      })));
-      return { ok: true, detail: "v2_schema_readable", tables: tables.length };
-    } catch (error) {
-      return { ok: false, detail: error.code || error.message };
+    const tables = [
+      ["profiles", "user_id"],
+      ["capture_operations", "operation_id"],
+      ["capture_records", "capture_id"],
+      ["story_evidence_links", "capture_id"],
+      ["experience_events", "event_id"],
+      ["vibe_jobs_v2", "job_id"],
+      ["integration_connections_v2", "connection_id"],
+      ["integration_oauth_states_v2", "state"],
+      ["agenda_events", "event_id"],
+      ["context_signals", "signal_id"],
+      ["daily_briefings", "user_id"],
+    ];
+    const results = await Promise.all(tables.map(async ([table, column]) => {
+      try {
+        await supabase.rest(table, {
+          auth: "service",
+          query: { select: column, limit: "1" },
+        });
+        return { ok: true, table };
+      } catch (error) {
+        return {
+          ok: false,
+          detail: error.code || error.message,
+          table,
+        };
+      }
+    }));
+    const failures = results.filter((result) => !result.ok);
+    if (failures.length) {
+      return {
+        ok: false,
+        detail: "v2_schema_incomplete",
+        failures,
+      };
     }
+    return { ok: true, detail: "v2_schema_readable", tables: tables.length };
   }
 
   async function storageCheck() {
