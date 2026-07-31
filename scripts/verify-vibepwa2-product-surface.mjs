@@ -9,6 +9,7 @@ const appRoot = new URL("../apps/vibepwa-next/", import.meta.url);
 const backendRoot = new URL("../apps/vibe-api-v2/src/", import.meta.url);
 const files = {
   server: await readFile(new URL("../server.js", import.meta.url), "utf8"),
+  railway: await readFile(new URL("../railway.json", import.meta.url), "utf8"),
   app: await readFile(new URL("src/app.js", appRoot), "utf8"),
   api: await readFile(new URL("src/api.js", appRoot), "utf8"),
   i18n: await readFile(new URL("src/i18n.js", appRoot), "utf8"),
@@ -296,6 +297,11 @@ function verifyProductEntryPoint() {
   );
   assert.match(files.server, /url\.pathname === "\/legacy"/);
   assert.match(files.server, /Location:\s*"\/index\.html\?legacy=1"/);
+  assert.equal(
+    JSON.parse(files.railway).deploy?.healthcheckPath,
+    "/api/v2/health/live",
+    "Railway deploy healthcheck must use liveness; readiness depends on external infrastructure",
+  );
 }
 
 async function check(name, verifier) {
