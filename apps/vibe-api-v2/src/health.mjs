@@ -1,5 +1,36 @@
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
+
 export function createHealthService({ config, supabase, capture }) {
   let cached = null;
+
+  // Comprobacion REAL del generador de PDF: sin esto, la salud decia "ok"
+  // mientras las cuatro salidas PDF devolvian error, y no habia forma de verlo
+  // desde fuera. Devuelve el interprete resuelto y el motivo exacto del fallo.
+  function pdfRuntimeCheck() {
+    const command = config.pythonCommand;
+    if (!command) return { ok: false, detail: "python_not_resolved", python: "" };
+    try {
+      const probe = spawnSync(command, ["-c", "import reportlab, PIL; print(reportlab.Version)"], {
+        windowsHide: true,
+        encoding: "utf8",
+        env: {
+          ...process.env,
+          PYTHONPATH: [path.join(ROOT, ".python"), process.env.PYTHONPATH].filter(Boolean).join(path.delimiter),
+        },
+      });
+      if (probe.status === 0) {
+        return { ok: true, detail: `reportlab_${String(probe.stdout || "").trim()}`, python: command };
+      }
+      const reason = String(probe.stderr || probe.error?.message || "unknown").trim().slice(-300);
+      return { ok: false, detail: `import_failed: ${reason}`, python: command };
+    } catch (error) {
+      return { ok: false, detail: String(error?.message || error).slice(0, 300), python: command };
+    }
+  }
 
   function live() {
     return {
@@ -20,7 +51,12 @@ export function createHealthService({ config, supabase, capture }) {
       database: await databaseCheck(),
       storage: await storageCheck(),
     };
+    // Se informa, pero NO decide `ready`: que no se pueda generar un PDF no
+    // significa que la aplicacion este caida (mismo criterio de aislamiento que
+    // en el health legacy con la sonda de captura).
+    const pdfRuntime = pdfRuntimeCheck();
     const ok = Object.values(checks).every((check) => check.ok);
+    checks.pdfRuntime = pdfRuntime;
     const value = {
       status: ok ? "ok" : "degraded",
       ready: ok,
