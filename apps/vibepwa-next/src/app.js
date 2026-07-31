@@ -1530,32 +1530,45 @@ function pickerItem(asset, selected) {
 async function hydrateAssetPreviews(root = document) {
   const nodes = Array.from(root.querySelectorAll("[data-asset-preview]"));
   await Promise.all(nodes.map(async (node) => {
-    const asset = allAssets().find((item) => item.id === node.dataset.assetPreview);
-    if (!asset || node.dataset.loaded === "1") return;
+    if (node.dataset.loaded === "1") return;
+    // El id y el tipo YA estan en el propio elemento. Antes se volvia a buscar
+    // el activo en allAssets() y, si la busqueda no encontraba coincidencia
+    // (ids distintos entre la lista que pinta y la que consulta), se salia en
+    // SILENCIO: sin miniatura y sin rastro en consola. Por eso solo se veian
+    // los iconos y no habia nada que depurar.
+    const id = node.dataset.assetPreview || "";
+    if (!id) return;
+    const asset = allAssets().find((item) => item.id === id
+      || item.captureId === id
+      || item.assetId === id) || {};
+    const kind = node.dataset.assetKind || assetKind(asset);
+    if (kind !== "image" && kind !== "video") return;
+
     let url = asset.previewUrl || asset.signedUrl || asset.url || asset.dataUrl || "";
-    if (!url && asset.id) {
-      try {
-        let result;
+    if (!url) {
+      const candidates = [
+        `/api/v2/assets/${encodeURIComponent(id)}/download`,
+        `/api/v2/captures/${encodeURIComponent(asset.captureId || id)}/download`,
+      ];
+      const errors = [];
+      for (const endpoint of candidates) {
         try {
-          result = await request(`/api/v2/assets/${encodeURIComponent(asset.id)}/download`);
+          const result = await request(endpoint);
+          url = result.url || result.signedUrl || "";
+          if (url) break;
+          errors.push(`${endpoint}: sin url en la respuesta`);
         } catch (error) {
-          if (!asset.captureId || error.status !== 404) throw error;
-          result = await request(`/api/v2/captures/${encodeURIComponent(asset.captureId)}/download`);
+          errors.push(`${endpoint}: ${error?.message || error}`);
         }
-        url = result.url || result.signedUrl || "";
-      } catch (error) {
-        // No se puede firmar la URL: se deja el icono, pero se registra el
-        // motivo. Antes el catch vacio hacia indistinguible "es un documento"
-        // de "no se pudo cargar la evidencia".
-        node.dataset.previewError = String(error?.message || error || "preview_failed");
-        console.warn("asset_preview_failed", asset.id, error);
+      }
+      if (!url) {
+        node.dataset.previewError = errors.join(" | ");
+        console.warn("asset_preview_failed", id, errors);
         return;
       }
     }
-    if (!url) return;
-    const kind = assetKind(asset);
     if (kind === "image") node.innerHTML = `<img src="${escapeAttr(url)}" alt="" loading="lazy" />`;
-    else if (kind === "video") node.innerHTML = `<video src="${escapeAttr(url)}" preload="metadata" muted></video>`;
+    else node.innerHTML = `<video src="${escapeAttr(url)}" preload="metadata" muted></video>`;
     node.dataset.loaded = "1";
   }));
 }
