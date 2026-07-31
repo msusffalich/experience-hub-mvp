@@ -268,12 +268,16 @@ export function createStoryService({ supabase, workspace, config }) {
         throw error;
       });
     }
-    const raw = String(signed.signedURL || signed.signedUrl || signed.url || "");
+    // `signedUrl` ya viene absolutizado por storageSignDownload. Antes se leia
+    // primero `signedURL`, que es el valor CRUDO y relativo de Supabase
+    // ("/object/sign/..."); al empezar por "/" se concatenaba tal cual y la URL
+    // quedaba sin el prefijo /storage/v1 -> 404 en todas las miniaturas.
+    const raw = String(signed.signedUrl || signed.signedURL || signed.url || "");
     return {
       ok: true,
       url: /^https?:\/\//i.test(raw)
         ? raw
-        : `${config.supabaseUrl}${raw.startsWith("/") ? raw : `/storage/v1${raw}`}`,
+        : `${config.supabaseUrl}/storage/v1/${raw.replace(/^\/+(storage\/v1\/)?/, "")}`,
       expiresAt: new Date(Date.now() + 900_000).toISOString(),
     };
   }

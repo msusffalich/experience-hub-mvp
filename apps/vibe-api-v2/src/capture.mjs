@@ -226,10 +226,12 @@ export function createCaptureService({ supabase, workspace, config }) {
         throw error;
       });
     }
-    const raw = String(signed.signedURL || signed.signedUrl || signed.url || "");
+    // Mismo fallo que en stories: `signedURL` es el valor crudo relativo de
+    // Supabase y al concatenarlo se perdia el prefijo /storage/v1 -> 404.
+    const raw = String(signed.signedUrl || signed.signedURL || signed.url || "");
     const url = /^https?:\/\//i.test(raw)
       ? raw
-      : `${config.supabaseUrl}${raw.startsWith("/") ? raw : `/storage/v1${raw}`}`;
+      : `${config.supabaseUrl}/storage/v1/${raw.replace(/^\/+(storage\/v1\/)?/, "")}`;
     return {
       ok: true,
       captureId,
