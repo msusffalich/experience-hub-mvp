@@ -7990,7 +7990,11 @@ async function getSupabaseObjectInfo(bucket, objectPath) {
   const cleanBucket = encodeURIComponent(String(bucket || ""));
   const cleanPath = encodeStorageObjectPath(objectPath);
   const response = await fetchCaptureStorage(
-    `${SUPABASE_URL}/storage/v1/object/info/${cleanBucket}/${cleanPath}`,
+    // Supabase Storage expone la metadata autenticada en
+    // /object/info/authenticated/{bucket}/{path}. Sin el segmento
+    // "authenticated" la ruta queda mal formada y Storage responde 400 con
+    // NoSuchKey aunque el objeto exista -> capture_storage_check_failed / 503.
+    `${SUPABASE_URL}/storage/v1/object/info/authenticated/${cleanBucket}/${cleanPath}`,
     {
       method: "GET",
       headers: supabaseServerKeyHeaders(),
@@ -7999,6 +8003,9 @@ async function getSupabaseObjectInfo(bucket, objectPath) {
   if (response.status === 404) return null;
   const text = await response.text();
   if (!response.ok) {
+    // "No encontrado" puede llegar como 404, o como 400/40x cuyo cuerpo trae
+    // NoSuchKey / not_found. En ese caso NO es un fallo: el objeto no existe.
+    if (isStorageObjectNotFound(response.status, text)) return null;
     throw new Error(`supabase_storage_info_${response.status}: ${text}`);
   }
   let payload = {};
@@ -8219,15 +8226,32 @@ async function createSignedObjectUrl(objectPath, bucket = SUPABASE_STORAGE_BUCKE
 }
 
 function supabaseServerKeyHeaders() {
-  const headers = { apikey: SUPABASE_SERVICE_ROLE_KEY };
-  if (isLegacyJwtSupabaseKey(SUPABASE_SERVICE_ROLE_KEY)) {
-    headers.Authorization = `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`;
-  }
-  return headers;
+  // El service-role debe ir SIEMPRE como Authorization: Bearer, sea JWT legacy
+  // (eyJ...) o secret key nueva (sb_secret_...). El gate anterior solo lo
+  // mandaba con JWT legacy, dejando a Storage sin Bearer con keys nuevas.
+  return {
+    apikey: SUPABASE_SERVICE_ROLE_KEY,
+    Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+  };
 }
 
 function isLegacyJwtSupabaseKey(key = "") {
   return typeof key === "string" && key.split(".").length === 3;
+}
+
+// Detecta el "objeto no encontrado" de Supabase Storage, que puede llegar como
+// HTTP 404 o como 400/40x cuyo cuerpo trae {code:"NoSuchKey"} / not_found /
+// "Object not found". Se usa para no confundir un objeto ausente con un fallo.
+function isStorageObjectNotFound(status, bodyText = "") {
+  if (status === 404) return true;
+  if (status < 400 || status >= 500) return false;
+  const body = String(bodyText || "").toLowerCase();
+  return (
+    body.includes("nosuchkey") ||
+    body.includes("not_found") ||
+    body.includes("object not found") ||
+    body.includes("\"statuscode\":\"404\"")
+  );
 }
 
 async function assertSignedUrlReachable(url) {
