@@ -9,6 +9,7 @@ import {
   retryQueuedUpload,
 } from "./upload-queue.js";
 import { createZip } from "./zip.js";
+import { forgetVault, getStoredVault, isVaultPickerSupported, pickVault, writeBundleToVault } from "./vault.js";
 
 const app = document.getElementById("app");
 const toastRegion = document.getElementById("toastRegion");
@@ -42,6 +43,8 @@ const state = {
   obsidianPreview: null,
   obsidianPreviewLoading: false,
   obsidianPreviewError: "",
+  // Nombre de la carpeta de boveda elegida en este equipo (File System Access).
+  obsidianVaultName: "",
   modal: null,
   upload: null,
 };
@@ -69,6 +72,9 @@ async function boot() {
     renderLogin();
     return;
   }
+  // Recuperar la carpeta de boveda ya autorizada (sin pedir permiso: eso exige
+  // gesto del usuario y se hace al pulsar Exportar).
+  await restoreObsidianVaultName();
   await refreshData();
   await refreshOfflineQueue();
   showIntegrationCallback();
@@ -479,7 +485,7 @@ function mapView() {
   return `
     <section class="page-heading">
       <div><p class="eyebrow">${escapeHtml(t("knowledgeMap"))}</p><h2>${escapeHtml(t("experienceMap"))}</h2><p>${escapeHtml(t("experienceMapHelp"))}</p></div>
-      <div class="heading-actions"><button class="button secondary" data-action="preview-obsidian">${icon("refresh")}${escapeHtml(t("refreshMap"))}</button><button class="button" data-action="export-obsidian">${icon("download")}${escapeHtml(t("exportToObsidian"))}</button></div>
+      <div class="heading-actions">${vaultPickerControls()}<button class="button secondary" data-action="preview-obsidian">${icon("refresh")}${escapeHtml(t("refreshMap"))}</button><button class="button" data-action="export-obsidian">${icon("download")}${escapeHtml(t("exportToObsidian"))}</button></div>
     </section>
     ${filterToolbar(true)}
     <section class="metric-strip">
@@ -778,6 +784,8 @@ function bindViewEvents() {
   document.querySelector("[data-action='generate-publication']")?.addEventListener("click", generatePublication);
   document.querySelector("[data-action='preview-obsidian']")?.addEventListener("click", loadObsidianPreview);
   document.querySelector("[data-action='export-obsidian']")?.addEventListener("click", exportObsidian);
+  document.querySelector("[data-action='choose-vault']")?.addEventListener("click", chooseObsidianVault);
+  document.querySelector("[data-action='forget-vault']")?.addEventListener("click", forgetObsidianVault);
   document.getElementById("groupForm")?.addEventListener("submit", saveGroup);
   document.querySelectorAll("[data-group-deactivate]").forEach((button) => {
     button.addEventListener("click", () => deactivateGroup(button.dataset.groupDeactivate));
@@ -813,20 +821,93 @@ function bindViewEvents() {
   }));
 }
 
+// Controles de la carpeta de la boveda. Si el navegador no soporta la File
+// System Access API (Safari iOS), se dice explicitamente en vez de ofrecer un
+// boton que no haria nada: la exportacion caera a la descarga del ZIP.
+async function restoreObsidianVaultName() {
+  try {
+    const vault = await getStoredVault();
+    state.obsidianVaultName = vault?.name || "";
+  } catch {
+    state.obsidianVaultName = "";
+  }
+}
+
+function vaultPickerControls() {
+  if (!isVaultPickerSupported()) {
+    return `<span class="tag">${escapeHtml(t("obsidianPickerUnsupported"))}</span>`;
+  }
+  if (state.obsidianVaultName) {
+    return `<span class="tag" title="${escapeAttr(t("obsidianVaultInUse"))}">${icon("file")}${escapeHtml(state.obsidianVaultName)}</span>`
+      + `<button class="button secondary" data-action="choose-vault">${escapeHtml(t("obsidianChangeVault"))}</button>`
+      + `<button class="button secondary" data-action="forget-vault">${escapeHtml(t("obsidianForgetVault"))}</button>`;
+  }
+  return `<button class="button secondary" data-action="choose-vault">${icon("file")}${escapeHtml(t("obsidianChooseVault"))}</button>`;
+}
+
+// Elegir la carpeta de la boveda en el propio equipo. Requiere gesto del
+// usuario, por eso vive en su propio boton.
+async function chooseObsidianVault() {
+  try {
+    const info = await pickVault();
+    state.obsidianVaultName = info.name;
+    toast(info.correctedFromParent
+      ? `${t("obsidianVaultSelected")} ${info.name} (${t("obsidianVaultCorrected")})`
+      : `${t("obsidianVaultSelected")} ${info.name}`);
+    render();
+  } catch (error) {
+    toast(obsidianErrorText(error), true);
+  }
+}
+
+async function forgetObsidianVault() {
+  await forgetVault();
+  state.obsidianVaultName = "";
+  toast(t("obsidianVaultForgotten"));
+  render();
+}
+
+function obsidianErrorText(error) {
+  const code = String(error?.message || "");
+  if (code.includes("obsidian_vault_marker_missing")) return t("obsidianVaultMarkerMissing");
+  if (code.includes("obsidian_multiple_vaults_found")) return t("obsidianVaultMultiple");
+  if (code.includes("obsidian_permission_denied")) return t("obsidianVaultDenied");
+  if (code.includes("obsidian_picker_unsupported")) return t("obsidianPickerUnsupported");
+  if (code === "AbortError" || code.includes("aborted")) return t("obsidianVaultCancelled");
+  return code || t("failed");
+}
+
 async function exportObsidian() {
   const button = document.querySelector("[data-action='export-obsidian']");
   if (button) button.disabled = true;
   try {
+    // 1) Si hay carpeta elegida, se escribe DIRECTO en la boveda del equipo.
+    //    Es la unica via que llega a la boveda real: el servidor escribe en el
+    //    contenedor de Railway, no en el disco del usuario.
+    const vault = await getStoredVault({ interactive: true }).catch(() => null);
+    if (vault) {
+      const bundle = await request("/api/v2/obsidian/preview");
+      const files = [...(bundle.files || []), ...(bundle.map ? [bundle.map] : [])];
+      const summary = await writeBundleToVault(vault, files);
+      state.obsidianPreview = bundle;
+      state.obsidianPreviewError = "";
+      const parts = [`${t("obsidianExportComplete")} ${summary.written} ${t("files")}.`];
+      if (summary.preserved) parts.push(`${t("obsidianHumanPreserved")}: ${summary.preserved}.`);
+      if (summary.versioned.length) parts.push(`${t("obsidianVersioned")}: ${summary.versioned.length}.`);
+      if (summary.failed.length) parts.push(`${t("failed")}: ${summary.failed.length}.`);
+      toast(parts.join(" "), summary.failed.length > 0);
+      render();
+      return;
+    }
+
+    // 2) Sin carpeta elegida: se intenta la boveda del servidor y, si no esta
+    //    configurada, se descarga el paquete para descomprimir.
     let serverExported = false;
     try {
       const result = await request("/api/v2/obsidian/export", { method: "POST" });
       serverExported = true;
       toast(`${t("obsidianExportComplete")} ${Number(result.count || 0)} ${t("files")}.`);
     } catch (error) {
-      // La boveda del servidor vive en el contenedor de Railway, NO en el disco
-      // del usuario: si no esta configurada (o no existe), escribir ahi no
-      // serviria de nada. En ese caso se descarga el paquete Markdown para
-      // descomprimirlo sobre la boveda real.
       if (!isObsidianVaultUnavailable(error)) throw error;
       await downloadObsidianBundle();
     }
@@ -841,7 +922,7 @@ async function exportObsidian() {
     }
     render();
   } catch (error) {
-    toast(error.message, true);
+    toast(obsidianErrorText(error), true);
   } finally {
     if (button) button.disabled = false;
   }
