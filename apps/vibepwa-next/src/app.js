@@ -613,8 +613,11 @@ function metricValue(metrics, keys) {
 }
 
 function formatSleep(value) {
-  if (!Number.isFinite(Number(value))) return "";
+  // metricValue devuelve "" cuando no hay dato, y Number("") es 0 (finito!):
+  // por eso el sueno ausente se mostraba como "0.0 h" en vez de "—".
+  if (value === "" || value === null || value === undefined) return "—";
   const minutes = Number(value);
+  if (!Number.isFinite(minutes) || minutes <= 0) return "—";
   return minutes >= 24 ? `${(minutes / 60).toFixed(1)} h` : `${minutes.toFixed(1)} h`;
 }
 

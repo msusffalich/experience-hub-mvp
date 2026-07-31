@@ -265,8 +265,18 @@ export function createContextEnrichmentService({
     url.searchParams.set("localityLanguage", locale);
     try {
       const payload = await fetchJson(url);
+      // `city` es el municipio administrativo y suele resolver a la poblacion
+      // mayor mas cercana (devolvia "Clermont" estando en Winter Garden, a
+      // 15 km). `locality` es el nombre local preciso: va primero. Como tercera
+      // via se usa el nivel administrativo mas fino que reporte el servicio.
+      const administrative = Array.isArray(payload.localityInfo?.administrative)
+        ? [...payload.localityInfo.administrative].sort(
+          (a, b) => Number(b.adminLevel || 0) - Number(a.adminLevel || 0),
+        )
+        : [];
+      const finestAdministrative = administrative.find((entry) => Number(entry.adminLevel || 0) >= 8)?.name || "";
       return {
-        locality: firstText(payload.city, payload.locality, payload.principalSubdivision),
+        locality: firstText(payload.locality, finestAdministrative, payload.city, payload.principalSubdivision),
         region: firstText(payload.principalSubdivision),
         country: firstText(payload.countryName, payload.countryCode),
       };
@@ -301,12 +311,18 @@ export function createContextEnrichmentService({
   }
 
   async function fetchNews(place, locale) {
-    const query = `${place.locality || place.label} (Reuters OR BBC OR AP OR NPR OR \"Associated Press\") when:${NEWS_FRESHNESS_HOURS}h`;
+    // La localidad va ENTRECOMILLADA y acompanada de region/pais: sin eso los
+    // terminos genericos dominaban la consulta y Google News devolvia notas de
+    // cualquier sitio del mundo en ese idioma.
+    const query = `${placeQuery(place)} (Reuters OR BBC OR AP OR NPR OR \"Associated Press\") when:${NEWS_FRESHNESS_HOURS}h`;
     const items = (await fetchRss(query, locale, 20))
       .filter((item) => isRecent(item.publishedAt, NEWS_FRESHNESS_HOURS))
       .filter((item) => TRUSTED_NEWS_SOURCES.some((source) =>
         String(item.source || "").toLowerCase().includes(source),
       ))
+      // Y ademas se exige que la nota mencione el lugar: mas vale decir que no
+      // hay noticias de tu zona que mostrar noticias de otra.
+      .filter((item) => mentionsPlace(item, place))
       .slice(0, 8);
     return {
       status: items.length ? "available" : "no_recent_items",
@@ -323,9 +339,13 @@ export function createContextEnrichmentService({
       fr: "cinema OR theatre OR concert OR festival OR spectacles OR evenements",
       pt: "cinema OR teatro OR concerto OR festival OR espetaculos OR eventos",
     };
-    const query = `${place.locality || place.label} (${terms[locale] || terms.es}) when:7d`;
+    const query = `${placeQuery(place)} (${terms[locale] || terms.es}) when:7d`;
     const items = (await fetchRss(query, locale, 20))
       .filter((item) => isRecent(item.publishedAt, 168))
+      // Sin este filtro se mostraba cartelera de Madrid a alguien en Florida:
+      // los terminos genericos ("cine OR teatro OR festival") pesaban mas que
+      // la localidad y Google News devolvia cultura del idioma, no del lugar.
+      .filter((item) => mentionsPlace(item, place))
       .slice(0, 10);
     return {
       status: items.length ? "available" : "no_recent_items",
@@ -523,11 +543,20 @@ function calculateImpact(weather, news, locale) {
     RISK_WORDS.some((word) => `${item.title} ${item.summary}`.toLowerCase().includes(word)),
   );
   signals.push(...newsRisks.slice(0, 4).map(() => "relevant_news_signal"));
+  // Sin clima no hay base para estimar nada: antes se publicaba "impacto bajo
+  // (0/100)" con los proveedores caidos, afirmando una conclusion sobre datos
+  // inexistentes. Un score de 0 solo es legitimo si el clima SI se pudo leer.
+  const weatherUsable = weather?.status !== "unavailable" && Number.isFinite(Number(weather?.temperatureC));
+  if (!weatherUsable) {
+    return { score: null, level: null, signals: [], partial: true, summary: localized(locale, "impactUnavailable") };
+  }
   const score = Math.min(100, signals.length * 14);
   return {
     score,
     level: score >= 70 ? "high" : score >= 35 ? "medium" : "low",
     signals,
+    // Si las noticias no pudieron leerse, el indice se calculo solo con clima.
+    partial: news?.status === "unavailable",
     summary: localized(locale, score >= 70 ? "impactHigh" : score >= 35 ? "impactMedium" : "impactLow"),
   };
 }
@@ -605,6 +634,7 @@ const localizedText = {
     locationMissing: "No hay una ubicación reciente para actualizar el contexto.",
     impactHigh: "El contexto externo requiere atención antes de planificar.",
     impactMedium: "Hay condiciones externas que conviene considerar.",
+    impactUnavailable: "Sin datos de clima disponibles: no se puede estimar el impacto contextual.",
     impactLow: "No se observan presiones externas importantes con los datos disponibles.",
     clear: "Despejado", cloudy: "Parcialmente nublado", fog: "Niebla", rain: "Lluvia",
     snow: "Nieve", showers: "Chubascos", storm: "Tormenta", variable: "Condiciones variables",
@@ -613,6 +643,7 @@ const localizedText = {
     locationMissing: "There is no recent location available to update context.",
     impactHigh: "External conditions require attention before planning.",
     impactMedium: "There are external conditions worth considering.",
+    impactUnavailable: "No weather data available: contextual impact cannot be estimated.",
     impactLow: "No major external pressures are visible in the available data.",
     clear: "Clear", cloudy: "Partly cloudy", fog: "Fog", rain: "Rain",
     snow: "Snow", showers: "Showers", storm: "Storm", variable: "Variable conditions",
@@ -621,6 +652,7 @@ const localizedText = {
     locationMissing: "Aucune localisation récente n'est disponible pour actualiser le contexte.",
     impactHigh: "Le contexte externe demande une attention particulière avant de planifier.",
     impactMedium: "Certaines conditions externes méritent d'être prises en compte.",
+    impactUnavailable: "Aucune donnée météo disponible : l'impact contextuel ne peut pas être estimé.",
     impactLow: "Aucune pression externe importante n'apparaît dans les données disponibles.",
     clear: "Dégagé", cloudy: "Partiellement nuageux", fog: "Brouillard", rain: "Pluie",
     snow: "Neige", showers: "Averses", storm: "Orage", variable: "Conditions variables",
@@ -629,6 +661,7 @@ const localizedText = {
     locationMissing: "Não há uma localização recente disponível para atualizar o contexto.",
     impactHigh: "O contexto externo exige atenção antes do planejamento.",
     impactMedium: "Há condições externas que vale a pena considerar.",
+    impactUnavailable: "Sem dados meteorológicos disponíveis: não é possível estimar o impacto contextual.",
     impactLow: "Não há pressões externas importantes nos dados disponíveis.",
     clear: "Céu limpo", cloudy: "Parcialmente nublado", fog: "Nevoeiro", rain: "Chuva",
     snow: "Neve", showers: "Pancadas de chuva", storm: "Tempestade", variable: "Condições variáveis",
@@ -637,6 +670,38 @@ const localizedText = {
 
 function localized(locale, key) {
   return localizedText[locale]?.[key] || localizedText.es[key] || key;
+}
+
+// Consulta anclada al lugar: la localidad entrecomillada (para que no se
+// disuelva entre los terminos OR) mas region y pais como contexto.
+function placeQuery(place = {}) {
+  const locality = String(place.locality || place.label || "").split(",")[0].trim();
+  const region = String(place.region || "").trim();
+  const country = String(place.country || "").trim();
+  const parts = [];
+  if (locality) parts.push(`"${locality}"`);
+  if (region && region.toLowerCase() !== locality.toLowerCase()) parts.push(region);
+  else if (country) parts.push(country);
+  return parts.join(" ") || String(place.label || "");
+}
+
+function normalizeForMatch(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase();
+}
+
+// Exige que el resultado mencione realmente el lugar. Sin esto se mostraba
+// cartelera de Madrid a alguien en Florida: mas vale decir "no hay nada de tu
+// zona" que presentar contenido de otro sitio como si fuera local.
+function mentionsPlace(item = {}, place = {}) {
+  const haystack = normalizeForMatch(`${item.title || ""} ${item.summary || ""} ${item.source || ""}`);
+  const candidates = [place.locality, place.label, place.region]
+    .map((value) => String(value || "").split(",")[0].trim())
+    .filter((value) => value.length >= 3);
+  if (!candidates.length) return true;
+  return candidates.some((value) => haystack.includes(normalizeForMatch(value)));
 }
 
 function rssLocale(locale) {
