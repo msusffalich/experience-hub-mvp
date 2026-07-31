@@ -28,6 +28,7 @@ await check("automatic location, weather, news and listings", verifyAutomaticCon
 await check("Apple Health through Vibeapp and Backend2", verifyAppleHealth);
 await check("multiple multimodal evidence", verifyMultimodal);
 await check("date, life-area and group filters", verifyFilters);
+await check("discoverable experience map and manual", verifyMapAndManualNavigation);
 await check("localized printable manual", verifyManual);
 await check("VibePWA2 is the public product entry point", verifyProductEntryPoint);
 
@@ -66,7 +67,7 @@ async function verifyLanguageParity() {
   }
   for (const key of [
     "agenda", "agendaTitle", "contextTitle", "healthContext", "currentNews",
-    "entertainment", "groups", "from", "to", "activity", "manual",
+    "entertainment", "groups", "from", "to", "activity", "manual", "map", "experienceMap",
   ]) {
     assert.ok(baseline.includes(key), `Shared translation key ${key} is missing`);
   }
@@ -79,7 +80,20 @@ function verifyAgenda() {
   assert.match(files.app, /state\.data\.agenda/);
   assert.match(files.api, /\["agenda",\s*"\/api\/v2\/agenda"/);
   assert.match(files.routes, /router\.add\("GET",\s*"\/api\/v2\/agenda"/);
-  assert.match(files.app, /\["stories",\s*"evidence",\s*"agenda",\s*"intelligence",\s*"publish",\s*"account"\]/);
+  assert.match(files.app, /\["stories",\s*"evidence",\s*"agenda",\s*"intelligence",\s*"map",\s*"publish",\s*"account"\]/);
+}
+
+function verifyMapAndManualNavigation() {
+  assert.match(files.app, /\["map",\s*"map"\]/);
+  assert.match(files.app, /state\.route === "map"\)\s*return mapView\(\)/);
+  assert.match(files.app, /function mapView\(\)/);
+  assert.match(files.app, /manualNavLink\(\)/);
+  assert.match(files.app, /manualNavLink\(true\)/);
+  assert.match(files.app, /href="\.\/manual\.html"/);
+  assert.match(files.app, /request\("\/api\/v2\/obsidian\/preview"\)/);
+  assert.match(files.app, /request\("\/api\/v2\/obsidian\/export"/);
+  assert.match(files.routes, /router\.add\("GET",\s*"\/api\/v2\/obsidian\/preview"/);
+  assert.match(files.routes, /router\.add\("POST",\s*"\/api\/v2\/obsidian\/export"/);
 }
 
 async function verifyAutomaticContext() {

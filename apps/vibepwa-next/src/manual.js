@@ -242,6 +242,14 @@ const copies = {
         lead: "Obsidian permite explorar relaciones, aprendizajes y tendencias a partir de historias ya confirmadas.",
         sections: [
           {
+            title: "Dónde encontrarlo",
+            steps: [
+              "Abre la pestaña Mapa en la navegación principal de VibePWA.",
+              "Revisa personas, historias, evidencia y el estado de la vista estructurada.",
+              "Pulsa Actualizar mapa para comprobar la vista o Enviar a Obsidian para escribirla en la bóveda configurada.",
+            ],
+          },
+          {
             title: "Qué se exporta",
             paragraphs: [
               "Vibe envía notas de experiencias, eventos relevantes y referencias a activos. Biometría, ubicación y clima enriquecen las notas por tiempo, pero no se convierten en experiencias separadas.",
@@ -620,6 +628,14 @@ const copies = {
         title: "Experience map and Obsidian",
         lead: "Obsidian explores relationships, lessons, and trends from confirmed stories.",
         sections: [
+          {
+            title: "Where to find it",
+            steps: [
+              "Open the Map tab in VibePWA's main navigation.",
+              "Review people, stories, evidence, and the structured-view status.",
+              "Select Refresh map to check the view or Send to Obsidian to write it to the configured vault.",
+            ],
+          },
           {
             title: "What is exported",
             paragraphs: [
@@ -1000,6 +1016,14 @@ const copies = {
         lead: "Obsidian permet d'explorer relations, apprentissages et tendances issus d'histoires confirmées.",
         sections: [
           {
+            title: "Où le trouver",
+            steps: [
+              "Ouvrez l'onglet Carte dans la navigation principale de VibePWA.",
+              "Consultez les personnes, les récits, les preuves et l'état de la vue structurée.",
+              "Sélectionnez Actualiser la carte pour vérifier la vue ou Envoyer vers Obsidian pour l'écrire dans le coffre configuré.",
+            ],
+          },
+          {
             title: "Ce qui est exporté",
             paragraphs: [
               "Vibe envoie des notes d'expériences, des événements significatifs et des références d'actifs. Biométrie, lieu et météo enrichissent les notes dans le temps sans devenir des expériences séparées.",
@@ -1378,6 +1402,14 @@ const copies = {
         title: "Mapa de experiências e Obsidian",
         lead: "O Obsidian permite explorar relações, aprendizados e tendências a partir de histórias confirmadas.",
         sections: [
+          {
+            title: "Onde encontrar",
+            steps: [
+              "Abra a aba Mapa na navegação principal do VibePWA.",
+              "Revise pessoas, histórias, evidências e o estado da visão estruturada.",
+              "Selecione Atualizar mapa para verificar a visão ou Enviar ao Obsidian para gravá-la no cofre configurado.",
+            ],
+          },
           {
             title: "O que é exportado",
             paragraphs: [

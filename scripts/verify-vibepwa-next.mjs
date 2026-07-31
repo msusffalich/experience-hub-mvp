@@ -23,9 +23,15 @@ assert.match(files.css, /@media \(max-width: 700px\)/);
 assert.match(files.css, /\[data-theme="dark"\]/);
 assert.doesNotMatch(files.css, /letter-spacing:\s*-/);
 
-for (const route of ["home", "stories", "evidence", "intelligence", "publish", "account"]) {
+for (const route of ["home", "stories", "evidence", "agenda", "intelligence", "map", "publish", "account"]) {
   assert.match(files.app, new RegExp(`"${route}"`));
 }
+assert.match(files.app, /function mapView\(\)/);
+assert.match(files.app, /manualNavLink\(\)/);
+assert.match(files.app, /manualNavLink\(true\)/);
+assert.match(files.app, /href="\.\/manual\.html"/);
+assert.match(files.app, /request\("\/api\/v2\/obsidian\/preview"\)/);
+assert.match(files.app, /request\("\/api\/v2\/obsidian\/export"/);
 for (const language of ["es", "en", "fr", "pt"]) {
   assert.match(files.i18n, new RegExp(`\\b${language}: \\{`));
   assert.match(files.manual, new RegExp(`\\b${language}: \\{`));
@@ -38,6 +44,8 @@ for (const endpoint of [
   "/api/v2/captures/status",
   "/api/v2/context/summary",
   "/api/v2/integrations/oura/status",
+  "/api/v2/obsidian/preview",
+  "/api/v2/obsidian/export",
   "/api/v2/outputs/report/pdf",
   "/api/v2/outputs/insights/pdf",
   "/api/v2/outputs/publication/pdf",

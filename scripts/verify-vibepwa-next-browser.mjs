@@ -51,7 +51,7 @@ try {
   }
 }
 
-console.log("VibePWA 2 browser: login, seven spaces, context panels, story editor, responsive layout and theme passed.");
+console.log("VibePWA 2 browser: login, eight spaces, visible manual, experience map, context, editor, responsive layout and theme passed.");
 
 async function verifyLogin(browser) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
@@ -153,7 +153,7 @@ async function verifyProduct(browser, viewport, label) {
   await assertNoHorizontalOverflow(page, `${label}:home`);
   await page.screenshot({ path: path.join(outputDir, `${label}-home.png`), fullPage: true });
 
-  for (const route of ["stories", "evidence", "agenda", "intelligence", "publish", "account"]) {
+  for (const route of ["stories", "evidence", "agenda", "intelligence", "map", "publish", "account"]) {
     await visibleRouteButton(page, route, label).click();
     await page.waitForTimeout(50);
     assert.equal(new URL(page.url()).hash.includes(route), true, `${label}:${route}`);
@@ -165,7 +165,18 @@ async function verifyProduct(browser, viewport, label) {
       assert.equal(await page.getByText("Winter Garden, Florida", { exact: true }).isVisible(), true);
       assert.equal(await page.getByText("Festival de verano", { exact: true }).isVisible(), true);
     }
+    if (route === "map") {
+      assert.equal(await page.getByRole("heading", { name: "Mapa de experiencias", exact: true }).isVisible(), true);
+      assert.equal(await page.getByText("Vista estructurada disponible", { exact: true }).isVisible(), true);
+      assert.equal(await page.getByText("2 notas de experiencias · 2 notas de activos", { exact: true }).isVisible(), true);
+      await page.screenshot({ path: path.join(outputDir, `${label}-map.png`), fullPage: true });
+    }
   }
+
+  const manualLink = label === "mobile"
+    ? page.locator('.mobile-nav a[href="./manual.html"]')
+    : page.locator('.side-nav a[href="./manual.html"]');
+  assert.equal(await manualLink.isVisible(), true, `${label}: manual navigation must be visible`);
 
   await visibleRouteButton(page, "stories", label).click();
   await page.locator('[data-action="new-story"]').click();
@@ -217,6 +228,7 @@ async function verifyManualLanguages(browser) {
   await page.waitForLoadState("networkidle");
   assert.equal(await page.getByRole("heading", { name: "O ecossistema Vibe", exact: true }).isVisible(), true);
   await assertNoHorizontalOverflow(page, "mobile:manual");
+  await page.screenshot({ path: path.join(outputDir, "mobile-manual-pt.png"), fullPage: true });
   await context.close();
 }
 
@@ -321,6 +333,17 @@ async function installApiMocks(page) {
       },
     };
     else if (pathname === "/api/v2/integrations/oura/status") payload = { connected: false, configured: true };
+    else if (pathname === "/api/v2/obsidian/preview") payload = {
+      generatedAt: now,
+      files: [
+        { path: "02_Experiences/paseo.md", markdown: "# Paseo" },
+        { path: "02_Experiences/trabajo.md", markdown: "# Trabajo" },
+        { path: "04_Assets/lago.md", markdown: "# Lago" },
+        { path: "04_Assets/nota.md", markdown: "# Nota" },
+      ],
+      map: { path: "05_Generated/mapa.md", markdown: "# Mapa" },
+    };
+    else if (pathname === "/api/v2/obsidian/export") payload = { ok: true, count: 5 };
     else if (pathname.includes("/download")) payload = { url: "" };
     else if (pathname.startsWith("/api/v2/experiences/")) payload = experiences[0];
     else payload = { ok: true };

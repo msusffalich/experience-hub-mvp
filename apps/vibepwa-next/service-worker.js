@@ -1,4 +1,4 @@
-const CACHE = "vibe-next-20260730-2";
+const CACHE = "vibe-next-20260731-map-manual-1";
 const SHELL = [
   "./index.html",
   "./manual.html",

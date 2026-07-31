@@ -62,6 +62,8 @@ const expectedEndpointFragments = [
   "/api/v2/outputs/insights/pdf",
   "/api/v2/outputs/publication/pdf",
   "/api/v2/integrations/oura/status",
+  "/api/v2/obsidian/preview",
+  "/api/v2/obsidian/export",
 ];
 const combined = [...sources.values()].join("\n");
 for (const endpoint of expectedEndpointFragments) {
@@ -86,9 +88,12 @@ assert.doesNotMatch(
 for (const language of ["es", "en", "fr", "pt"]) {
   assert.match(i18n, new RegExp(`\\b${language}: \\{`), `Missing ${language} UI dictionary`);
 }
-for (const route of ["home", "stories", "evidence", "intelligence", "publish", "account"]) {
+for (const route of ["home", "stories", "evidence", "agenda", "intelligence", "map", "publish", "account"]) {
   assert.match(app, new RegExp(`"${route}"`), `Missing ${route} workspace`);
 }
+assert.match(app, /function mapView\(\)/, "Missing experience map workspace");
+assert.match(app, /manualNavLink\(\)/, "Manual is not visible in desktop navigation");
+assert.match(app, /manualNavLink\(true\)/, "Manual is not visible in mobile navigation");
 assert.match(html, /src\/app\.js/);
 assert.match(worker, /url\.pathname\.startsWith\("\/api\/"\)/);
 

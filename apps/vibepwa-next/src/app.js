@@ -38,6 +38,9 @@ const state = {
   filters: { search: "", area: "", group: "", from: "", to: "" },
   selectedPublicationStories: new Set(),
   contextRefreshQueued: false,
+  obsidianPreview: null,
+  obsidianPreviewLoading: false,
+  obsidianPreviewError: "",
   modal: null,
   upload: null,
 };
@@ -159,6 +162,9 @@ function render() {
   app.innerHTML = shell(viewForRoute());
   bindShellEvents();
   bindViewEvents();
+  if (state.route === "map" && !state.obsidianPreview && !state.obsidianPreviewLoading) {
+    void loadObsidianPreview();
+  }
   if (state.modal) renderModal();
 }
 
@@ -217,7 +223,8 @@ function renderLogin() {
 function shell(content) {
   const nav = [
     ["home", "home"], ["stories", "story"], ["evidence", "image"],
-    ["agenda", "calendar"], ["intelligence", "insight"], ["publish", "publish"], ["account", "user"],
+    ["agenda", "calendar"], ["intelligence", "insight"], ["map", "map"],
+    ["publish", "publish"], ["account", "user"],
   ];
   const routeTitle = t(state.route);
   const serviceOk = state.data.health?.status === "ok";
@@ -227,6 +234,7 @@ function shell(content) {
         <div class="brand"><img src="/icons/vibe-icon-192.png" alt="" /><strong>Vibe</strong></div>
         <nav class="side-nav" aria-label="Principal">
           ${nav.map(([route, symbol]) => navButton(route, symbol)).join("")}
+          ${manualNavLink()}
         </nav>
         <div class="sidebar-footer"><div class="user-line">${escapeHtml(state.session?.user?.email || "")}</div></div>
       </aside>
@@ -234,14 +242,13 @@ function shell(content) {
         <header class="topbar">
           <h1>${escapeHtml(routeTitle)}</h1>
           <div class="topbar-actions">
-            <a class="button secondary icon-only" href="./manual.html" title="${escapeAttr(t("manual"))}">${icon("file")}</a>
             <div class="sync-state"><i class="sync-dot ${serviceOk ? "" : "issue"}"></i><span>${escapeHtml(serviceOk ? t("syncReady") : t("serviceIssue"))}</span></div>
             <button id="refreshButton" class="button secondary icon-only" title="${escapeHtml(t("refresh"))}">${icon("refresh")}</button>
           </div>
         </header>
         <div class="content">${moduleIssuesBanner()}${content}</div>
       </main>
-      <nav class="mobile-nav" aria-label="Principal">${nav.map(([route, symbol]) => navButton(route, symbol, true)).join("")}</nav>
+      <nav class="mobile-nav" aria-label="Principal">${nav.map(([route, symbol]) => navButton(route, symbol, true)).join("")}${manualNavLink(true)}</nav>
     </div>`;
 }
 
@@ -256,11 +263,16 @@ function navButton(route, symbol, mobile = false) {
   return `<button class="${mobile ? "" : "nav-link "}${state.route === route ? "active" : ""}" data-route="${route}">${icon(symbol)}<span>${escapeHtml(t(route))}</span></button>`;
 }
 
+function manualNavLink(mobile = false) {
+  return `<a class="${mobile ? "" : "nav-link"}" href="./manual.html">${icon("file")}<span>${escapeHtml(t("manual"))}</span></a>`;
+}
+
 function viewForRoute() {
   if (state.route === "stories") return storiesView();
   if (state.route === "evidence") return evidenceView();
   if (state.route === "agenda") return agendaView();
   if (state.route === "intelligence") return intelligenceView();
+  if (state.route === "map") return mapView();
   if (state.route === "publish") return publishView();
   if (state.route === "account") return accountView();
   return homeView();
@@ -381,7 +393,62 @@ function intelligenceView() {
     <section class="action-grid">
       <div class="action-cell"><h3>${escapeHtml(t("report"))}</h3><p>${escapeHtml(t("reportHelp"))}</p><button class="button secondary" data-action="generate-report">${icon("download")}${escapeHtml(t("generate"))}</button></div>
       <div class="action-cell"><h3>${escapeHtml(t("findings"))}</h3><p>${escapeHtml(t("findingsHelp"))}</p><button class="button secondary" data-action="generate-findings">${icon("download")}${escapeHtml(t("generate"))}</button></div>
-      <div class="action-cell"><h3>${escapeHtml(t("knowledgeMap"))}</h3><p>${escapeHtml(t("knowledgeMapHelp"))}</p><button class="button secondary" data-action="export-obsidian">${icon("map")}${escapeHtml(t("openMap"))}</button></div>
+      <div class="action-cell"><h3>${escapeHtml(t("knowledgeMap"))}</h3><p>${escapeHtml(t("knowledgeMapHelp"))}</p><button class="button secondary" data-route="map">${icon("map")}${escapeHtml(t("openMap"))}</button></div>
+    </section>`;
+}
+
+function mapView() {
+  const stories = filteredStories();
+  const assets = allAssets();
+  const narrated = stories.filter(hasHumanNarrative).length;
+  const groups = activeGroups();
+  const kinds = ["image", "video", "audio", "document"].map((kind) => ({
+    kind,
+    count: assets.filter((asset) => assetKind(asset) === kind).length,
+  }));
+  const preview = state.obsidianPreview;
+  const experienceNotes = preview?.files?.filter((file) => file.path?.startsWith("02_Experiences/")).length || 0;
+  const assetNotes = preview?.files?.filter((file) => file.path?.startsWith("04_Assets/")).length || 0;
+  const previewState = state.obsidianPreviewLoading
+    ? t("mapChecking")
+    : state.obsidianPreviewError
+      ? t("mapNeedsAttention")
+      : preview
+        ? t("mapReady")
+        : t("mapNotChecked");
+  return `
+    <section class="page-heading">
+      <div><p class="eyebrow">${escapeHtml(t("knowledgeMap"))}</p><h2>${escapeHtml(t("experienceMap"))}</h2><p>${escapeHtml(t("experienceMapHelp"))}</p></div>
+      <div class="heading-actions"><button class="button secondary" data-action="preview-obsidian">${icon("refresh")}${escapeHtml(t("refreshMap"))}</button><button class="button" data-action="export-obsidian">${icon("download")}${escapeHtml(t("exportToObsidian"))}</button></div>
+    </section>
+    ${filterToolbar(true)}
+    <section class="metric-strip">
+      ${metric(stories.length, t("experiences"))}
+      ${metric(narrated, t("narratedStories"))}
+      ${metric(assets.length, t("evidence"))}
+      ${metric(groups.length + 1, t("peopleAndGroups"))}
+    </section>
+    <section class="map-explainer" aria-label="${escapeAttr(t("mapReadingGuide"))}">
+      <div>${icon("user")}<strong>${escapeHtml(t("peopleAndGroups"))}</strong><span>${escapeHtml(t("mapPeopleHelp"))}</span></div>
+      <i>${icon("chevron")}</i>
+      <div>${icon("story")}<strong>${escapeHtml(t("experiences"))}</strong><span>${escapeHtml(t("mapStoriesHelp"))}</span></div>
+      <i>${icon("chevron")}</i>
+      <div>${icon("image")}<strong>${escapeHtml(t("evidence"))}</strong><span>${escapeHtml(t("mapEvidenceHelp"))}</span></div>
+    </section>
+    <section class="map-layout">
+      <div class="map-column">
+        <div class="section-heading"><div><h3>${escapeHtml(t("storiesOnMap"))}</h3><p>${escapeHtml(t("storiesOnMapHelp"))}</p></div></div>
+        ${storyList(stories.slice(0, 10))}
+      </div>
+      <aside class="map-column map-summary">
+        <div class="section-heading"><div><h3>${escapeHtml(t("evidenceComposition"))}</h3><p>${escapeHtml(t("evidenceCompositionHelp"))}</p></div></div>
+        <div class="map-kind-list">${kinds.map((item) => `<div>${icon(item.kind === "audio" ? "mic" : item.kind === "video" ? "play" : item.kind === "image" ? "image" : "file")}<span>${escapeHtml(t(`kind.${item.kind}`))}</span><strong>${item.count}</strong></div>`).join("")}</div>
+        <div class="obsidian-status ${state.obsidianPreviewError ? "issue" : ""}">
+          <div>${icon(state.obsidianPreviewError ? "warning" : "map")}<span><strong>${escapeHtml(t("obsidianConnection"))}</strong><small>${escapeHtml(previewState)}</small></span></div>
+          ${preview ? `<p>${experienceNotes} ${escapeHtml(t("experienceNotes"))} · ${assetNotes} ${escapeHtml(t("assetNotes"))}</p>` : ""}
+          ${state.obsidianPreviewError ? `<p>${escapeHtml(state.obsidianPreviewError)}</p>` : ""}
+        </div>
+      </aside>
     </section>`;
 }
 
@@ -632,6 +699,7 @@ function bindViewEvents() {
   document.querySelector("[data-action='generate-report']")?.addEventListener("click", () => generatePdf("report"));
   document.querySelector("[data-action='generate-findings']")?.addEventListener("click", () => generatePdf("findings"));
   document.querySelector("[data-action='generate-publication']")?.addEventListener("click", generatePublication);
+  document.querySelector("[data-action='preview-obsidian']")?.addEventListener("click", loadObsidianPreview);
   document.querySelector("[data-action='export-obsidian']")?.addEventListener("click", exportObsidian);
   document.getElementById("groupForm")?.addEventListener("submit", saveGroup);
   document.querySelectorAll("[data-group-deactivate]").forEach((button) => {
@@ -673,11 +741,29 @@ async function exportObsidian() {
   if (button) button.disabled = true;
   try {
     const result = await request("/api/v2/obsidian/export", { method: "POST" });
-    toast(`${t("generated")} ${Number(result.count || 0)}`);
+    state.obsidianPreview = await request("/api/v2/obsidian/preview");
+    state.obsidianPreviewError = "";
+    toast(`${t("obsidianExportComplete")} ${Number(result.count || 0)} ${t("files")}.`);
   } catch (error) {
     toast(error.message, true);
   } finally {
     if (button) button.disabled = false;
+  }
+}
+
+async function loadObsidianPreview() {
+  if (state.obsidianPreviewLoading) return;
+  state.obsidianPreviewLoading = true;
+  state.obsidianPreviewError = "";
+  render();
+  try {
+    state.obsidianPreview = await request("/api/v2/obsidian/preview");
+  } catch (error) {
+    state.obsidianPreview = null;
+    state.obsidianPreviewError = error.message;
+  } finally {
+    state.obsidianPreviewLoading = false;
+    render();
   }
 }
 
@@ -1636,7 +1722,7 @@ function hasHumanNarrative(story) {
 
 function routeFromHash() {
   const value = window.location.hash.replace(/^#\/?/, "");
-  return ["stories", "evidence", "agenda", "intelligence", "publish", "account"].includes(value) ? value : "home";
+  return ["stories", "evidence", "agenda", "intelligence", "map", "publish", "account"].includes(value) ? value : "home";
 }
 
 function normalizeLanguage(value) {
