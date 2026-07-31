@@ -332,19 +332,47 @@ export function createContextEnrichmentService({
       fr: "cinema OR theatre OR concert OR festival OR spectacles OR evenements",
       pt: "cinema OR teatro OR concerto OR festival OR espetaculos OR eventos",
     };
-    const query = `${placeQuery(place)} (${terms[locale] || terms.es}) when:7d`;
-    const items = (await fetchRss(query, locale, 20))
-      .filter((item) => isRecent(item.publishedAt, 168))
-      // Sin este filtro se mostraba cartelera de Madrid a alguien en Florida:
-      // los terminos genericos ("cine OR teatro OR festival") pesaban mas que
-      // la localidad y Google News devolvia cultura del idioma, no del lugar.
-      .filter((item) => mentionsPlace(item, place))
-      .slice(0, 10);
+    const categoryTerms = terms[locale] || terms.es;
+    const locality = String(place.locality || "").split(",")[0].trim();
+    const region = String(place.region || "").trim();
+    const country = String(place.country || "").trim();
+
+    // Busqueda ESCALONADA. Exigir que la nota mencione la localidad evita
+    // mostrar cartelera de Madrid a alguien en Florida, pero en un municipio
+    // pequeno (Winter Garden) deja la seccion vacia, que no le sirve a nadie.
+    // Se amplia a la region y luego al pais, y se DEVUELVE el ambito usado para
+    // que la interfaz diga de donde es lo que muestra en vez de fingir que es
+    // de tu ciudad.
+    const tiers = [
+      locality && { scope: "locality", anchor: `"${locality}" ${region}`.trim(), match: { locality, region: "" } },
+      region && { scope: "region", anchor: `"${region}"`, match: { locality: region, region: "" } },
+      country && { scope: "country", anchor: `"${country}"`, match: { locality: country, region: "" } },
+    ].filter(Boolean);
+
+    for (const tier of tiers) {
+      const query = `${tier.anchor} (${categoryTerms}) when:7d`;
+      const items = (await fetchRss(query, locale, 20))
+        .filter((item) => isRecent(item.publishedAt, 168))
+        .filter((item) => mentionsPlace(item, tier.match))
+        .slice(0, 10);
+      if (items.length) {
+        return {
+          status: "available",
+          scope: tier.scope,
+          scopeLabel: tier.scope === "locality" ? locality : tier.scope === "region" ? region : country,
+          source: "Google News RSS",
+          freshnessHours: 168,
+          items,
+        };
+      }
+    }
     return {
-      status: items.length ? "available" : "no_recent_items",
+      status: "no_recent_items",
+      scope: "",
+      scopeLabel: "",
       source: "Google News RSS",
       freshnessHours: 168,
-      items,
+      items: [],
     };
   }
 

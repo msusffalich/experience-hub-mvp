@@ -589,6 +589,9 @@ function contextOverview(compact = false) {
       <article class="context-card">
         <div class="context-card-head">${icon("calendar")}<span>${escapeHtml(t("entertainment"))}</span></div>
         ${entertainmentItems.length ? headlineList(entertainmentItems, 3) : `<p>${escapeHtml(t("noEntertainment"))}</p>`}
+        ${entertainmentItems.length && entertainment.scope && entertainment.scope !== "locality"
+          ? `<p class="source-line">${escapeHtml(t("entertainmentWiderScope"))} ${escapeHtml(entertainment.scopeLabel || "")}</p>`
+          : ""}
       </article>
     </div>
   </section>`;
