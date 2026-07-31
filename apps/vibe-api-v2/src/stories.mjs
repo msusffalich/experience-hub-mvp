@@ -249,12 +249,25 @@ export function createStoryService({ supabase, workspace, config }) {
     }
     if (!row) throw new ApiError(404, "asset_not_found");
     if (!row.storage_path) throw new ApiError(409, "asset_binary_unavailable");
-    const signed = await supabase.storageSignDownload(
-      row.storage_bucket || config.storageBucket,
-      row.storage_path,
-      900,
-      { accessToken: auth.accessToken },
-    );
+    // La propiedad YA quedo verificada arriba (la consulta filtra por
+    // owner_user_id), asi que si la firma con el token del usuario no sale
+    // —tipicamente porque las politicas RLS de storage.objects no habilitan la
+    // lectura al rol authenticated— se reintenta con la clave de servicio.
+    // Sin esto, /assets/:id/download devolvia 502 y las miniaturas nunca
+    // cargaban: solo se veian los iconos.
+    const bucket = row.storage_bucket || config.storageBucket;
+    let signed;
+    try {
+      signed = await supabase.storageSignDownload(bucket, row.storage_path, 900, {
+        accessToken: auth.accessToken,
+      });
+    } catch (error) {
+      signed = await supabase.storageSignDownload(bucket, row.storage_path, 900, {
+        auth: "service",
+      }).catch(() => {
+        throw error;
+      });
+    }
     const raw = String(signed.signedURL || signed.signedUrl || signed.url || "");
     return {
       ok: true,

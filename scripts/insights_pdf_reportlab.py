@@ -49,8 +49,42 @@ def register_pdf_fonts():
 FONT_REGULAR, FONT_BOLD = register_pdf_fonts()
 
 
+def text_of(value, limit=600):
+    """Convierte cualquier valor en texto legible y ACOTADO.
+
+    Antes se hacia str(value), asi que una lista de diccionarios se renderizaba
+    como su repr de Python y generaba una celda de 475.825 puntos de alto:
+    ReportLab lanzaba LayoutError y no se producia ningun PDF de hallazgos.
+    """
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        text = value
+    elif isinstance(value, bool):
+        text = "si" if value else "no"
+    elif isinstance(value, (int, float)):
+        text = str(value)
+    elif isinstance(value, dict):
+        text = str(value.get("title") or value.get("name") or value.get("label")
+                   or value.get("text") or value.get("summary") or "")
+        if not text:
+            text = ", ".join(f"{k}: {text_of(v, 60)}" for k, v in list(value.items())[:4])
+    elif isinstance(value, (list, tuple, set)):
+        items = list(value)
+        parts = [text_of(item, 120) for item in items[:6]]
+        text = " \u00b7 ".join(p for p in parts if p)
+        if len(items) > 6:
+            text += f" (+{len(items) - 6})"
+    else:
+        text = str(value)
+    text = text.replace("\n", " ").replace("\r", " ")
+    if len(text) > limit:
+        text = text[:limit].rstrip() + "\u2026"
+    return text
+
+
 def clean(value):
-    text = str(value or "").replace("\n", " ").replace("\r", " ")
+    text = text_of(value)
     if any(marker in text for marker in (chr(0x00C3), chr(0x00C2), chr(0xFFFD))):
         try:
             text = text.encode("latin1").decode("utf-8")
@@ -127,7 +161,7 @@ STYLES = styles()
 
 
 def para(text, style="Bodyx"):
-    return Paragraph(escape(polish(text)), STYLES[style])
+    return Paragraph(escape(polish(text_of(text, 3000))), STYLES[style])
 
 
 def draw_logo(canvas, x, y, width=1.25 * inch):
@@ -399,7 +433,7 @@ class Waffle(Flowable):
 
 def metric_grid(items):
     columns = min(4, max(1, len(items)))
-    cells = [[para(str(value), "Metric"), para(label, "MetricLabel")] for label, value in items]
+    cells = [[para(value, "Metric"), para(label, "MetricLabel")] for label, value in items]
     rows = []
     for index in range(0, len(cells), columns):
         row = cells[index : index + columns]

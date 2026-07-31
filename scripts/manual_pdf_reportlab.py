@@ -23,6 +23,40 @@ MUTED = colors.HexColor("#526273")
 LOGO_PATH = Path(__file__).resolve().parents[1] / "icons" / "vibe-logo-pdf.png"
 
 
+def text_of(value, limit=600):
+    """Convierte cualquier valor en texto legible y ACOTADO.
+
+    Antes se hacia str(value), asi que una lista de diccionarios se renderizaba
+    como su repr de Python y generaba una celda de 475.825 puntos de alto:
+    ReportLab lanzaba LayoutError y no se producia ningun PDF de hallazgos.
+    """
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        text = value
+    elif isinstance(value, bool):
+        text = "si" if value else "no"
+    elif isinstance(value, (int, float)):
+        text = str(value)
+    elif isinstance(value, dict):
+        text = str(value.get("title") or value.get("name") or value.get("label")
+                   or value.get("text") or value.get("summary") or "")
+        if not text:
+            text = ", ".join(f"{k}: {text_of(v, 60)}" for k, v in list(value.items())[:4])
+    elif isinstance(value, (list, tuple, set)):
+        items = list(value)
+        parts = [text_of(item, 120) for item in items[:6]]
+        text = " \u00b7 ".join(p for p in parts if p)
+        if len(items) > 6:
+            text += f" (+{len(items) - 6})"
+    else:
+        text = str(value)
+    text = text.replace("\n", " ").replace("\r", " ")
+    if len(text) > limit:
+        text = text[:limit].rstrip() + "\u2026"
+    return text
+
+
 def clean(value):
     return " ".join(str(value or "").replace("\n", " ").replace("\r", " ").split())
 

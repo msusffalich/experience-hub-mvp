@@ -209,12 +209,23 @@ export function createCaptureService({ supabase, workspace, config }) {
     const record = await getCapture(captureId, auth);
     if (!record) throw new ApiError(404, "capture_not_found");
     if (!record.storage_path) throw new ApiError(409, "capture_binary_unavailable");
-    const signed = await supabase.storageSignDownload(
-      record.storage_bucket || config.storageBucket,
-      record.storage_path,
-      900,
-      { accessToken: auth.accessToken },
-    );
+    // getCapture ya acota por propietario, asi que la autorizacion esta hecha.
+    // Si la firma con el token del usuario falla (politicas RLS de
+    // storage.objects que no habilitan al rol authenticated), se reintenta con
+    // la clave de servicio en vez de devolver 502.
+    const bucket = record.storage_bucket || config.storageBucket;
+    let signed;
+    try {
+      signed = await supabase.storageSignDownload(bucket, record.storage_path, 900, {
+        accessToken: auth.accessToken,
+      });
+    } catch (error) {
+      signed = await supabase.storageSignDownload(bucket, record.storage_path, 900, {
+        auth: "service",
+      }).catch(() => {
+        throw error;
+      });
+    }
     const raw = String(signed.signedURL || signed.signedUrl || signed.url || "");
     const url = /^https?:\/\//i.test(raw)
       ? raw
