@@ -221,11 +221,17 @@ export function createContextEnrichmentService({
     let locality = "";
     let region = "";
     let country = "";
-    if (!resolvedLabel) {
-      const reverse = await reverseGeocode(coordinates, locale);
-      locality = reverse.locality;
-      region = reverse.region;
-      country = reverse.country;
+    // Las COORDENADAS mandan. Antes el geocodificado inverso solo corria si no
+    // habia etiqueta de texto, asi que una etiqueta vieja o generica (guardada
+    // en un payload anterior) se imponia sobre el GPS real y el clima, las
+    // noticias y la cartelera se calculaban para otra ciudad.
+    // Ahora siempre se resuelve la ciudad desde las coordenadas; la etiqueta
+    // solo se conserva si el inverso no devuelve nada.
+    const reverse = await reverseGeocode(coordinates, locale);
+    if (reverse?.locality || reverse?.region || reverse?.country) {
+      locality = reverse.locality || "";
+      region = reverse.region || "";
+      country = reverse.country || "";
       resolvedLabel = [locality, region, country].filter(Boolean).join(", ");
     }
     return {

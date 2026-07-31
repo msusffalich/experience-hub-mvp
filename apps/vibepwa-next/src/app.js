@@ -817,15 +817,56 @@ async function exportObsidian() {
   const button = document.querySelector("[data-action='export-obsidian']");
   if (button) button.disabled = true;
   try {
-    const result = await request("/api/v2/obsidian/export", { method: "POST" });
-    state.obsidianPreview = await request("/api/v2/obsidian/preview");
-    state.obsidianPreviewError = "";
-    toast(`${t("obsidianExportComplete")} ${Number(result.count || 0)} ${t("files")}.`);
+    let serverExported = false;
+    try {
+      const result = await request("/api/v2/obsidian/export", { method: "POST" });
+      serverExported = true;
+      toast(`${t("obsidianExportComplete")} ${Number(result.count || 0)} ${t("files")}.`);
+    } catch (error) {
+      // La boveda del servidor vive en el contenedor de Railway, NO en el disco
+      // del usuario: si no esta configurada (o no existe), escribir ahi no
+      // serviria de nada. En ese caso se descarga el paquete Markdown para
+      // descomprimirlo sobre la boveda real.
+      if (!isObsidianVaultUnavailable(error)) throw error;
+      await downloadObsidianBundle();
+    }
+    try {
+      state.obsidianPreview = await request("/api/v2/obsidian/preview");
+      state.obsidianPreviewError = "";
+    } catch (previewError) {
+      // Un fallo al refrescar la vista previa NO invalida una exportacion que
+      // si ocurrio: antes se mostraba un toast rojo enganoso.
+      state.obsidianPreviewError = previewError.message;
+      if (!serverExported) throw previewError;
+    }
+    render();
   } catch (error) {
     toast(error.message, true);
   } finally {
     if (button) button.disabled = false;
   }
+}
+
+function isObsidianVaultUnavailable(error) {
+  const text = String(error?.message || "").toLowerCase();
+  return text.includes("obsidian_vault_not_configured")
+    || text.includes("obsidian_vault_marker_missing")
+    || text.includes("enoent");
+}
+
+// Descarga todas las notas como ZIP, con la misma estructura de carpetas de la
+// boveda (02_Experiences/, 04_Assets/, 05_Generated/), para descomprimir encima.
+async function downloadObsidianBundle() {
+  const bundle = await request("/api/v2/obsidian/preview");
+  const files = [...(bundle.files || []), ...(bundle.map ? [bundle.map] : [])]
+    .filter((file) => file && file.path && typeof file.markdown === "string");
+  if (!files.length) throw new Error(t("obsidianExportEmpty"));
+  const entries = files.map((file) => ({
+    name: file.path,
+    blob: new Blob([file.markdown], { type: "text/markdown;charset=utf-8" }),
+  }));
+  downloadBlob(await createZip(entries), "boveda-vibe-obsidian.zip");
+  toast(`${t("obsidianExportDownloaded")} ${files.length} ${t("files")}.`);
 }
 
 async function loadObsidianPreview() {
@@ -1418,7 +1459,12 @@ async function hydrateAssetPreviews(root = document) {
           result = await request(`/api/v2/captures/${encodeURIComponent(asset.captureId)}/download`);
         }
         url = result.url || result.signedUrl || "";
-      } catch {
+      } catch (error) {
+        // No se puede firmar la URL: se deja el icono, pero se registra el
+        // motivo. Antes el catch vacio hacia indistinguible "es un documento"
+        // de "no se pudo cargar la evidencia".
+        node.dataset.previewError = String(error?.message || error || "preview_failed");
+        console.warn("asset_preview_failed", asset.id, error);
         return;
       }
     }
@@ -1804,11 +1850,28 @@ function assetFallback(asset) {
   return icon(kind === "audio" ? "mic" : kind === "video" ? "play" : kind === "image" ? "image" : "file");
 }
 
-function assetKind(asset) {
-  const value = String(asset.payloadType || asset.evidenceType || asset.kind || asset.type || "").toLowerCase();
-  if (value.includes("image")) return "image";
-  if (value.includes("audio")) return "audio";
+// El encadenado `||` se quedaba con el PRIMER campo con valor (p. ej.
+// payloadType "evidence") y nunca llegaba a `type`, que es donde viaja el MIME
+// real (`row.mime_type`). Resultado: toda foto se clasificaba como "document" y
+// nunca se le pintaba miniatura. Se miran TODOS los campos, mas la extension.
+function assetKind(asset = {}) {
+  const value = [
+    asset.payloadType,
+    asset.evidenceType,
+    asset.kind,
+    asset.type,
+    asset.mimeType,
+    asset.mime_type,
+    asset.contentType,
+  ].filter(Boolean).join(" ").toLowerCase();
+  if (value.includes("image") || value.includes("photo") || value.includes("foto")) return "image";
+  if (value.includes("audio") || value.includes("voice")) return "audio";
   if (value.includes("video")) return "video";
+  const name = String(asset.filename || asset.name || asset.path || asset.storagePath || "").toLowerCase();
+  const extension = name.includes(".") ? name.slice(name.lastIndexOf(".") + 1) : "";
+  if (["jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "bmp", "avif"].includes(extension)) return "image";
+  if (["mp4", "mov", "m4v", "webm", "avi", "mkv"].includes(extension)) return "video";
+  if (["mp3", "m4a", "wav", "aac", "ogg", "opus", "caf"].includes(extension)) return "audio";
   return "document";
 }
 

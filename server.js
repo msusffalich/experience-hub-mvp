@@ -10148,10 +10148,13 @@ async function analyzeAppleHealthZip(media = {}, existingBytes = null) {
   // Un export real de Apple Health trae cientos de miles de <Record>. Antes se
   // cortaba a 50.000 EN SILENCIO y se presentaban como import completo el
   // recuento, los totales y el rango de fechas de una muestra parcial.
-  const APPLE_HEALTH_ROW_LIMIT = 50000;
-  const allRows = extractAppleHealthXmlRowsServer(xml);
-  const rows = allRows.slice(0, APPLE_HEALTH_ROW_LIMIT);
-  const truncated = allRows.length > APPLE_HEALTH_ROW_LIMIT;
+  // CAUSA REAL de "solo capta BPM": el corte tomaba los PRIMEROS 50.000
+  // registros en orden de fichero, y el export de Apple Health viene agrupado
+  // por tipo. Los primeros decenas de miles son de frecuencia cardiaca, asi que
+  // pasos, sueno y energia no llegaban a procesarse nunca.
+  // La agregacion es solo aritmetica sobre filas YA parseadas en memoria: se
+  // hace sobre TODAS. El limite se aplica unicamente a la muestra que se envia.
+  const rows = extractAppleHealthXmlRowsServer(xml);
   const metricNames = detectServerBiometricMetricNames(rows);
   const metrics = aggregateServerBiometricRows(rows);
   const dates = rows
@@ -10188,15 +10191,12 @@ async function analyzeAppleHealthZip(media = {}, existingBytes = null) {
     metrics.sleepMinutes ? `Sueno registrado: ${(metrics.sleepMinutes / 60).toFixed(1)} horas.` : "",
   ].filter(Boolean).join(" ");
   return {
-    status: truncated ? "partial" : (rows.length ? "ok" : "empty"),
-    truncated,
-    totalRecords: allRows.length,
+    status: rows.length ? "ok" : "empty",
+    totalRecords: rows.length,
     processedRecords: rows.length,
     method: "server-apple-health-zip-extraction",
     provider: "local-server",
-    text: truncated
-      ? `${text} Importacion PARCIAL: se procesaron ${rows.length} de ${allRows.length} registros.`
-      : text,
+    text,
     characters: text.length,
     biometricImport,
     structuredContext: {
@@ -10280,17 +10280,38 @@ function classifyServerBiometricType(row = {}) {
   return "other";
 }
 
+// Devuelve null (no 0) cuando no hay valor numerico: un 0 medido de verdad y un
+// dato no parseable no pueden ser lo mismo.
 function getServerBiometricNumericValue(row = {}) {
-  const value = Number(String(row.value ?? "").replace(",", ".").replace(/[^\d.-]/g, ""));
-  return Number.isFinite(value) ? value : 0;
+  const raw = String(row.value ?? "").replace(",", ".").replace(/[^\d.-]/g, "").trim();
+  if (!raw) return null;
+  const value = Number(raw);
+  return Number.isFinite(value) ? value : null;
+}
+
+// Los registros de sueno de Apple Health son de categoria
+// (HKCategoryValueSleepAnalysisAsleepCore...): NO llevan value numerico, llevan
+// la duracion implicita entre startDate y endDate. Por eso el sueno nunca se
+// calculaba. Se derivan los minutos del intervalo.
+function getServerBiometricDurationMinutes(row = {}) {
+  const start = new Date(row.startDate || row.start || row.date || "");
+  const end = new Date(row.endDate || row.end || "");
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
+  const minutes = (end.getTime() - start.getTime()) / 60000;
+  return minutes > 0 && minutes < 24 * 60 ? minutes : null;
 }
 
 function aggregateServerBiometricRows(rows = []) {
   const grouped = rows.reduce((acc, row) => {
     const type = classifyServerBiometricType(row);
-    const value = getServerBiometricNumericValue(row);
+    // El sueno viene como categoria sin valor numerico: se mide por duracion.
+    const value = type === "sleep"
+      ? (getServerBiometricNumericValue(row) ?? getServerBiometricDurationMinutes(row))
+      : getServerBiometricNumericValue(row);
     if (!acc[type]) acc[type] = [];
-    if (value) acc[type].push(value);
+    // `if (value)` descartaba tambien los ceros reales (p. ej. 0 pasos en una
+    // hora). Solo se descarta la ausencia de dato.
+    if (value !== null && value !== undefined) acc[type].push(value);
     return acc;
   }, {});
   const sum = (items = []) => items.reduce((total, value) => total + value, 0);

@@ -31,7 +31,13 @@ function runPython(command, script, payload) {
     const child = spawn(command, [script], {
       cwd: ROOT,
       windowsHide: true,
-      env: process.env,
+      // Sin PYTHONPATH no se encuentra reportlab: las dependencias se instalan
+      // con `pip --target ./.python` (ver scripts/install-python-deps.mjs), no
+      // en el site-packages del sistema.
+      env: {
+        ...process.env,
+        PYTHONPATH: [path.join(ROOT, ".python"), process.env.PYTHONPATH].filter(Boolean).join(path.delimiter),
+      },
       stdio: ["pipe", "pipe", "pipe"],
     });
     const output = [];
@@ -68,6 +74,12 @@ function runPython(command, script, payload) {
         return;
       }
       resolve(Buffer.concat(output));
+    });
+    // Sin listener, un EPIPE sobre el stdin destruido tumba el proceso Node en
+    // vez de devolver un error controlado.
+    child.stdin.on("error", (error) => {
+      clearTimeout(timeout);
+      reject(new ApiError(503, "pdf_runtime_unavailable", error?.message || "stdin_failed"));
     });
     child.stdin.end(JSON.stringify(payload || {}));
   });

@@ -59,7 +59,19 @@ export async function createZip(entries = []) {
   return new Blob([...localParts, ...centralParts, end.buffer], { type: "application/zip" });
 }
 
+// Conserva la estructura de carpetas: el ZIP usa "/" como separador y el
+// paquete de Obsidian depende de ella (02_Experiences/, 04_Assets/,
+// 05_Generated/). Antes "/" se sustituia por "-" y el archivo salia plano.
+// Se sanea cada segmento por separado y se descartan los saltos de directorio.
 function sanitize(value) {
+  const segments = String(value || "archivo")
+    .split(/[/\\]+/)
+    .map((segment) => sanitizeSegment(segment))
+    .filter((segment) => segment && segment !== "." && segment !== "..");
+  return segments.join("/") || "archivo";
+}
+
+function sanitizeSegment(value) {
   return String(value || "archivo")
     .normalize("NFKC")
     .replace(/[<>:"/\\|?*\u0000-\u001f]/g, "-")
