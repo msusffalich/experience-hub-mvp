@@ -58,15 +58,28 @@ export async function request(path, options = {}) {
     window.dispatchEvent(new CustomEvent("vibe:session-expired"));
   }
   if (!response.ok) {
+    // El encadenado `||` se quedaba con `message` y DESCARTABA `detail`, que es
+    // justo donde el servidor manda la causa real (por ejemplo el stderr de
+    // Python al generar un PDF). El usuario solo veia "No se pudo generar el
+    // PDF" y no habia nada que reportar. Ahora se compone todo.
     let detail = "";
+    let code = "";
+    let extra = "";
     try {
       const payload = await response.json();
-      detail = payload.message || payload.detail || payload.error || "";
+      code = String(payload.error || payload.code || "");
+      detail = String(payload.message || "");
+      // El servidor v2 lo emite como `details` (plural); el legacy como `detail`.
+      const raw = payload.details ?? payload.detail ?? "";
+      extra = typeof raw === "string" ? raw : JSON.stringify(raw);
     } catch {
       detail = await response.text();
     }
-    const error = new Error(detail || `HTTP ${response.status}`);
+    const parts = [detail || code, extra && extra !== detail ? `(${extra})` : ""].filter(Boolean);
+    const error = new Error(parts.join(" ") || `HTTP ${response.status}`);
     error.status = response.status;
+    error.code = code;
+    error.detail = extra;
     throw error;
   }
   if (options.responseType === "blob") return response.blob();
