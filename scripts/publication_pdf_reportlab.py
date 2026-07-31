@@ -213,8 +213,8 @@ def hero(title, subtitle):
 
 def card(title, body, width=None):
     width = width or (PAGE_WIDTH - 2 * MARGIN)
-    t = Table([[para(title, "H2x")], [para(body, "Bodyx")]], colWidths=[width])
-    t.setStyle(TableStyle([
+    table = Table([[para(title, "H2x")], [para(body, "Bodyx")]], colWidths=[width])
+    table.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, -1), colors.white),
         ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#fbf6ed")),
         ("BOX", (0, 0), (-1, -1), 0.6, LINE),
@@ -223,7 +223,7 @@ def card(title, body, width=None):
         ("TOPPADDING", (0, 0), (-1, -1), 9),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 9),
     ]))
-    return t
+    return table
 
 
 class PublicationDashboard(Flowable):
@@ -379,8 +379,8 @@ def paragraph_block(title, text, width=None, max_parts=5, part_limit=420):
         if part.startswith("- "):
             continue
         rows.append([para(short(part, part_limit), "Bodyx")])
-    t = Table(rows, colWidths=[width])
-    t.setStyle(TableStyle([
+    table = Table(rows, colWidths=[width])
+    table.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, -1), colors.white),
         ("BOX", (0, 0), (-1, -1), 0.6, LINE),
         ("LEFTPADDING", (0, 0), (-1, -1), 12),
@@ -388,7 +388,7 @@ def paragraph_block(title, text, width=None, max_parts=5, part_limit=420):
         ("TOPPADDING", (0, 0), (-1, -1), 8),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
     ]))
-    return t
+    return table
 
 
 def section_heading(title, subtitle=""):

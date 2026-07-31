@@ -483,8 +483,8 @@ def card(title, body, meta=None, width=None, body_limit=210):
     data = [[para(title, "H2x")], [para(short(body, body_limit), "Bodyx")]]
     if meta:
         data.append([para(short(meta, 90), "Small")])
-    t = Table(data, colWidths=[width], hAlign="LEFT")
-    t.setStyle(TableStyle([
+    table = Table(data, colWidths=[width], hAlign="LEFT")
+    table.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, -1), colors.white),
         ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#f3f8fa")),
         ("BOX", (0, 0), (-1, -1), 0.7, LINE),
@@ -494,7 +494,7 @@ def card(title, body, meta=None, width=None, body_limit=210):
         ("TOPPADDING", (0, 0), (-1, -1), 8),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
     ]))
-    return t
+    return table
 
 
 def two_column_cards(items):
@@ -507,15 +507,15 @@ def two_column_cards(items):
         while len(row) < 2:
             row.append("")
         rows.append(row)
-    t = Table(rows, colWidths=[card_width] * 2)
-    t.setStyle(TableStyle([
+    table = Table(rows, colWidths=[card_width] * 2)
+    table.setStyle(TableStyle([
         ("VALIGN", (0, 0), (-1, -1), "TOP"),
         ("LEFTPADDING", (0, 0), (-1, -1), 0),
         ("RIGHTPADDING", (0, 0), (-1, -1), 6),
         ("TOPPADDING", (0, 0), (-1, -1), 3),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
     ]))
-    return t
+    return table
 
 
 def bar_table(categories):
@@ -526,8 +526,8 @@ def bar_table(categories):
         bar = Table([[""]], colWidths=[2.7 * inch * width / 100], rowHeights=[0.12 * inch])
         bar.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, -1), ACCENT)]))
         rows.append([para(item.get("category", "-"), "Bodyx"), bar, para(f"{item.get('avgEnergy', 0)}/10", "Bodyx")])
-    t = Table(rows, colWidths=[1.65 * inch, 3.1 * inch, 0.8 * inch])
-    t.setStyle(TableStyle([
+    table = Table(rows, colWidths=[1.65 * inch, 3.1 * inch, 0.8 * inch])
+    table.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), SOFT),
         ("GRID", (0, 0), (-1, -1), 0.4, LINE),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
@@ -536,7 +536,7 @@ def bar_table(categories):
         ("TOPPADDING", (0, 0), (-1, -1), 5),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
     ]))
-    return t
+    return table
 
 
 def visual_dashboard(summary, rows, kpis, categories, quality):
