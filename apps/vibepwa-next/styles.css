@@ -588,3 +588,15 @@ details.operation summary { padding: 16px; font-weight: 800; cursor: pointer; }
   .news-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
   .news-image { height: 80px; }
 }
+
+/* Cartelera de cines (TMDB): poster + titulo. Sin horarios: no existen en fuentes gratuitas. */
+.movie-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+.movie-card {
+  display: block; overflow: hidden; text-decoration: none; color: inherit;
+  border: 1px solid var(--border); border-radius: 10px; background: var(--surface);
+}
+.movie-card:hover { border-color: var(--accent); }
+.movie-poster { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; display: block; }
+.movie-body { padding: 6px 8px; display: flex; align-items: baseline; gap: 6px; }
+.movie-title { margin: 0; font-size: 0.74rem; line-height: 1.25; flex: 1; }
+.movie-rating { font-size: 0.68rem; color: var(--muted); }

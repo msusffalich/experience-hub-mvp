@@ -593,6 +593,10 @@ function contextOverview(compact = false) {
           ? `<p class="source-line">${escapeHtml(t("entertainmentWiderScope"))} ${escapeHtml(entertainment.scopeLabel || "")}</p>`
           : ""}
       </article>
+      <article class="context-card">
+        <div class="context-card-head">${icon("play")}<span>${escapeHtml(t("moviesTitle"))}</span></div>
+        ${moviesBlock(briefing.movies || {})}
+      </article>
     </div>
   </section>`;
 }
@@ -609,6 +613,25 @@ const NEWS_SCOPE_ORDER = ["local", "national", "global"];
 // Noticias por categoria y ambito. Una noticia sin imagen se muestra igual: la
 // extraccion de og:image no siempre es posible (los enlaces de Google News son
 // redirecciones) y es preferible el titular sin foto a ocultar la noticia.
+// Peliculas en cartel (TMDB). No hay horarios ni sala: ninguna fuente gratuita
+// los expone, asi que se muestra QUE se puede ver, no a que hora, y se dice.
+function moviesBlock(movies = {}) {
+  const items = Array.isArray(movies.items) ? movies.items : [];
+  if (movies.status === "not_configured") return `<p>${escapeHtml(t("moviesNotConfigured"))}</p>`;
+  if (!items.length) return `<p>${escapeHtml(t("moviesEmpty"))}</p>`;
+  const cards = items.slice(0, 8).map((movie) => {
+    const poster = movie.image
+      ? `<img class="movie-poster" src="${escapeAttr(movie.image)}" alt="" loading="lazy" referrerpolicy="no-referrer" />`
+      : "";
+    const rating = movie.rating ? `<span class="movie-rating">${escapeHtml(Number(movie.rating).toFixed(1))}</span>` : "";
+    const body = `${poster}<div class="movie-body"><p class="movie-title">${escapeHtml(movie.title)}</p>${rating}</div>`;
+    return movie.link
+      ? `<a class="movie-card" href="${escapeAttr(movie.link)}" target="_blank" rel="noopener">${body}</a>`
+      : `<article class="movie-card">${body}</article>`;
+  }).join("");
+  return `<div class="movie-grid">${cards}</div><p class="source-line">${escapeHtml(t("moviesNote"))}</p>`;
+}
+
 function newsByCategory(news = {}) {
   const categories = news.categories || {};
   const blocks = NEWS_CATEGORY_ORDER.map((category) => {

@@ -136,14 +136,16 @@ export function createContextEnrichmentService({
       };
     }
 
-    const [weatherResult, newsResult, entertainmentResult] = await Promise.allSettled([
+    const [weatherResult, newsResult, entertainmentResult, moviesResult] = await Promise.allSettled([
       fetchWeather(place, locale),
       fetchNews(place, locale),
       fetchEntertainment(place, locale),
+      fetchMovies(place, locale),
     ]);
     const weather = resultOrUnavailable(weatherResult, "weather");
     const news = resultOrUnavailable(newsResult, "news");
     const entertainment = resultOrUnavailable(entertainmentResult, "entertainment");
+    const movies = resultOrUnavailable(moviesResult, "movies");
     // `status` era el literal "available": los tres proveedores podian fallar y
     // la app decia "Contexto actualizado con los datos mas recientes", ademas de
     // afirmar "impacto bajo, sin presiones externas" sobre datos inexistentes.
@@ -174,6 +176,7 @@ export function createContextEnrichmentService({
       weather,
       news,
       entertainment,
+      movies,
       impact,
       sources: {
         weather: weather.source || "Open-Meteo",
@@ -222,6 +225,7 @@ export function createContextEnrichmentService({
     let locality = "";
     let region = "";
     let country = "";
+    let countryCode = "";
     // Las COORDENADAS mandan. Antes el geocodificado inverso solo corria si no
     // habia etiqueta de texto, asi que una etiqueta vieja o generica (guardada
     // en un payload anterior) se imponia sobre el GPS real y el clima, las
@@ -233,6 +237,7 @@ export function createContextEnrichmentService({
       locality = reverse.locality || "";
       region = reverse.region || "";
       country = reverse.country || "";
+      countryCode = reverse.countryCode || "";
       resolvedLabel = [locality, region, country].filter(Boolean).join(", ");
     }
     return {
@@ -242,6 +247,7 @@ export function createContextEnrichmentService({
       locality: locality || firstText(payload.city, payload.locality, resolvedLabel.split(",")[0]),
       region: region || firstText(payload.region, payload.state),
       country: country || firstText(payload.country, payload.countryCode),
+      countryCode: countryCode || String(payload.countryCode || "").toUpperCase(),
       timezone: firstText(payload.timezone, "auto"),
     };
   }
@@ -280,6 +286,7 @@ export function createContextEnrichmentService({
         locality: firstText(payload.locality, finestAdministrative, payload.city, payload.principalSubdivision),
         region: firstText(payload.principalSubdivision),
         country: firstText(payload.countryName, payload.countryCode),
+        countryCode: String(payload.countryCode || "").toUpperCase(),
       };
     } catch {
       return { locality: "", region: "", country: "" };
@@ -323,6 +330,37 @@ export function createContextEnrichmentService({
 
   async function fetchNews(place, locale) {
     return newsService.collect(place, locale);
+  }
+
+
+  // Cartelera de CINES: peliculas actualmente en cartel en el pais del usuario,
+  // con poster. TMDB no da horarios ni sala concreta -y ninguna fuente gratuita
+  // los da-, asi que se muestra que se puede ver, no a que hora.
+  async function fetchMovies(place, locale) {
+    if (!config.tmdbApiKey) {
+      return { status: "not_configured", source: "TMDB", items: [] };
+    }
+    const region = String(place.countryCode || "").slice(0, 2).toUpperCase();
+    const url = new URL("https://api.themoviedb.org/3/movie/now_playing");
+    url.searchParams.set("api_key", config.tmdbApiKey);
+    url.searchParams.set("language", { es: "es-ES", en: "en-US", fr: "fr-FR", pt: "pt-BR" }[locale] || "es-ES");
+    if (region) url.searchParams.set("region", region);
+    const payload = await fetchJson(url);
+    const items = (payload.results || []).slice(0, 12).map((movie) => ({
+      id: movie.id,
+      title: movie.title || movie.original_title || "",
+      overview: String(movie.overview || "").slice(0, 220),
+      releaseDate: movie.release_date || "",
+      rating: Number(movie.vote_average || 0) || null,
+      image: movie.poster_path ? `https://image.tmdb.org/t/p/w342${movie.poster_path}` : "",
+      link: movie.id ? `https://www.themoviedb.org/movie/${movie.id}` : "",
+    })).filter((movie) => movie.title);
+    return {
+      status: items.length ? "available" : "no_recent_items",
+      source: "TMDB",
+      region,
+      items,
+    };
   }
 
   async function fetchEntertainment(place, locale) {

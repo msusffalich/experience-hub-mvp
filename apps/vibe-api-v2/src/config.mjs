@@ -57,6 +57,8 @@ export function loadConfig(env = process.env) {
     // ningun PDF de VibePWA 2 se podia generar. Se resuelve probando candidatos
     // reales con --version, igual que el servidor legacy.
     pythonCommand: resolvePythonCommand(env),
+    // Clave gratuita de TMDB para la cartelera de cines (peliculas en cartel).
+    tmdbApiKey: String(env.TMDB_API_KEY || "").trim(),
     obsidianVaultPath: String(env.OBSIDIAN_VAULT_PATH || "").trim(),
     ouraClientId: String(env.OURA_CLIENT_ID || "").trim(),
     ouraClientSecret: String(env.OURA_CLIENT_SECRET || "").trim(),
