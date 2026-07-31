@@ -1567,8 +1567,16 @@ async function hydrateAssetPreviews(root = document) {
         return;
       }
     }
-    if (kind === "image") node.innerHTML = `<img src="${escapeAttr(url)}" alt="" loading="lazy" />`;
-    else node.innerHTML = `<video src="${escapeAttr(url)}" preload="metadata" muted></video>`;
+    if (kind === "image") {
+      node.innerHTML = `<img src="${escapeAttr(url)}" alt="" loading="lazy" />`;
+    } else {
+      // Con preload="metadata" el navegador carga la cabecera pero NO pinta
+      // ningun fotograma: el recuadro quedaba vacio. El fragmento #t=0.1 le
+      // pide posicionarse en el primer instante, y ahi si dibuja el frame.
+      // playsinline evita que iOS abra el reproductor a pantalla completa.
+      const posterUrl = `${url}${url.includes("#") ? "" : "#t=0.1"}`;
+      node.innerHTML = `<video src="${escapeAttr(posterUrl)}" preload="metadata" muted playsinline></video>`;
+    }
     node.dataset.loaded = "1";
   }));
 }
