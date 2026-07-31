@@ -4,7 +4,7 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { gzipSync, inflateRawSync } from "node:zlib";
-import { createCipheriv, createDecipheriv, createHash, randomBytes, randomUUID } from "node:crypto";
+import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import { execFile, spawn } from "node:child_process";
 import { promisify } from "node:util";
 import { tmpdir } from "node:os";
@@ -384,8 +384,30 @@ if (process.env.NODE_ENV !== "test") {
 async function handleApi(req, res, url) {
   if (url.pathname === "/api/health" && req.method === "GET") {
     const captureStorage = getCaptureStorageHealthSnapshot();
+    // El status era el literal "ok": decia "ok" con Supabase caido, Storage roto
+    // o la cola llena de fallos. Ahora se deriva, y `degraded` explica por que.
+    // Se mantiene HTTP 200 a proposito: Railway usa /api/v2/health/live como
+    // healthcheck, pero otros consumidores tratarian un 503 como caida total.
+    const jobsSummary = getJobSummary();
+    const supabaseExpected = STORAGE_ADAPTER === "supabase";
+    // `status` mide la LIVENESS de la app y se mantiene aislado de la
+    // disponibilidad de captura: que Storage falle no significa que la
+    // aplicacion este caida (contrato "separate app health from capture
+    // readiness", verificado por verify:capture-guardian).
+    const appDegraded = [];
+    if (supabaseExpected && !isSupabaseConfigured()) appDegraded.push("supabase_not_configured");
+    if (supabaseExpected && activePersistence() !== "supabase") appDegraded.push("persistence_fallback_json");
+    // `degraded` si expone TODO lo que no funciona, incluida la captura: antes
+    // el health decia "ok" y nada revelaba que Storage estuviera roto.
+    const degraded = [...appDegraded];
+    if (captureStorage?.ok === false) degraded.push(`capture_storage_failing:${captureStorage.detail || "unknown"}`);
+    if (captureStorage?.ok === null && ["canary", "on"].includes(CAPTURE_PIPELINE_MODE)) {
+      degraded.push("capture_storage_unverified");
+    }
+    if (Number(jobsSummary?.failed || 0) > 0) degraded.push(`jobs_failed:${jobsSummary.failed}`);
     sendJson(res, 200, {
-      status: "ok",
+      status: appDegraded.length ? "degraded" : "ok",
+      degraded,
       service: "experience-hub-api",
       host: HOST,
       port: PORT,
@@ -594,8 +616,29 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  // Challenge de verificacion de suscripcion (GET): Oura devuelve el reto.
+  if (url.pathname === "/api/integration/oura/webhook" && req.method === "GET") {
+    const token = String(url.searchParams.get("verification_token") || "");
+    const challenge = String(url.searchParams.get("challenge") || "");
+    if (!OURA_WEBHOOK_SECRET || token !== OURA_WEBHOOK_SECRET || !challenge) {
+      throw new HttpError(401, "oura_webhook_verification_failed");
+    }
+    sendJson(res, 200, { challenge });
+    return;
+  }
+
   if (url.pathname === "/api/integration/oura/webhook" && req.method === "POST") {
-    const body = await readJson(req);
+    // La firma se verifica sobre el cuerpo CRUDO, antes de parsear: un JSON
+    // reserializado no reproduce el HMAC original.
+    const rawBody = await readRawBody(req, MAX_JSON_BODY_LENGTH);
+    verifyOuraWebhookSignature(rawBody, req.headers);
+    let body;
+    try {
+      const text = rawBody.toString("utf8");
+      body = text ? JSON.parse(text) : {};
+    } catch {
+      throw new HttpError(400, "invalid_json");
+    }
     sendJson(res, 202, await handleOuraWebhook(req, body));
     return;
   }
@@ -943,8 +986,10 @@ async function handleApi(req, res, url) {
   }
 
   if (url.pathname === "/api/jobs" && req.method === "GET") {
-    await getRequestUser(req);
-    sendJson(res, 200, { jobs: listJobs(), logs: await readLogs() });
+    // Antes autenticaba pero descartaba el usuario: devolvia los jobs, payloads
+    // y logs (con emails y UUIDs) de TODOS los usuarios a cualquier autenticado.
+    const user = await getRequestUser(req);
+    sendJson(res, 200, { jobs: listJobs(user), logs: await readLogs(user) });
     return;
   }
 
@@ -1034,8 +1079,11 @@ async function handleApi(req, res, url) {
   }
 
   if (url.pathname === "/api/exports/file" && req.method === "POST") {
+    // Antes era el unico endpoint de escritura sin autenticar: permitia subir
+    // un .html anonimo que luego se servia en el mismo origen que la PWA.
+    const user = await getRequestUser(req);
     const body = await readJson(req);
-    sendJson(res, 201, await saveExportFile(body));
+    sendJson(res, 201, await saveExportFile(body, user));
     return;
   }
 
@@ -1148,6 +1196,24 @@ async function loadDotEnv() {
   }
 }
 
+// Directorios y ficheros que jamas deben servirse como estaticos.
+const PRIVATE_STATIC_ROOTS = [
+  DATA_DIR,
+  path.join(__dirname, ".git"),
+  path.join(__dirname, "node_modules"),
+];
+
+function isPrivateStaticPath(filePath) {
+  const base = path.basename(filePath);
+  // .env, .env.production, etc. Se permite unicamente *.example (plantillas).
+  if ((base === ".env" || base.startsWith(".env.")) && !base.endsWith(".example")) {
+    return true;
+  }
+  return PRIVATE_STATIC_ROOTS.some(
+    (root) => filePath === root || filePath.startsWith(root + path.sep),
+  );
+}
+
 async function serveStatic(req, res, pathname) {
   if (pathname === "/applink/meta") {
     res.writeHead(200, {
@@ -1166,6 +1232,16 @@ async function serveStatic(req, res, pathname) {
   const filePath = path.join(__dirname, safePath);
 
   if (!filePath.startsWith(__dirname) || !existsSync(filePath)) {
+    sendText(res, 404, "Not found");
+    return;
+  }
+
+  // NUNCA servir por HTTP los directorios privados ni los ficheros de secretos.
+  // Antes, cualquiera sin autenticar podia leer data/experience-store.json,
+  // data/operation-log.json (con emails y PII), data/oura-oauth-store.json
+  // (tokens OAuth) o un .env desplegado. Se responde 404 para no revelar
+  // siquiera si el fichero existe.
+  if (isPrivateStaticPath(filePath)) {
     sendText(res, 404, "Not found");
     return;
   }
@@ -2397,8 +2473,35 @@ async function syncOuraApiData(body = {}, user = { id: LOCAL_USER_ID }) {
   };
 }
 
+// Verificacion REAL de la firma del webhook (HMAC-SHA256 sobre timestamp+cuerpo
+// crudo), igual que en la API v2. Antes bastaba con enviar la cabecera con
+// cualquier valor: `validated = Boolean(signature)`, sin comprobar nada.
+function verifyOuraWebhookSignature(rawBody, headers = {}) {
+  if (!OURA_CLIENT_SECRET) {
+    throw new HttpError(
+      503,
+      "oura_not_configured",
+      "Falta OURA_CLIENT_SECRET: no se puede verificar la firma del webhook.",
+    );
+  }
+  const signature = String(headers["x-oura-signature"] || headers["x-oura-webhook-signature"] || "").trim();
+  const timestamp = String(headers["x-oura-timestamp"] || "").trim();
+  if (!signature || !timestamp) {
+    throw new HttpError(401, "oura_webhook_signature_missing");
+  }
+  const expected = createHmac("sha256", OURA_CLIENT_SECRET)
+    .update(timestamp)
+    .update(rawBody)
+    .digest("hex")
+    .toUpperCase();
+  const left = Buffer.from(expected, "utf8");
+  const right = Buffer.from(signature.toUpperCase(), "utf8");
+  if (left.length !== right.length || !timingSafeEqual(left, right)) {
+    throw new HttpError(401, "oura_webhook_signature_invalid");
+  }
+}
+
 async function handleOuraWebhook(req, body = {}) {
-  const signature = req.headers["x-oura-signature"] || req.headers["x-oura-webhook-signature"] || "";
   const webhookEvents = Array.isArray(body.events)
     ? body.events
     : Array.isArray(body.data)
@@ -2406,12 +2509,10 @@ async function handleOuraWebhook(req, body = {}) {
       : body && typeof body === "object"
         ? [body]
         : [];
-  const configured = Boolean(OURA_WEBHOOK_SECRET);
-  const validated = configured ? Boolean(signature) : false;
+  // Si la ejecucion llega hasta aqui, la firma YA fue verificada en la ruta.
   const userId = String(body.userId || body.user_id || body.ownerId || LOCAL_USER_ID);
-  await appendLog(configured && !validated ? "warn" : "info", "oura_webhook_received", {
-    configured,
-    validated,
+  await appendLog("info", "oura_webhook_received", {
+    signatureVerified: true,
     userId,
     events: webhookEvents.map((event) => ({
       dataType: event.data_type || event.dataType || event.type || "",
@@ -2422,7 +2523,7 @@ async function handleOuraWebhook(req, body = {}) {
   return {
     ok: true,
     connector: "oura-api-v2",
-    status: configured && !validated ? "accepted_signature_unverified" : "accepted",
+    status: "accepted",
     receivedEvents: webhookEvents.length,
     nextAction: "El webhook quedo registrado; la sincronizacion segura ocurre por /api/integration/oura/sync o rutina oura-sync.",
   };
@@ -3297,8 +3398,13 @@ function buildExperienceFromIntegrationSignal(normalized, signal = {}, user = { 
     category: rawCategory ? normalizeCategoryName(rawCategory) : "Sin categoría",
     timestamp: normalized.capturedAt,
     duration: Number(payload.durationMinutes || signal.duration || 0),
-    mood: payload.mood || "Calmo",
+    // Sin dato de animo se deja null: "Calmo" era un estado inventado que luego
+    // se presentaba como si lo hubiera reportado la persona.
+    mood: payload.mood || null,
     energy: Number.isFinite(Number(rawEnergy)) ? clampServerNumber(rawEnergy, 1, 10) : null,
+    // Procedencia de la energia: distingue lo reportado por la persona de lo
+    // estimado por la maquina. Sin esto, Obsidian etiquetaba todo como "user".
+    energySource: Number.isFinite(Number(rawEnergy)) ? "user" : null,
     location: payload.location || signal.location || "Sin ubicación",
     people: payload.people || normalized.participantId || "Sin personas",
     notes: text || title,
@@ -3428,6 +3534,8 @@ function buildContextExperienceFromIntegrationSignal(normalized, signal = {}, us
     duration: 0,
     mood: "Observado",
     energy: inferEnergyFromIntegrationPayload(normalized),
+    // Estimacion de la maquina, no energia percibida por la persona.
+    energySource: "biometric_estimate",
     location: payload.location || signal.location || "Dato del dispositivo",
     people: normalized.participantId || "Sin personas",
     notes: buildContextSignalSummary(normalized),
@@ -3885,10 +3993,20 @@ async function mutateStore(mutator) {
   return operation;
 }
 
-async function readLogs() {
+// El log es un fichero global. Cuando se sirve por HTTP hay que acotarlo al
+// usuario: contenia PII de terceros (emails, UUIDs, rutas de Storage).
+// Las entradas sin dueno son de sistema y se conservan para poder diagnosticar.
+async function readLogs(user = null) {
   if (!existsSync(LOG_PATH)) return [];
   const raw = await readFile(LOG_PATH, "utf-8");
-  return JSON.parse(raw || "[]").slice(-80).reverse();
+  const entries = JSON.parse(raw || "[]");
+  const scoped = user?.id
+    ? entries.filter((entry) => {
+        const owner = entry?.details?.userId;
+        return !owner || owner === user.id;
+      })
+    : entries;
+  return scoped.slice(-80).reverse();
 }
 
 async function appendLog(level, message, details = {}) {
@@ -4013,16 +4131,19 @@ async function getRequestUser(req) {
   return { id: user.id, email: user.email, accessToken: token };
 }
 
+// Si viene un token, DEBE ser valido: antes cualquier excepcion (token
+// falsificado, caducado, o una caida de Supabase) degradaba en silencio al
+// usuario local, dando acceso a su espacio. Sin token, acceso anonimo explicito.
 async function getOptionalRequestUser(req) {
-  try {
-    return await getRequestUser(req);
-  } catch {
-    return {
-      id: LOCAL_USER_ID,
-      email: "local-user@example.com",
-      accessToken: null,
-    };
-  }
+  const authHeader = req.headers.authorization || "";
+  const hasBearer = authHeader.startsWith("Bearer ") && authHeader.slice(7).trim() !== "";
+  if (hasBearer) return await getRequestUser(req);
+  return {
+    id: LOCAL_USER_ID,
+    email: "local-user@example.com",
+    accessToken: null,
+    anonymous: true,
+  };
 }
 
 async function verifySupabaseUser(token) {
@@ -4910,18 +5031,21 @@ async function upsertAgendaEvent(agendaEvent, user = { id: LOCAL_USER_ID }) {
       workspaceSchemaState.available = true;
       workspaceSchemaState.checkedAt = new Date().toISOString();
       workspaceSchemaState.error = null;
-      return fromAgendaEventRow(rows[0]);
+      // remote: true -> persistido de verdad en Supabase.
+      return { ...fromAgendaEventRow(rows[0]), remote: true };
     } catch (error) {
       workspaceSchemaState.available = false;
       workspaceSchemaState.checkedAt = new Date().toISOString();
       workspaceSchemaState.error = sanitizeDiagnosticError(error);
     }
   }
+  // Caida al almacen local: se marca remote:false para que quien lo consuma no
+  // pueda presentarlo como guardado de forma duradera.
   return mutateAgendaStore((store) => {
     const key = user.id || LOCAL_USER_ID;
     const current = Array.isArray(store[key]) ? store[key] : [];
     store[key] = [normalized, ...current.filter((item) => item.id !== normalized.id)];
-    return normalized;
+    return { ...normalized, remote: false };
   }, user);
 }
 
@@ -4970,7 +5094,7 @@ async function upsertContextSignal(signal, user = { id: LOCAL_USER_ID }) {
         workspaceSchemaState.available = true;
         workspaceSchemaState.checkedAt = new Date().toISOString();
         workspaceSchemaState.error = null;
-        return fromContextSignalRow(rows[0]);
+        return { ...fromContextSignalRow(rows[0]), remote: true };
       } catch (error) {
         await appendLog("warn", "context_signal_remote_skipped", {
           signalId: normalized.id,
@@ -4979,10 +5103,11 @@ async function upsertContextSignal(signal, user = { id: LOCAL_USER_ID }) {
       }
     }
   }
+  // Igual que en agenda: el fallback local no es persistencia duradera.
   return mutateStore((currentStore) => {
     const contextSignals = Array.isArray(currentStore.contextSignals) ? currentStore.contextSignals : [];
     currentStore.contextSignals = [normalized, ...contextSignals.filter((item) => item.id !== normalized.id)];
-    return normalized;
+    return { ...normalized, remote: false };
   });
 }
 
@@ -5339,8 +5464,8 @@ async function resetUserContentData(body = {}, user = { id: LOCAL_USER_ID, email
   }
 
   await appendLog("warn", "user_content_reset_completed", {
+    // Sin email: el userId ya identifica y el log se sirve por /api/jobs.
     userId: user.id || LOCAL_USER_ID,
-    email: user.email || "",
     mode: summary.mode,
     deleted: summary.deleted,
     storage: summary.storage,
@@ -5468,9 +5593,15 @@ async function syncExperienceEventsToSupabase(experience, user = { id: LOCAL_USE
       const participant = await ensureExperienceParticipant(experience, workspace.id, user);
       if (!participant) return { synced: false, reason: "participant_sync_failed" };
     }
+    // El workspace ya esta resuelto arriba: usarlo tambien aqui. Sin este
+    // filtro, un PUT /api/experiences/<id-ajeno> con events: [] borraba los
+    // eventos internos de otro usuario.
     await supabaseRest("experience_events", {
       method: "DELETE",
-      searchParams: { experience_id: `eq.${experience.id}` },
+      searchParams: {
+        experience_id: `eq.${experience.id}`,
+        workspace_id: `eq.${workspace.id}`,
+      },
       headers: { Prefer: "return=minimal" },
       accessToken: user.accessToken,
     });
@@ -6470,9 +6601,14 @@ async function updateAssetProcessing(assetId, body = {}, user = { id: LOCAL_USER
       reason: "supabase_not_active",
     };
   }
+  // IDOR: el assetId viene de la URL. Sin filtro de propietario se podia leer y
+  // sobrescribir el activo de otro usuario. Se filtra por owner_user_id (y no
+  // por workspace_id) para no excluir activos antiguos sin workspace y para no
+  // depender de getWorkspaceContext dentro del worker de jobs.
   const rows = await supabaseRest("assets", {
     searchParams: {
       asset_id: `eq.${assetId}`,
+      owner_user_id: `eq.${user.id}`,
       limit: "1",
     },
     accessToken: user.accessToken,
@@ -6511,6 +6647,7 @@ async function updateAssetProcessing(assetId, body = {}, user = { id: LOCAL_USER
     method: "PATCH",
     searchParams: {
       asset_id: `eq.${assetId}`,
+      owner_user_id: `eq.${user.id}`,
     },
     headers: { Prefer: "return=representation" },
     body: JSON.stringify(patch),
@@ -6746,10 +6883,20 @@ async function deleteExperienceRecord(id, user = { id: LOCAL_USER_ID }) {
 
 async function deleteExperienceCompanionRows(id, user = { id: LOCAL_USER_ID }) {
   if (workspaceSchemaUnavailableRecently()) return;
+  // IDOR: el id viene de la URL. Sin filtro de propietario, un DELETE sobre una
+  // experiencia ajena borraba sus eventos y desvinculaba sus activos, y aun asi
+  // respondia ok:true. experience_events solo tiene workspace_id (no
+  // owner_user_id), asi que se acota por workspace; ademas su FK a experiences
+  // es ON DELETE CASCADE, por lo que si el filtro no encaja no se pierde nada.
+  const workspace = await getWorkspaceContext(user);
+  if (!workspace?.id) return;
   try {
     await supabaseRest("experience_events", {
       method: "DELETE",
-      searchParams: { experience_id: `eq.${id}` },
+      searchParams: {
+        experience_id: `eq.${id}`,
+        workspace_id: `eq.${workspace.id}`,
+      },
       headers: { Prefer: "return=minimal" },
       accessToken: user.accessToken,
     });
@@ -6767,7 +6914,10 @@ async function deleteExperienceCompanionRows(id, user = { id: LOCAL_USER_ID }) {
     try {
       await supabaseRest("assets", {
         method: "PATCH",
-        searchParams: { experience_id: `eq.${id}` },
+        searchParams: {
+          experience_id: `eq.${id}`,
+          owner_user_id: `eq.${user.id}`,
+        },
         headers: { Prefer: "return=minimal" },
         body: JSON.stringify(releasePatch),
         accessToken: user.accessToken,
@@ -6776,7 +6926,10 @@ async function deleteExperienceCompanionRows(id, user = { id: LOCAL_USER_ID }) {
       if (!isAssetOptionalAdoptionColumnError(error)) throw error;
       await supabaseRest("assets", {
         method: "PATCH",
-        searchParams: { experience_id: `eq.${id}` },
+        searchParams: {
+          experience_id: `eq.${id}`,
+          owner_user_id: `eq.${user.id}`,
+        },
         headers: { Prefer: "return=minimal" },
         body: JSON.stringify(removeAssetOptionalAdoptionColumns(releasePatch)),
         accessToken: user.accessToken,
@@ -7075,8 +7228,9 @@ async function getCapturePipelineStatus(user = {}) {
     storageBucket: { ok: false, detail: "not_checked" },
     storageRoundTrip: { ok: false, detail: "not_checked" },
   };
+  // `ok` era literal `true` y se propagaba incluso con ready:false. Quien leyera
+  // .ok en vez de .ready obtenia otro verde en falso. Ahora `ok` refleja `ready`.
   const statusBase = {
-    ok: true,
     mode: CAPTURE_PIPELINE_MODE,
     enabledForUser,
     architecture: "capture_first_story_later",
@@ -7086,6 +7240,7 @@ async function getCapturePipelineStatus(user = {}) {
   if (!["canary", "on"].includes(CAPTURE_PIPELINE_MODE) || activePersistence() !== "supabase" || !isSupabaseConfigured()) {
     return {
       ...statusBase,
+      ok: false,
       ready: false,
       reason: !["canary", "on"].includes(CAPTURE_PIPELINE_MODE)
         ? "pipeline_off"
@@ -7101,6 +7256,7 @@ async function getCapturePipelineStatus(user = {}) {
     checks.persistence = { ok: false, detail: "workspace_unavailable" };
     return {
       ...statusBase,
+      ok: false,
       ready: false,
       reason: "workspace_unavailable",
       checks,
@@ -7155,6 +7311,7 @@ async function getCapturePipelineStatus(user = {}) {
   const ready = Object.values(checks).every((check) => check.ok);
   return {
     ...statusBase,
+    ok: ready,
     ready,
     reason: !ready
       ? "infrastructure_not_ready"
@@ -7356,7 +7513,10 @@ async function commitDirectCaptureUpload(body, user) {
     }, receipt, user);
     return {
       ...receipt,
-      visible: true,
+      // `visible` era literal true: se afirmaba que la captura ya se veia en
+      // VibePWA aunque la proyeccion hubiera caido al almacen local. Ahora se
+      // deriva del recibo Y de la durabilidad real de la proyeccion.
+      visible: Boolean(receipt.durable && projection?.durable),
       projection,
     };
   } catch (error) {
@@ -7406,7 +7566,10 @@ async function receiveCapture(req, user) {
     const projection = await materializeCaptureForVibePwa(body, receipt, user);
     return {
       ...receipt,
-      visible: true,
+      // `visible` era literal true: se afirmaba que la captura ya se veia en
+      // VibePWA aunque la proyeccion hubiera caido al almacen local. Ahora se
+      // deriva del recibo Y de la durabilidad real de la proyeccion.
+      visible: Boolean(receipt.durable && projection?.durable),
       projection,
     };
   } catch (error) {
@@ -7449,7 +7612,8 @@ async function materializeCaptureForVibePwa(body = {}, receipt = {}, user = {}) 
           inboxReason: "waiting_for_experience_adoption",
         },
       }, user, { requireRemote: true });
-      return { target: "assets", id: asset.id || receipt.captureId };
+      // requireRemote:true ya lanza si el remoto falla: si llegamos aqui, es duradero.
+      return { target: "assets", id: asset.id || receipt.captureId, durable: true };
     }
 
     if (body.kind === "agenda") {
@@ -7474,7 +7638,12 @@ async function materializeCaptureForVibePwa(body = {}, receipt = {}, user = {}) 
           capturedOffline: source.capturedOffline === true,
         },
       }, user);
-      return { target: "agenda", id: agendaEvent.id || receipt.captureId };
+      // Agenda NO usa requireRemote: puede haber caido al almacen local.
+      return {
+        target: "agenda",
+        id: agendaEvent.id || receipt.captureId,
+        durable: agendaEvent.remote === true,
+      };
     }
 
     const contextSignal = await upsertContextSignal({
@@ -7511,7 +7680,12 @@ async function materializeCaptureForVibePwa(body = {}, receipt = {}, user = {}) 
         capturedOffline: source.capturedOffline === true,
       },
     }, user);
-    return { target: "context", id: contextSignal.id || receipt.captureId };
+    // Contexto tampoco usa requireRemote: puede haber caido al almacen local.
+    return {
+      target: "context",
+      id: contextSignal.id || receipt.captureId,
+      durable: contextSignal.remote === true,
+    };
   } catch (error) {
     const pipelineError = new CapturePipelineError(
       "capture_projection_failed",
@@ -7572,7 +7746,7 @@ async function getCaptureReceipt(operationId, user) {
       metadata: row.metadata || {},
       source: row.source || {},
     }, receipt, user);
-    return { ...receipt, visible: true, projection };
+    return { ...receipt, visible: Boolean(receipt.durable && projection?.durable), projection };
   } catch (error) {
     throw capturePipelineHttpError(error instanceof CapturePipelineError
       ? error
@@ -8226,13 +8400,16 @@ async function createSignedObjectUrl(objectPath, bucket = SUPABASE_STORAGE_BUCKE
 }
 
 function supabaseServerKeyHeaders() {
-  // El service-role debe ir SIEMPRE como Authorization: Bearer, sea JWT legacy
-  // (eyJ...) o secret key nueva (sb_secret_...). El gate anterior solo lo
-  // mandaba con JWT legacy, dejando a Storage sin Bearer con keys nuevas.
-  return {
-    apikey: SUPABASE_SERVICE_ROLE_KEY,
-    Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-  };
+  // El Authorization solo se manda con JWT legacy (eyJ..., 3 segmentos).
+  // Las secret keys nuevas (sb_secret_...) NO son JWT: viajan en `apikey`, y
+  // ponerlas en Authorization hace que Supabase intente validarlas como token
+  // de usuario. La hipotesis C1 ("faltaba el Bearer") quedo descartada: el
+  // write a Storage siempre funciono; el 503 lo causaba la ruta del verify.
+  const headers = { apikey: SUPABASE_SERVICE_ROLE_KEY };
+  if (isLegacyJwtSupabaseKey(SUPABASE_SERVICE_ROLE_KEY)) {
+    headers.Authorization = `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`;
+  }
+  return headers;
 }
 
 function isLegacyJwtSupabaseKey(key = "") {
@@ -9067,13 +9244,17 @@ async function processJobs() {
   jobRunning = false;
 }
 
-function listJobs() {
+// Sin `user` mantiene el comportamiento global (uso interno/diagnostico del
+// propio servidor). Desde HTTP se pasa SIEMPRE el usuario: nadie debe ver los
+// jobs de otro.
+function listJobs(user = null) {
   return [...jobs.values()]
+    .filter((job) => !user?.id || job.user?.id === user.id)
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .slice(0, 30)
-    .map(({ user, ...job }) => ({
+    .map(({ user: jobUser, ...job }) => ({
       ...job,
-      userId: user.id,
+      userId: jobUser?.id || "",
     }));
 }
 
@@ -9968,10 +10149,12 @@ function aggregateServerBiometricRows(rows = []) {
   }, {});
   const sum = (items = []) => items.reduce((total, value) => total + value, 0);
   return {
-    heartAvg: grouped.heart?.length ? average(grouped.heart) : 0,
-    steps: grouped.steps?.length ? sum(grouped.steps) : 0,
-    activeEnergy: grouped.energy?.length ? sum(grouped.energy) : 0,
-    sleepMinutes: grouped.sleep?.length ? sum(grouped.sleep) : 0,
+    // Omitir la metrica ausente en vez de emitir 0: "no hubo importacion de
+    // pulso" y "el pulso medio es 0 bpm" no pueden ser el mismo valor.
+    ...(grouped.heart?.length ? { heartAvg: average(grouped.heart) } : {}),
+    ...(grouped.steps?.length ? { steps: sum(grouped.steps) } : {}),
+    ...(grouped.energy?.length ? { activeEnergy: sum(grouped.energy) } : {}),
+    ...(grouped.sleep?.length ? { sleepMinutes: sum(grouped.sleep) } : {}),
     activityCount: grouped.activity?.length || 0,
     metricTypes: Object.keys(grouped),
     recordCount: rows.length,
@@ -10331,16 +10514,17 @@ async function buildPdfReport(user, report = null) {
   const experiences = await listExperiences(user);
   const sorted = [...experiences].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
   const totalMinutes = sorted.reduce((sum, item) => sum + item.duration, 0);
-  const avgEnergy = sorted.length ? average(sorted.map((item) => item.energy)).toFixed(1) : "0.0";
+  // Antes: sin experiencias mostraba "0.0/10", y cada fila sin energia "null/10".
+  const avgEnergy = averageRecordedEnergyServer(sorted);
   const lines = [
     "Experience Hub MVP",
     "Reporte de experiencias",
     `Generado: ${new Date().toISOString()}`,
     `Experiencias: ${sorted.length}`,
     `Horas capturadas: ${(totalMinutes / 60).toFixed(1)}`,
-    `Energía media: ${avgEnergy}/10`,
+    `Energía media: ${formatEnergyMetricServer(avgEnergy)}`,
     "",
-    ...sorted.slice(0, 40).map((item) => `${formatPdfDate(item.timestamp)} | ${item.title} | ${item.category} | ${item.energy}/10`),
+    ...sorted.slice(0, 40).map((item) => `${formatPdfDate(item.timestamp)} | ${item.title} | ${item.category} | ${formatEnergyMetricServer(item.energy)}`),
   ];
   await appendLog("info", "PDF report generated", { count: sorted.length, userId: user.id });
   return createSimplePdf(lines);
@@ -10534,7 +10718,7 @@ function buildReportPdfHtml(report = {}) {
     <div class="stats">
       <article class="stat"><span>${escapeHtmlServer(labels.experiences)}</span><strong>${escapeHtmlServer(summary.totalExperiences ?? rows.length)}</strong></article>
       <article class="stat"><span>${escapeHtmlServer(labels.hours)}</span><strong>${escapeHtmlServer(summary.capturedHours ?? 0)}</strong></article>
-      <article class="stat"><span>${escapeHtmlServer(labels.energy)}</span><strong>${escapeHtmlServer(summary.averageEnergy ?? 0)}/10</strong></article>
+      <article class="stat"><span>${escapeHtmlServer(labels.energy)}</span><strong>${escapeHtmlServer(formatEnergyMetricServer(summary.averageEnergy, language))}</strong></article>
       <article class="stat"><span>${escapeHtmlServer(labels.category)}</span><strong>${escapeHtmlServer(summary.topCategory || "-")}</strong></article>
     </div>
   </section>
@@ -10547,14 +10731,14 @@ function buildReportPdfHtml(report = {}) {
   ${predictive?.title ? `<section><h2>${escapeHtmlServer(labels.outlook)}</h2><div class="wide-card"><span class="pill">${escapeHtmlServer(labels.confidence)} ${escapeHtmlServer(predictive.confidence || 0)}%</span><h3>${escapeHtmlServer(predictive.title)}</h3><p><b>${escapeHtmlServer(labels.hypothesis)}:</b> ${escapeHtmlServer(truncatePdfText(predictive.hypothesis || "", 260))}</p><p><b>${escapeHtmlServer(labels.next)}:</b> ${escapeHtmlServer(truncatePdfText(predictive.nextStep || "", 220))}</p>${renderPdfList((predictive.drivers || []).slice(0, 4).map((item) => truncatePdfText(item, 120)))}</div></section>` : ""}
   ${integratedSelection.length ? `<section><h2>${escapeHtmlServer(labels.integrated)}</h2><div class="card-grid">${integratedSelection.map((item) => `<article class="card"><span class="pill">${escapeHtmlServer(labels.priority)}: ${escapeHtmlServer(item.priority || "-")}</span><h3>${escapeHtmlServer(item.title || "")}</h3><p>${escapeHtmlServer(truncatePdfText(item.evidence || "", 160))}</p><p><b>${escapeHtmlServer(labels.action)}:</b> ${escapeHtmlServer(truncatePdfText(item.action || "", 190))}</p></article>`).join("")}</div></section>` : ""}
   ${kpiSelection.length ? `<section><h2>${escapeHtmlServer(labels.kpis)}</h2><div class="card-grid">${kpiSelection.map((item) => `<article class="card"><h3>${escapeHtmlServer(item.label || "KPI")}</h3><strong>${escapeHtmlServer(item.score || 0)}/100</strong><div class="meter"><i style="width:${clampPdfWidth(item.score)}%"></i></div><p>${escapeHtmlServer(truncatePdfText(item.detail || "", 150))}</p></article>`).join("")}</div></section>` : ""}
-  ${categorySelection.length ? `<section><h2>${escapeHtmlServer(labels.categories)}</h2>${categorySelection.map((item) => `<div class="category-row"><span>${escapeHtmlServer(item.category || "")}</span><div class="meter"><i style="width:${Math.max(4, Math.round((Number(item.minutes || 0) / maxMinutes) * 100))}%"></i></div><strong>${escapeHtmlServer(item.avgEnergy || 0)}/10</strong></div>`).join("")}</section>` : ""}
-  ${routeSelection.length ? `<section><h2>${escapeHtmlServer(labels.routes)}</h2><div class="card-grid">${routeSelection.map((route) => `<article class="card"><h3>${escapeHtmlServer(route.title || "")}</h3><p>${escapeHtmlServer(route.count || 0)} experiencias - ${escapeHtmlServer(route.avgEnergy || 0)}/10 - ${escapeHtmlServer(route.dominant || "")}</p></article>`).join("")}</div></section>` : ""}
+  ${categorySelection.length ? `<section><h2>${escapeHtmlServer(labels.categories)}</h2>${categorySelection.map((item) => `<div class="category-row"><span>${escapeHtmlServer(item.category || "")}</span><div class="meter"><i style="width:${Math.max(4, Math.round((Number(item.minutes || 0) / maxMinutes) * 100))}%"></i></div><strong>${escapeHtmlServer(formatEnergyMetricServer(item.avgEnergy, language))}</strong></div>`).join("")}</section>` : ""}
+  ${routeSelection.length ? `<section><h2>${escapeHtmlServer(labels.routes)}</h2><div class="card-grid">${routeSelection.map((route) => `<article class="card"><h3>${escapeHtmlServer(route.title || "")}</h3><p>${escapeHtmlServer(route.count || 0)} experiencias - ${escapeHtmlServer(formatEnergyMetricServer(route.avgEnergy, language))} - ${escapeHtmlServer(route.dominant || "")}</p></article>`).join("")}</div></section>` : ""}
   ${evidenceSelection.length ? `<section><h2>${escapeHtmlServer(labels.evidence)}</h2><p class="callout">${escapeHtmlServer(language === "en" ? "Selected evidence only. Use JSON or CSV for the complete technical register." : "Solo evidencia seleccionada. JSON y CSV conservan el registro tecnico completo.")}</p><div class="evidence-grid">${evidenceSelection.map((item) => `<article class="card">${item.previewUrl ? `<img class="evidence-image" src="${escapeHtmlServer(item.previewUrl)}" alt="" />` : ""}<h3>${escapeHtmlServer(item.experienceTitle || item.name || "")}</h3><p><b>${escapeHtmlServer(item.kind || "")}</b> - ${escapeHtmlServer(item.name || "")}</p><p>${escapeHtmlServer(truncatePdfText(item.analyticalText || item.translatedText || item.manualNote || "", 220))}</p></article>`).join("")}</div></section>` : ""}
   <section>
     <h2>${escapeHtmlServer(language === "en" ? "Short register" : "Registro resumido")}</h2>
     <table>
       <thead><tr><th>Fecha</th><th>Experiencia</th><th>Categoría</th><th>Energía</th><th>Adjuntos</th></tr></thead>
-      <tbody>${rowSelection.map((row) => `<tr><td>${escapeHtmlServer(row.fecha || row.date || "")}</td><td>${escapeHtmlServer(row.titulo || row.title || "")}</td><td>${escapeHtmlServer(row.categoría || row.categoria || row.category || "")}</td><td>${escapeHtmlServer(row.energia || row.energy || "")}/10</td><td>${escapeHtmlServer(row.adjuntos || row.attachments || 0)}</td></tr>`).join("")}</tbody>
+      <tbody>${rowSelection.map((row) => `<tr><td>${escapeHtmlServer(row.fecha || row.date || "")}</td><td>${escapeHtmlServer(row.titulo || row.title || "")}</td><td>${escapeHtmlServer(row.categoría || row.categoria || row.category || "")}</td><td>${escapeHtmlServer(formatEnergyMetricServer(row.energia ?? row.energy, language))}</td><td>${escapeHtmlServer(row.adjuntos || row.attachments || 0)}</td></tr>`).join("")}</tbody>
     </table>
     <p class="footer-note">${escapeHtmlServer(language === "en" ? "This PDF is an executive report. Full evidence, rows, and technical fields remain in JSON and CSV." : "Este PDF es un reporte ejecutivo. La evidencia completa, filas y campos tecnicos quedan en JSON y CSV.")}</p>
     <p class="footer-note">Experience Hub - Vibe</p>
@@ -10749,9 +10933,9 @@ function findChromeExecutable() {
 function buildPdfExecutiveSummary(report, attachmentCount, language) {
   const summary = report.summary || {};
   if (language === "en") {
-    return `This report reviews ${summary.totalExperiences || report.rows?.length || 0} experiences, ${summary.capturedHours || 0} captured hours, ${attachmentCount} attachments, and an average energy of ${summary.averageEnergy || 0}/10. The dominant category is ${summary.topCategory || "not defined"}.`;
+    return `This report reviews ${summary.totalExperiences || report.rows?.length || 0} experiences, ${summary.capturedHours || 0} captured hours, ${attachmentCount} attachments, and an average energy of ${formatEnergyMetricServer(summary.averageEnergy, "en")}. The dominant category is ${summary.topCategory || "not defined"}.`;
   }
-  return `Este reporte revisa ${summary.totalExperiences || report.rows?.length || 0} experiencias, ${summary.capturedHours || 0} horas capturadas, ${attachmentCount} adjuntos y una energía media de ${summary.averageEnergy || 0}/10. La categoría dominante es ${summary.topCategory || "sin definir"}.`;
+  return `Este reporte revisa ${summary.totalExperiences || report.rows?.length || 0} experiencias, ${summary.capturedHours || 0} horas capturadas, ${attachmentCount} adjuntos y una energía media de ${formatEnergyMetricServer(summary.averageEnergy, "es")}. La categoría dominante es ${summary.topCategory || "sin definir"}.`;
 }
 
 function renderPdfList(items = []) {
@@ -10867,6 +11051,29 @@ function formatPdfDate(value) {
 
 function average(values) {
   return values.reduce((sum, value) => sum + Number(value || 0), 0) / (values.length || 1);
+}
+
+// Regla del proyecto: un dato ausente se OMITE, nunca se rellena con un valor
+// plausible. `average()` convierte null en 0 y hunde la media; estos helpers
+// descartan los ausentes y devuelven null cuando no hay ningun dato real.
+function recordedEnergyValues(items = []) {
+  return (Array.isArray(items) ? items : [])
+    .map((item) => Number(item?.energy))
+    .filter((value) => Number.isFinite(value) && value >= 1 && value <= 10);
+}
+
+function averageRecordedEnergyServer(items = []) {
+  const values = recordedEnergyValues(items);
+  if (!values.length) return null;
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function formatEnergyMetricServer(value, language = "es") {
+  const energy = Number(value);
+  if (!Number.isFinite(energy) || energy < 1 || energy > 10) {
+    return language === "en" ? "No data" : "Sin dato";
+  }
+  return `${Number(energy.toFixed(1))}/10`;
 }
 
 function sanitizeFileName(name) {
@@ -12433,6 +12640,8 @@ async function toExperienceRow(experience, user = { id: LOCAL_USER_ID }) {
       events: normalized.events || [],
       isDemo: Boolean(normalized.isDemo),
       demoBatch: normalized.demoBatch || null,
+      // Va en metadata (JSONB): no requiere migracion de esquema.
+      energySource: normalized.energySource ?? null,
     },
     embedding,
     embedding_model: activeEmbeddingsProvider(),
@@ -12449,6 +12658,7 @@ function fromExperienceRow(row) {
     duration: row.duration_minutes,
     mood: row.mood,
     energy: row.energy,
+    energySource: row.metadata?.energySource ?? null,
     location: row.location || "Sin ubicación",
     people: row.people || "Sin personas",
     notes: row.notes || "",
@@ -12486,8 +12696,11 @@ function normalizeExperience(experience) {
     category: normalizeCategoryName(experience.category || "Sin categoría"),
     timestamp: experience.timestamp || new Date().toISOString(),
     duration: Number(experience.duration || 0),
-    mood: experience.mood || "Calmo",
+    mood: experience.mood || null,
     energy: Number.isFinite(Number(rawEnergy)) ? Number(rawEnergy) : null,
+    // Conservar la procedencia en el viaje por el servidor: antes se perdia en
+    // cada sincronizacion y una estimacion de maquina acababa etiquetada "user".
+    energySource: experience.energySource ?? experience.metadata?.energySource ?? null,
     location: experience.location || "Sin ubicación",
     people: experience.people || "Sin personas",
     notes: experience.notes || "",
@@ -12687,12 +12900,27 @@ function formatHttpErrorMessage(error) {
   return String(error.message || "internal_error");
 }
 
-async function saveExportFile(body = {}) {
+const EXPORT_FILE_ALLOWED_EXTENSIONS = new Set([".json", ".md", ".csv", ".txt"]);
+
+async function saveExportFile(body = {}, user = null) {
   const filename = sanitizeExportFilename(body.filename || "export.json");
+  // Solo formatos de datos. Un .html o .js aqui se serviria en el mismo origen
+  // que la PWA (XSS almacenado); un .svg tambien puede ejecutar script.
+  const extension = path.extname(filename).toLowerCase();
+  if (!EXPORT_FILE_ALLOWED_EXTENSIONS.has(extension)) {
+    throw new HttpError(
+      400,
+      "export_extension_not_allowed",
+      `Solo se permiten exportaciones ${[...EXPORT_FILE_ALLOWED_EXTENSIONS].join(", ")}.`,
+    );
+  }
   const content = typeof body.content === "string" ? body.content : JSON.stringify(body.content ?? {}, null, 2);
   const stampedName = `${new Date().toISOString().replace(/[:.]/g, "-")}-${filename}`;
-  await mkdir(EXPORTS_DIR, { recursive: true });
-  const filePath = path.join(EXPORTS_DIR, stampedName);
+  // Aislar por usuario: las exportaciones de uno no se mezclan con las de otro.
+  const ownerSegment = String(user?.id || LOCAL_USER_ID).replace(/[^a-zA-Z0-9_-]/g, "-").slice(0, 80);
+  const ownerDir = path.join(EXPORTS_DIR, ownerSegment);
+  await mkdir(ownerDir, { recursive: true });
+  const filePath = path.join(ownerDir, stampedName);
   await writeFile(filePath, content, "utf-8");
   return {
     ok: true,
