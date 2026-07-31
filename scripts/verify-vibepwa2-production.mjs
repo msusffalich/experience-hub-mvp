@@ -16,6 +16,16 @@ assert.equal(ready.body?.ready, true, `V2 readiness is not true: ${JSON.stringif
 const shell = await fetch(`${baseUrl}/apps/vibepwa-next/index.html`, {
   headers: { "cache-control": "no-cache" },
 });
+
+const directoryShell = await fetch(`${baseUrl}/apps/vibepwa-next/`, {
+  redirect: "manual",
+});
+assert.equal(directoryShell.status, 200, "VibePWA 2 directory URL must resolve to its index document");
+assert.match(
+  await directoryShell.text(),
+  /<title>Vibe<\/title>/,
+  "VibePWA 2 directory URL returned an unexpected document",
+);
 assert.equal(shell.status, 200, `VibePWA2 shell failed: ${shell.status}`);
 const html = await shell.text();
 assert.match(html, /<title>Vibe<\/title>/, "VibePWA2 shell is not the expected release");

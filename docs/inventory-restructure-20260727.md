@@ -9,7 +9,7 @@ Generado por `npm run audit:restructure`. Este documento no decide que se borra;
 - Botones con identificador detectados: 62.
 - Funciones escritoras o reconciliadoras detectadas: 28.
 - Documentos candidatos a canonicos: 11.
-- Documentos historicos o de soporte: 54.
+- Documentos historicos o de soporte: 55.
 
 ## Vistas
 
@@ -110,34 +110,34 @@ Generado por `npm run audit:restructure`. Este documento no decide que se borra;
 
 ## Escritores y reconciliadores
 
-- `writeOuraTokenStore` (server.js:1793)
-- `syncOuraApiData` (server.js:2319)
-- `ingestIntegrationSignals` (server.js:2826)
-- `ingestIntegrationSignal` (server.js:2863)
-- `writeStore` (server.js:3868)
-- `writeAgendaStore` (server.js:3927)
-- `writeProfileParameters` (server.js:3939)
-- `writeRoutineStore` (server.js:3958)
-- `writeDailyBriefingStore` (server.js:3984)
-- `upsertProfile` (server.js:4783)
-- `upsertAgendaEvent` (server.js:4894)
-- `upsertContextSignal` (server.js:4953)
-- `upsertExperience` (server.js:5016)
-- `upsertParticipantRecord` (server.js:5185)
-- `syncExperienceEventsToSupabase` (server.js:5458)
-- `syncExperienceAssetsToSupabase` (server.js:5500)
-- `reconcileDeferredEvidenceForExperiences` (server.js:5529)
-- `upsertAssetEvidence` (server.js:5882)
-- `writeAssetEvidenceWithCompatibility` (server.js:5929)
-- `saveMedia` (server.js:6789)
-- `saveMediaBuffer` (server.js:6799)
-- `commitDirectCaptureUpload` (server.js:7340)
-- `receiveCapture` (server.js:7363)
-- `receiveEvidenceV2` (server.js:7776)
-- `saveExperienceV2` (server.js:7842)
-- `saveStoredDailyBriefing` (server.js:11612)
-- `saveExportFile` (server.js:12662)
-- `saveObsidianExport` (server.js:12678)
+- `writeOuraTokenStore` (server.js:1797)
+- `syncOuraApiData` (server.js:2323)
+- `ingestIntegrationSignals` (server.js:2830)
+- `ingestIntegrationSignal` (server.js:2867)
+- `writeStore` (server.js:3872)
+- `writeAgendaStore` (server.js:3931)
+- `writeProfileParameters` (server.js:3943)
+- `writeRoutineStore` (server.js:3962)
+- `writeDailyBriefingStore` (server.js:3988)
+- `upsertProfile` (server.js:4787)
+- `upsertAgendaEvent` (server.js:4898)
+- `upsertContextSignal` (server.js:4957)
+- `upsertExperience` (server.js:5020)
+- `upsertParticipantRecord` (server.js:5189)
+- `syncExperienceEventsToSupabase` (server.js:5462)
+- `syncExperienceAssetsToSupabase` (server.js:5504)
+- `reconcileDeferredEvidenceForExperiences` (server.js:5533)
+- `upsertAssetEvidence` (server.js:5886)
+- `writeAssetEvidenceWithCompatibility` (server.js:5933)
+- `saveMedia` (server.js:6793)
+- `saveMediaBuffer` (server.js:6803)
+- `commitDirectCaptureUpload` (server.js:7344)
+- `receiveCapture` (server.js:7367)
+- `receiveEvidenceV2` (server.js:7780)
+- `saveExperienceV2` (server.js:7846)
+- `saveStoredDailyBriefing` (server.js:11616)
+- `saveExportFile` (server.js:12666)
+- `saveObsidianExport` (server.js:12682)
 
 ## Controles identificados
 
@@ -273,6 +273,7 @@ Debe conservarse fuera del recorrido normal del usuario y no presentarse como co
 - `vibepwa2-backend2-release-validation.md`
 - `vibepwa2-canary-handcheck.md`
 - `vibepwa2-decision-log.md`
+- `vibepwa2-functional-audit-20260731.md`
 - `vibepwa2-migration-runbook.md`
 - `vibepwa2-operational-flows.md`
 - `vibepwa2-vibeapp-contract.md`

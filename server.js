@@ -1157,7 +1157,11 @@ async function serveStatic(req, res, pathname) {
     res.end(`<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Vibeapp</title></head><body><h1>Vibeapp</h1><p>Este enlace abre Vibeapp cuando la aplicacion nativa esta instalada.</p></body></html>`);
     return;
   }
-  const requested = pathname === "/" ? "/index.html" : pathname;
+  const requested = pathname === "/"
+    ? "/index.html"
+    : pathname.endsWith("/")
+      ? `${pathname}index.html`
+      : pathname;
   const safePath = path.normalize(decodeURIComponent(requested)).replace(/^(\.\.[/\\])+/, "");
   const filePath = path.join(__dirname, safePath);
 
