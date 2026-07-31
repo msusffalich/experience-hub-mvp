@@ -401,6 +401,10 @@ details.operation summary { padding: 16px; font-weight: 800; cursor: pointer; }
 
 .context-section { margin: 22px 0; padding: 20px; border: 1px solid var(--line); background: var(--surface); }
 .context-section.compact { margin-top: 24px; }
+.context-refresh-state { display: flex; align-items: center; gap: 8px; margin: -4px 0 14px; padding: 10px 12px; border: 1px solid var(--line); background: var(--surface-2); color: var(--muted); font-size: 12px; font-weight: 750; }
+.context-refresh-state .icon { width: 16px; height: 16px; color: var(--brand); }
+.context-refresh-state.issue { border-color: color-mix(in srgb, var(--warning) 45%, var(--line)); color: var(--text); }
+.context-refresh-state.issue .icon { color: var(--warning); }
 .context-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
 .context-card { min-width: 0; padding: 15px; border: 1px solid var(--line); background: var(--bg); }
 .context-card p { margin: 9px 0 0; color: var(--muted); font-size: 12px; line-height: 1.45; overflow-wrap: anywhere; }

@@ -10,6 +10,7 @@ import { createAuthService } from "../apps/vibe-api-v2/src/auth.mjs";
 import { createCaptureService } from "../apps/vibe-api-v2/src/capture.mjs";
 import { createContextService } from "../apps/vibe-api-v2/src/context.mjs";
 import { createIntegrationService } from "../apps/vibe-api-v2/src/integrations.mjs";
+import { createWorkspaceService } from "../apps/vibe-api-v2/src/workspace.mjs";
 import { createSupabaseClient } from "../apps/vibe-api-v2/src/supabase.mjs";
 import { ApiError } from "../apps/vibe-api-v2/src/errors.mjs";
 
@@ -239,6 +240,68 @@ assert.equal(emptyContext.sourceSignals, 0);
 assert.equal(emptyContext.biometricSignals, 0);
 assert.deepEqual(emptyContext.metrics, {});
 assert.equal(emptyContext.energy, null, "Missing biometrics must never fabricate energy");
+
+const workspaceQueries = [];
+const workspaceService = createWorkspaceService({
+  async rest(table, options = {}) {
+    workspaceQueries.push({ table, query: options.query });
+    if (table === "workspaces") {
+      return [{ workspace_id: "owned-workspace", created_at: "2026-01-01T00:00:00.000Z" }];
+    }
+    if (table === "workspace_members" && options.query?.workspace_id === "eq.owned-workspace") {
+      return [{ workspace_id: "owned-workspace", role: "owner" }];
+    }
+    if (table === "workspace_members") {
+      return [{ workspace_id: "older-membership", role: "member" }];
+    }
+    return [];
+  },
+});
+const resolvedWorkspace = await workspaceService.resolve(authValue());
+assert.equal(resolvedWorkspace.id, "owned-workspace", "V2 must reuse the owner workspace used by Vibeapp");
+assert.equal(
+  workspaceQueries.some((entry) => entry.table === "workspaces" && entry.query?.owner_user_id === "eq.user-1"),
+  true,
+  "Workspace resolution must check ownership before choosing an arbitrary membership",
+);
+
+let contextQuery = null;
+const reconciledContext = createContextService({
+  supabase: {
+    async rest(table, options = {}) {
+      if (table !== "context_signals") return [];
+      contextQuery = options.query;
+      return [
+        {
+          signal_id: "health-legacy-workspace",
+          workspace_id: "legacy-workspace",
+          owner_user_id: "user-1",
+          signal_type: "biometric",
+          captured_at: "2026-07-31T12:00:00.000Z",
+          metrics: { steps: 4200, heartAvg: 67 },
+        },
+        {
+          signal_id: "location-legacy-workspace",
+          workspace_id: "legacy-workspace",
+          owner_user_id: "user-1",
+          signal_type: "location",
+          captured_at: "2026-07-31T11:00:00.000Z",
+          location: "Winter Garden, Florida",
+        },
+      ];
+    },
+  },
+  workspace: { resolve: async () => ({ id: "owned-workspace", role: "owner" }) },
+});
+const reconciledSummary = await reconciledContext.summary(
+  authValue(),
+  new URL("https://example.test/api/v2/context/summary"),
+);
+assert.equal(contextQuery.owner_user_id, "eq.user-1");
+assert.equal(contextQuery.workspace_id, undefined, "User-owned historical context must not disappear across workspace upgrades");
+assert.equal(reconciledSummary.biometricSignals, 1);
+assert.equal(reconciledSummary.metrics.steps, 4200);
+assert.equal(reconciledSummary.latestLocation, "Winter Garden, Florida");
 
 const contextSource = await readFile(new URL("context.mjs", sourceRoot), "utf8");
 const storiesSource = await readFile(new URL("stories.mjs", sourceRoot), "utf8");

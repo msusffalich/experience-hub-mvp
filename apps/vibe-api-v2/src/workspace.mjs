@@ -2,6 +2,32 @@ import { ApiError } from "./errors.mjs";
 
 export function createWorkspaceService(supabase) {
   async function resolve(auth) {
+    const owned = await supabase.rest("workspaces", {
+      accessToken: auth.accessToken,
+      query: {
+        owner_user_id: `eq.${auth.user.id}`,
+        select: "workspace_id,created_at",
+        order: "created_at.asc",
+        limit: "1",
+      },
+    });
+    if (owned?.[0]?.workspace_id) {
+      const ownedMembership = await supabase.rest("workspace_members", {
+        accessToken: auth.accessToken,
+        query: {
+          workspace_id: `eq.${owned[0].workspace_id}`,
+          user_id: `eq.${auth.user.id}`,
+          select: "workspace_id,role",
+          limit: "1",
+        },
+      });
+      if (ownedMembership?.[0]) {
+        return {
+          id: owned[0].workspace_id,
+          role: ownedMembership[0].role || "owner",
+        };
+      }
+    }
     const memberships = await supabase.rest("workspace_members", {
       accessToken: auth.accessToken,
       query: {

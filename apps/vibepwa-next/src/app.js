@@ -38,6 +38,7 @@ const state = {
   filters: { search: "", area: "", group: "", from: "", to: "" },
   selectedPublicationStories: new Set(),
   contextRefreshQueued: false,
+  contextRefreshStatus: "",
   obsidianPreview: null,
   obsidianPreviewLoading: false,
   obsidianPreviewError: "",
@@ -120,6 +121,8 @@ function scheduleContextRefresh() {
 async function requestContextRefresh(userInitiated) {
   if (state.contextRefreshQueued) return;
   state.contextRefreshQueued = true;
+  state.contextRefreshStatus = "updating";
+  render();
   if (userInitiated) toast(t("contextUpdating"));
   try {
     const result = await request("/api/v2/context/refresh", {
@@ -131,23 +134,61 @@ async function requestContextRefresh(userInitiated) {
       },
     });
     if (result.state === "complete") {
-      state.contextRefreshQueued = false;
-      await refreshData();
+      await finishContextRefresh(result, userInitiated);
       return;
     }
-    setTimeout(async () => {
-      state.contextRefreshQueued = false;
-      try {
-        state.data = await loadWorkspace(state.data);
-        render();
-      } catch {
-        // A later normal refresh will pick up the completed background job.
-      }
-    }, 6_000);
+    await pollContextRefresh(result.id, userInitiated);
   } catch (error) {
     state.contextRefreshQueued = false;
+    state.contextRefreshStatus = "failed";
+    render();
     if (userInitiated) toast(error.message, true);
   }
+}
+
+async function pollContextRefresh(jobId, userInitiated) {
+  if (!jobId) {
+    state.contextRefreshQueued = false;
+    state.contextRefreshStatus = "failed";
+    render();
+    if (userInitiated) toast(t("contextRefreshFailed"), true);
+    return;
+  }
+  for (let attempt = 0; attempt < 30; attempt += 1) {
+    await delay(1_000);
+    const job = await request(`/api/v2/jobs/${encodeURIComponent(jobId)}`);
+    if (job.state === "complete") {
+      await finishContextRefresh(job, userInitiated);
+      return;
+    }
+    if (job.state === "needs_attention") {
+      state.contextRefreshQueued = false;
+      state.contextRefreshStatus = "failed";
+      render();
+      if (userInitiated) toast(t("contextRefreshFailed"), true);
+      return;
+    }
+  }
+  state.contextRefreshQueued = false;
+  state.contextRefreshStatus = "pending";
+  render();
+  if (userInitiated) toast(t("contextStillUpdating"));
+}
+
+async function finishContextRefresh(job, userInitiated) {
+  const waitingForLocation = job.result?.status === "waiting_for_location";
+  state.contextRefreshQueued = false;
+  state.contextRefreshStatus = waitingForLocation ? "waiting_location" : "complete";
+  state.data = await loadWorkspace(state.data);
+  render();
+  hydrateAssetPreviews();
+  if (userInitiated) {
+    toast(t(waitingForLocation ? "contextWaitingLocation" : "contextRefreshComplete"), waitingForLocation);
+  }
+}
+
+function delay(milliseconds) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
 function render() {
@@ -488,11 +529,15 @@ function contextOverview(compact = false) {
   const hasBiometrics = Number(context.biometricSignals || 0) > 0;
   const newsItems = Array.isArray(news.items) ? news.items : [];
   const entertainmentItems = Array.isArray(entertainment.items) ? entertainment.items : [];
+  const contextStatus = state.contextRefreshStatus
+    ? `<div class="context-refresh-state ${state.contextRefreshStatus === "failed" || state.contextRefreshStatus === "waiting_location" ? "issue" : ""}" role="status">${icon(state.contextRefreshStatus === "complete" ? "check" : state.contextRefreshStatus === "failed" || state.contextRefreshStatus === "waiting_location" ? "warning" : "refresh")}<span>${escapeHtml(t(`contextStatus.${state.contextRefreshStatus}`))}</span></div>`
+    : "";
   return `<section class="context-section ${compact ? "compact" : ""}">
     <div class="section-heading">
       <div><h3>${escapeHtml(t("contextTitle"))}</h3><p>${escapeHtml(t("contextHelp"))}</p></div>
       <button class="button secondary small" data-action="refresh-context">${icon("refresh")}${escapeHtml(t("refreshContext"))}</button>
     </div>
+    ${contextStatus}
     <div class="context-grid">
       <article class="context-card">
         <div class="context-card-head">${icon("insight")}<span>${escapeHtml(t("healthContext"))}</span></div>

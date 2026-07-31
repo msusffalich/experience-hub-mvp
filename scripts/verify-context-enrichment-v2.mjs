@@ -3,6 +3,7 @@ import { createContextEnrichmentService } from "../apps/vibe-api-v2/src/context-
 
 const jobs = [];
 const briefings = [];
+const locationQueries = [];
 const signals = [{
   signal_id: "location-1",
   owner_user_id: "user-1",
@@ -36,7 +37,10 @@ const supabase = {
       }
     }
     if (table === "context_signals") {
-      if (method === "GET") return signals.filter((item) => item.signal_type === "location").slice(0, 1);
+      if (method === "GET") {
+        locationQueries.push(options.query || {});
+        return signals.filter((item) => item.signal_type === "location").slice(0, 1);
+      }
       if (method === "POST") {
         const index = signals.findIndex((item) => item.signal_id === options.body.signal_id);
         if (index >= 0) signals[index] = structuredClone(options.body);
@@ -101,6 +105,8 @@ assert.equal(briefings[0].payload.weather.status, "available");
 assert.equal(briefings[0].payload.news.items.length, 1);
 assert.equal(briefings[0].payload.entertainment.items.length, 1);
 assert.equal(signals.filter((item) => ["weather", "news", "entertainment"].includes(item.signal_type)).length, 3);
+assert.equal(locationQueries.some((query) => query.owner_user_id === "eq.user-1"), true);
+assert.equal(locationQueries.some((query) => query.workspace_id !== undefined), false, "Location lookup must reconcile user-owned context from prior workspaces");
 
 const latest = await service.latest(auth);
 assert.equal(latest.status, "available");

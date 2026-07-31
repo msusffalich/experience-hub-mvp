@@ -171,7 +171,6 @@ export function createContextEnrichmentService({
       auth: "service",
       query: {
         owner_user_id: `eq.${job.owner_user_id}`,
-        workspace_id: `eq.${job.workspace_id}`,
         signal_type: "eq.location",
         select: "*",
         order: "captured_at.desc",

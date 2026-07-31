@@ -90,9 +90,8 @@ export function createContextService({ supabase, workspace }) {
   }
 
   async function signals(auth, url) {
-    const scope = await workspace.resolve(auth);
+    await workspace.resolve(auth);
     const query = {
-      workspace_id: `eq.${scope.id}`,
       owner_user_id: `eq.${auth.user.id}`,
       select: "*",
       order: "captured_at.desc",

@@ -152,6 +152,12 @@ async function verifyProduct(browser, viewport, label) {
   }
   await assertNoHorizontalOverflow(page, `${label}:home`);
   await page.screenshot({ path: path.join(outputDir, `${label}-home.png`), fullPage: true });
+  if (label === "desktop") {
+    await page.locator('[data-action="refresh-context"]').first().click();
+    await page.getByText("Contexto actualizado con los datos más recientes.", { exact: true }).waitFor();
+    await waitForObservedRequest(requests, (entry) => entry.path === "/api/v2/context/refresh" && entry.method === "POST", "context refresh");
+    await waitForObservedRequest(requests, (entry) => entry.path === "/api/v2/jobs/context-job-1" && entry.method === "GET", "context refresh job");
+  }
 
   for (const route of ["stories", "evidence", "agenda", "intelligence", "map", "publish", "account"]) {
     await visibleRouteButton(page, route, label).click();
@@ -160,16 +166,43 @@ async function verifyProduct(browser, viewport, label) {
     await assertNoHorizontalOverflow(page, `${label}:${route}`);
     if (route === "agenda") {
       assert.equal(await page.getByText("Reunión de planificación", { exact: true }).isVisible(), true);
+      if (label === "desktop") {
+        await page.locator('[data-action="new-agenda"]').click();
+        await page.locator("#agendaTitle").fill("Revisión funcional de agenda");
+        await page.locator("#agendaForm [type='submit']").click();
+        await page.locator("#agendaForm").waitFor({ state: "detached" });
+        await waitForObservedRequest(requests, (entry) => entry.path === "/api/v2/agenda" && entry.method === "POST", "agenda create");
+      }
     }
     if (route === "intelligence") {
       assert.equal(await page.getByText("Winter Garden, Florida", { exact: true }).isVisible(), true);
       assert.equal(await page.getByText("Festival de verano", { exact: true }).isVisible(), true);
+      if (label === "desktop") {
+        await page.locator('[data-action="generate-report"]').click();
+        await page.locator('[data-action="generate-findings"]').click();
+        await waitForObservedRequest(requests, (entry) => entry.path === "/api/v2/outputs/report/pdf" && entry.method === "POST", "report PDF");
+        await waitForObservedRequest(requests, (entry) => entry.path === "/api/v2/outputs/insights/pdf" && entry.method === "POST", "findings PDF");
+      }
     }
     if (route === "map") {
       assert.equal(await page.getByRole("heading", { name: "Mapa de experiencias", exact: true }).isVisible(), true);
       assert.equal(await page.getByText("Vista estructurada disponible", { exact: true }).isVisible(), true);
       assert.equal(await page.getByText("2 notas de experiencias · 2 notas de activos", { exact: true }).isVisible(), true);
+      if (label === "desktop") {
+        await page.locator('[data-action="export-obsidian"]').click();
+        await waitForObservedRequest(requests, (entry) => entry.path === "/api/v2/obsidian/export" && entry.method === "POST", "Obsidian export");
+      }
       await page.screenshot({ path: path.join(outputDir, `${label}-map.png`), fullPage: true });
+    }
+    if (route === "evidence" && label === "desktop") {
+      await page.locator("[data-asset-download]").first().click();
+      await waitForObservedRequest(requests, (entry) => entry.path === "/api/v2/assets/asset-1/download", "asset download");
+    }
+    if (route === "publish" && label === "desktop") {
+      await page.locator("[data-publication-story]").first().check();
+      await page.locator("#publicationTitle").fill("Publicación funcional");
+      await page.locator('[data-action="generate-publication"]').click();
+      await waitForObservedRequest(requests, (entry) => entry.path === "/api/v2/outputs/publication/pdf" && entry.method === "POST", "publication PDF");
     }
   }
 
@@ -185,6 +218,15 @@ async function verifyProduct(browser, viewport, label) {
   await page.locator("#storyNarrative").fill("Probamos una interfaz simple para contar lo vivido.");
   await assertNoHorizontalOverflow(page, `${label}:story-modal`);
   await page.locator("[data-modal-close]").first().click();
+
+  if (label === "desktop") {
+    await page.locator('[data-action="new-story"]').click();
+    await page.locator("#storyTitle").fill("Historia funcional guardada");
+    await page.locator("#storyNarrative").fill("Esta historia confirma el guardado desde el editor.");
+    await page.locator("#storyForm [type='submit']").click();
+    await page.locator("#storyForm").waitFor({ state: "detached" });
+    await waitForObservedRequest(requests, (entry) => entry.path === "/api/v2/experiences" && entry.method === "POST", "story create");
+  }
 
   if (label === "desktop") {
     await page.locator("[data-story-id='story-1']").click();
@@ -206,6 +248,12 @@ async function verifyProduct(browser, viewport, label) {
   }
 
   await visibleRouteButton(page, "account", label).click();
+  if (label === "desktop") {
+    await page.locator("#groupForm [name='displayName']").fill("Familia");
+    await page.locator("#groupForm [name='segment']").fill("Prueba funcional");
+    await page.locator("#groupForm [type='submit']").click();
+    await waitForObservedRequest(requests, (entry) => entry.path === "/api/v2/groups" && entry.method === "POST", "group create");
+  }
   await page.locator('[data-theme-choice="dark"]').click();
   assert.equal(await page.locator("html").getAttribute("data-theme"), "dark");
   if (label === "desktop") {
@@ -215,6 +263,10 @@ async function verifyProduct(browser, viewport, label) {
     assert.equal(await page.locator(".topbar h1").textContent(), "Conta");
   }
   await page.screenshot({ path: path.join(outputDir, `${label}-account-dark.png`), fullPage: true });
+  if (label === "desktop") {
+    await page.locator('[data-action="sign-out"]').click();
+    await page.locator("#loginForm").waitFor();
+  }
   await context.close();
 }
 
@@ -332,6 +384,13 @@ async function installApiMocks(page) {
         entertainment: { status: "available", items: [{ title: "Festival de verano", link: "https://example.test/event" }] },
       },
     };
+    else if (pathname === "/api/v2/context/refresh") payload = { id: "context-job-1", state: "queued" };
+    else if (pathname === "/api/v2/jobs/context-job-1") payload = {
+      id: "context-job-1",
+      type: "context_refresh",
+      state: "complete",
+      result: { status: "available" },
+    };
     else if (pathname === "/api/v2/integrations/oura/status") payload = { connected: false, configured: true };
     else if (pathname === "/api/v2/obsidian/preview") payload = {
       generatedAt: now,
@@ -372,6 +431,14 @@ async function assertNoHorizontalOverflow(page, label) {
   }));
   assert.equal(result.body <= result.viewport + 1, true, `${label}: body overflow ${JSON.stringify(result)}`);
   assert.equal(result.root <= result.viewport + 1, true, `${label}: root overflow ${JSON.stringify(result)}`);
+}
+
+async function waitForObservedRequest(requests, predicate, label) {
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    if (requests.some(predicate)) return;
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  }
+  assert.fail(`Missing observed request: ${label}`);
 }
 
 async function waitForServer() {
