@@ -17409,7 +17409,7 @@ function renderContextImpact() {
           <span class="pill">${weather.temperatureC ?? "-"} °C</span>
           <span class="pill">${weather.humidityPct ?? "-"}% humedad</span>
           <span class="pill">${weather.windKmh ?? "-"} km/h viento</span>
-          <span class="pill">${weather.precipitationMm ?? "0"} mm lluvia</span>
+          <span class="pill">${weather.precipitationMm ?? "-"} mm lluvia</span>
         </div>
         <p>${impact.weather.riskSignals.length ? impact.weather.riskSignals.join(", ") : "Sin señales climáticas críticas."}</p>
       </div>
@@ -24668,9 +24668,17 @@ function buildPredictiveOutlook(experiences, analysis, quality) {
        ? `Based on recent records, energy looks ${direction} and the next period shows ${riskLabel}.`
       : `Según los registros recientes, la energía luce ${direction} y el siguiente periodo muestra ${riskLabel}.`,
     drivers: [
-      state.language !== "es"
-         ? `Recent energy ${recentEnergy.toFixed(1)}/10 vs. previous ${previousEnergy.toFixed(1)}/10`
-        : `Energía reciente ${recentEnergy.toFixed(1)}/10 vs. previa ${previousEnergy.toFixed(1)}/10`,
+      // recentEnergy/previousEnergy son null cuando ninguna experiencia tiene
+      // energia registrada (que es lo normal: el contrato dice omitir el dato).
+      // Sin esta guarda, .toFixed() lanzaba TypeError y dejaba la barra de
+      // progreso colgada al 15% sin ningun error visible.
+      !hasEnergyTrend
+        ? (state.language !== "es"
+          ? "Not enough recorded energy to compare periods"
+          : "Sin energía registrada suficiente para comparar periodos")
+        : state.language !== "es"
+          ? `Recent energy ${recentEnergy.toFixed(1)}/10 vs. previous ${previousEnergy.toFixed(1)}/10`
+          : `Energía reciente ${recentEnergy.toFixed(1)}/10 vs. previa ${previousEnergy.toFixed(1)}/10`,
       state.language !== "es"
          ? `Recent saturation or low energy: ${Math.round(recentSaturationPct)}%`
         : `Saturación o baja energía reciente: ${Math.round(recentSaturationPct)}%`,
@@ -26085,7 +26093,7 @@ function markReportExport(format, payload = buildReportExportPayload(), status =
       status,
       experiences: reportExperiences.length,
       filters: { ...state.reportFilters },
-      averageEnergy: payload?.summary?.averageEnergy ?? 0,
+      averageEnergy: payload?.summary?.averageEnergy ?? null,
       evidence: payload?.multimodalEvidence?.length || 0,
     },
     lastFormat: format,
@@ -37095,12 +37103,12 @@ function renderAdminUnsafe() {
     ["Búsqueda vectorial", state.persistence === "supabase" ? okStatus : attentionStatus, state.persistence === "supabase" ? "pgvector + embeddings" : "Respaldo local"],
     [
       "Impacto ambiental",
-      state.health?.contextProviders?.environmental?.status === "available" ? okStatus : attentionStatus,
+      ["available", "configured"].includes(state.health?.contextProviders?.environmental?.status) ? okStatus : attentionStatus,
       state.health?.contextProviders?.environmental?.provider || "Open-Meteo bajo demanda",
     ],
     [
       "Impacto geopolítico",
-      state.health?.contextProviders?.geopolitical?.status === "available" ? okStatus : attentionStatus,
+      ["available", "configured"].includes(state.health?.contextProviders?.geopolitical?.status) ? okStatus : attentionStatus,
       state.health?.contextProviders?.geopolitical?.provider || "GDELT bajo demanda",
     ],
     [
@@ -40485,8 +40493,9 @@ function calculateDevelopmentReadiness() {
     state.persistence === "supabase",
     Boolean(state.health?.routineScheduler?.status === "active"),
     state.offlineQueue.length === 0,
-    Boolean(state.health?.contextProviders?.environmental?.status === "available"),
-    Boolean(state.health?.contextProviders?.geopolitical?.status === "available"),
+    // Los dos checks de contextProviders se retiran: el health los declaraba
+    // "available" de forma incondicional, sin sondear nada, asi que eran dos
+    // comprobaciones que no podian fallar e inflaban el indicador tecnico.
     state.config?.vectorSearch !== "disabled",
     Boolean(state.session?.access_token),
     assetWorkflowReadiness.score >= 85,

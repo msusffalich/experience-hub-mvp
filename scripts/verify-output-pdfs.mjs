@@ -36,7 +36,13 @@ const cases = [
     name: "report",
     script: "report_pdf_reportlab.py",
     requiredText: ["Contexto que", "Frecuencia cardiaca", "Winter Garden", "Reuters", "Festival de verano", "Impacto contextual"],
-    forbiddenText: ["Supabase", "context_signal", "PGRST", "Storage privado", "ReportLab"],
+    // Centinelas de dato inventado / seccion vacia: si alguno reaparece, el PDF
+    // esta mostrando un relleno como si fuera una medicion.
+    forbiddenText: [
+      "Supabase", "context_signal", "PGRST", "Storage privado", "ReportLab",
+      "None/10", "null/10", "undefined",
+      "No hay hallazgos suficientes", "No hay indicadores suficientes",
+    ],
     validateBounds: true,
     payload: {
       ...structuredClone(richContext),
@@ -51,12 +57,19 @@ const cases = [
         { ...baseExperience, title: "Caminata", category: "Salud", energy: 8, timestamp: "2026-05-22T16:00:00.000Z" },
         { ...baseExperience, title: "Lectura", category: "Aprendizaje", energy: 6, timestamp: "2026-05-23T09:00:00.000Z" },
       ],
-      integratedReadings: [
+      // Los nombres correctos son los que emite buildReportExportPayload en
+      // app.js. Con las claves antiguas (integratedReadings/kpis/categories/
+      // quality) el script leia otras y renderizaba "Hallazgos prioritarios",
+      // "Indices humanos" y "Balance de areas" TODOS en su fallback vacio, con
+      // confianza 0% — y la verificacion pasaba igual. Es decir: la puerta que
+      // debia impedir un PDF vacio era la unica que nunca ejercitaba las
+      // secciones que pueden salir vacias.
+      integratedReading: [
         { title: "Energia y recuperacion", evidence: "Energia media 6.8/10.", action: "Mantener pausas breves y registrar descanso.", priority: "Media" },
       ],
-      kpis: [{ label: "Confiabilidad", score: 82, detail: "Datos suficientes para lectura ejecutiva." }],
-      categories: [{ label: "Trabajo", count: 1 }, { label: "Salud", count: 1 }, { label: "Aprendizaje", count: 1 }],
-      quality: { score: 82 },
+      humanKpis: [{ label: "Confiabilidad", score: 82, detail: "Datos suficientes para lectura ejecutiva." }],
+      categoryBreakdown: [{ label: "Trabajo", count: 1 }, { label: "Salud", count: 1 }, { label: "Aprendizaje", count: 1 }],
+      dataQuality: { score: 82 },
     },
   },
   {

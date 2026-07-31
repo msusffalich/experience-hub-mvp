@@ -125,18 +125,31 @@ async function versionedPath(target) {
 }
 
 function markdown(story) {
+  // Historia reorganizada (fusion / division / degradado): NO se exporta como
+  // experiencia activa. Se conserva como antecedente marcado y sin duplicar el
+  // relato, que vive solo en la historia vigente. Antes se emitia
+  // type: experience para todas, de modo que una historia fusionada aparecia
+  // como activa, duplicaba el relato y ademas revertia el antecedente que ya
+  // hubiera escrito el exportador legacy.
+  if (isSupersededStory(story)) return supersededMarkdown(story);
+
   const human = humanNarrative(story);
   const learnings = "pending";
   const links = [`[[MOC - Vibe]]`, story.category ? `[[${story.category}]]` : ""].filter(Boolean);
+  // Un campo sin dato se OMITE del frontmatter: emitir activity: "" o date: ""
+  // es fabricar un valor. Ver contrato de la boveda.
+  const frontmatter = [
+    "type: experience",
+    `vibe_id: "${yaml(story.id)}"`,
+    story.timestamp ? `date: "${yaml(story.timestamp)}"` : "",
+    `updated_at: "${new Date().toISOString()}"`,
+    story.category ? `activity: "${yaml(story.category)}"` : "",
+    `narrative: ${human ? "ok" : "pending"}`,
+    `learnings: ${learnings}`,
+    `multimodal: ${(story.attachments || []).length > 0}`,
+  ].filter(Boolean).join("\n");
   return `---
-type: experience
-vibe_id: "${yaml(story.id)}"
-date: "${yaml(story.timestamp)}"
-updated_at: "${new Date().toISOString()}"
-activity: "${yaml(story.category || "")}"
-narrative: ${human ? "ok" : "pending"}
-learnings: ${learnings}
-multimodal: ${(story.attachments || []).length > 0}
+${frontmatter}
 ---
 
 ${AUTO_START}
@@ -159,7 +172,9 @@ ${HUMAN_HEADING}
 
 ### Aprendizajes
 
-### Notas
+### Decisiones o acciones
+
+### Notas editoriales
 `;
 }
 
@@ -194,17 +209,82 @@ function assetFilename(asset) {
   return `asset-${id}-${label || "evidencia"}`;
 }
 
+// Una historia esta superada si el backend la marco con cualquiera de estas
+// senales de reorganizacion (fusion, division o degradado).
+function isSupersededStory(story = {}) {
+  const status = String(story.curationStatus || story.curation_status || "").toLowerCase();
+  const lifecycle = String(story.lifecycle || "").toLowerCase();
+  const supersededBy = story.supersededBy || story.superseded_by;
+  return (
+    lifecycle === "superseded" ||
+    ["merged", "split", "degraded"].includes(status) ||
+    (Array.isArray(supersededBy) && supersededBy.length > 0)
+  );
+}
+
+function supersededSuccessors(story = {}) {
+  const raw = story.supersededBy || story.superseded_by || [];
+  return (Array.isArray(raw) ? raw : [raw]).map((item) => String(item || "").trim()).filter(Boolean);
+}
+
+// Antecedente: se conserva la nota, marcada, y SIN duplicar el relato (el texto
+// vive solo en la historia vigente). Contrato de la boveda Vibe.
+function supersededMarkdown(story) {
+  const status = String(story.curationStatus || story.curation_status || "merged").toLowerCase();
+  const successors = supersededSuccessors(story);
+  const frontmatter = [
+    "type: experience_antecedent",
+    `vibe_id: "${yaml(story.id)}"`,
+    story.timestamp ? `date: "${yaml(story.timestamp)}"` : "",
+    `updated_at: "${new Date().toISOString()}"`,
+    'lifecycle: "superseded"',
+    `curation_status: "${yaml(status)}"`,
+    `superseded_by: [${successors.map((item) => `"${yaml(item)}"`).join(", ")}]`,
+    'narrative: "pending"',
+  ].filter(Boolean).join("\n");
+  const successorLinks = successors.length
+    ? `Historia vigente: ${successors.map((item) => `[[${item}]]`).join(", ")}`
+    : "Historia vigente: pendiente de resolver.";
+  return `---
+${frontmatter}
+---
+
+${AUTO_START}
+# ${story.title || "Historia reorganizada"}
+
+## Estado de curación
+Esta historia fue reorganizada mediante ${status}. No cuenta como experiencia activa
+ni duplica su relato.
+
+${successorLinks}
+
+## Enlaces
+- [[MOC - Vibe]]
+${AUTO_END}
+
+${HUMAN_HEADING}
+
+### Aprendizajes
+
+### Notas editoriales
+`;
+}
+
 function mapMarkdown(items) {
-  const narrated = items.filter((story) => Boolean(humanNarrative(story))).length;
+  // Los antecedentes no cuentan como experiencias activas: incluirlos hacia que
+  // una historia fusionada apareciera como "experiencia sin narrativa".
+  const activeItems = items.filter((story) => !isSupersededStory(story));
+  const narrated = activeItems.filter((story) => Boolean(humanNarrative(story))).length;
   const categories = new Map();
   // Sin este guard, las historias sin categoria entraban con clave undefined y
   // producian un wikilink literal "[[undefined]]", ademas de contarse como
   // "area de vida observada".
-  items.forEach((story) => {
+  activeItems.forEach((story) => {
     const area = String(story.category || "").trim();
     if (!area) return;
     categories.set(area, (categories.get(area) || 0) + 1);
   });
+  const supersededCount = items.length - activeItems.length;
   return `---
 type: generated_map
 updated_at: "${new Date().toISOString()}"
@@ -212,9 +292,10 @@ updated_at: "${new Date().toISOString()}"
 
 # Mapa de conocimiento Vibe
 
-- Experiencias exportadas: ${items.length}
+- Experiencias exportadas: ${activeItems.length}
 - Experiencias con narrativa humana: ${narrated}
 - Áreas de vida observadas: ${categories.size}
+- Antecedentes conservados (fusión/división/degradado): ${supersededCount}
 
 ## Experiencias
 ${items.map((story) => `- [[${filename(story)}]]`).join("\n")}

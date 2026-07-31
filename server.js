@@ -431,8 +431,12 @@ async function handleApi(req, res, url) {
       transcriptionProvider: activeTranscriptionProvider(),
       ocrProvider: activeOcrProvider(),
       contextProviders: {
-        environmental: { status: "available", provider: "Open-Meteo", mode: "on-demand" },
-        geopolitical: { status: "available", provider: "GDELT DOC 2.0", mode: "on-demand" },
+        // "configured" != "available": estos proveedores NO se sondean aqui.
+        // Declararlos "available" era un verde incondicional que ademas
+        // alimentaba 2 de los 13 checks del readiness tecnico, que asi nunca
+        // podian fallar. El estado real se conoce al pedir el contexto.
+        environmental: { status: "configured", provider: "Open-Meteo", mode: "on-demand" },
+        geopolitical: { status: "configured", provider: "GDELT DOC 2.0 + Google News RSS", mode: "on-demand" },
       },
       routineScheduler: { status: "active", intervalSeconds: 60 },
       capturePipeline: {
@@ -1089,7 +1093,7 @@ async function handleApi(req, res, url) {
   if (url.pathname === "/api/manual/pdf" && req.method === "POST") {
     const user = await getOptionalRequestUser(req);
     const body = await readJson(req);
-    sendPdf(res, await buildManualPdf(body.html, user), "manual-vibe.pdf");
+    sendPdf(res, await buildManualPdf(body, user), "manual-vibe.pdf");
     return;
   }
 
@@ -4133,8 +4137,28 @@ function isSupabaseConfigured() {
   return Boolean(SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY && SUPABASE_SERVICE_ROLE_KEY);
 }
 
+// C3 — fail-open por configuracion. `activePersistence() !== "supabase"` hace
+// cortocircuito ANTES de mirar el header: basta con que falte una variable de
+// Supabase (o que STORAGE_ADAPTER no sea exactamente "supabase") para que TODO
+// el API quede sin autenticacion, con todas las peticiones colapsando al mismo
+// usuario local. Y el modo inseguro era el default.
+//
+// Se falla en cerrado en produccion, pero con valvula: ALLOW_LOCAL_USER=1
+// restaura el comportamiento anterior si hiciera falta desbloquear. Fuera de
+// produccion el modo local sigue siendo el default (desarrollo sin Supabase).
+const ALLOW_LOCAL_USER = String(
+  process.env.ALLOW_LOCAL_USER ?? (process.env.NODE_ENV === "production" ? "0" : "1"),
+).trim() === "1";
+
 async function getRequestUser(req) {
   if (activePersistence() !== "supabase") {
+    if (!ALLOW_LOCAL_USER) {
+      throw new HttpError(
+        503,
+        "auth_backend_unavailable",
+        "Autenticacion no disponible: Supabase no esta activo en este despliegue.",
+      );
+    }
     return {
       id: LOCAL_USER_ID,
       email: "local-user@example.com",
@@ -6880,6 +6904,22 @@ function workspaceSchemaUnavailableRecently() {
 
 async function deleteExperienceRecord(id, user = { id: LOCAL_USER_ID }) {
   if (activePersistence() === "supabase") {
+    // Verificar la propiedad ANTES de tocar nada y recuperar los adjuntos: al
+    // borrar la fila, sus storage_path desaparecian de la BD y los binarios
+    // quedaban huerfanos en el bucket para siempre, sin puntero que los
+    // recuperara (ni siquiera el reset de cuenta, que los busca en esta fila).
+    const owned = await supabaseRest("experiences", {
+      searchParams: {
+        experience_id: `eq.${id}`,
+        user_id: `eq.${user.id}`,
+        select: "experience_id,attachments",
+        limit: "1",
+      },
+      accessToken: user.accessToken,
+    });
+    if (!owned.length) throw new HttpError(404, "experience_not_found");
+    const candidatePaths = collectExperienceAttachmentPaths(owned[0], user);
+
     await deleteExperienceCompanionRows(id, user);
     await supabaseRest("experiences", {
       method: "DELETE",
@@ -6890,12 +6930,90 @@ async function deleteExperienceRecord(id, user = { id: LOCAL_USER_ID }) {
       headers: { Prefer: "return=minimal" },
       accessToken: user.accessToken,
     });
+
+    if (candidatePaths.length) {
+      await cleanupOrphanExperienceBinaries(candidatePaths, id, user);
+    }
     return;
   }
   await mutateStore((currentStore) => {
     currentStore.experiences = currentStore.experiences.filter((item) => item.id !== id);
     return { ok: true };
   });
+}
+
+// Extrae las rutas de Storage de los adjuntos de una fila de experiencia,
+// descartando las que NO pertenecen al prefijo del usuario. Ese filtro es
+// imprescindible: el borrado en Storage usa la service key, que ignora las
+// politicas de storage.objects, asi que un `attachments` manipulado podria
+// borrar objetos de otro usuario.
+function collectExperienceAttachmentPaths(row = {}, user = {}) {
+  const ownerPrefix = `${String(user?.id || "")}/`;
+  const attachments = Array.isArray(row.attachments) ? row.attachments : [];
+  return [...new Set(
+    attachments
+      .map((attachment) => String(attachment?.path || attachment?.storagePath || "").trim())
+      .filter(Boolean)
+      .filter((storagePath) => ownerPrefix.length > 1 && storagePath.startsWith(ownerPrefix)),
+  )];
+}
+
+// Solo borra los binarios que ya no referencia NADIE. `saveMediaBuffer` genera
+// nombres estables para deduplicar, asi que dos experiencias (o un activo
+// liberado al inbox) pueden apuntar al mismo objeto: borrarlo a ciegas romperia
+// evidencia viva.
+async function cleanupOrphanExperienceBinaries(candidatePaths, deletedExperienceId, user = {}) {
+  try {
+    const stillReferenced = new Set();
+
+    const assetRows = await supabaseRest("assets", {
+      searchParams: {
+        owner_user_id: `eq.${user.id}`,
+        storage_path: `in.(${candidatePaths.map((item) => `"${item}"`).join(",")})`,
+        select: "storage_path",
+      },
+      accessToken: user.accessToken,
+    }).catch(() => []);
+    assetRows.forEach((row) => {
+      if (row?.storage_path) stillReferenced.add(String(row.storage_path));
+    });
+
+    const otherExperiences = await supabaseRest("experiences", {
+      searchParams: {
+        user_id: `eq.${user.id}`,
+        experience_id: `neq.${deletedExperienceId}`,
+        select: "attachments",
+      },
+      accessToken: user.accessToken,
+    }).catch(() => []);
+    otherExperiences.forEach((row) => {
+      (Array.isArray(row?.attachments) ? row.attachments : []).forEach((attachment) => {
+        const storagePath = String(attachment?.path || attachment?.storagePath || "").trim();
+        if (storagePath) stillReferenced.add(storagePath);
+      });
+    });
+
+    const orphans = candidatePaths.filter((storagePath) => !stillReferenced.has(storagePath));
+    if (!orphans.length) return;
+
+    const result = await deleteSupabaseObjects(orphans);
+    if (result?.failed) {
+      await appendLog("warn", "experience_storage_cleanup_partial", {
+        experienceId: deletedExperienceId,
+        userId: user.id,
+        failed: result.failed,
+        warnings: result.warnings,
+      });
+    }
+  } catch (error) {
+    // La experiencia YA se borro: un fallo limpiando binarios no debe convertir
+    // un borrado correcto en un error para el usuario. Se registra y sigue.
+    await appendLog("warn", "experience_storage_cleanup_failed", {
+      experienceId: deletedExperienceId,
+      userId: user.id,
+      error: sanitizeDiagnosticError(error),
+    });
+  }
 }
 
 async function deleteExperienceCompanionRows(id, user = { id: LOCAL_USER_ID }) {
@@ -10027,7 +10145,13 @@ async function analyzeAppleHealthZip(media = {}, existingBytes = null) {
   }
   const [entryName, xmlBytes] = xmlEntry;
   const xml = xmlBytes.toString("utf8");
-  const rows = extractAppleHealthXmlRowsServer(xml).slice(0, 50000);
+  // Un export real de Apple Health trae cientos de miles de <Record>. Antes se
+  // cortaba a 50.000 EN SILENCIO y se presentaban como import completo el
+  // recuento, los totales y el rango de fechas de una muestra parcial.
+  const APPLE_HEALTH_ROW_LIMIT = 50000;
+  const allRows = extractAppleHealthXmlRowsServer(xml);
+  const rows = allRows.slice(0, APPLE_HEALTH_ROW_LIMIT);
+  const truncated = allRows.length > APPLE_HEALTH_ROW_LIMIT;
   const metricNames = detectServerBiometricMetricNames(rows);
   const metrics = aggregateServerBiometricRows(rows);
   const dates = rows
@@ -10064,10 +10188,15 @@ async function analyzeAppleHealthZip(media = {}, existingBytes = null) {
     metrics.sleepMinutes ? `Sueno registrado: ${(metrics.sleepMinutes / 60).toFixed(1)} horas.` : "",
   ].filter(Boolean).join(" ");
   return {
-    status: rows.length ? "ok" : "empty",
+    status: truncated ? "partial" : (rows.length ? "ok" : "empty"),
+    truncated,
+    totalRecords: allRows.length,
+    processedRecords: rows.length,
     method: "server-apple-health-zip-extraction",
     provider: "local-server",
-    text,
+    text: truncated
+      ? `${text} Importacion PARCIAL: se procesaron ${rows.length} de ${allRows.length} registros.`
+      : text,
     characters: text.length,
     biometricImport,
     structuredContext: {
@@ -10528,6 +10657,16 @@ async function buildPdfReport(user, report = null) {
       throw new HttpError(503, "reportlab_unavailable", error.message);
     }
   }
+  // Sin payload valido NO se entrega un PDF degradado con el mismo nombre que
+  // el reporte real: un texto plano sin portada, KPIs ni hallazgos parecia "el
+  // reporte" y no lo era.
+  if (report && (report.summary || report.rows)) {
+    throw new HttpError(
+      400,
+      "report_payload_incomplete",
+      "El reporte requiere summary y rows para generarse.",
+    );
+  }
   const experiences = await listExperiences(user);
   const sorted = [...experiences].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
   const totalMinutes = sorted.reduce((sum, item) => sum + item.duration, 0);
@@ -10569,6 +10708,16 @@ async function buildPublicationPdf(payload = {}, user = { id: LOCAL_USER_ID }) {
 }
 
 async function buildInsightsPdf(payload = {}, user = { id: LOCAL_USER_ID }) {
+  // Sin esta guarda, un POST con body {} devolvia 200 y un informe con portada
+  // ejecutiva, seis ceros y tarjetas de "no hay hallazgos": un documento con
+  // aspecto de analisis y sin un solo dato.
+  if (!Array.isArray(payload.insights) && !Array.isArray(payload.axes)) {
+    throw new HttpError(
+      400,
+      "insights_payload_required",
+      "Los hallazgos requieren insights o axes para generarse.",
+    );
+  }
   try {
     const reportLabPdf = await renderReportLabPdf("insights_pdf_reportlab.py", payload);
     await appendLog("info", "Insights PDF generated", { userId: user.id, source: "reportlab" });
@@ -10579,7 +10728,12 @@ async function buildInsightsPdf(payload = {}, user = { id: LOCAL_USER_ID }) {
   }
 }
 
-async function buildManualPdf(html, user = { id: LOCAL_USER_ID }) {
+// Acepta el body completo: antes solo recibia `html` y descartaba `version` y
+// `language`, que el cliente SI envia, de modo que todos los manuales salian
+// con "Version: -" en la portada.
+async function buildManualPdf(input, user = { id: LOCAL_USER_ID }) {
+  const body = typeof input === "string" ? { html: input } : (input || {});
+  const html = body.html;
   if (typeof html !== "string" || !html.trim()) {
     throw new HttpError(400, "manual_html_required");
   }
@@ -10587,6 +10741,8 @@ async function buildManualPdf(html, user = { id: LOCAL_USER_ID }) {
     const reportLabPdf = await renderReportLabPdf("manual_pdf_reportlab.py", {
       title: "Manual Vibe",
       html,
+      version: body.version || body.appVersion || "",
+      language: body.language === "en" ? "en" : (body.language || "es"),
     });
     await appendLog("info", "Manual PDF generated", { userId: user.id, source: "reportlab" });
     return reportLabPdf;
@@ -10805,6 +10961,11 @@ async function renderReportLabPdf(scriptName, payload) {
     if (!stdout.length) {
       throw new Error("reportlab_empty_pdf_output");
     }
+    // Cualquier byte escrito a stdout antes del PDF (un print de depuracion, un
+    // warning mal dirigido) salia al cliente como 200 application/pdf corrupto.
+    if (stdout.length < 5 || stdout.subarray(0, 4).toString("ascii") !== "%PDF") {
+      throw new Error(`reportlab_invalid_pdf_output: ${stdout.subarray(0, 120).toString("utf8")}`);
+    }
     return stdout;
   } catch (error) {
     const detail = summarizeReportLabError(error);
@@ -10922,6 +11083,11 @@ function runReportLabProcess(pythonExecutable, scriptPath, payload) {
       error.stdoutBytes = stdoutBytes;
       error.stderrBytes = stderrBytes;
       rejectOnce(error);
+    });
+    // Sin listener, un EPIPE sobre el stdin destruido tumba el proceso Node en
+    // vez de devolver un 503.
+    child.stdin.on("error", (error) => {
+      rejectOnce(new Error(`reportlab_stdin_failed: ${error?.message || error}`));
     });
     child.stdin.end(JSON.stringify(payload || {}), "utf8");
   });
@@ -11185,7 +11351,11 @@ async function getContextImpact(location, profile = {}, experienceType = "auto",
   const news = newsResult.status === "fulfilled" ? newsResult.value : unavailableNewsImpact(newsResult.reason);
   const baseScore = calculateImpactScore(weather, news);
   const profileImpact = buildProfileImpact(profile, experienceType, weather, news);
-  const score = Math.min(100, Math.max(0, baseScore + profileImpact.scoreAdjustment));
+  // baseScore es null cuando clima y noticias fallaron: sin datos no se publica
+  // ni indice ni conclusion.
+  const score = baseScore === null
+    ? null
+    : Math.min(100, Math.max(0, baseScore + profileImpact.scoreAdjustment));
   return {
     location: getPlaceDisplayName(place),
     country: place.country,
@@ -11193,7 +11363,13 @@ async function getContextImpact(location, profile = {}, experienceType = "auto",
     longitude: place.longitude,
     generatedAt: new Date().toISOString(),
     impactScore: score,
-    summary: buildImpactSummary(score, weather, news),
+    degraded: [
+      ...(weather?.unavailable ? ["weather"] : []),
+      ...(news?.unavailable ? ["news"] : []),
+    ],
+    summary: score === null
+      ? "Sin datos externos disponibles: no se puede estimar el impacto contextual."
+      : buildImpactSummary(score, weather, news),
     profileImpact,
     weather,
     geopoliticalNews: news,
@@ -12468,6 +12644,10 @@ function buildDailyHoroscope(language) {
 }
 
 function calculateImpactScore(weather, news) {
+  // Con AMBOS proveedores caidos, el suelo incondicional de 20 producia un
+  // "impacto contextual bajo" afirmado sobre datos que no existen. Sin datos no
+  // hay indice: se devuelve null y el consumidor omite la tarjeta.
+  if (weather?.unavailable && news?.unavailable) return null;
   let score = 20;
   score += Math.min(35, weather.riskSignals.length * 12);
   score += Math.min(35, news.riskSignals.length * 10 + news.articleCount * 2);
@@ -12643,12 +12823,34 @@ async function supabaseRpc(functionName, body, accessToken) {
   return text ? JSON.parse(text) : [];
 }
 
+// Telemetria de B7, con freno: se registra como mucho una vez por minuto para
+// no inundar el log (que se lee y reescribe entero en cada appendLog).
+let serviceRoleUseCount = 0;
+let serviceRoleLastLoggedAt = 0;
+const SERVICE_ROLE_LOG_INTERVAL_MS = 60_000;
+
 function supabaseRequestHeaders(accessToken = "") {
   if (accessToken) {
     return {
       apikey: SUPABASE_PUBLISHABLE_KEY,
       Authorization: `Bearer ${accessToken}`,
     };
+  }
+  // B7 — sin token de usuario se escala a service-role, que SALTA RLS. Es
+  // legitimo en el reset de cuenta y en tareas de servidor, pero era silencioso:
+  // no habia forma de saber que una peticion se estaba sirviendo sin RLS.
+  // Primera fase: se registra para poder medir quien llega sin token. Endurecer
+  // a excepcion solo despues de ver esos logs (hay 13 rutas que hoy funcionan
+  // sin sesion y romperian pantallas visibles).
+  serviceRoleUseCount += 1;
+  const now = Date.now();
+  if (now - serviceRoleLastLoggedAt > SERVICE_ROLE_LOG_INTERVAL_MS) {
+    serviceRoleLastLoggedAt = now;
+    const total = serviceRoleUseCount;
+    appendLog("warn", "supabase_service_role_used", {
+      reason: "no_user_access_token",
+      totalSinceBoot: total,
+    }).catch(() => {});
   }
   return supabaseServerKeyHeaders();
 }
