@@ -583,7 +583,7 @@ function contextOverview(compact = false) {
       </article>
       <article class="context-card">
         <div class="context-card-head">${icon("file")}<span>${escapeHtml(t("currentNews"))}</span></div>
-        ${newsItems.length ? headlineList(newsItems, 3) : `<p>${escapeHtml(t("noNews"))}</p>`}
+        ${news.categories ? newsByCategory(news) : (newsItems.length ? headlineList(newsItems, 3) : `<p>${escapeHtml(t("noNews"))}</p>`)}
         ${impact.level ? `<p class="impact-line ${escapeAttr(impact.level)}">${escapeHtml(t("contextImpact"))}: ${escapeHtml(t(`impact.${impact.level}`))} (${Number(impact.score || 0)}/100)</p>` : ""}
       </article>
       <article class="context-card">
@@ -598,6 +598,50 @@ function headlineList(items, limit) {
   return `<ul class="headline-list">${items.slice(0, limit).map((item) =>
     `<li>${item.link ? `<a href="${escapeAttr(item.link)}" target="_blank" rel="noopener">${escapeHtml(item.title)}</a>` : escapeHtml(item.title)}</li>`,
   ).join("")}</ul>`;
+}
+
+const NEWS_CATEGORY_ORDER = ["geopolitics", "economy", "technology", "science", "sports"];
+const NEWS_SCOPE_ORDER = ["local", "national", "global"];
+
+// Noticias por categoria y ambito. Una noticia sin imagen se muestra igual: la
+// extraccion de og:image no siempre es posible (los enlaces de Google News son
+// redirecciones) y es preferible el titular sin foto a ocultar la noticia.
+function newsByCategory(news = {}) {
+  const categories = news.categories || {};
+  const blocks = NEWS_CATEGORY_ORDER.map((category) => {
+    const scopes = categories[category] || {};
+    const groups = NEWS_SCOPE_ORDER.map((scope) => {
+      const items = Array.isArray(scopes[scope]) ? scopes[scope] : [];
+      if (!items.length) return "";
+      return `<div class="news-scope">
+        <h4>${escapeHtml(t(`newsScope.${scope}`))}</h4>
+        <div class="news-grid">${items.map(newsCard).join("")}</div>
+      </div>`;
+    }).filter(Boolean).join("");
+    if (!groups) return "";
+    return `<section class="news-category">
+      <h3>${escapeHtml(t(`newsCategory.${category}`))}</h3>
+      ${groups}
+    </section>`;
+  }).filter(Boolean).join("");
+  if (!blocks) return `<p>${escapeHtml(t("noNews"))}</p>`;
+  const note = Number(news.withImage || 0) < Number(news.total || 0)
+    ? `<p class="source-line">${escapeHtml(t("newsImageNote"))}</p>`
+    : "";
+  return `<div class="news-board">${blocks}${note}</div>`;
+}
+
+function newsCard(item = {}) {
+  const link = item.publisherUrl || item.link || "";
+  const title = escapeHtml(item.title || "");
+  const source = item.source ? `<span class="news-source">${escapeHtml(item.source)}</span>` : "";
+  const media = item.image
+    ? `<img class="news-image" src="${escapeAttr(item.image)}" alt="" loading="lazy" referrerpolicy="no-referrer" />`
+    : "";
+  const body = `${media}<div class="news-body"><p class="news-title">${title}</p>${source}</div>`;
+  return link
+    ? `<a class="news-card" href="${escapeAttr(link)}" target="_blank" rel="noopener">${body}</a>`
+    : `<article class="news-card">${body}</article>`;
 }
 
 function contextMetric(value, suffix, label) {

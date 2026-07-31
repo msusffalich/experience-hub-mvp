@@ -19,6 +19,7 @@ const files = {
   capture: await readFile(new URL("capture.mjs", backendRoot), "utf8"),
   context: await readFile(new URL("context-enrichment.mjs", backendRoot), "utf8"),
   routes: await readFile(new URL("app.mjs", backendRoot), "utf8"),
+  news: await readFile(new URL("news.mjs", backendRoot), "utf8"),
 };
 
 const results = [];
@@ -105,7 +106,12 @@ async function verifyAutomaticContext() {
   assert.match(files.app, /reason:\s*userInitiated\s*\?\s*"manual"\s*:\s*"automatic"/);
   assert.match(files.context, /signal_type:\s*"eq\.location"/);
   assert.match(files.context, /https:\/\/api\.open-meteo\.com\/v1\/forecast/);
-  assert.match(files.context, /Reuters OR BBC OR AP OR NPR/);
+  // Las noticias pasaron a news.mjs: cinco categorias x tres ambitos, con
+  // imagen via og:image. Las aserciones siguen al modulo.
+  assert.match(files.news, /NEWS_CATEGORIES = \["geopolitics", "economy", "technology", "science", "sports"\]/);
+  assert.match(files.news, /scope === "local"/);
+  assert.match(files.news, /scope === "national"/);
+  assert.match(files.news, /og:image/);
   assert.match(files.context, /cinema OR theater OR theatre OR concert OR festival OR events OR shows/);
   assert.match(files.context, /Promise\.allSettled\(\[/);
   assert.match(files.context, /\["weather",\s*payload\.weather\]/);
@@ -200,11 +206,14 @@ async function verifyAutomaticContext() {
   const outcomes = await service.processQueued(1);
   assert.deepEqual(outcomes, [{ id: "context-job-1", state: "complete" }]);
   assert.equal(fetches.filter((url) => url.hostname === "api.open-meteo.com").length, 1);
-  assert.equal(fetches.filter((url) => url.hostname === "news.google.com").length, 2);
+  // 5 categorias x 3 ambitos + cartelera. Antes eran 2 consultas.
+  assert.equal(fetches.filter((url) => url.hostname === "news.google.com").length, 16);
   assert.equal(briefings.length, 1);
   assert.equal(briefings[0].payload.location.locality, "Winter Garden");
   assert.equal(briefings[0].payload.weather.status, "available");
   assert.equal(briefings[0].payload.news.items.length, 1);
+  assert.ok(briefings[0].payload.news.categories, "las noticias deben venir agrupadas por categoria");
+  assert.ok(briefings[0].payload.news.categories.geopolitics, "falta la categoria geopolitics");
   assert.equal(briefings[0].payload.entertainment.items.length, 1);
   assert.deepEqual(
     persistedSignals.map((item) => item.signal_type).sort(),

@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { ApiError } from "./errors.mjs";
+import { createNewsService } from "./news.mjs";
 
 const REFRESH_HOURS = 6;
 const MAX_ATTEMPTS = 4;
@@ -310,26 +311,18 @@ export function createContextEnrichmentService({
     };
   }
 
+  // Noticias por categoria y ambito (local / nacional / global) con imagen.
+  const newsService = createNewsService({
+    fetchText,
+    fetchImpl,
+    rssLocale,
+    parseRss,
+    isRecent,
+    mentionsPlace,
+  });
+
   async function fetchNews(place, locale) {
-    // La localidad va ENTRECOMILLADA y acompanada de region/pais: sin eso los
-    // terminos genericos dominaban la consulta y Google News devolvia notas de
-    // cualquier sitio del mundo en ese idioma.
-    const query = `${placeQuery(place)} (Reuters OR BBC OR AP OR NPR OR \"Associated Press\") when:${NEWS_FRESHNESS_HOURS}h`;
-    const items = (await fetchRss(query, locale, 20))
-      .filter((item) => isRecent(item.publishedAt, NEWS_FRESHNESS_HOURS))
-      .filter((item) => TRUSTED_NEWS_SOURCES.some((source) =>
-        String(item.source || "").toLowerCase().includes(source),
-      ))
-      // Y ademas se exige que la nota mencione el lugar: mas vale decir que no
-      // hay noticias de tu zona que mostrar noticias de otra.
-      .filter((item) => mentionsPlace(item, place))
-      .slice(0, 8);
-    return {
-      status: items.length ? "available" : "no_recent_items",
-      source: "Trusted Google News RSS",
-      freshnessHours: NEWS_FRESHNESS_HOURS,
-      items,
-    };
+    return newsService.collect(place, locale);
   }
 
   async function fetchEntertainment(place, locale) {
