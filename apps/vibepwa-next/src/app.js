@@ -618,6 +618,14 @@ const NEWS_SCOPE_ORDER = ["local", "national", "global"];
 function moviesBlock(movies = {}) {
   const items = Array.isArray(movies.items) ? movies.items : [];
   if (movies.status === "not_configured") return `<p>${escapeHtml(t("moviesNotConfigured"))}</p>`;
+  // Distinguir "TMDB fallo" de "no hay peliculas": con una clave invalida se
+  // mostraba "no hay peliculas en cartel", que es afirmar algo que no se sabe.
+  if (movies.status === "unavailable") {
+    return `<p>${escapeHtml(t("moviesFailed"))}${movies.error ? ` (${escapeHtml(String(movies.error).slice(0, 160))})` : ""}</p>`;
+  }
+  // Sin el campo `movies` el briefing es anterior a esta funcion: se pide
+  // actualizar el contexto en vez de afirmar que no hay cartelera.
+  if (!movies.status) return `<p>${escapeHtml(t("moviesStale"))}</p>`;
   if (!items.length) return `<p>${escapeHtml(t("moviesEmpty"))}</p>`;
   const cards = items.slice(0, 8).map((movie) => {
     const poster = movie.image
