@@ -72,6 +72,11 @@ assert.doesNotMatch(combined, /\/api\/(?:experiences|assets|captures|report|insi
 
 assert.match(api, /Promise\.allSettled\(/);
 assert.match(api, /\["health",\s*"\/api\/v2\/health"/);
+assert.match(
+  api,
+  /invalid:\s*response\.status === 400 \|\| response\.status === 401 \|\| response\.status === 403/,
+  "VibePWA2 must recover from a legacy session rejected during refresh",
+);
 assert.doesNotMatch(
   api.match(/export async function loadWorkspace\(previous = \{\}\)[\s\S]*?\n\}/)?.[0] || "",
   /\.catch\(\(\)\s*=>/,

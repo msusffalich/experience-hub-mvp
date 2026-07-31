@@ -12,19 +12,37 @@ export function createAuthService(supabase) {
   async function refresh(body = {}) {
     const token = String(body.refreshToken || body.refresh_token || "").trim();
     if (!token) throw new ApiError(400, "refresh_token_required");
-    const result = await supabase.authRefresh(token);
-    return sessionPayload(result);
+    try {
+      const result = await supabase.authRefresh(token);
+      return sessionPayload(result);
+    } catch (error) {
+      if (isRejectedCredential(error)) {
+        throw new ApiError(401, "refresh_token_invalid", "La sesión expiró. Inicia sesión nuevamente.");
+      }
+      throw error;
+    }
   }
 
   async function requireUser(req) {
     const accessToken = bearer(req.headers.authorization);
     if (!accessToken) throw new ApiError(401, "auth_required", "Inicia sesión para continuar.");
-    const user = await supabase.authUser(accessToken);
-    if (!user?.id) throw new ApiError(401, "auth_invalid");
-    return { user, accessToken };
+    try {
+      const user = await supabase.authUser(accessToken);
+      if (!user?.id) throw new ApiError(401, "auth_invalid", "La sesión ya no es válida.");
+      return { user, accessToken };
+    } catch (error) {
+      if (isRejectedCredential(error)) {
+        throw new ApiError(401, "auth_invalid", "La sesión ya no es válida.");
+      }
+      throw error;
+    }
   }
 
   return { signIn, refresh, requireUser };
+}
+
+function isRejectedCredential(error) {
+  return error?.status === 400 || error?.status === 401 || error?.status === 403;
 }
 
 function sessionPayload(result = {}) {

@@ -56,6 +56,11 @@ assert.match(files.queue, /occurredAt/);
 assert.match(files.api, /\/api\/v2\/auth\/refresh/);
 assert.match(files.api, /refreshPromise/);
 assert.match(files.api, /if \(!refreshed\.invalid\) throw refreshed\.error/);
+assert.match(
+  files.api,
+  /invalid:\s*response\.status === 400 \|\| response\.status === 401 \|\| response\.status === 403/,
+  "A refresh token rejected by an older Supabase session must be cleared",
+);
 assert.match(files.zip, /0x06054b50/);
 assert.match(files.worker, /vibe-next-/);
 assert.match(server, /url\.pathname\.startsWith\("\/api\/v2\/"\)/);
@@ -75,4 +80,75 @@ assert.deepEqual(Array.from(archive.slice(0, 4)), [0x50, 0x4b, 0x03, 0x04]);
 assert.equal(new TextDecoder().decode(archive).includes("publicacion.pdf"), true);
 assert.equal(new TextDecoder().decode(archive).includes("video.mp4"), true);
 
+const storage = new Map();
+globalThis.localStorage = {
+  getItem(key) {
+    return storage.has(key) ? storage.get(key) : null;
+  },
+  setItem(key, value) {
+    storage.set(key, String(value));
+  },
+  removeItem(key) {
+    storage.delete(key);
+  },
+};
+const sessionEvents = [];
+globalThis.CustomEvent = class CustomEvent {
+  constructor(type) {
+    this.type = type;
+  }
+};
+globalThis.window = {
+  dispatchEvent(event) {
+    sessionEvents.push(event.type);
+  },
+};
+const apiModule = await import(new URL(`src/api.js?session-test=${Date.now()}`, root));
+apiModule.setSession({
+  accessToken: "legacy-access",
+  refreshToken: "valid-refresh",
+  user: { id: "user-1" },
+});
+let refreshCalls = 0;
+globalThis.fetch = async (path, options = {}) => {
+  if (path === "/api/v2/auth/refresh") {
+    refreshCalls += 1;
+    return jsonResponse(200, {
+      accessToken: "fresh-access",
+      refreshToken: "fresh-refresh",
+      user: { id: "user-1" },
+    });
+  }
+  const authorization = new Headers(options.headers || {}).get("Authorization");
+  return authorization === "Bearer fresh-access"
+    ? jsonResponse(200, { ok: true, path })
+    : jsonResponse(401, { error: "auth_invalid" });
+};
+const recovered = await Promise.all(
+  Array.from({ length: 12 }, (_, index) => apiModule.request(`/api/v2/test/${index}`)),
+);
+assert.equal(recovered.every((item) => item.ok), true);
+assert.equal(refreshCalls, 1, "Concurrent module failures must share one session refresh");
+assert.equal(apiModule.getSession().accessToken, "fresh-access");
+assert.deepEqual(sessionEvents, []);
+
+apiModule.setSession({
+  accessToken: "expired-access",
+  refreshToken: "expired-refresh",
+  user: { id: "user-1" },
+});
+globalThis.fetch = async (path) => path === "/api/v2/auth/refresh"
+  ? jsonResponse(403, { error: "supabase_403" })
+  : jsonResponse(401, { error: "auth_invalid" });
+await assert.rejects(() => apiModule.request("/api/v2/profile"), (error) => error?.status === 401);
+assert.equal(apiModule.getSession(), null, "An unrecoverable legacy session must be removed");
+assert.deepEqual(sessionEvents, ["vibe:session-expired"]);
+
 console.log("VibePWA 2 shell: routes, languages, responsive UI and direct upload passed.");
+
+function jsonResponse(status, body) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}

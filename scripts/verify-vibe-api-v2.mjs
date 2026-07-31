@@ -6,10 +6,12 @@ import { Readable } from "node:stream";
 import { fileURLToPath } from "node:url";
 
 import { createVibeApiV2 } from "../apps/vibe-api-v2/src/app.mjs";
+import { createAuthService } from "../apps/vibe-api-v2/src/auth.mjs";
 import { createCaptureService } from "../apps/vibe-api-v2/src/capture.mjs";
 import { createContextService } from "../apps/vibe-api-v2/src/context.mjs";
 import { createIntegrationService } from "../apps/vibe-api-v2/src/integrations.mjs";
 import { createSupabaseClient } from "../apps/vibe-api-v2/src/supabase.mjs";
+import { ApiError } from "../apps/vibe-api-v2/src/errors.mjs";
 
 const backendRoot = new URL("../apps/vibe-api-v2/", import.meta.url);
 const sourceRoot = new URL("src/", backendRoot);
@@ -142,6 +144,35 @@ const authenticated = await dispatch(api, "GET", "/api/v2/profile", {
 assert.equal(authenticated.status, 200);
 assert.equal(authenticated.json.userId, profile.user_id);
 assert.equal(authenticated.headers["x-vibe-api-version"], "2.0.0");
+
+const rejectedSessionAuth = createAuthService({
+  async authUser() {
+    throw new ApiError(403, "supabase_403");
+  },
+  async authRefresh() {
+    throw new ApiError(403, "supabase_403");
+  },
+});
+await assert.rejects(
+  () => rejectedSessionAuth.requireUser({ headers: { authorization: "Bearer stale-token" } }),
+  (error) => error?.status === 401 && error?.code === "auth_invalid",
+  "A stale Supabase access token must become a recoverable 401",
+);
+await assert.rejects(
+  () => rejectedSessionAuth.refresh({ refreshToken: "stale-refresh-token" }),
+  (error) => error?.status === 401 && error?.code === "refresh_token_invalid",
+  "A stale Supabase refresh token must end the invalid session cleanly",
+);
+const unavailableAuth = createAuthService({
+  async authUser() {
+    throw new ApiError(502, "supabase_502");
+  },
+});
+await assert.rejects(
+  () => unavailableAuth.requireUser({ headers: { authorization: "Bearer valid-token" } }),
+  (error) => error?.status === 502 && error?.code === "supabase_502",
+  "A real upstream outage must not be mislabeled as an expired session",
+);
 
 const storageRequests = [];
 const storageClient = createSupabaseClient(config, async (url) => {

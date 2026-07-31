@@ -98,7 +98,7 @@ async function performSessionRefresh() {
     if (!response.ok) {
       return {
         ok: false,
-        invalid: response.status === 400 || response.status === 401,
+        invalid: response.status === 400 || response.status === 401 || response.status === 403,
         error: new Error(`session_refresh_${response.status}`),
       };
     }
