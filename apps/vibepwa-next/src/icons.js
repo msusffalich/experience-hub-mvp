@@ -25,6 +25,7 @@ const paths = {
   arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
   warning: '<path d="M12 3 2 21h20z"/><path d="M12 9v5M12 18h.01"/>',
   delete: '<path d="M4 7h16M9 7V4h6v3M7 7l1 14h8l1-14M10 11v6M14 11v6"/>',
+  edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13 7 4 4"/>',
 };
 
 export function icon(name, className = "") {

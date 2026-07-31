@@ -1,8 +1,13 @@
-# VibePWA 2 - handcheck de canario
+# VibePWA 2 - handcheck histórico de canario
 
-Estado: listo para canario, sin sustituir la interfaz productiva
+Estado: cerrado; VibePWA 2 es la entrada productiva
 Rama: `codex/vibepwa-2`
-Acceso paralelo: `/apps/vibepwa-next/index.html`
+Entrada productiva: `/` y `/index.html`
+Reversión controlada: `/legacy`
+
+> Este documento conserva la prueba que precedió al lanzamiento. Las
+> instrucciones de no cambiar la entrada principal que aparecen más abajo son
+> históricas y ya fueron sustituidas por ADR-009.
 
 ## Objetivo
 

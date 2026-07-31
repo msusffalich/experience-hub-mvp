@@ -122,21 +122,37 @@ async function performSessionRefresh() {
   }
 }
 
-export async function loadWorkspace() {
-  const [health, profile, groups, experiences, assets, captures, agenda, capture, context, contextSignals, oura] = await Promise.all([
-    request("/api/v2/health"),
-    request("/api/v2/profile"),
-    request("/api/v2/groups"),
-    request("/api/v2/experiences"),
-    request("/api/v2/assets"),
-    request("/api/v2/captures?intent=evidence"),
-    request("/api/v2/agenda"),
-    request("/api/v2/captures/status"),
-    request("/api/v2/context/summary"),
-    request("/api/v2/context/signals"),
-    request("/api/v2/integrations/oura/status"),
-  ]);
-  return { health, profile, groups, experiences, assets, captures, agenda, capture, context, contextSignals, oura };
+export async function loadWorkspace(previous = {}) {
+  const modules = [
+    ["health", "/api/v2/health", null],
+    ["profile", "/api/v2/profile", {}],
+    ["groups", "/api/v2/groups", []],
+    ["experiences", "/api/v2/experiences", []],
+    ["assets", "/api/v2/assets", []],
+    ["captures", "/api/v2/captures?intent=evidence", []],
+    ["agenda", "/api/v2/agenda", []],
+    ["capture", "/api/v2/captures/status", null],
+    ["context", "/api/v2/context/summary", null],
+    ["contextSignals", "/api/v2/context/signals", []],
+    ["briefing", "/api/v2/context/briefing", null],
+    ["oura", "/api/v2/integrations/oura/status", null],
+  ];
+  const settled = await Promise.allSettled(modules.map(([, path]) => request(path)));
+  const result = { issues: [] };
+  settled.forEach((outcome, index) => {
+    const [name, , fallback] = modules[index];
+    if (outcome.status === "fulfilled") {
+      result[name] = outcome.value;
+      return;
+    }
+    result[name] = previous[name] ?? fallback;
+    result.issues.push({
+      module: name,
+      status: Number(outcome.reason?.status || 0),
+      message: String(outcome.reason?.message || "module_unavailable"),
+    });
+  });
+  return result;
 }
 
 export function downloadBlob(blob, filename) {

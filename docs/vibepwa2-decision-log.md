@@ -60,3 +60,13 @@ episodio vivido.
 fecha ni porcentaje declarado.
 
 **Motivo:** el estado real se demuestra con pruebas funcionales.
+
+## ADR-009 - Entrada publica y reversión
+
+**Decision:** `/` e `/index.html` abren VibePWA 2. La interfaz anterior queda
+disponible exclusivamente en `/legacy`, que redirige a
+`/index.html?legacy=1`.
+
+**Motivo:** el usuario debe encontrar un solo producto al abrir la URL
+principal, sin perder una vía de reversión operativa mientras se completa el
+seguimiento en producción.

@@ -17,6 +17,9 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import BaseDocTemplate, Flowable, Frame, Image, KeepTogether, PageBreak, PageTemplate, Paragraph, Spacer, Table, TableStyle
 
+from pdf_context_sections import build_context_digest
+from pdf_i18n import natural_date, set_locale, t
+
 
 PAGE_WIDTH, PAGE_HEIGHT = letter
 MARGIN = 0.58 * inch
@@ -175,12 +178,12 @@ def page(canvas, doc):
     canvas.rect(0, PAGE_HEIGHT - 0.035 * inch, PAGE_WIDTH, 0.035 * inch, fill=1, stroke=0)
     canvas.setFillColor(BRAND)
     canvas.setFont(FONT_BOLD, 8)
-    canvas.drawString(MARGIN, 0.32 * inch, "Vibe - Documento editado ReportLab")
+    canvas.drawString(MARGIN, 0.32 * inch, t("publication_footer"))
     canvas.setFillColor(GOLD)
     canvas.roundRect(MARGIN, 0.22 * inch, 0.38 * inch, 0.035 * inch, 1, fill=1, stroke=0)
     canvas.setFillColor(MUTED)
     canvas.setFont(FONT_REGULAR, 8)
-    canvas.drawRightString(PAGE_WIDTH - MARGIN, 0.32 * inch, f"Página {doc.page}")
+    canvas.drawRightString(PAGE_WIDTH - MARGIN, 0.32 * inch, t("page", number=doc.page))
     canvas.restoreState()
 
 
@@ -510,14 +513,15 @@ def media_caption(item):
 
 
 def media_action_note(item):
-    kind = human_kind(item).lower()
-    if kind == "audio":
-        return "Audio disponible para reproducir en la app; el PDF conserva la transcripcion o resumen."
-    if kind == "video":
-        return "Video disponible para reproducir en la app; el PDF conserva la lectura editorial."
-    if kind == "documento":
-        return "Documento disponible para abrir en la app; el PDF resume el contenido interpretado."
-    return "Archivo disponible para descarga desde la app."
+    mime = str((item or {}).get("type") or "").lower()
+    kind = str((item or {}).get("kind") or "").lower()
+    if mime.startswith("audio/") or kind == "audio":
+        return t("audio_available")
+    if mime.startswith("video/") or kind == "video":
+        return t("video_available")
+    if "pdf" in mime or "text" in mime or "document" in kind:
+        return t("document_available")
+    return t("file_available")
 
 def media_gallery(media):
     flow = []
@@ -537,12 +541,12 @@ def media_gallery(media):
         else:
             non_images.insert(0, item)
     if not rendered:
-        flow.append(text_card("Imágenes", "No fue posible incrustar imágenes en el PDF. Revisa que el activo tenga URL firmada o data URL disponible al exportar.", colors.HexColor("#f2b84b")))
+        flow.append(text_card(t("images"), t("images_unavailable"), colors.HexColor("#f2b84b")))
         flow.append(Spacer(1, 8))
     if non_images:
         flow.append(Spacer(1, 4))
         for item in non_images[:18]:
-            body = item.get("manualNote") or item.get("analyticalText") or item.get("translatedText") or item.get("experienceTitle") or "Disponible para revisar."
+            body = item.get("manualNote") or item.get("analyticalText") or item.get("translatedText") or item.get("experienceTitle") or t("available_review")
             flow.append(KeepTogether([
                 text_card(
                     friendly_media_name(item),
@@ -552,7 +556,7 @@ def media_gallery(media):
                 Spacer(1, 7),
             ]))
     if not media:
-        flow.append(text_card("Multimedia", "No hay multimedia seleccionada para esta publicación.", colors.HexColor("#f2b84b")))
+        flow.append(text_card(t("multimedia"), t("no_multimedia_selected"), colors.HexColor("#f2b84b")))
     return flow
 
 
@@ -576,14 +580,11 @@ def timeline_items_from_draft(draft, highlights):
 
 
 def format_timeline_date(value):
-    text = str(value or "").strip()
-    if not text:
-        return "-"
-    return text[:16].replace("T", " ")
+    return natural_date(value, include_time=True)
 
 
 def timeline_card(item, media_lookup):
-    title = clean_html(item.get("title") or "Momento registrado")
+    title = clean_html(item.get("title") or t("recorded_moment"))
     date = format_timeline_date(item.get("date"))
     category = clean_html(item.get("category") or "")
     location = clean_html(item.get("location") or "")
@@ -602,7 +603,7 @@ def timeline_card(item, media_lookup):
     for raw in item.get("mediaSummary") or []:
         if len(media_rows) >= 8:
             break
-        media_rows.append(f"{clean_html(raw.get('kind') or 'Activo')}: {clean_html(raw.get('name') or '')}. {short(raw.get('text') or '', 150)}")
+        media_rows.append(f"{clean_html(raw.get('kind') or t('asset'))}: {clean_html(raw.get('name') or '')}. {short(raw.get('text') or '', 150)}")
     event_lines = []
     for event in item.get("internalEvents") or []:
         event_title = clean_html(event.get("title") or "")
@@ -610,25 +611,25 @@ def timeline_card(item, media_lookup):
         if event_title or event_note:
             event_lines.append(f"{event_title}: {event_note}".strip(": "))
     body_parts = [
-        f"Fecha: {date}",
-        f"Categoria: {category}" if category else "",
-        f"Lugar: {location}" if location else "",
-        f"Energia percibida: {energy}/10" if energy not in (None, "", 0) else "",
-        f"Nota: {short(note, 260)}" if note else "",
+        f"{t('date')}: {date}",
+        f"{t('category')}: {category}" if category else "",
+        f"{t('place')}: {location}" if location else "",
+        f"{t('perceived_energy')}: {energy}/10" if energy not in (None, "", 0) else "",
+        f"{t('note')}: {short(note, 260)}" if note else "",
     ]
     if event_lines:
-        body_parts.append("Eventos internos: " + " | ".join(event_lines[:4]))
+        body_parts.append(f"{t('internal_events')}: " + " | ".join(event_lines[:4]))
     if media_rows:
-        body_parts.append("Activos vinculados: " + " | ".join(media_rows))
+        body_parts.append(f"{t('linked_assets')}: " + " | ".join(media_rows))
     return text_card(title, "\n".join([part for part in body_parts if part]), BLUE)
 
 
 def build_chronological_timeline_section(draft, highlights, media):
     items = timeline_items_from_draft(draft, highlights)
     media_lookup = {item.get("id"): item for item in media if item.get("id")}
-    flow = [section_heading("Cronologia completa", "Eventos, notas, mediciones y activos ordenados de inicio a fin.")]
+    flow = [section_heading(t("chronology"), t("chronology_subtitle"))]
     if not items:
-        flow.append(text_card("Sin eventos", "No hay eventos cronologicos disponibles para esta publicacion.", GOLD))
+        flow.append(text_card(t("no_events"), t("no_chronological_events"), GOLD))
         return flow
     for item in items:
         flow.append(KeepTogether([timeline_card(item, media_lookup), Spacer(1, 8)]))
@@ -651,14 +652,14 @@ def human_kind(item):
     mime = str((item or {}).get("type") or "")
     kind = str((item or {}).get("kind") or "").lower()
     if mime.startswith("image/") or kind == "image":
-        return "Imagen"
+        return t("image")
     if mime.startswith("video/") or kind == "video":
-        return "Video"
+        return t("video")
     if mime.startswith("audio/") or kind == "audio":
-        return "Audio"
+        return t("audio")
     if "pdf" in mime or "text" in mime or "document" in kind:
-        return "Documento"
-    return "Activo"
+        return t("document")
+    return t("asset")
 
 
 def simple_table(headers, rows, col_widths):
@@ -709,12 +710,12 @@ def selected_media(media):
 
 def media_selection_label(all_media, media):
     if not all_media:
-        return "Sin multimedia disponible"
+        return t("no_multimedia_available")
     if not media:
-        return "Sin multimedia seleccionada"
+        return t("no_multimedia_selected_short")
     if len(media) == len(all_media):
-        return "Toda la multimedia incluida"
-    return f"{len(media)} de {len(all_media)} activos seleccionados"
+        return t("all_multimedia")
+    return t("selected_assets", selected=len(media), total=len(all_media))
 
 
 def evidence_plain_language(item):
@@ -770,7 +771,7 @@ def channel_rows(channel):
     return [
         ["Canal elegido", channel or "-", status],
         ["Privacidad", "Revisión humana", "La limpieza automática ayuda, pero nombres, rostros y datos sensibles se revisan antes de compartir."],
-        ["Salida principal", "PDF ReportLab", "Documento editado, estable e imprimible. HTML/Markdown/JSON quedan como apoyo técnico."],
+        ["Salida principal", "PDF editorial", "Documento editado, estable e imprimible, listo para revisión final."],
     ]
 
 
@@ -791,11 +792,11 @@ def decision_cards(rows):
 def evidence_cards(media):
     selected = [item for item in (media or []) if item.get("included", True) is not False][:6]
     if not selected:
-        return [text_card("Evidencia multimedia", "No se seleccionó multimedia para esta publicación.", GOLD)]
+        return [text_card(t("multimedia_evidence"), t("no_multimedia_selected"), GOLD)]
     flow = []
     for item in selected:
         title = friendly_media_name(item)
-        context = item.get("experienceTitle") or "Sin experiencia vinculada"
+        context = item.get("experienceTitle") or t("no_linked_experience")
         body = f"{context}. {evidence_plain_language(item)}"
         flow.append(KeepTogether([
             text_card(title, short(body, 380), colors.HexColor("#7a5cc8")),
@@ -1137,53 +1138,85 @@ def editorial_story_from_draft(draft, summary, body):
 
 def build_story_section(title, summary, body_lines):
     flow = [
-        section_heading("Historia editada", "Lectura narrativa preparada para compartir."),
-        text_card("Idea central", summary, RUST),
+        section_heading(t("edited_story"), t("edited_story_subtitle")),
+        text_card(t("central_idea"), summary, RUST),
         Spacer(1, 8),
     ]
     for index, line in enumerate(body_lines[:5], 1):
         flow.append(KeepTogether([
-            text_card(f"Parte {index}", short(line, 520), BLUE if index % 2 else colors.HexColor("#0d7c66")),
+            text_card(t("part", number=index), short(line, 520), BLUE if index % 2 else colors.HexColor("#0d7c66")),
             Spacer(1, 7),
         ]))
     return flow
 
 
 def build_moment_section(highlights):
-    flow = [section_heading("Momentos que sostienen la historia", "Seleccionados por relevancia narrativa, no como inventario.")]
+    flow = [section_heading(t("moments_title"), t("moments_subtitle"))]
     rows = []
     for index, item in enumerate((highlights or [])[:6], 1):
-        title = clean_html(item.get("title") or "Momento")
-        note = clean_html(item.get("note") or item.get("location") or "Registro disponible para memoria.")
+        title = clean_html(item.get("title") or t("moment"))
+        note = clean_html(item.get("note") or item.get("location") or t("record_available"))
         rows.append([str(index), title, short(note, 230)])
     if not rows:
-        rows = [["-", "Sin momentos destacados", "Agrega notas, fotos o audio para enriquecer la publicacion."]]
-    flow.append(simple_table(["#", "Momento", "Por que importa"], rows, [0.35 * inch, 1.8 * inch, PAGE_WIDTH - 2 * MARGIN - 2.15 * inch]))
+        rows = [["-", t("no_moments"), t("add_material")]]
+    flow.append(simple_table(["#", t("moment"), t("why_it_matters")], rows, [0.35 * inch, 1.8 * inch, PAGE_WIDTH - 2 * MARGIN - 2.15 * inch]))
     return flow
 
 
 def build_publication_closing(draft, purpose):
-    text = draft.get("summary") or purpose or "Documento preparado para revision final."
+    text = draft.get("summary") or purpose or t("final_review")
     return [
-        section_heading("Cierre editorial", "Antes de compartir, revisa privacidad, permisos y coherencia narrativa."),
+        section_heading(t("editorial_closing"), t("editorial_closing_subtitle")),
         text_card(
-            "Lectura final",
-            f"{short(text, 420)} Revisa nombres, rostros, datos sensibles y derechos de los medios antes de enviar o publicar.",
+            t("final_reading"),
+            f"{short(text, 420)} {t('review_sensitive')}",
             colors.HexColor("#f2b84b"),
         ),
     ]
 
 
-def build_paged_publication(title, summary, draft, stats, highlights, all_media, media, purpose, people, locations):
+def build_context_section(payload):
+    digest = build_context_digest(payload)
+    if not digest["has_context"]:
+        return []
+    flow = [
+        section_heading(
+            t("context_story"),
+            t("context_story_subtitle"),
+        ),
+    ]
+    if digest["biometrics"]:
+        flow.extend([
+            text_card(
+                t("recorded_measurements"),
+                " · ".join(f"{label}: {value}" for label, value in digest["biometrics"][:6]),
+                colors.HexColor("#0d7c66"),
+            ),
+            Spacer(1, 8),
+        ])
+    accents = [BLUE, RUST, colors.HexColor("#0d7c66"), GOLD]
+    for index, (title, body, meta) in enumerate(digest["cards"]):
+        flow.extend([
+            text_card(title, f"{body.rstrip('.')}. {meta}", accents[index % len(accents)]),
+            Spacer(1, 7),
+        ])
+    flow.append(para(
+        t("context_story_note"),
+        "Muted",
+    ))
+    return flow
+
+
+def build_paged_publication(title, summary, draft, stats, highlights, all_media, media, purpose, people, locations, payload):
     context_lines = [purpose]
-    if people and people.lower() not in ("sin personas indicadas", "not specified"):
-        context_lines.append(f"Personas: {people}")
-    if locations and locations.lower() not in ("sin ubicacion indicada", "no location specified"):
-        context_lines.append(f"Lugares: {locations}")
+    if people and people != t("not_specified_people"):
+        context_lines.append(t("people", value=people))
+    if locations and locations != t("not_specified_location"):
+        context_lines.append(t("places", value=locations))
     first_image = next((item for item in media if str(item.get("type") or "").startswith("image/")), None)
     story_lines = editorial_story_from_draft(draft, summary, draft.get("body") or "")
     flow = [
-        hero(title, "PDF revista premium - memoria cronologica editada."),
+        hero(title, t("publication_subtitle")),
         Spacer(1, 14),
     ]
     if first_image:
@@ -1192,25 +1225,28 @@ def build_paged_publication(title, summary, draft, stats, highlights, all_media,
             flow.extend([cover_image, Spacer(1, 8), para(media_caption(first_image), "Muted"), Spacer(1, 12)])
     flow.extend([
         editorial_cards([
-            ("Enfoque", "\n".join(context_lines), GOLD),
-            ("Resumen", summary, RUST),
-            ("Material usado", media_selection_label(all_media, media), colors.HexColor("#0d7c66")),
-            ("Salida", "PDF cronologico con notas, imagenes, videos, documentos y mediciones disponibles.", BLUE),
+            (t("focus"), "\n".join(context_lines), GOLD),
+            (t("summary"), summary, RUST),
+            (t("material_used"), media_selection_label(all_media, media), colors.HexColor("#0d7c66")),
+            (t("output"), t("output_description"), BLUE),
         ]),
         PageBreak(),
         *build_story_section(title, summary, story_lines),
         PageBreak(),
         *build_chronological_timeline_section(draft, highlights, media),
     ])
+    context_flow = build_context_section(payload)
+    if context_flow:
+        flow.extend([PageBreak(), *context_flow])
     if media:
         flow.extend([
             PageBreak(),
-            section_heading("Galeria y soportes", "Imagenes curadas primero; audio, video y documentos se interpretan en lenguaje claro."),
+            section_heading(t("gallery"), t("gallery_subtitle")),
             *media_gallery(media),
         ])
         flow.extend([
             PageBreak(),
-            section_heading("Lectura de la evidencia", "Que aporta cada medio a la historia."),
+            section_heading(t("evidence_reading"), t("evidence_reading_subtitle")),
             *evidence_cards(media),
         ])
     flow.extend([
@@ -1223,22 +1259,23 @@ def build_paged_publication(title, summary, draft, stats, highlights, all_media,
 def build(payload):
     html = payload.get("html") or ""
     draft = payload.get("draft") or {}
-    title = draft.get("title") or payload.get("title") or "Publicación inteligente"
+    title = draft.get("title") or payload.get("title") or t("publication_title")
     text = clean_html(html)
-    summary = draft.get("summary") or sentence_summary(text, max_sentences=2, limit=360) or "Contenido preparado para revisión humana."
+    summary = draft.get("summary") or sentence_summary(text, max_sentences=2, limit=360) or t("prepared_review")
     body = draft.get("body") or editorial_body(text, limit=940)
     stats = draft.get("stats") or {}
     highlights = draft.get("highlights") or []
     all_media = draft.get("media") or []
     media = selected_media(all_media)
-    purpose = draft.get("purpose") or "Pieza preparada para compartir una memoria viva, no un reporte técnico."
-    people = ", ".join(draft.get("people") or []) or "Sin personas indicadas"
-    locations = ", ".join(draft.get("locations") or []) or "Sin ubicacion indicada"
-    return build_paged_publication(title, summary, draft, stats, highlights, all_media, media, purpose, people, locations)
+    purpose = draft.get("purpose") or t("prepared_memory")
+    people = ", ".join(draft.get("people") or []) or t("not_specified_people")
+    locations = ", ".join(draft.get("locations") or []) or t("not_specified_location")
+    return build_paged_publication(title, summary, draft, stats, highlights, all_media, media, purpose, people, locations, payload)
 
 
 def main():
     payload = json.loads(sys.stdin.buffer.read().decode("utf-8"))
+    set_locale(payload.get("language") or payload.get("locale"))
     buffer = io.BytesIO()
     frame = Frame(MARGIN, MARGIN + 0.22 * inch, PAGE_WIDTH - 2 * MARGIN, PAGE_HEIGHT - 2 * MARGIN - 0.25 * inch, showBoundary=0)
     doc = BaseDocTemplate(buffer, pagesize=letter)

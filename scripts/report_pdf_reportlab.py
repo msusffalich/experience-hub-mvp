@@ -28,6 +28,9 @@ from reportlab.platypus import (
     TableStyle,
 )
 
+from pdf_context_sections import build_context_digest
+from pdf_i18n import natural_date, set_locale, t
+
 
 PAGE_WIDTH, PAGE_HEIGHT = letter
 MARGIN = 0.55 * inch
@@ -183,12 +186,12 @@ def draw_page(canvas, doc):
     canvas.rect(0, PAGE_HEIGHT - 0.035 * inch, PAGE_WIDTH, 0.035 * inch, fill=1, stroke=0)
     canvas.setFillColor(BRAND)
     canvas.setFont(FONT_BOLD, 8)
-    canvas.drawString(MARGIN, 0.32 * inch, "Vibe - Human Experience Intelligence Platform")
+    canvas.drawString(MARGIN, 0.32 * inch, t("report_footer"))
     canvas.setFillColor(ACCENT)
     canvas.roundRect(MARGIN, 0.22 * inch, 0.38 * inch, 0.035 * inch, 1, fill=1, stroke=0)
     canvas.setFillColor(MUTED)
     canvas.setFont(FONT_REGULAR, 8)
-    canvas.drawRightString(PAGE_WIDTH - MARGIN, 0.32 * inch, f"Página {doc.page}")
+    canvas.drawRightString(PAGE_WIDTH - MARGIN, 0.32 * inch, t("page", number=doc.page))
     canvas.restoreState()
 
 
@@ -197,14 +200,10 @@ def cover(report):
     output_scope = report.get("outputScope") or {}
     inventory = report.get("evidenceInventory") or {}
     is_inventory = output_scope.get("presentationMode") == "evidence_inventory"
-    generated = clean(report.get("generatedAt") or datetime.now(timezone.utc).isoformat())
+    generated = natural_date(report.get("generatedAt") or datetime.now(timezone.utc))
     rows = report.get("rows") or []
-    title = "Inventario de evidencia y mediciones" if is_inventory else "Reporte de experiencias"
-    subtitle = (
-        "Archivos y registros reales del período, sin estimaciones inventadas."
-        if is_inventory
-        else "Lectura por Áreas de vida, evidencia multimodal y recomendaciones."
-    )
+    title = t("inventory_title") if is_inventory else t("report_title")
+    subtitle = t("inventory_subtitle") if is_inventory else t("report_subtitle")
     content_width = PAGE_WIDTH - 2 * MARGIN
     logo_column = 1.62 * inch
     title_block = Table(
@@ -230,29 +229,33 @@ def cover(report):
         Spacer(1, 0.24 * inch),
         executive_kpi_strip(
             [
-                ("Evidencias", inventory.get("evidence", 0)),
-                ("Contextos", inventory.get("context", 0)),
-                ("Texto interpretable", inventory.get("readable", 0)),
+                (t("evidence"), inventory.get("evidence", 0)),
+                (t("contexts"), inventory.get("context", 0)),
+                (t("readable_text"), inventory.get("readable", 0)),
             ]
             if is_inventory
             else [
-                ("Historias", summary.get("totalExperiences", len(rows))),
-                ("Horas", summary.get("capturedHours", 0)),
-                ("Energía media", f"{summary.get('averageEnergy')}/10" if summary.get("averageEnergy") is not None else "Sin dato"),
+                (t("stories"), summary.get("totalExperiences", len(rows))),
+                (t("hours"), summary.get("capturedHours", 0)),
+                (t("average_energy"), f"{summary.get('averageEnergy')}/10" if summary.get("averageEnergy") is not None else t("no_data")),
             ]
         ),
         Spacer(1, 0.18 * inch),
         card(
-            "Alcance del inventario" if is_inventory else "Área de vida principal",
+            t("inventory_scope") if is_inventory else t("main_life_area"),
             (
-                "No se calcula balance por Áreas de vida: este alcance no incluye historias."
+                t("no_life_area_balance")
                 if is_inventory
-                else summary.get("topCategory") or "Sin Área de vida registrada"
+                else summary.get("topCategory") or t("no_life_area")
             ),
             body_limit=360,
         ),
         Spacer(1, 0.12 * inch),
-        card("Alcance del documento", f"Generado: {generated}. {'Este inventario muestra evidencia y mediciones reales del alcance.' if is_inventory else 'Este reporte resume cobertura por Áreas de vida, evidencia y contexto del alcance seleccionado.'}", body_limit=320),
+        card(
+            t("document_scope"),
+            f"{t('generated', date=generated)}. {t('inventory_scope_body') if is_inventory else t('report_scope_body')}",
+            body_limit=320,
+        ),
         PageBreak(),
     ]
 
@@ -342,7 +345,7 @@ class VisualTile(Flowable):
         legend_y = h - 38
         labels = [short(label, 30) for label in (self.labels or [])[:4]]
         while len(labels) < len(values):
-            labels.append(f"Área de vida {len(labels) + 1}")
+            labels.append(t("life_area_number", number=len(labels) + 1))
         for index, (label, value) in enumerate(zip(labels, values)):
             y = legend_y - index * 15
             c.setFillColor(palette[index % len(palette)])
@@ -376,9 +379,9 @@ class VisualTile(Flowable):
         c.circle(x, y, 3, fill=1, stroke=0)
         c.setFillColor(MUTED)
         c.setFont(FONT_REGULAR, 6.5)
-        c.drawString(left, bottom - 10, "Inicio")
-        c.drawRightString(left + chart_w, bottom - 10, "Reciente")
-        c.drawString(left - 6, bottom + chart_h + 3, "Energía")
+        c.drawString(left, bottom - 10, t("start"))
+        c.drawRightString(left + chart_w, bottom - 10, t("recent"))
+        c.drawString(left - 6, bottom + chart_h + 3, t("energy"))
 
     def _draw_waffle(self, c, w, h):
         value = max(0, min(100, num(self.values[0] if self.values else 0)))
@@ -424,7 +427,7 @@ class VisualTile(Flowable):
         c.drawPath(path, fill=1, stroke=1)
         labels = [short(label, 18) for label in (self.labels or [])[:count]]
         while len(labels) < count:
-            labels.append(f"Eje {len(labels) + 1}")
+            labels.append(t("axis_number", number=len(labels) + 1))
         c.setFont(FONT_REGULAR, 6.2)
         c.setFillColor(MUTED)
         for index, label in enumerate(labels[:count]):
@@ -516,7 +519,7 @@ def two_column_cards(items):
 
 
 def bar_table(categories):
-    rows = [[para("Área de vida", "Small"), para("Volumen", "Small"), para("Energía", "Small")]]
+    rows = [[para(t("life_area"), "Small"), para(t("volume"), "Small"), para(t("energy"), "Small")]]
     max_minutes = max([num(item.get("minutes")) for item in categories] + [1])
     for item in categories[:8]:
         width = max(4, int((num(item.get("minutes")) / max_minutes) * 100))
@@ -541,7 +544,7 @@ def visual_dashboard(summary, rows, kpis, categories, quality):
     category_labels = [item.get("category") or item.get("label") or item.get("title") for item in categories[:4]]
     if not category_values:
         category_values = [num(summary.get("totalExperiences")), 1]
-        category_labels = ["Experiencias", "Referencia"]
+        category_labels = [t("experiences"), t("reference")]
     energy_values = [num(row.get("energia") or row.get("energy")) for row in rows[:12]]
     if len(energy_values) < 2:
         energy_values = [num(summary.get("averageEnergy")), num(summary.get("averageEnergy"))]
@@ -549,12 +552,12 @@ def visual_dashboard(summary, rows, kpis, categories, quality):
     kpi_labels = [item.get("label") or item.get("title") or item.get("name") for item in kpis[:6]]
     if len(kpi_values) < 3:
         kpi_values = [num(summary.get("averageEnergy")) * 10, num(quality.get("score")), 60]
-        kpi_labels = ["Energia", "Confiabilidad", "Balance"]
+        kpi_labels = [t("energy"), t("confidence"), t("balance")]
     tiles = [
-        VisualTile("Proporción por Área de vida", "donut", category_values, note="Leyenda: porcentaje de cada Área de vida"),
-        VisualTile("Evolución de energía", "sparkline", energy_values, note="Leyenda: tendencia de registros recientes"),
-        VisualTile("Confiabilidad de datos", "waffle", [quality.get("score", 0)], note="Leyenda: completitud de la captura"),
-        VisualTile("Radar de ejes humanos", "radar", kpi_values, labels=kpi_labels, note="Leyenda: puntaje por eje humano"),
+        VisualTile(t("life_area_share"), "donut", category_values, note=t("legend_share")),
+        VisualTile(t("energy_evolution"), "sparkline", energy_values, note=t("legend_recent")),
+        VisualTile(t("data_reliability"), "waffle", [quality.get("score", 0)], note=t("legend_completeness")),
+        VisualTile(t("human_axis_radar"), "radar", kpi_values, labels=kpi_labels, note=t("legend_axis")),
     ]
     tiles[0].labels = category_labels
     table = Table([[tiles[0], tiles[1]], [tiles[2], tiles[3]]], colWidths=[(PAGE_WIDTH - 2 * MARGIN - 8) / 2] * 2)
@@ -571,11 +574,11 @@ def visual_dashboard(summary, rows, kpis, categories, quality):
 def full_legend_table(categories, kpis):
     category_names = [clean(item.get("category") or "-") for item in categories[:6]]
     kpi_names = [clean(item.get("label") or item.get("title") or item.get("name") or "-") for item in kpis[:6]]
-    rows = [[para("Grafico", "Small"), para("Nombres completos", "Small")]]
-    rows.append([para("Proporción por Área de vida", "Small"), para(", ".join(category_names) or "Sin Áreas de vida suficientes", "Small")])
-    rows.append([para("Radar de ejes humanos", "Small"), para(", ".join(kpi_names) or "Energia, Confiabilidad, Balance", "Small")])
-    rows.append([para("Evolucion de energia", "Small"), para("Inicio del periodo, registros intermedios y registros recientes", "Small")])
-    rows.append([para("Confiabilidad de datos", "Small"), para("Completitud de campos: objetivo, ubicacion, personas, notas y adjuntos", "Small")])
+    rows = [[para(t("chart"), "Small"), para(t("full_names"), "Small")]]
+    rows.append([para(t("life_area_share"), "Small"), para(", ".join(category_names) or t("no_life_areas"), "Small")])
+    rows.append([para(t("human_axis_radar"), "Small"), para(", ".join(kpi_names) or ", ".join([t("energy"), t("confidence"), t("balance")]), "Small")])
+    rows.append([para(t("energy_evolution"), "Small"), para(t("period_start_recent"), "Small")])
+    rows.append([para(t("data_reliability"), "Small"), para(t("completeness_fields"), "Small")])
     table = Table(rows, colWidths=[1.65 * inch, 4.05 * inch])
     table.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), BRAND),
@@ -604,27 +607,27 @@ def evidence_cards(items):
             break
     cards = []
     for item in selected:
-        title = f"{item.get('experienceTitle') or 'Elemento de apoyo'}"
-        meta = f"{item.get('kind', '') or 'Contexto'}"
-        body = item.get("analyticalText") or item.get("translatedText") or item.get("manualNote") or "Evidencia disponible para revisar."
+        title = f"{item.get('experienceTitle') or t('supporting_item')}"
+        meta = f"{item.get('kind', '') or t('context')}"
+        body = item.get("analyticalText") or item.get("translatedText") or item.get("manualNote") or t("evidence_review")
         body = body.replace("Extracción local automática para", "Texto extraído de")
         body = body.replace("Uso: evidencia consultable para reportes, memoria y publicaciones. Revisar antes de publicar.", "")
         cards.append((title, short(body, 155), meta))
-    return two_column_cards(cards) if cards else para("No hay evidencia multimodal seleccionada para este filtro.", "Muted")
+    return two_column_cards(cards) if cards else para(t("no_multimodal_evidence"), "Muted")
 
 
 def short_register(rows):
-    table_rows = [[para("Fecha", "Small"), para("Historia", "Small"), para("Área de vida", "Small"), para("Energía", "Small"), para("Adj.", "Small")]]
+    table_rows = [[para(t("date"), "Small"), para(t("story"), "Small"), para(t("life_area"), "Small"), para(t("energy"), "Small"), para(t("attachments"), "Small")]]
     for row in rows[:16]:
         table_rows.append([
-            para(row.get("fecha") or row.get("date") or "", "Small"),
+            para(natural_date(row.get("fecha") or row.get("date") or row.get("timestamp")), "Small"),
             para(short(row.get("titulo") or row.get("title") or "", 55), "Small"),
             para(row.get("categoría") or row.get("categoria") or row.get("category") or "", "Small"),
             para(f"{row.get('energia') or row.get('energy') or ''}/10", "Small"),
             para(str(row.get("adjuntos") or row.get("attachments") or 0), "Small"),
         ])
-    t = Table(table_rows, colWidths=[1.05 * inch, 2.45 * inch, 1.15 * inch, 0.62 * inch, 0.42 * inch])
-    t.setStyle(TableStyle([
+    table = Table(table_rows, colWidths=[1.05 * inch, 2.45 * inch, 1.15 * inch, 0.62 * inch, 0.42 * inch])
+    table.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), BRAND),
         ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
         ("GRID", (0, 0), (-1, -1), 0.35, LINE),
@@ -634,18 +637,18 @@ def short_register(rows):
         ("TOPPADDING", (0, 0), (-1, -1), 5),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
     ]))
-    return t
+    return table
 
 
 def evidence_register(items):
-    table_rows = [[para("Fecha", "Small"), para("Elemento", "Small"), para("Tipo", "Small"), para("Estado", "Small")]]
+    table_rows = [[para(t("date"), "Small"), para(t("item"), "Small"), para(t("type"), "Small"), para(t("status"), "Small")]]
     for item in items[:24]:
         readable = clean(item.get("analyticalText") or item.get("translatedText") or item.get("manualNote") or "")
         table_rows.append([
-            para(item.get("capturedAt") or item.get("timestamp") or "", "Small"),
-            para(short(item.get("name") or item.get("experienceTitle") or "Elemento sin nombre", 58), "Small"),
-            para(item.get("kind") or "Evidencia", "Small"),
-            para("Con lectura" if readable else "Disponible", "Small"),
+            para(natural_date(item.get("capturedAt") or item.get("timestamp")), "Small"),
+            para(short(item.get("name") or item.get("experienceTitle") or t("unnamed_item"), 58), "Small"),
+            para(item.get("kind") or t("evidence"), "Small"),
+            para(t("with_reading") if readable else t("available"), "Small"),
         ])
     table = Table(table_rows, colWidths=[1.15 * inch, 2.95 * inch, 0.95 * inch, 0.8 * inch])
     table.setStyle(TableStyle([
@@ -661,6 +664,24 @@ def evidence_register(items):
     return table
 
 
+def contextual_snapshot(report, include_biometrics=True):
+    digest = build_context_digest(report)
+    if not digest["has_context"]:
+        return []
+    flow = section_title(t("context_period"))
+    if include_biometrics and digest["biometrics"]:
+        flow.append(metric_grid(digest["biometrics"][:4]))
+        flow.append(Spacer(1, 8))
+    if digest["cards"]:
+        flow.append(two_column_cards(digest["cards"]))
+    flow.append(Spacer(1, 4))
+    flow.append(para(
+        t("context_explanation"),
+        "Muted",
+    ))
+    return flow
+
+
 def build_evidence_inventory_story(report):
     inventory = report.get("evidenceInventory") or {}
     measurements = inventory.get("measurements") or {}
@@ -673,36 +694,37 @@ def build_evidence_inventory_story(report):
 
     story = []
     story.extend(cover(report))
-    story.extend(section_title("Inventario del período"))
+    story.extend(section_title(t("period_inventory")))
     story.append(metric_grid([
-        ("Evidencias", inventory.get("evidence", 0)),
-        ("Contextos", inventory.get("context", 0)),
-        ("Texto interpretable", inventory.get("readable", 0)),
-        ("Registros biométricos", records if has_measurements else "-"),
+        (t("evidence"), inventory.get("evidence", 0)),
+        (t("contexts"), inventory.get("context", 0)),
+        (t("readable_text"), inventory.get("readable", 0)),
+        (t("biometric_records"), records if has_measurements else "-"),
     ]))
     story.append(Spacer(1, 10))
     story.append(card(
-        "Cómo leer este inventario",
-        "Este documento organiza archivos y mediciones reales del período seleccionado. No calcula cobertura ni balance por Áreas de vida porque ese análisis requiere historias.",
+        t("how_read_inventory"),
+        t("inventory_explanation"),
     ))
-    story.extend(section_title("Mediciones disponibles"))
+    story.extend(section_title(t("available_measurements")))
     story.append(metric_grid([
-        ("Frecuencia cardiaca promedio", f"{round(num(metrics.get('heartAvg')))} bpm" if num(metrics.get("heartAvg")) else "-"),
-        ("Pasos", f"{int(round(num(metrics.get('steps')))):,}" if num(metrics.get("steps")) else "-"),
-        ("Sueño", f"{num(metrics.get('sleepMinutes')) / 60:.1f} h" if num(metrics.get("sleepMinutes")) else "-"),
-        ("Energía activa", f"{round(num(metrics.get('activeEnergy')))} kcal" if num(metrics.get("activeEnergy")) else "-"),
+        (t("heart_rate"), f"{round(num(metrics.get('heartAvg')))} bpm" if num(metrics.get("heartAvg")) else "-"),
+        (t("steps"), f"{int(round(num(metrics.get('steps')))):,}" if num(metrics.get("steps")) else "-"),
+        (t("sleep"), f"{num(metrics.get('sleepMinutes')) / 60:.1f} h" if num(metrics.get("sleepMinutes")) else "-"),
+        (t("active_energy"), f"{round(num(metrics.get('activeEnergy')))} kcal" if num(metrics.get("activeEnergy")) else "-"),
     ]))
     story.append(Spacer(1, 8))
     story.append(para(
-        "Las mediciones se muestran únicamente cuando existen registros reales en el período. Sin registros suficientes, no se estima energía ni se infiere balance.",
+        t("measurement_rule"),
         "Muted",
     ))
-    story.extend(section_title("Evidencia disponible"))
+    story.extend(contextual_snapshot(report, include_biometrics=False))
+    story.extend(section_title(t("available_evidence")))
     story.append(evidence_cards(all_items))
-    story.extend(section_title("Registro de evidencia"))
-    story.append(evidence_register(all_items) if all_items else para("No hay evidencia ni contexto en el período seleccionado.", "Muted"))
+    story.extend(section_title(t("evidence_register")))
+    story.append(evidence_register(all_items) if all_items else para(t("no_evidence_period"), "Muted"))
     story.append(Spacer(1, 8))
-    story.append(para("Este PDF es un inventario verificable de evidencia y mediciones; no sustituye un reporte de historias por Áreas de vida.", "Muted"))
+    story.append(para(t("inventory_closing"), "Muted"))
     return story
 
 
@@ -725,51 +747,77 @@ def build_story(report):
 
     story = []
     story.extend(cover(report))
-    story.extend(section_title("Resumen ejecutivo"))
+    story.extend(section_title(t("executive_summary")))
     story.append(metric_grid([
-        ("Historias", output_scope.get("stories", summary.get("totalExperiences", len(rows)))),
-        ("Evidencias", output_scope.get("evidence", attachment_count)),
-        ("Energía", f"{summary.get('averageEnergy')}/10" if summary.get("averageEnergy") is not None else "Sin dato"),
-        ("Confiabilidad", f"{quality.get('score', 0)}%"),
+        (t("stories"), output_scope.get("stories", summary.get("totalExperiences", len(rows)))),
+        (t("evidence"), output_scope.get("evidence", attachment_count)),
+        (t("energy"), f"{summary.get('averageEnergy')}/10" if summary.get("averageEnergy") is not None else t("no_data")),
+        (t("confidence"), f"{quality.get('score', 0)}%"),
     ]))
     story.append(Spacer(1, 10))
-    story.append(card("Lectura general", f"La biblioteca contiene {summary.get('totalExperiences', len(rows))} historias y {attachment_count} elementos de apoyo. El Área de vida principal es {summary.get('topCategory', '-')}, con energía media {summary.get('averageEnergy')}/10 si existen registros suficientes. Este reporte prioriza patrones, señales relevantes y acciones concretas para decidir."))
+    top_category = summary.get("topCategory") or t("no_dominant_area")
+    average_energy = summary.get("averageEnergy")
+    energy_sentence = t("energy_recorded", value=average_energy) if average_energy is not None else t("energy_unavailable")
+    story.append(card(
+        t("general_reading"),
+        t(
+            "general_reading_body",
+            stories=summary.get("totalExperiences", len(rows)),
+            assets=attachment_count,
+            area=top_category,
+            energy=energy_sentence,
+        ),
+    ))
     story.append(Spacer(1, 8))
     story.append(visual_dashboard(summary, rows, kpis, categories, quality))
     story.append(Spacer(1, 8))
     story.append(full_legend_table(categories, kpis))
+    story.extend(contextual_snapshot(report))
     if predictive.get("title"):
-        story.append(card("Proyeccion inicial", f"{predictive.get('title')}. {predictive.get('hypothesis', '')} Siguiente accion: {predictive.get('nextStep', '')}", f"Confianza: {predictive.get('confidence', 0)}%"))
+        story.append(card(
+            t("initial_projection"),
+            f"{predictive.get('title')}. {predictive.get('hypothesis', '')} {t('next_action')}: {predictive.get('nextStep', '')}",
+            f"{t('confidence')}: {predictive.get('confidence', 0)}%",
+        ))
 
-    story.extend(section_title("Hallazgos prioritarios"))
+    story.extend(section_title(t("priority_findings")))
     insight_cards = []
     for item in integrated[:4]:
-        insight_cards.append((item.get("title", "Hallazgo"), f"{item.get('evidence', '')} Accion: {item.get('action', '')}", f"Prioridad: {item.get('priority', '-')}"))
-    story.append(two_column_cards(insight_cards) if insight_cards else para("No hay hallazgos suficientes.", "Muted"))
+        insight_cards.append((
+            item.get("title", t("insight")),
+            f"{item.get('evidence', '')} {t('next_action')}: {item.get('action', '')}",
+            f"{t('priority')}: {item.get('priority', '-')}",
+        ))
+    story.append(two_column_cards(insight_cards) if insight_cards else para(t("no_findings"), "Muted"))
 
-    story.extend(section_title("Indicadores humanos"))
-    kpi_cards = [(item.get("label", "Indicador"), f"{item.get('detail', '')}", f"{item.get('score', 0)}/100") for item in kpis[:4]]
-    story.append(two_column_cards(kpi_cards) if kpi_cards else para("No hay indicadores suficientes.", "Muted"))
+    story.extend(section_title(t("human_indicators")))
+    kpi_cards = [(item.get("label", t("indicator")), f"{item.get('detail', '')}", f"{item.get('score', 0)}/100") for item in kpis[:4]]
+    story.append(two_column_cards(kpi_cards) if kpi_cards else para(t("no_indicators"), "Muted"))
 
-    story.extend(section_title("Áreas de vida y balance"))
-    story.append(bar_table(categories) if categories else para("No hay Áreas de vida suficientes.", "Muted"))
+    story.extend(section_title(t("life_areas_balance")))
+    story.append(bar_table(categories) if categories else para(t("no_life_areas"), "Muted"))
 
-    story.extend(section_title("Rutas y conexiones"))
-    route_cards = [(item.get("title", "Ruta"), f"{item.get('count', 0)} experiencias con energia media {item.get('avgEnergy', 0)}/10.", item.get("dominant", "")) for item in routes[:4]]
-    story.append(two_column_cards(route_cards) if route_cards else para("No hay rutas suficientes.", "Muted"))
+    story.extend(section_title(t("routes_connections")))
+    route_cards = [(
+        item.get("title", t("route")),
+        t("route_summary", count=item.get("count", 0), energy=item.get("avgEnergy", 0)),
+        item.get("dominant", ""),
+    ) for item in routes[:4]]
+    story.append(two_column_cards(route_cards) if route_cards else para(t("no_routes"), "Muted"))
 
-    story.extend(section_title("Evidencia seleccionada"))
+    story.extend(section_title(t("selected_evidence")))
     story.append(evidence_cards(evidence))
 
-    story.extend(section_title("Registro resumido"))
+    story.extend(section_title(t("summary_register")))
     story.append(short_register(rows))
     story.append(Spacer(1, 8))
-    story.append(para("Este PDF es una lectura ejecutiva: resume lo importante, conserva el contexto y deja una ruta clara para revisar y decidir.", "Muted"))
+    story.append(para(t("report_closing"), "Muted"))
     return story
 
 
 def main():
     payload = json.loads(sys.stdin.buffer.read().decode("utf-8"))
+    set_locale(payload.get("language") or payload.get("locale"))
     buffer = io.BytesIO()
     frame = Frame(MARGIN, MARGIN + 0.22 * inch, PAGE_WIDTH - 2 * MARGIN, PAGE_HEIGHT - 2 * MARGIN - 0.25 * inch, showBoundary=0)
     doc = BaseDocTemplate(buffer, pagesize=letter, leftMargin=MARGIN, rightMargin=MARGIN, topMargin=MARGIN, bottomMargin=MARGIN)

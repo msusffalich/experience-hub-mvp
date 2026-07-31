@@ -30,11 +30,14 @@ const state = {
     capture: null,
     context: null,
     contextSignals: [],
+    briefing: null,
     oura: null,
+    issues: [],
   },
   offlineQueue: { total: 0, pending: 0, uploading: 0, retry_pending: 0 },
-  filters: { search: "", area: "", from: "", to: "" },
+  filters: { search: "", area: "", group: "", from: "", to: "" },
   selectedPublicationStories: new Set(),
+  contextRefreshQueued: false,
   modal: null,
   upload: null,
 };
@@ -85,17 +88,62 @@ async function refreshData() {
   state.loading = true;
   render();
   try {
-    state.data = await loadWorkspace();
+    state.data = await loadWorkspace(state.data);
     state.language = normalizeLanguage(state.data.profile?.language || state.language);
     t = translator(state.language);
     document.documentElement.lang = state.language;
     localStorage.setItem("vibe-next-language", state.language);
+    scheduleContextRefresh();
   } catch (error) {
     if (error.status !== 401) toast(error.message, true);
   } finally {
     state.loading = false;
     render();
     hydrateAssetPreviews();
+  }
+}
+
+function scheduleContextRefresh() {
+  const nextRefresh = new Date(state.data.briefing?.nextRefreshAt || 0).getTime();
+  const hasRecentBriefing = Number.isFinite(nextRefresh) && nextRefresh > Date.now();
+  const hasLocation = Boolean(
+    state.data.context?.latestLocation ||
+    (state.data.contextSignals || []).some((item) => item.signalType === "location"),
+  );
+  if (hasRecentBriefing || !hasLocation || state.contextRefreshQueued) return;
+  requestContextRefresh(false);
+}
+
+async function requestContextRefresh(userInitiated) {
+  if (state.contextRefreshQueued) return;
+  state.contextRefreshQueued = true;
+  if (userInitiated) toast(t("contextUpdating"));
+  try {
+    const result = await request("/api/v2/context/refresh", {
+      method: "POST",
+      body: {
+        locale: state.language,
+        location: state.data.context?.latestLocation || "",
+        reason: userInitiated ? "manual" : "automatic",
+      },
+    });
+    if (result.state === "complete") {
+      state.contextRefreshQueued = false;
+      await refreshData();
+      return;
+    }
+    setTimeout(async () => {
+      state.contextRefreshQueued = false;
+      try {
+        state.data = await loadWorkspace(state.data);
+        render();
+      } catch {
+        // A later normal refresh will pick up the completed background job.
+      }
+    }, 6_000);
+  } catch (error) {
+    state.contextRefreshQueued = false;
+    if (userInitiated) toast(error.message, true);
   }
 }
 
@@ -131,6 +179,11 @@ function renderLogin() {
           <div class="field"><label for="loginEmail">${escapeHtml(t("email"))}</label><input id="loginEmail" name="email" type="email" autocomplete="email" required /></div>
           <div class="field"><label for="loginPassword">${escapeHtml(t("password"))}</label><div class="password-field"><input id="loginPassword" name="password" type="password" autocomplete="current-password" required /><button type="button" data-toggle-password>${escapeHtml(t("showPassword"))}</button></div></div>
           <button class="button full" type="submit">${icon("arrow")}${escapeHtml(t("signIn"))}</button>
+          <div class="login-links">
+            <label for="loginLanguage">${escapeHtml(t("language"))}</label>
+            <select id="loginLanguage" class="filter-control">${supportedLanguages.map((item) => `<option value="${item.value}" ${item.value === state.language ? "selected" : ""}>${escapeHtml(item.label)}</option>`).join("")}</select>
+            <a class="button secondary small" href="./manual.html">${icon("file")}${escapeHtml(t("manual"))}</a>
+          </div>
         </form>
       </section>
     </main>`;
@@ -152,12 +205,19 @@ function renderLogin() {
     input.type = show ? "text" : "password";
     event.currentTarget.textContent = t(show ? "hidePassword" : "showPassword");
   });
+  document.getElementById("loginLanguage")?.addEventListener("change", (event) => {
+    state.language = normalizeLanguage(event.target.value);
+    t = translator(state.language);
+    document.documentElement.lang = state.language;
+    localStorage.setItem("vibe-next-language", state.language);
+    renderLogin();
+  });
 }
 
 function shell(content) {
   const nav = [
     ["home", "home"], ["stories", "story"], ["evidence", "image"],
-    ["intelligence", "insight"], ["publish", "publish"], ["account", "user"],
+    ["agenda", "calendar"], ["intelligence", "insight"], ["publish", "publish"], ["account", "user"],
   ];
   const routeTitle = t(state.route);
   const serviceOk = state.data.health?.status === "ok";
@@ -174,14 +234,22 @@ function shell(content) {
         <header class="topbar">
           <h1>${escapeHtml(routeTitle)}</h1>
           <div class="topbar-actions">
+            <a class="button secondary icon-only" href="./manual.html" title="${escapeAttr(t("manual"))}">${icon("file")}</a>
             <div class="sync-state"><i class="sync-dot ${serviceOk ? "" : "issue"}"></i><span>${escapeHtml(serviceOk ? t("syncReady") : t("serviceIssue"))}</span></div>
             <button id="refreshButton" class="button secondary icon-only" title="${escapeHtml(t("refresh"))}">${icon("refresh")}</button>
           </div>
         </header>
-        <div class="content">${content}</div>
+        <div class="content">${moduleIssuesBanner()}${content}</div>
       </main>
       <nav class="mobile-nav" aria-label="Principal">${nav.map(([route, symbol]) => navButton(route, symbol, true)).join("")}</nav>
     </div>`;
+}
+
+function moduleIssuesBanner() {
+  const issues = state.data.issues || [];
+  if (!issues.length) return "";
+  const labels = issues.map((item) => t(`module.${item.module}`)).join(", ");
+  return `<section class="module-warning" role="status">${icon("warning")}<div><strong>${escapeHtml(t("moduleIssueTitle"))}</strong><p>${escapeHtml(`${t("moduleIssueHelp")}: ${labels}`)}</p></div><button class="button secondary small" data-action="retry-modules">${icon("refresh")}${escapeHtml(t("retry"))}</button></section>`;
 }
 
 function navButton(route, symbol, mobile = false) {
@@ -191,6 +259,7 @@ function navButton(route, symbol, mobile = false) {
 function viewForRoute() {
   if (state.route === "stories") return storiesView();
   if (state.route === "evidence") return evidenceView();
+  if (state.route === "agenda") return agendaView();
   if (state.route === "intelligence") return intelligenceView();
   if (state.route === "publish") return publishView();
   if (state.route === "account") return accountView();
@@ -213,6 +282,7 @@ function homeView() {
       ${metric(pending.length, t("waitingEvidence"))}
       ${metric(stories.length ? `${Math.round((narrated / stories.length) * 100)}%` : "0%", t("narrativeQuality"))}
     </section>
+    ${contextOverview()}
     <section class="two-column">
       <div class="section">
         <div class="section-heading"><div><h3>${escapeHtml(t("recentStories"))}</h3><p>${escapeHtml(t("recentHelp"))}</p></div><button class="button ghost small" data-route="stories">${escapeHtml(t("allStories"))}${icon("chevron")}</button></div>
@@ -243,12 +313,48 @@ function evidenceView() {
   return `
     <section class="page-heading">
       <div><p class="eyebrow">${escapeHtml(t("evidence"))}</p><h2>${escapeHtml(t("evidence"))}</h2><p>${escapeHtml(t("evidenceHelp"))}</p></div>
-      <label class="button">${icon("upload")}${escapeHtml(t("uploadEvidence"))}<input id="evidenceFileInput" type="file" hidden /></label>
+      <label class="button">${icon("upload")}${escapeHtml(t("uploadEvidence"))}<input id="evidenceFileInput" type="file" accept="image/*,video/*,audio/*,.pdf,.txt,.md,.csv,.json,.xml" multiple hidden /></label>
     </section>
     ${state.upload ? uploadStatus() : ""}
     ${offlineQueueStatus()}
     ${filterToolbar(false)}
     ${assets.length ? `<div class="evidence-grid">${assets.map(evidenceTile).join("")}</div>` : `<div class="empty">${escapeHtml(t("noEvidence"))}</div>`}`;
+}
+
+function agendaView() {
+  const items = filteredAgenda().sort(
+    (a, b) => new Date(a.startAt || 0) - new Date(b.startAt || 0),
+  );
+  const upcoming = items.filter((item) => new Date(item.endAt || item.startAt || 0).getTime() >= Date.now());
+  const past = items.filter((item) => !upcoming.includes(item));
+  return `
+    <section class="page-heading">
+      <div><p class="eyebrow">${escapeHtml(t("agenda"))}</p><h2>${escapeHtml(t("agendaTitle"))}</h2><p>${escapeHtml(t("agendaHelp"))}</p></div>
+      <button class="button" data-action="new-agenda">${icon("plus")}${escapeHtml(t("newAgendaEvent"))}</button>
+    </section>
+    ${filterToolbar(false)}
+    <section class="metric-strip">
+      ${metric(upcoming.length, t("upcoming"))}
+      ${metric(past.length, t("past"))}
+      ${metric(items.filter((item) => item.status === "Completado").length, t("completed"))}
+      ${metric(items.filter((item) => item.sourceType).length, t("fromDevices"))}
+    </section>
+    <section class="section">
+      <div class="section-heading"><div><h3>${escapeHtml(t("upcomingEvents"))}</h3><p>${escapeHtml(t("agendaNotStory"))}</p></div></div>
+      ${upcoming.length ? `<div class="agenda-list">${upcoming.map(agendaRow).join("")}</div>` : `<div class="empty">${escapeHtml(t("noAgenda"))}</div>`}
+    </section>
+    ${past.length ? `<section class="section"><div class="section-heading"><h3>${escapeHtml(t("pastEvents"))}</h3></div><div class="agenda-list">${past.slice(-12).reverse().map(agendaRow).join("")}</div></section>` : ""}`;
+}
+
+function agendaRow(item) {
+  const when = [formatLongDate(item.startAt), timeLabel(item.startAt)].filter(Boolean).join(" · ");
+  return `<article class="agenda-row">
+    <div class="agenda-date">${icon("calendar")}<span>${escapeHtml(when)}</span></div>
+    <div><h3>${escapeHtml(item.title || t("event"))}</h3><p>${escapeHtml(item.description || t("noNote"))}</p>
+      <div class="agenda-meta">${item.location ? `<span>${icon("map")}${escapeHtml(item.location)}</span>` : ""}<span class="tag">${escapeHtml(item.status || t("planned"))}</span></div>
+    </div>
+    <button class="button secondary icon-only small" data-agenda-id="${escapeAttr(item.id)}" title="${escapeAttr(t("edit"))}">${icon("edit")}</button>
+  </article>`;
 }
 
 function intelligenceView() {
@@ -271,6 +377,7 @@ function intelligenceView() {
       <div class="chart-panel"><div class="section-heading"><h3>${escapeHtml(t("lifeBalance"))}</h3></div><div class="bar-list">${counts.map((item) => bar(areaLabel(item.area), item.count, max)).join("")}</div></div>
       <div class="chart-panel"><div class="section-heading"><h3>${escapeHtml(t("activityTrend"))}</h3></div><div class="timeline">${months.map((item) => timelineBar(item, months)).join("")}</div></div>
     </section>
+    ${contextOverview(true)}
     <section class="action-grid">
       <div class="action-cell"><h3>${escapeHtml(t("report"))}</h3><p>${escapeHtml(t("reportHelp"))}</p><button class="button secondary" data-action="generate-report">${icon("download")}${escapeHtml(t("generate"))}</button></div>
       <div class="action-cell"><h3>${escapeHtml(t("findings"))}</h3><p>${escapeHtml(t("findingsHelp"))}</p><button class="button secondary" data-action="generate-findings">${icon("download")}${escapeHtml(t("generate"))}</button></div>
@@ -285,6 +392,7 @@ function publishView() {
     <section class="page-heading">
       <div><p class="eyebrow">${escapeHtml(t("publish"))}</p><h2>${escapeHtml(t("publicationTitle"))}</h2><p>${escapeHtml(t("publicationHelp"))}</p></div>
     </section>
+    ${filterToolbar(true)}
     <section class="publication-layout">
       <div>
         <div class="field"><label for="publicationTitle">${escapeHtml(t("publicationName"))}</label><input id="publicationTitle" value="${escapeAttr(t("publicationDefault"))}" /></div>
@@ -299,6 +407,82 @@ function publishView() {
         ${selected.length ? selected.map(previewStory).join("") : `<div class="empty">${escapeHtml(t("selectAtLeastOne"))}</div>`}
       </article>
     </section>`;
+}
+
+function contextOverview(compact = false) {
+  const context = state.data.context || {};
+  const briefing = state.data.briefing?.payload || {};
+  const metrics = cleanMetrics(context.metrics || {});
+  const weather = briefing.weather || context.latestWeather || {};
+  const news = briefing.news || context.latestNews || {};
+  const entertainment = briefing.entertainment || context.latestEntertainment || {};
+  const location = briefing.location?.label || context.latestLocation || "";
+  const impact = briefing.impact || news.impact || {};
+  const hasBiometrics = Number(context.biometricSignals || 0) > 0;
+  const newsItems = Array.isArray(news.items) ? news.items : [];
+  const entertainmentItems = Array.isArray(entertainment.items) ? entertainment.items : [];
+  return `<section class="context-section ${compact ? "compact" : ""}">
+    <div class="section-heading">
+      <div><h3>${escapeHtml(t("contextTitle"))}</h3><p>${escapeHtml(t("contextHelp"))}</p></div>
+      <button class="button secondary small" data-action="refresh-context">${icon("refresh")}${escapeHtml(t("refreshContext"))}</button>
+    </div>
+    <div class="context-grid">
+      <article class="context-card">
+        <div class="context-card-head">${icon("insight")}<span>${escapeHtml(t("healthContext"))}</span></div>
+        ${hasBiometrics ? `<div class="context-metrics">
+          ${contextMetric(metricValue(metrics, ["heartAvg", "heartRate", "heart_rate", "heartRateAvg", "heartRateBpm", "average_heart_rate"]), "bpm", t("heartRate"))}
+          ${contextMetric(metricValue(metrics, ["steps", "stepCount"]), "", t("steps"))}
+          ${contextMetric(formatSleep(metricValue(metrics, ["sleepMinutes", "sleep_duration", "sleep"])), "", t("sleep"))}
+          ${contextMetric(metricValue(metrics, ["activeEnergy", "active_calories", "activeEnergyKcal"]), "kcal", t("activeEnergy"))}
+        </div><p class="source-line">${Number(context.biometricSignals || 0)} ${escapeHtml(t("healthRecords"))}</p>`
+          : `<p>${escapeHtml(t("noHealthData"))}</p>`}
+      </article>
+      <article class="context-card">
+        <div class="context-card-head">${icon("map")}<span>${escapeHtml(t("locationWeather"))}</span></div>
+        <strong class="context-primary">${escapeHtml(location || t("noLocationData"))}</strong>
+        ${weather.status === "available" || Number.isFinite(Number(weather.temperatureC))
+          ? `<p>${escapeHtml(weather.description || t("weather"))} · ${formatNumber(weather.temperatureC, "°C")} · ${formatNumber(weather.humidity, "%")}</p><p class="source-line">${escapeHtml(weather.source || "Open-Meteo")}</p>`
+          : `<p>${escapeHtml(t("weatherWaiting"))}</p>`}
+      </article>
+      <article class="context-card">
+        <div class="context-card-head">${icon("file")}<span>${escapeHtml(t("currentNews"))}</span></div>
+        ${newsItems.length ? headlineList(newsItems, 3) : `<p>${escapeHtml(t("noNews"))}</p>`}
+        ${impact.level ? `<p class="impact-line ${escapeAttr(impact.level)}">${escapeHtml(t("contextImpact"))}: ${escapeHtml(t(`impact.${impact.level}`))} (${Number(impact.score || 0)}/100)</p>` : ""}
+      </article>
+      <article class="context-card">
+        <div class="context-card-head">${icon("calendar")}<span>${escapeHtml(t("entertainment"))}</span></div>
+        ${entertainmentItems.length ? headlineList(entertainmentItems, 3) : `<p>${escapeHtml(t("noEntertainment"))}</p>`}
+      </article>
+    </div>
+  </section>`;
+}
+
+function headlineList(items, limit) {
+  return `<ul class="headline-list">${items.slice(0, limit).map((item) =>
+    `<li>${item.link ? `<a href="${escapeAttr(item.link)}" target="_blank" rel="noopener">${escapeHtml(item.title)}</a>` : escapeHtml(item.title)}</li>`,
+  ).join("")}</ul>`;
+}
+
+function contextMetric(value, suffix, label) {
+  const available = value !== "" && value != null;
+  return `<div><span>${escapeHtml(label)}</span><strong>${available ? `${escapeHtml(String(value))}${suffix ? ` ${escapeHtml(suffix)}` : ""}` : "—"}</strong></div>`;
+}
+
+function metricValue(metrics, keys) {
+  for (const key of keys) {
+    if (Number.isFinite(Number(metrics[key]))) return Number(metrics[key]).toFixed(key === "steps" ? 0 : 1).replace(/\.0$/, "");
+  }
+  return "";
+}
+
+function formatSleep(value) {
+  if (!Number.isFinite(Number(value))) return "";
+  const minutes = Number(value);
+  return minutes >= 24 ? `${(minutes / 60).toFixed(1)} h` : `${minutes.toFixed(1)} h`;
+}
+
+function formatNumber(value, suffix) {
+  return Number.isFinite(Number(value)) ? `${Number(value).toFixed(1).replace(/\.0$/, "")}${suffix}` : "—";
 }
 
 function accountView() {
@@ -329,6 +513,13 @@ function accountView() {
         <div class="group-list">
           ${groups.length ? groups.map(groupRow).join("") : `<p class="muted-copy">${escapeHtml(t("noGroups"))}</p>`}
         </div>
+      </section>
+      <section class="account-block">
+        <div class="settings-row">
+          <div><h3>Apple Health / HealthKit</h3><p>${escapeHtml(t("appleHealthHelp"))}</p></div>
+          <span class="tag ${Number(state.data.context?.biometricSignals || 0) > 0 ? "accent" : ""}">${escapeHtml(Number(state.data.context?.biometricSignals || 0) > 0 ? t("healthDataAvailable") : t("waitingForVibeapp"))}</span>
+        </div>
+        <p class="muted-copy">${escapeHtml(t("appleHealthFlow"))}</p>
       </section>
       <section class="account-block">
         <div class="settings-row">
@@ -398,6 +589,13 @@ function bindShellEvents() {
 
 function bindViewEvents() {
   document.querySelectorAll("[data-action='new-story']").forEach((button) => button.addEventListener("click", () => openStoryModal()));
+  document.querySelectorAll("[data-action='new-agenda']").forEach((button) => button.addEventListener("click", () => openAgendaModal()));
+  document.querySelectorAll("[data-agenda-id]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const item = state.data.agenda.find((entry) => entry.id === button.dataset.agendaId);
+      if (item) openAgendaModal(item);
+    });
+  });
   document.querySelectorAll("[data-story-id]").forEach((button) => {
     button.addEventListener("click", () => {
       const story = state.data.experiences.find((item) => item.id === button.dataset.storyId);
@@ -414,6 +612,10 @@ function bindViewEvents() {
   document.getElementById("evidenceFileInput")?.addEventListener("change", handleEvidenceFile);
   document.querySelector("[data-action='retry-upload']")?.addEventListener("click", retryEvidenceUpload);
   document.querySelector("[data-action='retry-queue']")?.addEventListener("click", drainOfflineUploads);
+  document.querySelector("[data-action='retry-modules']")?.addEventListener("click", refreshData);
+  document.querySelectorAll("[data-action='refresh-context']").forEach((button) =>
+    button.addEventListener("click", () => requestContextRefresh(true)),
+  );
   document.querySelectorAll("[data-asset-download]").forEach((button) => button.addEventListener("click", () => downloadAsset(button.dataset.assetDownload)));
   document.querySelectorAll("[data-publication-story]").forEach((input) => {
     input.addEventListener("change", () => {
@@ -556,6 +758,10 @@ function openStoryModal(story = null) {
 
 function renderModal() {
   document.getElementById("activeModal")?.remove();
+  if (state.modal?.type === "agenda") {
+    renderAgendaModal();
+    return;
+  }
   const story = state.modal?.story || {};
   const pending = pendingAssets();
   const linked = story.id ? assetsForStory(story) : [];
@@ -624,6 +830,88 @@ function renderModal() {
   });
   wrapper.querySelector("[data-delete-story]")?.addEventListener("click", deleteCurrentStory);
   hydrateAssetPreviews(wrapper);
+}
+
+function openAgendaModal(item = null) {
+  state.modal = { type: "agenda", item };
+  renderAgendaModal();
+}
+
+function renderAgendaModal() {
+  document.getElementById("activeModal")?.remove();
+  const item = state.modal?.item || {};
+  const wrapper = document.createElement("div");
+  wrapper.id = "activeModal";
+  wrapper.className = "modal-backdrop";
+  wrapper.innerHTML = `
+    <section class="modal compact-modal" role="dialog" aria-modal="true" aria-labelledby="agendaModalTitle">
+      <header class="modal-header"><h2 id="agendaModalTitle">${escapeHtml(item.id ? t("editAgendaEvent") : t("newAgendaEvent"))}</h2><button class="button secondary icon-only" data-modal-close>${icon("close")}</button></header>
+      <form id="agendaForm" class="modal-body">
+        <div class="field"><label for="agendaTitle">${escapeHtml(t("title"))}</label><input id="agendaTitle" name="title" value="${escapeAttr(item.title || "")}" required /></div>
+        <div class="field"><label for="agendaDescription">${escapeHtml(t("description"))}</label><textarea id="agendaDescription" name="description">${escapeHtml(item.description || "")}</textarea></div>
+        <div class="field-grid">
+          <div class="field"><label for="agendaStart">${escapeHtml(t("start"))}</label><input id="agendaStart" name="startAt" type="datetime-local" value="${localDateTimeValue(item.startAt || new Date())}" required /></div>
+          <div class="field"><label for="agendaEnd">${escapeHtml(t("end"))}</label><input id="agendaEnd" name="endAt" type="datetime-local" value="${localDateTimeValue(item.endAt || item.startAt || new Date())}" required /></div>
+          <div class="field"><label for="agendaPlace">${escapeHtml(t("place"))}</label><input id="agendaPlace" name="location" value="${escapeAttr(item.location || "")}" /></div>
+          <div class="field"><label for="agendaPeople">${escapeHtml(t("people"))}</label><input id="agendaPeople" name="participants" value="${escapeAttr(item.participants || "")}" /></div>
+          <div class="field"><label for="agendaGroup">${escapeHtml(t("groupPerson"))}</label><select id="agendaGroup" name="participantId"><option value="">${escapeHtml(t("primaryUser"))}</option>${activeGroups().map((group) => `<option value="${escapeAttr(group.id)}" ${group.id === item.participantId ? "selected" : ""}>${escapeHtml(group.displayName)}</option>`).join("")}</select></div>
+          <div class="field"><label for="agendaStatus">${escapeHtml(t("status"))}</label><select id="agendaStatus" name="status">${["Planificado", "Confirmado", "Completado", "Cancelado"].map((status) => `<option value="${status}" ${status === item.status ? "selected" : ""}>${escapeHtml(t(`agendaStatus.${status}`))}</option>`).join("")}</select></div>
+        </div>
+        <p class="muted-copy">${escapeHtml(t("agendaNotStory"))}</p>
+        <div class="sticky-actions">${item.id ? `<button type="button" class="button danger" data-delete-agenda>${icon("delete")}${escapeHtml(t("delete"))}</button>` : ""}<button type="button" class="button secondary" data-modal-close>${escapeHtml(t("cancel"))}</button><button class="button" type="submit">${icon("check")}${escapeHtml(t("save"))}</button></div>
+      </form>
+    </section>`;
+  document.body.appendChild(wrapper);
+  wrapper.querySelectorAll("[data-modal-close]").forEach((button) => button.addEventListener("click", closeModal));
+  wrapper.addEventListener("click", (event) => {
+    if (event.target === wrapper) closeModal();
+  });
+  wrapper.querySelector("#agendaForm")?.addEventListener("submit", saveAgendaEvent);
+  wrapper.querySelector("[data-delete-agenda]")?.addEventListener("click", deleteAgendaEvent);
+}
+
+async function saveAgendaEvent(event) {
+  event.preventDefault();
+  const form = new FormData(event.currentTarget);
+  const existing = state.modal?.item || {};
+  const payload = {
+    title: form.get("title"),
+    description: form.get("description"),
+    startAt: new Date(form.get("startAt")).toISOString(),
+    endAt: new Date(form.get("endAt")).toISOString(),
+    location: form.get("location"),
+    participants: form.get("participants"),
+    participantId: form.get("participantId"),
+    status: form.get("status"),
+    sourceType: existing.sourceType || "vibepwa",
+  };
+  const submit = event.currentTarget.querySelector("[type='submit']");
+  submit.disabled = true;
+  try {
+    await request(existing.id ? `/api/v2/agenda/${encodeURIComponent(existing.id)}` : "/api/v2/agenda", {
+      method: existing.id ? "PUT" : "POST",
+      body: payload,
+    });
+    closeModal();
+    toast(t("agendaSaved"));
+    await refreshData();
+  } catch (error) {
+    submit.disabled = false;
+    toast(error.message, true);
+  }
+}
+
+async function deleteAgendaEvent() {
+  const item = state.modal?.item;
+  if (!item?.id || !window.confirm(t("confirmDeleteAgenda"))) return;
+  try {
+    await request(`/api/v2/agenda/${encodeURIComponent(item.id)}`, { method: "DELETE" });
+    closeModal();
+    toast(t("agendaDeleted"));
+    await refreshData();
+  } catch (error) {
+    toast(error.message, true);
+  }
 }
 
 async function saveStory(event) {
@@ -697,25 +985,26 @@ function closeModal() {
 }
 
 async function handleEvidenceFile(event) {
-  const file = event.target.files?.[0];
-  if (!file) return;
-  const captureId = crypto.randomUUID();
-  const queued = await enqueueUpload(file, {
-    captureId,
-    idempotencyKey: `web-${captureId}`,
-    occurredAt: new Date(file.lastModified || Date.now()).toISOString(),
-    source: { app: "vibepwa", platform: "web" },
-  });
+  const files = Array.from(event.target.files || []);
+  if (!files.length) return;
+  for (const file of files) {
+    const captureId = crypto.randomUUID();
+    await enqueueUpload(file, {
+      captureId,
+      idempotencyKey: `web-${captureId}`,
+      occurredAt: new Date(file.lastModified || Date.now()).toISOString(),
+      source: { app: "vibepwa", platform: "web" },
+    });
+  }
   state.upload = {
-    queueId: queued.queueId,
-    captureId: queued.captureId,
-    idempotencyKey: queued.idempotencyKey,
-    name: file.name,
+    queueId: "",
+    name: files.length === 1 ? files[0].name : `${files.length} ${t("files")}`,
     progress: 2,
     status: t("uploading"),
   };
+  event.target.value = "";
   await refreshOfflineQueue();
-  await runEvidenceUpload();
+  await drainOfflineUploads();
 }
 
 async function retryEvidenceUpload() {
@@ -838,7 +1127,7 @@ async function generatePdf(type) {
 }
 
 async function generatePublication() {
-  const stories = state.data.experiences.filter((item) => state.selectedPublicationStories.has(item.id));
+  const stories = filteredStories().filter((item) => state.selectedPublicationStories.has(item.id));
   if (!stories.length) {
     toast(t("selectAtLeastOne"), true);
     return;
@@ -884,7 +1173,7 @@ async function generatePublication() {
 async function enrichPublicationStories(stories) {
   return Promise.all(stories.map(async (story) => ({
     ...story,
-    attachments: await Promise.all((story.attachments || []).map(async (attachment) => {
+    attachments: await Promise.all(assetsForStory(story).map(async (attachment) => {
       const existing = attachment.url || attachment.signedUrl || attachment.previewUrl || "";
       if (existing) return { ...attachment, resolvedUrl: existing };
       const id = attachment.id || attachment.assetId;
@@ -953,6 +1242,7 @@ function filterToolbar(includeArea) {
   return `<div class="toolbar">
     <div class="search-box">${icon("search")}<input class="filter-control" data-filter="search" value="${escapeAttr(state.filters.search)}" placeholder="${escapeAttr(t("search"))}" /></div>
     ${includeArea ? `<div class="compact-field"><label>${escapeHtml(t("activity"))}</label><select class="filter-control" data-filter="area"><option value="">${escapeHtml(t("all"))}</option>${areas.map((area) => `<option value="${escapeAttr(area)}" ${state.filters.area === area ? "selected" : ""}>${escapeHtml(areaLabel(area))}</option>`).join("")}</select></div>` : ""}
+    <div class="compact-field"><label>${escapeHtml(t("groupPerson"))}</label><select class="filter-control" data-filter="group"><option value="">${escapeHtml(t("allGroups"))}</option><option value="__primary__" ${state.filters.group === "__primary__" ? "selected" : ""}>${escapeHtml(t("primaryUser"))}</option>${activeGroups().map((group) => `<option value="${escapeAttr(group.id)}" ${state.filters.group === group.id ? "selected" : ""}>${escapeHtml(group.displayName)}</option>`).join("")}</select></div>
     <div class="compact-field"><label>${escapeHtml(t("from"))}</label><input class="filter-control" data-filter="from" type="date" value="${escapeAttr(state.filters.from)}" /></div>
     <div class="compact-field"><label>${escapeHtml(t("to"))}</label><input class="filter-control" data-filter="to" type="date" value="${escapeAttr(state.filters.to)}" /></div>
   </div>`;
@@ -964,6 +1254,7 @@ function filteredStories() {
     const haystack = [item.title, item.notes, item.category, item.location, item.people].join(" ").toLowerCase();
     return (!search || haystack.includes(search))
       && (!state.filters.area || item.category === state.filters.area)
+      && participantMatches(item.participantId)
       && inDateRange(item.timestamp);
   });
 }
@@ -972,8 +1263,33 @@ function filteredAssets() {
   const search = state.filters.search.trim().toLowerCase();
   return allAssets().filter((item) => {
     const haystack = [item.name, item.filename, item.type, item.payloadType, item.sourceType].join(" ").toLowerCase();
-    return (!search || haystack.includes(search)) && inDateRange(item.capturedAt || item.uploadedAt);
+    const story = storyForAsset(item);
+    return (!search || haystack.includes(search))
+      && (!state.filters.area || story?.category === state.filters.area)
+      && participantMatches(item.participantId || story?.participantId)
+      && inDateRange(item.capturedAt || item.occurredAt || item.uploadedAt);
   });
+}
+
+function filteredAgenda() {
+  const search = state.filters.search.trim().toLowerCase();
+  return (state.data.agenda || []).filter((item) => {
+    const haystack = [item.title, item.description, item.location, item.participants, item.status].join(" ").toLowerCase();
+    return (!search || haystack.includes(search))
+      && participantMatches(item.participantId)
+      && inDateRange(item.startAt);
+  });
+}
+
+function participantMatches(value) {
+  if (!state.filters.group) return true;
+  if (state.filters.group === "__primary__") return !value;
+  return String(value || "") === state.filters.group;
+}
+
+function storyForAsset(asset) {
+  const storyId = String(asset.experienceId || asset.linkedExperienceId || asset.metadata?.linkedExperienceId || "");
+  return storyId ? (state.data.experiences || []).find((story) => String(story.id) === storyId) : null;
 }
 
 function inDateRange(value) {
@@ -1028,9 +1344,34 @@ function analyticalPayload(stories) {
   const counts = areaCounts(stories);
   const energy = recordedEnergy(stories);
   const context = state.data.context || {};
-  const signals = state.data.contextSignals || [];
+  const signals = (state.data.contextSignals || []).filter(contextSignalInScope);
   const metrics = cleanMetrics(context.metrics || {});
-  const evidence = allAssets();
+  const evidence = filteredAssets();
+  const briefing = state.data.briefing?.payload || {};
+  const multimodalEvidence = evidence.map((item) => ({
+    id: item.id || item.captureId || "",
+    name: item.name || item.filename || t("evidenceItem"),
+    kind: evidenceKind(item),
+    capturedAt: item.capturedAt || item.occurredAt || item.uploadedAt || null,
+    experienceTitle: stories.find((story) => story.id === (item.experienceId || item.linkedExperienceId))?.title || "",
+    mimeType: item.mimeType || "",
+    sizeBytes: Number(item.sizeBytes || item.size || 0),
+    source: item.sourceType || item.source?.app || "",
+    analyticalText: item.analyticalText || item.transcript || item.text || "",
+  }));
+  const contextEvidence = signals.map((signal) => ({
+    id: signal.id,
+    name: contextSignalLabel(signal),
+    kind: signal.signalType,
+    capturedAt: signal.capturedAt,
+    location: signal.location || "",
+    source: signal.sourceType || "",
+    metrics: signal.metrics || {},
+    analyticalText: contextSignalText(signal),
+  }));
+  const measurementRecords = Number(context.biometricSignals || 0);
+  const hasMeasurements = measurementRecords > 0 && Object.keys(metrics).length > 0;
+  const reliableDataPoints = stories.length + multimodalEvidence.length + contextEvidence.length;
   return {
     generatedAt: new Date().toISOString(),
     language: state.language,
@@ -1060,13 +1401,23 @@ function analyticalPayload(stories) {
       notas: story.notes || "",
     })),
     experiences: stories,
-    findings: buildFindings(stories),
+    findings: buildFindings(stories, briefing),
+    multimodalEvidence,
+    contextEvidence,
     evidenceInventory: {
-      total: evidence.length,
+      total: evidence.length + signals.length,
+      evidence: evidence.length,
+      context: signals.length,
+      readable: [...multimodalEvidence, ...contextEvidence].filter((item) => item.analyticalText).length,
       images: evidence.filter((item) => evidenceKind(item) === "image").length,
       videos: evidence.filter((item) => evidenceKind(item) === "video").length,
       audio: evidence.filter((item) => evidenceKind(item) === "audio").length,
       documents: evidence.filter((item) => evidenceKind(item) === "document").length,
+      measurements: {
+        hasMeasurements,
+        records: measurementRecords,
+        metrics,
+      },
     },
     biometricContext: {
       status: context.biometricSignals > 0 ? "available" : "not_available",
@@ -1074,14 +1425,40 @@ function analyticalPayload(stories) {
       metrics,
       energy: Number.isFinite(Number(context.energy)) ? Number(context.energy) : null,
     },
-    contextEvidence: {
-      records: signals.length,
+    currentContext: {
+      records: contextEvidence.length,
       latestLocation: context.latestLocation || "",
       latestWeather: context.latestWeather || null,
       latestNews: context.latestNews || null,
-      signals,
+      latestEntertainment: context.latestEntertainment || null,
+      agenda: filteredAgenda(),
+      briefing,
+    },
+    contextImpact: briefing.impact || null,
+    outputScope: {
+      presentationMode: stories.length ? "stories" : "evidence_inventory",
+      stories: stories.length,
+      evidence: multimodalEvidence.length,
+      context: contextEvidence.length,
+    },
+    dataQuality: {
+      score: Math.min(100, Math.round(
+        (stories.filter(hasHumanNarrative).length * 20 + reliableDataPoints * 3 + (hasMeasurements ? 15 : 0)) /
+        Math.max(1, stories.length * 20 + reliableDataPoints * 3 + 15) * 100,
+      )),
+      hasMeasurements,
+      missingEnergy: stories.filter((story) => !Number.isFinite(Number(story.energy))).length,
     },
   };
+}
+
+function contextSignalInScope(signal) {
+  const stamp = new Date(signal.capturedAt || signal.validFrom || 0).getTime();
+  if (!Number.isFinite(stamp)) return false;
+  if (!participantMatches(signal.participantId)) return false;
+  if (state.filters.from && stamp < new Date(`${state.filters.from}T00:00:00`).getTime()) return false;
+  if (state.filters.to && stamp > new Date(`${state.filters.to}T23:59:59`).getTime()) return false;
+  return true;
 }
 
 function cleanMetrics(metrics) {
@@ -1100,21 +1477,72 @@ function evidenceKind(item = {}) {
   return "document";
 }
 
-function buildFindings(stories) {
+function buildFindings(stories, briefing = {}) {
   const counts = areaCounts(stories).filter((item) => item.count).sort((a, b) => b.count - a.count);
-  if (!stories.length) return [];
-  return [
-    { title: t("mostPresentArea"), detail: `${counts[0]?.area ? areaLabel(counts[0].area) : t("noArea")}: ${counts[0]?.count || 0} ${t("storiesInPeriod")}.`, confidence: 85 },
-    { title: t("narrativeQualityFinding"), detail: `${stories.filter(hasHumanNarrative).length}/${stories.length} ${t("storyCountText")}.`, confidence: 100 },
-  ];
+  const findings = [];
+  if (stories.length) {
+    findings.push(
+      { title: t("mostPresentArea"), detail: `${counts[0]?.area ? areaLabel(counts[0].area) : t("noArea")}: ${counts[0]?.count || 0} ${t("storiesInPeriod")}.`, confidence: 85 },
+      { title: t("narrativeQualityFinding"), detail: `${stories.filter(hasHumanNarrative).length}/${stories.length} ${t("storyCountText")}.`, confidence: 100 },
+    );
+  }
+  if (briefing.impact?.summary) {
+    findings.push({
+      title: t("contextImpact"),
+      detail: briefing.impact.summary,
+      confidence: briefing.weather?.status === "available" && briefing.news?.status === "available" ? 90 : 60,
+    });
+  }
+  return findings;
+}
+
+function contextSignalLabel(signal = {}) {
+  const labels = {
+    biometric: t("healthContext"),
+    location: t("locationWeather"),
+    weather: t("weather"),
+    news: t("currentNews"),
+    entertainment: t("entertainment"),
+    agenda: t("agenda"),
+    sensor: t("healthContext"),
+  };
+  return labels[signal.signalType] || signal.signalType || t("evidenceItem");
+}
+
+function contextSignalText(signal = {}) {
+  if (signal.signalType === "biometric") {
+    const values = cleanMetrics(signal.metrics || {});
+    return Object.entries(values).map(([key, value]) => `${key}: ${value}`).join(", ");
+  }
+  const payload = signal.payload || {};
+  if (Array.isArray(payload.items)) return payload.items.slice(0, 5).map((item) => item.title).filter(Boolean).join("; ");
+  return payload.description || payload.text || payload.summary || signal.location || "";
 }
 
 function publicationHtml(title, stories) {
   return `<!doctype html><html lang="${state.language}"><head><meta charset="utf-8"><style>
-  @page{size:Letter;margin:18mm}body{font-family:Arial,sans-serif;color:#17201b;margin:0}header{padding:40px 0 28px;border-bottom:4px solid #176b5b}h1{font-size:38px;margin:0 0 8px}header p{color:#607069}article{padding:26px 0;border-bottom:1px solid #d6dfda;break-inside:avoid}h2{font-size:24px;margin:0 0 8px}.meta{color:#607069;font-size:12px}.narrative{font-size:15px;line-height:1.6;white-space:pre-wrap}.evidence{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:14px}.evidence span{padding:10px;background:#edf2ef;font-size:11px;overflow-wrap:anywhere}</style></head><body>
+  @page{size:Letter;margin:18mm}body{font-family:Arial,sans-serif;color:#17201b;margin:0}header{padding:40px 0 28px;border-bottom:4px solid #176b5b}h1{font-size:38px;margin:0 0 8px}header p{color:#607069}article{padding:26px 0;border-bottom:1px solid #d6dfda;break-inside:avoid}h2{font-size:24px;margin:0 0 8px}.meta{color:#607069;font-size:12px}.narrative{font-size:15px;line-height:1.6;white-space:pre-wrap}.context{margin:20px 0;padding:16px;background:#edf2ef;border-left:4px solid #176b5b}.context h2{font-size:18px}.context-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.context-grid p{margin:0;font-size:12px}.events{margin-top:14px;padding-left:18px}.events li{margin:6px 0;line-height:1.45}.evidence{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:14px}.evidence img{width:100%;max-height:420px;object-fit:contain;image-orientation:from-image;background:#f4f6f4}.evidence span{padding:10px;background:#edf2ef;font-size:11px;overflow-wrap:anywhere}</style></head><body>
   <header><h1>${escapeHtml(title)}</h1><p>${formatLongDate(new Date())} · ${stories.length} ${escapeHtml(t("experiences"))}</p></header>
-  ${stories.slice().sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)).map((story) => `<article><p class="meta">${formatLongDate(story.timestamp)} · ${escapeHtml(story.category ? areaLabel(story.category) : "")}</p><h2>${escapeHtml(story.title)}</h2><div class="narrative">${escapeHtml(story.notes || t("pendingNarrative"))}</div>${story.attachments?.length ? `<div class="evidence">${story.attachments.map((item) => assetKind(item) === "image" && item.resolvedUrl ? `<img src="${escapeAttr(item.resolvedUrl)}" alt="" style="width:100%;max-height:260px;object-fit:cover"/>` : `<span>${escapeHtml(item.name || item.filename || t("evidenceItem"))}${assetKind(item) === "video" ? ` · ${escapeHtml(t("videoInPackage"))}` : ""}</span>`).join("")}</div>` : ""}</article>`).join("")}
+  ${publicationContextHtml()}
+  ${stories.slice().sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)).map((story) => `<article><p class="meta">${formatLongDate(story.timestamp)} · ${escapeHtml(story.category ? areaLabel(story.category) : "")}${story.location ? ` · ${escapeHtml(story.location)}` : ""}</p><h2>${escapeHtml(story.title)}</h2><div class="narrative">${escapeHtml(story.notes || t("pendingNarrative"))}</div>${story.events?.length ? `<ol class="events">${story.events.slice().sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)).map((event) => `<li><strong>${escapeHtml(event.title || t("event"))}</strong>${event.narrativeText ? `: ${escapeHtml(event.narrativeText)}` : ""}</li>`).join("")}</ol>` : ""}${story.attachments?.length ? `<div class="evidence">${story.attachments.map((item) => assetKind(item) === "image" && item.resolvedUrl ? `<img src="${escapeAttr(item.resolvedUrl)}" alt="" />` : `<span>${escapeHtml(item.name || item.filename || t("evidenceItem"))}${assetKind(item) === "video" ? ` · ${escapeHtml(t("videoInPackage"))}` : ""}</span>`).join("")}</div>` : ""}</article>`).join("")}
   </body></html>`;
+}
+
+function publicationContextHtml() {
+  const context = state.data.context || {};
+  const briefing = state.data.briefing?.payload || {};
+  const metrics = cleanMetrics(context.metrics || {});
+  const values = [
+    [t("heartRate"), metricValue(metrics, ["heartAvg", "heartRate", "heart_rate", "heartRateAvg", "heartRateBpm", "average_heart_rate"]), "bpm"],
+    [t("steps"), metricValue(metrics, ["steps", "stepCount"]), ""],
+    [t("sleep"), formatSleep(metricValue(metrics, ["sleepMinutes", "sleep_duration", "sleep"])), ""],
+    [t("activeEnergy"), metricValue(metrics, ["activeEnergy", "active_calories", "activeEnergyKcal"]), "kcal"],
+    [t("locationWeather"), briefing.location?.label || context.latestLocation || "", ""],
+    [t("weather"), briefing.weather?.description || "", ""],
+    [t("contextImpact"), briefing.impact?.summary || "", ""],
+  ].filter(([, value]) => value !== "" && value != null);
+  if (!values.length) return "";
+  return `<section class="context"><h2>${escapeHtml(t("contextTitle"))}</h2><div class="context-grid">${values.map(([label, value, suffix]) => `<p><strong>${escapeHtml(label)}:</strong> ${escapeHtml(String(value))}${suffix ? ` ${escapeHtml(suffix)}` : ""}</p>`).join("")}</div></section>`;
 }
 
 function publicationSelection(story) {
@@ -1208,7 +1636,7 @@ function hasHumanNarrative(story) {
 
 function routeFromHash() {
   const value = window.location.hash.replace(/^#\/?/, "");
-  return ["stories", "evidence", "intelligence", "publish", "account"].includes(value) ? value : "home";
+  return ["stories", "evidence", "agenda", "intelligence", "publish", "account"].includes(value) ? value : "home";
 }
 
 function normalizeLanguage(value) {
@@ -1226,6 +1654,12 @@ function formatLongDate(value) {
   const date = new Date(value || 0);
   if (Number.isNaN(date.getTime())) return "—";
   return new Intl.DateTimeFormat(state.language, { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(date);
+}
+
+function timeLabel(value) {
+  const date = new Date(value || 0);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat(state.language, { hour: "numeric", minute: "2-digit" }).format(date);
 }
 
 function localDateTimeValue(value) {

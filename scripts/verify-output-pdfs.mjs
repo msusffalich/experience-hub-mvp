@@ -16,6 +16,9 @@ function resolvePython() {
 
 const python = resolvePython();
 const pythonPath = [path.join(process.cwd(), ".python"), process.env.PYTHONPATH].filter(Boolean).join(path.delimiter);
+const richContext = JSON.parse(
+  fs.readFileSync(path.join("scripts", "fixtures", "rich-output-context.json"), "utf8"),
+);
 
 const baseExperience = {
   title: "Prueba de Software",
@@ -32,7 +35,11 @@ const cases = [
   {
     name: "report",
     script: "report_pdf_reportlab.py",
+    requiredText: ["Contexto que", "Frecuencia cardiaca", "Winter Garden", "Reuters", "Festival de verano", "Impacto contextual"],
+    forbiddenText: ["Supabase", "context_signal", "PGRST", "Storage privado", "ReportLab"],
+    validateBounds: true,
     payload: {
+      ...structuredClone(richContext),
       summary: {
         totalExperiences: 3,
         topCategory: "Trabajo",
@@ -94,7 +101,11 @@ const cases = [
   {
     name: "insights",
     script: "insights_pdf_reportlab.py",
+    requiredText: ["Contexto que", "Frecuencia cardiaca", "Winter Garden", "Reuters", "Festival de verano", "Impacto contextual"],
+    forbiddenText: ["Supabase", "context_signal", "PGRST", "Storage privado"],
+    validateBounds: true,
     payload: {
+      ...structuredClone(richContext),
       participant: "Miguel",
       experiences: 3,
       axes: [
@@ -130,7 +141,11 @@ const cases = [
   {
     name: "publication",
     script: "publication_pdf_reportlab.py",
+    requiredText: ["Contexto que", "Frecuencia cardiaca", "Winter Garden", "Reuters", "Festival de verano", "Impacto contextual"],
+    forbiddenText: ["Supabase", "context_signal", "PGRST", "Storage privado", "ReportLab"],
+    validateBounds: true,
     payload: {
+      ...structuredClone(richContext),
       title: "Memoria breve de la semana",
       language: "es",
       html: "<h1>Memoria breve de la semana</h1><p>Una seleccion de momentos, aprendizajes y evidencia para compartir.</p>",
@@ -165,6 +180,116 @@ const cases = [
   },
 ];
 
+const localeExpectations = {
+  es: {
+    report: "Reporte de experiencias",
+    insights: "Hallazgos de experiencias",
+    publication: "Historia editada",
+    context: "Contexto que",
+    date: "27 de julio de 2026",
+  },
+  en: {
+    report: "Experience report",
+    insights: "Experience insights",
+    publication: "Edited story",
+    context: "Context for the period",
+    date: "July 27, 2026",
+  },
+  fr: {
+    report: "Rapport",
+    insights: "Enseignements",
+    publication: "Partie 1",
+    context: "Contexte de la",
+    date: "27 juillet 2026",
+  },
+  pt: {
+    report: "Resumo executivo",
+    insights: "Descobertas",
+    publication: "Parte 1",
+    context: "Contexto que acompanhou",
+    date: "27 de julho de 2026",
+  },
+};
+
+const internalTerms = ["Supabase", "context_signal", "PGRST", "Storage privado", "ReportLab", "URL firmada"];
+const spanishInterfaceTerms = [
+  "Proporción por Área de vida",
+  "Evolución de energía",
+  "Confiabilidad de datos",
+  "Radar de ejes humanos",
+  "Leyenda: porcentaje",
+  "Lectura actual:",
+  "Energía media registrada:",
+  "Se consideraron",
+  "Siguiente paso:",
+];
+for (const [locale, expected] of Object.entries(localeExpectations)) {
+  const shared = {
+    ...structuredClone(richContext),
+    language: locale,
+    generatedAt: "2026-07-27T10:15:00.000Z",
+  };
+  cases.push(
+    {
+      name: `report-${locale}`,
+      script: "report_pdf_reportlab.py",
+      requiredText: [expected.report, expected.context, expected.date],
+      forbiddenText: locale === "es" ? internalTerms : [...internalTerms, ...spanishInterfaceTerms],
+      forbiddenPatterns: [/\b2026-07-27(?:T|\s)/],
+      validateBounds: true,
+      payload: {
+        ...structuredClone(shared),
+        summary: { totalExperiences: 1, topCategory: "Trabajo", averageEnergy: 7, capturedHours: 1 },
+        outputScope: { stories: 1, evidence: 1, context: 4 },
+        rows: [{ ...baseExperience, date: "2026-07-27T10:00:00.000Z" }],
+        dataQuality: { score: 90 },
+      },
+    },
+    {
+      name: `insights-${locale}`,
+      script: "insights_pdf_reportlab.py",
+      requiredText: [expected.insights, expected.date],
+      forbiddenText: locale === "es" ? internalTerms : [...internalTerms, ...spanishInterfaceTerms],
+      forbiddenPatterns: [/\b2026-07-27(?:T|\s)/],
+      validateBounds: true,
+      payload: {
+        ...structuredClone(shared),
+        experiences: 1,
+        outputScope: { evidence: 1, context: 4 },
+        axes: [{ title: "Trabajo", avgEnergy: 7, items: ["Momento"] }],
+        insights: [],
+        actionPlan: [],
+      },
+    },
+    {
+      name: `publication-${locale}`,
+      script: "publication_pdf_reportlab.py",
+      requiredText: [expected.publication, expected.date],
+      forbiddenText: locale === "es" ? internalTerms : [...internalTerms, ...spanishInterfaceTerms],
+      forbiddenPatterns: [/\b2026-07-27(?:T|\s)/],
+      validateBounds: true,
+      payload: {
+        ...structuredClone(shared),
+        title: "Vibe",
+        html: "<p>Recorded human account for the selected period.</p>",
+        draft: {
+          title: "Vibe",
+          summary: "Recorded human account for the selected period.",
+          body: "Recorded human account for the selected period. A second sentence adds narrative detail.",
+          purpose: "A clear memory of the selected period.",
+          timeline: [{
+            title: "Recorded moment",
+            date: "2026-07-27T10:00:00.000Z",
+            note: "Human account.",
+            mediaSummary: [],
+          }],
+          media: [],
+        },
+      },
+    },
+  );
+}
+
 for (const item of cases) {
   const result = spawnSync(python.command, [...python.args, path.join("scripts", item.script)], {
     input: JSON.stringify(item.payload),
@@ -180,7 +305,11 @@ for (const item of cases) {
   if (!output.subarray(0, 5).equals(Buffer.from("%PDF-")) || output.length < 4000) {
     throw new Error(`${item.name} PDF output is invalid or too small (${output.length} bytes).`);
   }
-  if (item.requiredText?.length) {
+  if (process.env.VIBE_PDF_REVIEW_DIR) {
+    fs.mkdirSync(process.env.VIBE_PDF_REVIEW_DIR, { recursive: true });
+    fs.writeFileSync(path.join(process.env.VIBE_PDF_REVIEW_DIR, `${item.name}.pdf`), output);
+  }
+  if (item.requiredText?.length || item.forbiddenText?.length || item.validateBounds) {
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "vibe-pdf-"));
     const tempPdf = path.join(tempDir, `${item.name}.pdf`);
     try {
@@ -191,8 +320,46 @@ for (const item of cases) {
         env: { ...process.env, PYTHONPATH: pythonPath },
       });
       const text = extracted.stdout?.toString("utf8") || "";
-      if (extracted.status !== 0 || item.requiredText.some((required) => !text.includes(required))) {
-        throw new Error(`${item.name} PDF is missing its required inventory content.`);
+      const comparable = (value) => value
+        .normalize("NFD")
+        .replace(/\p{M}/gu, "")
+        .replace(/[’‘]/g, "'");
+      const comparableText = comparable(text);
+      const missing = (item.requiredText || []).filter((required) => !comparableText.includes(comparable(required)));
+      if (extracted.status !== 0 || missing.length) {
+        throw new Error(`${item.name} PDF is missing required output content: ${missing.join(", ")}.`);
+      }
+      const forbidden = (item.forbiddenText || []).find((value) => text.includes(value));
+      if (forbidden) {
+        throw new Error(`${item.name} PDF exposes technical text: ${forbidden}.`);
+      }
+      const forbiddenPattern = (item.forbiddenPatterns || []).find((pattern) => pattern.test(text));
+      if (forbiddenPattern) {
+        throw new Error(`${item.name} PDF exposes forbidden text pattern: ${forbiddenPattern}.`);
+      }
+      if (item.validateBounds) {
+        const bounds = spawnSync(python.command, [
+          ...python.args,
+          "-c",
+          [
+            "import pdfplumber,sys",
+            "bad=[]",
+            "with pdfplumber.open(sys.argv[1]) as pdf:",
+            "  for page_no,page in enumerate(pdf.pages,1):",
+            "    for char in page.chars:",
+            "      if char['x0'] < -1 or char['x1'] > page.width + 1 or char['top'] < -1 or char['bottom'] > page.height + 1:",
+            "        bad.append((page_no,char.get('text',''),char['x0'],char['x1'],char['top'],char['bottom']))",
+            "print(len(bad))",
+          ].join("\n"),
+          tempPdf,
+        ], {
+          windowsHide: true,
+          maxBuffer: 2 * 1024 * 1024,
+          env: { ...process.env, PYTHONPATH: pythonPath },
+        });
+        if (bounds.status !== 0 || Number(bounds.stdout?.toString("utf8").trim() || -1) !== 0) {
+          throw new Error(`${item.name} PDF contains text outside its page bounds.`);
+        }
       }
     } finally {
       fs.rmSync(tempDir, { recursive: true, force: true });

@@ -70,10 +70,10 @@ for (const endpoint of expectedEndpointFragments) {
 assert.doesNotMatch(combined, /\/api\/mobile\//);
 assert.doesNotMatch(combined, /\/api\/(?:experiences|assets|captures|report|insights|publication)(?:[/?`'"])/);
 
-assert.match(api, /Promise\.all\(\[/);
-assert.match(api, /request\("\/api\/v2\/health"\)/);
+assert.match(api, /Promise\.allSettled\(/);
+assert.match(api, /\["health",\s*"\/api\/v2\/health"/);
 assert.doesNotMatch(
-  api.match(/export async function loadWorkspace\(\)[\s\S]*?\n\}/)?.[0] || "",
+  api.match(/export async function loadWorkspace\(previous = \{\}\)[\s\S]*?\n\}/)?.[0] || "",
   /\.catch\(\(\)\s*=>/,
   "Workspace load must not hide failed V2 services",
 );

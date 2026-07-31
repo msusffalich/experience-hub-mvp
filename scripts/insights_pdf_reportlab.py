@@ -16,6 +16,9 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import BaseDocTemplate, Frame, Flowable, PageBreak, PageTemplate, Paragraph, Spacer, Table, TableStyle
 
+from pdf_context_sections import build_context_digest
+from pdf_i18n import natural_date, set_locale, t
+
 
 PAGE_WIDTH, PAGE_HEIGHT = letter
 MARGIN = 0.55 * inch
@@ -142,12 +145,12 @@ def draw_page(canvas, doc):
     canvas.rect(0, PAGE_HEIGHT - 0.035 * inch, PAGE_WIDTH, 0.035 * inch, fill=1, stroke=0)
     canvas.setFillColor(BRAND)
     canvas.setFont(FONT_BOLD, 8)
-    canvas.drawString(MARGIN, 0.32 * inch, "Vibe - Hallazgos de experiencias")
+    canvas.drawString(MARGIN, 0.32 * inch, t("insights_footer"))
     canvas.setFillColor(ACCENT)
     canvas.roundRect(MARGIN, 0.22 * inch, 0.38 * inch, 0.035 * inch, 1, fill=1, stroke=0)
     canvas.setFillColor(MUTED)
     canvas.setFont(FONT_REGULAR, 8)
-    canvas.drawRightString(PAGE_WIDTH - MARGIN, 0.32 * inch, f"Página {doc.page}")
+    canvas.drawRightString(PAGE_WIDTH - MARGIN, 0.32 * inch, t("page", number=doc.page))
     canvas.restoreState()
 
 
@@ -172,22 +175,22 @@ class CoverBlock(Flowable):
         is_inventory = output_scope.get("presentationMode") == "signal_inventory"
         c.setFillColor(colors.white)
         c.setFont(FONT_BOLD, 30)
-        c.drawString(0.38 * inch, self.height - 1.42 * inch, "Señales y mediciones" if is_inventory else "Hallazgos de experiencias")
+        c.drawString(0.38 * inch, self.height - 1.42 * inch, t("signals_title") if is_inventory else t("insights_title"))
         c.setFont(FONT_REGULAR, 12)
-        c.drawString(0.4 * inch, self.height - 1.76 * inch, "Registros reales del período, sin inferencias inventadas." if is_inventory else "Diagnóstico visual, ejes humanos y recomendaciones accionables.")
+        c.drawString(0.4 * inch, self.height - 1.76 * inch, t("signals_subtitle") if is_inventory else t("insights_subtitle"))
         metrics = (
             [
-                ("Evidencias", inventory.get("evidence", 0)),
-                ("Contextos", inventory.get("context", 0)),
-                ("Texto", inventory.get("readable", 0)),
-                ("Mediciones", (inventory.get("measurements") or {}).get("records", 0)),
+                (t("evidence"), inventory.get("evidence", 0)),
+                (t("contexts"), inventory.get("context", 0)),
+                (t("readable_text"), inventory.get("readable", 0)),
+                (t("measurements"), (inventory.get("measurements") or {}).get("records", 0)),
             ]
             if is_inventory
             else [
-                ("Experiencias", self.payload.get("experiences", 0)),
-                ("Evidencias", output_scope.get("evidence", 0)),
-                ("Hallazgos", len(self.payload.get("insights") or [])),
-                ("Contextos", output_scope.get("context", 0)),
+                (t("experiences"), self.payload.get("experiences", 0)),
+                (t("evidence"), output_scope.get("evidence", 0)),
+                (t("findings"), len(self.payload.get("insights") or [])),
+                (t("contexts"), output_scope.get("context", 0)),
             ]
         )
         y = self.height - 2.55 * inch
@@ -202,7 +205,7 @@ class CoverBlock(Flowable):
             c.drawCentredString(x + 0.54 * inch, y + 0.16 * inch, label.upper())
         c.setFillColor(colors.HexColor("#eaf3f4"))
         c.setFont(FONT_REGULAR, 9)
-        c.drawString(0.4 * inch, 0.55 * inch, f"Generado: {clean(self.payload.get('generatedAt') or datetime.now(timezone.utc).isoformat())}")
+        c.drawString(0.4 * inch, 0.55 * inch, t("generated", date=natural_date(self.payload.get("generatedAt") or datetime.now(timezone.utc))))
         c.restoreState()
 
 
@@ -318,12 +321,19 @@ def axis_cards(axes):
     width = PAGE_WIDTH - 2 * MARGIN
     for index, axis in enumerate(axes[:8]):
         color = AXIS_COLORS[index % len(AXIS_COLORS)]
-        body = (
-            f"Estado: {axis.get('status', '-')}. Energia media: {axis.get('avgEnergy', 0)}/10. "
-            f"Base observada: {len(axis.get('items') or [])} experiencias y {axis.get('assets', 0)} elementos de apoyo. "
-            f"Siguiente paso: {human_action(axis.get('action', ''), 180)}"
-        )
-        rows.append([text_axis_card(axis.get("title") or "Eje", body, color, width)])
+        experiences = len(axis.get("items") or [])
+        assets = int(num(axis.get("assets")))
+        parts = []
+        if axis.get("status") not in (None, "", "-"):
+            parts.append(t("current_reading", value=axis.get("status")))
+        if axis.get("avgEnergy") not in (None, ""):
+            parts.append(t("axis_average_energy", value=axis.get("avgEnergy")))
+        parts.append(t("axis_considered", experiences=experiences, assets=assets))
+        parts.append(f"{t('next_action')}: {human_action(axis.get('action', ''), 180)}")
+        body = " ".join(parts)
+        rows.append([text_axis_card(axis.get("title") or t("axis"), body, color, width)])
+    if not rows:
+        return para(t("no_scope_findings"), "Bodyx")
     table = Table(rows, colWidths=[width])
     table.setStyle(TableStyle([
         ("VALIGN", (0, 0), (-1, -1), "TOP"),
@@ -388,8 +398,15 @@ class Waffle(Flowable):
 
 
 def metric_grid(items):
+    columns = min(4, max(1, len(items)))
     cells = [[para(str(value), "Metric"), para(label, "MetricLabel")] for label, value in items]
-    table = Table([cells], colWidths=[(PAGE_WIDTH - 2 * MARGIN) / 4 - 6] * 4)
+    rows = []
+    for index in range(0, len(cells), columns):
+        row = cells[index : index + columns]
+        while len(row) < columns:
+            row.append("")
+        rows.append(row)
+    table = Table(rows or [[""]], colWidths=[(PAGE_WIDTH - 2 * MARGIN) / columns - 6] * columns)
     table.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, -1), colors.white),
         ("BOX", (0, 0), (-1, -1), 0.6, LINE),
@@ -430,7 +447,7 @@ def two_columns(cards):
 
 
 def axis_table(axes):
-    rows = [[para("Eje", "Small"), para("Experiencias", "Small"), para("Energia", "Small"), para("Siguiente accion", "Small")]]
+    rows = [[para(t("axis"), "Small"), para(t("experiences"), "Small"), para(t("energy"), "Small"), para(t("next_action"), "Small")]]
     for axis in axes[:8]:
         rows.append([
             para(axis.get("title", ""), "Small"),
@@ -453,14 +470,14 @@ def axis_table(axes):
 
 
 def evidence_register(items):
-    rows = [[para("Fecha", "Small"), para("Elemento", "Small"), para("Tipo", "Small"), para("Estado", "Small")]]
+    rows = [[para(t("date"), "Small"), para(t("item"), "Small"), para(t("type"), "Small"), para(t("status"), "Small")]]
     for item in items[:24]:
         readable = clean(item.get("analyticalText") or item.get("translatedText") or item.get("manualNote") or "")
         rows.append([
-            para(short(item.get("capturedAt") or item.get("timestamp") or "", 22), "Small"),
-            para(short(item.get("name") or item.get("experienceTitle") or "Elemento sin nombre", 58), "Small"),
-            para(item.get("kind") or "Evidencia", "Small"),
-            para("Con lectura" if readable else "Disponible", "Small"),
+            para(natural_date(item.get("capturedAt") or item.get("timestamp")), "Small"),
+            para(short(item.get("name") or item.get("experienceTitle") or t("unnamed_item"), 58), "Small"),
+            para(item.get("kind") or t("evidence"), "Small"),
+            para(t("with_reading") if readable else t("available"), "Small"),
         ])
     table = Table(rows, colWidths=[1.15 * inch, 2.95 * inch, 0.95 * inch, 0.8 * inch])
     table.setStyle(TableStyle([
@@ -476,6 +493,27 @@ def evidence_register(items):
     return table
 
 
+def contextual_snapshot(payload, include_biometrics=True):
+    digest = build_context_digest(payload)
+    if not digest["has_context"]:
+        return []
+    flow = [para(t("context_findings"), "H1x")]
+    if include_biometrics and digest["biometrics"]:
+        flow.append(metric_grid(digest["biometrics"][:4]))
+        flow.append(Spacer(1, 8))
+    if digest["cards"]:
+        flow.append(two_columns([
+            card(title, body, meta)
+            for title, body, meta in digest["cards"]
+        ]))
+    flow.append(Spacer(1, 4))
+    flow.append(para(
+        t("context_findings_note"),
+        "Small",
+    ))
+    return flow
+
+
 def build_signal_inventory_story(payload):
     inventory = payload.get("evidenceInventory") or {}
     measurements = inventory.get("measurements") or {}
@@ -484,31 +522,32 @@ def build_signal_inventory_story(payload):
     has_measurements = bool(measurements.get("hasMeasurements"))
     records = int(num(measurements.get("records")))
     story = [CoverBlock(payload), PageBreak()]
-    story.append(para("Resumen factual", "H1x"))
+    story.append(para(t("factual_summary"), "H1x"))
     story.append(metric_grid([
-        ("Evidencias", inventory.get("evidence", 0)),
-        ("Contextos", inventory.get("context", 0)),
-        ("Texto interpretable", inventory.get("readable", 0)),
-        ("Registros biométricos", records if has_measurements else "-"),
+        (t("evidence"), inventory.get("evidence", 0)),
+        (t("contexts"), inventory.get("context", 0)),
+        (t("readable_text"), inventory.get("readable", 0)),
+        (t("biometric_records"), records if has_measurements else "-"),
     ]))
     story.append(Spacer(1, 10))
     story.append(two_columns([
-        card("Cómo leer esta salida", "Organiza evidencia y contexto del período. No calcula ejes humanos, cobertura por Áreas de vida ni acciones porque no incluye historias."),
-        card("Uso recomendado", "Revisa el material disponible, completa una historia cuando corresponda o úsalo como respaldo para una publicación."),
+        card(t("how_read_output"), t("signal_explanation")),
+        card(t("recommended_use"), t("recommended_use_body")),
     ]))
-    story.append(para("Mediciones disponibles", "H1x"))
+    story.append(para(t("available_measurements"), "H1x"))
     story.append(metric_grid([
-        ("Frecuencia cardiaca", f"{round(num(metrics.get('heartAvg')))} bpm" if num(metrics.get("heartAvg")) else "-"),
-        ("Pasos", f"{int(round(num(metrics.get('steps')))):,}" if num(metrics.get("steps")) else "-"),
-        ("Sueño", f"{num(metrics.get('sleepMinutes')) / 60:.1f} h" if num(metrics.get("sleepMinutes")) else "-"),
-        ("Energía activa", f"{round(num(metrics.get('activeEnergy')))} kcal" if num(metrics.get("activeEnergy")) else "-"),
+        (t("heart_rate"), f"{round(num(metrics.get('heartAvg')))} bpm" if num(metrics.get("heartAvg")) else "-"),
+        (t("steps"), f"{int(round(num(metrics.get('steps')))):,}" if num(metrics.get("steps")) else "-"),
+        (t("sleep"), f"{num(metrics.get('sleepMinutes')) / 60:.1f} h" if num(metrics.get("sleepMinutes")) else "-"),
+        (t("active_energy"), f"{round(num(metrics.get('activeEnergy')))} kcal" if num(metrics.get("activeEnergy")) else "-"),
     ]))
     story.append(Spacer(1, 8))
-    story.append(para("Las mediciones solo aparecen cuando existen registros reales en el período. Sin registros suficientes, no se estima energía ni se infieren recomendaciones.", "Small"))
-    story.append(para("Registro de evidencia", "H1x"))
-    story.append(evidence_register(items) if items else para("No hay evidencia ni contexto en el período seleccionado.", "Bodyx"))
+    story.append(para(t("signals_rule"), "Small"))
+    story.extend(contextual_snapshot(payload, include_biometrics=False))
+    story.append(para(t("evidence_register"), "H1x"))
+    story.append(evidence_register(items) if items else para(t("no_evidence_period"), "Bodyx"))
     story.append(Spacer(1, 8))
-    story.append(para("Este documento es una lectura factual de señales y mediciones. Los hallazgos por Áreas de vida requieren historias registradas.", "Small"))
+    story.append(para(t("signals_closing"), "Small"))
     return story
 
 
@@ -521,52 +560,54 @@ def build_story(payload):
     if output_scope.get("presentationMode") == "signal_inventory":
         return build_signal_inventory_story(payload)
     story = [CoverBlock(payload), PageBreak()]
-    story.append(para("Resumen ejecutivo", "H1x"))
+    story.append(para(t("executive_summary"), "H1x"))
     story.append(metric_grid([
-        ("Experiencias", experiences),
-        ("Evidencias", output_scope.get("evidence", 0)),
-        ("Contextos", output_scope.get("context", 0)),
-        ("Ejes humanos", len(axes)),
-        ("Hallazgos", len(insights)),
-        ("Acciones", len(action_plan)),
+        (t("experiences"), experiences),
+        (t("evidence"), output_scope.get("evidence", 0)),
+        (t("contexts"), output_scope.get("context", 0)),
+        (t("human_axes"), len(axes)),
+        (t("findings"), len(insights)),
+        (t("actions"), len(action_plan)),
     ]))
     story.append(Spacer(1, 10))
-    story.append(para("Mapa de ejes humanos", "H1x"))
+    story.extend(contextual_snapshot(payload))
+    story.append(para(t("human_axis_map"), "H1x"))
     story.append(axis_cards(axes))
     story.append(Spacer(1, 8))
     avg_axis_energy = sum(num(axis.get("avgEnergy")) for axis in axes) / max(1, len(axes))
     coverage = min(100, (sum(len(axis.get("items") or []) for axis in axes) / max(1, len(axes) * max(1, num(experiences)))) * 100)
     story.append(two_columns([
-        Waffle("Cobertura tematica", coverage, "Waffle: proporcion de ejes con evidencia"),
-        Waffle("Energia media de ejes", avg_axis_energy * 10, "Waffle: lectura agregada de energia"),
+        Waffle(t("thematic_coverage"), coverage, t("axes_with_evidence")),
+        Waffle(t("axis_average_energy"), avg_axis_energy * 10, t("aggregated_energy")),
     ]))
-    story.append(para("Plan de acción 7 días", "H1x"))
+    story.append(para(t("action_plan"), "H1x"))
     plan_cards = []
     for index, action in enumerate(action_plan[:6]):
-        meta = f"{clean(action.get('priority') or 'Prioridad media')} - {clean(action.get('horizon') or 'Próximos 7 días')}"
+        meta = f"{clean(action.get('priority') or t('medium_priority'))} - {clean(action.get('horizon') or t('next_7_days'))}"
         body = (
             f"{clean(action.get('why') or '')} "
-            f"Base observada: {clean(action.get('evidence') or '')}. "
-            f"Siguiente paso: {human_action(action.get('next') or '', 150)}"
+            f"{t('observed_basis')}: {clean(action.get('evidence') or '')}. "
+            f"{t('next_action')}: {human_action(action.get('next') or '', 150)}"
         )
-        plan_cards.append(card(f"{index + 1}. {clean(action.get('title') or 'Acción')}", body, meta))
-    story.append(two_columns(plan_cards) if plan_cards else para("No hay acciones suficientes para este alcance.", "Bodyx"))
-    story.append(para("Hallazgos priorizados", "H1x"))
+        plan_cards.append(card(f"{index + 1}. {clean(action.get('title') or t('action'))}", body, meta))
+    story.append(two_columns(plan_cards) if plan_cards else para(t("no_actions"), "Bodyx"))
+    story.append(para(t("prioritized_findings"), "H1x"))
     cards = []
     for index, insight in enumerate(insights[:8]):
-        meta = f"{clean(insight.get('type') or 'Hallazgo')} - confianza {insight.get('confidence', 0)}%"
-        body = f"{clean(insight.get('description', ''))} Siguiente paso: {human_action(insight.get('action', ''), 140)}"
-        cards.append(card(f"{index + 1}. {insight.get('title', 'Hallazgo')}", body, meta))
-    story.append(two_columns(cards) if cards else para("No hay hallazgos suficientes para este alcance.", "Bodyx"))
-    story.append(para("Ejes de exploracion", "H1x"))
+        meta = f"{clean(insight.get('type') or t('finding'))} - {t('confidence').lower()} {insight.get('confidence', 0)}%"
+        body = f"{clean(insight.get('description', ''))} {t('next_action')}: {human_action(insight.get('action', ''), 140)}"
+        cards.append(card(f"{index + 1}. {insight.get('title', t('finding'))}", body, meta))
+    story.append(two_columns(cards) if cards else para(t("no_scope_findings"), "Bodyx"))
+    story.append(para(t("exploration_axes"), "H1x"))
     story.append(axis_table(axes))
     story.append(Spacer(1, 8))
-    story.append(para("Este PDF resume patrones, señales y recomendaciones en lenguaje humano. La intención es orientar decisiones, no exponer detalles técnicos.", "Small"))
+    story.append(para(t("insights_closing"), "Small"))
     return story
 
 
 def main():
     payload = json.loads(sys.stdin.buffer.read().decode("utf-8"))
+    set_locale(payload.get("language") or payload.get("locale"))
     buffer = io.BytesIO()
     frame = Frame(MARGIN, MARGIN + 0.22 * inch, PAGE_WIDTH - 2 * MARGIN, PAGE_HEIGHT - 2 * MARGIN - 0.25 * inch, showBoundary=0)
     doc = BaseDocTemplate(buffer, pagesize=letter, leftMargin=MARGIN, rightMargin=MARGIN, topMargin=MARGIN, bottomMargin=MARGIN)

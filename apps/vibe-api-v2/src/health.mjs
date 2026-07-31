@@ -56,6 +56,9 @@ export function createHealthService({ config, supabase, capture }) {
         ["vibe_jobs_v2", "job_id"],
         ["integration_connections_v2", "connection_id"],
         ["integration_oauth_states_v2", "state"],
+        ["agenda_events", "event_id"],
+        ["context_signals", "signal_id"],
+        ["daily_briefings", "user_id"],
       ];
       await Promise.all(tables.map(([table, column]) => supabase.rest(table, {
         auth: "service",

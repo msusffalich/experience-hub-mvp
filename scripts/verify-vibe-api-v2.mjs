@@ -97,8 +97,13 @@ const expectedRoutes = [
   ["GET", "/api/v2/captures/operations/:id", true],
   ["GET", "/api/v2/captures/:id/download", true],
   ["GET", "/api/v2/agenda", true],
+  ["POST", "/api/v2/agenda", true],
+  ["PUT", "/api/v2/agenda/:id", true],
+  ["DELETE", "/api/v2/agenda/:id", true],
   ["GET", "/api/v2/context/signals", true],
   ["GET", "/api/v2/context/summary", true],
+  ["GET", "/api/v2/context/briefing", true],
+  ["POST", "/api/v2/context/refresh", true],
   ["POST", "/api/v2/outputs/:type/pdf", true],
   ["GET", "/api/v2/obsidian/preview", true],
   ["POST", "/api/v2/obsidian/export", true],
@@ -178,7 +183,7 @@ assert.deepEqual(
 );
 assert.deepEqual(
   [...captureStatus.contract.context].sort(),
-  ["agenda", "biometric", "location", "news", "sensor", "weather"],
+  ["agenda", "biometric", "entertainment", "location", "news", "sensor", "weather"],
 );
 assert.equal(captureStatus.contract.storyFieldsAllowed, false);
 assert.equal(captureStatus.contract.successRule, "storage_verified_and_catalog_committed");

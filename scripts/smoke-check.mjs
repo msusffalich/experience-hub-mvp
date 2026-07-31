@@ -411,7 +411,7 @@ assert(files.app.includes("getExternalAssetProfile") && files.app.includes("exte
 assert(files.app.includes("applyRecommendedPublicationMediaSelection") && files.app.includes("publicationRoleLabel") && files.app.includes("data-publication-media-bulk=\"recommended\""), "Publications must support recommended media curation with editorial asset roles.");
 assert(files.app.includes("PUBLICATION_OUTPUT_CHANNEL") && files.app.includes("PDF revista premium"), "Publications must use the single premium PDF output contract.");
 assert(files.app.includes("buildPublicationTimelineItems") && files.app.includes("timeline: privacy ? timeline.map"), "Publications must pass a chronological timeline into the PDF payload.");
-assert(files.publicationPdf.includes("build_chronological_timeline_section") && files.publicationPdf.includes("Cronologia completa"), "Publication ReportLab PDF must render a chronological event timeline.");
+assert(files.publicationPdf.includes("build_chronological_timeline_section") && files.publicationPdf.includes('t("chronology")'), "Publication ReportLab PDF must render a chronological event timeline.");
 assert(files.index.includes("Generar PDF revista premium") && files.index.includes("Descargar PDF revista premium"), "Publication UI must expose the premium PDF as the primary user action.");
 assert(files.index.includes("publicationQuickStart") && files.app.includes("publicationQuickStarts") && files.app.includes("handlePublicationQuickStart") && files.styles.includes(".publication-quick-grid"), "Publications must expose one-click quick starts by purpose.");
 assert(files.index.includes("reportQuickStart") && files.app.includes("reportQuickStarts") && files.app.includes("handleReportQuickStart") && files.styles.includes(".report-quick-grid"), "Reports must expose one-click quick starts by period, theme, and device data.");
@@ -422,7 +422,7 @@ assert(files.index.includes("reportSharedScopeContext") && files.index.includes(
 assert(files.app.includes("Contexto de alcance por salida") && files.app.includes("Output scope context"), "Manual/Admin must document output scope context cards.");
 assert(files.index.includes("insightsQuickStart") && files.app.includes("insightQuickStarts") && files.app.includes("handleInsightsQuickStart") && files.styles.includes(".insights-quick-grid"), "Findings must expose one-click quick starts by theme, period, and device data.");
 assert(files.app.includes("Arranque rapido de Hallazgos") && files.app.includes("Findings quick start"), "Manual/Admin must document Findings quick starts.");
-assert(files.publicationPdf.includes("Cierre editorial") && files.publicationPdf.includes("Antes de compartir"), "Publication ReportLab PDF must end with a human editorial close, not technical channel deliverables.");
+assert(files.publicationPdf.includes('t("editorial_closing")') && files.publicationPdf.includes('t("editorial_closing_subtitle")'), "Publication ReportLab PDF must end with a human editorial close, not technical channel deliverables.");
 assert(files.app.includes("syncPublicationDraftPagesFromTopLevel") && files.app.includes("Editor conectado a la exportacion") && files.app.includes("Publication editor tied to export"), "Publications editor must synchronize visible pages and export payloads.");
 assert(files.index.includes("publicationProgressPanel") && files.app.includes("setPublicationProgress") && files.app.includes("publicationProgressPdfReady") && files.styles.includes(".publication-progress-panel"), "Publications must show generation progress and final PDF readiness.");
 assert(files.app.includes("ensureApiOnlineForExport") && files.app.includes("publicationProgressApiCheck") && files.app.includes("await ensureApiOnlineForExport()"), "Publication PDF export must recheck API health inside the same flow before reporting API unavailable.");
@@ -476,7 +476,7 @@ assert(files.index.includes("Descargar PDF de hallazgos"), "Findings must expose
 assert(files.index.includes('id="exportInsightsHtmlButton"') && files.index.includes('id="exportInsightsHtmlButton" class="ghost-button technical-export" type="button" hidden'), "Findings HTML export must not appear as a primary user action.");
 assert(files.app.includes("function buildInsightActionPlan") && files.app.includes("data-insight-plan-index"), "Findings must produce a schedulable seven-day action plan.");
 assert(files.app.includes("actionPlan = buildInsightActionPlan") && files.app.includes("Plan de acción 7 días"), "Findings exports must include the seven-day action plan.");
-assert(files.insightsPdf.includes("actionPlan") && files.insightsPdf.includes("Plan de acción 7 días"), "Findings ReportLab PDF must render the seven-day action plan.");
+assert(files.insightsPdf.includes("actionPlan") && files.insightsPdf.includes('t("action_plan")'), "Findings ReportLab PDF must render the seven-day action plan.");
 assert(files.app.includes("Plan de acción de Hallazgos") && files.app.includes("7-day action plan"), "Manual/Admin must document the findings action plan.");
 assert(files.index.includes("manualExportPdfButton"), "Manual must expose edited ReportLab PDF export.");
 assert(files.server.includes("/api/manual/pdf"), "Server must expose Manual PDF generation.");

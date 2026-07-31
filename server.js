@@ -343,6 +343,24 @@ const server = createServer(async (req, res) => {
       return;
     }
 
+    if ((url.pathname === "/" || url.pathname === "/index.html") && url.searchParams.get("legacy") !== "1") {
+      res.writeHead(302, {
+        Location: "/apps/vibepwa-next/index.html",
+        "Cache-Control": "no-store",
+      });
+      res.end();
+      return;
+    }
+
+    if (url.pathname === "/legacy" || url.pathname === "/legacy/") {
+      res.writeHead(302, {
+        Location: "/index.html?legacy=1",
+        "Cache-Control": "no-store",
+      });
+      res.end();
+      return;
+    }
+
     await serveStatic(req, res, url.pathname);
   } catch (error) {
     const errorMessage = formatHttpErrorMessage(error);
@@ -356,7 +374,7 @@ const server = createServer(async (req, res) => {
 
 server.listen(PORT, HOST, () => {
   const displayHost = HOST === "0.0.0.0" ? "localhost" : HOST;
-  console.log(`Experience Hub MVP running at http://${displayHost}:${PORT}/index.html`);
+  console.log(`VibePWA 2 running at http://${displayHost}:${PORT}/`);
 });
 if (process.env.NODE_ENV !== "test") {
   setInterval(() => processRoutineSchedules().catch(() => {}), 60_000);

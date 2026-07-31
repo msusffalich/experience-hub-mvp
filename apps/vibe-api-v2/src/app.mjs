@@ -7,6 +7,7 @@ import { createCaptureService } from "./capture.mjs";
 import { createProfileService } from "./profile.mjs";
 import { createStoryService } from "./stories.mjs";
 import { createContextService } from "./context.mjs";
+import { createContextEnrichmentService } from "./context-enrichment.mjs";
 import { createOutputService } from "./outputs.mjs";
 import { createOperationsService } from "./operations.mjs";
 import { createObsidianService } from "./obsidian.mjs";
@@ -24,6 +25,12 @@ export function createVibeApiV2(options = {}) {
   const profile = createProfileService({ supabase, workspace });
   const stories = createStoryService({ supabase, workspace, config });
   const context = createContextService({ supabase, workspace });
+  const contextEnrichment = createContextEnrichmentService({
+    supabase,
+    workspace,
+    config,
+    fetchImpl: options.fetchImpl,
+  });
   const outputs = createOutputService({ config });
   const operations = createOperationsService({ supabase, workspace });
   const obsidian = createObsidianService({ config, stories });
@@ -44,6 +51,7 @@ export function createVibeApiV2(options = {}) {
     profile,
     stories,
     context,
+    contextEnrichment,
     outputs,
     operations,
     obsidian,
@@ -55,7 +63,10 @@ export function createVibeApiV2(options = {}) {
   const shouldStartWorkers = options.startWorkers ?? config.env !== "test";
   const stopWorkers = !shouldStartWorkers
     ? () => {}
-    : integrations.startWorker();
+    : combineStops(
+      integrations.startWorker(),
+      contextEnrichment.startWorker(),
+    );
 
   async function handle(req, res) {
     if (!String(req.url || "").startsWith("/api/v2/")) return false;
@@ -80,6 +91,7 @@ export function createVibeApiV2(options = {}) {
       profile,
       stories,
       context,
+      contextEnrichment,
       outputs,
       operations,
       obsidian,
@@ -99,6 +111,7 @@ function registerRoutes(router, service) {
     profile,
     stories,
     context,
+    contextEnrichment,
     outputs,
     operations,
     obsidian,
@@ -162,8 +175,28 @@ function registerRoutes(router, service) {
     json(200, await capture.list(authValue, url)));
   router.add("GET", "/api/v2/captures/contract", async () =>
     json(200, capture.contract()));
-  router.add("POST", "/api/v2/captures", async ({ body, auth: authValue }) =>
-    json(201, await capture.capture(body, authValue)));
+  router.add("POST", "/api/v2/captures", async ({ body, auth: authValue }) => {
+    const result = await capture.capture(body, authValue);
+    let contextRefresh = null;
+    if (
+      String(body?.intent || "").toLowerCase() === "context" &&
+      String(body?.kind || body?.type || "").toLowerCase() === "location"
+    ) {
+      try {
+        contextRefresh = await contextEnrichment.refresh(authValue, {
+          locale: body?.metadata?.locale || body?.locale || "es",
+          location: body?.metadata?.location || body?.text || "",
+          reason: "location_capture",
+        });
+      } catch (error) {
+        console.error("vibe_api_v2_context_refresh_queue_failed", {
+          code: error.code || "context_refresh_queue_failed",
+          message: error.message,
+        });
+      }
+    }
+    return json(201, { ...result, contextRefresh });
+  });
   router.add("GET", "/api/v2/captures/status", async ({ auth: authValue, url }) =>
     json(200, await capture.status(authValue, {
       roundTrip: url.searchParams.get("roundTrip") === "1",
@@ -179,10 +212,20 @@ function registerRoutes(router, service) {
 
   router.add("GET", "/api/v2/agenda", async ({ url, auth: authValue }) =>
     json(200, await context.agenda(authValue, url)));
+  router.add("POST", "/api/v2/agenda", async ({ body, auth: authValue }) =>
+    json(201, await context.saveAgenda(body, authValue)));
+  router.add("PUT", "/api/v2/agenda/:id", async ({ params, body, auth: authValue }) =>
+    json(200, await context.saveAgenda(body, authValue, params.id)));
+  router.add("DELETE", "/api/v2/agenda/:id", async ({ params, auth: authValue }) =>
+    json(200, await context.removeAgenda(params.id, authValue)));
   router.add("GET", "/api/v2/context/signals", async ({ url, auth: authValue }) =>
     json(200, await context.signals(authValue, url)));
   router.add("GET", "/api/v2/context/summary", async ({ url, auth: authValue }) =>
     json(200, await context.summary(authValue, url)));
+  router.add("GET", "/api/v2/context/briefing", async ({ auth: authValue }) =>
+    json(200, await contextEnrichment.latest(authValue)));
+  router.add("POST", "/api/v2/context/refresh", async ({ body, auth: authValue }) =>
+    json(202, await contextEnrichment.refresh(authValue, body)));
 
   router.add("POST", "/api/v2/outputs/:type/pdf", async ({ params, body, auth: authValue }) => {
     void authValue;
@@ -222,6 +265,18 @@ function registerRoutes(router, service) {
     auth: false,
     body: "bytes",
   });
+}
+
+function combineStops(...stops) {
+  return () => {
+    for (const stop of stops) {
+      try {
+        stop?.();
+      } catch {
+        // Worker shutdown is best effort.
+      }
+    }
+  };
 }
 
 export function validateVibeApiV2Runtime(options = {}) {

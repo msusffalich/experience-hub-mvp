@@ -1,0 +1,80 @@
+{
+  "biometricContext": {
+    "status": "available",
+    "records": 18,
+    "metrics": {
+      "heartAvg": 68,
+      "steps": 8420,
+      "sleepMinutes": 435,
+      "activeEnergy": 386,
+      "spo2": 97.4
+    },
+    "energy": 7
+  },
+  "currentContext": {
+    "records": 9,
+    "latestLocation": {
+      "label": "Winter Garden",
+      "country": "Florida, Estados Unidos",
+      "latitude": 28.377462,
+      "longitude": -81.652576
+    },
+    "latestWeather": {
+      "description": "Parcialmente nublado",
+      "temperatureC": 29.2,
+      "humidity": 71,
+      "windKph": 12,
+      "rainMm": 0
+    },
+    "latestNews": {
+      "items": [
+        {
+          "title": "La región anuncia nuevas mejoras de movilidad",
+          "source": "Reuters"
+        },
+        {
+          "title": "Agenda comunitaria actualizada para el fin de semana",
+          "source": "BBC"
+        }
+      ]
+    },
+    "latestEntertainment": {
+      "items": [
+        {
+          "title": "Festival de verano en el centro",
+          "venue": "Winter Garden"
+        },
+        {
+          "title": "Concierto al aire libre",
+          "venue": "Downtown Pavilion"
+        }
+      ]
+    },
+    "briefing": {
+      "agendaLinks": [
+        {
+          "title": "Cartelera de teatro local",
+          "venue": "Garden Theatre"
+        }
+      ]
+    }
+  },
+  "contextImpact": {
+    "location": "Winter Garden, Florida",
+    "score": 24,
+    "summary": "El clima fue estable y la actualidad local no mostró señales críticas para las actividades registradas."
+  },
+  "contextEvidence": [
+    {
+      "id": "context-health-rich",
+      "name": "Resumen de salud",
+      "kind": "biometric",
+      "capturedAt": "2026-07-27T10:10:00.000Z",
+      "metrics": {
+        "heartAvg": 68,
+        "steps": 8420
+      },
+      "analyticalText": "Promedios de salud disponibles para el período."
+    }
+  ]
+}

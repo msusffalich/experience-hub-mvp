@@ -2,7 +2,9 @@ import { createHash } from "node:crypto";
 import { ApiError } from "./errors.mjs";
 
 const EVIDENCE_KINDS = new Set(["text", "image", "audio", "video", "document"]);
-const CONTEXT_KINDS = new Set(["biometric", "location", "weather", "news", "agenda", "sensor"]);
+const CONTEXT_KINDS = new Set([
+  "biometric", "location", "weather", "news", "entertainment", "agenda", "sensor",
+]);
 const BINARY_REQUIRED_KINDS = new Set(["image", "audio", "video", "document"]);
 const BINARY_CAPABLE_KINDS = new Set([...BINARY_REQUIRED_KINDS, "biometric", "sensor"]);
 const COMPLETE = "complete";

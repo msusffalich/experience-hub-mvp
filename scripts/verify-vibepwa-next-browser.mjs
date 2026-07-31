@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
+import { once } from "node:events";
 import { createRequire } from "node:module";
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
@@ -41,10 +42,16 @@ try {
     await browser.close();
   }
 } finally {
-  if (server.exitCode === null) server.kill();
+  if (server.exitCode === null) {
+    server.kill();
+    await Promise.race([
+      once(server, "exit"),
+      new Promise((resolve) => setTimeout(resolve, 2000)),
+    ]);
+  }
 }
 
-console.log("VibePWA 2 browser: login, six spaces, story editor, responsive layout and theme passed.");
+console.log("VibePWA 2 browser: login, seven spaces, context panels, story editor, responsive layout and theme passed.");
 
 async function verifyLogin(browser) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
@@ -71,11 +78,11 @@ async function verifySessionRefresh(browser) {
   await page.route("**/api/**", async (route) => {
     const request = route.request();
     const pathname = new URL(request.url()).pathname;
-    if (pathname === "/api/health") {
+    if (pathname === "/api/v2/health") {
       await json(route, 200, { status: "ok", persistence: "supabase" });
       return;
     }
-    if (pathname === "/api/mobile/auth/refresh") {
+    if (pathname === "/api/v2/auth/refresh") {
       refreshRequests += 1;
       await json(route, 200, {
         accessToken: "fresh-token",
@@ -88,9 +95,9 @@ async function verifySessionRefresh(browser) {
       await json(route, 401, { error: "expired" });
       return;
     }
-    const payload = pathname === "/api/profile"
+    const payload = pathname === "/api/v2/profile"
       ? { userId: "user-1", email: "miguel@example.com", language: "es" }
-      : pathname === "/api/captures/status"
+      : pathname === "/api/v2/captures/status"
         ? { enabledForUser: true }
         : [];
     await json(route, 200, payload);
@@ -116,6 +123,9 @@ async function verifyProduct(browser, viewport, label) {
   const requests = await installApiMocks(page);
   await page.goto(`${baseUrl}/apps/vibepwa-next/index.html`, { waitUntil: "networkidle" });
   await page.locator(".metric-strip").waitFor({ state: "attached" });
+  await page.getByText("Winter Garden, Florida", { exact: true }).waitFor();
+  await page.getByText("Reuters: actividad local reciente", { exact: true }).waitFor();
+  await page.getByText("Festival de verano", { exact: true }).waitFor();
   await page.waitForTimeout(100);
   if (!(await page.locator(".metric-strip").isVisible())) {
     const debug = await page.evaluate(() => {
@@ -143,11 +153,18 @@ async function verifyProduct(browser, viewport, label) {
   await assertNoHorizontalOverflow(page, `${label}:home`);
   await page.screenshot({ path: path.join(outputDir, `${label}-home.png`), fullPage: true });
 
-  for (const route of ["stories", "evidence", "intelligence", "publish", "account"]) {
+  for (const route of ["stories", "evidence", "agenda", "intelligence", "publish", "account"]) {
     await visibleRouteButton(page, route, label).click();
     await page.waitForTimeout(50);
     assert.equal(new URL(page.url()).hash.includes(route), true, `${label}:${route}`);
     await assertNoHorizontalOverflow(page, `${label}:${route}`);
+    if (route === "agenda") {
+      assert.equal(await page.getByText("Reunión de planificación", { exact: true }).isVisible(), true);
+    }
+    if (route === "intelligence") {
+      assert.equal(await page.getByText("Winter Garden, Florida", { exact: true }).isVisible(), true);
+      assert.equal(await page.getByText("Festival de verano", { exact: true }).isVisible(), true);
+    }
   }
 
   await visibleRouteButton(page, "stories", label).click();
@@ -165,10 +182,15 @@ async function verifyProduct(browser, viewport, label) {
     await linked.uncheck();
     await page.locator("#storyForm [type='submit']").click();
     await page.waitForTimeout(100);
+    const storyUpdate = requests.find((entry) => (
+      entry.path === "/api/v2/experiences/story-1"
+      && entry.method === "PUT"
+    ));
+    assert.ok(storyUpdate, "Quitar evidencia debe guardar la historia actualizada");
     assert.equal(
-      requests.some((entry) => entry.path === "/api/assets/reassign" && entry.body?.release === true),
-      true,
-      "Quitar evidencia debe usar la liberación no destructiva",
+      storyUpdate.body?.legacyAssetIds?.includes("asset-1"),
+      false,
+      "Quitar evidencia debe retirar el vínculo sin borrar el activo",
     );
   }
 
@@ -190,10 +212,10 @@ async function verifyManualLanguages(browser) {
   await context.addInitScript(() => localStorage.setItem("vibe-next-language", "fr"));
   const page = await context.newPage();
   await page.goto(`${baseUrl}/apps/vibepwa-next/manual.html`, { waitUntil: "networkidle" });
-  assert.equal(await page.locator("h2").first().textContent(), "Une idée simple");
+  assert.equal(await page.getByRole("heading", { name: "L'écosystème Vibe", exact: true }).isVisible(), true);
   await page.locator("#manualLanguage").selectOption("pt");
   await page.waitForLoadState("networkidle");
-  assert.equal(await page.locator("h2").first().textContent(), "Uma ideia simples");
+  assert.equal(await page.getByRole("heading", { name: "O ecossistema Vibe", exact: true }).isVisible(), true);
   await assertNoHorizontalOverflow(page, "mobile:manual");
   await context.close();
 }
@@ -266,15 +288,41 @@ async function installApiMocks(page) {
     }
     requests.push({ path: pathname, method: route.request().method(), body: requestBody });
     let payload = {};
-    if (pathname === "/api/health") payload = { status: "ok", persistence: "supabase" };
-    else if (pathname === "/api/profile") payload = { userId: "user-1", email: "miguel@example.com", name: "Miguel", language: "es" };
-    else if (pathname === "/api/experiences") payload = experiences;
-    else if (pathname === "/api/assets") payload = assets;
-    else if (pathname === "/api/captures") payload = [];
-    else if (pathname === "/api/agenda") payload = [];
-    else if (pathname === "/api/captures/status") payload = { enabledForUser: true, contract: { version: "test", directUpload: { binaryTransport: "direct_to_supabase_storage" } } };
+    if (pathname === "/api/v2/health") payload = { status: "ok", persistence: "supabase" };
+    else if (pathname === "/api/v2/profile") payload = { userId: "user-1", email: "miguel@example.com", name: "Miguel", language: "es" };
+    else if (pathname === "/api/v2/groups") payload = [];
+    else if (pathname === "/api/v2/experiences") payload = experiences;
+    else if (pathname === "/api/v2/assets") payload = assets;
+    else if (pathname === "/api/v2/captures") payload = [];
+    else if (pathname === "/api/v2/agenda") payload = [{
+      id: "agenda-1",
+      title: "Reunión de planificación",
+      description: "Revisión de prioridades.",
+      startAt: "2026-08-01T14:00:00.000Z",
+      endAt: "2026-08-01T15:00:00.000Z",
+      location: "Winter Garden",
+      status: "Planificado",
+      sourceType: "vibeapp",
+    }];
+    else if (pathname === "/api/v2/captures/status") payload = { enabledForUser: true, contract: { version: "test", directUpload: { binaryTransport: "direct_to_supabase_storage" } } };
+    else if (pathname === "/api/v2/context/summary") payload = {
+      latestLocation: "Winter Garden, Florida",
+      biometricSignals: 4,
+      metrics: { heartAvg: 68, steps: 7420, sleepMinutes: 438, activeEnergy: 510 },
+    };
+    else if (pathname === "/api/v2/context/signals") payload = [];
+    else if (pathname === "/api/v2/context/briefing") payload = {
+      nextRefreshAt: "2099-08-01T14:00:00.000Z",
+      payload: {
+        location: { label: "Winter Garden, Florida" },
+        weather: { status: "available", description: "Parcialmente nublado", temperatureC: 29, humidity: 74, source: "Open-Meteo" },
+        news: { status: "available", items: [{ title: "Reuters: actividad local reciente", link: "https://example.test/news" }], impact: { level: "low", score: 18 } },
+        entertainment: { status: "available", items: [{ title: "Festival de verano", link: "https://example.test/event" }] },
+      },
+    };
+    else if (pathname === "/api/v2/integrations/oura/status") payload = { connected: false, configured: true };
     else if (pathname.includes("/download")) payload = { url: "" };
-    else if (pathname.startsWith("/api/experiences/")) payload = experiences[0];
+    else if (pathname.startsWith("/api/v2/experiences/")) payload = experiences[0];
     else payload = { ok: true };
     await route.fulfill({
       status: 200,
