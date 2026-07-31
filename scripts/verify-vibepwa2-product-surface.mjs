@@ -185,9 +185,13 @@ async function verifyAutomaticContext() {
       }
       if (url.hostname === "news.google.com") {
         return textResponse(
-          "<rss><channel><item><title>Evento local</title><link>https://example.test/item</link>" +
+          // El titular menciona la localidad a proposito: el enriquecimiento
+          // exige que el resultado hable del lugar del usuario. Antes se
+          // aceptaba cualquier nota y en produccion salia cartelera de Madrid
+          // para alguien en Florida.
+          "<rss><channel><item><title>Evento local en Winter Garden</title><link>https://example.test/item</link>" +
           "<pubDate>Thu, 30 Jul 2026 12:00:00 GMT</pubDate><source>Reuters</source>" +
-          "<description>Informacion reciente.</description></item></channel></rss>",
+          "<description>Informacion reciente de Winter Garden.</description></item></channel></rss>",
         );
       }
       throw new Error(`Unexpected context URL: ${url}`);
