@@ -174,6 +174,18 @@ function clean(value, max) {
   return String(value || "").trim().slice(0, max);
 }
 
+// Métricas acumulativas: se suman entre señales en vez de promediarse.
+// El resto (pulso, readiness, sleepScore…) sigue promediándose.
+const CUMULATIVE_METRICS = new Set([
+  "steps",
+  "activeEnergy",
+  "active_calories",
+  "activeCalories",
+  "distance",
+  "sleepHours",
+  "sleep_hours",
+]);
+
 function mergeMetrics(target, metrics) {
   const result = { ...target };
   for (const [key, value] of Object.entries(metrics || {})) {
@@ -181,9 +193,15 @@ function mergeMetrics(target, metrics) {
     if (!Number.isFinite(number)) continue;
     if (!Array.isArray(result[`_${key}`])) result[`_${key}`] = [];
     result[`_${key}`].push(number);
-    result[key] = average(result[`_${key}`]);
+    result[key] = CUMULATIVE_METRICS.has(key)
+      ? Number(sum(result[`_${key}`]).toFixed(1))
+      : average(result[`_${key}`]);
   }
   return result;
+}
+
+function sum(values) {
+  return values.reduce((total, value) => total + value, 0);
 }
 
 function average(values) {
