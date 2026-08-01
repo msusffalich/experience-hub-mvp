@@ -7805,7 +7805,7 @@ async function materializeCaptureForVibePwa(body = {}, receipt = {}, user = {}) 
           : ""
       ),
       metrics: isPlainObject(metadata.metrics) ? metadata.metrics : (
-        body.kind === "biometric" || body.kind === "sensor" || body.kind === "weather"
+        body.kind === "biometric" || body.kind === "sensor" || body.kind === "weather" || body.kind === "energy"
           ? metadata
           : {}
       ),
