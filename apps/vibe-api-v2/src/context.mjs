@@ -129,7 +129,7 @@ export function createContextService({ supabase, workspace }) {
       row.signalType === "biometric"
       || String(row.signalType || "").startsWith("oura_")
     ));
-    const metrics = measured.reduce((accumulator, row) => mergeMetrics(accumulator, row.metrics), {});
+    const metrics = aggregateBiometricMetrics(measured);
     // Energía 0-10: SOLO la declarada por el usuario (última). Ya no se deriva de
     // biometría (C7): un número calculado no refleja al usuario. Ausente = null.
     const declaredEnergy = rows
@@ -180,34 +180,45 @@ function clean(value, max) {
   return String(value || "").trim().slice(0, max);
 }
 
-// Métricas acumulativas: se suman entre señales en vez de promediarse.
-// El resto (pulso, readiness, sleepScore…) sigue promediándose.
-const CUMULATIVE_METRICS = new Set([
+// Apple Health envía en cada sync el TOTAL ACUMULADO del día (pasos, energía activa,
+// sueño), no incrementos. Por eso estas métricas se REEMPLAZAN por el valor de la
+// señal más reciente — NO se suman (sumar duplicaría) ni se promedian.
+// El resto (pulso…) sí se promedia entre lecturas.
+const REPLACE_LATEST_METRICS = new Set([
   "steps",
   "activeEnergy",
   "active_calories",
   "activeCalories",
+  "activeEnergyKcal",
   "distance",
   "sleepHours",
   "sleep_hours",
+  "sleepMinutes",
 ]);
 
-function mergeMetrics(target, metrics) {
-  const result = { ...target };
-  for (const [key, value] of Object.entries(metrics || {})) {
-    const number = Number(value);
-    if (!Number.isFinite(number)) continue;
-    if (!Array.isArray(result[`_${key}`])) result[`_${key}`] = [];
-    result[`_${key}`].push(number);
-    result[key] = CUMULATIVE_METRICS.has(key)
-      ? Number(sum(result[`_${key}`]).toFixed(1))
-      : average(result[`_${key}`]);
+function aggregateBiometricMetrics(signals = []) {
+  // De más reciente a más antigua, para que en las métricas "último valor" gane la primera.
+  const ordered = [...signals].sort(
+    (a, b) => new Date(b.capturedAt || 0) - new Date(a.capturedAt || 0),
+  );
+  const result = {};
+  const toAverage = {};
+  for (const signal of ordered) {
+    for (const [key, value] of Object.entries(signal?.metrics || {})) {
+      const number = Number(value);
+      if (!Number.isFinite(number)) continue;
+      if (REPLACE_LATEST_METRICS.has(key)) {
+        if (!(key in result)) result[key] = number; // la más reciente ya vista gana
+      } else {
+        if (!Array.isArray(toAverage[key])) toAverage[key] = [];
+        toAverage[key].push(number);
+      }
+    }
+  }
+  for (const [key, values] of Object.entries(toAverage)) {
+    result[key] = average(values);
   }
   return result;
-}
-
-function sum(values) {
-  return values.reduce((total, value) => total + value, 0);
 }
 
 function average(values) {
