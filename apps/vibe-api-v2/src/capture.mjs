@@ -3,7 +3,7 @@ import { ApiError } from "./errors.mjs";
 
 const EVIDENCE_KINDS = new Set(["text", "image", "audio", "video", "document"]);
 const CONTEXT_KINDS = new Set([
-  "biometric", "location", "weather", "news", "entertainment", "agenda", "sensor",
+  "biometric", "location", "weather", "news", "entertainment", "agenda", "sensor", "energy",
 ]);
 const BINARY_REQUIRED_KINDS = new Set(["image", "audio", "video", "document"]);
 const BINARY_CAPABLE_KINDS = new Set([...BINARY_REQUIRED_KINDS, "biometric", "sensor"]);
@@ -667,5 +667,5 @@ function metricsFor(command) {
   if (command.metadata.metrics && typeof command.metadata.metrics === "object") {
     return command.metadata.metrics;
   }
-  return ["biometric", "sensor", "weather"].includes(command.kind) ? command.metadata : {};
+  return ["biometric", "sensor", "weather", "energy"].includes(command.kind) ? command.metadata : {};
 }

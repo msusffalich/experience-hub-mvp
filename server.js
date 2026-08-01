@@ -1311,7 +1311,7 @@ function buildIntegrationContract() {
       "oura-api-v2",
       "meta-wearables-device-access",
     ],
-    allowedPayloadTypes: ["biometric", "location", "media", "image", "audio", "video", "document", "activity", "sleep", "text", "calendar", "context"],
+    allowedPayloadTypes: ["biometric", "location", "media", "image", "audio", "video", "document", "activity", "sleep", "text", "calendar", "context", "energy"],
     targets: {
       media: "assets",
       image: "assets",
@@ -1325,6 +1325,7 @@ function buildIntegrationContract() {
       location: "context",
       text: "experience",
       context: "context",
+      energy: "context",
     },
     rules: [
       "Validate before ingesting.",
@@ -3476,6 +3477,12 @@ function buildContextSignalFromIntegrationSignal(normalized, signal = {}, user =
   const entertainment = normalizeIntegrationEntertainment(payload.entertainment || payload.dailyContext?.entertainment || signal.entertainment || signal.metadata?.entertainment);
   const metrics = {
     ...(payload.metrics && typeof payload.metrics === "object" ? payload.metrics : {}),
+    // Energía subjetiva 0-10 declarada por el usuario: llega como payload.energy
+    // (no dentro de payload.metrics). Se conserva como metrica para mostrar la
+    // ULTIMA declarada. NO se promedia ni se deriva de biometria.
+    ...(normalized.payloadType === "energy" && Number.isFinite(Number(payload.energy))
+      ? { energy: Number(payload.energy) }
+      : {}),
     ...(weather ? {
       weatherTemperatureC: weather.temperatureC,
       weatherApparentC: weather.apparentC,

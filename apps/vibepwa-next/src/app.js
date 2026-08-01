@@ -571,6 +571,7 @@ function contextOverview(compact = false) {
           ${contextMetric(metricValue(metrics, ["steps", "stepCount"]), "", t("steps"))}
           ${contextMetric(formatSleep(metricValue(metrics, ["sleepMinutes", "sleep_duration", "sleep"])), "", t("sleep"))}
           ${contextMetric(metricValue(metrics, ["activeEnergy", "active_calories", "activeEnergyKcal"]), "kcal", t("activeEnergy"))}
+          ${Number.isFinite(Number(context.energy)) ? contextMetric(context.energy, "/10", t("energyLevel")) : ""}
         </div><p class="source-line">${Number(context.biometricSignals || 0)} ${escapeHtml(t("healthRecords"))}</p>`
           : `<p>${escapeHtml(t("noHealthData"))}</p>`}
       </article>

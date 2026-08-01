@@ -130,6 +130,11 @@ export function createContextService({ supabase, workspace }) {
       || String(row.signalType || "").startsWith("oura_")
     ));
     const metrics = measured.reduce((accumulator, row) => mergeMetrics(accumulator, row.metrics), {});
+    // Energía 0-10: SOLO la declarada por el usuario (última). Ya no se deriva de
+    // biometría (C7): un número calculado no refleja al usuario. Ausente = null.
+    const declaredEnergy = rows
+      .filter((row) => row.signalType === "energy" && Number.isFinite(Number(row.metrics?.energy)))
+      .sort((a, b) => new Date(b.capturedAt || 0) - new Date(a.capturedAt || 0))[0] || null;
     return {
       ok: true,
       generatedAt: new Date().toISOString(),
@@ -140,7 +145,8 @@ export function createContextService({ supabase, workspace }) {
       latestWeather: rows.find((row) => row.signalType === "weather")?.payload || null,
       latestNews: rows.find((row) => row.signalType === "news")?.payload || null,
       latestEntertainment: rows.find((row) => row.signalType === "entertainment")?.payload || null,
-      energy: energyFromMetrics(metrics),
+      energy: declaredEnergy ? Number(declaredEnergy.metrics.energy) : null,
+      energyDeclaredAt: declaredEnergy ? declaredEnergy.capturedAt : null,
     };
   }
 
