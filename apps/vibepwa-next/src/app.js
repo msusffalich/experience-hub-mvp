@@ -569,7 +569,7 @@ function contextOverview(compact = false) {
         ${hasBiometrics ? `<div class="context-metrics">
           ${contextMetric(metricValue(metrics, ["heartAvg", "heartRate", "heart_rate", "heartRateAvg", "heartRateBpm", "average_heart_rate"]), "bpm", t("heartRate"))}
           ${contextMetric(metricValue(metrics, ["steps", "stepCount"]), "", t("steps"))}
-          ${contextMetric(formatSleep(metricValue(metrics, ["sleepMinutes", "sleep_duration", "sleep"])), "", t("sleep"))}
+          ${contextMetric(formatSleep(metricValue(metrics, ["sleepMinutes", "sleep_duration", "sleep", "sleepHours", "sleep_hours"])), "", t("sleep"))}
           ${contextMetric(metricValue(metrics, ["activeEnergy", "active_calories", "activeEnergyKcal"]), "kcal", t("activeEnergy"))}
           ${Number.isFinite(Number(context.energy)) ? contextMetric(context.energy, "/10", t("energyLevel")) : ""}
         </div><p class="source-line">${Number(context.biometricSignals || 0)} ${escapeHtml(t("healthRecords"))}</p>`
@@ -1957,7 +1957,7 @@ function publicationContextHtml() {
   const values = [
     [t("heartRate"), metricValue(metrics, ["heartAvg", "heartRate", "heart_rate", "heartRateAvg", "heartRateBpm", "average_heart_rate"]), "bpm"],
     [t("steps"), metricValue(metrics, ["steps", "stepCount"]), ""],
-    [t("sleep"), formatSleep(metricValue(metrics, ["sleepMinutes", "sleep_duration", "sleep"])), ""],
+    [t("sleep"), formatSleep(metricValue(metrics, ["sleepMinutes", "sleep_duration", "sleep", "sleepHours", "sleep_hours"])), ""],
     [t("activeEnergy"), metricValue(metrics, ["activeEnergy", "active_calories", "activeEnergyKcal"]), "kcal"],
     [t("locationWeather"), briefing.location?.label || context.latestLocation || "", ""],
     [t("weather"), briefing.weather?.description || "", ""],

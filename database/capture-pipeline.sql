@@ -71,7 +71,7 @@ ALTER TABLE capture_records
     CHECK (
       (intent = 'evidence' AND kind IN ('text', 'image', 'audio', 'video', 'document'))
       OR
-      (intent = 'context' AND kind IN ('biometric', 'location', 'weather', 'news', 'agenda', 'sensor'))
+      (intent = 'context' AND kind IN ('biometric', 'location', 'weather', 'news', 'agenda', 'sensor', 'energy'))
     );
 
 CREATE INDEX IF NOT EXISTS capture_records_owner_time_idx
